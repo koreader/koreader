@@ -7,6 +7,7 @@ Plugin for setting screen warmth based on the sun position and/or a time schedul
 local Device = require("device")
 
 local ConfirmBox = require("ui/widget/confirmbox")
+local DateTimeWidget = require("ui/widget/datetimewidget")
 local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
 local DeviceListener = require("device/devicelistener")
 local Dispatcher = require("dispatcher")
@@ -481,19 +482,18 @@ function AutoWarmth:getLocationMenu()
                 info_text = _("Enter decimal degrees, northern hemisphere and eastern length are '+'."),
                 left_text = _("Latitude"),
                 left_value = self.latitude,
-                left_default = 0,
                 left_min = -90,
                 left_max = 90,
                 left_step = 0.1,
-                precision = "%0.2f",
                 left_hold_step = 5,
+                left_precision = "%0.2f",
                 right_text = _("Longitude"),
                 right_value = self.longitude,
-                right_default = 0,
                 right_min = -180,
                 right_max = 180,
                 right_step = 0.1,
                 right_hold_step = 5,
+                right_precision = "%0.2f",
                 callback = function(lat, long)
                     self.latitude = lat
                     self.longitude = long
@@ -516,6 +516,7 @@ function AutoWarmth:getLocationMenu()
         callback = function(touchmenu_instance)
             UIManager:show(SpinWidget:new{
                 title_text = _("Altitude"),
+                info_text = _("Enter the altitude in meters above sea level."),
                 value = self.altitude,
                 value_min = -100,
                 value_max = 15000, -- intercontinental flight
@@ -578,26 +579,15 @@ function AutoWarmth:getScheduleMenu()
                     hh = math.floor(self.scheduler_times[num])
                     mm = math.floor(frac(self.scheduler_times[num]) * 60 + 0.5)
                 end
-                UIManager:show(DoubleSpinWidget:new{
+                UIManager:show(DateTimeWidget:new{
                     title_text = _("Set time"),
-                    left_text = _("HH"),
-                    left_value = hh,
-                    left_default = 0,
-                    left_min = 0,
-                    left_max = 23,
-                    left_step = 1,
-                    left_hold_step = 3,
-                    left_wrap = true,
-                    right_text = _("MM"),
-                    right_value = mm,
-                    right_default = 0,
-                    right_min = 0,
-                    right_max = 59,
-                    right_step = 1,
-                    right_hold_step = 5,
-                    right_wrap = true,
-                    callback = function(left, right)
-                        local new_time = left + right / 60
+                    info_text = _("Enter time in hours and minutes."),
+                    is_date = false,
+                    hour = hh,
+                    min = mm,
+                    ok_text = _("Set time"),
+                    callback = function(time)
+                        local new_time = time.hour + time.min / 60
                         local function get_valid_time(n, dir)
                             for i = n+dir, dir > 0 and midnight_index or 1, dir do
                                 if self.scheduler_times[i] then
@@ -694,6 +684,7 @@ function AutoWarmth:getWarmthMenu()
                 if Device:hasNaturalLight() then
                     UIManager:show(SpinWidget:new{
                         title_text = text,
+                        info_text = _("Enter percentage of warmth."),
                         value = self.warmth[num],
                         value_min = 0,
                         value_max = 100,

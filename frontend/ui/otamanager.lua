@@ -14,6 +14,7 @@ local Version = require("version")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 
 local ota_dir = DataStorage:getDataDir() .. "/ota/"
@@ -230,7 +231,7 @@ function OTAManager:fetchAndProcessUpdate()
         local update_message = T(_("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
                                  BD.ltr(local_version),
                                  BD.ltr(ota_version))
-        local update_ok_text = _("Update")
+        local update_ok_text = C_("Application update | Button", "Update")
         if ota_version < local_version then
             -- Android cannot downgrade APKs. The user needs to uninstall current app first.
             -- Instead of doing the auto-update when ready we just download the APK using the browser.
@@ -452,7 +453,7 @@ end
 
 function OTAManager:getOTAMenuTable()
     return {
-        text = _("Update"),
+        text = C_("Application update | Menu", "Update"),
         hold_callback = function()
             local connect_callback = function()
                 OTAManager:fetchAndProcessUpdate()

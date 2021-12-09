@@ -9,11 +9,13 @@ local Notification = require("ui/widget/notification")
 local lfs = require("libs/libkoreader-lfs")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local ReaderTypeset = InputContainer:new{
-    css_menu_title = _("Style"),
+    -- @translators This is style in the sense meant by CSS (cascading style sheets), relating to the layout and presentation of the document. See <https://en.wikipedia.org/wiki/CSS> for more information.
+    css_menu_title = C_("CSS", "Style"),
     css = nil,
     internal_css = true,
     unscaled_margins = nil,

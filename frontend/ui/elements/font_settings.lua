@@ -5,34 +5,33 @@ local _ = require("gettext")
 
 --[[ Font settings for systems with multiple font dirs ]]--
 
-local LINUX_FONT_PATH = "share/fonts"
-local MACOS_FONT_PATH = "Library/fonts"
-
 local function getDir(isUser)
     local home = Device.home_dir
+
+    local XDG_DATA_HOME = os.getenv("XDG_DATA_HOME")
+    local LINUX_FONT_PATH = XDG_DATA_HOME and XDG_DATA_HOME .. "/fonts"
+                                           or home .. "/.local/share/fonts"
+    local LINUX_SYS_FONT_PATH = "/usr/share/fonts"
+    local MACOS_FONT_PATH = "Library/fonts"
+
     if isUser and not home then return end
+
     if Device:isAndroid() then
-        if isUser then
-            return home .. "/fonts;" .. home .. "/koreader/fonts"
-        else
-            return "/system/fonts"
-        end
+        return isUser and home .. "/fonts;" .. home .. "/koreader/fonts"
+                       or "/system/fonts"
     elseif Device:isPocketBook() then
-        if isUser then
-            return "/mnt/ext1/system/fonts"
-        else
-            return "/ebrmain/adobefonts;/ebrmain/fonts"
-        end
+        return isUser and "/mnt/ext1/system/fonts"
+                       or "/ebrmain/adobefonts;/ebrmain/fonts"
     elseif Device:isRemarkable() then
-        return isUser and string.format("%s/.local/%s", home, LINUX_FONT_PATH)
-            or string.format("/usr/%s", LINUX_FONT_PATH)
+        return isUser and LINUX_FONT_PATH
+                       or LINUX_SYS_FONT_PATH
     elseif Device:isDesktop() or Device:isEmulator() then
         if jit.os == "OSX" then
-            return isUser and string.format("%s/%s", home, MACOS_FONT_PATH)
-                or string.format("/%s", MACOS_FONT_PATH)
+            return isUser and home .. "/" .. MACOS_FONT_PATH
+                           or "/" .. MACOS_FONT_PATH
         else
-            return isUser and string.format("%s/.local/%s", home, LINUX_FONT_PATH)
-                or string.format("/usr/%s", LINUX_FONT_PATH)
+            return isUser and LINUX_FONT_PATH
+                           or LINUX_SYS_FONT_PATH
         end
     end
 end

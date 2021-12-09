@@ -106,6 +106,8 @@ function ReaderUI:init()
     -- cap screen refresh on pan to 2 refreshes per second
     local pan_rate = Screen.low_pan_rate and 2.0 or 30.0
 
+    Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
+
     self.postInitCallback = {}
     self.postReaderCallback = {}
     -- if we are not the top level dialog ourselves, it must be given in the table
@@ -456,6 +458,8 @@ function ReaderUI:init()
         v()
     end
     self.postReaderCallback = nil
+
+    Device:setIgnoreInput(false) -- Allow processing of events (on Android).
 
     -- print("Ordered registered gestures:")
     -- for _, tzone in ipairs(self._ordered_touch_zones) do

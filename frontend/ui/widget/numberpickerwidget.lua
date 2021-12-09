@@ -48,6 +48,8 @@ local NumberPickerWidget = InputContainer:new{
     -- in case we need calculate number of days in a given month and year
     date_month = nil,
     date_year = nil,
+    -- on update signal to the caller and pass updated value
+    picker_updated_callback = nil,
 }
 
 function NumberPickerWidget:init()
@@ -224,6 +226,9 @@ function NumberPickerWidget:update()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self.dimen
     end)
+    if self.picker_updated_callback then
+        self.picker_updated_callback(self.value, self.value_index)
+    end
 end
 
 --[[--

@@ -776,24 +776,29 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
             -- so it's safe to split. Ideally luajson would support jsonl but
             -- unfortunately it doesn't and it also seems to decode the last
             -- object rather than the first one if there are multiple.
+            local result_word_idx = 0
             for _, entry_str in ipairs(util.splitToArray(results_str, "\n")) do
+                result_word_idx = result_word_idx + 1
                 local ok, results = pcall(JSON.decode, entry_str)
-                if ok and results then
-                    table.insert(all_results, results)
-                else
+                if not ok or not results then
                     logger.warn("JSON data cannot be decoded", results)
                     -- Need to insert an empty table so that the word entries
                     -- match up to the result entries (so that callers can
                     -- batch lookups to reduce the cost of bulk lookups while
                     -- still being able to figure out which lookup came from
                     -- which word).
-                    table.insert(all_results, {})
+                    results = {}
+                end
+                if all_results[result_word_idx] then
+                    util.arrayAppend(all_results[result_word_idx], results)
+                else
+                    table.insert(all_results, results)
                 end
             end
+            if result_word_idx ~= #words then
+                logger.warn("sdcv returned a different number of results than the number of words")
+            end
         end
-    end
-    if #all_results ~= #words then
-        logger.warn("sdcv returned a different number of results than the number of words")
     end
     return lookup_cancelled, all_results
 end

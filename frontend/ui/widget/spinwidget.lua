@@ -52,6 +52,9 @@ local SpinWidget = InputContainer:new{
 }
 
 function SpinWidget:init()
+    -- used to enable ok_button, self.value may be changed in extra callback
+    self.original_value = self.value_table and self.value_table[self.value_index or 1] or self.value
+
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     if not self.width then
@@ -83,18 +86,21 @@ function SpinWidget:init()
     self:update()
 end
 
-function SpinWidget:update()
+function SpinWidget:update(numberpicker_value, numberpicker_value_index)
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
-        value = self.value,
+        value = numberpicker_value or self.value,
         value_table = self.value_table,
-        value_index = self.value_index,
+        value_index = numberpicker_value_index or self.value_index,
         value_min = self.value_min,
         value_max = self.value_max,
         value_step = self.value_step,
         value_hold_step = self.value_hold_step,
         precision = self.precision,
         wrap = self.wrap,
+        picker_updated_callback = function(value, value_index)
+            self:update(value, value_index)
+        end,
     }
     local value_group = HorizontalGroup:new{
         align = "center",
@@ -159,12 +165,16 @@ function SpinWidget:update()
         },
         {
             text = self.ok_text,
+            enabled = self.original_value ~= value_widget:getValue(),
             callback = function()
+                self.value, self.value_index = value_widget:getValue()
+                self.original_value = self.value
                 if self.callback then
-                    self.value, self.value_index = value_widget:getValue()
                     self.callback(self)
                 end
-                if not self.keep_shown_on_apply then
+                if self.keep_shown_on_apply then
+                    self:update()
+                else
                     self:onClose()
                 end
             end,

@@ -3,6 +3,7 @@ Simple math helper functions
 ]]
 
 local bit = require("bit")
+local dbg = require("dbg")
 
 local Math = {}
 
@@ -101,5 +102,27 @@ The optional argument func specifies a one-argument ordering function.
 function Math.tmax(tab, func)
     return tmin_max(tab, func, "max")
 end
+
+--[[--
+Restricts a value within an interval.
+
+@number value
+@number min
+@number max
+@treturn number value clamped to the interval [min,max]
+]]
+function Math.clamp(value, min, max)
+    if value <= min then
+        return min
+    elseif value >= max then
+        return max
+    end
+    return value
+end
+dbg:guard(Math, "minmax",
+    function(value, min, max)
+        assert(min ~= nil and max ~= nil, "Math.clamp: min " .. min .. " and max " .. nil .. " must not be nil")
+        assert(min < max, "Math.clamp: min .. " .. min .. " must be less than max " .. max)
+    end)
 
 return Math

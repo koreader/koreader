@@ -115,7 +115,7 @@ function DocSettings:open(docfile)
         -- can handle two files with only different suffixes.
         new.sidecar_file = self:getSidecarFile(docfile)
         new.legacy_sidecar_file = sidecar.."/"..
-                                  docfile:match("([^%/]+%..+)")..".lua"
+                                  ffiutil.basename(docfile)..".lua"
     end
 
     local candidates = {}

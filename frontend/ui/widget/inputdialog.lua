@@ -14,7 +14,7 @@ Example:
         input = "default value",
         -- A placeholder text shown in the text box.
         input_hint = _("Hint text"),
-        input_type = "string",
+        -- input_type = nil, -- default for text
         -- A description shown above the input.
         description = _("Some more description."),
         -- text_type = "password",
@@ -133,6 +133,7 @@ local InputDialog = InputContainer:new{
     readonly = false, -- don't allow editing, will not show keyboard
     allow_newline = false, -- allow entering new lines (this disables any enter_callback)
     cursor_at_end = true, -- starts with cursor at end of text, ready for appending
+    use_available_height = false, -- adjust input box to fill available height on screen
     fullscreen = false, -- adjust to full screen minus keyboard
     condensed = false, -- true will prevent adding air and balance between elements
     add_scroll_buttons = false, -- add scroll Up/Down buttons to first row of buttons
@@ -347,7 +348,7 @@ function InputDialog:init()
                                     - vspan_after_input_text:getSize().h
                                     - buttons_container:getSize().h
                                     - keyboard_height
-        if self.fullscreen or text_height > available_height then
+        if self.fullscreen or self.use_available_height or text_height > available_height then
             -- Don't leave unusable space in the text widget, as the user could think
             -- it's an empty line: move that space in pads after and below (for centering)
             self.text_height = math.floor(available_height / line_height) * line_height
@@ -356,7 +357,9 @@ function InputDialog:init()
             local pad_after = pad_height - pad_before
             vspan_before_input_text.width = vspan_before_input_text.width + pad_before
             vspan_after_input_text.width = vspan_after_input_text.width + pad_after
-            self.cursor_at_end = false -- stay at start if overflowed
+            if text_height > available_height then
+                self.cursor_at_end = false -- stay at start if overflowed
+            end
         else
             -- Don't leave unusable space in the text widget
             self.text_height = text_height
@@ -864,9 +867,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                         text = _("Case sensitive"),
                         checked = self.case_sensitive,
                         parent = input_dialog,
-                        max_width = input_dialog._input_widget.width,
                         callback = function()
-                            self.check_button_case:toggleCheck()
                             self.case_sensitive = self.check_button_case.checked
                         end,
                     }

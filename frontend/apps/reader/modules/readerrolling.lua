@@ -867,16 +867,24 @@ function ReaderRolling:onUpdatePos()
         -- we have set above) to avoid multiple refreshes.
         return true
     end
+
+    UIManager:discardEvents(math.huge) -- Discard any past and upcoming input events for the next hour.
+    Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
+
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
     -- the previous xpointer accurately:
     self.ui.document:getCurrentPos()
+
     -- Otherwise, _readMetadata() would do that, but the positioning
     -- would not work as expected, for some reason (it worked
     -- previously because of some bad setDirty() in ConfigDialog widgets
     -- that were triggering a full repaint of crengine (so, the needed
     -- rerendering) before updatePos() is called.
     self:updatePos()
+
+    Device:setIgnoreInput(false) -- Allow processing of events (on Android).
+    UIManager:discardEvents(true) -- Discard events, which might have occured (double tap).
 end
 
 function ReaderRolling:updatePos()
@@ -900,7 +908,7 @@ function ReaderRolling:updatePos()
     end
     self:onUpdateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
-    self.current_header_height = self.ui.document:getHeaderHeight()
+    self.current_header_height = self.view.view_mode == "page" and self.ui.document:getHeaderHeight() or 0
     -- Allow for the new rendering to be shown before possibly showing
     -- the "Styles have changed..." ConfirmBox so the user can decide
     -- if it is really needed
@@ -909,14 +917,9 @@ function ReaderRolling:updatePos()
     end)
 end
 
---[[
-    switching screen mode should not change current page number
---]]
 function ReaderRolling:onChangeViewMode()
-    self.rendering_hash = self.ui.document:getDocumentRenderingHash()
-    self.ui.document:_readMetadata()
-    self.current_header_height = self.ui.document:getHeaderHeight()
-    self.ui:handleEvent(Event:new("UpdateToc"))
+    self.current_header_height = self.view.view_mode == "page" and self.ui.document:getHeaderHeight() or 0
+    -- Restore current position when switching page/scroll mode
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
         -- Ensure a whole screen refresh is always enqueued
@@ -952,8 +955,7 @@ function ReaderRolling:onSetDimensions(dimen)
         self.ui.document:enableInternalHistory(true)
         -- Set document dimensions
         self.ui.document:setViewDimen(Screen:getSize())
-        -- Re-setup previous position
-        self:onChangeViewMode()
+        -- Re-render document (and update TOC, re set position)
         self:onUpdatePos()
         -- Re-disable internal history, with required redraw
         self.ui.document:enableInternalHistory(false)

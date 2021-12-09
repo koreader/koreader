@@ -18,8 +18,12 @@ function DataStorage:getDataDir()
         -- confined ubuntu app has write access to this dir
         data_dir = string.format("%s/%s", os.getenv("XDG_DATA_HOME"), package_name)
     elseif os.getenv("APPIMAGE") or os.getenv("KO_MULTIUSER") then
-        local user_rw = jit.os == "OSX" and "Library/Application Support" or ".config"
-        data_dir = string.format("%s/%s/%s", os.getenv("HOME"), user_rw, "koreader")
+        if os.getenv("XDG_CONFIG_HOME") then
+            data_dir = string.format("%s/%s", os.getenv("XDG_CONFIG_HOME"), "koreader")
+        else
+            local user_rw = jit.os == "OSX" and "Library/Application Support" or ".config"
+            data_dir = string.format("%s/%s/%s", os.getenv("HOME"), user_rw, "koreader")
+        end
     else
         data_dir = "."
     end

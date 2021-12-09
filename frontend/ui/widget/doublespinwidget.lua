@@ -20,6 +20,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 local DoubleSpinWidget = InputContainer:new{
     title_text = "",
@@ -28,26 +29,30 @@ local DoubleSpinWidget = InputContainer:new{
     width = nil,
     width_factor = nil, -- number between 0 and 1, factor to the smallest of screen width and height
     height = nil,
+    left_text = _("Left"),
     left_min = 1,
     left_max = 20,
     left_value = 1,
     left_default = nil,
-    left_text = _("Left"),
+    left_precision = nil, -- default "%02d" in NumberPickerWidget
+    left_wrap = false,
+    right_text = _("Right"),
     right_min = 1,
     right_max = 20,
     right_value = 1,
     right_default = nil,
-    right_text = _("Right"),
+    right_precision = nil,
+    right_wrap = false,
     cancel_text = _("Close"),
     ok_text = _("Apply"),
     cancel_callback = nil,
     callback = nil,
     close_callback = nil,
     keep_shown_on_apply = false,
-    -- Set this to add default button that restores numbers to their default values
-    default_values = nil,
-    default_text = _("Use defaults"),
-    -- Optional extra button on bottom
+    -- Set this to add upper default button that applies default values with callback(nil, nil)
+    default_values = false,
+    default_text = nil,
+    -- Optional extra button above ok/cancel buttons row
     extra_text = nil,
     extra_callback = nil,
 }
@@ -63,7 +68,7 @@ function DoubleSpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close time widget" }
+            Close = { {"Back"}, doc = "close doublespin widget" }
         }
     end
     if Device:isTouchDevice() then
@@ -84,44 +89,50 @@ function DoubleSpinWidget:init()
     self:update()
 end
 
-function DoubleSpinWidget:update()
+function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_value)
     local left_widget = NumberPickerWidget:new{
         show_parent = self,
-        value = self.left_value,
+        value = numberpicker_left_value or self.left_value,
         value_min = self.left_min,
         value_max = self.left_max,
         value_step = self.left_step,
         value_hold_step = self.left_hold_step,
-        precision = self.precision,
-        wrap = self.left_wrap or false,
+        precision = self.left_precision,
+        wrap = self.left_wrap,
     }
     local right_widget = NumberPickerWidget:new{
         show_parent = self,
-        value = self.right_value,
+        value = numberpicker_right_value or self.right_value,
         value_min = self.right_min,
         value_max = self.right_max,
         value_step = self.right_step,
         value_hold_step = self.right_hold_step,
-        precision = self.precision,
-        wrap = self.right_wrap or false,
+        precision = self.right_precision,
+        wrap = self.right_wrap,
     }
+    left_widget.picker_updated_callback = function(value)
+        self:update(value, right_widget:getValue())
+    end
+    right_widget.picker_updated_callback = function(value)
+        self:update(left_widget:getValue(), value)
+    end
+
+    local text_max_width = math.floor(0.95 * self.width / 2)
     local left_vertical_group = VerticalGroup:new{
         align = "center",
-        VerticalSpan:new{ width = Size.span.vertical_large },
         TextWidget:new{
             text = self.left_text,
             face = self.title_face,
-            max_width = math.floor(0.95 * self.width / 2),
+            max_width = text_max_width,
         },
         left_widget,
     }
     local right_vertical_group = VerticalGroup:new{
         align = "center",
-        VerticalSpan:new{ width = Size.span.vertical_large },
         TextWidget:new{
             text = self.right_text,
             face = self.title_face,
-            max_width = math.floor(0.95 * self.width / 2),
+            max_width = text_max_width,
         },
         right_widget,
     }
@@ -173,34 +184,14 @@ function DoubleSpinWidget:update()
     else
         widget_info = VerticalSpan:new{ width = 0 }
     end
-    local buttons = {
-        {
-            {
-                text = self.cancel_text,
-                callback = function()
-                    if self.cancel_callback then
-                        self.cancel_callback()
-                    end
-                    self:onClose()
-                end,
-            },
-            {
-                text = self.ok_text,
-                callback = function()
-                    if self.callback then
-                        self.callback(left_widget:getValue(), right_widget:getValue())
-                    end
-                    if not self.keep_shown_on_apply then
-                        self:onClose()
-                    end
-                end,
-            },
-        },
-    }
+
+    local buttons = {}
     if self.default_values then
-        table.insert(buttons,{
+        table.insert(buttons, {
             {
-                text = self.default_text,
+                text = self.default_text or T(_("Apply default values: %1 / %2"),
+                    self.left_precision and string.format(self.left_precision, self.left_default) or self.left_default,
+                    self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default),
                 callback = function()
                     left_widget.value = self.left_default
                     right_widget.value = self.right_default
@@ -212,7 +203,7 @@ function DoubleSpinWidget:update()
         })
     end
     if self.extra_text then
-        table.insert(buttons,{
+        table.insert(buttons, {
             {
                 text = self.extra_text,
                 callback = function()
@@ -226,6 +217,33 @@ function DoubleSpinWidget:update()
             },
         })
     end
+    table.insert(buttons, {
+        {
+            text = self.cancel_text,
+            callback = function()
+                if self.cancel_callback then
+                    self.cancel_callback()
+                end
+                self:onClose()
+            end,
+        },
+        {
+            text = self.ok_text,
+            enabled = self.left_value ~= left_widget:getValue() or self.right_value ~= right_widget:getValue(),
+            callback = function()
+                self.left_value = left_widget:getValue()
+                self.right_value = right_widget:getValue()
+                if self.callback then
+                    self.callback(self.left_value, self.right_value)
+                end
+                if self.keep_shown_on_apply then
+                    self:update()
+                else
+                    self:onClose()
+                end
+            end,
+        },
+    })
 
     local button_table = ButtonTable:new{
         width = self.width - 2*Size.padding.default,
@@ -244,15 +262,13 @@ function DoubleSpinWidget:update()
             widget_title,
             widget_line,
             widget_info,
-            VerticalSpan:new{ width = Size.span.vertical_large },
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = widget_group:getSize().h,
+                    h = widget_group:getSize().h + 4 * Size.padding.large,
                 },
                 widget_group
             },
-            VerticalSpan:new{ width = Size.span.vertical_large },
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,

@@ -4,20 +4,26 @@
 -- The current source code of this file can be found on https://github.com/zwim/suntime.
 
 --[[--
-Module to calculate ephemeris and other times depending on the sun position
+Module to calculate ephemeris and other times depending on the sun position.
 
-Maximal errors from 2020-2050 are:
+Maximal errors from 2020-2050 (compared to https://midcdmz.nrel.gov/spa/) are:
 
+* -43.52° Christchurch 66s
+* -20.16° Mauritius:   25s
+* 20.30° Honolulu:     47s
 * 33.58° Casablanca:   24s
-* 37.97° Athene:       25s
-* 41.91° Rome:         28s
-* 47.25° Innsbruck:    14s
-* 52.32° Berlin:       32s
-* 64.14° Reykjavik:   113s
-* 65.69° Akureyri:   <110s (except *)
+* 35.68° Tokio:        50s
+* 37.97° Athene:       24s
+* 38°    Sacramento:   67s
+* 41.91° Rome:         27s
+* 47.25° Innsbruck:    13s
+* 52.32° Berlin:       30s
+* 59.92° Oslo:         42s
+* 64.14° Reykjavik:    66s
+* 65.69° Akureyri:    <24s (except *)
 * 70.67° Hammerfest: <105s (except **)
 
-*) A few days around beginning of summer (error <530s)
+*) A few days around beginning of summer (error <290s)
 
 **) A few days after and befor midnight sun (error <1200s)
 
@@ -41,9 +47,10 @@ Maximal errors from 2020-2050 are:
 --]]--
 
 -- math abbrevations
-local toRad = math.pi/180
-local toDeg = 1/toRad
+local pi = math.pi
+local pi_2 = pi/2
 
+local abs = math.abs
 local floor = math.floor
 local sin = math.sin
 local cos = math.cos
@@ -52,20 +59,38 @@ local asin = math.asin
 local acos = math.acos
 local atan = math.atan
 
+local toRad = pi/180
+local toDeg = 1/toRad
+
 local function Rad(x)
     return x*toRad
 end
 
 --------------------------------------------
+local speed_of_light = 2.99792E8
+local sun_radius = 6.96342e8
+local average_earth_radius = 6371e3
+local semimajor_axis = 149598022.96E3 -- earth orbit's major semi-axis in meter
+local average_speed_earth = 29.7859e3
+local aberration = asin(average_speed_earth/speed_of_light) -- Aberration relativistic
+--local average_speed_equator = (2*pi * average_earth_radius) / (24*3600)
+--------------------------------------------
 
-local SunTime = {}
+ -- minimal twillight times in hours
+local min_civil_twilight = 20/60
+local min_nautic_twilight = 45/60 - min_civil_twilight
+local min_astronomic_twilight = 20/60 - min_nautic_twilight
 
-SunTime.astronomic = Rad(-18)
-SunTime.nautic =  Rad(-12)
-SunTime.civil = Rad(-6)
--- SunTime.eod = Rad(-49/60) -- approx. end of day
-SunTime.earth_flatten = 1 / 298.257223563 -- WGS84
-SunTime.average_temperature = 10 -- °C
+local SunTime = {
+        astronomic = Rad(-18),
+        nautic =  Rad(-12),
+        civil = Rad(-6),
+        -- eod = Rad(-49/60), -- approx. end of day
+        earth_flatten = 1 / 298.257223563, -- WGS84
+        average_temperature = 10, -- °C
+
+        times = {},
+    }
 
 ----------------------------------------------------------------
 
@@ -90,13 +115,12 @@ function SunTime:getZglAdvanced()
     local e4 = e3*e
     local e5 = e4*e
 
-    local M = self.M
     -- https://de.wikibooks.org/wiki/Astronomische_Berechnungen_f%C3%BCr_Amateure/_Himmelsmechanik/_Sonne
-    local C = (2*e - e3/4 + 5/96*e5) * sin(M)
-            + (5/4*e2 + 11/24*e4) * sin(2*M)
-            + (13/12*e3 - 43/64*e5) * sin(3*M)
-            + 103/96*e4 * sin(4*M)
-            + 1097/960*e5 * sin(5*M) -- rad
+    local C = (2*e - e3/4 + 5/96*e5) * self.sin_M
+            + (5/4*e2 + 11/24*e4) * self.sin_2M
+            + (13/12*e3 - 43/64*e5) * self.sin_3M
+            + 103/96*e4 * self.sin_4M
+            + 1097/960*e5 * self.sin_5M -- rad
 
     local lamb = self.L + C
     local tanL = tan(self.L)
@@ -109,6 +133,8 @@ end
 
 -- set current date or year/month/day daylightsaving hh/mm/ss
 -- if dst == nil use curent daylight saving of the system
+local days_in_month = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+
 function SunTime:setDate(year, month, day, dst, hour, min, sec)
     self.date = os.date("*t") -- get current day
 
@@ -116,11 +142,11 @@ function SunTime:setDate(year, month, day, dst, hour, min, sec)
         self.date.year = year
         self.date.month = month
         self.date.day = day
-        local feb = 28
         if year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0) then
-            feb = 29
+            days_in_month[2] = 29
+        else
+            days_in_month[2] = 28
         end
-        local days_in_month = {31, feb, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
         self.date.yday = day
         for i = 1, month-1 do
             self.date.yday = self.date.yday + days_in_month[i]
@@ -131,10 +157,6 @@ function SunTime:setDate(year, month, day, dst, hour, min, sec)
         if dst ~= nil then
             self.date.isdst = dst
         end
-    end
-
-    if not self.getZgl then
-        self.getZgl = self.getZglAdvanced
     end
 end
 
@@ -157,22 +179,27 @@ function SunTime:setPosition(name, latitude, longitude, time_zone, altitude, deg
 
     -- check for sane values
     -- latitudes are from -90° to +90°
-    if latitude > math.pi/2 then
-        latitude = math.pi/2
-    elseif latitude < -math.pi/2 then
-        latitude = -math.pi/2
+    if latitude > pi_2 then
+        latitude = pi_2
+    elseif latitude < -pi_2 then
+        latitude = -pi_2
     end
     -- longitudes are from -180° to +180°
-    if longitude > math.pi then
-        longitude = math.pi
-    elseif longitude < -math.pi then
-        longitude = -math.pi
+    if longitude > pi then
+        longitude = pi
+    elseif longitude < -pi then
+        longitude = -pi
     end
 
-    self.pos = {name, latitude = latitude, longitude = longitude, altitude = altitude}
+    latitude = atan((1-self.earth_flatten)^2 * tan(latitude))
+
+    self.pos = {name = name, latitude = latitude, longitude = longitude, altitude = altitude}
     self.time_zone = time_zone
 --    self.refract = Rad(36.35/60 * .5 ^ (altitude / 5538)) -- constant temperature
     self.refract = Rad(36.20/60 * (1 - 0.0065*altitude/(273.15+self.average_temperature)) ^ 5.255 )
+
+    self.sin_latitude = sin(self.pos.latitude)
+    self.cos_latitude = cos(self.pos.latitude)
 end
 
 --[[--
@@ -188,6 +215,10 @@ function SunTime:setAdvanced()
     self.getZgl = self.getZglAdvanced
 end
 
+--[[--
+  Function to get the equation of time, can be set by setSimple() or setAdvanced()
+--]]--
+SunTime.getZgl = SunTime.getZglAdvanced
 
 function SunTime:daysSince2000(hour)
     local delta = self.date.year - 2000
@@ -204,6 +235,8 @@ function SunTime:initVars(hour)
     if not hour then
         hour = 12
     end
+
+    local after_noon = hour > 12
 
     local T = self:daysSince2000(hour)/36525 -- in Julian centuries form 2000-01-01 12:00
 
@@ -239,7 +272,6 @@ function SunTime:initVars(hour)
             + nT*(-2.04411E-2 -  nT* 0.00523E-3)))/3600 --°
     self.L = (L - floor(L/360)*360) * toRad
 
-
     -- see Numerical expressions for precession formulae ...
     -- Time is here in Julian centuries
     local omega =     102.93734808 + nT*(11612.35290e-1
@@ -249,6 +281,21 @@ function SunTime:initVars(hour)
     -- mean anomaly
     local M = L - omega --°
     self.M = (M - floor(M/360)*360) * toRad
+
+    self.sin_M = sin(self.M)
+    self.cos_M = cos(self.M)
+
+    -- sin(2x)=2 sin(x) cos(x)
+    self.sin_2M = 2 * self.sin_M * self.cos_M
+
+    -- sin(3x) = 3 sin(x) − 4 sin(x)^3
+    self.sin_3M = 3 * self.sin_M - 4 * self.sin_M^3
+
+    -- sin(4x) = 8 sin(x) cos(x)^3 - 4 sin(x) cos(x)
+    self.sin_4M = 8 * self.sin_M * self.cos_M^3 - 4 * self.sin_M * self.cos_M
+
+    -- sin(5x) = 5 sin(x) - 20 sin(x)^3+ 16 sin(x)^5
+    self.sin_5M = 5 * self.sin_M - 20 * self.sin_M^3 + 16 * self.sin_M^5
 
     -- Deklination nach astronomie.info
     --  local decl = 0.4095 * sin(0.016906 * (self.date.yday - 80.086))
@@ -267,7 +314,7 @@ function SunTime:initVars(hour)
     --self.decl = asin(sin(ep)*sin(l))
 
     -- Deklination WMO-No.8 page I-7-37
-    local l =  self.L + math.pi + (1.915 * sin (self.M) + 0.020 * sin (2*self.M))*toRad
+    local l =  self.L + pi + (1.915 * self.sin_M + 0.020 * self.sin_2M)*toRad
     self.decl = asin(sin(self.epsilon)*sin(l))
 
     -- Nutation see https://de.wikipedia.org/wiki/Nutation_(Astronomie)
@@ -288,105 +335,160 @@ function SunTime:initVars(hour)
     self.decl = self.decl + delta_epsilon/3600*toRad
 
     -- https://de.wikipedia.org/wiki/Kepler-Gleichung#Wahre_Anomalie
-    self.E = self.M + self.num_ex * sin(self.M) + self.num_ex^2 / 2 * sin(2*self.M)
-    self.a = 149598022.96E3 -- große Halbachse in meter
-    self.r = self.a * (1 - self.num_ex * cos(self.E))
+    self.E = self.M + self.num_ex * self.sin_M + self.num_ex^2 / 2 * self.sin_2M
+    self.r = semimajor_axis * (1 - self.num_ex * cos(self.E))
 
-    self.eod = -atan(6.96342e8/self.r) - self.refract
-    --                ^--sun radius            ^- astronomical refraction (at altitude)
+    --    self.eod = -atan(sun_radius/self.r) - self.refract
+    --                                            ^- astronomical refraction (at altitude)
+
+    if after_noon then
+        self.eod = -atan((sun_radius-average_earth_radius*self.cos_latitude)/self.r) - self.refract
+        self.eod = self.eod + aberration
+    else
+        self.eod = -atan((sun_radius+average_earth_radius*self.cos_latitude)/self.r) - self.refract
+        self.eod = self.eod - aberration
+    end
 
     self.zgl = self:getZgl()
 end
 
 function SunTime:getTimeDiff(height)
-    local val = (sin(height) - sin(self.pos.latitude)*sin(self.decl))
-                / (cos(self.pos.latitude)*cos(self.decl))
+    local val = (sin(height) - self.sin_latitude*sin(self.decl))
+                / (self.cos_latitude*cos(self.decl))
 
-    if math.abs(val) > 1 then
+    if abs(val) > 1 then
         return
     end
-    return 12/math.pi * acos(val)
+    return 12/pi * acos(val)
+end
+
+-- get the sun height for a given time
+-- eod for considering sun diameter and astronomic refraction
+function SunTime:getHeight(time, eod)
+    time = time - 12 -- subtrace 12, because JD starts at 12:00
+    local val = cos(self.decl)*self.cos_latitude*cos(pi/12*time)
+        + sin(self.decl)*self.sin_latitude
+
+    if abs(val) > 1 then
+        return
+    end
+
+    if eod then
+        return asin(val) - eod -- self.eod might be a bit too small
+    else
+        return asin(val)
+    end
 end
 
 -- Get time for a certain height
 -- Set hour near to expected time
--- Sed after_noon to true, if sunset is wanted
+-- Set after_noon to true, if sunset is wanted
+-- Set no_correct_dst if no daylight saving correction is wanted
 -- Result rise or set time
 --        nil sun does not reach the height
-function SunTime:calculateTime(height, hour, after_noon)
-    local dst = self.date.isdst and 1 or 0
-    local timeDiff = self:getTimeDiff(height, hour)
+function SunTime:calculateTime(height, hour, after_noon, no_correct_dst)
+    if not no_correct_dst then
+        if self.date.isdst and hour then
+            hour = hour - 1
+        end
+    end
+    self:initVars(hour) -- calculate self.eod
+    local timeDiff = self:getTimeDiff(height or self.eod, hour)
     if not timeDiff then
         return
     end
 
-    local local_correction = self.time_zone - self.pos.longitude*12/math.pi + dst - self.zgl
+    local local_correction = self.time_zone - self.pos.longitude*12/pi - self.zgl
     if not after_noon then
-        return 12 - timeDiff + local_correction
+        hour = 12 - timeDiff + local_correction
     else
-        return 12 + timeDiff + local_correction
+        hour = 12 + timeDiff + local_correction
     end
+    if not no_correct_dst then
+        if self.date.isdst and hour then
+            hour = hour + 1
+        end
+    end
+    return hour
 end
 
+-- Calculates the hour, when the sun reaches height
 -- If height is nil, use newly calculated self.eod
-function SunTime:calculateTimeIter(height, hour)
-    local after_noon = hour > 12
+-- hour gives a start value, default is used when hour == nil
+function SunTime:calculateTimeIter(height, hour, default_hour)
+    local after_noon = (hour and hour > 12) or (default_hour and default_hour > 12)
 
-    self:initVars(hour) -- calculate self.eod
-    hour = self:calculateTime(height or self.eod, hour, after_noon)
-    if hour ~= nil then
-        self:initVars(hour)  -- calculate self.eod
+    if not hour then -- do the iteration with the default value
+        hour = self:calculateTime(height or self.eod, default_hour, after_noon, true)
+    elseif hour and not default_hour then -- do the full iteration with value
+        hour = self:calculateTime(height or self.eod, hour, after_noon, true)
+    end -- if hour and default_hour are given don't do the first step
+
+    if hour ~= nil then -- do the last calculation step
         hour = self:calculateTime(height or self.eod, hour, after_noon)
     end
     return hour
 end
 
-function SunTime:calculateNoon()
-    self:initVars(12)
+function SunTime:calculateNoon(hour)
+    hour = hour or 12
+    self:initVars(hour)
+    local aberration_time = aberration / pi * 12 -- aberration in hours (angle/(2pi)*24)
+    local dst = self.date.isdst and 1 or 0
+    local local_correction = self.time_zone - self.pos.longitude*12/pi + dst - self.zgl
     if self.pos.latitude >= 0 then -- northern hemisphere
-        if math.pi/2 - self.pos.latitude + self.decl > self.eod then
-            local dst = self.date.isdst and 1 or 0
-            local local_correction = self.time_zone - self.pos.longitude*12/math.pi + dst - self.zgl
-            return 12 + local_correction
+        if pi_2 - self.pos.latitude + self.decl > self.eod then
+            if self:getHeight(hour) > 0 then
+                return hour + local_correction + aberration_time
+            end
         end
     else -- sourthern hemisphere
-        if math.pi/2 + self.pos.latitude - self.decl > self.eod then
-            local dst = self.date.isdst and 1 or 0
-            local local_correction = self.time_zone - self.pos.longitude*12/math.pi + dst - self.zgl
-            return 12 + local_correction
+        if pi_2 + self.pos.latitude - self.decl > self.eod then
+            if self:getHeight(hour) > 0 then
+                return hour + local_correction + aberration_time
+            end
         end
     end
 end
 
-function SunTime:calculateMidnight()
-    -- 24 is the midnight at the end of the current day,
+function SunTime:calculateMidnight(hour)
+    -- hour:
     -- 00 would be the beginning of the day
-    self:initVars(24)
+    -- 24 is the midnight at the end of the current day,
+    hour = hour or 24
+    self:initVars(hour)
+    local dst = self.date.isdst and 1 or 0
+    -- no aberration correction here, as you can't see the sun on her nadir ;-)
+    local local_correction = self.time_zone - self.pos.longitude*12/pi + dst - self.zgl
     if self.pos.latitude >= 0 then -- northern hemisphere
-        if math.pi/2 - self.pos.latitude - self.decl > self.eod then
-            local dst = self.date.isdst and 1 or 0
-            local local_correction = self.time_zone - self.pos.longitude*12/math.pi + dst - self.zgl
-            return 24 + local_correction
+        if pi_2 - self.pos.latitude - self.decl > self.eod then
+            if self:getHeight(hour) < 0 then
+                return hour + local_correction
+            end
         end
-    else -- southern hemisphere
-        if math.pi/2 + self.pos.latitude + self.decl > self.eod then
-            local dst = self.date.isdst and 1 or 0
-            local local_correction = self.time_zone - self.pos.longitude*12/math.pi + dst - self.zgl
-            return 24 + local_correction
+    else -- sourthern hemisphere
+        if pi_2 + self.pos.latitude + self.decl > self.eod then
+            if self:getHeight(hour) < 0 then
+                return hour + local_correction
+            end
         end
     end
-
 end
 
 --[[--
 Calculates the ephemeris and twilight times
 
+@param exact_twilight If not nil, then exact twilight times will be calculated.
+
 @usage
-SunTime:calculateTime()
+SunTime:calculateTimes(exact_twilight)
+
 
 Times are in hours or `nil` if not applicable.
 
 You can then access:
+    self.midnight_beginning
+
     self.rise_astronomic
     self.rise_nautic
     self.rise_civil
@@ -402,7 +504,7 @@ You can then access:
     self.midnight
 
 Or as values in a table:
-    self.times[1]  midnight - 24h
+    self.times[1]  midnight_beginning
     self.times[2]  rise_astronomic
     self.times[3]  rise_nautic
     self.times[4]  rise_civil
@@ -414,9 +516,12 @@ Or as values in a table:
     self.times[10] set_astronomic
     self.times[11] midnight
 --]]--
-function SunTime:calculateTimes()
+function SunTime:calculateTimes(fast_twilight)
     -- All or some the times can be nil at great latitudes
-    -- but either noon or midnight is not nil!
+    -- but either noon or midnight is not nil
+
+if not fast_twilight then
+    -- The canonical way is to calculate everything from scratch
     self.rise = self:calculateTimeIter(nil, 6)
     self.set = self:calculateTimeIter(nil, 18)
 
@@ -426,12 +531,43 @@ function SunTime:calculateTimes()
     self.set_nautic = self:calculateTimeIter(self.nautic, 18)
     self.rise_astronomic = self:calculateTimeIter(self.astronomic, 6)
     self.set_astronomic = self:calculateTimeIter(self.astronomic, 18)
+else
+    -- Calculate rise and set from scratch, use these values for twilight times
+    self.rise = self:calculateTimeIter(nil, 6)
+    self.rise_civil = self:calculateTimeIter(self.civil, self.rise - min_civil_twilight, 6)
+    self.rise_nautic = self:calculateTimeIter(self.nautic, self.rise_civil - min_nautic_twilight, 6)
+    self.rise_astronomic = self:calculateTimeIter(self.astronomic, self.rise_nautic - min_astronomic_twilight, 6)
 
+    self.set = self:calculateTimeIter(nil, 18)
+    self.set_civil = self:calculateTimeIter(self.civil, self.set + min_civil_twilight, 18)
+    self.set_nautic = self:calculateTimeIter(self.nautic, self.set_civil + min_nautic_twilight, 18)
+    self.set_astronomic = self:calculateTimeIter(self.astronomic, self.set_nautic + min_astronomic_twilight, 18)
+end
+
+    self.midnight_beginning = self:calculateMidnight(0)
     self.noon = self:calculateNoon()
     self.midnight = self:calculateMidnight()
 
-    self.times = {}
-    self.times[1]  = self.midnight and (self.midnight - 24)
+    -- Sometimes at high latitudes noon or midnight does not get calculated.
+    -- Maybe there is a minor bug in the calculateNoon/calculateMidnight functions.
+    if self.rise and self.set then
+        if not self.noon then
+            self.noon = (self.rise + self.set) / 2
+        end
+        if not self.midnight then
+            self.midnight = self.noon + 12
+        end
+        if not self.midnight_beginning then
+            self.midnight_beginning = self.midnight - 24
+        end
+    elseif self.rise and not self.set then -- only sunrise on that day
+        self.midnight = nil
+        self.midnight_beginning = nil
+    elseif self.set and not self.rise then -- only sunset on that day
+        self.noon = nil
+    end
+
+    self.times[1]  = self.midnight_beginning
     self.times[2]  = self.rise_astronomic
     self.times[3]  = self.rise_nautic
     self.times[4]  = self.rise_civil

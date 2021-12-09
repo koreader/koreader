@@ -63,13 +63,8 @@ function OpenWithDialog:init()
 
     self._check_file_button = self._check_file_button or CheckButton:new{
         text = _("Always use this engine for this file"),
-        callback = function()
-            self._check_file_button:toggleCheck()
-        end,
-
-        max_width = self.element_width,
+        width = self.element_width,
         face = self.face,
-
         parent = self,
     }
     self._always_file_toggle = LeftContainer:new{
@@ -83,13 +78,8 @@ function OpenWithDialog:init()
 
     self._check_global_button = self._check_global_button or CheckButton:new{
         text = _("Always use this engine for file type"),
-        callback = function()
-            self._check_global_button:toggleCheck()
-        end,
-
-        max_width = self.element_width,
+        width = self.element_width,
         face = self.face,
-
         parent = self,
     }
     self._always_global_toggle = LeftContainer:new{
