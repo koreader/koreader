@@ -98,10 +98,17 @@ local extensions = {
     [".doc"] = true,
 }
 
+-- first attempt to parse from document metadat
 -- remove file extensions added by former KOReader
 -- extract author name in "Title(Author)" format
 -- extract author name in "Title - Author" format
 function MyClipping:getTitle(line)
+    -- TODO test that this works in different scenarios
+    local props = self:getProps(path)
+    if props then
+        return props.title and props.author
+    end
+
     line = line:match("^%s*(.-)%s*$") or ""
     if extensions[line:sub(-4):lower()] then
         line = line:sub(1, -5)
@@ -312,33 +319,19 @@ function MyClipping:parseHistory()
     return clippings
 end
 
--- this is from frontend/apps/filemanager/filemanagerbookinfo.lua
--- TODO consolidate?
--- TODO don't need page num
 function MyClipping:getProps(file)
     local document = DocumentRegistry:openDocument(file)
-    local book_props
+    local book_props = nil
     if document then
         local loaded = true
-        local pages
         if document.loadDocument then -- CreDocument
             if not document:loadDocument(false) then -- load only metadata
                 -- failed loading, calling other methods would segfault
                 loaded = false
             end
-            -- For CreDocument, we would need to call document:render()
-            -- to get nb of pages, but the nb obtained by simply calling
-            -- here document:getPageCount() is wrong, often 2 to 3 times
-            -- the nb of pages we see when opening the document (may be
-            -- some other cre settings should be applied before calling
-            -- render() ?)
-        else
-            -- for all others than crengine, we seem to get an accurate nb of pages
-            pages = document:getPageCount()
         end
         if loaded then
             book_props = document:getProps()
-            book_props.pages = pages
         end
         document:close()
     end
@@ -350,10 +343,7 @@ function MyClipping:parseCurrentDoc(view)
     local clippings = {}
     local path = view.document.file
     local _, _, docname = path:find(".*/(.*)")
-    local inferred_title, inferred_author = self:getTitle(docname)
-    local props = self:getProps(path)
-    local title = props.title or inferred_title
-    local author = props.authors or inferred_author
+    local title, author = self:getTitle(docname)
     clippings[title] = {
         file = view.document.file,
         title = title,
