@@ -262,7 +262,8 @@ function ListMenuItem:update()
             },
         }
     else
-        local is_file_selected = self.menu.filemanager.selected_files and self.menu.filemanager.selected_files[self.filepath]
+        local is_file_selected = self.menu.filemanager and self.menu.filemanager.selected_files
+            and self.menu.filemanager.selected_files[self.filepath]
         if file_mode ~= "file" or is_file_selected then
             self.file_deleted = true -- dim file
         end
