@@ -698,6 +698,7 @@ function CoverMenu:tapPlus()
     -- Call original function: it will create a ButtonDialogTitle
     -- and store it as self.file_dialog, and UIManager:show() it.
     CoverMenu._FileManager_tapPlus_orig(self)
+    if self.file_dialog.select_mode then return end -- do not change select menu
 
     -- Remember some of this original ButtonDialogTitle properties
     local orig_title = self.file_dialog.title
