@@ -325,6 +325,7 @@ function FileChooser:genItemTableFromPath(path)
             bidi_wrap_func = BD.filename,
             mandatory = sstr,
             path = full_path,
+            is_file = true,
         }
         if show_file_in_bold ~= false then
             file_item.bold = DocSettings:hasSidecarFile(full_path)
@@ -497,7 +498,7 @@ end
 
 function FileChooser:selectAllFilesInFolder()
     for _, item in pairs(self.item_table) do
-        if item.bidi_wrap_func == BD.filename then
+        if item.is_file then
             self.filemanager.selected_files[item.path] = true
         end
     end
