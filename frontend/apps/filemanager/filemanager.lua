@@ -797,6 +797,7 @@ function FileManager:tapPlus()
         title_align = "center",
         use_info_style = true,
         buttons = buttons,
+        select_mode = self.select_mode, -- for coverbrowser
     }
     UIManager:show(self.file_dialog)
 end
