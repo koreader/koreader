@@ -624,9 +624,71 @@ function FileManager:tapPlus()
 
     if self.select_mode then
         local select_count = util.tableSize(self.selected_files)
-        title = select_count == 0 and _("No files selected")
-            or T(N_("1 file selected", "%1 files selected", select_count), select_count)
+        local actions_enabled = select_count > 0
+        title = actions_enabled and T(N_("1 file selected", "%1 files selected", select_count), select_count)
+            or _("No files selected")
         buttons = {
+            {
+                {
+                    text = _("Select all files in folder"),
+                    callback = function()
+                        self.file_chooser:selectAllFilesInFolder()
+                        self:onRefresh()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+                {
+                    text = _("Copy"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Copy selected files to the current folder?"),
+                            ok_text = _("Copy"),
+                            ok_callback = function()
+                                self.cutfile = false
+                                local curr_dir = self:getCurrentDir()
+                                for file in pairs(self.selected_files) do
+                                    self.clipboard = file
+                                    self:pasteHere(curr_dir)
+                                end
+                                setSelectMode(false)
+                                UIManager:close(self.file_dialog)
+                            end,
+                        })
+                    end
+                },
+            },
+            {
+                {
+                    text = _("Deselect all"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        self.selected_files = {}
+                        self:onRefresh()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+                {
+                    text = _("Move"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Move selected files to the current folder?"),
+                            ok_text = _("Move"),
+                            ok_callback = function()
+                                self.cutfile = true
+                                local curr_dir = self:getCurrentDir()
+                                for file in pairs(self.selected_files) do
+                                    self.clipboard = file
+                                    self:pasteHere(curr_dir)
+                                end
+                                setSelectMode(false)
+                                UIManager:close(self.file_dialog)
+                            end,
+                        })
+                    end
+                },
+            },
             {
                 {
                     text = _("Exit select mode"),
@@ -637,7 +699,7 @@ function FileManager:tapPlus()
                 },
                 {
                     text = _("Delete"),
-                    enabled = select_count > 0,
+                    enabled = actions_enabled,
                     callback = function()
                         UIManager:show(ConfirmBox:new{
                             text = _("Delete selected files?\nIf you delete a file, it is permanently lost."),
@@ -653,7 +715,7 @@ function FileManager:tapPlus()
                             end,
                         })
                     end
-                }
+                },
             },
         }
     else
