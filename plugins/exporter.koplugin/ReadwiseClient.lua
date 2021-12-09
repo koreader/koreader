@@ -1,6 +1,7 @@
 local http = require("socket.http")
 local json = require("json")
 local ltn12 = require("ltn12")
+local socket = require("socket")
 local socketutil = require("socketutil")
 local logger = require("logger") -- TODO remove
 
@@ -20,7 +21,7 @@ function ReadwiseClient:_makeRequest(endpoint, method, request_body)
     local request_body_json = json.encode(request_body)
     local source = ltn12.source.string(request_body_json)
     socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
-    http.request{
+    local request = {
         url     = "https://readwise.io/api/v2/" .. endpoint,
         method  = method,
         sink    = ltn12.sink.table(sink),
@@ -31,19 +32,14 @@ function ReadwiseClient:_makeRequest(endpoint, method, request_body)
             ["Authorization"] = "Token " .. self.auth_token
         },
     }
+    local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
-    if not sink[1] then
-        error("No response from Readwise Server")
+    if code ~= 200 then
+        error("ReadwiseClient: HTTP response code <> 200. Response status: ", status)
     end
 
     local response = json.decode(sink[1])
-
-    -- TODO check response code
-
-    if response.error then
-        error(response.error)
-    end
 
     return response
 end
