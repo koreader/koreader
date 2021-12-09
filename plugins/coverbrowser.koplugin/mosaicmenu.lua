@@ -521,8 +521,8 @@ function MosaicMenuItem:update()
             },
         }
     else
-        local file_selected = self.menu.filemanager.selected_files and self.menu.filemanager.selected_files[self.filepath]
-        if file_mode ~= "file" or file_selected then
+        local is_file_selected = self.menu.filemanager.selected_files and self.menu.filemanager.selected_files[self.filepath]
+        if file_mode ~= "file" or is_file_selected then
             self.file_deleted = true -- dim file
         end
         -- File : various appearances
