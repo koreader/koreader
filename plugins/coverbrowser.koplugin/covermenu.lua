@@ -729,6 +729,7 @@ function CoverMenu:tapPlus()
     self.file_dialog = ButtonDialogTitle:new{
         title = orig_title,
         title_align = orig_title_align,
+        use_info_style = true,
         buttons = orig_buttons,
     }
     UIManager:show(self.file_dialog)
