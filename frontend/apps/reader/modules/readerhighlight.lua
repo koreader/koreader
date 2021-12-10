@@ -161,7 +161,7 @@ function ReaderHighlight:init()
     end
 
     -- cre documents only
-    if not self.ui.document.info.has_pages then
+    if self.ui.rolling then
         self:addToHighlightDialog("09_view_html", function(_self)
             return {
                 text = _("View HTML"),
@@ -690,7 +690,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
         }
     }
 
-    if not self.ui.document.info.has_pages then
+    if self.ui.rolling then
         local start_prev = "◁▒▒"
         local start_next = "▷▒▒"
         local end_prev = "▒▒◁"
@@ -921,6 +921,7 @@ function ReaderHighlight:onHold(arg, ges)
 end
 
 function ReaderHighlight:onHoldPan(_, ges)
+    if self.view.highlight.disabled then return false end -- Long-press action "Do nothing" checked
     if self.hold_pos == nil then
         logger.dbg("no previous hold position")
         self:_resetHoldTimer(true)
@@ -936,7 +937,7 @@ function ReaderHighlight:onHoldPan(_, ges)
     self.holdpan_pos = self.view:screenToPageTransform(ges.pos)
     logger.dbg("holdpan position in page", self.holdpan_pos)
 
-    if not self.ui.document.info.has_pages and self.selected_text_start_xpointer then
+    if self.ui.rolling and self.selected_text_start_xpointer then
         -- With CreDocuments, allow text selection across multiple pages
         -- by (temporarily) switching to scroll mode when panning to the
         -- top left or bottom right corners.
