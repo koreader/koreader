@@ -97,6 +97,7 @@ local settingsList = {
     -- filemanager settings
     folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     show_plus_menu = {category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
+    toggle_select_mode = {category="none", event="ToggleSelectMode", title=_("Toggle select mode"), filemanager=true},
     refresh_content = {category="none", event="RefreshContent", title=_("Refresh content"), filemanager=true},
     folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true, separator=true},
 
@@ -254,6 +255,7 @@ local dispatcher_menu_order = {
     -- filemanager
     "folder_up",
     "show_plus_menu",
+    "toggle_select_mode",
     "refresh_content",
     "folder_shortcuts",
 
