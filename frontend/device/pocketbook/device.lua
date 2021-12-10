@@ -342,6 +342,7 @@ end
 
 function PocketBook:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
+        inkview.WiFiPower(1)
         if inkview.NetConnect(nil) ~= C.NET_OK then
             logger.info('NetConnect failed')
         end
