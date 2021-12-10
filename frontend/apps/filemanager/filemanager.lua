@@ -65,6 +65,9 @@ function FileManager:onSetRotationMode(rotation)
         Screen:setRotationMode(rotation)
         if FileManager.instance then
             self:reinit(self.path, self.focused_file)
+            if self.select_mode then
+                self.plus_button:setIcon("check")
+            end
             UIManager:setDirty(self.banner, function()
                 return "ui", self.banner.dimen
             end)
@@ -595,11 +598,6 @@ function FileChooser:onBack()
     end
 end
 
-function FileManager:onShowPlusMenu()
-    self:tapPlus()
-    return true
-end
-
 function FileManager:onSwipeFM(ges)
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
@@ -610,18 +608,24 @@ function FileManager:onSwipeFM(ges)
     return true
 end
 
+function FileManager:onShowPlusMenu()
+    self:tapPlus()
+    return true
+end
+
+function FileManager:onToggleSelectMode()
+    logger.dbg("toggle select mode")
+    self.select_mode = not self.select_mode
+    self.selected_files = self.select_mode and {} or nil
+    self.plus_button:setIcon(self.select_mode and "check" or "plus")
+    UIManager:setDirty(self, function()
+        return "ui", self.plus_button.dimen, self.dithered
+    end)
+    self:onRefresh()
+end
+
 function FileManager:tapPlus()
     local title, buttons
-    local function setSelectMode(enable)
-        self.select_mode = enable
-        self.selected_files = enable and {} or nil
-        self.plus_button:setIcon(enable and "check" or "plus")
-        UIManager:setDirty(self, function()
-            return "ui", self.plus_button.dimen, self.dithered
-        end)
-        self:onRefresh()
-    end
-
     if self.select_mode then
         local select_count = util.tableSize(self.selected_files)
         local actions_enabled = select_count > 0
@@ -646,12 +650,11 @@ function FileManager:tapPlus()
                             ok_text = _("Copy"),
                             ok_callback = function()
                                 self.cutfile = false
-                                local curr_dir = self:getCurrentDir()
                                 for file in pairs(self.selected_files) do
                                     self.clipboard = file
-                                    self:pasteHere(curr_dir)
+                                    self:pasteHere(self.file_chooser.path)
                                 end
-                                setSelectMode(false)
+                                self:onToggleSelectMode()
                                 UIManager:close(self.file_dialog)
                             end,
                         })
@@ -677,12 +680,11 @@ function FileManager:tapPlus()
                             ok_text = _("Move"),
                             ok_callback = function()
                                 self.cutfile = true
-                                local curr_dir = self:getCurrentDir()
                                 for file in pairs(self.selected_files) do
                                     self.clipboard = file
-                                    self:pasteHere(curr_dir)
+                                    self:pasteHere(self.file_chooser.path)
                                 end
-                                setSelectMode(false)
+                                self:onToggleSelectMode()
                                 UIManager:close(self.file_dialog)
                             end,
                         })
@@ -693,7 +695,7 @@ function FileManager:tapPlus()
                 {
                     text = _("Exit select mode"),
                     callback = function()
-                        setSelectMode(false)
+                        self:onToggleSelectMode()
                         UIManager:close(self.file_dialog)
                     end,
                 },
@@ -710,7 +712,7 @@ function FileManager:tapPlus()
                                     self:deleteFile(file)
                                     readhistory:fileDeleted(file)
                                 end
-                                setSelectMode(false)
+                                self:onToggleSelectMode()
                                 UIManager:close(self.file_dialog)
                             end,
                         })
@@ -725,7 +727,7 @@ function FileManager:tapPlus()
                 {
                     text = _("Select files"),
                     callback = function()
-                        setSelectMode(true)
+                        self:onToggleSelectMode()
                         UIManager:close(self.file_dialog)
                     end,
                 },
@@ -737,7 +739,6 @@ function FileManager:tapPlus()
                         UIManager:close(self.file_dialog)
                         self.input_dialog = InputDialog:new{
                             title = _("New folder"),
-                            input_type = "text",
                             buttons = {
                                 {
                                     {
