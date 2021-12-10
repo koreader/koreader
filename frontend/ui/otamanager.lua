@@ -43,7 +43,6 @@ local OTAManager = {
     package_indexfile = "ota/package.index",
     updated_package = ota_dir .. "koreader.updated.tar",
     can_pretty_print = lfs.attributes("./fbink", "mode") == "file" and true or false,
-    nb_ota_packages = G_reader_settings:readSetting("nb_OTA_updates", 3)
 }
 
 local ota_channels = {
@@ -485,38 +484,50 @@ function OTAManager:getOTAMenuTable()
                         text = _("Update channel"),
                         sub_item_table = self:genChannelList()
                     },
-                    {
-                        text_func = function()
-                            return T(_("Number of saved updates: %1"),
-                                self.nb_ota_packages ~= 0 and self.nb_ota_packages or _("unlimited"))
-                        end,
-                        keep_menu_open = true,
-                        callback = function(touchmenu_instance)
-                            UIManager:show(SpinWidget:new{
-                                    title_text = "Set number of saved downloaded updates",
-                                    info_text = _("Don't clean up, if number is set to zero."),
-                                    value = self.nb_ota_packages,
-                                    value_min = 0,
-                                    value_max = 99,
-                                    default_value = 3,
-                                    ok_text = _("Set"),
-                                    callback = function(spin)
-                                        self.nb_ota_packages = spin.value
-                                        G_reader_settings:saveSetting("nb_OTA_updates", spin.value)
-                                        self:cleanUpdates()
-                                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                                    end,
-                                })
-                        end,
-                    },
-                }
+                },
             },
-        }
+        },
+    }
+end
+
+function OTAManager:getOTASettingMenuEntry()
+    return {
+        text_func = function()
+            local nb = G_reader_settings:readSetting("nb_OTA_updates", 0)
+            if nb <= 0 then
+                nb = _("unlimited")
+            elseif nb == 0 then
+                nb = _("none")
+            end
+            return T(_("Number of saved updates packages: %1"), nb)
+        end,
+        keep_menu_open = true,
+        callback = function(touchmenu_instance)
+            UIManager:show(SpinWidget:new{
+                    title_text = "Set number of saved downloaded updates",
+                    info_text = _("Don't clean up, if number is less than zero."),
+                    value = G_reader_settings:readSetting("nb_OTA_updates", 0),
+                    value_min = -1,
+                    value_max = 99,
+                    default_value = 0,
+                    ok_text = _("Set"),
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("nb_OTA_updates", spin.value)
+                        self:cleanUpdates()
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                })
+        end,
     }
 end
 
 function OTAManager:cleanUpdates()
-    if self.nb_ota_packages <= 0 then
+    if self:getOTAType() ~= "link" then
+        return
+    end
+
+    local nb_ota_packages = G_reader_settings:readSetting("nb_OTA_updates", 0)
+    if nb_ota_packages < 0 then
         return
     end
 
@@ -540,10 +551,17 @@ function OTAManager:cleanUpdates()
     -- sort files, newest first
     table.sort(files, function(a, b) return a.mod > b.mod end)
 
-    for i = self.nb_ota_packages+1, #files do
-       os.remove(files[i].name)
+    local nb_deleted = 0
+    for i = #files, 1, -1 do
+        if lfs.attributes(files[i].name, "permissions"):find("^.w") then
+            os.remove(files[i].name)
+            nb_deleted = nb_deleted + 1
+        end
+        if nb_deleted >= #files - nb_ota_packages then
+            break
+        end
     end
-    logger.dbg("OTAManager: deleted " .. math.max(#files - self.nb_ota_packages, 0) .. " update packages")
+    logger.dbg("OTAManager: deleted " .. nb_deleted .. " update packages")
 end
 
 return OTAManager
