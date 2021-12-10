@@ -496,6 +496,8 @@ function FileChooser:getNextFile(curr_file)
     return next_file
 end
 
+-- Used in file manager select mode to select all files in a folder,
+-- that are visible in all file browser pages, without subfolders.
 function FileChooser:selectAllFilesInFolder()
     for _, item in pairs(self.item_table) do
         if item.is_file then
