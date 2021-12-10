@@ -703,6 +703,7 @@ function CoverMenu:tapPlus()
     -- Remember some of this original ButtonDialogTitle properties
     local orig_title = self.file_dialog.title
     local orig_title_align = self.file_dialog.title_align
+    local orig_use_info_style = self.file_dialog.use_info_style
     local orig_buttons = self.file_dialog.buttons
     -- Close original ButtonDialogTitle (it has not yet been painted
     -- on screen, so we won't see it)
@@ -729,7 +730,7 @@ function CoverMenu:tapPlus()
     self.file_dialog = ButtonDialogTitle:new{
         title = orig_title,
         title_align = orig_title_align,
-        use_info_style = true,
+        use_info_style = orig_use_info_style,
         buttons = orig_buttons,
     }
     UIManager:show(self.file_dialog)
