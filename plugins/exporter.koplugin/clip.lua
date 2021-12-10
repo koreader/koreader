@@ -102,11 +102,13 @@ local extensions = {
 -- remove file extensions added by former KOReader
 -- extract author name in "Title(Author)" format
 -- extract author name in "Title - Author" format
-function MyClipping:getTitle(line)
+function MyClipping:getTitle(line, path)
     -- TODO test that this works in different scenarios
-    local props = self:getProps(path)
-    if props then
-        return props.title and props.author
+    if path then
+        local props = self:getProps(path)
+        if props and props.title ~= "" then
+            return props.title, props.authors or props.author
+        end
     end
 
     line = line:match("^%s*(.-)%s*$") or ""
@@ -292,7 +294,7 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
             return
         end
         local _, docname = util.splitFilePathName(doc_file)
-        local title, author = self:getTitle(util.splitFileNameSuffix(docname))
+        local title, author = self:getTitle(util.splitFileNameSuffix(docname), doc_file)
         clippings[title] = {
             file = doc_file,
             title = title,
@@ -343,7 +345,7 @@ function MyClipping:parseCurrentDoc(view)
     local clippings = {}
     local path = view.document.file
     local _, _, docname = path:find(".*/(.*)")
-    local title, author = self:getTitle(docname)
+    local title, author = self:getTitle(docname, path)
     clippings[title] = {
         file = view.document.file,
         title = title,
