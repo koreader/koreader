@@ -336,8 +336,6 @@ function OTAManager:fetchAndProcessUpdate()
                 end
             })
         end
-
-        self:cleanUpdates()
     end
 end
 
@@ -494,7 +492,7 @@ function OTAManager:getOTASettingMenuEntry()
     return {
         text_func = function()
             local nb = G_reader_settings:readSetting("nb_OTA_updates", 0)
-            if nb <= 0 then
+            if nb < 0 then
                 nb = _("unlimited")
             elseif nb == 0 then
                 nb = _("none")
@@ -548,20 +546,29 @@ function OTAManager:cleanUpdates()
         end
     end
 
-    -- sort files, newest first
-    table.sort(files, function(a, b) return a.mod > b.mod end)
+    if #files <= nb_ota_packages then
+        return -- nothing to do here
+    end
+
+    -- sort files, oldest first
+    table.sort(files, function(a, b) return a.mod < b.mod end)
 
     local nb_deleted = 0
-    for i = #files, 1, -1 do
-        if lfs.attributes(files[i].name, "permissions"):find("^.w") then
+    for i = 1, #files do
+        if nb_deleted >= #files - nb_ota_packages then
+            break
+        elseif lfs.attributes(files[i].name, "permissions"):find("^.w") then
+            -- only remove if not write protected
             os.remove(files[i].name)
             nb_deleted = nb_deleted + 1
         end
-        if nb_deleted >= #files - nb_ota_packages then
-            break
-        end
     end
     logger.dbg("OTAManager: deleted " .. nb_deleted .. " update packages")
+end
+
+-- Clean up after start on supported devices.
+if OTAManager:getOTAType() == "link" then
+    UIManager:scheduleIn(2, OTAManager.cleanUpdates, OTAManager)
 end
 
 return OTAManager
