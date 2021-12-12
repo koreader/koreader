@@ -249,7 +249,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                     local tmp = string.gsub(bookmark.text, "Page %d+ ", "")
                     local bookmark_quote = string.gsub(tmp, " @ %d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d", "")
                     if bookmark_quote ~= clipping.text then
-                        clipping.note = bookmark.text
+                        clipping.note = bookmark_quote
                     end
                 end
             end

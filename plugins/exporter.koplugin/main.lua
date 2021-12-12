@@ -4,6 +4,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
+local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("ffi/util")
@@ -167,16 +168,10 @@ function Exporter:addToMainMenu(menu_items)
                         text = _("Set authorization token"),
                         keep_menu_open = true,
                         callback = function()
-                            local MultiInputDialog = require("ui/widget/multiinputdialog")
                             local auth_dialog
-                            auth_dialog = MultiInputDialog:new{
+                            auth_dialog = InputDialog:new{
                                 title = _("Set authorization token for Joplin"),
-                                fields = {
-                                    {
-                                        text = self.joplin_token,
-                                        input_type = "string"
-                                    }
-                                },
+                                input = self.joplin_token,
                                 buttons = {
                                     {
                                         {
@@ -244,16 +239,10 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                         text = _("Set authorization token"),
                         keep_menu_open = true,
                         callback = function()
-                            local MultiInputDialog = require("ui/widget/multiinputdialog")
                             local auth_dialog
-                            auth_dialog = MultiInputDialog:new{
+                            auth_dialog = InputDialog:new{
                                 title = _("Set authorization token for Readwise"),
-                                fields = {
-                                    {
-                                        text = self.readwise_token,
-                                        input_type = "string"
-                                    }
-                                },
+                                input = self.readwise_token,
                                 buttons = {
                                     {
                                         {
