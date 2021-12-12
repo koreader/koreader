@@ -3,7 +3,7 @@ local json = require("json")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
-local logger = require("logger") -- TODO remove
+local logger = require("logger")
 
 local ReadwiseClient =  {
     auth_token = ""
@@ -63,9 +63,8 @@ function ReadwiseClient:createHighlights(booknotes)
             table.insert(highlights, highlight)
         end
     end
-    logger.dbg("request", highlights) -- TODO remove
     local result = self:_makeRequest("highlights", "POST", { highlights = highlights })
-    logger.dbg("ReadwiseClient createHighlights", result)
+    logger.dbg("ReadwiseClient createHighlights result", result)
 end
 
 return ReadwiseClient

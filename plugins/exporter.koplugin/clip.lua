@@ -98,12 +98,11 @@ local extensions = {
     [".doc"] = true,
 }
 
--- first attempt to parse from document metadat
+-- first attempt to parse from document metadata
 -- remove file extensions added by former KOReader
 -- extract author name in "Title(Author)" format
 -- extract author name in "Title - Author" format
 function MyClipping:getTitle(line, path)
-    -- TODO test that this works in different scenarios
     if path then
         local props = self:getProps(path)
         if props and props.title ~= "" then

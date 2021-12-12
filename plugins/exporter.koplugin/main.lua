@@ -675,10 +675,6 @@ function Exporter:exportBooknotesToJoplin(client, title, booknotes)
 end
 
 function Exporter:exportBooknotesToReadwise(client, title, booknotes)
-    -- TODO remove
-    logger.dbg("Readwise title", title)
-    logger.dbg("Readwise booknotes", booknotes)
-
     client:createHighlights(booknotes)
 end
 
