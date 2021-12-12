@@ -502,19 +502,19 @@ function OTAManager:getOTASettingMenuEntry()
         keep_menu_open = true,
         callback = function(touchmenu_instance)
             UIManager:show(SpinWidget:new{
-                    title_text = "Set number of saved downloaded updates",
-                    info_text = _("Don't clean up, if number is less than zero."),
-                    value = G_reader_settings:readSetting("nb_OTA_updates", 0),
-                    value_min = -1,
-                    value_max = 99,
-                    default_value = 0,
-                    ok_text = _("Set"),
-                    callback = function(spin)
-                        G_reader_settings:saveSetting("nb_OTA_updates", spin.value)
-                        self:cleanUpdates()
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end,
-                })
+                title_text = "Set number of saved downloaded updates",
+                info_text = _("Don't clean up, if number is less than zero."),
+                value = G_reader_settings:readSetting("nb_OTA_updates", 0),
+                value_min = -1,
+                value_max = 99,
+                default_value = 0,
+                ok_text = _("Set"),
+                callback = function(spin)
+                    G_reader_settings:saveSetting("nb_OTA_updates", spin.value)
+                    self:cleanUpdates()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
         end,
     }
 end
@@ -529,15 +529,17 @@ function OTAManager:cleanUpdates()
         return
     end
 
-    local update_template = "^koreader-" .. self:getOTAModel() .. "-.*-v.*"
-    update_template = update_template:gsub("%-","%%-") -- escape "-" for lua
+    -- search for filesname of the form: "koreader-model-*v.*"
+    local update_template = "^koreader-" .. self:getOTAModel() .. ".*-v.*"
+    update_template = update_template:gsub("%-","%%-") -- "-" can be in getOTAModel(), escape it with "%-"
 
     local files = {}
     local download_dir = Device:isAndroid() and "/sdcard/Download/" or ota_dir
     for entry in lfs.dir(download_dir) do
         if entry ~= "." and entry ~= ".." then
             local file = download_dir .. entry
-            if entry:find(update_template) and lfs.attributes(file, "mode") == "file" then
+            if entry:find(update_template) and lfs.attributes(file, "mode") == "file"
+                and lfs.attributes(file, "permissions"):find("^.w") then -- only get writeable files
                 table.insert(files, {
                     name = file,
                     mod = lfs.attributes(file).modification,
@@ -550,20 +552,13 @@ function OTAManager:cleanUpdates()
         return -- nothing to do here
     end
 
-    -- sort files, oldest first
-    table.sort(files, function(a, b) return a.mod < b.mod end)
+    -- sort files, newest first
+    table.sort(files, function(a, b) return a.mod > b.mod end)
 
-    local nb_deleted = 0
-    for i = 1, #files do
-        if nb_deleted >= #files - nb_ota_packages then
-            break
-        elseif lfs.attributes(files[i].name, "permissions"):find("^.w") then
-            -- only remove if not write protected
-            os.remove(files[i].name)
-            nb_deleted = nb_deleted + 1
-        end
+    for i = nb_ota_packages + 1, #files  do
+        os.remove(files[i].name)
     end
-    logger.dbg("OTAManager: deleted " .. nb_deleted .. " update packages")
+    logger.dbg("OTAManager: deleted " .. (#files - nb_ota_packages) .. " update packages")
 end
 
 -- Clean up after start on supported devices.
