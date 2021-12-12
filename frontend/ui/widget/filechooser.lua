@@ -333,7 +333,7 @@ function FileChooser:genItemTableFromPath(path)
                 file_item.bold = not file_item.bold
             end
         end
-        if self.filemanager.selected_files and self.filemanager.selected_files[full_path] then
+        if self.filemanager and self.filemanager.selected_files and self.filemanager.selected_files[full_path] then
             file_item.dim = true
         end
         table.insert(item_table, file_item)
