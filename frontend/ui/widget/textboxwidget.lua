@@ -216,6 +216,11 @@ end
 function TextBoxWidget:_evalCharWidthList()
     -- if self.charlist is provided, use it directly
     if self.charlist == nil then
+        if not self.text then
+            self.text = ""
+        elseif type(self.text) ~= "string" then
+            self.text = tostring(self.text)
+        end
         self.charlist = util.splitToChars(self.text)
     end
     -- get width of each distinct char
