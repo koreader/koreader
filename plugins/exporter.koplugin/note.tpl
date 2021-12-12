@@ -44,8 +44,12 @@
     local esc, _ = text:gsub('&', '&amp;'):gsub('<', '&lt;'):gsub('>', '&gt;')
     return esc
   end
+  function newline_to_br(text)
+    return text:gsub("\n", "<br/>")
+  end
 }#
 <!DOCTYPE html>
+<meta charset="utf-8"/>
 <div style="width:90%; max-width:600px; margin:0px auto; padding:5px; font-size:12pt; font-family:Georgia">
   <h2 style="font-size:18pt; text-align:right;">#{= htmlescape(booknotes.title) }#</h2>
   <h5 style="font-size:12pt; text-align:right; color:gray;">#{= htmlescape(booknotes.author) }#</h5>
@@ -60,7 +64,7 @@
           <span>#{= os.date("%x", clipping.time) }#</span><span style="float:right">#{ if clipping.chapter then }#<b>#{= clipping.chapter }#</b>: #{ end }# #{= clipping.page }#</span>
         </div>
         <div style="font-size:12pt">
-          <span>#{= htmlescape(clipping.text) }#</span>
+          <span>#{= newline_to_br(htmlescape(clipping.text)) }#</span>
           #{ if clipping.image then }#
             <en-media type="image/png" hash="#{= clipping.image.hash }#"/>
           #{ end }#
@@ -68,7 +72,7 @@
         #{ if clipping.note then }#
           <div style="font-size:11pt; margin-top:0.2em;">
             <span style="font-weight:bold;">#{= htmlescape(notemarks) }#</span>
-            <span style="color:#888888">#{= htmlescape(clipping.note) }#</span>
+            <span style="color:#888888">#{= newline_to_br(htmlescape(clipping.note)) }#</span>
           </div>
         #{ end }#
       </div>
