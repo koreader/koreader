@@ -36,7 +36,8 @@ function ReadwiseClient:_makeRequest(endpoint, method, request_body)
     socketutil:reset_timeout()
 
     if code ~= 200 then
-        error("ReadwiseClient: HTTP response code <> 200. Response status: ", status)
+        logger.warn("ReadwiseClient: HTTP response code <> 200. Response status: ", status)
+        error("ReadwiseClient: HTTP response code <> 200.")
     end
 
     local response = json.decode(sink[1])
@@ -51,7 +52,7 @@ function ReadwiseClient:createHighlights(booknotes)
             local highlight = {
                 text = clipping.text,
                 title = booknotes.title,
-                author = booknotes.author,
+                author = booknotes.author ~= "" and booknotes.author or nil, -- optional author
                 source_type = "koreader",
                 category = "books",
                 note = clipping.note,
