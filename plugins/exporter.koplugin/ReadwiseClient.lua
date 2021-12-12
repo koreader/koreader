@@ -1,9 +1,9 @@
 local http = require("socket.http")
 local json = require("json")
+local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
-local logger = require("logger")
 
 local ReadwiseClient =  {
     auth_token = ""
