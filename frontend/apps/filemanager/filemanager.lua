@@ -134,7 +134,7 @@ function FileManager:setupLayout()
         height = icon_size,
         padding = Size.padding.default,
         padding_left = Size.padding.large,
-        padding_right = Size.padding.large,
+        padding_right = Size.padding.default,
         padding_bottom = 0,
         callback = function() self:onShowPlusMenu() end,
     }
