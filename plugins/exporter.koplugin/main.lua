@@ -183,8 +183,7 @@ function Exporter:addToMainMenu(menu_items)
                                         {
                                             text = _("Set token"),
                                             callback = function()
-                                                local auth_field = auth_dialog:getFields()
-                                                self.joplin_token = auth_field[1]
+                                                self.joplin_token = auth_dialog:getInputText()
                                                 self:saveSettings()
                                                 UIManager:close(auth_dialog)
                                             end
@@ -215,7 +214,7 @@ function Exporter:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             UIManager:show(InfoMessage:new{
-                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the evernote.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
+                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the exporter.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
 
 To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
 
@@ -254,8 +253,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                                         {
                                             text = _("Set token"),
                                             callback = function()
-                                                local auth_field = auth_dialog:getFields()
-                                                self.readwise_token = auth_field[1]
+                                                self.readwise_token = auth_dialog:getInputText()
                                                 self:saveSettings()
                                                 UIManager:close(auth_dialog)
                                             end
@@ -286,7 +284,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                         keep_menu_open = true,
                         callback = function()
                             UIManager:show(InfoMessage:new{
-                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the evernote.readwise_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
+                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the exporter.readwise_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
 
 For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
                             , BD.dirpath(DataStorage:getDataDir()))
