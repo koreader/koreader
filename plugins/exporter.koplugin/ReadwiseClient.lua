@@ -32,7 +32,7 @@ function ReadwiseClient:_makeRequest(endpoint, method, request_body)
             ["Authorization"] = "Token " .. self.auth_token
         },
     }
-    local code, headers, status = socket.skip(1, http.request(request))
+    local code, _, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
     if code ~= 200 then

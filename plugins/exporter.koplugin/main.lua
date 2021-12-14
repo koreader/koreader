@@ -483,6 +483,7 @@ end
 function Exporter:exportClippings(clippings)
     local exported_stamp
     local joplin_client
+    local readwise_client
     if self.html_export then
         exported_stamp= "html"
     elseif self.json_export then
