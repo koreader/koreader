@@ -231,7 +231,6 @@ function CoverImage:emptyCache()
 end
 
 function CoverImage:getCacheFiles(cache_path, cache_prefix)
-    local cache_count = 0
     local cache_size = 0
     local files = {}
     for entry in lfs.dir(self.cover_image_cache_path) do
@@ -239,19 +238,20 @@ function CoverImage:getCacheFiles(cache_path, cache_prefix)
             local file = cache_path .. entry
             if entry:sub(1, self.cover_image_cache_prefix:len()) == cache_prefix
                 and lfs.attributes(file, "mode") == "file" then
-                cache_count = cache_count + 1
                 local blocksize = lfs.attributes(file).blksize or 4096
-                files[cache_count] = {
+                local size = math.floor(((lfs.attributes(file).size) + blocksize - 1) / blocksize) * blocksize
+                table.insert(files, {
                     name = file,
-                    size = math.floor(((lfs.attributes(file).size) + blocksize - 1)/ blocksize) * blocksize,
+                    size = size,
                     mod = lfs.attributes(file).modification,
-                }
-                cache_size = cache_size + files[cache_count].size
+                })
+                cache_size = cache_size + size
             end
         end
     end
-    logger.dbg("CoverImage: start - cache size: ".. cache_size .. " Bytes, cached files: " .. cache_count)
-    return cache_count, cache_size, files
+    logger.dbg("CoverImage: start - cache size: ".. util.getFriendlySize(cache_size) ..
+        ", cached files: " .. #files)
+    return #files, cache_size, files
 end
 
 function CoverImage:cleanCache()
@@ -273,7 +273,8 @@ function CoverImage:cleanCache()
         cache_size = cache_size - files[index].size
         index = index + 1
     end
-    logger.dbg("CoverImage: clean - cache size: ".. cache_size .. " Bytes, cached files: " .. cache_count)
+    logger.dbg("CoverImage: clean - cache size: ".. util.getFriendlySize(cache_size) ..
+        ", cached files: " .. cache_count)
 end
 
 function CoverImage:isCacheEnabled(path)
@@ -399,21 +400,18 @@ Update a specific G_reader_setting's value via a Spinner
 ]]
 function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, default, callback)
     local SpinWidget = require("ui/widget/spinwidget")
-    local old_val = self[setting]
     UIManager:show(SpinWidget:new{
-        value = old_val,
+        value = self[setting],
         value_min = min,
         value_max = max,
         default_value = default,
         title_text = title,
         ok_text = _("Set"),
         callback = function(spin)
-            if spin.value ~= old_val then
-                self[setting] = spin.value
-                G_reader_settings:saveSetting(setting, self[setting])
-                if callback then
-                    callback(self)
-                end
+            self[setting] = spin.value
+            G_reader_settings:saveSetting(setting, self[setting])
+            if callback then
+                callback(self)
             end
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end
@@ -628,7 +626,7 @@ function CoverImage:menuEntrySBF()
                     local function createCover()
                         self:createCoverImage(self.ui.doc_settings)
                     end
-                    self:sizeSpinner(touchmenu_instance, "cover_image_stretch_limit", _("Set strech threshold"), 0, 20, 8, createCover)
+                    self:sizeSpinner(touchmenu_instance, "cover_image_stretch_limit", _("Set stretch threshold"), 0, 20, 8, createCover)
                 end,
             },
             self:menuEntryBackground("black", _("black")),
