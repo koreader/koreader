@@ -9,11 +9,11 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
-local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local Version = require("version")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
@@ -488,82 +488,30 @@ function OTAManager:getOTAMenuTable()
     }
 end
 
-function OTAManager:getOTASettingMenuEntry()
-    return {
-        text_func = function()
-            local nb = G_reader_settings:readSetting("nb_OTA_updates", 0)
-            if nb < 0 then
-                nb = _("unlimited")
-            elseif nb == 0 then
-                nb = _("none")
-            end
-            return T(_("Number of saved updates packages: %1"), nb)
-        end,
-        keep_menu_open = true,
-        callback = function(touchmenu_instance)
-            UIManager:show(SpinWidget:new{
-                title_text = "Set number of saved downloaded updates",
-                info_text = _("Don't clean up, if number is less than zero."),
-                value = G_reader_settings:readSetting("nb_OTA_updates", 0),
-                value_min = -1,
-                value_max = 99,
-                default_value = 0,
-                ok_text = _("Set"),
-                callback = function(spin)
-                    G_reader_settings:saveSetting("nb_OTA_updates", spin.value)
-                    self:cleanUpdates()
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-            })
-        end,
-    }
-end
-
 function OTAManager:cleanUpdates()
     if self:getOTAType() ~= "link" then
         return
     end
 
-    local nb_ota_packages = G_reader_settings:readSetting("nb_OTA_updates", 0)
-    if nb_ota_packages < 0 then
+    if util.fileExists(DataStorage:getDataDir() .. "/keep_updates") then
+        logger.dbg("OTAManager: update packages not deleted")
         return
     end
 
-    -- search for filesname of the form: "koreader-model-*v.*"
-    local update_template = "^koreader-" .. self:getOTAModel() .. ".*-v.*"
-    update_template = update_template:gsub("%-","%%-") -- "-" can be in getOTAModel(), escape it with "%-"
+    local update_template = "^koreader-" .. self:getOTAModel() .. ".*" .. Version:getCurrentRevision() .. ".*"
+    update_template = update_template:gsub("%-","%%-") -- "-" can be in getOTAModel(), revision; escape it with "%-"
 
-    local files = {}
     local download_dir = Device:isAndroid() and "/sdcard/Download/" or ota_dir
     for entry in lfs.dir(download_dir) do
         if entry ~= "." and entry ~= ".." then
             local file = download_dir .. entry
             if entry:find(update_template) and lfs.attributes(file, "mode") == "file"
                 and lfs.attributes(file, "permissions"):find("^.w") then -- only get writeable files
-                table.insert(files, {
-                    name = file,
-                    mod = lfs.attributes(file).modification,
-                })
+                os.remove(file)
+                logger.dbg("OTAManager: deleted update package(s):", file)
             end
         end
     end
-
-    if #files <= nb_ota_packages then
-        return -- nothing to do here
-    end
-
-    -- sort files, newest first
-    table.sort(files, function(a, b) return a.mod > b.mod end)
-
-    for i = nb_ota_packages + 1, #files  do
-        os.remove(files[i].name)
-    end
-    logger.dbg("OTAManager: deleted " .. (#files - nb_ota_packages) .. " update packages")
-end
-
--- Clean up after start on supported devices.
-if OTAManager:getOTAType() == "link" then
-    UIManager:scheduleIn(2, OTAManager.cleanUpdates, OTAManager)
 end
 
 return OTAManager

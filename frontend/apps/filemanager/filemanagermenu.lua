@@ -6,7 +6,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local OTAManager = require("ui/otamanager")
 local PluginLoader = require("pluginloader")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local Size = require("ui/size")
@@ -703,10 +702,6 @@ To:
             touchmenu_instance:updateItems()
         end,
     })
-    if OTAManager:getOTAType() == "link" then
-        table.insert(self.menu_items.developer_options.sub_item_table,
-            OTAManager:getOTASettingMenuEntry())
-    end
 
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
