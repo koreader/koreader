@@ -133,6 +133,7 @@ local settingsList = {
     panel_zoom_toggle = {category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true},
 
     -- rolling reader settings
+    set_font = {category="string", event="SetFont", title=_("Set font"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size by %1"), rolling=true},
     decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size by %1"), rolling=true},
 
@@ -288,6 +289,7 @@ local dispatcher_menu_order = {
     "book_description",
     "book_cover",
 
+    "set_font",
     "increase_font",
     "decrease_font",
     "font_size",
