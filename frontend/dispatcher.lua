@@ -523,6 +523,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                             value_max = settingsList[k].max,
                             default_value = settingsList[k].default,
                             title_text = Dispatcher:getNameFromItem(k, location, settings),
+                            ok_always_enabled = true,
                             callback = function(spin)
                                 if location[settings] == nil then
                                     location[settings] = {}
@@ -570,6 +571,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                             default_value = 0,
                             title_text = Dispatcher:getNameFromItem(k, location, settings),
                             info_text = _([[If called by a gesture the amount of the gesture will be used]]),
+                            ok_always_enabled = true,
                             callback = function(spin)
                                 if location[settings] == nil then
                                     location[settings] = {}
