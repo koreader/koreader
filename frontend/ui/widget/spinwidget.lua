@@ -39,6 +39,7 @@ local SpinWidget = InputContainer:new{
     wrap = false,
     cancel_text = _("Close"),
     ok_text = _("Apply"),
+    ok_always_enabled = false, -- set to true to enable OK button for unchanged value
     cancel_callback = nil,
     callback = nil,
     close_callback = nil,
@@ -165,7 +166,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         },
         {
             text = self.ok_text,
-            enabled = self.original_value ~= value_widget:getValue(),
+            enabled = self.ok_always_enabled or self.original_value ~= value_widget:getValue(),
             callback = function()
                 self.value, self.value_index = value_widget:getValue()
                 self.original_value = self.value
