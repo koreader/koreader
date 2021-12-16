@@ -51,7 +51,7 @@ local T = BaseUtil.template
 local FileManager = InputContainer:extend{
     title = _("KOReader"),
     root_path = lfs.currentdir(),
-    
+
     clipboard = nil, -- for single file operations
     selected_files = nil, -- for group file operations
 
@@ -119,7 +119,6 @@ function FileManager:setupLayout()
         width = icon_size,
         height = icon_size,
         padding = Size.padding.default,
-        padding_left = Size.padding.large,
         padding_right = Size.padding.large,
         padding_bottom = 0,
         callback = function()
@@ -134,7 +133,6 @@ function FileManager:setupLayout()
         height = icon_size,
         padding = Size.padding.default,
         padding_left = Size.padding.large,
-        padding_right = Size.padding.default,
         padding_bottom = 0,
         callback = function() self:onShowPlusMenu() end,
     }

@@ -236,7 +236,6 @@ function FileSearcher:onMenuHold(item)
 
     self.results_dialog = ButtonDialogTitle:new{
         title = is_file and fullpath or fullpath .. "/",
-        use_info_style = true,
         buttons = buttons,
     }
     UIManager:show(self.results_dialog)
