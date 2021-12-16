@@ -598,6 +598,9 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                 })
             elseif settingsList[k].category == "string" or settingsList[k].category == "configurable" then
                 local sub_item_table = {}
+                if settingsList[k].args_func then
+                    settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
+                end
                 for i=1,#settingsList[k].args do
                     table.insert(sub_item_table, {
                         text = tostring(settingsList[k].toggle[i]),
