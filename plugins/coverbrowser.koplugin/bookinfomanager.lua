@@ -393,7 +393,6 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         -- so it does not reset our temporary cache dir when we first open
         -- a crengine book for extraction.
         require("document/credocument"):engineInit()
-        local cre = require "libs/libkoreader-cre"
         -- If we wanted to disallow caching completely:
         -- cre.initCache("", 1024*1024*32) -- empty path = no cache
         -- But it's best to use a cache for quicker and less memory
