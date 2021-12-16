@@ -858,7 +858,6 @@ function FileManager:tapPlus()
     self.file_dialog = ButtonDialogTitle:new{
         title = title,
         title_align = "center",
-        use_info_style = true,
         buttons = buttons,
         select_mode = self.select_mode, -- for coverbrowser
     }
