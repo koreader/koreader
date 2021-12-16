@@ -42,6 +42,7 @@ local TextBoxWidget = InputContainer:new{
                   -- which, with XText, makes a bold string the same width as it non-bolded.
     line_height = 0.3, -- in em
     fgcolor = Blitbuffer.COLOR_BLACK,
+    bgcolor = Blitbuffer.COLOR_WHITE,
     width = Screen:scaleBySize(400), -- in pixels
     height = nil, -- nil value indicates unscrollable text widget
     height_adjust = false, -- if true, reduce height to a multiple of line_height (for nicer centering)
@@ -785,7 +786,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
         bbtype = Screen:isColorEnabled() and Blitbuffer.TYPE_BBRGB32 or Blitbuffer.TYPE_BB8
     end
     self._bb = Blitbuffer.new(self.width, h, bbtype)
-    self._bb:fill(Blitbuffer.COLOR_WHITE)
+    self._bb:fill(self.bgcolor)
 
     local y = self.line_glyph_baseline
     if self.use_xtext then
