@@ -740,6 +740,7 @@ local VirtualKeyboard = FocusManager:new{
     layout = {},
 
     height = nil,
+    keys_height = nil,
     default_label_size = DEFAULT_LABEL_SIZE,
     bordersize = Size.border.default,
     padding = 0,
@@ -784,7 +785,8 @@ function VirtualKeyboard:init()
     self.utf8mode_keys = keyboard.utf8mode_keys
     self.umlautmode_keys = keyboard.umlautmode_keys
     self.width = Screen:getWidth()
-    local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
+    local keys_height = self.keys_height and self.keys_height or (G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64)
+
     self.height = Screen:scaleBySize(keys_height * #self.KEYS)
     self.min_layer = keyboard.min_layer
     self.max_layer = keyboard.max_layer
