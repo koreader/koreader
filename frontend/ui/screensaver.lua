@@ -14,6 +14,7 @@ local ImageWidget = require("ui/widget/imagewidget")
 local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
+local SpinWidget = require("ui/widget/spinwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
@@ -383,6 +384,27 @@ function Screensaver:setMessage()
     self.input_dialog:onShowKeyboard()
 end
 
+function Screensaver:setStretchLimit(touchmenu_instance)
+    UIManager:show(SpinWidget:new{
+        value = G_reader_settings:readSetting("screensaver_stretch_limit_percentage", 8),
+        value_min = 0,
+        value_max = 25,
+        default_value = 8, -- percent
+        title_text = _("Set maximum stretch limit"),
+        ok_text = _("Set"),
+        callback = function(spin)
+            G_reader_settings:saveSetting("screensaver_stretch_limit_percentage", spin.value)
+            G_reader_settings:makeTrue("screensaver_stretch_images")
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+        end,
+        extra_text = _("Disable"),
+        extra_callback = function()
+            G_reader_settings:makeFalse("screensaver_stretch_images")
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+        end,
+    })
+end
+
 -- When called after setup(), may not match the saved settings, because it accounts for fallbacks that might have kicked in.
 function Screensaver:getMode()
    return self.screensaver_type
@@ -543,6 +565,7 @@ function Screensaver:show()
             width = Screen:getWidth(),
             height = Screen:getHeight(),
             scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
+            stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
     elseif self.screensaver_type == "bookstatus" then
         local ReaderUI = require("apps/reader/readerui")
@@ -565,6 +588,7 @@ function Screensaver:show()
             width = Screen:getWidth(),
             height = Screen:getHeight(),
             scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
+            stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
     elseif self.screensaver_type == "readingprogress" then
         widget = Screensaver.getReaderProgress()
