@@ -233,4 +233,14 @@ function FontList:getLocalizedFontName(file, index)
     return altname
 end
 
+function FontList:getFontArgFunc()
+    require("document/credocument"):engineInit()
+    local toggle = {}
+    local face_list = cre.getFontFaces()
+    for k,v in ipairs(face_list) do
+        table.insert(toggle, FontList:getLocalizedFontName(cre.getFontFaceFilenameAndFaceIndex(v)) or v)
+    end
+    return face_list, toggle
+end
+
 return FontList

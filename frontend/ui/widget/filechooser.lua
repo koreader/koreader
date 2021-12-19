@@ -324,13 +324,17 @@ function FileChooser:genItemTableFromPath(path)
             text = file.name,
             bidi_wrap_func = BD.filename,
             mandatory = sstr,
-            path = full_path
+            path = full_path,
+            is_file = true,
         }
         if show_file_in_bold ~= false then
             file_item.bold = DocSettings:hasSidecarFile(full_path)
             if show_file_in_bold ~= "opened" then
                 file_item.bold = not file_item.bold
             end
+        end
+        if self.filemanager and self.filemanager.selected_files and self.filemanager.selected_files[full_path] then
+            file_item.dim = true
         end
         table.insert(item_table, file_item)
     end
@@ -492,7 +496,17 @@ function FileChooser:getNextFile(curr_file)
     return next_file
 end
 
-function FileChooser:showSetProviderButtons(file, filemanager_instance, one_time_providers)
+-- Used in file manager select mode to select all files in a folder,
+-- that are visible in all file browser pages, without subfolders.
+function FileChooser:selectAllFilesInFolder()
+    for _, item in pairs(self.item_table) do
+        if item.is_file then
+            self.filemanager.selected_files[item.path] = true
+        end
+    end
+end
+
+function FileChooser:showSetProviderButtons(file, one_time_providers)
     local ReaderUI = require("apps/reader/readerui")
 
     local __, filename_pure = util.splitFilePathName(file)
