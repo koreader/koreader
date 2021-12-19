@@ -223,7 +223,7 @@ For Windows: netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenpo
 
 For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
 
-For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
+For more information, please visit https://github.com/koreader/koreader/wiki/Highlight-export.]])
                             , BD.dirpath(DataStorage:getDataDir()))
                             })
                         end
@@ -287,7 +287,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                             UIManager:show(InfoMessage:new{
                                 text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the exporter.readwise_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
 
-For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
+For more information, please visit https://github.com/koreader/koreader/wiki/Highlight-export.]])
                             , BD.dirpath(DataStorage:getDataDir()))
                             })
                         end
