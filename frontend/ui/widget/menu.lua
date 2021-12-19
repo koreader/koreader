@@ -1433,10 +1433,10 @@ function Menu:setTitleBarIconText(extra_button_icon, title_text)
     UIManager:setDirty(self.show_parent, "ui")
 end
 
-function Menu:onExtraButtonTap() -- override in the caller
+function Menu:onExtraButtonTap() -- to be overriden and implemented by the caller
 end
 
-function Menu:onExtraButtonHold() -- override in the caller
+function Menu:onExtraButtonHold() -- to be overriden and implemented by the caller
 end
 
 --- Adds > to touch menu items with a submenu
