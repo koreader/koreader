@@ -245,12 +245,9 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             clipping.text = self:getText(item.text)
             clipping.chapter = item.chapter
             for _, bookmark in pairs(bookmarks) do
-                if bookmark.datetime == item.datetime and bookmark.text then
-                    local tmp = string.gsub(bookmark.text, "^Page %[?%d*%]?%d+ ", "")
-                    local bookmark_quote = string.gsub(tmp, " @ %d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d", "")
-                    if bookmark_quote ~= clipping.text then
-                        clipping.note = bookmark_quote
-                    end
+                if bookmark.datetime == item.datetime and bookmark.text and
+                        not self.ui.bookmark:isBookmarkAutoText(bookmark) then
+                    clipping.note = bookmark.text
                 end
             end
             if item.text == "" and item.pos0 and item.pos1 and
