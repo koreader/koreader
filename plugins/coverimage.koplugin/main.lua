@@ -620,7 +620,7 @@ function CoverImage:menuEntrySBF()
                 end,
                 keep_menu_open = true,
                 help_text_func = function()
-                    return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit )
+                    return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit)
                 end,
                 callback = function(touchmenu_instance)
                     local function createCover()
