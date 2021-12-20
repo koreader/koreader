@@ -257,7 +257,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             for _, bookmark in pairs(bookmarks) do
                 if bookmark.datetime == item.datetime and bookmark.text then
                     local bookmark_quote = bookmark.text:match(pattern)
-                    if bookmark_quote ~= clipping.text then
+                    if bookmark_quote ~= clipping.text and bookmark.text ~= clipping.text then
                         -- use modified quoted text or entire bookmark text if it's not a match
                         clipping.note = bookmark_quote or bookmark.text
                     end
