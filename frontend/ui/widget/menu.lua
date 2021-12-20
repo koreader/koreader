@@ -1423,7 +1423,7 @@ function Menu:onSwipe(arg, ges_ev)
     end
 end
 
-function Menu:setTitleBarIconText(extra_button_icon, title_text)
+function Menu:setTitleBarIconAndText(extra_button_icon, title_text)
     if self.extra_button and extra_button_icon then
         self.extra_button:setIcon(extra_button_icon)
     end
