@@ -241,6 +241,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
 
     -- create a translated pattern that matches bookmark auto-text
     -- see ReaderBookmark:getBookmarkAutoText and ReaderBookmark:getBookmarkPageString
+    --- @todo remove this once we get rid of auto-text or improve the data model
     local pattern = "^" .. T(_("Page %1 %2 @ %3"),
                                "%[?%d*%]?%d+",
                                "(.*)",
