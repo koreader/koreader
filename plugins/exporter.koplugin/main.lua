@@ -77,7 +77,6 @@ function Exporter:init()
     self.parser = MyClipping:new{
         my_clippings = "/mnt/us/documents/My Clippings.txt",
         history_dir = "./history",
-        ui = self.ui,
     }
     self.template = slt2.loadfile(self.path.."/note.tpl")
     self:migrateClippings()

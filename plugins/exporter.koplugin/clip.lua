@@ -4,6 +4,8 @@ local ReadHistory = require("readhistory")
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
+local T = require("ffi/util").template
+local _ = require("gettext")
 
 local MyClipping = {
     my_clippings = "/mnt/us/documents/My Clippings.txt",
@@ -236,6 +238,14 @@ end
 
 function MyClipping:parseHighlight(highlights, bookmarks, book)
     --DEBUG("book", book.file)
+
+    -- create a translated pattern that matches bookmark auto-text
+    -- see ReaderBookmark:getBookmarkAutoText and ReaderBookmark:getBookmarkPageString
+    local pattern = "^" .. T(_("Page %1 %2 @ %3"),
+                               "%[?%d*%]?%d+",
+                               "(.*)",
+                               "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
+
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
             local clipping = {}
@@ -245,9 +255,12 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             clipping.text = self:getText(item.text)
             clipping.chapter = item.chapter
             for _, bookmark in pairs(bookmarks) do
-                if bookmark.datetime == item.datetime and bookmark.text and
-                        not self.ui.bookmark:isBookmarkAutoText(bookmark) then
-                    clipping.note = bookmark.text
+                if bookmark.datetime == item.datetime and bookmark.text then
+                    local bookmark_quote = bookmark.text:match(pattern)
+                    if bookmark_quote ~= clipping.text then
+                        -- use modified quoted text or entire bookmark text if it's not a match
+                        clipping.note = bookmark_quote or bookmark.text
+                    end
                 end
             end
             if item.text == "" and item.pos0 and item.pos1 and
