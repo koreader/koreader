@@ -157,7 +157,7 @@ function CloudStorage:openCloudServer(url)
     end
     if tbl and #tbl > 0 then
         self:switchItemTable(url, tbl)
-        self:setTitleBarIconText("home")
+        self:setTitleBarIconAndText("home")
         self.onExtraButtonTap = function()
             self:init()
         end
