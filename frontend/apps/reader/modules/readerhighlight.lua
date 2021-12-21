@@ -161,7 +161,7 @@ function ReaderHighlight:init()
     end
 
     -- cre documents only
-    if self.ui.rolling then
+    if not self.document.info.has_pages then
         self:addToHighlightDialog("09_view_html", function(_self)
             return {
                 text = _("View HTML"),
