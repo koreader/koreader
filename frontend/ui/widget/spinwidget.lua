@@ -154,6 +154,22 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
             },
         })
     end
+    if self.option_text then
+        table.insert(buttons, {
+            {
+                text = self.option_text,
+                callback = function()
+                    if self.option_callback then
+                        self.value, self.value_index = value_widget:getValue()
+                        self.option_callback(self)
+                    end
+                    if not self.keep_shown_on_apply then -- assume option wants it same as ok
+                        self:onClose()
+                    end
+                end,
+            },
+        })
+    end
     table.insert(buttons, {
         {
             text = self.cancel_text,

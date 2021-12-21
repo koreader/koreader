@@ -155,8 +155,14 @@ return {
                     },
                     {
                         text_func = function()
-                            return T(_("Stretch covers and images to fit screen: %1%"),
-                                G_reader_settings:readSetting("screensaver_stretch_limit_percentage", 8))
+                            if G_reader_settings:nilOrFalse("screensaver_stretch_images") then
+                                return _("Stretch covers and images to fit screen")
+                            elseif G_reader_settings:readSetting("screensaver_stretch_limit_percentage") then
+                                return T(_("Stretch covers and images to fit screen: %1%"),
+                                    G_reader_settings:readSetting("screensaver_stretch_limit_percentage"))
+                            else
+                                return _("Stretch covers and images to fit screen: always")
+                            end
                         end,
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_stretch_images")
