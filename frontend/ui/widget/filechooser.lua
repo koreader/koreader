@@ -462,6 +462,7 @@ function FileChooser:onMenuSelect(item)
 end
 
 function FileChooser:onMenuHold(item)
+    if self.filemanager and self.filemanager.select_mode then return true end
     self:onFileHold(item.path)
     return true
 end

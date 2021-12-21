@@ -243,7 +243,6 @@ function FileManager:setupLayout()
     local setHome = function(path) self:setHome(path) end
 
     function file_chooser:onFileHold(file)  -- luacheck: ignore
-        if file_manager.select_mode then return true end
         local is_file = lfs.attributes(file, "mode") == "file"
         local is_folder = lfs.attributes(file, "mode") == "directory"
         local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
