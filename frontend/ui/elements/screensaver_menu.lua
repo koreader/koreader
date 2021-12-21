@@ -127,7 +127,7 @@ return {
                 text = _("Covers and images settings"),
                 sub_item_table = {
                     {
-                        text = _("Black background behind covers and images"),
+                        text = _("Black background"),
                         checked_func = function()
                             return G_reader_settings:readSetting("screensaver_img_background") == "black"
                         end,
@@ -136,7 +136,7 @@ return {
                         end,
                     },
                     {
-                        text = _("White background behind covers and images"),
+                        text = _("White background"),
                         checked_func = function()
                             return G_reader_settings:readSetting("screensaver_img_background") == "white"
                         end,
@@ -145,7 +145,7 @@ return {
                         end,
                     },
                     {
-                        text = _("Leave background as-is behind covers and images"),
+                        text = _("Leave background as-is"),
                         checked_func = function()
                             return G_reader_settings:readSetting("screensaver_img_background") == "none"
                         end,
@@ -156,12 +156,12 @@ return {
                     {
                         text_func = function()
                             if G_reader_settings:nilOrFalse("screensaver_stretch_images") then
-                                return _("Stretch covers and images to fit screen")
+                                return _("Stretch to fit screen")
                             elseif G_reader_settings:readSetting("screensaver_stretch_limit_percentage") then
-                                return T(_("Stretch covers and images to fit screen: %1%"),
+                                return T(_("Stretch to fit screen: %1%"),
                                     G_reader_settings:readSetting("screensaver_stretch_limit_percentage"))
                             else
-                                return _("Stretch covers and images to fit screen: always")
+                                return _("Stretch to fit screen: always")
                             end
                         end,
                         checked_func = function()
