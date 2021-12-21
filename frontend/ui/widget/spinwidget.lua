@@ -47,9 +47,12 @@ local SpinWidget = InputContainer:new{
     -- Set this to add upper default button that restores number to its default value
     default_value = nil,
     default_text = nil,
-    -- Optional extra button above ok/cancel buttons row
+    -- Optional extra button
     extra_text = nil,
     extra_callback = nil,
+    -- Optional extra button above ok/cancel buttons row
+    option_text = nil,
+    option_callback = nil,
 }
 
 function SpinWidget:init()
