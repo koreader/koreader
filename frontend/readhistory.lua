@@ -258,6 +258,7 @@ function ReadHistory:updateItemByPath(old_path, new_path)
             self.hist[i].file = new_path
             self.hist[i].text = new_path:gsub(".*/", "")
             self:_flush()
+            self:reload()
             self.hist[i].callback = function()
                 selectCallback(new_path)
             end
