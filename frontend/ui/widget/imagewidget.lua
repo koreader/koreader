@@ -86,10 +86,11 @@ local ImageWidget = Widget:new{
     --   Special case: scale_factor == 0 : image will be scaled to best fit provided
     --   width and height, keeping aspect ratio (scale_factor will be updated
     --   from 0 to the factor used at _render() time)
-    -- If scale_factor is nil and stretch_limit_percantage is provided,
-    --   then stretch the image to fit the container if the aspect ratios of the image
-    --   and the widget don't differ more than stretch_limit_percentage,
-    --   or scale the image to best fit the container.
+    -- If scale_factor is nil and stretch_limit_percantage is provided:
+    --   If the aspect ratios of the image and the widget don't differ more than stretch_limit_percentage,
+    --      then stretch
+    --      else scale
+    --   the image to best fit the container.
     -- In all other cases the image will be stretched to best fit the container.
     scale_factor = nil,
     stretch_limit_percentage = nil,
