@@ -428,6 +428,9 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
         if not rect then
             logger.warn("aborting, since we do not have a specification for that part")
             -- required part not given, so abort
+            if hinting then
+                Device:enableCPUCores(1)
+            end
             return
         end
         -- only render required part
