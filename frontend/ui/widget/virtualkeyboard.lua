@@ -131,8 +131,16 @@ function VirtualKey:init()
         end
     elseif self.label == "↑" then
         self.callback = function() self.keyboard:upLine() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            self.keyboard:upPage()
+        end
     elseif self.label == "↓" then
         self.callback = function() self.keyboard:downLine() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            self.keyboard:downPage()
+        end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
         self.hold_callback = function()
@@ -1033,8 +1041,16 @@ function VirtualKeyboard:upLine()
     self.inputbox:upLine()
 end
 
+function VirtualKeyboard:upPage()
+    self.inputbox:upPage()
+end
+
 function VirtualKeyboard:downLine()
     self.inputbox:downLine()
+end
+
+function VirtualKeyboard:downPage()
+    self.inputbox:downPage()
 end
 
 function VirtualKeyboard:clear()

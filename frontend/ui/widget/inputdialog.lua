@@ -128,6 +128,7 @@ local InputDialog = InputContainer:new{
     input_type = nil,
     deny_keyboard_hiding = false, -- don't hide keyboard on tap outside
     enter_callback = nil,
+    strike_callback = nil, -- call this on every keystroke
     readonly = false, -- don't allow editing, will not show keyboard
     allow_newline = false, -- allow entering new lines (this disables any enter_callback)
     cursor_at_end = true, -- starts with cursor at end of text, ready for appending
@@ -346,6 +347,7 @@ function InputDialog:init()
         margin = self.input_margin,
         input_type = self.input_type,
         text_type = self.text_type,
+        terminal_mode = self.terminal_mode,
         enter_callback = self.enter_callback or function()
             for _,btn_row in ipairs(self.buttons) do
                 for _,btn in ipairs(btn_row) do
@@ -356,6 +358,7 @@ function InputDialog:init()
                 end
             end
         end,
+        strike_callback = self.strike_callback,
         edit_callback = self._buttons_edit_callback, -- nil if no Save/Close buttons
         scroll_callback = self._buttons_scroll_callback, -- nil if no Nav or Scroll buttons
         scroll = true,

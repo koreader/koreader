@@ -20,6 +20,18 @@ local Screen = Device.screen
 
 local Keyboard
 
+local esc_seq = {
+    backspace = "\008",
+    cursor_left =  "\027[D",
+    cursor_right = "\027[C",
+    cursor_up =    "\027[A",
+    cursor_down =  "\027[B",
+    cursor_pos1 =  "\027[7~",
+    cursor_end =   "\027[8~",
+    page_up =      "\027[5~",
+    page_down =    "\027[6~",
+}
+
 local InputText = InputContainer:new{
     text = "",
     hint = "demo hint",
@@ -43,6 +55,9 @@ local InputText = InputContainer:new{
     padding = Size.padding.default,
     margin = Size.margin.default,
     bordersize = Size.border.inputtext,
+
+    terminal_mode = false,
+    strike_callback = nil,
 
     -- See TextBoxWidget for details about these options
     alignment = "left",
@@ -132,6 +147,10 @@ if Device:isTouchDevice() or Device:hasDPad() then
                     self:onShowKeyboard()
                     self.is_keyboard_hidden = false
                 end
+            end
+            -- disable positioning cursor by tap in emulator mode
+            if self.terminal_mode then
+                return true
             end
             if #self.charlist > 0 then -- Avoid cursor moving within a hint.
                 local textwidget_offset = self.margin + self.bordersize + self.padding
@@ -738,14 +757,18 @@ function InputText:getChar(offset, is_absolute)
     return self.charlist[idx]
 end
 
-function InputText:addChars(chars)
+function InputText:addChars(chars, skip_callback)
     if not chars then
         -- VirtualKeyboard:addChar(key) gave us 'nil' once (?!)
         -- which would crash table.concat()
         return
     end
-    if self.enter_callback and chars == "\n" then
+    if self.enter_callback and chars == "\n" and not skip_callback then
         UIManager:scheduleIn(0.3, function() self.enter_callback() end)
+        return
+    end
+    if self.strike_callback and not skip_callback then
+        self.strike_callback(chars)
         return
     end
     if self.readonly or not self:isTextEditable(true) then
@@ -756,6 +779,52 @@ function InputText:addChars(chars)
     if #self.charlist == 0 then -- widget text is empty or a hint text is displayed
         self.charpos = 1 -- move cursor to the first position
     end
+
+    if self.terminal_mode then
+        local chars_list = util.splitToChars(chars) -- for UTF8
+        for i = 1, #chars_list do
+            if chars_list[i] == "\n" then
+                local pos = self.charpos
+
+                -- detect current column
+                while pos > 0 and self.charlist[pos] ~= "\n" do
+                    pos = pos - 1
+                end
+                local column = self.charpos - pos
+
+                -- go to EOL
+                pos = self.charpos
+                while self.charlist[pos] and self.charlist[pos] ~= "\n" do
+                    pos = pos + 1
+                end
+
+                if not self.charlist[pos] then -- add new line if necessary
+                    table.insert(self.charlist, pos, "\n")
+                    pos = pos + 1
+                end
+
+                -- go to column in next line
+                for j = 1, column-1 do
+                    if self.charlist[pos+i] or self.charlist[pos+i] ~= "\n" then
+                        table.insert(self.charlist, pos, " ")
+                    else
+                        break
+                    end
+                end
+                self.charpos = pos
+            else -- ~="\n"
+                if self.charlist[self.charpos] == "\n" then
+                    self.charpos = self.charpos + 1
+                end
+                table.remove(self.charlist, self.charpos)
+                table.insert(self.charlist, self.charpos, chars_list[i])
+                self.charpos = self.charpos + 1
+            end
+        end
+        self:initTextBox(table.concat(self.charlist), true)
+        return
+    end
+
     table.insert(self.charlist, self.charpos, chars)
     self.charpos = self.charpos + #util.splitToChars(chars)
     self:initTextBox(table.concat(self.charlist), true)
@@ -766,11 +835,141 @@ dbg:guard(InputText, "addChars",
             "Wrong chars value type (expected string)!")
     end)
 
+function InputText:enterAlternateKeypad(maxr, maxc)
+    self.store_position = self.charpos
+    self:formatTerminal(maxr, maxc, true)
+end
+
+function InputText:exitAlternateKeypad()
+    if self.store_position then
+        self.charpos = self.store_position
+        self.store_position = nil
+        -- clear the alternate keypad buffer
+        while self.charlist[self.charpos] do
+            table.remove(self.charlist, self.charpos)
+        end
+    end
+end
+
+--- generates a "tty-matrix"
+-- @param maxr number of rows
+-- @param maxc number of columns
+-- @param clear if true, fill the matrix with filler
+-- @param filler if unset, use ' '
+function InputText:formatTerminal(maxr, maxc, clear, filler)
+    filler = filler or " "
+    maxr = maxr or 24
+    maxc = maxc or 80
+
+    local i = self.store_position or 1
+    -- so we end up in a maxr x maxc array for positioning
+    for r = 1, maxr do
+        for c = 1, maxc do
+            if not self.charlist[i] then -- end of text
+                table.insert(self.charlist, i, "\n")
+            end
+
+            if self.charlist[i] ~= "\n" then
+                if clear then
+                    self.charlist[i] = filler
+                end
+            else
+                table.insert(self.charlist, i, filler)
+            end
+            i = i + 1
+        end
+        if self.charlist[i] ~= "\n" then
+            table.insert(self.charlist, i, "\n")
+        end
+        i = i + 1  -- skip newline
+    end
+--    table.remove(self.charlist, i - 1)
+end
+
+function InputText:moveCursorToRowCol(r, c, maxr, maxc)
+    if r==1 and c== 1 and not self.store_position then
+        self.store_position = self.charpos
+    end
+
+    self:formatTerminal(maxr, maxc)
+
+    local cur_r, cur_c = 1, 0
+    local i = self.store_position or 1
+    while i < #self.charlist do
+        if self.charlist[i] ~= "\n" then
+            cur_c = cur_c + 1
+        else
+            cur_c = 0 -- as we are at the last NL
+            cur_r = cur_r + 1
+        end
+        self.charpos = i
+        if cur_r == r and cur_c == c then
+            break
+        end
+        i = i + 1
+    end
+    self:moveCursorToCharPos(self.charpos)
+end
+
+function InputText:moveCursorDown()
+    local pos = self.charpos
+
+    -- detect current column
+    while pos > 0 and self.charlist[pos] ~= "\n" do
+        pos = pos - 1
+    end
+    local column = self.charpos - pos
+
+    while self.charlist[self.charpos] and self.charlist[self.charpos] ~= "\n" do
+        self.charpos = self.charpos + 1
+    end
+    self.charpos = self.charpos + 1
+    for i = 1, column-1 do
+        if self.charlist[pos+i] or self.charlist[pos+i] ~= "\n" then
+            self.charpos = self.charpos + 1
+        else
+            break
+        end
+    end
+    self:moveCursorToCharPos(self.charpos)
+end
+
+function InputText:moveCursorUp()
+    local pos = self.charpos
+    while self.charlist[pos] and self.charlist[pos] ~= "\n" do
+        pos = pos - 1
+    end
+    local column = self.charpos - pos
+    pos = pos - 1
+    while self.charlist[pos] and self.charlist[pos] ~= "\n" do
+        pos = pos - 1
+    end
+    self.charpos = pos + column
+    self:moveCursorToCharPos(self.charpos)
+end
+
+function InputText:clearToEndOfScreen()
+    local pos = self.charpos
+    while pos <= #self.charlist do
+        if self.charlist[pos] ~= "\n" then
+            self.charlist[pos] = " "
+        end
+        pos = pos + 1
+    end
+    self:initTextBox(table.concat(self.charlist))
+    self:moveCursorToCharPos(self.charpos)
+end
+
 function InputText:delChar()
     if self.readonly or not self:isTextEditable(true) then
         return
     end
     if self.charpos == 1 then return end
+
+    if self.strike_callback then
+        self.strike_callback(esc_seq.backspace)
+        return
+    end
     self.charpos = self.charpos - 1
     self.is_text_edited = true
     table.remove(self.charlist, self.charpos)
@@ -798,27 +997,95 @@ function InputText:delToStartOfLine()
     self:initTextBox(table.concat(self.charlist))
 end
 
+function InputText:delToEndOfLine(is_terminal)
+    if self.readonly or not self:isTextEditable(true) then
+        return
+    end
+    local cur_pos = self.charpos
+    -- self.charlist[self.charpos] is the char after the cursor
+    while self.charlist[cur_pos] and self.charlist[cur_pos] ~= "\n" do
+        if not is_terminal then
+            table.remove(self.charlist, cur_pos)
+        else
+            self.charlist[cur_pos]=" "
+            cur_pos = cur_pos + 1
+        end
+    end
+    -- delete the newline at end
+    if self.charlist[cur_pos] ~= "\n" and not is_terminal then
+        table.remove(self.charlist, cur_pos)
+    end
+    self.is_text_edited = true
+    self:initTextBox(table.concat(self.charlist))
+end
+
 -- For the following cursor/scroll methods, the text_widget deals
 -- itself with setDirty'ing the appropriate regions
-function InputText:leftChar()
+function InputText:leftChar(skip_callback)
     if self.charpos == 1 then return end
+    if self.strike_callback and not skip_callback then
+        self.strike_callback(esc_seq.cursor_left)
+        return
+    end
+    if self.terminal_mode then
+        local left_char = self.charlist[self.charpos - 1]
+        if not left_char and left_char == "\n" then
+            return
+        end
+    end
     self.text_widget:moveCursorLeft()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
-function InputText:rightChar()
+function InputText:rightChar(skip_callback)
+    if self.strike_callback and not skip_callback then
+        self.strike_callback(esc_seq.cursor_right)
+        return
+    end
     if self.charpos > #self.charlist then return end
+    if self.terminal_mode then
+        local right_char = self.charlist[self.charpos + 1]
+        if not right_char and right_char == "\n" then
+            return
+        end
+    end
     self.text_widget:moveCursorRight()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
-function InputText:goToStartOfLine()
+function InputText:goToStartOfLine(skip_callback)
+    if self.strike_callback then
+        if not skip_callback then
+            self.strike_callback(esc_seq.cursor_pos1)
+        else
+            if self.charlist[self.charpos] == "\n" then
+                self.charpos = self.charpos - 1
+            end
+            while self.charpos >=1 and self.charlist[self.charpos] ~= "\n" do
+                self.charpos = self.charpos - 1
+            end
+            self.charpos = self.charpos + 1
+        end
+        self.text_widget:moveCursorToCharPos(self.charpos)
+        return
+    end
     local new_pos = select(1, self:getStringPos({"\n", "\r"}, {"\n", "\r"}))
     self.text_widget:moveCursorToCharPos(new_pos)
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
-function InputText:goToEndOfLine()
+function InputText:goToEndOfLine(skip_callback)
+    if self.strike_callback then
+        if not skip_callback then
+            self.strike_callback(esc_seq.cursor_end)
+        else
+            while self.charpos <= #self.charlist and self.charlist[self.charpos] ~= "\n" do
+                self.charpos = self.charpos + 1
+            end
+        end
+        self.text_widget:moveCursorToCharPos(self.charpos)
+        return
+    end
     local new_pos = select(2, self:getStringPos({"\n", "\r"}, {"\n", "\r"})) + 1
     self.text_widget:moveCursorToCharPos(new_pos)
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
@@ -837,15 +1104,39 @@ function InputText:moveCursorToCharPos(char_pos)
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
-function InputText:upLine()
+function InputText:upLine(skip_callback)
+    if self.strike_callback and not skip_callback then
+        self.strike_callback(esc_seq.cursor_up)
+        return
+    end
     self.text_widget:moveCursorUp()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
-function InputText:downLine()
+function InputText:upPage(skip_callback)
+    if self.strike_callback and not skip_callback then
+        self.strike_callback(esc_seq.page_up)
+        return
+    end
+    self:scrollUp()
+end
+
+function InputText:downLine(skip_callback)
     if #self.charlist == 0 then return end -- Avoid cursor moving within a hint.
+    if self.strike_callback and not skip_callback then
+        self.strike_callback(esc_seq.cursor_down)
+        return
+    end
     self.text_widget:moveCursorDown()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
+end
+
+function InputText:downPage(skip_callback)
+    if self.strike_callback and not skip_callback then
+        self.strike_callback(esc_seq.page_down)
+        return
+    end
+    self:scrollDown()
 end
 
 function InputText:scrollDown()
