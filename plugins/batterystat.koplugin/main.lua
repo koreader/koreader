@@ -51,7 +51,7 @@ function Usage:percentageRate()
     if self.time == 0 then
         return 0
     else
-        return self.percentage / self.time
+        return 3600 * self.percentage / self.time
     end
 end
 
