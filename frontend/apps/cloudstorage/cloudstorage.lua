@@ -4,6 +4,7 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DropBox = require("apps/cloudstorage/dropbox")
+local FFIUtil = require("ffi/util")
 local Ftp = require("apps/cloudstorage/ftp")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
@@ -29,7 +30,14 @@ local CloudStorage = Menu:extend{
     show_parent = nil,
     is_popout = false,
     is_borderless = true,
-    title = _("Cloud storage")
+    title = _("Cloud storage"),
+    has_extra_button = true,
+}
+
+local server_types = {
+    dropbox = _("Dropbox"),
+    ftp = _("FTP"),
+    webdav = _("WebDAV"),
 }
 
 function CloudStorage:init()
@@ -44,6 +52,10 @@ function CloudStorage:init()
     end
     self.width = Screen:getWidth()
     self.height = Screen:getHeight()
+    self.extra_button_icon = "plus"
+    self.onExtraButtonTap = function() -- add new cloud storage
+        self:selectCloudType()
+    end
     Menu.init(self)
     if self.item then
         self.item_table[1].callback()
@@ -52,16 +64,11 @@ end
 
 function CloudStorage:genItemTableFromRoot()
     local item_table = {}
-    table.insert(item_table, {
-        text = _("Add new cloud storage"),
-        callback = function()
-            self:selectCloudType()
-        end,
-    })
     local added_servers = self.cs_settings:readSetting("cs_servers") or {}
     for _, server in ipairs(added_servers) do
         table.insert(item_table, {
             text = server.name,
+            mandatory = server_types[server.type],
             address = server.address,
             username = server.username,
             password = server.password,
@@ -108,41 +115,23 @@ function CloudStorage:genItemTable(item)
 end
 
 function CloudStorage:selectCloudType()
-    local buttons = {
-        {
+    local buttons = {}
+    for server_type, name in FFIUtil.orderedPairs(server_types) do
+        table.insert(buttons, {
             {
-                text = _("Dropbox"),
+                text = name,
                 callback = function()
                     UIManager:close(self.cloud_dialog)
-                    self:configCloud("dropbox")
+                    self:configCloud(server_type)
                 end,
             },
-        },
-        {
-            {
-                text = _("FTP"),
-                callback = function()
-                    UIManager:close(self.cloud_dialog)
-                    self:configCloud("ftp")
-                end,
-            },
-        },
-        {
-            {
-                text = _("WebDAV"),
-                callback = function()
-                    UIManager:close(self.cloud_dialog)
-                    self:configCloud("webdav")
-                end,
-            },
-        },
+        })
+    end
+    self.cloud_dialog = ButtonDialogTitle:new{
+        title = _("Add new cloud storage"),
+        title_align = "center",
+        buttons = buttons,
     }
-        self.cloud_dialog = ButtonDialogTitle:new{
-            title = _("Choose cloud storage type"),
-            title_align = "center",
-            buttons = buttons,
-    }
-
     UIManager:show(self.cloud_dialog)
     return true
 end
@@ -168,6 +157,10 @@ function CloudStorage:openCloudServer(url)
     end
     if tbl and #tbl > 0 then
         self:switchItemTable(url, tbl)
+        self:setTitleBarIconAndText("home")
+        self.onExtraButtonTap = function()
+            self:init()
+        end
         return true
     elseif not tbl then
         logger.err("CloudStorage:", e)
