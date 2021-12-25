@@ -862,7 +862,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 .footnote, .footnotes, .fn,
 .note, .note1, .note2, .note3,
 .ntb, .ntb-txt, .ntb-txt-j,
-.voetnoten
+.przypis, .przypis1, /* Polish footnotes */
+.voetnoten /* Dutch footnotes */
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
@@ -879,7 +880,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 .footnote, .footnotes, .fn,
 .note, .note1, .note2, .note3,
 .ntb, .ntb-txt, .ntb-txt-j,
-.voetnoten
+.przypis, .przypis1, /* Polish footnotes */
+.voetnoten /* Dutch footnotes */
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
