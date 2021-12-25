@@ -4,8 +4,8 @@ local ReadHistory = require("readhistory")
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
-local T = require("ffi/util").template
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local MyClipping = {
     my_clippings = "/mnt/us/documents/My Clippings.txt",
