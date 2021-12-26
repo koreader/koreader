@@ -1,8 +1,10 @@
+name: build
+
 on: [push, pull_request]
 
 jobs:
   macos_build:
-
+  
     runs-on: macos-11
 
     steps:
@@ -31,5 +33,5 @@ jobs:
       - name: Uploading artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: osx-artifacts
+          name: koreader-macos
           path: '*.7z'
