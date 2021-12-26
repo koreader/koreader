@@ -47,24 +47,24 @@ function Usage:append(state)
     self.time = self.time + os.difftime(curr.timestamp - state.timestamp)
 end
 
-function Usage:percentageRate()
+function Usage:percentageRatePerHour()
     if self.time == 0 then
         return 0
     else
-        return self.percentage / self.time
+        return 3600 * self.percentage / self.time
     end
 end
 
 function Usage:remainingTime()
-    if self:percentageRate() == 0 then return "N/A" end
+    if self:percentageRatePerHour() == 0 then return "N/A" end
     local curr = State:new()
-    return curr.percentage / self:percentageRate()
+    return curr.percentage / self:percentageRatePerHour()
 end
 
 function Usage:chargingTime()
-    if self:percentageRate() == 0 then return "N/A" end
+    if self:percentageRatePerHour() == 0 then return "N/A" end
     local curr = State:new()
-    return math.abs(curr.percentage - 100) / self:percentageRate()
+    return math.abs(curr.percentage - 100) / self:percentageRatePerHour()
 end
 
 local function shorten(number)
@@ -82,7 +82,7 @@ function Usage:dump(kv_pairs, id)
     local name = id or _("Consumed:")
     table.insert(kv_pairs, {INDENTATION .. _("Total time:"), duration(self.time) })
     table.insert(kv_pairs, {INDENTATION .. name, shorten(self.percentage), "%"})
-    table.insert(kv_pairs, {INDENTATION .. _("Change per hour:"), shorten(self:percentageRate())})
+    table.insert(kv_pairs, {INDENTATION .. _("Change per hour:"), shorten(self:percentageRatePerHour())})
 end
 
 function Usage:dumpRemaining(kv_pairs)
