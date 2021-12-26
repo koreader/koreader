@@ -1,14 +1,11 @@
-name: test
+name: build
 
 on: [push, pull_request]
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [macos-latest]
+  macos_build:
+  
+    runs-on: macos-11
 
     steps:
       - name: XCode version
@@ -20,15 +17,21 @@ jobs:
           fetch-depth: 0
 
       - name: Homebrew install dependencies
-        # Compared to the README, adds ccache for faster compilation times and removes sh5sum to prevent some conflict with coreutils
-        # Compared to the emulator, adds p7zip and removes sdl2.
-        run: brew install ccache nasm ragel binutils coreutils libtool autoconf automake cmake makedepend lua@5.1 luarocks gettext gnu-getopt pkg-config wget bison p7zip
+        # Compared to the README, adds ccache for faster compilation times
+        # Compared to the emulator, adds p7zip.
+        run: >
+          brew install -q nasm ragel binutils coreutils libtool autoconf automake cmake makedepend
+          sdl2 lua@5.1 luarocks gettext pkg-config wget gnu-getopt grep bison
+          ccache p7zip
 
       - name: Building in progress…
-        run: export MACOSX_DEPLOYMENT_TARGET=10.14 PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:${PATH}" && ./kodev release macos
+        run: |
+          export MACOSX_DEPLOYMENT_TARGET=11;
+          export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}";
+          ./kodev release macos
 
       - name: Uploading artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: osx-artifacts
+          name: koreader-macos
           path: '*.7z'
