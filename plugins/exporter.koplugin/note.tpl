@@ -52,6 +52,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8"/>
+  <title>#{= htmlescape(booknotes.title) }#</title>
 </head>
 <body>
   <div style="width:90%; max-width:600px; margin:0px auto; padding:5px; font-size:12pt; font-family:Georgia">
