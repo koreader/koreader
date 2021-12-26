@@ -4,6 +4,8 @@ local ReadHistory = require("readhistory")
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
+local _ = require("gettext")
+local T = require("ffi/util").template
 
 local MyClipping = {
     my_clippings = "/mnt/us/documents/My Clippings.txt",
@@ -98,10 +100,18 @@ local extensions = {
     [".doc"] = true,
 }
 
+-- first attempt to parse from document metadata
 -- remove file extensions added by former KOReader
 -- extract author name in "Title(Author)" format
 -- extract author name in "Title - Author" format
-function MyClipping:getTitle(line)
+function MyClipping:getTitle(line, path)
+    if path then
+        local props = self:getProps(path)
+        if props and props.title ~= "" then
+            return props.title, props.authors or props.author
+        end
+    end
+
     line = line:match("^%s*(.-)%s*$") or ""
     if extensions[line:sub(-4):lower()] then
         line = line:sub(1, -5)
@@ -228,6 +238,15 @@ end
 
 function MyClipping:parseHighlight(highlights, bookmarks, book)
     --DEBUG("book", book.file)
+
+    -- create a translated pattern that matches bookmark auto-text
+    -- see ReaderBookmark:getBookmarkAutoText and ReaderBookmark:getBookmarkPageString
+    --- @todo Remove this once we get rid of auto-text or improve the data model.
+    local pattern = "^" .. T(_("Page %1 %2 @ %3"),
+                               "%[?%d*%]?%d+",
+                               "(.*)",
+                               "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
+
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
             local clipping = {}
@@ -238,8 +257,11 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             clipping.chapter = item.chapter
             for _, bookmark in pairs(bookmarks) do
                 if bookmark.datetime == item.datetime and bookmark.text then
-                    local tmp = string.gsub(bookmark.text, "Page %d+ ", "")
-                    clipping.text = string.gsub(tmp, " @ %d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d", "")
+                    local bookmark_quote = bookmark.text:match(pattern)
+                    if bookmark_quote ~= clipping.text and bookmark.text ~= clipping.text then
+                        -- use modified quoted text or entire bookmark text if it's not a match
+                        clipping.note = bookmark_quote or bookmark.text
+                    end
                 end
             end
             if item.text == "" and item.pos0 and item.pos1 and
@@ -282,7 +304,7 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
             return
         end
         local _, docname = util.splitFilePathName(doc_file)
-        local title, author = self:getTitle(util.splitFileNameSuffix(docname))
+        local title, author = self:getTitle(util.splitFileNameSuffix(docname), doc_file)
         clippings[title] = {
             file = doc_file,
             title = title,
@@ -309,11 +331,31 @@ function MyClipping:parseHistory()
     return clippings
 end
 
+function MyClipping:getProps(file)
+    local document = DocumentRegistry:openDocument(file)
+    local book_props = nil
+    if document then
+        local loaded = true
+        if document.loadDocument then -- CreDocument
+            if not document:loadDocument(false) then -- load only metadata
+                -- failed loading, calling other methods would segfault
+                loaded = false
+            end
+        end
+        if loaded then
+            book_props = document:getProps()
+        end
+        document:close()
+    end
+
+    return book_props
+end
+
 function MyClipping:parseCurrentDoc(view)
     local clippings = {}
     local path = view.document.file
     local _, _, docname = path:find(".*/(.*)")
-    local title, author = self:getTitle(docname)
+    local title, author = self:getTitle(docname, path)
     clippings[title] = {
         file = view.document.file,
         title = title,

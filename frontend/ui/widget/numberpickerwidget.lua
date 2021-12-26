@@ -227,7 +227,7 @@ function NumberPickerWidget:update()
         return "ui", self.dimen
     end)
     if self.picker_updated_callback then
-        self.picker_updated_callback(self.value)
+        self.picker_updated_callback(self.value, self.value_index)
     end
 end
 

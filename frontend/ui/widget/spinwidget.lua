@@ -39,6 +39,7 @@ local SpinWidget = InputContainer:new{
     wrap = false,
     cancel_text = _("Close"),
     ok_text = _("Apply"),
+    ok_always_enabled = false, -- set to true to enable OK button for unchanged value
     cancel_callback = nil,
     callback = nil,
     close_callback = nil,
@@ -52,7 +53,9 @@ local SpinWidget = InputContainer:new{
 }
 
 function SpinWidget:init()
-    self.original_value = self.value -- used to enable ok_button, self.value may be changed in extra callback
+    -- used to enable ok_button, self.value may be changed in extra callback
+    self.original_value = self.value_table and self.value_table[self.value_index or 1] or self.value
+
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     if not self.width then
@@ -84,20 +87,20 @@ function SpinWidget:init()
     self:update()
 end
 
-function SpinWidget:update(numberpicker_value)
+function SpinWidget:update(numberpicker_value, numberpicker_value_index)
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_value or self.value,
         value_table = self.value_table,
-        value_index = self.value_index,
+        value_index = numberpicker_value_index or self.value_index,
         value_min = self.value_min,
         value_max = self.value_max,
         value_step = self.value_step,
         value_hold_step = self.value_hold_step,
         precision = self.precision,
         wrap = self.wrap,
-        picker_updated_callback = function(value)
-            self:update(value)
+        picker_updated_callback = function(value, value_index)
+            self:update(value, value_index)
         end,
     }
     local value_group = HorizontalGroup:new{
@@ -163,7 +166,7 @@ function SpinWidget:update(numberpicker_value)
         },
         {
             text = self.ok_text,
-            enabled = self.original_value ~= value_widget:getValue(),
+            enabled = self.ok_always_enabled or self.original_value ~= value_widget:getValue(),
             callback = function()
                 self.value, self.value_index = value_widget:getValue()
                 self.original_value = self.value

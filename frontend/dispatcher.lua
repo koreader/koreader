@@ -97,6 +97,7 @@ local settingsList = {
     -- filemanager settings
     folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     show_plus_menu = {category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
+    toggle_select_mode = {category="none", event="ToggleSelectMode", title=_("Toggle select mode"), filemanager=true},
     refresh_content = {category="none", event="RefreshContent", title=_("Refresh content"), filemanager=true},
     folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true, separator=true},
 
@@ -132,6 +133,7 @@ local settingsList = {
     panel_zoom_toggle = {category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true},
 
     -- rolling reader settings
+    set_font = {category="string", event="SetFont", title=_("Set font"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size by %1"), rolling=true},
     decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size by %1"), rolling=true},
 
@@ -154,8 +156,8 @@ local settingsList = {
     render_dpi = {category="string", rolling=true},
     line_spacing = {category="absolutenumber", rolling=true, separator=true},
     font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true, step=0.5},
-    font_base_weight = {category="absolutenumber", rolling=true},
-    font_gamma = {category="absolutenumber", rolling=true},
+    font_base_weight = {category="string", rolling=true},
+    font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
     font_kerning = {category="string", rolling=true, separator=true},
     status_line = {category="string", rolling=true},
@@ -254,6 +256,7 @@ local dispatcher_menu_order = {
     -- filemanager
     "folder_up",
     "show_plus_menu",
+    "toggle_select_mode",
     "refresh_content",
     "folder_shortcuts",
 
@@ -286,6 +289,7 @@ local dispatcher_menu_order = {
     "book_description",
     "book_cover",
 
+    "set_font",
     "increase_font",
     "decrease_font",
     "font_size",
@@ -521,6 +525,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                             value_max = settingsList[k].max,
                             default_value = settingsList[k].default,
                             title_text = Dispatcher:getNameFromItem(k, location, settings),
+                            ok_always_enabled = true,
                             callback = function(spin)
                                 if location[settings] == nil then
                                     location[settings] = {}
@@ -568,6 +573,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                             default_value = 0,
                             title_text = Dispatcher:getNameFromItem(k, location, settings),
                             info_text = _([[If called by a gesture the amount of the gesture will be used]]),
+                            ok_always_enabled = true,
                             callback = function(spin)
                                 if location[settings] == nil then
                                     location[settings] = {}
@@ -594,6 +600,9 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                 })
             elseif settingsList[k].category == "string" or settingsList[k].category == "configurable" then
                 local sub_item_table = {}
+                if settingsList[k].args_func then
+                    settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
+                end
                 for i=1,#settingsList[k].args do
                     table.insert(sub_item_table, {
                         text = tostring(settingsList[k].toggle[i]),

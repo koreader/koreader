@@ -24,6 +24,8 @@ function TileCacheItem:totable()
             h = self.bb.h,
             stride = tonumber(self.bb.stride),
             fmt = self.bb:getType(),
+            rotation = self.bb:getRotation(),
+            inverse = self.bb:getInverse(),
             data = Blitbuffer.tostring(self.bb),
         },
     }
@@ -54,7 +56,7 @@ function TileCacheItem:fromtable(t)
     self.excerpt = t.excerpt
     self.created_ts = t.created_ts
     self.persistent = t.persistent
-    self.bb = Blitbuffer.fromstring(t.bb.w, t.bb.h, t.bb.fmt, t.bb.data, t.bb.stride)
+    self.bb = Blitbuffer.fromstring(t.bb.w, t.bb.h, t.bb.fmt, t.bb.data, t.bb.stride, t.bb.rotation, t.bb.inverse)
 end
 
 function TileCacheItem:load(filename)

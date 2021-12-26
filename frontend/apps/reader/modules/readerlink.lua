@@ -765,7 +765,6 @@ function ReaderLink:onGoToExternalLink(link_url)
     end
     dialog = ButtonDialogTitle:new{
         title = text,
-        use_info_style = true,
         buttons = buttons,
     }
     UIManager:show(dialog)

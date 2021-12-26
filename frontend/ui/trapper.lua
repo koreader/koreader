@@ -485,7 +485,7 @@ Notes and limitations:
    an invisible TrapWidget will be used instead (if nil or true, the event will be
    resent; if false, the event will not be resent).
 
-@function task lua function to execute and get return values from
+@param task lua function to execute and get return values from
 @param trap_widget_or_string already shown widget, string, or nil, true or false
 @boolean task_returns_simple_string[opt=false] true if task returns a single string
 @treturn boolean completed (`true` if not interrupted, `false` if dismissed)

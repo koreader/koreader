@@ -158,4 +158,12 @@ function IconButton:onTapSelect()
     self:onTapIconButton()
 end
 
+function IconButton:setIcon(icon)
+    if icon ~= self.icon then
+        self.icon = icon
+        self:free()
+        self:init()
+    end
+end
+
 return IconButton

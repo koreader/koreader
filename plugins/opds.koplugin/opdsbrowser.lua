@@ -6,9 +6,9 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
-local InputDialog = require("ui/widget/inputdialog")
 local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("opdsparser")
 local Screen = require("device").screen
@@ -594,14 +594,9 @@ function OPDSBrowser.getCurrentDownloadDir()
     return G_reader_settings:readSetting("download_dir") or lastdir
 end
 
-function OPDSBrowser:downloadFile(item, filetype, remote_url)
+function OPDSBrowser:downloadFile(item, filename, remote_url)
     -- Download to user selected folder or last opened folder.
     local download_dir = self.getCurrentDownloadDir()
-
-    local filename = item.title .. "." .. filetype
-    if item.author then
-        filename = item.author .. " - " .. filename
-    end
 
     filename = util.getSafeFilename(filename, download_dir)
     local local_path = download_dir .. "/" .. filename
@@ -671,58 +666,54 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
     end
 end
 
-function OPDSBrowser:createNewDownloadDialog(path, buttons)
+function OPDSBrowser:createNewDownloadDialog(path, filename, buttons)
     self.download_dialog = ButtonDialogTitle:new{
-        title = T(_("Download folder:\n%1\n\nDownload file type:"), BD.dirpath(path)),
-        use_info_style = true,
+        title = T(_("Download folder:\n%1\n\nDownload filename:\n%2\n\nDownload file type:"),
+            BD.dirpath(path), filename),
         buttons = buttons
     }
 end
 
 function OPDSBrowser:showDownloads(item)
     local acquisitions = item.acquisitions
-    local downloadsperline = 2
-    local lines = math.ceil(#acquisitions/downloadsperline)
-    local buttons = {}
-    for i = 1, lines do
-        local line = {}
-        for j = 1, downloadsperline do
-            local button = {}
-            local index = (i-1)*downloadsperline + j
-            local acquisition = acquisitions[index]
-            if acquisition then
-                local filetype = util.getFileNameSuffix(acquisition.href)
-                logger.dbg("Filetype for download is", filetype)
-                if not DocumentRegistry:hasProvider("dummy."..filetype) then
-                    filetype = nil
-                end
-                if not filetype and DocumentRegistry:hasProvider(nil, acquisition.type) then
-                    filetype = DocumentRegistry:mimeToExt(acquisition.type)
-                end
-
-                if filetype then
-                    filetype = string.lower(filetype)
-                    -- append DOWNWARDS BLACK ARROW ⬇ U+2B07 to format
-                    if acquisition.title then
-                        button.text = acquisition.title .. "\xE2\xAC\x87"
-                    else
-                        button.text = string.upper(filetype) .. "\xE2\xAC\x87"
-                    end
-                    button.callback = function()
-                        self:downloadFile(item, filetype, acquisition.href)
-                        UIManager:close(self.download_dialog)
-                    end
-                    table.insert(line, button)
-                end
-            elseif #acquisitions > downloadsperline then
-                table.insert(line, {text=""})
-            end
-        end
-        table.insert(buttons, line)
+    local filename = item.title
+    if item.author then
+        filename = item.author .. " - " .. filename
     end
-    table.insert(buttons, {})
-    -- Set download folder and book info buttons.
-    table.insert(buttons, {
+
+    local buttons = {} -- buttons for ButtonDialogTitle
+
+    local type_buttons = {} -- file type download buttons
+    for i = 1, #acquisitions do -- filter out unsupported file types
+        local acquisition = acquisitions[i]
+        local filetype = util.getFileNameSuffix(acquisition.href)
+        logger.dbg("Filetype for download is", filetype)
+        if not DocumentRegistry:hasProvider("dummy." .. filetype) then
+            filetype = nil
+        end
+        if not filetype and DocumentRegistry:hasProvider(nil, acquisition.type) then
+            filetype = DocumentRegistry:mimeToExt(acquisition.type)
+        end
+        if filetype then -- supported file type
+            local text = acquisition.title and acquisition.title or string.upper(filetype)
+            table.insert(type_buttons, {
+                text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
+                callback = function()
+                    self:downloadFile(item, filename .. "." .. string.lower(filetype), acquisition.href)
+                    UIManager:close(self.download_dialog)
+                end,
+            })
+        end
+    end
+    if (#type_buttons % 2 == 1) then -- we need even number of type buttons
+        table.insert(type_buttons, {text = ""})
+    end
+    for i = 2, #type_buttons, 2 do
+        table.insert(buttons, {type_buttons[i - 1], type_buttons[i]}) -- type buttons, two in a row
+    end
+
+    table.insert(buttons, {}) -- separator
+    table.insert(buttons, { -- action buttons
         {
             text = _("Choose folder"),
             callback = function()
@@ -732,11 +723,52 @@ function OPDSBrowser:showDownloads(item)
                         G_reader_settings:saveSetting("download_dir", path)
                         UIManager:nextTick(function()
                             UIManager:close(self.download_dialog)
-                            self:createNewDownloadDialog(path, buttons)
+                            self:createNewDownloadDialog(path, filename, buttons)
                             UIManager:show(self.download_dialog)
                         end)
                     end,
                 }:chooseDir()
+            end,
+        },
+        {
+            text = _("Change filename"),
+            callback = function()
+                local input_dialog
+                input_dialog = InputDialog:new{
+                    title = _("Enter filename"),
+                    input = filename,
+                    buttons = {
+                        {
+                            {
+                                text = _("Cancel"),
+                                callback = function()
+                                    UIManager:close(input_dialog)
+                                end,
+                            },
+                            {
+                                text = _("Set filename"),
+                                is_enter_default = true,
+                                callback = function()
+                                    filename = input_dialog:getInputValue()
+                                    UIManager:close(input_dialog)
+                                    UIManager:close(self.download_dialog)
+                                    self:createNewDownloadDialog(self.getCurrentDownloadDir(), filename, buttons)
+                                    UIManager:show(self.download_dialog)
+                                end,
+                            },
+                        }
+                    },
+                }
+                UIManager:show(input_dialog)
+                input_dialog:onShowKeyboard()
+            end,
+        },
+    })
+    table.insert(buttons, {
+        {
+            text = _("Cancel"),
+            callback = function()
+                UIManager:close(self.download_dialog)
             end,
         },
         {
@@ -753,7 +785,7 @@ function OPDSBrowser:showDownloads(item)
         },
     })
 
-    self:createNewDownloadDialog(self.getCurrentDownloadDir(), buttons)
+    self:createNewDownloadDialog(self.getCurrentDownloadDir(), filename, buttons)
     UIManager:show(self.download_dialog)
 end
 

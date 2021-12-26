@@ -201,6 +201,7 @@ function Button:setText(text, width)
         else
             self.text = text
             self.width = width
+            self.label_widget:free()
             self:init()
         end
     end
@@ -210,6 +211,7 @@ function Button:setIcon(icon, width)
     if icon ~= self.icon then
         self.icon = icon
         self.width = width
+        self.label_widget:free()
         self:init()
     end
 end

@@ -118,30 +118,18 @@ local sub_item_table = {
                 text = _("in bold"),
                 checked = G_reader_settings:isTrue("keyboard_key_bold"),
                 parent = input_dialog,
-                max_width = input_dialog._input_widget.width,
-                callback = function()
-                    check_button_bold:toggleCheck()
-                end,
             }
             input_dialog:addWidget(check_button_bold)
             check_button_border = CheckButton:new{
                 text = _("with border"),
                 checked = G_reader_settings:nilOrTrue("keyboard_key_border"),
                 parent = input_dialog,
-                max_width = input_dialog._input_widget.width,
-                callback = function()
-                    check_button_border:toggleCheck()
-                end,
             }
             input_dialog:addWidget(check_button_border)
             check_button_compact = CheckButton:new{
                 text = _("compact"),
                 checked = G_reader_settings:isTrue("keyboard_key_compact"),
                 parent = input_dialog,
-                max_width = input_dialog._input_widget.width,
-                callback = function()
-                    check_button_compact:toggleCheck()
-                end,
             }
             input_dialog:addWidget(check_button_compact)
 
