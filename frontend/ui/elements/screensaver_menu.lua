@@ -156,19 +156,19 @@ return {
                     {
                         text_func = function()
                             if G_reader_settings:nilOrFalse("screensaver_stretch_images") then
-                                return _("Stretch to fit screen")
+                                return _("Stretch to fit screen: off")
                             elseif G_reader_settings:readSetting("screensaver_stretch_limit_percentage") then
                                 return T(_("Stretch to fit screen: limit to %1%"),
                                     G_reader_settings:readSetting("screensaver_stretch_limit_percentage"))
                             else
-                                return _("Stretch to fit screen: unlimited")
+                                return _("Stretch to fit screen: full")
                             end
                         end,
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_stretch_images")
                         end,
                         help_text_func = function()
-                            return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), G_reader_settings:readSetting("screensaver_stretch_limit_percentage"))
+                            return _("If the image and the screen have similar aspect ratios, stretch the image instead of keeping its aspect ratio.")
                         end,
                         callback = function(touchmenu_instance)
                             Screensaver:setStretchLimit(touchmenu_instance)

@@ -318,7 +318,7 @@ function Device:setDateTime(year, month, day, hour, min, sec)
     end
 end
 
-function Device:supportsScreensaver() return true end
+function Emulator:supportsScreensaver() return true end
 
 function Emulator:simulateSuspend()
     local Screensaver = require("ui/screensaver")
