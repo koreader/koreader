@@ -12,7 +12,6 @@ local lfs = require("libs/libkoreader-lfs")
 local ffiUtil = require("ffi/util")
 local T = ffiUtil.template
 local _ = require("gettext")
-local N_ = _.ngettext
 local Screen = Device.screen
 local util = require("util")
 local getFileNameSuffix = util.getFileNameSuffix
@@ -24,7 +23,9 @@ local FileChooser = Menu:extend{
     path = lfs.currentdir(),
     show_path = true,
     parent = nil,
-    show_hidden = nil,
+    show_hidden = false, -- set to true to show folders/files starting with "."
+    file_filter = nil, -- function defined in the caller, returns true for files to be shown
+    show_unsupported = false, -- set to true to ignore file_filter
     -- NOTE: Input is *always* a relative entry name
     exclude_dirs = {
         -- KOReader / Kindle
@@ -95,7 +96,7 @@ function FileChooser:show_file(filename)
     for _, pattern in ipairs(self.exclude_files) do
         if filename:match(pattern) then return false end
     end
-    return true
+    return self.show_unsupported or self.file_filter == nil or self.file_filter(filename)
 end
 
 function FileChooser:init()
@@ -106,45 +107,39 @@ function FileChooser:init()
         if ok then
             unreadable_dir_content[path] = nil
             for f in iter, dir_obj do
-                if count_only then
-                    if ((not self.show_hidden and not util.stringStartsWith(f, "."))
-                         or (self.show_hidden and f ~= "." and f ~= ".." and not util.stringStartsWith(f, "._")))
-                         and self:show_dir(f)
-                         and self:show_file(f)
-                    then
-                        table.insert(dirs, true)
-                    end
-                elseif self.show_hidden or not util.stringStartsWith(f, ".") then
+                if self.show_hidden or not util.stringStartsWith(f, ".") then
                     local filename = path.."/"..f
                     local attributes = lfs.attributes(filename)
                     if attributes ~= nil then
+                        local item = true
                         if attributes.mode == "directory" and f ~= "." and f ~= ".." then
                             if self:show_dir(f) then
-                                table.insert(dirs, {name = f,
-                                                    suffix = getFileNameSuffix(f),
-                                                    fullpath = filename,
-                                                    attr = attributes})
+                                if not count_only then
+                                    item = {name = f,
+                                            suffix = getFileNameSuffix(f),
+                                            fullpath = filename,
+                                            attr = attributes,}
+                                end
+                                table.insert(dirs, item)
                             end
                         -- Always ignore macOS resource forks.
                         elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
                             if self:show_file(f) then
-                                if self.file_filter == nil or self.file_filter(filename) or self.show_unsupported then
+                                if not count_only then
                                     local percent_finished = 0
                                     if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
                                         if DocSettings:hasSidecarFile(filename) then
                                             local docinfo = DocSettings:open(filename)
-                                            percent_finished = docinfo.data.percent_finished
-                                            if percent_finished == nil then
-                                                percent_finished = 0
-                                            end
+                                            percent_finished = docinfo.data.percent_finished or 0
                                         end
                                     end
-                                    table.insert(files, {name = f,
-                                                        suffix = getFileNameSuffix(f),
-                                                        fullpath = filename,
-                                                        attr = attributes,
-                                                        percent_finished = percent_finished })
+                                    item = {name = f,
+                                            suffix = getFileNameSuffix(f),
+                                            fullpath = filename,
+                                            attr = attributes,
+                                            percent_finished = percent_finished,}
                                 end
+                                table.insert(files, item)
                             end
                         end
                     end
@@ -282,13 +277,12 @@ function FileChooser:genItemTableFromPath(path)
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
-        -- count sume of directories and files inside dir
+        -- count number of folders and files inside dir
         local sub_dirs = {}
         local dir_files = {}
         local subdir_path = self.path.."/"..dir.name
         self.list(subdir_path, sub_dirs, dir_files, true)
-        local num_items = #sub_dirs + #dir_files
-        local istr = ffiUtil.template(N_("1 item", "%1 items", num_items), num_items)
+        local istr = T("%1 • %2", #sub_dirs, #dir_files)
         local text
         local bidi_wrap_func
         if dir.name == ".." then
