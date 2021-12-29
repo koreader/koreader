@@ -723,7 +723,7 @@ function FileManager:tapPlus()
                     text = _("New folder"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self:createFolderDialog()
+                        self:createFolder()
                     end,
                 },
                 {
@@ -752,7 +752,7 @@ function FileManager:tapPlus()
                     text = _("New folder"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self:createFolderDialog()
+                        self:createFolder()
                     end,
                 },
             },
@@ -1079,20 +1079,7 @@ function FileManager:pasteHere(file)
     end
 end
 
-function FileManager:createFolder(folder)
-    local code = BaseUtil.execute(self.mkdir_bin, folder)
-    if code == 0 then
-        self:onRefresh()
-        return true
-    else
-        UIManager:show(InfoMessage:new{
-            text = T(_("Failed to create folder:\n%1"), BD.directory(BaseUtil.basename(folder))),
-            icon = "notice-warning",
-        })
-    end
-end
-
-function FileManager:createFolderDialog()
+function FileManager:createFolder()
     local input_dialog, check_button_enter_folder
     input_dialog = InputDialog:new{
         title = _("New folder"),
@@ -1108,12 +1095,21 @@ function FileManager:createFolderDialog()
                     text = _("Create"),
                     is_enter_default = true,
                     callback = function()
-                        local new_folder = input_dialog:getInputText()
-                        if new_folder == "" then return end
+                        local new_folder_name = input_dialog:getInputText()
+                        if new_folder_name == "" then return end
                         UIManager:close(input_dialog)
-                        new_folder = string.format("%s/%s", self.file_chooser.path, new_folder)
-                        if self:createFolder(new_folder) and check_button_enter_folder.checked then
-                            self.file_chooser:changeToPath(new_folder)
+                        local new_folder = string.format("%s/%s", self.file_chooser.path, new_folder_name)
+                        if BaseUtil.execute(self.mkdir_bin, new_folder) == 0 then
+                            if check_button_enter_folder.checked then
+                                self.file_chooser:changeToPath(new_folder)
+                            else
+                                self.file_chooser:refreshPath()
+                            end
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Failed to create folder:\n%1"), BD.directory(new_folder_name)),
+                                icon = "notice-warning",
+                            })
                         end
                     end,
                 },
