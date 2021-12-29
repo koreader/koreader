@@ -156,12 +156,11 @@ return {
                     {
                         text_func = function()
                             if G_reader_settings:nilOrFalse("screensaver_stretch_images") then
-                                return _("Stretch to fit screen: off")
+                                return _("Stretch to fit screen")
                             elseif G_reader_settings:readSetting("screensaver_stretch_limit_percentage") then
-                                return T(_("Stretch to fit screen: limit to %1%"),
-                                    G_reader_settings:readSetting("screensaver_stretch_limit_percentage"))
+                                return _("Stretch to fit screen (with limit)")
                             else
-                                return _("Stretch to fit screen: full")
+                                return _("Stretch to fit screen")
                             end
                         end,
                         checked_func = function()
