@@ -299,14 +299,21 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
                     return not self:isDocless() and self:readyToExport() and not self.txt_export
                 end,
                 callback = function()
-                    UIManager:scheduleIn(0.5, function()
-                        self:exportCurrentNotes(self.view)
-                    end)
+                    local export_callback = function()
+                        UIManager:scheduleIn(0.5, function()
+                            self:exportCurrentNotes(self.view)
+                        end)
 
-                    UIManager:show(InfoMessage:new{
-                        text = _("Exporting may take several seconds…"),
-                        timeout = 1,
-                    })
+                        UIManager:show(InfoMessage:new{
+                            text = _("Exporting may take several seconds…"),
+                            timeout = 1,
+                        })
+                    end
+                    if self.joplin_export or self.readwise_export then
+                        NetworkMgr:runWhenOnline(export_callback)
+                    else
+                        export_callback()
+                    end
                 end
             },
             {
@@ -315,14 +322,22 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
                     return self:readyToExport()
                 end,
                 callback = function()
-                    UIManager:scheduleIn(0.5, function()
-                        self:exportAllNotes()
-                    end)
+                    local export_callback = function()
+                        UIManager:scheduleIn(0.5, function()
+                            self:exportAllNotes()
+                        end)
 
-                    UIManager:show(InfoMessage:new{
-                        text = _("Exporting may take several minutes…"),
-                        timeout = 1,
-                    })
+                        UIManager:show(InfoMessage:new{
+                            text = _("Exporting may take several minutes…"),
+                            timeout = 1,
+                        })
+                    end
+                    if self.joplin_export or self.readwise_export then
+                        NetworkMgr:runWhenOnline(export_callback)
+                    else
+                        export_callback()
+                    end
+
                 end,
                 separator = true,
             },
