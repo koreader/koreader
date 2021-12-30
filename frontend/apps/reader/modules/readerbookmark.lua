@@ -164,7 +164,6 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 callback = function()
                     G_reader_settings:flipNilOrTrue("bookmarks_items_reverse_sorting")
                 end,
-                separator = true,
             },
             {
                 text = _("Add page number / timestamp to bookmark"),
@@ -173,15 +172,6 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrTrue("bookmarks_items_auto_text")
-                end,
-            },
-            {
-                text = _("Show bookmark note on tap on highlighted text"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("bookmarks_show_note_on_tap")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("bookmarks_show_note_on_tap")
                 end,
             },
         },
