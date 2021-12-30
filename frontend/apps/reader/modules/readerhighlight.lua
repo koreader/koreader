@@ -652,7 +652,7 @@ function ReaderHighlight:onShowHighlightNoteOrDialog(page, index)
         page = self.ui.document.info.has_pages and item.pos0.page or item.pos0,
         datetime = item.datetime,
     })
-    if bookmark_note and G_reader_settings:isTrue("bookmarks_show_note_on_tap") then
+    if bookmark_note then
         local textviewer
         textviewer = TextViewer:new{
             title = _("Note"),
@@ -680,7 +680,7 @@ function ReaderHighlight:onShowHighlightNoteOrDialog(page, index)
         }
         UIManager:show(textviewer)
     else
-        self:onShowHighlightDialog(page, index, not bookmark_note)
+        self:onShowHighlightDialog(page, index, true)
     end
     return true
 end
