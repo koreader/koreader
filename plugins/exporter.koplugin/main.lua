@@ -300,7 +300,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
                 end,
                 callback = function()
                     local export_callback = function()
-                        UIManager:scheduleIn(0.5, function()
+                        UIManager:nextTick(function()
                             self:exportCurrentNotes(self.view)
                         end)
 
@@ -323,7 +323,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
                 end,
                 callback = function()
                     local export_callback = function()
-                        UIManager:scheduleIn(0.5, function()
+                        UIManager:nextTick(function()
                             self:exportAllNotes()
                         end)
 
