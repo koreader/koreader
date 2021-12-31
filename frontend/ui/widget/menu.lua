@@ -666,7 +666,7 @@ function Menu:init()
     -----------------------------------
     -- start to set up widget layout --
     -----------------------------------
-    local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8) -- left and right title buttons
+    local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.6) -- left and right title buttons
     local title_text_width = self.inner_dimen.w - 2 * Size.padding.large
     self.menu_title = TextWidget:new{
         face = Font:getFace("tfont"),
@@ -701,7 +701,6 @@ function Menu:init()
     end
     self.menu_title_group = VerticalGroup:new{
         align = "center",
-        VerticalSpan:new{width = self.header_padding},
         menu_title_container,
         path_text_container,
     }
@@ -927,14 +926,15 @@ function Menu:init()
     ------------------------------------------
     if Device:isTouchDevice() then
         local button_padding = Screen:scaleBySize(8)
+        local tap_zone_padding = 2 * icon_size
         if self.has_extra_button then
             self.extra_button = IconButton:new{
                 icon = self.extra_button_icon or "appbar.menu",
                 width = icon_size,
                 height = icon_size,
                 padding = button_padding,
-                padding_right = icon_size, -- extend button tap zone
-                padding_bottom = 0,
+                padding_right = tap_zone_padding, -- extend button tap zone
+                padding_bottom = tap_zone_padding,
                 overlap_align = "left",
                 callback = function() self:onExtraButtonTap() end,
                 hold_callback = function() self:onExtraButtonHold() end,
@@ -947,8 +947,8 @@ function Menu:init()
                 width = icon_size,
                 height = icon_size,
                 padding = button_padding,
-                padding_left = icon_size, -- extend button tap zone
-                padding_bottom = 0,
+                padding_left = tap_zone_padding, -- extend button tap zone
+                padding_bottom = tap_zone_padding,
                 overlap_align = "right",
                 callback = function() self:onClose() end,
             }
