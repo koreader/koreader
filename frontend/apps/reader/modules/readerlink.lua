@@ -151,6 +151,25 @@ end
 
 function ReaderLink:addToMainMenu(menu_items)
     -- insert table to main reader menu
+    menu_items.go_to_previous_location = {
+        text = _("Go back to previous location"),
+        enabled_func = function() return #self.location_stack > 0 end,
+        callback = function() self:onGoBackLink() end,
+        hold_callback = function(touchmenu_instance)
+            UIManager:show(ConfirmBox:new{
+                text = _("Clear location history?"),
+                ok_text = _("Clear"),
+                ok_callback = function()
+                    self:onClearLocationStack()
+                    touchmenu_instance:closeMenu()
+                end,
+            })
+        end,
+    }
+    if not Device:isTouchDevice() then
+        -- Menu items below aren't needed.
+        return
+    end
     menu_items.follow_links = {
         text = _("Links"),
         sub_item_table = {
@@ -342,21 +361,6 @@ This allows you to specify how much smaller or larger it should be relative to t
             separator = true,
         })
     end
-    menu_items.go_to_previous_location = {
-        text = _("Go back to previous location"),
-        enabled_func = function() return #self.location_stack > 0 end,
-        callback = function() self:onGoBackLink() end,
-        hold_callback = function(touchmenu_instance)
-            UIManager:show(ConfirmBox:new{
-                text = _("Clear location history?"),
-                ok_text = _("Clear"),
-                ok_callback = function()
-                    self:onClearLocationStack()
-                    touchmenu_instance:closeMenu()
-                end,
-            })
-        end,
-    }
 end
 
 --- Check if a xpointer to <a> node really points to itself

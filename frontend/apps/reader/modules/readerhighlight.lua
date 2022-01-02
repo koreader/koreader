@@ -357,6 +357,12 @@ function ReaderHighlight:addToMainMenu(menu_items)
         }
     end
     menu_items.translation_settings = Translator:genSettingsMenu()
+
+    if not Device:isTouchDevice() then
+        -- Menu items below aren't needed.
+        return
+    end
+
     menu_items.long_press = {
         text = _("Long-press on text"),
         sub_item_table = {

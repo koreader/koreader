@@ -200,7 +200,13 @@ function ReaderMenu:setUpdateItemTable()
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_settings_menu_table.lua")) do
         self.menu_items[id] = common_setting
     end
-    self.menu_items.page_turns = require("ui/elements/page_turns")
+
+    if Device:isTouchDevice() then
+        self.menu_items.page_turns = require("ui/elements/page_turns")
+    else
+        -- Placed elsewhere than in Taps and gestures, with only a subset of menu items.
+        self.menu_items.page_turns_non_touch = require("ui/elements/page_turns")
+    end
     -- insert DjVu render mode submenu just before the last entry (show advanced)
     -- this is a bit of a hack
     if self.ui.document.is_djvu then
