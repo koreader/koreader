@@ -8,7 +8,7 @@ KOREADER_DIR="${0%/*}"
 cd "${KOREADER_DIR}" || exit
 
 # export load library path for some old firmware
-export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH="${KOREADER_DIR}/libs":"${LD_LIBRARY_PATH}"
 
 # export trained OCR data directory
 export TESSDATA_PREFIX="data"
