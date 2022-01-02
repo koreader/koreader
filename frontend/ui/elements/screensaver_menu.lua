@@ -1,6 +1,5 @@
 local Screensaver = require("ui/screensaver")
 local _ = require("gettext")
-local T = require("ffi/util").template
 
 local function hasLastFile()
     if G_reader_settings:hasNot("lastfile") then
@@ -165,9 +164,6 @@ return {
                         end,
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_stretch_images")
-                        end,
-                        help_text_func = function()
-                            return _("If the image and the screen have similar aspect ratios, stretch the image instead of keeping its aspect ratio.")
                         end,
                         callback = function(touchmenu_instance)
                             Screensaver:setStretchLimit(touchmenu_instance)
