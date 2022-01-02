@@ -1200,7 +1200,6 @@ function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
                     return pre .. "\n" .. util.prettifyCSS(css_text) .. post
                 end)
             end
-            local TextViewer = require("ui/widget/textviewer")
             local Font = require("ui/font")
             local textviewer
             local buttons_hold_callback = function()
