@@ -1,4 +1,4 @@
-name: build
+name: macos
 
 on: [push, pull_request]
 
