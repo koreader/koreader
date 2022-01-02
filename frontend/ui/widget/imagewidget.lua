@@ -81,12 +81,18 @@ local ImageWidget = Widget:new{
     -- If scale_for_dpi is true image will be rescaled according to screen dpi
     scale_for_dpi = false,
 
-    -- When scale_factor is not nil, native image is scaled by this factor
-    -- (if scale_factor == 1, native image size is kept)
-    -- Special case : scale_factor == 0 : image will be scaled to best fit provided
-    -- width and height, keeping aspect ratio (scale_factor will be updated
-    -- from 0 to the factor used at _render() time)
+    -- When scale_factor is not nil, native image is scaled by this factor,
+    --   (if scale_factor == 1, native image size is kept)
+    --   Special case: scale_factor == 0 : image will be scaled to best fit provided
+    --   width and height, keeping aspect ratio (scale_factor will be updated
+    --   from 0 to the factor used at _render() time)
+    -- If scale_factor is nil and stretch_limit_percantage is provided:
+    --   If the aspect ratios of the image and the width/height provided don't differ by more than
+    --   stretch_limit_percentage, then stretch the image (as scale_factor=nil);
+    --   otherwise, scale to best fit (as scale_factor=0)
+    -- In all other cases the image will be stretched to best fit the container.
     scale_factor = nil,
+    stretch_limit_percentage = nil,
 
     -- Whether to use former blitbuffer:scale() (default to using MuPDF)
     use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling"),
@@ -281,8 +287,18 @@ function ImageWidget:_render()
         self.scale_factor = self.scale_factor * DPI_SCALE
     end
 
-    -- scale to best fit container : compute scale_factor for that
+    if self.stretch_limit_percentage and not self.scale_factor then
+        -- stretch or scale to fit container, depending on self.stretch_limit_percentage
+        local screen_ratio = self.width / self.height
+        local image_ratio = bb_w / bb_h
+        local ratio_divergence_percent = math.abs(100 - image_ratio / screen_ratio * 100)
+        if ratio_divergence_percent > self.stretch_limit_percentage then
+            self.scale_factor = 0
+        end
+    end
+
     if self.scale_factor == 0 then
+        -- scale to best fit container: compute scale_factor for that
         if self.width and self.height then
             self.scale_factor = math.min(self.width / bb_w, self.height / bb_h)
             logger.dbg("ImageWidget: scale to fit, setting scale_factor to", self.scale_factor)

@@ -47,9 +47,12 @@ local SpinWidget = InputContainer:new{
     -- Set this to add upper default button that restores number to its default value
     default_value = nil,
     default_text = nil,
-    -- Optional extra button above ok/cancel buttons row
+    -- Optional extra button
     extra_text = nil,
     extra_callback = nil,
+    -- Optional extra button above ok/cancel buttons row
+    option_text = nil,
+    option_callback = nil,
 }
 
 function SpinWidget:init()
@@ -138,21 +141,37 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
             },
         })
     end
-    if self.extra_text then
-        table.insert(buttons, {
-            {
-                text = self.extra_text,
-                callback = function()
-                    if self.extra_callback then
-                        self.value, self.value_index = value_widget:getValue()
-                        self.extra_callback(self)
-                    end
-                    if not self.keep_shown_on_apply then -- assume extra wants it same as ok
-                        self:onClose()
-                    end
-                end,
-            },
-        })
+
+    local extra_button = {
+        text = self.extra_text,
+        callback = function()
+            if self.extra_callback then
+                self.value, self.value_index = value_widget:getValue()
+                self.extra_callback(self)
+            end
+            if not self.keep_shown_on_apply then -- assume extra wants it same as ok
+                self:onClose()
+            end
+        end,
+    }
+    local option_button = {
+        text = self.option_text,
+        callback = function()
+            if self.option_callback then
+                self.value, self.value_index = value_widget:getValue()
+                self.option_callback(self)
+            end
+            if not self.keep_shown_on_apply then -- assume option wants it same as ok
+                self:onClose()
+            end
+        end,
+    }
+    if self.extra_text and not self.option_text then
+        table.insert(buttons, {extra_button})
+    elseif self.option_text and not self.extra_text then
+        table.insert(buttons, {option_button})
+    elseif self.extra_text and self.option_text then
+        table.insert(buttons, {extra_button, option_button})
     end
     table.insert(buttons, {
         {
