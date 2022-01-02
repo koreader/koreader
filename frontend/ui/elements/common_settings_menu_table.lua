@@ -238,17 +238,20 @@ common_settings.screen_rotation = require("ui/elements/screen_rotation_menu_tabl
 common_settings.screen_dpi = require("ui/elements/screen_dpi_menu_table")
 common_settings.screen_eink_opt = require("ui/elements/screen_eink_opt_menu_table")
 common_settings.screen_notification = require("ui/elements/screen_notification_menu_table")
-common_settings.menu_activate = require("ui/elements/menu_activate")
-common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
-common_settings.ignore_hold_corners = {
-    text = _("Ignore long-press on corners"),
-    checked_func = function()
-        return G_reader_settings:isTrue("ignore_hold_corners")
-    end,
-    callback = function()
-        UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
-    end,
-}
+
+if Device:isTouchDevice() then
+    common_settings.menu_activate = require("ui/elements/menu_activate")
+    common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
+    common_settings.ignore_hold_corners = {
+        text = _("Ignore long-press on corners"),
+        checked_func = function()
+            return G_reader_settings:isTrue("ignore_hold_corners")
+        end,
+        callback = function()
+            UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
+        end,
+    }
+end
 
 -- NOTE: Allow disabling color if it's mistakenly enabled on a Grayscale screen (after a settings import?)
 if Screen:isColorEnabled() or Screen:isColorScreen() then

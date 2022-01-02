@@ -98,6 +98,8 @@ local order = {
         "back_to_exit",
         "back_in_filemanager",
         "back_in_reader",
+        "----------------------------",
+        "page_turns_non_touch",
         "android_volume_keys",
         "android_camera_key",
         "android_haptic_feedback",
