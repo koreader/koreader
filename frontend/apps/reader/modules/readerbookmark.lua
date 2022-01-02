@@ -618,7 +618,8 @@ function ReaderBookmark:onShowBookmark(match_table)
                 },
                 {
                     text = _("Reset"),
-                    enabled = actions_enabled and not bookmark.ui.highlight.select_mode,
+                    enabled = G_reader_settings:isFalse("bookmarks_items_auto_text")
+                        and actions_enabled and not bookmark.ui.highlight.select_mode,
                     callback = function()
                         UIManager:show(ConfirmBox:new{
                             text = _("Reset page number / timestamp?"),
@@ -627,7 +628,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                                 UIManager:close(bm_dialog)
                                 for _, v in ipairs(item_table) do
                                     if v.dim then
-                                        bookmark:removeBookmark(v, true)
+                                        bookmark:removeBookmark(v, true) -- reset_auto_text_only=true
                                     end
                                 end
                                 bm_menu:onClose()
