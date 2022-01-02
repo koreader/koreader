@@ -141,7 +141,7 @@ end
 
 if not Device:isTouchDevice() then
     if Device:hasKeys() then
-        -- We just need the last item added above
+        -- We just need the last item added above.
         PageTurns = PageTurns.sub_item_table[#PageTurns.sub_item_table]
     else
         PageTurns = {} -- no menu item

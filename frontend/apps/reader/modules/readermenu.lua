@@ -204,7 +204,7 @@ function ReaderMenu:setUpdateItemTable()
     if Device:isTouchDevice() then
         self.menu_items.page_turns = require("ui/elements/page_turns")
     else
-        -- Placed elsewhere than in Taps and gestures, with only a subset of menu items
+        -- Placed elsewhere than in Taps and gestures, with only a subset of menu items.
         self.menu_items.page_turns_non_touch = require("ui/elements/page_turns")
     end
     -- insert DjVu render mode submenu just before the last entry (show advanced)

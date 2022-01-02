@@ -358,7 +358,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
     menu_items.translation_settings = Translator:genSettingsMenu()
 
     if not Device:isTouchDevice() then
-        -- Menu items below aren't needed
+        -- Menu items below aren't needed.
         return
     end
 

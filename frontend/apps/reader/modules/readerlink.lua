@@ -167,7 +167,7 @@ function ReaderLink:addToMainMenu(menu_items)
         end,
     }
     if not Device:isTouchDevice() then
-        -- Menu items below aren't needed
+        -- Menu items below aren't needed.
         return
     end
     menu_items.follow_links = {
