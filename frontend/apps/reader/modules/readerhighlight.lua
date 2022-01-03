@@ -1710,8 +1710,13 @@ function ReaderHighlight:editHighlightStyle(page, i)
         default_provider = self.view.highlight.saved_drawer or
             G_reader_settings:readSetting("highlight_drawing_style", "lighten"),
         callback = function(radio)
-            self.view.highlight.saved[page][i].drawer = radio.provider
+            item.drawer = radio.provider
             UIManager:setDirty(self.dialog, "ui")
+            self.ui:handleEvent(Event:new("BookmarkUpdated",
+                    self.ui.bookmark:getBookmarkForHighlight({
+                        page = self.ui.paging and item.pos0.page or item.pos0,
+                        datetime = item.datetime,
+                    })))
         end,
     })
 end

@@ -13,12 +13,15 @@ local order = {
     navi = {
         "table_of_contents",
         "bookmarks",
-        "toggle_bookmark",
+        "toggle_bookmark", -- if not Device:isTouchDevice()
         "bookmark_browsing_mode",
         "navi_settings",
         "----------------------------",
         "page_map",
         "hide_nonlinear_flows",
+        "----------------------------",
+        "book_map", -- if Device:isTouchDevice()
+        "page_browser", -- if Device:isTouchDevice()
         "----------------------------",
         "go_to",
         "skim_to",
@@ -64,7 +67,7 @@ local order = {
         "network",
         "screen",
         "----------------------------",
-        "taps_and_gestures",
+        "taps_and_gestures", -- if Device:isTouchDevice()
         "navigation",
         "document",
         "----------------------------",
