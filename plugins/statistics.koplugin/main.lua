@@ -234,6 +234,10 @@ function ReaderStatistics:initData()
     end
 end
 
+function ReaderStatistics:isEnabled()
+    return self.settings.is_enabled
+end
+
 -- Reset the (volatile) stats on page count changes (e.g., after a font size update)
 function ReaderStatistics:onUpdateToc()
     local new_pagecount = self.view.document:getPageCount()
@@ -2452,6 +2456,43 @@ end
 
 function ReaderStatistics:onShowCalendarView()
      UIManager:show(self:getCalendarView())
+end
+
+function ReaderStatistics:getCurrentBookReadPages()
+    if self:isDocless() or not self.settings.is_enabled then return end
+    self:insertDB(self.id_curr_book)
+    local sql_stmt = [[
+        SELECT
+          page,
+          min(sum(duration), ?) AS durations,
+          strftime("%s", "now") - max(start_time) AS delay
+        FROM page_stat
+        WHERE id_book = ?
+        GROUP BY page
+        ORDER BY page;
+    ]]
+    local conn = SQ3.open(db_location)
+    local stmt = conn:prepare(sql_stmt)
+    local res, nb = stmt:reset():bind(self.settings.max_sec, self.id_curr_book):resultset("i")
+    stmt:close()
+    conn:close()
+    local read_pages = {}
+    local max_duration = 0
+    for i=1, nb do
+        local page, duration, delay = res[1][i], res[2][i], res[3][i]
+        page = tonumber(page)
+        duration = tonumber(duration)
+        delay = tonumber(delay)
+        read_pages[page] = {duration, delay}
+        if duration > max_duration then
+            max_duration = duration
+        end
+    end
+    for page, info in pairs(read_pages) do
+        -- Make the value a duration ratio (vs capped or max duration)
+        read_pages[page][1] = info[1] / max_duration
+    end
+    return read_pages
 end
 
 return ReaderStatistics

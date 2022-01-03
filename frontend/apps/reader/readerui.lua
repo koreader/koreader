@@ -46,6 +46,7 @@ local ReaderRolling = require("apps/reader/modules/readerrolling")
 local ReaderSearch = require("apps/reader/modules/readersearch")
 local ReaderStatus = require("apps/reader/modules/readerstatus")
 local ReaderStyleTweak = require("apps/reader/modules/readerstyletweak")
+local ReaderThumbnail = require("apps/reader/modules/readerthumbnail")
 local ReaderToc = require("apps/reader/modules/readertoc")
 local ReaderTypeset = require("apps/reader/modules/readertypeset")
 local ReaderTypography = require("apps/reader/modules/readertypography")
@@ -374,6 +375,11 @@ function ReaderUI:init()
         ui = self,
         document = self.document,
         view = self.view,
+    })
+    -- thumbnails service (book map, page browser)
+    self:registerModule("thumbnail", ReaderThumbnail:new{
+        ui = self,
+        document = self.document,
     })
     -- file searcher
     self:registerModule("filesearcher", FileManagerFileSearcher:new{
