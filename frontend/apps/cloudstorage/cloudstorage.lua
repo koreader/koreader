@@ -582,7 +582,7 @@ function CloudStorage:showPlusMenu(url)
             },
             {
                 {
-                    text = _("Create folder"),
+                    text = _("New folder"),
                     callback = function()
                         UIManager:close(button_dialog)
                         self:createFolder(url)
@@ -592,7 +592,7 @@ function CloudStorage:showPlusMenu(url)
             {},
             {
                 {
-                    text = _("Return to Cloud storage list"),
+                    text = _("Return to cloud storage list"),
                     callback = function()
                         UIManager:close(button_dialog)
                         self:init()
@@ -615,7 +615,7 @@ function CloudStorage:uploadFile(url)
             if self.last_path == "" then self.last_path = "/" end
             if lfs.attributes(file_path, "size") > 157286400 then
                 UIManager:show(InfoMessage:new{
-                    text = _("File size must be less than 150 MB"),
+                    text = _("File size must be less than 150 MB."),
                 })
             else
                 local callback_close = function()
