@@ -22,19 +22,16 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v2
 
-      - name: Lint
-        run: .ci/check.sh
-
       - name: Check
         run: ./kodev check
 
   test:
-    runs-on: ubuntu-latest
-
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
     env:
         EMULATE_READER: 1
-        # pretend to be cirleci so the scripts dont have to change
-        CIRCLE_WORKING_DIRECTORY: ${{ github.workspace }}
         GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
 
     steps:
@@ -62,7 +59,7 @@ jobs:
             path: |
                 ~/.ccache
                 base
-            key: build-${{ hashFiles('git-rev-base') }}
+            key: ${{ matrix.os }}-build-${{ hashFiles('git-rev-base') }}
 
       - name: Build
         run: ./kodev build
