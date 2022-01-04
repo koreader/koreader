@@ -8,8 +8,6 @@ jobs:
           password: $DOCKER_PASSWORD
         environment:
           EMULATE_READER: 1
-          # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
-          LC_ALL: en_US.UTF8
     parallelism: 2
     steps:
       - checkout
