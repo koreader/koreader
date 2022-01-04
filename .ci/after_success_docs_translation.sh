@@ -6,7 +6,7 @@ source "${CI_DIR}/common.sh"
 
 set +e
 
-if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
+#~ if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     echo -e "\\n${ANSI_GREEN}Updating translation source file."
     make pot
     pushd l10n && {
@@ -44,6 +44,6 @@ if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
 
     echo -e "\\n${ANSI_GREEN}Running make testfront for timings."
     make testfront BUSTED_OVERRIDES="--output=junit -Xoutput junit-test-results.xml"
-else
-    echo -e "\\n${ANSI_GREEN}Not on official master branch. Skipping documentation and translation update."
-fi
+#~ else
+    #~ echo -e "\\n${ANSI_GREEN}Not on official master branch. Skipping documentation and translation update."
+#~ fi
