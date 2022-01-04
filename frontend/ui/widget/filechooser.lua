@@ -282,7 +282,10 @@ function FileChooser:genItemTableFromPath(path)
         local dir_files = {}
         local subdir_path = self.path.."/"..dir.name
         self.list(subdir_path, sub_dirs, dir_files, true)
-        local istr = T("%1 • %2", #sub_dirs, #dir_files)
+        local istr = T("%1 \u{F016}", #dir_files)
+        if #sub_dirs > 0 then
+            istr = T("%1 \u{F114} ", #sub_dirs) .. istr
+        end
         local text
         local bidi_wrap_func
         if dir.name == ".." then
