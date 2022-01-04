@@ -170,6 +170,7 @@ function ReaderToc:validateAndFixToc()
     logger.dbg("validateAndFixToc(): quick scan")
     local has_bogus
     local cur_page = 0
+    local max_depth = 0
     for i = first, last do
         local page = toc[i].page
         if page < cur_page then
@@ -177,15 +178,22 @@ function ReaderToc:validateAndFixToc()
             break
         end
         cur_page = page
+        -- Use this loop to compute max_depth here (if has_bogus,
+        -- we will recompute it in the loop below)
+        if toc[i].depth > max_depth then
+            max_depth = toc[i].depth
+        end
     end
     if not has_bogus then -- no TOC items, or all are valid
         logger.dbg("validateAndFixToc(): TOC is fine")
+        self.toc_depth = max_depth
         return
     end
     logger.dbg("validateAndFixToc(): TOC needs fixing")
 
     -- Bad ordering previously noticed: try to fix the wrong items' page
     -- by setting it to the previous or next good item page.
+    max_depth = 0 -- recompute this
     local nb_bogus = 0
     local nb_fixed_pages = 0
     -- We fix only one bogus item per loop, taking the option that
@@ -198,6 +206,9 @@ function ReaderToc:validateAndFixToc()
     -- (These cases are met in the following code with cur_page=57 and page=6)
     cur_page = 0
     for i = first, last do
+        if toc[i].depth > max_depth then
+            max_depth = toc[i].depth
+        end
         local page = toc[i].fixed_page or toc[i].page
         if page >= cur_page then
             cur_page = page
@@ -265,6 +276,7 @@ function ReaderToc:validateAndFixToc()
         end
     end
     logger.info(string.format("TOC had %d bogus page numbers: fixed %d items to keep them ordered.", nb_bogus, nb_fixed_pages))
+    self.toc_depth = max_depth
 end
 
 function ReaderToc:getTocIndexByPage(pn_or_xp, skip_ignored_ticks)
@@ -635,10 +647,11 @@ function ReaderToc:onShowToc()
     self:fillToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
+        local has_hidden_flows = self.ui.document:hasHiddenFlows()
         for _, v in ipairs(self.toc) do
             v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title, true)
             v.mandatory = v.page
-            if self.ui.document:hasHiddenFlows() then
+            if has_hidden_flows then
                 local flow = self.ui.document:getPageFlow(v.page)
                 if v.orig_page then -- bogus page fixed: show original page number
                     -- This is an ugly piece of code, which can result in an ugly TOC,

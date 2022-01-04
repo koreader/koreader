@@ -840,6 +840,7 @@ function ReaderBookmark:addBookmark(item)
         end
     end
     table.insert(self.bookmarks, _middle + direction, item)
+    self.ui:handleEvent(Event:new("BookmarkAdded", item))
     self.view.footer:onUpdateFooter(self.view.footer_visible)
 end
 
@@ -888,6 +889,7 @@ function ReaderBookmark:removeBookmark(item, reset_auto_text_only)
                     v.text = nil
                 end
             else
+                self.ui:handleEvent(Event:new("BookmarkRemoved", v))
                 table.remove(self.bookmarks, _middle)
                 self.view.footer:onUpdateFooter(self.view.footer_visible)
             end
@@ -911,6 +913,7 @@ function ReaderBookmark:removeBookmark(item, reset_auto_text_only)
                     v.text = nil
                 end
             else
+                self.ui:handleEvent(Event:new("BookmarkRemoved", v))
                 table.remove(self.bookmarks, i)
                 self.view.footer:onUpdateFooter(self.view.footer_visible)
             end
@@ -923,6 +926,7 @@ end
 function ReaderBookmark:updateBookmark(item)
     for i=1, #self.bookmarks do
         if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
+            local bookmark_before = util.tableDeepCopy(self.bookmarks[i])
             local is_auto_text = self:isBookmarkAutoText(self.bookmarks[i])
             self.bookmarks[i].page = item.updated_highlight.pos0
             self.bookmarks[i].pos0 = item.updated_highlight.pos0
@@ -933,6 +937,7 @@ function ReaderBookmark:updateBookmark(item)
             if is_auto_text then
                 self.bookmarks[i].text = self:getBookmarkAutoText(self.bookmarks[i])
             end
+            self.ui:handleEvent(Event:new("BookmarkUpdated", self.bookmarks[i], bookmark_before))
             self:onSaveSettings()
             break
         end
@@ -953,6 +958,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note)
                 bookmark = util.tableDeepCopy(bm)
                 bookmark.text_orig = bm.text or bm.notes
                 bookmark.mandatory = self:getBookmarkPageString(bm.page)
+                self.ui:handleEvent(Event:new("BookmarkEdited", bm))
                 break
             end
         end
@@ -997,6 +1003,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note)
                         for __, bm in ipairs(self.bookmarks) do
                             if bookmark.datetime == bm.datetime and bookmark.page == bm.page then
                                 bm.text = value
+                                self.ui:handleEvent(Event:new("BookmarkEdited", bm))
                                 -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
                                 if bookmark.pboxes then
                                     local setting = G_reader_settings:readSetting("save_document")
@@ -1131,6 +1138,7 @@ end
 function ReaderBookmark:toggleBookmark(pn_or_xp)
     local index = self:getDogearBookmarkIndex(pn_or_xp)
     if index then
+        self.ui:handleEvent(Event:new("BookmarkRemoved", self.bookmarks[index]))
         table.remove(self.bookmarks, index)
     else
         -- build notes from TOC
@@ -1297,6 +1305,26 @@ function ReaderBookmark:getBookmarkPageString(page)
     return tostring(page)
 end
 
+function ReaderBookmark:getBookmarkedPages()
+    local pages = {}
+    for _, bm in ipairs(self.bookmarks) do
+        local page
+        if self.ui.rolling then
+            page = self.ui.document:getPageFromXPointer(bm.page)
+        else
+            page = bm.page
+        end
+        local btype = self:getBookmarkType(bm)
+        if not pages[page] then
+            pages[page] = {}
+        end
+        if not pages[page][btype] then
+            pages[page][btype] = true
+        end
+    end
+    return pages
+end
+
 function ReaderBookmark:getBookmarkAutoText(bookmark, force_auto_text)
     if G_reader_settings:nilOrTrue("bookmarks_items_auto_text") or force_auto_text then
         local page = self:getBookmarkPageString(bookmark.page)
@@ -1309,7 +1337,7 @@ end
 
 --- Check if the 'text' field has not been edited manually
 function ReaderBookmark:isBookmarkAutoText(bookmark)
-    return (bookmark.text == nil) or (bookmark.text == bookmark.notes)
+    return (bookmark.text == nil) or (bookmark.text == "") or (bookmark.text == bookmark.notes)
         or (bookmark.text == self:getBookmarkAutoText(bookmark, true))
 end
 
@@ -1317,6 +1345,14 @@ function ReaderBookmark:getBookmarkNote(item)
     for _, bm in ipairs(self.bookmarks) do
         if item.datetime == bm.datetime and item.page == bm.page then
             return not self:isBookmarkAutoText(bm) and bm.text
+        end
+    end
+end
+
+function ReaderBookmark:getBookmarkForHighlight(item)
+    for i=1, #self.bookmarks do
+        if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
+            return self.bookmarks[i]
         end
     end
 end
