@@ -9,6 +9,10 @@ set +e
 if [ -z "${CIRCLE_PULL_REQUEST}" ] && [ "${CIRCLE_BRANCH}" = 'master' ]; then
     echo "CIRCLE_NODE_INDEX: ${CIRCLE_NODE_INDEX}"
 
+    if [ "${CIRCLE_NODE_INDEX}" = 1 ]; then
+        echo -e "\\n${ANSI_GREEN}Running make testfront for timings."
+        make testfront BUSTED_OVERRIDES="--output=junit -Xoutput junit-test-results.xml"
+    fi
     if [ "${CIRCLE_NODE_INDEX}" = 0 ]; then
         travis_retry make coverage
         pushd koreader-*/koreader && {
