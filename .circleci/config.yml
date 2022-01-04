@@ -7,9 +7,9 @@ workflows:
       - build
       - docs:
           context: koreader-vars
-          #~ filters:
-            #~ branches:
-              #~ only: master
+          filters:
+            branches:
+              only: master
           requires:
             - build
 
