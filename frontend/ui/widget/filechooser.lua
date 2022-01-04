@@ -277,17 +277,8 @@ function FileChooser:genItemTableFromPath(path)
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
-        -- count number of folders and files inside dir
-        local sub_dirs = {}
-        local dir_files = {}
         local subdir_path = self.path.."/"..dir.name
-        self.list(subdir_path, sub_dirs, dir_files, true)
-        local istr = T("%1 \u{F016}", #dir_files)
-        if #sub_dirs > 0 then
-            istr = T("%1 \u{F114} ", #sub_dirs) .. istr
-        end
-        local text
-        local bidi_wrap_func
+        local text, bidi_wrap_func, istr
         if dir.name == ".." then
             text = up_folder_arrow
         elseif dir.name == "." then -- possible with show_current_dir_for_hold
@@ -297,6 +288,14 @@ function FileChooser:genItemTableFromPath(path)
         else
             text = dir.name.."/"
             bidi_wrap_func = BD.directory
+            -- count number of folders and files inside dir
+            local sub_dirs = {}
+            local dir_files = {}
+            self.list(subdir_path, sub_dirs, dir_files, true)
+            istr = T("%1 \u{F016}", #dir_files)
+            if #sub_dirs > 0 then
+                istr = T("%1 \u{F114} ", #sub_dirs) .. istr
+            end
         end
         table.insert(item_table, {
             text = text,
