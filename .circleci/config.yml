@@ -104,30 +104,10 @@ jobs:
       - run: git submodule init base && git submodule update base && pushd base && git submodule init && git submodule update && popd
       # we can't use command output directly for cache check so we write it to git-rev-base
       - run: pushd base && git_rev_base=$(git describe HEAD) && popd && echo $git_rev_base && echo $git_rev_base >git-rev-base
-      - restore_cache:
-          keys:
-            - build-{{ arch }}-{{ checksum "git-rev-base" }}
-      - run: echo 'export PATH=${HOME}/bin:${PATH}' >> $BASH_ENV
-      - run:
-          name: setup
-          command: .ci/before_install.sh
 
-      # installs and caches testing tools
       - run:
-          name: install
-          command: .ci/install.sh
-      - save_cache:
-          key: deps-{{ arch }}-{{ checksum ".ci/install.sh" }}-{{ checksum ".ci/helper_luarocks.sh" }}
-          paths:
-            - "/home/ko/bin"
-            - "/home/ko/.luarocks"
-            # compiled luarocks binaries
-            - "install"
-
-      # installs everything and caches base
-      - run:
-          name: fetch
-          command: .ci/fetch.sh
+          name: init-submodules
+          command: git submodule init && git submodule sync && git submodule update
 
       # docs, coverage, and test timing (can we use two outputs at once?); master branch only
       - run:
