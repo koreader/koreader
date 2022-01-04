@@ -7,9 +7,9 @@ workflows:
       - build
       - docs:
           context: koreader-vars
-          filters:
-            branches:
-              only: master
+          #~ filters:
+            #~ branches:
+              #~ only: master
           requires:
             - build
 
@@ -96,10 +96,6 @@ jobs:
     parallelism: 1
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            # binary dependencies require {{ arch }} because there are different CPUs in use on the servers
-            - deps-{{ arch }}-{{ checksum ".ci/install.sh" }}-{{ checksum ".ci/helper_luarocks.sh" }}
       # need to init some stuff first or git will complain when sticking in base cache
       - run: git submodule init base && git submodule update base && pushd base && git submodule init && git submodule update && popd
       # we can't use command output directly for cache check so we write it to git-rev-base
