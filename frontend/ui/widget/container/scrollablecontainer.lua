@@ -242,6 +242,16 @@ function ScrollableContainer:onCloseWidget()
     end
 end
 
+function ScrollableContainer:reset()
+    if self._bb then
+        self._bb:free()
+        self._bb = nil
+    end
+    self._is_scrollable = nil
+    self._scroll_offset_x = 0
+    self._scroll_offset_y = 0
+end
+
 function ScrollableContainer:paintTo(bb, x, y)
     if self[1] == nil then
         return
@@ -255,6 +265,9 @@ function ScrollableContainer:paintTo(bb, x, y)
 
     if not self._is_scrollable then
         -- nothing to scroll: pass-through
+        if self._mirroredUI then -- behave as LeftContainer
+            x = x + (self.dimen.w - self[1]:getSize().w)
+        end
         self[1]:paintTo(bb, x, y)
         return
     end

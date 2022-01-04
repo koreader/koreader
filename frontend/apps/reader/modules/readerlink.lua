@@ -524,6 +524,21 @@ function ReaderLink:onClearLocationStack(show_notification)
     return true
 end
 
+function ReaderLink:getPreviousLocationPages()
+    local previous_locations = {}
+    if #self.location_stack > 0 then
+        for num, location in ipairs(self.location_stack) do
+            if self.ui.rolling and location.xpointer then
+                previous_locations[self.ui.document:getPageFromXPointer(location.xpointer)] = num
+            end
+            if self.ui.paging and location[1] and location[1].page then
+                previous_locations[location[1].page] = num
+            end
+        end
+    end
+    return previous_locations
+end
+
 --- Goes to link.
 -- (This is called by other modules (highlight, search) to jump to a xpointer,
 -- they should not provide allow_footnote_popup=true)
