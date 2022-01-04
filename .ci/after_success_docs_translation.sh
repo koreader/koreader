@@ -40,6 +40,3 @@ pushd koreader_doc && {
     git push -f --quiet "https://${DOCS_GITHUB_TOKEN}@github.com/koreader/doc.git" gh-pages >/dev/null
     echo -e "\\n${ANSI_GREEN}Documentation update pushed."
 } && popd || exit
-
-echo -e "\\n${ANSI_GREEN}Running make testfront for timings."
-make testfront BUSTED_OVERRIDES="--output=junit -Xoutput junit-test-results.xml"
