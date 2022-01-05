@@ -1212,7 +1212,6 @@ function KoptInterface:getTextFromNativePositions(doc, native_boxes, pos0, pos1)
     return text_boxes
 end
 
-
 --[[--
 Get text boxes from page positions.
 --]]
@@ -1237,6 +1236,26 @@ function KoptInterface:getPageBoxesFromPositions(doc, pageno, ppos0, ppos1)
         local text_boxes = self:getTextFromBoxes(page_boxes, ppos0, ppos1)
         return text_boxes.boxes
     end
+end
+
+--[[--
+Compare positions within one page.
+Returns 1 if positions are ordered (if ppos2 is after ppos1), -1 if not, 0 if same.
+Actually positions of the word boxes containing ppos1 and ppos2 are compared.
+--]]
+function KoptInterface:comparePositions(doc, ppos1, ppos2)
+    local box1 = self:getWordFromPosition(doc, ppos1).pbox
+    local box2 = self:getWordFromPosition(doc, ppos2).pbox
+    if box1.y == box2.y then
+        if box1.x == box2.x then
+            return 0
+        elseif box1.x > box2.x then
+            return -1
+        end
+    elseif box1.y > box2.y then
+        return -1
+    end
+    return 1
 end
 
 --[[--
