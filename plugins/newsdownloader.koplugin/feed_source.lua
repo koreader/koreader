@@ -67,8 +67,8 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
             end
         end
         error_callback(
-            T(_([[Could not initialize some feeds\n\n %1 \n\nPlease review your feed configuration file.]]),
-              unsupported_urls)
+            T(_("Could not initialize a feed:\n\n%2\n\nPlease review your feed configuration.", "Could not initialize %1 feeds:\n\n%2\n\nPlease review your feed configurations.", #unsupported_urls),
+                #unsupported_urls, unsupported_urls)
         )
     end
 
