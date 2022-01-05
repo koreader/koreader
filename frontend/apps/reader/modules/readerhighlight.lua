@@ -1740,12 +1740,10 @@ function ReaderHighlight:extendSelection()
         local is_reflow = self.ui.document.configurable.text_wrap
         local new_page = self.hold_pos.page
         -- reflow mode doesn't set page in positions
-        if is_reflow == 1 then
-            item1.pos0.page = new_page
-            item1.pos1.page = new_page
-            item2_pos0.page = new_page
-            item2_pos1.page = new_page
-        end
+        item1.pos0.page = new_page
+        item1.pos1.page = new_page
+        item2_pos0.page = new_page
+        item2_pos1.page = new_page
         -- pos0 and pos1 are not in order within highlights, hence sorting all
         local function comparePositions (pos1, pos2)
             return self.ui.document:comparePositions(pos1, pos2) == 1
