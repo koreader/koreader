@@ -1113,7 +1113,7 @@ OPTIONS:
         if [ "${show_previous}" -eq 0 ]; then
             echo "Running tests in" ${test_path}
             env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
-                busted --lua="./luajit" \
+                busted \
                 --sort-files \
                 -o "./spec/${target}/unit/verbose_print" \
                 --coverage \
