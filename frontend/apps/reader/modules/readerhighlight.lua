@@ -6,6 +6,7 @@ local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
+local TextViewer = require("ui/widget/textviewer")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
@@ -161,7 +162,7 @@ function ReaderHighlight:init()
     end
 
     -- cre documents only
-    if self.ui.rolling then
+    if not self.document.info.has_pages then
         self:addToHighlightDialog("09_view_html", function(_self)
             return {
                 text = _("View HTML"),
@@ -356,6 +357,12 @@ function ReaderHighlight:addToMainMenu(menu_items)
         }
     end
     menu_items.translation_settings = Translator:genSettingsMenu()
+
+    if not Device:isTouchDevice() then
+        -- Menu items below aren't needed.
+        return
+    end
+
     menu_items.long_press = {
         text = _("Long-press on text"),
         sub_item_table = {
@@ -496,7 +503,7 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
                     for index, box in pairs(boxes) do
                         if inside_box(pos, box) then
                             logger.dbg("Tap on highlight")
-                            return self:onShowHighlightDialog(page, i)
+                            return self:onShowHighlightNoteOrDialog(page, i)
                         end
                     end
                 end
@@ -547,7 +554,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
                         for index, box in pairs(boxes) do
                             if inside_box(pos, box) then
                                 logger.dbg("Tap on highlight")
-                                return self:onShowHighlightDialog(page, i)
+                                return self:onShowHighlightNoteOrDialog(page, i)
                             end
                         end
                     end
@@ -645,12 +652,46 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
     UIManager:setDirty(self.dialog, "ui")
 end
 
-function ReaderHighlight:onShowHighlightDialog(page, index)
+function ReaderHighlight:onShowHighlightNoteOrDialog(page, index)
     local item = self.view.highlight.saved[page][index]
-    local is_auto_text = self.ui.bookmark:isHighlightAutoText({
+    local bookmark_note = self.ui.bookmark:getBookmarkNote({
         page = self.ui.document.info.has_pages and item.pos0.page or item.pos0,
         datetime = item.datetime,
     })
+    if bookmark_note then
+        local textviewer
+        textviewer = TextViewer:new{
+            title = _("Note"),
+            text = bookmark_note,
+            width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
+            height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
+            justified = G_reader_settings:nilOrTrue("dict_justify"),
+            buttons_table = {
+                {
+                    {
+                        text = _("Close"),
+                        callback = function()
+                            UIManager:close(textviewer)
+                        end,
+                    },
+                    {
+                        text = _("Edit highlight"),
+                        callback = function()
+                            UIManager:close(textviewer)
+                            self:onShowHighlightDialog(page, index, false)
+                        end,
+                    },
+                },
+            },
+        }
+        UIManager:show(textviewer)
+    else
+        self:onShowHighlightDialog(page, index, true)
+    end
+    return true
+end
+
+function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
     local buttons = {
         {
             {
@@ -1159,7 +1200,6 @@ function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
                     return pre .. "\n" .. util.prettifyCSS(css_text) .. post
                 end)
             end
-            local TextViewer = require("ui/widget/textviewer")
             local Font = require("ui/font")
             local textviewer
             local buttons_hold_callback = function()
@@ -1583,7 +1623,7 @@ end
 
 function ReaderHighlight:addNote()
     local page, index = self:saveHighlight()
-    self:editHighlight(page, index)
+    self:editHighlight(page, index, true)
     UIManager:close(self.edit_highlight_dialog)
     self.edit_highlight_dialog = nil
     self.ui:handleEvent(Event:new("AddNote"))
@@ -1641,13 +1681,13 @@ function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
     end
 end
 
-function ReaderHighlight:editHighlight(page, i)
+function ReaderHighlight:editHighlight(page, i, is_new_note)
     local item = self.view.highlight.saved[page][i]
     self.ui.bookmark:renameBookmark({
         page = self.ui.document.info.has_pages and page or item.pos0,
         datetime = item.datetime,
         pboxes = item.pboxes
-    }, true)
+    }, true, is_new_note)
 end
 
 function ReaderHighlight:editHighlightStyle(page, i)
@@ -1670,8 +1710,13 @@ function ReaderHighlight:editHighlightStyle(page, i)
         default_provider = self.view.highlight.saved_drawer or
             G_reader_settings:readSetting("highlight_drawing_style", "lighten"),
         callback = function(radio)
-            self.view.highlight.saved[page][i].drawer = radio.provider
+            item.drawer = radio.provider
             UIManager:setDirty(self.dialog, "ui")
+            self.ui:handleEvent(Event:new("BookmarkUpdated",
+                    self.ui.bookmark:getBookmarkForHighlight({
+                        page = self.ui.paging and item.pos0.page or item.pos0,
+                        datetime = item.datetime,
+                    })))
         end,
     })
 end

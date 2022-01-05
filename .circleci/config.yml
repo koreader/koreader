@@ -1,4 +1,18 @@
 version: 2
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+      - docs:
+          context: koreader-vars
+          filters:
+            branches:
+              only: master
+          requires:
+            - build
+
 jobs:
   build:
     docker:
@@ -8,8 +22,6 @@ jobs:
           password: $DOCKER_PASSWORD
         environment:
           EMULATE_READER: 1
-          # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
-          LC_ALL: en_US.UTF8
     parallelism: 2
     steps:
       - checkout
@@ -65,7 +77,7 @@ jobs:
 
       # docs, coverage, and test timing (can we use two outputs at once?); master branch only
       - run:
-          name: docs-and-coverage
+          name: coverage
           command: .ci/after_success.sh
       # by storing the test results CircleCI automatically distributes tests based on execution time
       - store_test_results:
@@ -73,10 +85,31 @@ jobs:
       # CircleCI doesn't make the test results available as artifacts (October 2017)
       - store_artifacts:
           path: koreader-emulator-x86_64-linux-gnu/koreader/junit-test-results.xml
+  docs:
+    docker:
+      - image: koreader/koappimage:0.2.2
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
+        environment:
+          EMULATE_READER: 1
+    parallelism: 1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            # binary dependencies require {{ arch }} because there are different CPUs in use on the servers
+            - deps-{{ arch }}-{{ checksum ".ci/install.sh" }}-{{ checksum ".ci/helper_luarocks.sh" }}
+      # need to init some stuff first or git will complain when sticking in base cache
+      - run: git submodule init base && git submodule update base && pushd base && git submodule init && git submodule update && popd
+      # we can't use command output directly for cache check so we write it to git-rev-base
+      - run: pushd base && git_rev_base=$(git describe HEAD) && popd && echo $git_rev_base && echo $git_rev_base >git-rev-base
 
-workflows:
-  version: 2
-  build:
-    jobs:
-      - build:
-          context: koreader-vars
+      - run:
+          name: init-submodules
+          command: git submodule init && git submodule sync && git submodule update
+
+      # docs, coverage, and test timing (can we use two outputs at once?); master branch only
+      - run:
+          name: docs-and-translation
+          command: .ci/after_success_docs_translation.sh

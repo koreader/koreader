@@ -3,6 +3,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
@@ -243,7 +244,6 @@ function FileManager:setupLayout()
     local setHome = function(path) self:setHome(path) end
 
     function file_chooser:onFileHold(file)  -- luacheck: ignore
-        if file_manager.select_mode then return true end
         local is_file = lfs.attributes(file, "mode") == "file"
         local is_folder = lfs.attributes(file, "mode") == "directory"
         local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
@@ -717,6 +717,23 @@ function FileManager:tapPlus()
                     end
                 },
             },
+            {},
+            {
+                {
+                    text = _("New folder"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        self:createFolder()
+                    end,
+                },
+                {
+                    text = _("Folder shortcuts"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        self:handleEvent(Event:new("ShowFolderShortcutsDialog"))
+                    end
+                },
+            },
         }
     else
         title = BD.dirpath(filemanagerutil.abbreviate(self.file_chooser.path))
@@ -735,31 +752,7 @@ function FileManager:tapPlus()
                     text = _("New folder"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self.input_dialog = InputDialog:new{
-                            title = _("New folder"),
-                            buttons = {
-                                {
-                                    {
-                                        text = _("Cancel"),
-                                        callback = function()
-                                            self:closeInputDialog()
-                                        end,
-                                    },
-                                    {
-                                        text = _("Create"),
-                                        callback = function()
-                                            local new_folder = self.input_dialog:getInputText()
-                                            if new_folder and new_folder ~= "" then
-                                                self:createFolder(self.file_chooser.path, new_folder)
-                                                self:closeInputDialog()
-                                            end
-                                        end,
-                                    },
-                                }
-                            },
-                        }
-                        UIManager:show(self.input_dialog)
-                        self.input_dialog:onShowKeyboard()
+                        self:createFolder()
                     end,
                 },
             },
@@ -1086,17 +1079,51 @@ function FileManager:pasteHere(file)
     end
 end
 
-function FileManager:createFolder(curr_folder, new_folder)
-    local folder = string.format("%s/%s", curr_folder, new_folder)
-    local code = BaseUtil.execute(self.mkdir_bin, folder)
-    if code == 0 then
-        self:onRefresh()
-    else
-        UIManager:show(InfoMessage:new{
-            text = T(_("Failed to create folder:\n%1"), BD.directory(new_folder)),
-            icon = "notice-warning",
-        })
-    end
+function FileManager:createFolder()
+    local input_dialog, check_button_enter_folder
+    input_dialog = InputDialog:new{
+        title = _("New folder"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Create"),
+                    is_enter_default = true,
+                    callback = function()
+                        local new_folder_name = input_dialog:getInputText()
+                        if new_folder_name == "" then return end
+                        UIManager:close(input_dialog)
+                        local new_folder = string.format("%s/%s", self.file_chooser.path, new_folder_name)
+                        if BaseUtil.execute(self.mkdir_bin, new_folder) == 0 then
+                            if check_button_enter_folder.checked then
+                                self.file_chooser:changeToPath(new_folder)
+                            else
+                                self.file_chooser:refreshPath()
+                            end
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Failed to create folder:\n%1"), BD.directory(new_folder_name)),
+                                icon = "notice-warning",
+                            })
+                        end
+                    end,
+                },
+            }
+        },
+    }
+    check_button_enter_folder = CheckButton:new{
+        text = _("Enter folder after creation"),
+        checked = false,
+        parent = input_dialog,
+    }
+    input_dialog:addWidget(check_button_enter_folder)
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
 end
 
 function FileManager:deleteFile(file)

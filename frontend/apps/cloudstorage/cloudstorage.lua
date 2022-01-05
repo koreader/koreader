@@ -1,13 +1,17 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local DropBox = require("apps/cloudstorage/dropbox")
+local FFIUtil = require("ffi/util")
 local Ftp = require("apps/cloudstorage/ftp")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
+local PathChooser = require("ui/widget/pathchooser")
 local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
@@ -29,7 +33,14 @@ local CloudStorage = Menu:extend{
     show_parent = nil,
     is_popout = false,
     is_borderless = true,
-    title = _("Cloud storage")
+    title = _("Cloud storage"),
+    has_extra_button = true,
+}
+
+local server_types = {
+    dropbox = _("Dropbox"),
+    ftp = _("FTP"),
+    webdav = _("WebDAV"),
 }
 
 function CloudStorage:init()
@@ -44,6 +55,10 @@ function CloudStorage:init()
     end
     self.width = Screen:getWidth()
     self.height = Screen:getHeight()
+    self.extra_button_icon = "plus"
+    self.onExtraButtonTap = function() -- add new cloud storage
+        self:selectCloudType()
+    end
     Menu.init(self)
     if self.item then
         self.item_table[1].callback()
@@ -52,16 +67,11 @@ end
 
 function CloudStorage:genItemTableFromRoot()
     local item_table = {}
-    table.insert(item_table, {
-        text = _("Add new cloud storage"),
-        callback = function()
-            self:selectCloudType()
-        end,
-    })
     local added_servers = self.cs_settings:readSetting("cs_servers") or {}
     for _, server in ipairs(added_servers) do
         table.insert(item_table, {
             text = server.name,
+            mandatory = server_types[server.type],
             address = server.address,
             username = server.username,
             password = server.password,
@@ -108,41 +118,23 @@ function CloudStorage:genItemTable(item)
 end
 
 function CloudStorage:selectCloudType()
-    local buttons = {
-        {
+    local buttons = {}
+    for server_type, name in FFIUtil.orderedPairs(server_types) do
+        table.insert(buttons, {
             {
-                text = _("Dropbox"),
+                text = name,
                 callback = function()
                     UIManager:close(self.cloud_dialog)
-                    self:configCloud("dropbox")
+                    self:configCloud(server_type)
                 end,
             },
-        },
-        {
-            {
-                text = _("FTP"),
-                callback = function()
-                    UIManager:close(self.cloud_dialog)
-                    self:configCloud("ftp")
-                end,
-            },
-        },
-        {
-            {
-                text = _("WebDAV"),
-                callback = function()
-                    UIManager:close(self.cloud_dialog)
-                    self:configCloud("webdav")
-                end,
-            },
-        },
+        })
+    end
+    self.cloud_dialog = ButtonDialogTitle:new{
+        title = _("Add new cloud storage"),
+        title_align = "center",
+        buttons = buttons,
     }
-        self.cloud_dialog = ButtonDialogTitle:new{
-            title = _("Choose cloud storage type"),
-            title_align = "center",
-            buttons = buttons,
-    }
-
     UIManager:show(self.cloud_dialog)
     return true
 end
@@ -166,19 +158,26 @@ function CloudStorage:openCloudServer(url)
         end
         tbl, e = WebDav:run(self.address, self.username, self.password, url)
     end
-    if tbl and #tbl > 0 then
+    if tbl then
         self:switchItemTable(url, tbl)
+        if self.type == "dropbox" then
+            self.onExtraButtonTap = function()
+                self:showPlusMenu(url)
+            end
+        else
+            self:setTitleBarIconAndText("home")
+            self.onExtraButtonTap = function()
+                self:init()
+            end
+        end
         return true
-    elseif not tbl then
+    else
         logger.err("CloudStorage:", e)
         UIManager:show(InfoMessage:new{
             text = _("Cannot fetch list of folder contents\nPlease check your configuration or network connection."),
             timeout = 3,
         })
         table.remove(self.paths)
-        return false
-    else
-        UIManager:show(InfoMessage:new{ text = _("Empty folder") })
         return false
     end
 end
@@ -378,7 +377,6 @@ function CloudStorage:onMenuHold(item)
             {
                 {
                     text = _("Info"),
-                    enabled = true,
                     callback = function()
                         UIManager:close(cs_server_dialog)
                         self:infoServer(item)
@@ -386,7 +384,6 @@ function CloudStorage:onMenuHold(item)
                 },
                 {
                     text = _("Edit"),
-                    enabled = true,
                     callback = function()
                         UIManager:close(cs_server_dialog)
                         self:editCloudServer(item)
@@ -395,7 +392,6 @@ function CloudStorage:onMenuHold(item)
                 },
                 {
                     text = _("Delete"),
-                    enabled = true,
                     callback = function()
                         UIManager:close(cs_server_dialog)
                         self:deleteCloudServer(item)
@@ -415,7 +411,6 @@ function CloudStorage:onMenuHold(item)
                 },
                 {
                     text = _("Synchronize settings"),
-                    enabled = true,
                     callback = function()
                         UIManager:close(cs_server_dialog)
                         self:synchronizeSettings(item)
@@ -570,6 +565,119 @@ function CloudStorage:synchronizeSettings(item)
         }
     }
     UIManager:show(syn_dialog)
+end
+
+function CloudStorage:showPlusMenu(url)
+    local button_dialog
+    button_dialog = ButtonDialog:new{
+        buttons = {
+            {
+                {
+                    text = _("Upload file"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        self:uploadFile(url)
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("New folder"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        self:createFolder(url)
+                    end,
+                },
+            },
+            {},
+            {
+                {
+                    text = _("Return to cloud storage list"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        self:init()
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(button_dialog)
+end
+
+function CloudStorage:uploadFile(url)
+    local path_chooser
+    path_chooser = PathChooser:new{
+        select_directory = false,
+        detailed_file_info = true,
+        path = self.last_path,
+        onConfirm = function(file_path)
+            self.last_path = file_path:match("(.*)/")
+            if self.last_path == "" then self.last_path = "/" end
+            if lfs.attributes(file_path, "size") > 157286400 then
+                UIManager:show(InfoMessage:new{
+                    text = _("File size must be less than 150 MB."),
+                })
+            else
+                local callback_close = function()
+                    self:openCloudServer(url)
+                end
+                UIManager:nextTick(function()
+                    UIManager:show(InfoMessage:new{
+                        text = _("Uploading…"),
+                        timeout = 1,
+                    })
+                end)
+                UIManager:tickAfterNext(function()
+                    DropBox:uploadFile(url, self.password, file_path, callback_close)
+                end)
+            end
+        end
+    }
+    UIManager:show(path_chooser)
+end
+
+function CloudStorage:createFolder(url)
+    local input_dialog, check_button_enter_folder
+    input_dialog = InputDialog:new{
+        title = _("New folder"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Create"),
+                    is_enter_default = true,
+                    callback = function()
+                        local folder_name = input_dialog:getInputText()
+                        if folder_name == "" then return end
+                        UIManager:close(input_dialog)
+                        local callback_close = function()
+                            if check_button_enter_folder.checked then
+                                table.insert(self.paths, {
+                                    url = url,
+                                })
+                                url = url .. "/" .. folder_name
+                            end
+                            self:openCloudServer(url)
+                        end
+                        DropBox:createFolder(url, self.password, folder_name, callback_close)
+                    end,
+                },
+            }
+        },
+    }
+    check_button_enter_folder = CheckButton:new{
+        text = _("Enter folder after creation"),
+        checked = false,
+        parent = input_dialog,
+    }
+    input_dialog:addWidget(check_button_enter_folder)
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
 end
 
 function CloudStorage:configCloud(type)

@@ -28,7 +28,6 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -63,7 +62,6 @@ local TextViewer = InputContainer:new{
 }
 
 function TextViewer:init()
-    local orig_dimen = self.frame and self.frame.dimen or Geom:new{}
     -- calculate window dimension
     self.align = "center"
     self.region = Geom:new{
@@ -221,9 +219,7 @@ function TextViewer:init()
         self.movable,
     }
     UIManager:setDirty(self, function()
-        local update_region = self.frame.dimen:combine(orig_dimen)
-        logger.dbg("update region", update_region)
-        return "partial", update_region
+        return "partial", self.frame.dimen
     end)
 end
 

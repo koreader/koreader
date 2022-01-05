@@ -61,6 +61,36 @@ function DropBox:downloadFileNoUI(url, password, path)
     end
 end
 
+function DropBox:uploadFile(url, password, file_path, callback_close)
+    local code_response = DropBoxApi:uploadFile(url, password, file_path)
+    local __, filename = util.splitFilePathName(file_path)
+    if code_response == 200 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("File uploaded:\n%1"), filename),
+        })
+        if callback_close then
+            callback_close()
+        end
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("Could not upload file:\n%1"), filename),
+        })
+    end
+end
+
+function DropBox:createFolder(url, password, folder_name, callback_close)
+    local code_response = DropBoxApi:createFolder(url, password, folder_name)
+    if code_response == 200 then
+        if callback_close then
+            callback_close()
+        end
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("Could not create folder:\n%1"), folder_name),
+        })
+    end
+end
+
 function DropBox:config(item, callback)
     local text_info = "How to generate Access Token:\n"..
         "1. Open the following URL in your Browser, and log in using your account: https://www.dropbox.com/developers/apps.\n"..

@@ -37,6 +37,10 @@ local OPDSBrowser = Menu:extend{
             url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
         },
         {
+            title = "Standard Ebooks",
+            url = "https://standardebooks.org/opds",
+        },
+        {
             title = "Feedbooks",
             url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
         },

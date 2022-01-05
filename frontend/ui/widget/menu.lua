@@ -1,7 +1,3 @@
---[[--
-Widget that displays a shortcut icon for menu item.
---]]
-
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
@@ -17,6 +13,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
@@ -39,6 +36,9 @@ local Input = Device.input
 local Screen = Device.screen
 local T = FFIUtil.template
 
+--[[--
+Widget that displays a shortcut icon for menu item.
+--]]
 local ItemShortCutIcon = WidgetContainer:new{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
@@ -82,56 +82,6 @@ function ItemShortCutIcon:init()
             },
         },
     }
-end
-
---[[
-NOTICE:
-@menu entry must be provided in order to close the menu
---]]
-local MenuCloseButton = InputContainer:new{
-    overlap_align = "right",
-    padding_right = 0,
-    menu = nil,
-    dimen = nil,
-}
-
-function MenuCloseButton:init()
-    local text_widget = TextWidget:new{
-        text = "×",
-        face = Font:getFace("cfont", 30), -- this font size align nicely with title
-    }
-    -- The text box height is greater than its width, and we want this × to be
-    -- diagonally aligned with the top right corner (assuming padding_right=0,
-    -- or padding_right = padding_top so the diagonal aligment is preserved).
-    local text_size = text_widget:getSize()
-    local text_width_pad = math.floor((text_size.h - text_size.w) / 2)
-
-    self[1] = FrameContainer:new{
-        bordersize = 0,
-        padding = 0,
-        padding_top = self.padding_top,
-        padding_bottom = self.padding_bottom,
-        padding_left = self.padding_left,
-        padding_right = self.padding_right + text_width_pad,
-        text_widget,
-    }
-
-    self.dimen = Geom:new{
-        w = text_size.w + text_width_pad + self.padding_right,
-        h = text_size.h,
-    }
-    self.ges_events.Close = {
-        GestureRange:new{
-            ges = "tap",
-            range = self.dimen,
-        },
-        doc = "Close menu",
-    }
-end
-
-function MenuCloseButton:onClose()
-    self.menu:onClose()
-    return true
 end
 
 --[[
@@ -627,7 +577,7 @@ local Menu = FocusManager:new{
     width = nil,
     -- height will be calculated according to item number if not given
     height = nil,
-    header_padding = Size.padding.large,
+    header_padding = Size.padding.default,
     dimen = nil,
     item_table = nil, -- NOT mandatory (will be empty)
     item_shortcuts = {
@@ -657,6 +607,9 @@ local Menu = FocusManager:new{
     -- if you want to embed the menu widget into another widget, set
     -- this to false
     is_popout = true,
+    -- set this to true to add extra (left) button to the title bar
+    has_extra_button = false,
+    extra_button_icon = nil, -- default icon "appbar.menu"
     -- set this to true to add close button
     has_close_button = true,
     -- close_callback is a function, which is executed when menu is closed
@@ -713,10 +666,13 @@ function Menu:init()
     -----------------------------------
     -- start to set up widget layout --
     -----------------------------------
+    local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.6) -- left and right title buttons
+    local title_text_width = self.inner_dimen.w - 2 * Size.padding.large
     self.menu_title = TextWidget:new{
-        overlap_align = "center",
+        face = Font:getFace("smalltfont"),
         text = self.title,
-        face = Font:getFace("tfont"),
+        max_width = title_text_width - (Device:isTouchDevice() and 2 * icon_size or 0),
+        overlap_align = "center",
     }
     local menu_title_container = CenterContainer:new{
         dimen = Geom:new{
@@ -726,12 +682,11 @@ function Menu:init()
         self.menu_title,
     }
     local path_text_container
-
     if self.show_path then
         self.path_text = TextWidget:new{
             face = Font:getFace("xx_smallinfofont"),
             text = BD.directory(self.path),
-            max_width = self.inner_dimen.w - 2*Size.padding.large,
+            max_width = title_text_width,
             truncate_left = true,
         }
         path_text_container = CenterContainer:new{
@@ -741,17 +696,15 @@ function Menu:init()
             },
             self.path_text,
         }
-        self.menu_title_group = VerticalGroup:new{
-            align = "center",
-            menu_title_container,
-            path_text_container,
-        }
     else
-        self.menu_title_group = VerticalGroup:new{
-            align = "center",
-            menu_title_container
-        }
+        path_text_container = VerticalSpan:new{width = 0}
     end
+    self.menu_title_group = VerticalGroup:new{
+        align = "center",
+        VerticalSpan:new{width = Screen:scaleBySize(3)},
+        menu_title_container,
+        path_text_container,
+    }
     -- group for title bar
     self.title_bar = OverlapGroup:new{
         dimen = {w = self.inner_dimen.w, h = self.menu_title_group:getSize().h},
@@ -913,7 +866,6 @@ function Menu:init()
     }
 
     local header = VerticalGroup:new{
-        VerticalSpan:new{width = self.header_padding},
         self.title_bar,
     }
     local body = self.item_group
@@ -974,11 +926,33 @@ function Menu:init()
     -- start to set up input event callback --
     ------------------------------------------
     if Device:isTouchDevice() then
+        local button_padding = Screen:scaleBySize(11)
+        if self.has_extra_button then
+            self.extra_button = IconButton:new{
+                icon = self.extra_button_icon or "appbar.menu",
+                width = icon_size,
+                height = icon_size,
+                padding = button_padding,
+                padding_right = 2 * icon_size, -- extend button tap zone
+                padding_bottom = icon_size,
+                overlap_align = "left",
+                callback = function() self:onExtraButtonTap() end,
+                hold_callback = function() self:onExtraButtonHold() end,
+            }
+            table.insert(self.title_bar, self.extra_button)
+        end
         if self.has_close_button then
-            table.insert(self.title_bar, MenuCloseButton:new{
-                menu = self,
-                padding_right = self.header_padding,
-            })
+            local close_button = IconButton:new{
+                icon = "exit",
+                width = icon_size,
+                height = icon_size,
+                padding = button_padding,
+                padding_left = 2 * icon_size, -- extend button tap zone
+                padding_bottom = icon_size,
+                overlap_align = "right",
+                callback = function() self:onClose() end,
+            }
+            table.insert(self.title_bar, close_button)
         end
         -- watch for outer region if it's a self contained widget
         if self.is_popout then
@@ -1447,6 +1421,22 @@ function Menu:onSwipe(arg, ges_ev)
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end
+end
+
+function Menu:setTitleBarIconAndText(extra_button_icon, title_text)
+    if self.extra_button and extra_button_icon then
+        self.extra_button:setIcon(extra_button_icon)
+    end
+    if self.menu_title and title_text then
+        self.menu_title:setText(title_text)
+    end
+    UIManager:setDirty(self.show_parent, "ui")
+end
+
+function Menu:onExtraButtonTap() -- to be overriden and implemented by the caller
+end
+
+function Menu:onExtraButtonHold() -- to be overriden and implemented by the caller
 end
 
 --- Adds > to touch menu items with a submenu

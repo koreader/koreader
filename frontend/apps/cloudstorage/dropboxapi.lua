@@ -1,10 +1,13 @@
 local DocumentRegistry = require("document/documentregistry")
 local JSON = require("json")
 local http = require("socket.http")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
+local util = require("util")
+local BaseUtil = require("ffi/util")
 local _ = require("gettext")
 
 local DropBoxApi = {
@@ -13,6 +16,8 @@ local DropBoxApi = {
 local API_URL_INFO = "https://api.dropboxapi.com/2/users/get_current_account"
 local API_LIST_FOLDER = "https://api.dropboxapi.com/2/files/list_folder"
 local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
+local API_UPLOAD_FILE = "https://content.dropboxapi.com/2/files/upload"
+local API_CREATE_FOLDER = "https://api.dropboxapi.com/2/files/create_folder_v2"
 local API_LIST_ADD_FOLDER = "https://api.dropboxapi.com/2/files/list_folder/continue"
 
 function DropBoxApi:fetchInfo(token)
@@ -100,6 +105,48 @@ function DropBoxApi:downloadFile(path, token, local_path)
     return code
 end
 
+function DropBoxApi:uploadFile(path, token, file_path)
+    local data = "{\"path\": \"" .. path .. "/" .. BaseUtil.basename(file_path) ..
+        "\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}"
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    local code, _, status = socket.skip(1, http.request{
+        url     = API_UPLOAD_FILE,
+        method  = "POST",
+        headers = {
+            ["Authorization"]   = "Bearer ".. token,
+            ["Dropbox-API-Arg"] = data,
+            ["Content-Type"] = "application/octet-stream",
+            ["Content-Length"] = lfs.attributes(file_path, "size"),
+        },
+        source = ltn12.source.file(io.open(file_path, "r")),
+    })
+    socketutil:reset_timeout()
+    if code ~= 200 then
+        logger.warn("DropBoxApi: Upload failure:", status or code or "network unreachable")
+    end
+    return code
+end
+
+function DropBoxApi:createFolder(path, token, folder_name)
+    local data = "{\"path\": \"" .. path .. "/" .. folder_name .. "\",\"autorename\": false}"
+    socketutil:set_timeout()
+    local code, _, status = socket.skip(1, http.request{
+        url     = API_CREATE_FOLDER,
+        method  = "POST",
+        headers = {
+            ["Authorization"]   = "Bearer ".. token,
+            ["Content-Type"] = "application/json",
+            ["Content-Length"] = #data,
+        },
+        source = ltn12.source.string(data),
+    })
+    socketutil:reset_timeout()
+    if code ~= 200 then
+        logger.warn("DropBoxApi: Folder creation failure:", status or code or "network unreachable")
+    end
+    return code
+end
+
 -- folder_mode - set to true when we want to see only folder.
 -- We see also extra folder "Long-press to select current directory" at the beginning.
 function DropBoxApi:listFolder(path, token, folder_mode)
@@ -124,6 +171,7 @@ function DropBoxApi:listFolder(path, token, folder_mode)
             or G_reader_settings:isTrue("show_unsupported")) and not folder_mode then
             table.insert(dropbox_file, {
                 text = text,
+                mandatory = util.getFriendlySize(files.size),
                 url = files.path_display,
                 type = tag,
             })
@@ -147,6 +195,7 @@ function DropBoxApi:listFolder(path, token, folder_mode)
     for _, files in ipairs(dropbox_file) do
         table.insert(dropbox_list, {
             text = files.text,
+            mandatory = files.mandatory,
             url = files.url,
             type = files.type,
         })

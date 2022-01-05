@@ -126,7 +126,7 @@ return {
                 text = _("Covers and images settings"),
                 sub_item_table = {
                     {
-                        text = _("Black background behind covers and images"),
+                        text = _("Black background"),
                         checked_func = function()
                             return G_reader_settings:readSetting("screensaver_img_background") == "black"
                         end,
@@ -135,7 +135,7 @@ return {
                         end,
                     },
                     {
-                        text = _("White background behind covers and images"),
+                        text = _("White background"),
                         checked_func = function()
                             return G_reader_settings:readSetting("screensaver_img_background") == "white"
                         end,
@@ -144,7 +144,7 @@ return {
                         end,
                     },
                     {
-                        text = _("Leave background as-is behind covers and images"),
+                        text = _("Leave background as-is"),
                         checked_func = function()
                             return G_reader_settings:readSetting("screensaver_img_background") == "none"
                         end,
@@ -153,12 +153,20 @@ return {
                         end,
                     },
                     {
-                        text = _("Stretch covers and images to fit screen"),
+                        text_func = function()
+                            if G_reader_settings:nilOrFalse("screensaver_stretch_images") then
+                                return _("Stretch to fit screen")
+                            elseif G_reader_settings:readSetting("screensaver_stretch_limit_percentage") then
+                                return _("Stretch to fit screen (with limit)")
+                            else
+                                return _("Stretch to fit screen")
+                            end
+                        end,
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_stretch_images")
                         end,
-                        callback = function()
-                            G_reader_settings:toggle("screensaver_stretch_images")
+                        callback = function(touchmenu_instance)
+                            Screensaver:setStretchLimit(touchmenu_instance)
                         end,
                         separator = true,
                     },
