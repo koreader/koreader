@@ -197,17 +197,46 @@ end
 
 function ReaderBookmark:isBookmarkInPageOrder(a, b)
     if self.ui.document.info.has_pages then
-        if a.page == b.page then -- have bookmarks before highlights
-            return a.highlighted
+        if a.page == b.page then -- both bookmarks in the same page
+            if a.highlighted and b.highlighted then -- both are highlights, compare positions
+                local is_reflow = self.ui.document.configurable.text_wrap -- save reflow mode
+                if is_reflow == 1 then -- reflow mode doesn't set page in positions
+                    a.pos0.page = a.page
+                    a.pos1.page = a.page
+                    b.pos0.page = a.page
+                    b.pos1.page = a.page
+                end
+                self.ui.document.configurable.text_wrap = 0 -- native positions
+                -- sort start and end positions of each highlight
+                local compare_pos, a_start, a_end, b_start, b_end, result
+                compare_pos = self.ui.document:comparePositions(a.pos0, a.pos1) == 1
+                a_start = compare_pos and a.pos0 or a.pos1
+                a_end = compare_pos and a.pos1 or a.pos0
+                compare_pos = self.ui.document:comparePositions(b.pos0, b.pos1) == 1
+                b_start = compare_pos and b.pos0 or b.pos1
+                b_end = compare_pos and b.pos1 or b.pos0
+                -- compare start positions
+                compare_pos = self.ui.document:comparePositions(a_start, b_start)
+                if compare_pos == 0 then -- both highlights with the same start, compare ends
+                    result = self.ui.document:comparePositions(a_end, b_end) == -1
+                else
+                    result = compare_pos == -1
+                end
+                self.ui.document.configurable.text_wrap = is_reflow -- restore reflow mode
+                return result
+            end
+            return a.highlighted -- have page bookmarks before highlights
         end
         return a.page > b.page
     else
-        local a_page = self.ui.document:getPageFromXPointer(a.page)
-        local b_page = self.ui.document:getPageFromXPointer(b.page)
-        if a_page == b_page then -- have bookmarks before highlights
-            return a.highlighted
+        local compare_xp = self.ui.document:compareXPointers(a.page, b.page)
+        if compare_xp == 0 then -- both bookmarks with the same start
+            if a.highlighted and b.highlighted then -- both are highlights, compare ends
+                return self.ui.document:compareXPointers(a.pos1, b.pos1) == -1
+            end
+            return a.highlighted -- have page bookmarks before highlights
         end
-        return a_page > b_page
+        return compare_xp == -1
     end
 end
 
