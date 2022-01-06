@@ -20,6 +20,8 @@ local function no() return false end
 local ext_path = "/mnt/ext1/system/config/extensions.cfg"
 local app_name = "koreader.app"
 
+local pb741_color_connected = 515
+
 local PocketBook = Generic:new{
     model = "PocketBook",
     isPocketBook = yes,
@@ -358,7 +360,7 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:isWifiOn()
-        return band(inkview.QueryNetwork(), C.CONNECTED) ~= 0
+        return inkview.QueryNetwork() == C.CONNECTED or inkview.QueryNetwork() == pb741_color_connected
     end
 end
 
