@@ -68,6 +68,10 @@ function DjvuDocument:getProps()
     return props
 end
 
+function DjvuDocument:comparePositions(pos1, pos2)
+    return self.koptinterface:comparePositions(self, pos1, pos2)
+end
+
 function DjvuDocument:getPageTextBoxes(pageno)
     return self._document:getPageText(pageno)
 end

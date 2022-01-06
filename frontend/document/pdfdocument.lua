@@ -98,6 +98,10 @@ function PdfDocument:unlock(password)
     return true
 end
 
+function PdfDocument:comparePositions(pos1, pos2)
+    return self.koptinterface:comparePositions(self, pos1, pos2)
+end
+
 function PdfDocument:getPageTextBoxes(pageno)
     local page = self._document:openPage(pageno)
     local text = page:getPageText()

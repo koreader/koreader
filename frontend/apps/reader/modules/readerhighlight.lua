@@ -1737,24 +1737,16 @@ function ReaderHighlight:extendSelection()
     -- getting starting and ending positions, text and pboxes of extended highlight
     local new_pos0, new_pos1, new_text, new_pboxes
     if self.ui.document.info.has_pages then
-        local is_reflow = self.ui.document.configurable.text_wrap == 1
+        local is_reflow = self.ui.document.configurable.text_wrap
         local new_page = self.hold_pos.page
         -- reflow mode doesn't set page in positions
-        if is_reflow then
-            item1.pos0.page = new_page
-            item1.pos1.page = new_page
-            item2_pos0.page = new_page
-            item2_pos1.page = new_page
-        end
+        item1.pos0.page = new_page
+        item1.pos1.page = new_page
+        item2_pos0.page = new_page
+        item2_pos1.page = new_page
         -- pos0 and pos1 are not in order within highlights, hence sorting all
         local function comparePositions (pos1, pos2)
-            local box1 = self.ui.document:getWordFromPosition(pos1).pbox
-            local box2 = self.ui.document:getWordFromPosition(pos2).pbox
-            if box1.y == box2.y then
-                return box1.x < box2.x
-            else
-                return box1.y < box2.y
-            end
+            return self.ui.document:comparePositions(pos1, pos2) == 1
         end
         local positions = {item1.pos0, item1.pos1, item2_pos0, item2_pos1}
         self.ui.document.configurable.text_wrap = 0 -- native positions
@@ -1764,7 +1756,7 @@ function ReaderHighlight:extendSelection()
         local text_boxes = self.ui.document:getTextFromPositions(new_pos0, new_pos1)
         new_text = text_boxes.text
         new_pboxes = text_boxes.pboxes
-        self.ui.document.configurable.text_wrap = is_reflow and 1 or 0 -- restore reflow
+        self.ui.document.configurable.text_wrap = is_reflow -- restore reflow
         -- draw
         self.view.highlight.temp[new_page] = self.ui.document:getPageBoxesFromPositions(new_page, new_pos0, new_pos1)
     else
