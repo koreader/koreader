@@ -3,7 +3,6 @@ local logger = require("logger")
 local ffi = require("ffi")
 local C = ffi.C
 local inkview = ffi.load("inkview")
-local band = require("bit").band
 local util = require("util")
 
 require("ffi/posix_h")
