@@ -6,6 +6,7 @@ local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local FFIUtil = require("ffi/util")
 local T = FFIUtil.template
 
@@ -46,7 +47,6 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
                 document = response,
             })
         else
-            logger.dbg("FeedSource: Unsupported feed ", response)
             table.insert(unsupported_feeds_urls, {
                 url .. ": " .. response
             })
@@ -67,8 +67,8 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
             end
         end
         error_callback(
-            T(_("Could not initialize a feed:\n\n%2\n\nPlease review your feed configuration.", "Could not initialize %1 feeds:\n\n%2\n\nPlease review your feed configurations.", #unsupported_urls),
-                #unsupported_urls, unsupported_urls)
+            T(N_("Could not initialize a feed:\n\n%2\n\nPlease review your feed configuration.", "Could not initialize %1 feeds:\n\n%2\n\nPlease review your feed configurations.", #unsupported_feeds_urls),
+                #unsupported_feeds_urls, unsupported_urls)
         )
     end
 
@@ -85,7 +85,7 @@ function FeedSource:fetchDocumentByUrl(url)
             if (success) then
                 return content
             else
-                error("Failed to download content for url:", url)
+                error("Failed to download content for url: " .. url, 0)
             end
     end)
     -- Check to see if a response is available to deserialize.
@@ -98,9 +98,9 @@ function FeedSource:fetchDocumentByUrl(url)
         return document
     else
         if not ok then
-            error("(Reason: Failed to download feed document)")
+            error("(Reason: Failed to download feed document)", 0)
         else
-            error("(Reason: Error during feed document deserialization)")
+            error("(Reason: Error during feed document deserialization)", 0)
         end
     end
 end
@@ -137,7 +137,7 @@ function FeedSource:initializeDocument(document)
         document.total_items = total_items
         return document
     else
-        error(_("Could not initialize feed document"))
+        error(_("Could not initialize feed document"), 0)
     end
 end
 
@@ -300,7 +300,7 @@ function FeedSource:createEpub(title, chapters, abs_output_path, progress_callba
     end
 
     if #chapters == 0 then
-        error(_("Error: chapters contains 0 items"))
+        error(_("Error: chapters contains 0 items"), 0)
     end
 
     local images = {}
