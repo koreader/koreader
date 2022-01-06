@@ -360,7 +360,7 @@ end
 
 function ReaderBookmark:onSaveSettings()
     self.ui.doc_settings:saveSetting("bookmarks", self.bookmarks)
-    self.ui.doc_settings:delSetting("bookmarks_sorted")
+    self.ui.doc_settings:makeTrue("bookmarks_sorted")
     self.ui.doc_settings:makeTrue("bookmarks_sorted_20220106")
     self.ui.doc_settings:makeTrue("highlights_imported")
 end
