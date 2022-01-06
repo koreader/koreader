@@ -1241,7 +1241,7 @@ end
 --[[--
 Compare positions within one page.
 Returns 1 if positions are ordered (if ppos2 is after ppos1), -1 if not, 0 if same.
-Actually positions of the word boxes containing ppos1 and ppos2 are compared.
+Positions of the word boxes containing ppos1 and ppos2 are compared.
 --]]
 function KoptInterface:comparePositions(doc, ppos1, ppos2)
     local box1 = self:getWordFromPosition(doc, ppos1).pbox
