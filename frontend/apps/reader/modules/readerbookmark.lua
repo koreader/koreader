@@ -293,7 +293,8 @@ end
 function ReaderBookmark:fixBookmarkSort(config)
     -- for backward compatibility, since previously bookmarks for credocuments
     -- are not well sorted. We need to do a whole sorting for at least once.
-    if config:hasNot("bookmarks_sorted") then
+    -- 20220106: accurate sorting with isBookmarkInPositionOrder
+    if config:hasNot("bookmarks_sorted_20220106") then
         table.sort(self.bookmarks, function(a, b)
             return self:isBookmarkInPositionOrder(a, b)
         end)
@@ -359,7 +360,8 @@ end
 
 function ReaderBookmark:onSaveSettings()
     self.ui.doc_settings:saveSetting("bookmarks", self.bookmarks)
-    self.ui.doc_settings:makeTrue("bookmarks_sorted")
+    self.ui.doc_settings:delSetting("bookmarks_sorted")
+    self.ui.doc_settings:makeTrue("bookmarks_sorted_20220106")
     self.ui.doc_settings:makeTrue("highlights_imported")
 end
 
