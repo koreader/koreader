@@ -48,7 +48,7 @@ local TextViewer = InputContainer:new{
     auto_para_direction = true,
     alignment_strict = false,
 
-    title_face = nil -- use default from TitleBar,
+    title_face = nil, -- use default from TitleBar
     text_face = Font:getFace("x_smallinfofont"),
     fgcolor = Blitbuffer.COLOR_BLACK,
     title_padding = Size.padding.default,
