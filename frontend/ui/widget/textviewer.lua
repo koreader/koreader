@@ -19,7 +19,6 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MovableContainer = require("ui/widget/container/movablecontainer")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TitleBar = require("ui/widget/titlebar")
@@ -109,7 +108,7 @@ function TextViewer:init()
         title_face = self.title_face,
         close_callback = function() self:onClose() end,
     }
-    
+
     local buttons
     if self.buttons_table == nil then
         buttons = {
