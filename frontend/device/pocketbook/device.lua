@@ -3,6 +3,7 @@ local logger = require("logger")
 local ffi = require("ffi")
 local C = ffi.C
 local inkview = ffi.load("inkview")
+local band = require("bit").band
 local util = require("util")
 
 require("ffi/posix_h")
@@ -18,8 +19,6 @@ local function no() return false end
 
 local ext_path = "/mnt/ext1/system/config/extensions.cfg"
 local app_name = "koreader.app"
-
-local pb741_color_connected = 515
 
 local PocketBook = Generic:new{
     model = "PocketBook",
@@ -359,7 +358,16 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:isWifiOn()
-        return inkview.QueryNetwork() == C.CONNECTED or inkview.QueryNetwork() == pb741_color_connected
+        local state = inkview.QueryNetwork()
+        
+        -- Some devices (PB741) return state = 515 for connected and state = 3
+        -- when not connected. We guess the reason is deprecation of the old API
+        -- for this reason when state is higher than C.CONNECTED we try the new API
+        if state <= C.CONNECTED then
+            return band(state, C.CONNECTED) ~= 0
+        else
+            return band(inkview.GetNetState(), C.CONNECTED) ~= 0
+        end
     end
 end
 
