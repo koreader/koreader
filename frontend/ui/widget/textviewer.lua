@@ -12,19 +12,17 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -103,40 +101,15 @@ function TextViewer:init()
         }
     end
 
-    local closeb = CloseButton:new{ window = self, padding_top = Size.padding.tiny, }
-    local title_text = TextBoxWidget:new{
-        text = self.title,
-        face = self.title_face,
-        bold = true,
-        width = self.width - 2*self.title_padding - 2*self.title_margin - closeb:getSize().w,
+    local titlebar = TitleBar:new{
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        title = self.title,
+        title_face = self.title_face,
+        close_callback = function() self:onClose() end,
     }
-    local titlew = FrameContainer:new{
-        padding = self.title_padding,
-        -- TextBoxWidget has less text top & bottom padding than TextWidget
-        -- (for a reasonable line height with multi lines), but we
-        -- can get the same as TextWidget by simply adding Size.padding.small
-        padding_top = self.title_padding + Size.padding.small,
-        padding_bottom = self.title_padding + Size.padding.small,
-        margin = self.title_margin,
-        bordersize = 0,
-        title_text
-    }
-    titlew = OverlapGroup:new{
-        dimen = {
-            w = self.width,
-            h = titlew:getSize().h
-        },
-        titlew,
-        closeb,
-    }
-
-    local separator = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
-        }
-    }
-
+    
     local buttons
     if self.buttons_table == nil then
         buttons = {
@@ -161,7 +134,7 @@ function TextViewer:init()
         show_parent = self,
     }
 
-    local textw_height = self.height - titlew:getSize().h - separator:getSize().h - button_table:getSize().h
+    local textw_height = self.height - titlebar:getSize().h - button_table:getSize().h
 
     self.scroll_text_w = ScrollTextWidget:new{
         text = self.text,
@@ -190,9 +163,7 @@ function TextViewer:init()
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
-            align = "left",
-            titlew,
-            separator,
+            titlebar,
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
