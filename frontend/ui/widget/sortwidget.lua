@@ -4,7 +4,6 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -16,6 +15,7 @@ local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -23,43 +23,6 @@ local Screen = Device.screen
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
-
-local SortTitleWidget = VerticalGroup:new{
-    sort_page = nil,
-    title = "",
-    tface = Font:getFace("tfont"),
-    align = "left",
-}
-
-function SortTitleWidget:init()
-    self.close_button = CloseButton:new{ window = self }
-    local btn_width = self.close_button:getSize().w
-    -- title, close button, separation line
-    table.insert(self, OverlapGroup:new{
-        dimen = { w = self.width },
-        TextWidget:new{
-            text = self.title,
-            max_width = self.width - btn_width,
-            face = self.tface,
-        },
-        self.close_button,
-    })
-    self.title_bottom = OverlapGroup:new{
-        dimen = { w = self.width, h = Size.line.thick },
-        LineWidget:new{
-            dimen = Geom:new{ w = self.width, h = Size.line.thick },
-            background = Blitbuffer.COLOR_DARK_GRAY,
-            style = "solid",
-        },
-    }
-    table.insert(self, self.title_bottom)
-    table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
-end
-
-function SortTitleWidget:onClose()
-    self.sort_page:onClose()
-    return true
-end
 
 local SortItemWidget = InputContainer:new{
     item = nil,
@@ -289,8 +252,6 @@ function SortWidget:init()
     }
     local bottom_line = LineWidget:new{
         dimen = Geom:new{ w = self.item_width, h = Size.line.thick },
-        background = Blitbuffer.COLOR_DARK_GRAY,
-        style = "solid",
     }
     local vertical_footer = VerticalGroup:new{
         bottom_line,
@@ -301,16 +262,18 @@ function SortWidget:init()
         vertical_footer,
     }
     -- setup title bar
-    self.title_bar = SortTitleWidget:new{
-        title = self.title,
+    self.title_bar = TitleBar:new{
         width = self.item_width,
-        height = self.item_height,
-        sort_page = self,
+        align = "left",
+        with_bottom_line = true,
+        title = self.title,
+        title_face = self.title_face,
+        close_callback = function() self:onClose() end,
     }
     -- setup main content
     self.item_margin = math.floor(self.item_height / 8)
     local line_height = self.item_height + self.item_margin
-    local content_height = self.dimen.h - self.title_bar:getSize().h - vertical_footer:getSize().h - padding
+    local content_height = self.dimen.h - self.title_bar:getHeight() - vertical_footer:getSize().h - padding
     self.items_per_page = math.floor(content_height / line_height)
     self.pages = math.ceil(#self.item_table / self.items_per_page)
     self.main_content = VerticalGroup:new{}
@@ -323,7 +286,6 @@ function SortWidget:init()
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
-            align = "left",
             self.title_bar,
             self.main_content,
         },
