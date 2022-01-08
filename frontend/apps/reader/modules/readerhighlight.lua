@@ -1327,6 +1327,14 @@ function ReaderHighlight:onTranslateText(text)
 end
 
 function ReaderHighlight:onHoldRelease()
+    if self.clear_id then
+        -- Something has requested a clear id and is about to clear
+        -- the highlight: it may be a onHoldClose() that handled
+        -- "hold" and was closed, and can't handle "hold_release":
+        -- ignore this "hold_release" event.
+        return true
+    end
+
     local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
 
     if self.select_mode then -- extended highlighting, ending fragment

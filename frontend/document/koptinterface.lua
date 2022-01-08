@@ -668,7 +668,9 @@ function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
         local page = doc._document:openPage(pageno)
         page:getPagePix(kc)
         local boxes, nr_word = kc:getNativeWordBoxes("src", 0, 0, page_size.w, page_size.h)
-        DocCache:insert(hash, CacheItem:new{ scratchnativepgboxes = boxes, size = 192 * nr_word }) -- estimation
+        if boxes then
+            DocCache:insert(hash, CacheItem:new{ scratchnativepgboxes = boxes, size = 192 * nr_word }) -- estimation
+        end
         page:close()
         kc:free()
         return boxes

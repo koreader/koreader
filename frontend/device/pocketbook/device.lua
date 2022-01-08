@@ -358,7 +358,15 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:isWifiOn()
-        return band(inkview.QueryNetwork(), C.CONNECTED) ~= 0
+        local state = inkview.QueryNetwork()
+        -- Some devices (PB741) return state = 515 for connected and state = 3
+        -- when not connected. We guess the reason is deprecation of the old API
+        -- for this reason when state is higher than C.CONNECTED we try the new API
+        if state <= C.CONNECTED then
+            return band(state, C.CONNECTED) ~= 0
+        else
+            return band(inkview.GetNetState(), C.CONNECTED) ~= 0
+        end
     end
 end
 

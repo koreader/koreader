@@ -2,7 +2,6 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
@@ -12,7 +11,6 @@ local GestureRange = require("ui/gesturerange")
 local IconButton = require("ui/widget/iconbutton")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local LineWidget = require("ui/widget/linewidget")
 local Math = require("optmath")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -21,6 +19,7 @@ local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local TimeVal = require("ui/timeval")
+local TitleBar = require("ui/widget/titlebar")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -205,50 +204,16 @@ function DictQuickLookup:init()
     -- components, when we know how much height they are taking.
 
     -- Dictionary title
-    -- (a bit convoluted with margin & padding but no border, but let's
-    -- do as other widgets to get the same look)
-    local title_margin = Size.margin.title
-    local title_padding = Size.padding.default
-    local title_width = inner_width - 2*title_padding -2*title_margin
-    local close_button = CloseButton:new{ window = self, padding_top = title_margin, }
-    self.dict_title_text = TextWidget:new{
-        text = self.displaydictname,
-        face = Font:getFace("x_smalltfont"),
-        bold = true,
-        max_width = title_width - close_button:getSize().w + close_button.padding_left
-            -- Allow text to eat on the CloseButton padding_left (which
-            -- is quite large to ensure a bigger tap area)
-    }
-    local dict_title_widget = self.dict_title_text
-    if self.is_wiki then
-        -- Visual hint: title left aligned for dict, but centered for Wikipedia
-        dict_title_widget = CenterContainer:new{
-            dimen = Geom:new{
-                w = title_width,
-                h = self.dict_title_text:getSize().h,
-            },
-            self.dict_title_text,
-        }
-    end
-    self.dict_title = FrameContainer:new{
-        margin = title_margin,
-        bordersize = 0,
-        padding = title_padding,
-        dict_title_widget,
-    }
-    local title_bar = OverlapGroup:new{
-        dimen = {
-            w = inner_width,
-            h = self.dict_title:getSize().h
-        },
-        self.dict_title,
-        close_button,
-    }
-    local title_sep = LineWidget:new{
-        dimen = Geom:new{
-            w = inner_width,
-            h = Size.line.thick,
-        }
+    self.dict_title = TitleBar:new{
+        width = inner_width,
+        title = self.displaydictname,
+        with_bottom_line = true,
+        bottom_v_padding = 0, -- padding handled below
+        close_callback = function() self:onClose() end,
+        close_hold_callback = function() self:onHoldClose() end,
+        -- visual hint: title left aligned for dict, centered for Wikipedia
+        align = self.is_wiki and "center" or "left",
+        show_parent = self,
     }
 
     -- This padding and the resulting width apply to the content
@@ -577,8 +542,7 @@ function DictQuickLookup:init()
     self.align = "center"
 
     local others_height = frame_bordersize * 2 -- DictQuickLookup border
-                        + title_bar:getSize().h
-                        + title_sep:getSize().h
+                        + self.dict_title:getHeight()
                         + top_to_word_span:getSize().h
                         + lookup_word:getSize().h
                         + word_to_definition_span:getSize().h
@@ -684,8 +648,7 @@ function DictQuickLookup:init()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            title_bar,
-            title_sep,
+            self.dict_title,
             top_to_word_span,
             -- word
             CenterContainer:new{
@@ -839,7 +802,7 @@ function DictQuickLookup:update()
     self[1]:free()
 
     -- Update TextWidgets
-    self.dict_title_text:setText(self.displaydictname)
+    self.dict_title:setTitle(self.displaydictname)
     if self.displaynb then
         self.displaynb_text:setText(self.displaynb)
     end

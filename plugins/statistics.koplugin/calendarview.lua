@@ -19,6 +19,7 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -451,11 +452,7 @@ function CalendarView:init()
     -- Put back the possible 7px lost in rounding into outer_padding
     self.outer_padding = math.floor((self.dimen.w - 7*self.day_width - 6*self.inner_padding) / 2)
 
-    self.inner_dimen = Geom:new{
-        w = self.dimen.w - 2*self.outer_padding,
-        h = self.dimen.h - self.outer_padding, -- no bottom padding
-    }
-    self.content_width = self.inner_dimen.w
+    self.content_width = self.dimen.w - 2*self.outer_padding
 
     local now_ts = os.time()
     if not MIN_MONTH then
@@ -546,22 +543,27 @@ function CalendarView:init()
     }
 
     local footer = BottomContainer:new{
+        -- (BottomContainer does horizontal centering)
         dimen = Geom:new{
-            w = self.inner_dimen.w,
-            h = self.inner_dimen.h,
+            w = self.dimen.w,
+            h = self.dimen.h,
         },
         self.page_info,
     }
 
-    self.title_bar = CalendarTitle:new{
+    self.title_bar = TitleBar:new{
+        fullscreen = self.covers_fullscreen,
+        width = self.dimen.w,
+        align = "left",
         title = self.title,
-        width = self.content_width,
-        height = Size.item.height_default,
-        calendar_view = self,
+        title_h_padding = self.outer_padding, -- have month name aligned with calendar left edge
+        close_callback = function() self:onClose() end,
+        show_parent = self,
     }
 
     -- week days names header
     self.day_names = HorizontalGroup:new{}
+    table.insert(self.day_names, HorizontalSpan:new{ width = self.outer_padding })
     for i = 0, 6 do
         local dayname = TextWidget:new{
             text = self.shortDayOfWeekTranslation[self.weekdays[(self.start_day_of_week-1+i)%7 + 1]],
@@ -582,7 +584,7 @@ function CalendarView:init()
     end
 
     -- At most 6 weeks in a month
-    local available_height = self.inner_dimen.h - self.title_bar:getSize().h
+    local available_height = self.dimen.h - self.title_bar:getHeight()
                             - self.page_info:getSize().h - self.day_names:getSize().h
     self.week_height = math.floor((available_height - 7*self.inner_padding) / 6)
     self.day_border = Size.border.default
@@ -618,15 +620,18 @@ function CalendarView:init()
 
     local content = OverlapGroup:new{
         dimen = Geom:new{
-            w = self.inner_dimen.w,
-            h = self.inner_dimen.h,
+            w = self.dimen.w,
+            h = self.dimen.h,
         },
         allow_mirroring = false,
         VerticalGroup:new{
             align = "left",
             self.title_bar,
             self.day_names,
-            self.main_content,
+            HorizontalGroup:new{
+                HorizontalSpan:new{ width = self.outer_padding },
+                self.main_content,
+            },
         },
         footer,
     }
@@ -634,8 +639,7 @@ function CalendarView:init()
     self[1] = FrameContainer:new{
         width = self.dimen.w,
         height = self.dimen.h,
-        padding = self.outer_padding,
-        padding_bottom = 0,
+        padding = 0,
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
