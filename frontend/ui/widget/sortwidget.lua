@@ -252,6 +252,7 @@ function SortWidget:init()
     }
     local bottom_line = LineWidget:new{
         dimen = Geom:new{ w = self.item_width, h = Size.line.thick },
+        background = Blitbuffer.COLOR_DARK_GRAY,
     }
     local vertical_footer = VerticalGroup:new{
         bottom_line,
@@ -263,12 +264,15 @@ function SortWidget:init()
     }
     -- setup title bar
     self.title_bar = TitleBar:new{
-        width = self.item_width,
+        width = self.dimen.w,
         align = "left",
         with_bottom_line = true,
+        bottom_line_color = Blitbuffer.COLOR_DARK_GRAY,
+        bottom_line_h_padding = padding,
         title = self.title,
         title_face = self.title_face,
         close_callback = function() self:onClose() end,
+        show_parent = self,
     }
     -- setup main content
     self.item_margin = math.floor(self.item_height / 8)
@@ -280,13 +284,18 @@ function SortWidget:init()
 
     self:_populateItems()
 
+    local padding_below_title = 0
+    if self.pages > 1 then -- center content vertically
+        padding_below_title = (content_height - self.items_per_page * line_height) / 2
+    end
     local frame_content = FrameContainer:new{
         height = self.dimen.h,
-        padding = padding,
+        padding = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             self.title_bar,
+            VerticalSpan:new{ width = padding_below_title },
             self.main_content,
         },
     }
