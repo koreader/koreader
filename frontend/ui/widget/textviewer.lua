@@ -49,10 +49,10 @@ local TextViewer = InputContainer:new{
     alignment_strict = false,
 
     title_face = nil, -- use default from TitleBar
+    title_multilines = nil, -- see TitleBar for details
+    title_shrink_font_to_fit = nil, -- see TitleBar for details
     text_face = Font:getFace("x_smallinfofont"),
     fgcolor = Blitbuffer.COLOR_BLACK,
-    title_padding = Size.padding.default,
-    title_margin = Size.margin.title,
     text_padding = Size.padding.large,
     text_margin = Size.margin.small,
     button_padding = Size.padding.default,
@@ -106,12 +106,14 @@ function TextViewer:init()
         with_bottom_line = true,
         title = self.title,
         title_face = self.title_face,
+        title_multilines = self.title_multilines,
+        title_shrink_font_to_fit = self.title_shrink_font_to_fit,
         close_callback = function() self:onClose() end,
+        show_parent = self,
     }
 
-    local buttons
-    if self.buttons_table == nil then
-        buttons = {
+    local buttons = self.buttons_table or
+        {
             {
                 {
                     text = _("Close"),
@@ -121,13 +123,8 @@ function TextViewer:init()
                 },
             },
         }
-    else
-        buttons = self.buttons_table
-    end
     local button_table = ButtonTable:new{
         width = self.width - 2*self.button_padding,
-        button_font_face = "cfont",
-        button_font_size = 20,
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
