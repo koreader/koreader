@@ -105,7 +105,7 @@ function PageBrowserWidget:init()
         left_icon = "notice-info",
         left_icon_tap_callback = function() self:showHelp() end,
         close_callback = function() self:onClose() end,
-        hold_close_callback = function() self:onClose(true) end,
+        close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
     }
     self.title_bar_h = self.title_bar:getHeight()
@@ -618,8 +618,8 @@ function PageBrowserWidget:onClose(close_all_parents)
     if self.requests_batch_id then
         self.ui.thumbnail:cancelPageThumbnailRequests(self.requests_batch_id)
     end
-    logger.dbg("closing PageBrowserWidget")
     -- Close this widget
+    logger.dbg("closing PageBrowserWidget")
     UIManager:close(self)
     if self.launcher then
         -- We were launched by a BookMapWidget, don't do any cleanup.
@@ -627,6 +627,8 @@ function PageBrowserWidget:onClose(close_all_parents)
             -- The last one of these (which has no launcher attribute)
             -- will do the cleanup below.
             self.launcher:onClose(true)
+        else
+            UIManager:setDirty(self.launcher, "ui")
         end
     else
         -- Remove all thumbnails generated for a different target size than

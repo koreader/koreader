@@ -8,6 +8,7 @@ local LineWidget = require("ui/widget/linewidget")
 local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -17,14 +18,21 @@ local Screen = Device.screen
 local TitleBar = OverlapGroup:extend{
     width = nil, -- default to screen width
     fullscreen = false, -- larger font and small adjustments if fullscreen
-    align = "center",
+    align = "center", -- title & subtitle alignment inside TitleBar
+
     with_bottom_line = false,
+    bottom_line_color = nil, -- default to black
+    bottom_line_h_padding = nil, -- default to 0: full width
 
     title = "",
-    subtitle = nil,
     title_face = nil, -- if not provided, one of these will be used:
     title_face_fullscreen = Font:getFace("smalltfont"),
     title_face_not_fullscreen = Font:getFace("x_smalltfont"),
+    -- by default: single line, truncated if overflow -- the default could be made dependant on self.fullscreen
+    title_multilines = false, -- multilines if overflow
+    title_shrink_font_to_fit = false, -- reduce font size so that single line text fits
+
+    subtitle = nil,
     subtitle_face = Font:getFace("xx_smallinfofont"),
 
     title_top_padding = nil, -- computed if none provided
@@ -46,12 +54,23 @@ local TitleBar = OverlapGroup:extend{
 
     -- If provided, use right_icon="exit" and use this as right_icon_tap_callback
     close_callback = nil,
-    hold_close_callback = nil,
+    close_hold_callback = nil,
+
+    show_parent = nil,
+
+    -- Internal: remember first sizes computed when title_shrink_font_to_fit=true,
+    -- and keep using them after :setTitle() in case a smaller font size is needed,
+    -- to keep the TitleBar geometry stable.
+    _initial_title_top_padding = nil,
+    _initial_title_text_baseline = nil,
+    _initial_titlebar_height = nil,
+    _initial_filler_height = nil,
+    _initial_re_init_needed = nil,
 }
 
 function TitleBar:init()
     if self.close_callback then
-        self.right_icon = "exit"
+        self.right_icon = "close"
         self.right_icon_tap_callback = self.close_callback
         self.right_icon_allow_flash = false
         if self.close_hold_callback then
@@ -82,25 +101,86 @@ function TitleBar:init()
     end
 
     -- Title, subtitle, and their alignment
-    if not self.title_face then
-        self.title_face = self.fullscreen and self.title_face_fullscreen or self.title_face_not_fullscreen
+    local title_face = self.title_face
+    if not title_face then
+        title_face = self.fullscreen and self.title_face_fullscreen or self.title_face_not_fullscreen
     end
-    if not self.title_top_padding then
+    if self.title_multilines then
+        self.title_widget = TextBoxWidget:new{
+            text = self.title,
+            alignment = self.align,
+            width = title_max_width,
+            face = title_face,
+        }
+    else
+        while true do
+            self.title_widget = TextWidget:new{
+                text = self.title,
+                face = title_face,
+                padding = 0,
+                max_width = not self.title_shrink_font_to_fit and title_max_width,
+                    -- truncate if not self.title_shrink_font_to_fit
+            }
+            if not self.title_shrink_font_to_fit then
+                break -- truncation allowed, no loop needed
+            end
+            if self.title_widget:getWidth() <= title_max_width then
+                break -- text with normal font fits, no loop needed
+            end
+            -- Text doesn't fit
+            if not self._initial_titlebar_height then
+                -- We're with title_shrink_font_to_fit and in the first :init():
+                -- we don't want to go on measuring with this too long text.
+                -- We want metrics proper for when text fits, so if later :setTitle()
+                -- is called with a text that fits, this text will look allright.
+                -- Longer title with a smaller font size should be laid out on the
+                -- baseline of a fitted text.
+                -- So, go on computing sizes with an empty title. When all is
+                -- gathered, we'll re :init() ourselves with the original title,
+                -- using the metrics we're computing now (self._initial*).
+                self._initial_re_init_needed = true
+                self.title_widget:free()
+                self.title_widget = TextWidget:new{
+                    text = "",
+                    face = title_face,
+                    padding = 0,
+                }
+                break
+            end
+            -- otherwise, loop and do the same with a smaller font size
+            self.title_widget:free()
+            title_face = Font:getFace(title_face.orig_font, title_face.orig_size - 1)
+        end
+    end
+    local title_top_padding = self.title_top_padding
+    if not title_top_padding then
         -- Compute it so baselines of the text and of the icons align.
         -- Our icons' baselines looks like they could be at 83% to 90% of their height.
-        local face_height, face_baseline = self.title_face.ftface:getHeightAndAscender() -- luacheck: no unused
+        local text_baseline = self.title_widget:getBaseline()
         local icon_height = math.max(left_icon_size, right_icon_size)
         local icon_baseline = icon_height * 0.85 + self.button_padding
-        self.title_top_padding = Math.round(math.max(0,  icon_baseline - face_baseline))
+        title_top_padding = Math.round(math.max(0,  icon_baseline - text_baseline))
+        if self.title_shrink_font_to_fit then
+            -- Use, or store, the first top padding and baseline we have computed,
+            -- so the text stays vertically stable
+            if self._initial_title_top_padding then
+                -- Use this to have baselines aligned:
+                -- title_top_padding = Math.round(self._initial_title_top_padding + self._initial_title_text_baseline - text_baseline)
+                -- But then, smaller text is not vertically centered in the title bar.
+                -- So, go with just half the baseline difference:
+                title_top_padding = Math.round(self._initial_title_top_padding + (self._initial_title_text_baseline - text_baseline)/2)
+            else
+                self._initial_title_top_padding = title_top_padding
+                self._initial_title_text_baseline = text_baseline
+            end
+        end
     end
-    self.title_widget = TextWidget:new{
-        text = self.title,
-        face = self.title_face,
-        max_width = title_max_width,
-        padding = 0,
-    }
+
     self.subtitle_widget = nil
     if self.subtitle then
+        -- No specific options for subtitles currently: truncate if too long.
+        -- We might want to add truncate_left if this gets used for a filepath
+        -- as in FileManager.
         self.subtitle_widget = TextWidget:new{
             text = self.subtitle,
             face = self.subtitle_face,
@@ -115,7 +195,7 @@ function TitleBar:init()
 
     self.title_group = VerticalGroup:new{
         align = self.align,
-        VerticalSpan:new{width = self.title_top_padding},
+        VerticalSpan:new{width = title_top_padding},
         self.title_widget,
         self.subtitle_widget and VerticalSpan:new{width = self.title_subtitle_v_padding},
         self.subtitle_widget,
@@ -139,15 +219,45 @@ function TitleBar:init()
     -- the one we set as self.dimen.h.
 
     self.titlebar_height = self.title_group:getSize().h
+    if self.title_shrink_font_to_fit then
+        -- Use, or store, the first title_group height we have computed,
+        -- so the TitleBar geometry and the bottom line position stay stable
+        -- (face height may have changed, even after we kept the baseline
+        -- stable, as we did above).
+        if self._initial_titlebar_height then
+            self.titlebar_height = self._initial_titlebar_height
+        else
+            self._initial_titlebar_height = self.titlebar_height
+        end
+    end
+
     if self.with_bottom_line then
         -- Be sure we add between the text and the line at least as much padding
         -- as above the text, to keep it vertically centered.
-        local title_bottom_padding = math.max(self.title_top_padding, Size.padding.default)
+        local title_bottom_padding = math.max(title_top_padding, Size.padding.default)
+        local filler_height = self.titlebar_height + title_bottom_padding
+        if self.title_shrink_font_to_fit then
+            -- Use, or store, the first filler height we have computed,
+            if self._initial_filler_height then
+                filler_height = self._initial_filler_height
+            else
+                self._initial_filler_height = filler_height
+            end
+        end
+        local line_widget = LineWidget:new{
+            dimen = Geom:new{ w = self.width, h = Size.line.thick },
+            background = self.bottom_line_color;
+        }
+        if self.bottom_line_h_padding then
+            line_widget.dimen.w = line_widget.dimen.w - 2 * self.bottom_line_h_padding
+            line_widget = HorizontalGroup:new{
+                HorizontalSpan:new{ width = self.bottom_line_h_padding },
+                line_widget,
+            }
+        end
         local filler_and_bottom_line = VerticalGroup:new{
-            VerticalSpan:new{ width = self.titlebar_height + title_bottom_padding },
-            LineWidget:new{
-                dimen = Geom:new{ w = self.width, h = Size.line.thick },
-            },
+            VerticalSpan:new{ width = filler_height },
+            line_widget,
         }
         table.insert(self, filler_and_bottom_line)
         self.titlebar_height = filler_and_bottom_line:getSize().h
@@ -160,6 +270,14 @@ function TitleBar:init()
         end
     end
     self.titlebar_height = self.titlebar_height + self.bottom_v_padding
+
+    if self._initial_re_init_needed then
+        -- We have computed all the self._initial_ metrics needed.
+        self._initial_re_init_needed = nil
+        self:clear()
+        self:init()
+        return
+    end
 
     self.dimen = Geom:new{
         w = self.width,
@@ -177,7 +295,8 @@ function TitleBar:init()
             overlap_align = "left",
             callback = self.left_icon_tap_callback,
             hold_callback = self.left_icon_hold_callback,
-            allow_flash = self.left_icon_allow_flash
+            allow_flash = self.left_icon_allow_flash,
+            show_parent = self.show_parent,
         }
         table.insert(self, self.left_button)
     end
@@ -192,7 +311,8 @@ function TitleBar:init()
             overlap_align = "right",
             callback = self.right_icon_tap_callback,
             hold_callback = self.right_icon_hold_callback,
-            allow_flash = self.right_icon_allow_flash
+            allow_flash = self.right_icon_allow_flash,
+            show_parent = self.show_parent,
         }
         table.insert(self, self.right_button)
     end
@@ -215,13 +335,40 @@ function TitleBar:getHeight()
     return self.titlebar_height
 end
 
-function TitleBar:setTitle(title)
-    self.title_widget:setText(title)
-    if self.inner_title_group then
-        self.inner_title_group:resetLayout()
+function TitleBar:setTitle(title, no_refresh)
+    if self.title_multilines or self.title_shrink_font_to_fit then
+        -- We need to re-init the whole widget as its height or
+        -- padding may change.
+        local previous_height = self.titlebar_height
+        -- Call WidgetContainer:clear() that will call :free() and
+        -- will remove subwidgets from the OverlapGroup we are.
+        self:clear()
+        self.title = title
+        self:init()
+        if no_refresh then
+            -- If caller is sure to handle refresh correctly, it can provides this
+            return
+        end
+        if self.title_multilines and self.titlebar_height ~= previous_height then
+            -- Title height have changed, and the upper widget may not have
+            -- hooks to refresh a combination of its previous size and new
+            -- size: be sure everything is repainted
+            UIManager:setDirty("all", "ui")
+        else
+            UIManager:setDirty(self.show_parent, "ui", self.dimen)
+        end
+    else
+        -- TextWidget with max-width: we can just update its text
+        self.title_widget:setText(title)
+        if self.inner_title_group then
+            self.inner_title_group:resetLayout()
+        end
+        self.title_group:resetLayout()
+        if no_refresh then
+            return
+        end
+        UIManager:setDirty(self.show_parent, "ui", self.dimen)
     end
-    self.title_group:resetLayout()
-    UIManager:setDirty(self.show_parent, "ui", self.dimen)
 end
 
 function TitleBar:setSubTitle(subtitle)

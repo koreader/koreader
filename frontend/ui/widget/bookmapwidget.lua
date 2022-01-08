@@ -600,7 +600,7 @@ function BookMapWidget:init()
         left_icon = "notice-info",
         left_icon_tap_callback = function() self:showHelp() end,
         close_callback = function() self:onClose() end,
-        hold_close_callback = function() self:onClose(true) end,
+        close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
     }
     self.title_bar_h = self.title_bar:getHeight()
@@ -1036,6 +1036,8 @@ function BookMapWidget:onClose(close_all_parents)
             -- The last one of these (which has no launcher attribute)
             -- will do the cleanup below.
             self.launcher:onClose(true)
+        else
+            UIManager:setDirty(self.launcher, "ui")
         end
     else
         -- Remove all thumbnails generated for a different target size than
