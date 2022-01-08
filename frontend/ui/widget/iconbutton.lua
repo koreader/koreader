@@ -27,6 +27,7 @@ local IconButton = InputContainer:new{
     padding_left = nil,
     enabled = true,
     callback = nil,
+    allow_flash = true, -- set to false for any IconButton that may close its container
 }
 
 function IconButton:init()
@@ -85,6 +86,13 @@ function IconButton:initGesListener()
                     range = self.dimen,
                 },
                 doc = "Hold IconButton",
+            },
+            HoldReleaseIconButton = {
+                GestureRange:new{
+                    ges = "hold_release",
+                    range = self.dimen,
+                },
+                doc = "Hold Release IconButton",
             }
         }
     end
@@ -92,7 +100,7 @@ end
 
 function IconButton:onTapIconButton()
     if not self.callback then return end
-    if G_reader_settings:isFalse("flash_ui") then
+    if G_reader_settings:isFalse("flash_ui") or not self.allow_flash then
         self.callback()
     else
         -- c.f., ui/widget/button for more gnarly details about the implementation, but the flow of the flash_ui codepath essentially goes like this:
@@ -133,6 +141,10 @@ function IconButton:onTapIconButton()
 end
 
 function IconButton:onHoldIconButton()
+    -- If we're going to process this hold, we must make
+    -- sure to also handle its hold_release below, so it's
+    -- not propagated up to a MovableContainer
+    self._hold_handled = nil
     if self.enabled and self.hold_callback then
         self.hold_callback()
     elseif self.hold_input then
@@ -140,7 +152,16 @@ function IconButton:onHoldIconButton()
     elseif type(self.hold_input_func) == "function" then
         self:onInput(self.hold_input_func())
     elseif self.hold_callback == nil then return end
+    self._hold_handled = true
     return true
+end
+
+function IconButton:onHoldReleaseIconButton()
+    if self._hold_handled then
+        self._hold_handled = nil
+        return true
+    end
+    return false
 end
 
 function IconButton:onFocus()
