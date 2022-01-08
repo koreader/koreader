@@ -270,7 +270,6 @@ function SortWidget:init()
         bottom_line_color = Blitbuffer.COLOR_DARK_GRAY,
         bottom_line_h_padding = padding,
         title = self.title,
-        title_face = self.title_face,
         close_callback = function() self:onClose() end,
         show_parent = self,
     }
