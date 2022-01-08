@@ -23,7 +23,6 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -38,6 +37,7 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -46,73 +46,6 @@ local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
-
-local KeyValueTitle = VerticalGroup:new{
-    kv_page = nil,
-    title = "",
-    tface = Font:getFace("tfont"),
-    align = "left",
-    use_top_page_count = false,
-}
-
-function KeyValueTitle:init()
-    self.close_button = CloseButton:new{ window = self }
-    local btn_width = self.close_button:getSize().w
-    -- title and close button
-    table.insert(self, OverlapGroup:new{
-        dimen = { w = self.width },
-        TextWidget:new{
-            text = self.title,
-            max_width = self.width - btn_width,
-            face = self.tface,
-        },
-        self.close_button,
-    })
-    -- page count and separation line
-    self.title_bottom = OverlapGroup:new{
-        dimen = { w = self.width, h = Size.line.thick },
-        LineWidget:new{
-            dimen = Geom:new{ w = self.width, h = Size.line.thick },
-            background = Blitbuffer.COLOR_DARK_GRAY,
-            style = "solid",
-        },
-    }
-    if self.use_top_page_count then
-        self.page_cnt = FrameContainer:new{
-            padding = Size.padding.default,
-            margin = 0,
-            bordersize = 0,
-            background = Blitbuffer.COLOR_WHITE,
-            -- overlap offset x will be updated in setPageCount method
-            overlap_offset = {0, -15},
-            TextWidget:new{
-                text = "",  -- page count
-                fgcolor = Blitbuffer.COLOR_DARK_GRAY,
-                face = Font:getFace("smallffont"),
-            },
-        }
-        table.insert(self.title_bottom, self.page_cnt)
-    end
-    table.insert(self, self.title_bottom)
-    table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
-end
-
-function KeyValueTitle:setPageCount(curr, total)
-    if total == 1 then
-        -- remove page count if there is only one page
-        table.remove(self.title_bottom, 2)
-        return
-    end
-    self.page_cnt[1]:setText(curr .. "/" .. total)
-    self.page_cnt.overlap_offset[1] = (self.width - self.page_cnt:getSize().w - 10)
-    self.title_bottom[2] = self.page_cnt
-end
-
-function KeyValueTitle:onClose()
-    self.kv_page:onClose()
-    return true
-end
-
 
 local KeyValueItem = InputContainer:new{
     key = nil,
@@ -234,8 +167,9 @@ function KeyValueItem:init()
     if fit_right_align and value_align_right and value_widget:getWidth() < value_w then
         -- Because of truncation at glyph boundaries, value_widget
         -- may be a tad smaller than the specified value_w:
-        -- add some padding to key_w so value is pushed to the screen right border
-        key_w = key_w + ( value_w - value_widget:getWidth() )
+        -- adjust key_w so value is pushed to the screen right border
+        value_w = value_widget:getWidth()
+        key_w = available_width - value_w
     end
     key_widget:setMaxWidth(key_w)
 
@@ -333,7 +267,6 @@ local KeyValuePage = InputContainer:new{
     values_lang = nil,
     -- index for the first item to show
     show_page = 1,
-    use_top_page_count = false,
     -- aligment of value when key or value overflows its reserved width (for
     -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
     value_overflow_align = "left",
@@ -462,14 +395,10 @@ function KeyValuePage:init()
     }
 
     local padding = Size.padding.large
-    self.inner_dimen = Geom:new{
-        w = self.dimen.w - 2 * padding,
-        h = self.dimen.h - padding, -- no bottom padding
-    }
-    self.item_width = self.inner_dimen.w
+    self.item_width = self.dimen.w - 2 * padding
 
     local footer = BottomContainer:new{
-        dimen = self.inner_dimen:copy(),
+        dimen = self.dimen:copy(),
         self.page_info,
     }
     if self.single_page then
@@ -477,28 +406,29 @@ function KeyValuePage:init()
     end
 
     local page_return = BottomContainer:new{
-        dimen = self.inner_dimen:copy(),
+        dimen = self.dimen:copy(),
         WidgetContainer:new{
             dimen = Geom:new{
-                w = self.inner_dimen.w,
+                w = self.dimen.w,
                 h = self.return_button:getSize().h,
             },
             self.return_button,
         }
     }
 
-    -- setup title bar
-    self.title_bar = KeyValueTitle:new{
+    self.title_bar = TitleBar:new{
         title = self.title,
-        width = self.item_width,
-        height = Size.item.height_default,
-        use_top_page_count = self.use_top_page_count,
-        kv_page = self,
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        bottom_line_color = Blitbuffer.COLOR_DARK_GRAY,
+        bottom_line_h_padding = padding,
+        close_callback = function() self:onClose() end,
     }
 
     -- setup main content
-    local available_height = self.inner_dimen.h
-                         - self.title_bar:getSize().h
+    local available_height = self.dimen.h
+                         - self.title_bar:getHeight()
                          - Size.span.vertical_large -- for above page_info (as title_bar adds one itself)
                          - (self.single_page and 0 or self.page_info:getSize().h)
                          - 2*Size.line.thick
@@ -514,7 +444,8 @@ function KeyValuePage:init()
         G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
     self.item_height = math.floor(available_height / self.items_per_page)
     -- Put half of the pixels lost by floor'ing between title and content
-    local span_height = math.floor((available_height - (self.items_per_page * (self.item_height))) / 2)
+    local content_height = self.items_per_page * self.item_height
+    local span_height = math.floor((available_height - content_height) / 2)
 
     -- Font size is not configurable: we can get a good one from the following
     local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -525,29 +456,32 @@ function KeyValuePage:init()
     self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
     self.main_content = VerticalGroup:new{}
 
-    -- set textviewer height to let our title fully visible
+    -- set textviewer height to let our title fully visible (but hide the bottom line)
     self.textviewer_width = self.item_width
-    self.textviewer_height = self.dimen.h - 2*self.title_bar:getSize().h
+    self.textviewer_height = self.dimen.h - 2 * (self.title_bar:getHeight() - Size.padding.default - Size.line.thick)
 
     self:_populateItems()
 
     local content = OverlapGroup:new{
         allow_mirroring = false,
-        dimen = self.inner_dimen:copy(),
+        dimen = self.dimen:copy(),
         VerticalGroup:new{
             align = "left",
             self.title_bar,
             VerticalSpan:new{ width = span_height },
-            self.main_content,
+            HorizontalGroup:new{
+                HorizontalSpan:new{ width = padding },
+                self.main_content,
+            }
         },
         page_return,
         footer,
     }
     -- assemble page
     self[1] = FrameContainer:new{
+        width = self.dimen.w,
         height = self.dimen.h,
-        padding = padding,
-        padding_bottom = 0,
+        padding = 0,
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
