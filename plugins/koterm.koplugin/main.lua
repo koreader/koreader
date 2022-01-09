@@ -23,6 +23,7 @@ local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local TermInputText = require("terminputtext")
 local TextWidget = require("ui/widget/textwidget")
 local T = require("ffi/util").template
 local bit = require("bit")
@@ -44,7 +45,7 @@ local ctrl_z = "\026"
 
 local esc = "\027"
 
--- todo: A better message here would be helpful
+--- @todo: A better message here would be helpful
 local about_text = _([[
 KOTerm is a terminal emulator, which starts a shell (command prompt).
 
@@ -247,7 +248,7 @@ function Terminal:interpretAnsiSeq(text)
 --        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx", pos, next_byte)
         if self.sequence_state == "" then
             if next_byte == "\007" then
-                --nop
+                logger.info("KOTerm: bell")
             elseif next_byte == "\008" then
                 self.input_widget:leftChar(true)
             elseif next_byte == "\010" then
@@ -275,7 +276,7 @@ function Terminal:interpretAnsiSeq(text)
                     self.input_widget:addChars(part, true)
                 else -- utf8 sequence
                     local part = next_byte
-                    -- todo this allows only one utf8 codepoint by now, multiple will fail
+                    --- @todo this allows only one utf8 codepoint by now, multiple will fail
                     while pos+1 < #text and next_byte:byte() >= 128 do
                         next_byte = text:sub(pos+1, pos+1)
                         if next_byte ~= "" and pos+1 < #text and next_byte:byte() >=128 then
@@ -304,7 +305,7 @@ function Terminal:interpretAnsiSeq(text)
             elseif next_byte == "H" then -- cursor home
                 self.input_widget:moveCursorToRowCol(1, 1, self.maxr, self.maxc)
             elseif next_byte == "I" then -- reverse line feed (cursor up and insert line)
-                logger.dbg("KOTerm: reverse line feed not supported")
+                self.input_widget:reverseLineFeed(true)
             elseif next_byte == "J" then -- clear to end of screen
                 self.input_widget:clearToEndOfScreen()
             elseif next_byte == "K" then -- clear to end of line
@@ -341,9 +342,11 @@ function Terminal:interpretAnsiSeq(text)
         elseif self.sequence_state == "CSI1" then
 --            print("xxxx CSI", next_byte, pos)
             if next_byte == "s" then -- save cursor pos
-                -- todo
+                logger.dbg("KOTerm: save cursor pos not implemented")
+                --- @todo
             elseif next_byte == "u" then -- restore cursor pos
-                -- todo
+                logger.dbg("KOTerm: restore cursor pos not implemented")
+                --- @todo
             elseif next_byte == "?" then
                 self.sequence_state = "escParam2"
             elseif isNum(next_byte) then
@@ -435,7 +438,7 @@ function Terminal:generateInputDialog()
         allow_newline = false,
         cursor_at_end = true,
         fullscreen = true,
-        terminal_mode = true,
+        InputText = TermInputText,
         buttons = {{
             {
             text = "↹",  -- tabulator "⇤" and "⇥"
@@ -593,7 +596,7 @@ function Terminal:addToMainMenu(menu_items)
             {
                 text_func = function()
                     local state = self.is_shell_open and "running" or "not running"
-                    return T(_("Open terminal session: (%1)"), state)
+                    return T(_("Open terminal session (%1)"), state)
                 end,
                 callback = function(touchmenu_instance)
                     self:onKOTermStart(touchmenu_instance)
