@@ -34,6 +34,7 @@ local TitleBar = OverlapGroup:extend{
 
     subtitle = nil,
     subtitle_face = Font:getFace("xx_smallinfofont"),
+    subtitle_truncate_left = nil, -- set to true for a filepath
 
     title_top_padding = nil, -- computed if none provided
     title_h_padding = Size.padding.large, -- horizontal padding (this replaces button_padding on the inner/title side)
@@ -82,6 +83,7 @@ function TitleBar:init()
         self.width = Screen:getWidth()
     end
     local title_max_width = self.width - 2 * self.title_h_padding
+    local subtitle_max_width = title_max_width
 
     local left_icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.left_icon_size_ratio)
     local right_icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.right_icon_size_ratio)
@@ -179,12 +181,11 @@ function TitleBar:init()
     self.subtitle_widget = nil
     if self.subtitle then
         -- No specific options for subtitles currently: truncate if too long.
-        -- We might want to add truncate_left if this gets used for a filepath
-        -- as in FileManager.
         self.subtitle_widget = TextWidget:new{
             text = self.subtitle,
             face = self.subtitle_face,
-            max_width = title_max_width,
+            max_width = subtitle_max_width,
+            truncate_left = self.subtitle_truncate_left,
             padding = 0,
         }
     end
