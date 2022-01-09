@@ -492,8 +492,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         items_font_size = items_font_size,
         multilines_show_more_text = multilines_show_more_text,
         line_color = show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
-        has_extra_button = true,
-        extra_button_icon = "appbar.menu",
+        title_bar_left_icon = "appbar.menu",
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -598,7 +597,8 @@ function ReaderBookmark:onShowBookmark(match_table)
         self.select_mode = not self.select_mode
         if self.select_mode then
             self.select_count = 0
-            bm_menu:setTitleBarIconAndText("check")
+            bm_menu:setTitleBarLeftIcon("check")
+            UIManager:setDirty(self.show_parent, "ui")
         else
             for _, v in ipairs(item_table) do
                 if v.dim then
@@ -607,11 +607,11 @@ function ReaderBookmark:onShowBookmark(match_table)
             end
             bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)")
                 or _("Bookmarks"), item_table)
-            bm_menu:setTitleBarIconAndText("appbar.menu")
+            bm_menu:setTitleBarLeftIcon("appbar.menu")
         end
     end
 
-    function bm_menu:onExtraButtonTap()
+    function bm_menu:onLeftButtonTap()
         local bm_dialog, dialog_title
         local buttons = {}
         if self.select_mode then
@@ -715,7 +715,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                                 self.select_mode = false
                                 bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)")
                                     or _("Bookmarks"), item_table, -1)
-                                bm_menu:setTitleBarIconAndText("appbar.menu")
+                                bm_menu:setTitleBarLeftIcon("appbar.menu")
                             end,
                         })
                     end,
@@ -816,7 +816,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         UIManager:show(bm_dialog)
     end
 
-    function bm_menu:onExtraButtonHold()
+    function bm_menu:onLeftButtonHold()
         bm_menu:toggleSelectMode()
         return true
     end
