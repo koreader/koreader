@@ -1,5 +1,5 @@
 #!/bin/sh
-echo  "Frequency in Hz: "
+echo "Frequency in Hz: "
 cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq | sort -r
 echo "Core-Temperature:"
 cat /sys/class/thermal/thermal_zone*/temp
