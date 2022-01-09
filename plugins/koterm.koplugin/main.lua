@@ -3,6 +3,17 @@ This plugin provides a terminal emulator (VT52 (+some ANSI))
 ]]
 
 local Device = require("device")
+
+-- grantpt and friends are necessary (introduced on Android in API 21).
+-- So sorry for the Tolinos with (Android 4.4.x)
+if Device:isAndroid() then
+    local A, android = pcall(require, "android")  -- luacheck: ignore
+    local api = android.app.activity.sdkVersion
+    if api < 21 then
+        return { disabled = true }
+    end
+end
+
 local Dispatcher = require("dispatcher")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
@@ -70,7 +81,7 @@ function Terminal:spawnShell(cols, rows)
     local shell = G_reader_settings:readSetting("KOTerm_shell", "sh")
 
     local ptmx_name = "/dev/ptmx"
-    self.ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK))
+    self.ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
 
     if C.grantpt(self.ptmx) ~= 0 then
         logger.err("KOTerm: can not grantpt")
@@ -227,7 +238,6 @@ function Terminal:interpretAnsiSeq(text)
     for i = 1, #text do
 --       logger.info("xxxxx received: ", i,  text:sub(i,i):byte(), text:sub(i,i))
     end
-
 
     local pos = 1
     local param1, param2 = 0, 0
@@ -670,6 +680,9 @@ function Terminal:addToMainMenu(menu_items)
                                 callback = function()
                                     G_reader_settings:saveSetting("KOTerm_shell", "sh")
                                     UIManager:close(self.shell_dialog)
+                                    if touchmenu_instance then
+                                        touchmenu_instance:updateItems()
+                                    end
                                 end,
                             },
                             {
@@ -682,7 +695,6 @@ function Terminal:addToMainMenu(menu_items)
                                     end
                                     G_reader_settings:saveSetting("KOTerm_shell", new_shell)
                                     UIManager:close(self.shell_dialog)
-                                    self:killShell()
                                     if touchmenu_instance then
                                         touchmenu_instance:updateItems()
                                     end
