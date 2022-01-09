@@ -45,6 +45,7 @@ function Screenshoter:onScreenshot(filename, when_done_func)
     confirm_box = ConfirmBox:new{
         text = T( _("Screenshot saved to:\n%1"), BD.filepath(screenshot_name)),
         keep_dialog_open = true,
+        flush_events_on_show = true, -- may be invoked with 2-fingers tap, accidental additional events can happen
         cancel_text = _("Close"),
         cancel_callback = function()
             if when_done_func then when_done_func() end
