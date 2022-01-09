@@ -598,7 +598,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         if self.select_mode then
             self.select_count = 0
             bm_menu:setTitleBarLeftIcon("check")
-            UIManager:setDirty(self.show_parent, "ui")
+            UIManager:setDirty(bm_menu.show_parent, "ui")
         else
             for _, v in ipairs(item_table) do
                 if v.dim then
