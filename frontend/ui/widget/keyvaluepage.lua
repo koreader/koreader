@@ -41,7 +41,6 @@ local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -301,7 +300,7 @@ function KeyValuePage:init()
     -- return button
     --- @todo: alternative icon if BD.mirroredUILayout()
     self.page_return_arrow = self.page_return_arrow or Button:new{
-        icon = "back.top",
+        icon = BD.mirroredUILayout() and "back.top.rtl" or "back.top",
         callback = function() self:onReturn() end,
         bordersize = 0,
         show_parent = self,
@@ -353,6 +352,9 @@ function KeyValuePage:init()
             width = Size.span.horizontal_small,
         },
         self.page_return_arrow,
+        HorizontalSpan:new{
+            width = self.dimen.w - self.page_return_arrow:getSize().w - Size.span.horizontal_small,
+        },
     }
 
     self.page_info_left_chev:hide()
@@ -407,17 +409,12 @@ function KeyValuePage:init()
 
     local page_return = BottomContainer:new{
         dimen = self.dimen:copy(),
-        WidgetContainer:new{
-            dimen = Geom:new{
-                w = self.dimen.w,
-                h = self.return_button:getSize().h,
-            },
-            self.return_button,
-        }
+        self.return_button,
     }
 
     self.title_bar = TitleBar:new{
         title = self.title,
+        fullscreen = self.covers_fullscreen,
         width = self.width,
         align = "left",
         with_bottom_line = true,

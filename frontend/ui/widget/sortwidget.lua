@@ -11,6 +11,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
@@ -68,16 +69,22 @@ function SortItemWidget:init()
     self[1] = FrameContainer:new{
         padding = 0,
         bordersize = 0,
-        HorizontalGroup:new {
-            align = "center",
-            CenterContainer:new{
-                dimen = Geom:new{ w = checked_widget:getSize().w },
-                self.checkmark_widget,
+        LeftContainer:new{ -- needed only for auto UI mirroring
+            dimen = Geom:new{
+                w = self.width,
+                h = self.height,
             },
-            TextWidget:new{
-                text = self.item.text,
-                max_width = text_max_width,
-                face = self.face,
+            HorizontalGroup:new {
+                align = "center",
+                CenterContainer:new{
+                    dimen = Geom:new{ w = checked_widget:getSize().w },
+                    self.checkmark_widget,
+                },
+                TextWidget:new{
+                    text = self.item.text,
+                    max_width = text_max_width,
+                    face = self.face,
+                },
             },
         },
     }
