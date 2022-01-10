@@ -244,7 +244,7 @@ function TermInputText:reverseLineFeed(skip_callback)
 end
 
 ------------------------------------------------------------------
---              overwritten InputText methods                   --
+--              overridden InputText methods                    --
 ------------------------------------------------------------------
 
 function TermInputText:leftChar(skip_callback)
