@@ -481,6 +481,10 @@ function ReaderBookmark:onShowBookmark(match_table)
     local multilines_show_more_text = G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
     local show_separator = G_reader_settings:isTrue("bookmarks_items_show_separator")
 
+    self.bookmark_menu = CenterContainer:new{
+        dimen = Screen:getSize(),
+        covers_fullscreen = true, -- hint for UIManager:_repaint()
+    }
     local bm_menu = Menu:new{
         title = self.filtered_mode and _("Bookmarks (search results)") or _("Bookmarks"),
         item_table = item_table,
@@ -503,14 +507,10 @@ function ReaderBookmark:onShowBookmark(match_table)
                 },
                 direction = BD.flipDirectionIfMirroredUILayout("east")
             }
-        }
+        },
+        show_parent = self.bookmark_menu,
     }
-
-    self.bookmark_menu = CenterContainer:new{
-        dimen = Screen:getSize(),
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        bm_menu,
-    }
+    table.insert(self.bookmark_menu, bm_menu)
 
     -- buid up menu widget method as closure
     local bookmark = self
@@ -598,7 +598,6 @@ function ReaderBookmark:onShowBookmark(match_table)
         if self.select_mode then
             self.select_count = 0
             bm_menu:setTitleBarLeftIcon("check")
-            UIManager:setDirty(bm_menu.show_parent, "ui")
         else
             for _, v in ipairs(item_table) do
                 if v.dim then
