@@ -113,7 +113,7 @@ function CoverMenu:updateItems(select_number)
     self:updatePageInfo(select_number)
 
     if self.show_path then
-        self.path_text:setText(BD.directory(self.path))
+        self.title_bar:setSubTitle(BD.directory(self.path))
     end
     self.show_parent.dithered = self._has_cover_images
     UIManager:setDirty(self.show_parent, function()

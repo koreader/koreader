@@ -492,8 +492,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         items_font_size = items_font_size,
         multilines_show_more_text = multilines_show_more_text,
         line_color = show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
-        has_extra_button = true,
-        extra_button_icon = "appbar.menu",
+        title_bar_left_icon = "appbar.menu",
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -504,13 +503,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                 },
                 direction = BD.flipDirectionIfMirroredUILayout("east")
             }
-        }
-    }
-
-    self.bookmark_menu = CenterContainer:new{
-        dimen = Screen:getSize(),
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        bm_menu,
+        },
     }
 
     -- buid up menu widget method as closure
@@ -598,7 +591,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         self.select_mode = not self.select_mode
         if self.select_mode then
             self.select_count = 0
-            bm_menu:setTitleBarIconAndText("check")
+            bm_menu:setTitleBarLeftIcon("check")
         else
             for _, v in ipairs(item_table) do
                 if v.dim then
@@ -607,11 +600,11 @@ function ReaderBookmark:onShowBookmark(match_table)
             end
             bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)")
                 or _("Bookmarks"), item_table)
-            bm_menu:setTitleBarIconAndText("appbar.menu")
+            bm_menu:setTitleBarLeftIcon("appbar.menu")
         end
     end
 
-    function bm_menu:onExtraButtonTap()
+    function bm_menu:onLeftButtonTap()
         local bm_dialog, dialog_title
         local buttons = {}
         if self.select_mode then
@@ -715,7 +708,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                                 self.select_mode = false
                                 bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)")
                                     or _("Bookmarks"), item_table, -1)
-                                bm_menu:setTitleBarIconAndText("appbar.menu")
+                                bm_menu:setTitleBarLeftIcon("appbar.menu")
                             end,
                         })
                     end,
@@ -816,22 +809,21 @@ function ReaderBookmark:onShowBookmark(match_table)
         UIManager:show(bm_dialog)
     end
 
-    function bm_menu:onExtraButtonHold()
+    function bm_menu:onLeftButtonHold()
         bm_menu:toggleSelectMode()
         return true
     end
 
     bm_menu.close_callback = function()
-        UIManager:close(self.bookmark_menu)
+        UIManager:close(bm_menu)
     end
 
-    bm_menu.show_parent = self.bookmark_menu
     self.refresh = function()
         bm_menu:updateItems()
         self:onSaveSettings()
     end
 
-    UIManager:show(self.bookmark_menu)
+    UIManager:show(bm_menu)
     return true
 end
 

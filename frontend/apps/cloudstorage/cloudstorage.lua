@@ -34,7 +34,6 @@ local CloudStorage = Menu:extend{
     is_popout = false,
     is_borderless = true,
     title = _("Cloud storage"),
-    has_extra_button = true,
 }
 
 local server_types = {
@@ -55,8 +54,8 @@ function CloudStorage:init()
     end
     self.width = Screen:getWidth()
     self.height = Screen:getHeight()
-    self.extra_button_icon = "plus"
-    self.onExtraButtonTap = function() -- add new cloud storage
+    self.title_bar_left_icon = "plus"
+    self.onLeftButtonTap = function() -- add new cloud storage
         self:selectCloudType()
     end
     Menu.init(self)
@@ -161,12 +160,12 @@ function CloudStorage:openCloudServer(url)
     if tbl then
         self:switchItemTable(url, tbl)
         if self.type == "dropbox" then
-            self.onExtraButtonTap = function()
+            self.onLeftButtonTap = function()
                 self:showPlusMenu(url)
             end
         else
-            self:setTitleBarIconAndText("home")
-            self.onExtraButtonTap = function()
+            self:setTitleBarLeftIcon("home")
+            self.onLeftButtonTap = function()
                 self:init()
             end
         end

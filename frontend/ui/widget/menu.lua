@@ -13,7 +13,6 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
@@ -23,12 +22,14 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -607,9 +608,8 @@ local Menu = FocusManager:new{
     -- if you want to embed the menu widget into another widget, set
     -- this to false
     is_popout = true,
-    -- set this to true to add extra (left) button to the title bar
-    has_extra_button = false,
-    extra_button_icon = nil, -- default icon "appbar.menu"
+    -- set icon to add title bar left button
+    title_bar_left_icon = nil,
     -- set this to true to add close button
     has_close_button = true,
     -- close_callback is a function, which is executed when menu is closed
@@ -629,8 +629,8 @@ function Menu:_recalculateDimen()
         bottom_height = math.max(self.page_return_arrow:getSize().h, self.page_info_text:getSize().h)
             + 2 * Size.padding.button
     end
-    if self.menu_title and not self.no_title then
-        top_height = self.menu_title_group:getSize().h + self.header_padding
+    if self.title_bar and not self.no_title then
+        top_height = self.title_bar:getHeight() + self.header_padding
     end
     height_dim = self.inner_dimen.h - bottom_height - top_height
     local item_height = math.floor(height_dim / self.perpage)
@@ -666,50 +666,27 @@ function Menu:init()
     -----------------------------------
     -- start to set up widget layout --
     -----------------------------------
-    local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.6) -- left and right title buttons
-    local title_text_width = self.inner_dimen.w - 2 * Size.padding.large
-    self.menu_title = TextWidget:new{
-        face = Font:getFace("smalltfont"),
-        text = self.title,
-        max_width = title_text_width - (Device:isTouchDevice() and 2 * icon_size or 0),
-        overlap_align = "center",
-    }
-    local menu_title_container = CenterContainer:new{
-        dimen = Geom:new{
-            w = self.inner_dimen.w,
-            h = self.menu_title:getSize().h,
-        },
-        self.menu_title,
-    }
-    local path_text_container
-    if self.show_path then
-        self.path_text = TextWidget:new{
-            face = Font:getFace("xx_smallinfofont"),
-            text = BD.directory(self.path),
-            max_width = title_text_width,
-            truncate_left = true,
-        }
-        path_text_container = CenterContainer:new{
-            dimen = Geom:new{
-                w = self.inner_dimen.w,
-                h = self.path_text:getSize().h,
-            },
-            self.path_text,
-        }
-    else
-        path_text_container = VerticalSpan:new{width = 0}
-    end
-    self.menu_title_group = VerticalGroup:new{
+    self.title_bar = TitleBar:new{
+        width = self.dimen.w,
+        fullscreen = "true",
         align = "center",
-        VerticalSpan:new{width = Screen:scaleBySize(3)},
-        menu_title_container,
-        path_text_container,
+        with_bottom_line = self.with_bottom_line,
+        bottom_line_color = self.bottom_line_color,
+        bottom_line_h_padding = self.bottom_line_h_padding,
+        title = self.title,
+        title_face = self.title_face,
+        title_multilines = self.title_multilines,
+        title_shrink_font_to_fit = self.title_shrink_font_to_fit,
+        subtitle = self.show_path and BD.directory(filemanagerutil.abbreviate(self.path)),
+        subtitle_truncate_left = self.show_path,
+        subtitle_fullwidth = self.show_path,
+        left_icon = self.title_bar_left_icon,
+        left_icon_tap_callback = function() self:onLeftButtonTap() end,
+        left_icon_hold_callback = function() self:onLeftButtonHold() end,
+        close_callback = self.has_close_button and function() self:onClose() end,
+        show_parent = self.show_parent or self,
     }
-    -- group for title bar
-    self.title_bar = OverlapGroup:new{
-        dimen = {w = self.inner_dimen.w, h = self.menu_title_group:getSize().h},
-        self.menu_title_group,
-    }
+
     -- group for items
     self.item_group = VerticalGroup:new{}
     -- group for page info
@@ -865,9 +842,7 @@ function Menu:init()
         self.page_return_arrow,
     }
 
-    local header = VerticalGroup:new{
-        self.title_bar,
-    }
+    local header = self.no_title and VerticalSpan:new{ width = 0 } or self.title_bar
     local body = self.item_group
     local footer = BottomContainer:new{
         dimen = self.inner_dimen:copy(),
@@ -888,20 +863,12 @@ function Menu:init()
     self.vertical_span = HorizontalGroup:new{
         VerticalSpan:new{ width = self.span_width }
     }
-    if self.no_title then
-        self.content_group = VerticalGroup:new{
-            align = "left",
-            self.vertical_span,
-            body,
-        }
-    else
-        self.content_group = VerticalGroup:new{
-            align = "left",
-            header,
-            self.vertical_span,
-            body,
-        }
-    end
+    self.content_group = VerticalGroup:new{
+        align = "left",
+        header,
+        self.vertical_span,
+        body,
+    }
     local content = OverlapGroup:new{
         -- This unique allow_mirroring=false looks like it's enough
         -- to have this complex Menu, and all widgets based on it,
@@ -926,34 +893,6 @@ function Menu:init()
     -- start to set up input event callback --
     ------------------------------------------
     if Device:isTouchDevice() then
-        local button_padding = Screen:scaleBySize(11)
-        if self.has_extra_button then
-            self.extra_button = IconButton:new{
-                icon = self.extra_button_icon or "appbar.menu",
-                width = icon_size,
-                height = icon_size,
-                padding = button_padding,
-                padding_right = 2 * icon_size, -- extend button tap zone
-                padding_bottom = icon_size,
-                overlap_align = "left",
-                callback = function() self:onExtraButtonTap() end,
-                hold_callback = function() self:onExtraButtonHold() end,
-            }
-            table.insert(self.title_bar, self.extra_button)
-        end
-        if self.has_close_button then
-            local close_button = IconButton:new{
-                icon = "exit",
-                width = icon_size,
-                height = icon_size,
-                padding = button_padding,
-                padding_left = 2 * icon_size, -- extend button tap zone
-                padding_bottom = icon_size,
-                overlap_align = "right",
-                callback = function() self:onClose() end,
-            }
-            table.insert(self.title_bar, close_button)
-        end
         -- watch for outer region if it's a self contained widget
         if self.is_popout then
             self.ges_events.TapCloseAllMenus = {
@@ -1161,7 +1100,7 @@ function Menu:updateItems(select_number)
 
     self:updatePageInfo(select_number)
     if self.show_path then
-        self.path_text:setText(BD.directory(self.path))
+        self.title_bar:setSubTitle(BD.directory(filemanagerutil.abbreviate(self.path)))
     end
 
     UIManager:setDirty(self.show_parent, function()
@@ -1187,8 +1126,8 @@ end
     which item.key = value
 --]]
 function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
-    if self.menu_title and new_title then
-        self.menu_title:setText(new_title)
+    if self.title_bar and new_title then
+        self.title_bar:setTitle(new_title)
     end
 
     if itemnumber == nil then
@@ -1423,20 +1362,14 @@ function Menu:onSwipe(arg, ges_ev)
     end
 end
 
-function Menu:setTitleBarIconAndText(extra_button_icon, title_text)
-    if self.extra_button and extra_button_icon then
-        self.extra_button:setIcon(extra_button_icon)
-    end
-    if self.menu_title and title_text then
-        self.menu_title:setText(title_text)
-    end
-    UIManager:setDirty(self.show_parent, "ui")
+function Menu:setTitleBarLeftIcon(icon)
+    self.title_bar:setLeftIcon(icon)
 end
 
-function Menu:onExtraButtonTap() -- to be overriden and implemented by the caller
+function Menu:onLeftButtonTap() -- to be overriden and implemented by the caller
 end
 
-function Menu:onExtraButtonHold() -- to be overriden and implemented by the caller
+function Menu:onLeftButtonHold() -- to be overriden and implemented by the caller
 end
 
 --- Adds > to touch menu items with a submenu
