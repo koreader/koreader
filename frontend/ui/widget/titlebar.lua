@@ -18,7 +18,7 @@ local Screen = Device.screen
 local TitleBar = OverlapGroup:extend{
     width = nil, -- default to screen width
     fullscreen = false, -- larger font and small adjustments if fullscreen
-    align = "center", -- title & subtitle alignment inside TitleBar
+    align = "center", -- or "left": title & subtitle alignment inside TitleBar ("right" nor supported)
 
     with_bottom_line = false,
     bottom_line_color = nil, -- default to black
@@ -34,6 +34,9 @@ local TitleBar = OverlapGroup:extend{
 
     subtitle = nil,
     subtitle_face = Font:getFace("xx_smallinfofont"),
+    subtitle_truncate_left = false, -- default with single line is to truncate right (set to true for a filepath)
+    subtitle_fullwidth = false, -- true to allow subtitle to extend below the buttons
+    subtitle_multilines = false, -- multilines if overflow
 
     title_top_padding = nil, -- computed if none provided
     title_h_padding = Size.padding.large, -- horizontal padding (this replaces button_padding on the inner/title side)
@@ -43,11 +46,13 @@ local TitleBar = OverlapGroup:extend{
     button_padding = Screen:scaleBySize(11), -- fine to keep exit/cross icon diagonally aligned with screen corners
     left_icon = nil,
     left_icon_size_ratio = 0.6,
+    left_icon_rotation_angle = 0,
     left_icon_tap_callback = function() end,
     left_icon_hold_callback = function() end,
     left_icon_allow_flash = true,
     right_icon = nil,
     right_icon_size_ratio = 0.6,
+    right_icon_rotation_angle = 0,
     right_icon_tap_callback = function() end,
     right_icon_hold_callback = function() end,
     right_icon_allow_flash = true,
@@ -81,7 +86,6 @@ function TitleBar:init()
     if not self.width then
         self.width = Screen:getWidth()
     end
-    local title_max_width = self.width - 2 * self.title_h_padding
 
     local left_icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.left_icon_size_ratio)
     local right_icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.right_icon_size_ratio)
@@ -89,15 +93,28 @@ function TitleBar:init()
     self.has_right_icon = false
 
     -- No button on non-touch device
+    local left_icon_reserved_width = 0
+    local right_icon_reserved_width = 0
     if Device:isTouchDevice() then
         if self.left_icon then
-            title_max_width = title_max_width - left_icon_size - self.button_padding
             self.has_left_icon = true
+            left_icon_reserved_width = left_icon_size + self.button_padding
         end
         if self.right_icon then
-            title_max_width = title_max_width - right_icon_size - self.button_padding
             self.has_right_icon = true
+            right_icon_reserved_width = right_icon_size + self.button_padding
         end
+    end
+
+    if self.align == "center" then
+        -- Keep title and subtitle text centered even if single button
+        left_icon_reserved_width = math.max(left_icon_reserved_width, right_icon_reserved_width)
+        right_icon_reserved_width = left_icon_reserved_width
+    end
+    local title_max_width = self.width - 2*self.title_h_padding - left_icon_reserved_width - right_icon_reserved_width
+    local subtitle_max_width = self.width - 2*self.title_h_padding
+    if not self.subtitle_fullwidth then
+        subtitle_max_width = subtitle_max_width - left_icon_reserved_width - right_icon_reserved_width
     end
 
     -- Title, subtitle, and their alignment
@@ -178,15 +195,22 @@ function TitleBar:init()
 
     self.subtitle_widget = nil
     if self.subtitle then
-        -- No specific options for subtitles currently: truncate if too long.
-        -- We might want to add truncate_left if this gets used for a filepath
-        -- as in FileManager.
-        self.subtitle_widget = TextWidget:new{
-            text = self.subtitle,
-            face = self.subtitle_face,
-            max_width = title_max_width,
-            padding = 0,
-        }
+        if self.subtitle_multilines then
+            self.subtitle_widget = TextBoxWidget:new{
+                text = self.subtitle,
+                alignment = self.align,
+                width = subtitle_max_width,
+                face = self.subtitle_face,
+            }
+        else
+            self.subtitle_widget = TextWidget:new{
+                text = self.subtitle,
+                face = self.subtitle_face,
+                max_width = subtitle_max_width,
+                truncate_left = self.subtitle_truncate_left,
+                padding = 0,
+            }
+        end
     end
     -- To debug vertical positionning:
     -- local FrameContainer = require("ui/widget/container/framecontainer")
@@ -195,23 +219,35 @@ function TitleBar:init()
 
     self.title_group = VerticalGroup:new{
         align = self.align,
+        overlap_align = self.align,
         VerticalSpan:new{width = title_top_padding},
-        self.title_widget,
-        self.subtitle_widget and VerticalSpan:new{width = self.title_subtitle_v_padding},
-        self.subtitle_widget,
     }
     if self.align == "left" then
-        local padding = self.title_h_padding
-        if self.has_left_icon then
-            padding = padding + self.button_padding + left_icon_size
-        end
-        self.inner_title_group = self.title_group -- we need to :resetLayout() both in :setTitle()
-        self.title_group = HorizontalGroup:new{
-            HorizontalSpan:new{ width = padding },
-            self.title_group,
+        -- we need to :resetLayout() both VerticalGroup and HorizontalGroup in :setTitle()
+        self.inner_title_group = HorizontalGroup:new{
+            HorizontalSpan:new{ width = left_icon_reserved_width + self.title_h_padding },
+            self.title_widget,
         }
+        table.insert(self.title_group, self.inner_title_group)
+    else
+        table.insert(self.title_group, self.title_widget)
     end
-    self.title_group.overlap_align = self.align
+    if self.subtitle_widget then
+        table.insert(self.title_group, VerticalSpan:new{width = self.title_subtitle_v_padding})
+        if self.align == "left" then
+            local span_width = self.title_h_padding
+            if not self.subtitle_fullwidth then
+                span_width = span_width + left_icon_reserved_width
+            end
+            self.inner_subtitle_group = HorizontalGroup:new{
+                HorizontalSpan:new{ width = span_width },
+                self.subtitle_widget,
+            }
+            table.insert(self.title_group, self.inner_subtitle_group)
+        else
+            table.insert(self.title_group, self.subtitle_widget)
+        end
+    end
     table.insert(self, self.title_group)
 
     -- This TitleBar widget is an OverlapGroup: all sub elements overlap,
@@ -287,6 +323,7 @@ function TitleBar:init()
     if self.has_left_icon then
         self.left_button = IconButton:new{
             icon = self.left_icon,
+            icon_rotation_angle = self.left_icon_rotation_angle,
             width = left_icon_size,
             height = left_icon_size,
             padding = self.button_padding,
@@ -303,6 +340,7 @@ function TitleBar:init()
     if self.has_right_icon then
         self.right_button = IconButton:new{
             icon = self.right_icon,
+            icon_rotation_angle = self.right_icon_rotation_angle,
             width = right_icon_size,
             height = right_icon_size,
             padding = self.button_padding,
@@ -372,10 +410,10 @@ function TitleBar:setTitle(title, no_refresh)
 end
 
 function TitleBar:setSubTitle(subtitle)
-    if self.subtitle_widget then
+    if self.subtitle_widget and not self.subtitle_multilines then -- no TextBoxWidget:setText() available
         self.subtitle_widget:setText(subtitle)
-        if self.inner_title_group then
-            self.inner_title_group:resetLayout()
+        if self.inner_subtitle_group then
+            self.inner_subtitle_group:resetLayout()
         end
         self.title_group:resetLayout()
         UIManager:setDirty(self.show_parent, "ui", self.dimen)

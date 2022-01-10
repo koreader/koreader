@@ -15,6 +15,7 @@ local Screen = Device.screen
 
 local IconButton = InputContainer:new{
     icon = "notice-warning",
+    icon_rotation_angle = 0,
     dimen = nil,
     -- show_parent is used for UIManager:setDirty, so we can trigger repaint
     show_parent = nil,
@@ -33,6 +34,7 @@ local IconButton = InputContainer:new{
 function IconButton:init()
     self.image = IconWidget:new{
         icon = self.icon,
+        rotation_angle = self.icon_rotation_angle,
         width = self.width,
         height = self.height,
     }
