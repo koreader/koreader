@@ -52,6 +52,7 @@ function Wallabag:init()
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
     self.is_archiving_deleted = false
+    self.send_review_as_tags = false
     self.filter_tag = ""
     self.ignore_tags = ""
     self.articles_per_sync = 30
@@ -67,6 +68,9 @@ function Wallabag:init()
     self.directory = self.wb_settings.data.wallabag.directory
     if self.wb_settings.data.wallabag.is_delete_finished ~= nil then
         self.is_delete_finished = self.wb_settings.data.wallabag.is_delete_finished
+    end
+    if self.wb_settings.data.wallabag.send_review_as_tags ~= nil then
+        self.send_review_as_tags = self.wb_settings.data.wallabag.send_review_as_tags
     end
     if self.wb_settings.data.wallabag.is_delete_read ~= nil then
         self.is_delete_read = self.wb_settings.data.wallabag.is_delete_read
@@ -257,6 +261,18 @@ function Wallabag:addToMainMenu(menu_items)
                                 end,
                             },
                         },
+                    },
+                    {
+                        text = _("Send review as tags"),
+                        help_text = _("This allow you to write tags in the review field, separated by commas, which can then be sent to Wallabag."),
+                        keep_menu_open = true,
+                        checked_func = function()
+                            return self.send_review_as_tags or false
+                        end,
+                        callback = function()
+                            self.send_review_as_tags = not self.send_review_as_tags
+                            self:saveSettings()
+                        end,
                     },
                     {
                         text = _("Remove finished articles from history"),
@@ -735,6 +751,11 @@ function Wallabag:processLocalFiles(mode)
                 if DocSettings:hasSidecarFile(entry_path) then
                     local docinfo = DocSettings:open(entry_path)
                     local status
+
+                    if self.send_review_as_tags then
+                        self:addTags(entry_path)
+                    end
+
                     if docinfo.data.summary and docinfo.data.summary.status then
                         status = docinfo.data.summary.status
                     end
@@ -778,6 +799,39 @@ function Wallabag:addArticle(article_url)
     }
 
     return self:callAPI("POST", "/api/entries.json", headers, body_JSON, "")
+end
+
+function Wallabag:addTags(path)
+    logger.dbg("Wallabag: managing tags for article ", path)
+    local id = self:getArticleID(path)
+    if id then
+        local docinfo = DocSettings:open(path)
+
+        local tags = docinfo.data.summary.note
+
+        if tags ~= "" and tags ~= nil then
+
+            logger.dbg("Wallabag: sending tags ", tags, " for ", path)
+
+            local body = {
+                tags = tags
+            }
+
+            local bodyJSON = JSON.encode(body)
+
+            local headers = {
+                ["Content-type"] = "application/json",
+                ["Accept"] = "application/json, */*",
+                ["Content-Length"] = tostring(#bodyJSON),
+                ["Authorization"] = "Bearer " .. self.access_token,
+            }
+
+            self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON, "")
+        else
+            logger.dbg("Wallabag: no tags to send for ", path)
+        end
+
+    end
 end
 
 function Wallabag:removeArticle(path)
@@ -1043,6 +1097,7 @@ function Wallabag:saveSettings()
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete,
         articles_per_sync     = self.articles_per_sync,
+        send_review_as_tags   = self.send_review_as_tags,
         remove_finished_from_history = self.remove_finished_from_history,
         remove_read_from_history = self.remove_read_from_history,
         download_queue        = self.download_queue,
