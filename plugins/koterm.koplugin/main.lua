@@ -247,23 +247,13 @@ function Terminal:interpretAnsiSeq(text)
         local next_byte = text:sub(pos, pos)
 --        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx", pos, next_byte)
         if self.sequence_state == "" then
-            if next_byte == "\007" then
-                logger.info("KOTerm: bell")
-            elseif next_byte == "\008" then
-                self.input_widget:leftChar(true)
-            elseif next_byte == "\010" then
-                self.input_widget:addChars(next_byte, true)
-            elseif next_byte == "\013" then
-                self.input_widget:goToStartOfLine(true)
-            elseif next_byte == esc then
+            local function isPrintable(ch)
+                return ch:byte() >= 32 or ch:byte() == 10 or ch:byte() == 13 or ch:byte() == 0
+            end
+            if next_byte == esc then
                 self.sequence_state = "esc"
-            elseif next_byte:byte() >= 32 then
-                local function isPrintable(ch)
-                    return ch:byte() >= 32 and ch:byte() < 128
-                end
-                if next_byte:byte() < 32 then
-                    self.input_widget:addChars(next_byte, true)
-                elseif isPrintable(next_byte) then -- bytes from ascii 33 up to 127
+            elseif isPrintable(next_byte) then
+                if isPrintable(next_byte) then -- bytes from ascii 33 up to 127
                     local part = next_byte
                     -- all bytes up to the next control sequence
                     while pos+1 < #text and isPrintable(next_byte) do
@@ -274,19 +264,7 @@ function Terminal:interpretAnsiSeq(text)
                         end
                     end
                     self.input_widget:addChars(part, true)
-                else -- utf8 sequence
-                    local part = next_byte
-                    --- @todo this allows only one utf8 codepoint by now, multiple will fail
-                    while pos+1 < #text and next_byte:byte() >= 128 do
-                        next_byte = text:sub(pos+1, pos+1)
-                        if next_byte ~= "" and pos+1 < #text and next_byte:byte() >=128 then
-                            part = part .. next_byte
-                            pos = pos + 1
-                        end
-                    end
-                    self.input_widget:addChars(part, true)
                 end
---                self.sequence_state = ""
             end
         elseif self.sequence_state == "esc" then
             self.sequence_state = ""
