@@ -824,7 +824,6 @@ function ReaderBookmark:onShowBookmark(match_table)
         UIManager:close(self.bookmark_menu)
     end
 
-    bm_menu.show_parent = self.bookmark_menu
     self.refresh = function()
         bm_menu:updateItems()
         self:onSaveSettings()
