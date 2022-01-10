@@ -102,7 +102,7 @@ function PageBrowserWidget:init()
     self.title_bar = TitleBar:new{
         fullscreen = true,
         title = self.title,
-        left_icon = "notice-info",
+        left_icon = "info",
         left_icon_tap_callback = function() self:showHelp() end,
         close_callback = function() self:onClose() end,
         close_hold_callback = function() self:onClose(true) end,
@@ -600,17 +600,17 @@ end
 
 function PageBrowserWidget:showHelp()
     UIManager:show(InfoMessage:new{
-        text = [[
+        text = _([[
 Page browser shows thumbnails of pages.
 
-The bottom row displays an extract of the book map around the shown pages: see the book map help for details.
+The bottom ribbon displays an extract of the book map around the shown pages: see the book map help for details.
 
-Swipe along the top or left screen edge to change the number of columns or rows.
+Swipe along the top or left screen edge to change the number of columns or rows of thumbnails.
 Swipe vertically to move one row, horizontally to move one page.
-Swipe horizontally in the bottom row to move by the full stripe.
-Tap in the bottom row on a page to focus thumbnails on this page.
+Swipe horizontally in the bottom ribbon to move by the full stripe.
+Tap in the bottom ribbon on a page to focus thumbnails on this page.
 Tap on a thumbnail to go read this page.
-Any multiswipe will close the page browser.]],
+Any multiswipe will close the page browser.]]),
     })
 end
 

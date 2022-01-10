@@ -597,7 +597,7 @@ function BookMapWidget:init()
     self.title_bar = TitleBar:new{
         fullscreen = true,
         title = self.title,
-        left_icon = "notice-info",
+        left_icon = "info",
         left_icon_tap_callback = function() self:showHelp() end,
         close_callback = function() self:onClose() end,
         close_hold_callback = function() self:onClose(true) end,
@@ -1003,7 +1003,7 @@ end
 
 function BookMapWidget:showHelp()
     UIManager:show(InfoMessage:new{
-        text = [[
+        text = _([[
 Book map displays an overview of the book content.
 
 If statistics are enabled, black bars are shown for already read pages (gray for pages read in the current reading session). Their heights vary with the time spent reading the page.
@@ -1022,7 +1022,7 @@ Swipe along the bottom screen edge to change the width of page slots.
 Swipe or pan vertically on content to scroll.
 Any multiswipe will close the book map.
 
-On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.]],
+On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.]]),
     })
 end
 
