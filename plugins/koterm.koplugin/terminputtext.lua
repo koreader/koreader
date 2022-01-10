@@ -92,9 +92,9 @@ function TermInputText:addChars(chars, skip_callback)
                 self.charpos = self.charpos - 1
             end
             self.charpos = self.charpos + 1
-        elseif chars_list[i] == "\008" then
+        elseif chars_list[i] == "\b" then
             self:leftChar(true)
-        else -- ~="\n"
+        else
             if self.charlist[self.charpos] == "\n" then
                 self.charpos = self.charpos + 1
             end
@@ -188,28 +188,64 @@ function TermInputText:moveCursorToRowCol(r, c, maxr, maxc)
     self:moveCursorToCharPos(self.charpos)
 end
 
-function TermInputText:moveCursorDown()
+function TermInputText:clearToEndOfScreen()
     local pos = self.charpos
-
-    -- detect current column
-    while pos > 0 and self.charlist[pos] ~= "\n" do
-        pos = pos - 1
-    end
-    local column = self.charpos - pos
-
-    while self.charlist[self.charpos] and self.charlist[self.charpos] ~= "\n" do
-        self.charpos = self.charpos + 1
-    end
-    self.charpos = self.charpos + 1
-    for i = 1, column-1 do
-        if self.charlist[pos+i] or self.charlist[pos+i] ~= "\n" then
-            self.charpos = self.charpos + 1
-        else
-            break
+    while pos <= #self.charlist do
+        if self.charlist[pos] ~= "\n" then
+            self.charlist[pos] = " "
         end
+        pos = pos + 1
     end
+    self:initTextBox(table.concat(self.charlist))
     self:moveCursorToCharPos(self.charpos)
 end
+
+function TermInputText:delToEndOfLine(is_terminal)
+    if self.readonly or not self:isTextEditable(true) then
+        return
+    end
+    local cur_pos = self.charpos
+    -- self.charlist[self.charpos] is the char after the cursor
+    while self.charlist[cur_pos] and self.charlist[cur_pos] ~= "\n" do
+        if not is_terminal then
+            table.remove(self.charlist, cur_pos)
+        else
+            self.charlist[cur_pos]=" "
+            cur_pos = cur_pos + 1
+        end
+    end
+    -- delete the newline at end
+    if self.charlist[cur_pos] ~= "\n" and not is_terminal then
+        table.remove(self.charlist, cur_pos)
+    end
+    self.is_text_edited = true
+    self:initTextBox(table.concat(self.charlist))
+end
+
+function TermInputText:reverseLineFeed(skip_callback)
+    if self.strike_callback and not skip_callback then
+        self.strike_callback(esc_seq.page_down)
+        return
+    end
+    if self.charpos > 1 and self.charlist[self.charpos] == "\n" then
+        self.charpos = self.charpos - 1
+    end
+    local cur_col = 0
+    while self.charpos > 1 and self.charlist[self.charpos] ~= "\n" do
+        self.charpos = self.charpos - 1
+        cur_col = cur_col + 1
+    end
+    if self.charpos > 1 then
+        self.charpos = self.charpos + 1
+    end
+    for i = 1, 80 do
+        table.insert(self.charlist, self.charpos, " ")
+    end
+end
+
+------------------------------------------------------------------
+--              overwritten InputText methods                   --
+------------------------------------------------------------------
 
 function TermInputText:leftChar(skip_callback)
     if self.charpos == 1 then return end
@@ -251,6 +287,29 @@ function TermInputText:moveCursorUp()
     self:moveCursorToCharPos(self.charpos)
 end
 
+function TermInputText:moveCursorDown()
+    local pos = self.charpos
+
+    -- detect current column
+    while pos > 0 and self.charlist[pos] ~= "\n" do
+        pos = pos - 1
+    end
+    local column = self.charpos - pos
+
+    while self.charlist[self.charpos] and self.charlist[self.charpos] ~= "\n" do
+        self.charpos = self.charpos + 1
+    end
+    self.charpos = self.charpos + 1
+    for i = 1, column-1 do
+        if self.charlist[pos+i] or self.charlist[pos+i] ~= "\n" then
+            self.charpos = self.charpos + 1
+        else
+            break
+        end
+    end
+    self:moveCursorToCharPos(self.charpos)
+end
+
 function TermInputText:delChar()
     if self.readonly or not self:isTextEditable(true) then
         return
@@ -264,66 +323,6 @@ function TermInputText:delChar()
     InputText.delChar(self)
 end
 
-function TermInputText:clearToEndOfScreen()
-    local pos = self.charpos
-    while pos <= #self.charlist do
-        if self.charlist[pos] ~= "\n" then
-            self.charlist[pos] = " "
-        end
-        pos = pos + 1
-    end
-    self:initTextBox(table.concat(self.charlist))
-    self:moveCursorToCharPos(self.charpos)
-end
-
-
-function TermInputText:reverseLineFeed(skip_callback)
-    if self.strike_callback and not skip_callback then
-        self.strike_callback(esc_seq.page_down)
-        return
-    end
-    if self.charpos > 1 and self.charlist[self.charpos] == "\n" then
-        self.charpos = self.charpos - 1
-    end
-    local cur_col = 0
-    while self.charpos > 1 and self.charlist[self.charpos] ~= "\n" do
-        self.charpos = self.charpos - 1
-        cur_col = cur_col + 1
-    end
-    if self.charpos > 1 then
-        self.charpos = self.charpos + 1
-    end
-    for i = 1, 80 do
-        table.insert(self.charlist, self.charpos, " ")
-    end
-end
-
-------------------------------------------------------------------
---              overwritten InputText methods                   --
-------------------------------------------------------------------
-
-function TermInputText:delToEndOfLine(is_terminal)
-    if self.readonly or not self:isTextEditable(true) then
-        return
-    end
-    local cur_pos = self.charpos
-    -- self.charlist[self.charpos] is the char after the cursor
-    while self.charlist[cur_pos] and self.charlist[cur_pos] ~= "\n" do
-        if not is_terminal then
-            table.remove(self.charlist, cur_pos)
-        else
-            self.charlist[cur_pos]=" "
-            cur_pos = cur_pos + 1
-        end
-    end
-    -- delete the newline at end
-    if self.charlist[cur_pos] ~= "\n" and not is_terminal then
-        table.remove(self.charlist, cur_pos)
-    end
-    self.is_text_edited = true
-    self:initTextBox(table.concat(self.charlist))
-end
-
 function TermInputText:scrollDown(skip_callback)
     if self.strike_callback and not skip_callback then
         self.strike_callback(esc_seq.page_down)
@@ -332,7 +331,7 @@ function TermInputText:scrollDown(skip_callback)
     InputText.scrollDown(self)
 end
 
-function InputText:scrollUp(skip_callback)
+function TermInputText:scrollUp(skip_callback)
     if self.strike_callback and not skip_callback then
         self.strike_callback(esc_seq.page_up)
         return
@@ -359,7 +358,7 @@ function TermInputText:goToStartOfLine(skip_callback)
     InputText.goToStartOfLine(self)
 end
 
-function InputText:goToEndOfLine(skip_callback)
+function TermInputText:goToEndOfLine(skip_callback)
     if self.strike_callback then
         if not skip_callback then
             self.strike_callback(esc_seq.cursor_end)

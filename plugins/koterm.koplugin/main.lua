@@ -33,6 +33,20 @@ local _ = require("gettext")
 local ffi = require("ffi")
 local C = ffi.C
 
+-- for terminal emulator
+ffi.cdef[[
+static const int SIGTERM = 15;
+
+int grantpt(int fd) __attribute__((nothrow, leaf));
+int unlockpt(int fd) __attribute__((nothrow, leaf));
+char *ptsname(int fd) __attribute__((nothrow, leaf));
+pid_t setsid(void) __attribute__((nothrow, leaf));
+
+static const int TCIFLUSH = 0;
+int tcdrain(int fd) __attribute__((nothrow, leaf));
+int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
+]]
+
 --[[
 local ctrl_c = "\003"
 local ctrl_f = "\006" -- right
@@ -44,6 +58,8 @@ local ctrl_z = "\026"
 ]]
 
 local esc = "\027"
+
+local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
 --- @todo: A better message here would be helpful
 local about_text = _([[
@@ -70,7 +86,7 @@ function Terminal:init()
 
     self.terminal_font_size = G_reader_settings:readSetting("terminal_font_size", 14)
 
-    self.chunk_size = 100
+    self.chunk_size = CHUNK_SIZE
     self.chunk = ffi.new('uint8_t[?]', self.chunk_size)
 
     os.execute("rm koterm.pid") -- clean leftover from last run
@@ -236,8 +252,9 @@ local function isNum(char)
 end
 
 function Terminal:interpretAnsiSeq(text)
+    print("xxx ", text, #text)
     for i = 1, #text do
---       logger.info("xxxxx received: ", i,  text:sub(i,i):byte(), text:sub(i,i))
+--       logger.info("xxxxx received: ", i,  text:sub(i,i):byte())
     end
 
     local pos = 1
@@ -253,18 +270,16 @@ function Terminal:interpretAnsiSeq(text)
             if next_byte == esc then
                 self.sequence_state = "esc"
             elseif isPrintable(next_byte) then
-                if isPrintable(next_byte) then -- bytes from ascii 33 up to 127
-                    local part = next_byte
-                    -- all bytes up to the next control sequence
-                    while pos+1 < #text and isPrintable(next_byte) do
-                        next_byte = text:sub(pos+1, pos+1)
-                        if next_byte ~= "" and pos+1 < #text and isPrintable(next_byte) then
-                            part = part .. next_byte
-                            pos = pos + 1
-                        end
+                local part = next_byte
+                -- all bytes up to the next control sequence
+                while pos < #text and isPrintable(next_byte) do
+                    next_byte = text:sub(pos+1, pos+1)
+                    if next_byte ~= "" and pos < #text and isPrintable(next_byte) then
+                        part = part .. next_byte
+                        pos = pos + 1
                     end
-                    self.input_widget:addChars(part, true)
                 end
+                self.input_widget:addChars(part, true)
             end
         elseif self.sequence_state == "esc" then
             self.sequence_state = ""
@@ -339,7 +354,6 @@ function Terminal:interpretAnsiSeq(text)
             end
         elseif self.sequence_state == "escParam2" then
 --            print("xxxx escParam2", next_byte, pos)
-
             if isNum(next_byte) then
                 param2 = param2 * 10 + next_byte:byte() - ("0"):byte()
             else
@@ -355,7 +369,7 @@ function Terminal:interpretAnsiSeq(text)
             param1, param2 = 0, 0
             self.sequence_state = ""
         else
-            print("xxxx Error in esc sequence")
+            logger.dbg("KOTerm: detected error in esc sequence, not my fault.")
             self.sequence_state = ""
         end -- self.sequence_state
 
@@ -445,6 +459,7 @@ function Terminal:generateInputDialog()
                 while self:receive() ~= "" do
                     C.tcflush(self.ptmx, C.TCIFLUSH)
                 end
+                self.input_widget:addChars("\003", true) -- as we flush the queue
             end,
             },
             {
@@ -477,7 +492,7 @@ function Terminal:generateInputDialog()
             text = "☰", -- settings menu
             callback = function ()
                 UIManager:show(InfoMessage:new{
-                    text = _("Aliases and settings:\nNot implemented yet.\nYou can set aliases manually in:\n\n'./plugins/koterm.koplugins/scripts/aliases'"),
+                    text = _("Aliases and settings:\nNot implemented yet.\nYou can set aliases manually in:\n\n'./plugins/koterm.koplugin/scripts/aliases'"),
                     show_icon = true,
                     timeout = 10,
                 })
