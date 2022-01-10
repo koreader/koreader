@@ -828,7 +828,7 @@ function Wallabag:addTags(path)
 
             self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON, "")
         else
-          logger.dbg("Wallabag: no tags to send for ", path)
+            logger.dbg("Wallabag: no tags to send for ", path)
         end
 
     end
