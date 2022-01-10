@@ -29,6 +29,7 @@ local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -676,7 +677,7 @@ function Menu:init()
         title_face = self.title_face,
         title_multilines = self.title_multilines,
         title_shrink_font_to_fit = self.title_shrink_font_to_fit,
-        subtitle = self.show_path and BD.directory(self.path),
+        subtitle = self.show_path and BD.directory(filemanagerutil.abbreviate(self.path)),
         subtitle_truncate_left = self.show_path,
         subtitle_fullwidth = self.show_path,
         left_icon = self.title_bar_left_icon,
@@ -1099,7 +1100,7 @@ function Menu:updateItems(select_number)
 
     self:updatePageInfo(select_number)
     if self.show_path then
-        self.title_bar:setSubTitle(BD.directory(self.path))
+        self.title_bar:setSubTitle(BD.directory(filemanagerutil.abbreviate(self.path)))
     end
 
     UIManager:setDirty(self.show_parent, function()
