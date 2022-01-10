@@ -248,7 +248,7 @@ function Terminal:interpretAnsiSeq(text)
 --        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx", pos, next_byte)
         if self.sequence_state == "" then
             local function isPrintable(ch)
-                return ch:byte() >= 32 or ch:byte() == 10 or ch:byte() == 13 or ch:byte() == 0
+                return ch:byte() >= 32 or ch == "\010" or ch == "\013" or ch == "\008"
             end
             if next_byte == esc then
                 self.sequence_state = "esc"
@@ -416,7 +416,7 @@ function Terminal:generateInputDialog()
         allow_newline = false,
         cursor_at_end = true,
         fullscreen = true,
-        InputText = TermInputText,
+        inputtext_class = TermInputText,
         buttons = {{
             {
             text = "↹",  -- tabulator "⇤" and "⇥"

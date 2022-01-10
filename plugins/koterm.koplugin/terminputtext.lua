@@ -20,7 +20,6 @@ local esc_seq = {
 }
 
 local TermInputText = InputText:extend{
-    terminal_mode = true,
     maxr = 40,
     maxc = 80,
     strike_callback = nil,
@@ -28,10 +27,7 @@ local TermInputText = InputText:extend{
 
 function TermInputText:onTapTextBox(arg, ges)
     -- disable positioning cursor by tap in emulator mode
-    if self.terminal_mode then
-        return true
-    end
-    return InputText.onTapTextBox(self, arg, ges)
+    return true
 end
 
 function TermInputText:addChars(chars, skip_callback)
@@ -57,67 +53,63 @@ function TermInputText:addChars(chars, skip_callback)
         self.charpos = 1 -- move cursor to the first position
     end
 
-    if self.terminal_mode then
-        local chars_list = util.splitToChars(chars) -- for UTF8
-        for i = 1, #chars_list do
-            if chars_list[i] == "\n" then
-                local pos = self.charpos
+    local chars_list = util.splitToChars(chars) -- for UTF8
+    for i = 1, #chars_list do
+        if chars_list[i] == "\n" then
+            local pos = self.charpos
 
-                -- detect current column
-                while pos > 0 and self.charlist[pos] ~= "\n" do
-                    pos = pos - 1
-                end
-                local column = self.charpos - pos
+            -- detect current column
+            while pos > 0 and self.charlist[pos] ~= "\n" do
+                pos = pos - 1
+            end
+            local column = self.charpos - pos
 
-                -- go to EOL
-                pos = self.charpos
-                while self.charlist[pos] and self.charlist[pos] ~= "\n" do
-                    pos = pos + 1
-                end
+            -- go to EOL
+            pos = self.charpos
+            while self.charlist[pos] and self.charlist[pos] ~= "\n" do
+                pos = pos + 1
+            end
 
-                if not self.charlist[pos] then -- add new line if necessary
-                    table.insert(self.charlist, pos, "\n")
-                    pos = pos + 1
-                end
+            if not self.charlist[pos] then -- add new line if necessary
+                table.insert(self.charlist, pos, "\n")
+                pos = pos + 1
+            end
 
-                -- go to column in next line
-                for j = 1, column-1 do
-                    if self.charlist[pos+i] or self.charlist[pos+i] ~= "\n" then
-                        table.insert(self.charlist, pos, " ")
-                    else
-                        break
-                    end
+            -- go to column in next line
+            for j = 1, column-1 do
+                if self.charlist[pos+i] or self.charlist[pos+i] ~= "\n" then
+                    table.insert(self.charlist, pos, " ")
+                else
+                    break
                 end
-                self.charpos = pos
-            elseif chars_list[i] == "\r" then
-                if self.charlist[self.charpos] == "\n" then
-                    self.charpos = self.charpos - 1
-                end
-                while self.charpos >=1 and self.charlist[self.charpos] ~= "\n" do
-                    self.charpos = self.charpos - 1
-                end
-                self.charpos = self.charpos + 1
-            elseif chars_list[i] == "\008" then
-                self:leftChar(true)
-            else -- ~="\n"
-                if self.charlist[self.charpos] == "\n" then
-                    self.charpos = self.charpos + 1
-                end
-                table.remove(self.charlist, self.charpos)
-                table.insert(self.charlist, self.charpos, chars_list[i])
+            end
+            self.charpos = pos
+        elseif chars_list[i] == "\r" then
+            if self.charlist[self.charpos] == "\n" then
+                self.charpos = self.charpos - 1
+            end
+            while self.charpos >=1 and self.charlist[self.charpos] ~= "\n" do
+                self.charpos = self.charpos - 1
+            end
+            self.charpos = self.charpos + 1
+        elseif chars_list[i] == "\008" then
+            self:leftChar(true)
+        else -- ~="\n"
+            if self.charlist[self.charpos] == "\n" then
                 self.charpos = self.charpos + 1
             end
+            table.remove(self.charlist, self.charpos)
+            table.insert(self.charlist, self.charpos, chars_list[i])
+            self.charpos = self.charpos + 1
         end
-        self:initTextBox(table.concat(self.charlist), true)
-        return
     end
-
-    InputText.addChars(self, chars)
+    self:initTextBox(table.concat(self.charlist), true)
+    return
 end
 dbg:guard(TermInputText, "addChars",
     function(self, chars)
         assert(type(chars) == "string",
-            "Wrong chars value type (expected string)!")
+            "TermInputText: Wrong chars value type (expected string)!")
     end)
 
 function TermInputText:enterAlternateKeypad(maxr, maxc)
@@ -225,11 +217,9 @@ function TermInputText:leftChar(skip_callback)
         self.strike_callback(esc_seq.cursor_left)
         return
     end
-    if self.terminal_mode then
-        local left_char = self.charlist[self.charpos - 1]
-        if not left_char and left_char == "\n" then
-            return
-        end
+    local left_char = self.charlist[self.charpos - 1]
+    if not left_char and left_char == "\n" then
+        return
     end
     InputText.leftChar(self)
 end
@@ -240,11 +230,9 @@ function TermInputText:rightChar(skip_callback)
         return
     end
     if self.charpos > #self.charlist then return end
-    if self.terminal_mode then
-        local right_char = self.charlist[self.charpos + 1]
-        if not right_char and right_char == "\n" then
-            return
-        end
+    local right_char = self.charlist[self.charpos + 1]
+    if not right_char and right_char == "\n" then
+        return
     end
     InputText.rightChar(self)
 end
@@ -287,6 +275,32 @@ function TermInputText:clearToEndOfScreen()
     self:initTextBox(table.concat(self.charlist))
     self:moveCursorToCharPos(self.charpos)
 end
+
+
+function TermInputText:reverseLineFeed(skip_callback)
+    if self.strike_callback and not skip_callback then
+        self.strike_callback(esc_seq.page_down)
+        return
+    end
+    if self.charpos > 1 and self.charlist[self.charpos] == "\n" then
+        self.charpos = self.charpos - 1
+    end
+    local cur_col = 0
+    while self.charpos > 1 and self.charlist[self.charpos] ~= "\n" do
+        self.charpos = self.charpos - 1
+        cur_col = cur_col + 1
+    end
+    if self.charpos > 1 then
+        self.charpos = self.charpos + 1
+    end
+    for i = 1, 80 do
+        table.insert(self.charlist, self.charpos, " ")
+    end
+end
+
+------------------------------------------------------------------
+--              overwritten InputText methods                   --
+------------------------------------------------------------------
 
 function TermInputText:delToEndOfLine(is_terminal)
     if self.readonly or not self:isTextEditable(true) then
@@ -375,27 +389,6 @@ function TermInputText:downLine(skip_callback)
         return
     end
     InputText.downLine(self)
-end
-
-function TermInputText:reverseLineFeed(skip_callback)
-    if self.strike_callback and not skip_callback then
-        self.strike_callback(esc_seq.page_down)
-        return
-    end
-    if self.charpos > 1 and self.charlist[self.charpos] == "\n" then
-        self.charpos = self.charpos - 1
-    end
-    local cur_col = 0
-    while self.charpos > 1 and self.charlist[self.charpos] ~= "\n" do
-        self.charpos = self.charpos - 1
-        cur_col = cur_col + 1
-    end
-    if self.charpos > 1 then
-        self.charpos = self.charpos + 1
-    end
-    for i = 1, 80 do
-        table.insert(self.charlist, self.charpos, " ")
-    end
 end
 
 return TermInputText
