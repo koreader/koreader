@@ -89,6 +89,16 @@ function TermInputText:addChars(chars, skip_callback)
                     end
                 end
                 self.charpos = pos
+            elseif chars_list[i] == "\r" then
+                if self.charlist[self.charpos] == "\n" then
+                    self.charpos = self.charpos - 1
+                end
+                while self.charpos >=1 and self.charlist[self.charpos] ~= "\n" do
+                    self.charpos = self.charpos - 1
+                end
+                self.charpos = self.charpos + 1
+            elseif chars_list[i] == "\008" then
+                self:leftChar(true)
             else -- ~="\n"
                 if self.charlist[self.charpos] == "\n" then
                     self.charpos = self.charpos + 1
