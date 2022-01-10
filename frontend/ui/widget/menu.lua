@@ -678,11 +678,12 @@ function Menu:init()
         title_shrink_font_to_fit = self.title_shrink_font_to_fit,
         subtitle = self.show_path and BD.directory(self.path),
         subtitle_truncate_left = self.show_path,
+        subtitle_fullwidth = self.show_path,
         left_icon = self.title_bar_left_icon,
         left_icon_tap_callback = function() self:onLeftButtonTap() end,
         left_icon_hold_callback = function() self:onLeftButtonHold() end,
         close_callback = self.has_close_button and function() self:onClose() end,
-        show_parent = self,
+        show_parent = self.show_parent or self,
     }
 
     -- group for items
@@ -1124,7 +1125,7 @@ end
     which item.key = value
 --]]
 function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
-    if not self.no_title and new_title then
+    if self.title_bar and new_title then
         self.title_bar:setTitle(new_title)
     end
 
