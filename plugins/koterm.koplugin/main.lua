@@ -25,10 +25,10 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TermInputText = require("terminputtext")
 local TextWidget = require("ui/widget/textwidget")
-local T = require("ffi/util").template
 local bit = require("bit")
 local logger = require("logger")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ffi = require("ffi")
 local C = ffi.C
@@ -65,9 +65,9 @@ local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are no
 local about_text = _([[
 KOTerm is a terminal emulator, which starts a shell (command prompt).
 
-You can enter various low level commands here.
+Commands to be executed on start can be placed in './plugins/koterm.koplugin/scripts/profile.user'.
 
-You can place commands, which are executed on start in './plugins/koterm.koplugin/scripts/profile.user' and aliases (shortcuts) to command you use often in './plugins/koterm.koplugin/scripts/aliases'.]])
+Aliases (shortcuts) to frequently used commands can be placed in './plugins/koterm.koplugin/scripts/aliases'.]])
 
 local Terminal = WidgetContainer:new{
     name = "KOTerm",
