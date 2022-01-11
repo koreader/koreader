@@ -1,7 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local FileChooser = require("ui/widget/filechooser")
-local Font = require("ui/font")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
