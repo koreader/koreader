@@ -941,21 +941,7 @@ function FileManager:onRefresh()
 end
 
 function FileManager:goHome()
-    local home_dir = G_reader_settings:readSetting("home_dir")
-    if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory" then
-        -- Try some sane defaults, depending on platform
-        home_dir = Device.home_dir
-    end
-    if home_dir then
-        -- Jump to the first page if we're already home
-        if self.file_chooser.path and home_dir == self.file_chooser.path then
-            self.file_chooser:onGotoPage(1)
-            -- Also pick up new content, if any.
-            self.file_chooser:refreshPath()
-        else
-            self.file_chooser:changeToPath(home_dir)
-        end
-    else
+    if not self.file_chooser:goHome() then
         self:setHome()
     end
     return true

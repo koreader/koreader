@@ -406,6 +406,25 @@ function FileChooser:changeToPath(path, focused_path)
     self:onPathChanged(path)
 end
 
+function FileChooser:goHome()
+    local home_dir = G_reader_settings:readSetting("home_dir")
+    if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory" then
+        -- Try some sane defaults, depending on platform
+        home_dir = Device.home_dir
+    end
+    if home_dir then
+        -- Jump to the first page if we're already home
+        if self.path and home_dir == self.path then
+            self:onGotoPage(1)
+            -- Also pick up new content, if any.
+            self:refreshPath()
+        else
+            self:changeToPath(home_dir)
+        end
+        return true
+    end
+end
+
 function FileChooser:onFolderUp()
     if not (G_reader_settings:isTrue("lock_home_folder") and
             self.path == G_reader_settings:readSetting("home_dir")) then
