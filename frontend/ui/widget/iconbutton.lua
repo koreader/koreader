@@ -153,7 +153,9 @@ function IconButton:onHoldIconButton()
         self:onInput(self.hold_input)
     elseif type(self.hold_input_func) == "function" then
         self:onInput(self.hold_input_func())
-    elseif self.hold_callback == nil then return end
+    elseif not self.hold_callback then -- nil or false
+        return
+    end
     self._hold_handled = true
     return true
 end
