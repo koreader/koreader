@@ -17,9 +17,6 @@ local PathChooser = FileChooser:extend{
     is_popout = false,
     covers_fullscreen = true, -- set it to false if you set is_popout = true
     is_borderless = true,
-    -- smaller font to allow displaying our long titles
-    tface = Font:getFace("smalltfont"),
-
     select_directory = true, -- allow selecting directories
     select_file = true,      -- allow selecting files
     show_files = true, -- show files, even if select_files=false
@@ -44,6 +41,10 @@ function PathChooser:init()
     if self.select_directory then
         -- Let FileChooser display "Long-press to choose current folder"
         self.show_current_dir_for_hold = true
+    end
+    self.title_bar_left_icon = "home"
+    self.onLeftButtonTap = function()
+        self:goHome()
     end
     FileChooser.init(self)
 end
