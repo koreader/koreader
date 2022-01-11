@@ -120,6 +120,7 @@ function FileManager:setupLayout()
         right_icon = "plus",
         right_icon_size_ratio = 1,
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
+        right_icon_hold_not_propagate = false,
     }
 
     local show_hidden = G_reader_settings:isTrue("show_hidden") or DSHOWHIDDENFILES
