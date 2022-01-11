@@ -48,15 +48,14 @@ local TitleBar = OverlapGroup:extend{
     left_icon_size_ratio = 0.6,
     left_icon_rotation_angle = 0,
     left_icon_tap_callback = function() end,
+    -- set hold_callback=false to not handle the event and let it propagate; otherwise the event is discarded
     left_icon_hold_callback = function() end,
-    left_icon_hold_not_propagate = true, -- set to false to propagate long-press when there is no hold_callback
     left_icon_allow_flash = true,
     right_icon = nil,
     right_icon_size_ratio = 0.6,
     right_icon_rotation_angle = 0,
     right_icon_tap_callback = function() end,
     right_icon_hold_callback = function() end,
-    right_icon_hold_not_propagate = true,
     right_icon_allow_flash = true,
 
     -- If provided, use right_icon="exit" and use this as right_icon_tap_callback
@@ -333,7 +332,7 @@ function TitleBar:init()
             padding_bottom = left_icon_size,
             overlap_align = "left",
             callback = self.left_icon_tap_callback,
-            hold_callback = self.left_icon_hold_not_propagate and self.left_icon_hold_callback or nil,
+            hold_callback = self.left_icon_hold_callback,
             allow_flash = self.left_icon_allow_flash,
             show_parent = self.show_parent,
         }
@@ -350,7 +349,7 @@ function TitleBar:init()
             padding_bottom = right_icon_size,
             overlap_align = "right",
             callback = self.right_icon_tap_callback,
-            hold_callback = self.right_icon_hold_not_propagate and self.right_icon_hold_callback or nil,
+            hold_callback = self.right_icon_hold_callback,
             allow_flash = self.right_icon_allow_flash,
             show_parent = self.show_parent,
         }
