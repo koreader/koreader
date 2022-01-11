@@ -61,6 +61,7 @@ local KeyValueItem = InputContainer:new{
         -- "right": only align right if value overflow 1/2 width
         -- "right_always": align value right even when small and
         --                 only key overflows 1/2 width
+    close_callback = nil,
 }
 
 function KeyValueItem:init()
@@ -636,6 +637,9 @@ end
 
 function KeyValuePage:onClose()
     UIManager:close(self)
+    if self.close_callback then
+        self.close_callback()
+    end
     return true
 end
 

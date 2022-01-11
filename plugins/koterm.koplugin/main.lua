@@ -14,7 +14,9 @@ if Device:isAndroid() then
     end
 end
 
+local Aliases = require("aliases")
 local Dispatcher = require("dispatcher")
+local DataStorage = require("datastorage")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -26,6 +28,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TermInputText = require("terminputtext")
 local TextWidget = require("ui/widget/textwidget")
 local bit = require("bit")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -61,14 +64,6 @@ local esc = "\027"
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
---- @todo: A better message here would be helpful
-local about_text = _([[
-KOTerm is a terminal emulator, which starts a shell (command prompt).
-
-Commands to be executed on start can be placed in './plugins/koterm.koplugin/scripts/profile.user'.
-
-Aliases (shortcuts) to frequently used commands can be placed in './plugins/koterm.koplugin/scripts/aliases'.]])
-
 local Terminal = WidgetContainer:new{
     name = "KOTerm",
     history = "",
@@ -78,6 +73,7 @@ local Terminal = WidgetContainer:new{
     buffer_used_approx = 0,
     refresh_time = 0.2,
     sequence_state = "",
+    koterm_home = ".",
 }
 
 function Terminal:init()
@@ -89,7 +85,9 @@ function Terminal:init()
     self.chunk_size = CHUNK_SIZE
     self.chunk = ffi.new('uint8_t[?]', self.chunk_size)
 
-    os.execute("rm koterm.pid") -- clean leftover from last run
+    self.koterm_home = DataStorage:getDataDir() .. "/scripts"
+    lfs.mkdir(self.koterm_home)
+    os.remove("koterm.pid") -- clean leftover from last run
 end
 
 function Terminal:spawnShell(cols, rows)
@@ -146,7 +144,9 @@ function Terminal:spawnShell(cols, rows)
         C.setenv("TERM", "vt52", 1)
         C.setenv("ENV", "./plugins/koterm.koplugin/profile", 1)
         C.setenv("BASH_ENV", "./plugins/koterm.koplugin/profile", 1)
+        C.setenv("KOTERM_HOME", self.koterm_home, 1)
         if C.execlp(shell, shell) ~= 0 then
+            -- the following two prints are shown in the KOTerm emulator.
             print("KOTerm: something has gone really wrong in spawning the shell\n\n:-(\n")
             print("Maybe an incorrect shell: '" .. shell .. "'\n")
             os.exit()
@@ -188,13 +188,11 @@ function Terminal:refresh(reset)
 
     local next_text = self:receive()
     if next_text ~= "" then
-        print("xxx refresh xxx")
         self:interpretAnsiSeq(next_text)
         if self.is_shell_open then
             UIManager:tickAfterNext(function()
                 UIManager:scheduleIn(self.refresh_time, Terminal.refresh, self)
             end)
---                UIManager:scheduleIn(self.refresh_time, Terminal.refresh, self)
         end
     else
         if self.is_shell_open then
@@ -216,7 +214,6 @@ function Terminal:transmit(chars)
 end
 
 function Terminal:_helperVT52VT100(cmd, param1, param2)
---    print("xxxx helperVT", cmd)
     if cmd == "A" then -- cursor up
         self.input_widget:moveCursorUp(true)
         return true
@@ -252,17 +249,11 @@ local function isNum(char)
 end
 
 function Terminal:interpretAnsiSeq(text)
-    print("xxx ", text, #text)
-    for i = 1, #text do
---       logger.info("xxxxx received: ", i,  text:sub(i,i):byte())
-    end
-
     local pos = 1
     local param1, param2 = 0, 0
 
     while pos <= #text do
         local next_byte = text:sub(pos, pos)
---        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx", pos, next_byte)
         if self.sequence_state == "" then
             local function isPrintable(ch)
                 return ch:byte() >= 32 or ch == "\010" or ch == "\013" or ch == "\008"
@@ -327,13 +318,11 @@ function Terminal:interpretAnsiSeq(text)
             if param1 ~= 0 and param2 ~= 0 then
                 local row = param1 and (param1:byte() - (" "):byte() + 1) or 1
                 local col = param2 and (param2:byte() - (" "):byte() + 1) or 1
---              logger.dbg("xxxxxxxx goto row=" .. row .. " col=" .. col)
                 self.input_widget:moveCursorToRowCol(row, col, self.maxr, self.maxc)
                 param1, param2 = 0, 0
             end
             self.sequence_state = ""
         elseif self.sequence_state == "CSI1" then
---            print("xxxx CSI", next_byte, pos)
             if next_byte == "s" then -- save cursor pos
                 logger.dbg("KOTerm: save cursor pos not implemented")
                 --- @todo
@@ -353,7 +342,6 @@ function Terminal:interpretAnsiSeq(text)
                 end
             end
         elseif self.sequence_state == "escParam2" then
---            print("xxxx escParam2", next_byte, pos)
             if isNum(next_byte) then
                 param2 = param2 * 10 + next_byte:byte() - ("0"):byte()
             else
@@ -374,7 +362,6 @@ function Terminal:interpretAnsiSeq(text)
         end -- self.sequence_state
 
         pos = pos + 1
-  --      print("xxx buffersize", #self.input_dialog:getInputText())
         if #self.input_dialog:getInputText() > self.buffer_size then
             local input = self.input_dialog:getInputText()
             input = input:sub(#input - self.buffer_size)
@@ -405,7 +392,7 @@ function Terminal:killShell(ask)
         -- do other things before killing first
         self.is_shell_open = false
         self.history = ""
-        os.execute("rm koterm.pid")  -- check this todo
+        os.remove("koterm.pid")  -- check this todo
         C.close(self.ptmx)
 
         C.kill(pid, C.SIGTERM)
@@ -491,11 +478,13 @@ function Terminal:generateInputDialog()
             {
             text = "☰", -- settings menu
             callback = function ()
-                UIManager:show(InfoMessage:new{
-                    text = _("Aliases and settings:\nNot implemented yet.\nYou can set aliases manually in:\n\n'./plugins/koterm.koplugin/scripts/aliases'"),
-                    show_icon = true,
-                    timeout = 10,
-                })
+                UIManager:close(self.input_widget.keyboard)
+                Aliases:show(self.koterm_home .. "/aliases",
+                    function()
+                        UIManager:show(self.input_widget.keyboard)
+                        UIManager:setDirty(self.input_dialog, "fast") -- is there a better solution
+                    end,
+                    self)
             end,
             },
             {
@@ -579,6 +568,16 @@ function Terminal:addToMainMenu(menu_items)
             {
                 text = _("About KOTerm"),
                 callback = function()
+                    local about_text = T(_([[
+KOTerm is a terminal emulator, which starts a shell (command prompt).
+
+Commands to be executed on start can be placed in:
+'%1/profile.user'.
+
+Aliases (shortcuts) to frequently used commands can be placed in:
+'%1/aliases'.]]),
+self.koterm_home)
+
                     UIManager:show(InfoMessage:new{
                         text = about_text,
                     })
