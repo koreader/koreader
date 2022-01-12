@@ -177,7 +177,6 @@ function FileSearcher:showSearchResults()
         height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
-        cface = Font:getFace("smallinfofont"),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
