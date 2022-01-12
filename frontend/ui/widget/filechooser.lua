@@ -18,7 +18,6 @@ local getFileNameSuffix = util.getFileNameSuffix
 local getFriendlySize = util.getFriendlySize
 
 local FileChooser = Menu:extend{
-    cface = Font:getFace("smallinfofont"),
     no_title = true,
     path = lfs.currentdir(),
     show_path = true,
