@@ -48,7 +48,6 @@ local TitleBar = OverlapGroup:extend{
     left_icon_size_ratio = 0.6,
     left_icon_rotation_angle = 0,
     left_icon_tap_callback = function() end,
-    -- set hold_callback=false to not handle the event and let it propagate; otherwise the event is discarded
     left_icon_hold_callback = function() end,
     left_icon_allow_flash = true,
     right_icon = nil,
@@ -57,6 +56,8 @@ local TitleBar = OverlapGroup:extend{
     right_icon_tap_callback = function() end,
     right_icon_hold_callback = function() end,
     right_icon_allow_flash = true,
+        -- set any of these _callback to false to not handle the event
+        -- and let it propagate; otherwise the event is discarded
 
     -- If provided, use right_icon="exit" and use this as right_icon_tap_callback
     close_callback = nil,
