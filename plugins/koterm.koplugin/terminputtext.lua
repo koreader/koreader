@@ -93,7 +93,7 @@ function TermInputText:addChars(chars, skip_callback)
             end
             self.charpos = self.charpos + 1
         elseif chars_list[i] == "\b" then
-            self:leftChar(true)
+            self.charpos = self.charpos - 1
         else
             if self.charlist[self.charpos] == "\n" then
                 self.charpos = self.charpos + 1
@@ -254,7 +254,7 @@ function TermInputText:leftChar(skip_callback)
         return
     end
     local left_char = self.charlist[self.charpos - 1]
-    if not left_char and left_char == "\n" then
+    if not left_char or left_char == "\n" then
         return
     end
     InputText.leftChar(self)
