@@ -2,7 +2,6 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
-local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -96,7 +95,6 @@ function SetDefaults:init()
     self.defaults_menu = Menu:new{
         width = self.screen_width - (Size.margin.fullscreen_popout * 2),
         height = self.screen_height - (Size.margin.fullscreen_popout * 2),
-        cface = Font:getFace("smallinfofont"),
         show_parent = menu_container,
         _manager = self,
     }

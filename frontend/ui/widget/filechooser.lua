@@ -4,7 +4,6 @@ local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local OpenWithDialog = require("ui/widget/openwithdialog")
 local ConfirmBox = require("ui/widget/confirmbox")
-local Font = require("ui/font")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
@@ -18,7 +17,6 @@ local getFileNameSuffix = util.getFileNameSuffix
 local getFriendlySize = util.getFriendlySize
 
 local FileChooser = Menu:extend{
-    cface = Font:getFace("smallinfofont"),
     no_title = true,
     path = lfs.currentdir(),
     show_path = true,
