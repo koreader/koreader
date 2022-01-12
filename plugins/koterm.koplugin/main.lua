@@ -213,7 +213,7 @@ function Terminal:transmit(chars)
     self:refresh(true)
 end
 
-function Terminal:_helperVT52VT100(cmd, param1, param2)
+function Terminal:_helperVT52VT100(cmd, param1, param2, param3)
     if cmd == "A" then -- cursor up
         self.input_widget:moveCursorUp(true)
         return true
@@ -237,6 +237,8 @@ function Terminal:_helperVT52VT100(cmd, param1, param2)
     elseif cmd == "K" then -- clear to end of line
         self.input_widget:delToEndOfLine(true)
         return true
+    elseif cmd == "m" then
+        return true
     end
     return false
 end
@@ -250,7 +252,7 @@ end
 
 function Terminal:interpretAnsiSeq(text)
     local pos = 1
-    local param1, param2 = 0, 0
+    local param1, param2, param3 = 0, 0, 0
 
     while pos <= #text do
         local next_byte = text:sub(pos, pos)
@@ -319,7 +321,7 @@ function Terminal:interpretAnsiSeq(text)
                 local row = param1 and (param1:byte() - (" "):byte() + 1) or 1
                 local col = param2 and (param2:byte() - (" "):byte() + 1) or 1
                 self.input_widget:moveCursorToRowCol(row, col, self.maxr, self.maxc)
-                param1, param2 = 0, 0
+                param1, param2, param3 = 0, 0, 0
             end
             self.sequence_state = ""
         elseif self.sequence_state == "CSI1" then
@@ -345,16 +347,27 @@ function Terminal:interpretAnsiSeq(text)
             if isNum(next_byte) then
                 param2 = param2 * 10 + next_byte:byte() - ("0"):byte()
             else
+                if next_byte == ";" then
+                    self.sequence_state = "escParam3"
+                else
+                    pos = pos - 1
+                    self.sequence_state = "escOtherCmd"
+                end
+            end
+        elseif self.sequence_state == "escParam3" then
+            if isNum(next_byte) then
+                param3 = param3 * 10 + next_byte:byte() - ("0"):byte()
+            else
                 pos = pos - 1
                 self.sequence_state = "escOtherCmd"
             end
         elseif self.sequence_state == "escOtherCmd" then
-            if not self:_helperVT52VT100(next_byte, param1, param2) then
+            if not self:_helperVT52VT100(next_byte, param1, param2, param3) then
                 -- drop other VT100 sequences
                 logger.info("xxxxxxxxx ANSI-final: not supported", next_byte,
                     next_byte:byte(), next_byte)
             end
-            param1, param2 = 0, 0
+            param1, param2, param3 = 0, 0, 0
             self.sequence_state = ""
         else
             logger.dbg("KOTerm: detected error in esc sequence, not my fault.")
@@ -463,7 +476,7 @@ function Terminal:generateInputDialog()
                 self.input_widget:upLine()
             end,
             hold_callback = function()
-                self.input_widget:upPage()
+                self.input_widget:scrollUp()
             end,
             },
             {
@@ -472,7 +485,7 @@ function Terminal:generateInputDialog()
                 self.input_widget:downLine()
             end,
             hold_callback = function()
-                self.input_widget:downPage()
+                self.input_widget:scrollDown()
             end,
             },
             {
