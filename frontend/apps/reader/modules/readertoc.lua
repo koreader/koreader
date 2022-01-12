@@ -746,7 +746,6 @@ function ReaderToc:onShowToc()
         is_popout = false,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        cface = Font:getFace("x_smallinfofont"),
         single_line = true,
         align_baselines = true,
         with_dots = items_with_dots,
