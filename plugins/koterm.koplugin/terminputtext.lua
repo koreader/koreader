@@ -5,7 +5,10 @@ module used for terminal emulator to override InputText
 local InputText = require("ui/widget/inputtext")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
+local logger = require("logger")
 local util = require("util")
+
+local esc = "\027"
 
 local esc_seq = {
     backspace = "\008",
@@ -23,6 +26,7 @@ local TermInputText = InputText:extend{
     maxr = 40,
     maxc = 80,
     strike_callback = nil,
+    sequence_state = "",
 }
 
 function TermInputText:onTapTextBox(arg, ges)
@@ -112,9 +116,9 @@ dbg:guard(TermInputText, "addChars",
             "TermInputText: Wrong chars value type (expected string)!")
     end)
 
-function TermInputText:enterAlternateKeypad(maxr, maxc)
+function TermInputText:enterAlternateKeypad()
     self.store_position = self.charpos
-    self:formatTerminal(maxr, maxc, true)
+    self:formatTerminal(true)
 end
 
 function TermInputText:exitAlternateKeypad()
@@ -133,10 +137,8 @@ end
 -- @param maxc number of columns
 -- @param clear if true, fill the matrix with filler
 -- @param filler if unset, use ' '
-function TermInputText:formatTerminal(maxr, maxc, clear, filler)
+function TermInputText:formatTerminal(clear, filler)
     filler = filler or " "
-    self.maxr = maxr or 24
-    self.maxc = maxc or 80
 
     local i = self.store_position or 1
     -- so we end up in a maxr x maxc array for positioning
@@ -163,12 +165,12 @@ function TermInputText:formatTerminal(maxr, maxc, clear, filler)
 --    table.remove(self.charlist, i - 1)
 end
 
-function TermInputText:moveCursorToRowCol(r, c, maxr, maxc)
-    if r==1 and c== 1 and not self.store_position then
+function TermInputText:moveCursorToRowCol(r, c)
+    if r==1 and c==1 and not self.store_position then
         self.store_position = self.charpos
     end
 
-    self:formatTerminal(maxr, maxc)
+    self:formatTerminal()
 
     local cur_r, cur_c = 1, 0
     local i = self.store_position or 1
@@ -388,6 +390,182 @@ function TermInputText:downLine(skip_callback)
         return
     end
     InputText.downLine(self)
+end
+
+--------------------- move this up ------
+
+function TermInputText:resize(maxr, maxc)
+    self.maxr = maxr
+    self.maxc = maxc
+end
+
+function TermInputText:_helperVT52VT100(cmd, param1, param2, param3)
+    if cmd == "A" then -- cursor up
+        self:moveCursorUp(true)
+        return true
+    elseif cmd == "B" then -- cursor down
+        self:moveCursorDown(true)
+        return true
+    elseif cmd == "C" then -- cursor right
+        self:rightChar(true)
+        return true
+    elseif cmd == "D" then -- cursor left
+        self:leftChar(true)
+        return true
+    elseif cmd == "H" then -- cursor home
+        param1 = param1 == 0 and 1 or param1
+        param2 = param2 == 0 and 1 or param2
+        self:moveCursorToRowCol(param1, param2)
+        return true
+    elseif cmd == "J" then -- clear to end of screen
+        self:clearToEndOfScreen()
+        return true
+    elseif cmd == "K" then -- clear to end of line
+        self:delToEndOfLine(true)
+        return true
+    elseif cmd == "m" then
+        -- graphics mode not supported yet(?)
+        return true
+    elseif cmd == "n" then
+        --- @todo
+        return true
+    end
+    return false
+end
+
+local function isNum(char)
+    if #char ~= 1 then return end
+    if char:byte() >= ("0"):byte() and char:byte() <= ("9"):byte() then
+        return true
+    end
+end
+
+function TermInputText:interpretAnsiSeq(text)
+    local pos = 1
+    local param1, param2, param3 = 0, 0, 0
+
+    while pos <= #text do
+        local next_byte = text:sub(pos, pos)
+        if self.sequence_state == "" then
+            local function isPrintable(ch)
+                return ch:byte() >= 32 or ch == "\010" or ch == "\013" or ch == "\008"
+            end
+            if next_byte == esc then
+                self.sequence_state = "esc"
+            elseif isPrintable(next_byte) then
+                local part = next_byte
+                -- all bytes up to the next control sequence
+                while pos < #text and isPrintable(next_byte) do
+                    next_byte = text:sub(pos+1, pos+1)
+                    if next_byte ~= "" and pos < #text and isPrintable(next_byte) then
+                        part = part .. next_byte
+                        pos = pos + 1
+                    end
+                end
+                self:addChars(part, true)
+            end
+        elseif self.sequence_state == "esc" then
+            self.sequence_state = ""
+            if next_byte == "A" then -- cursor up
+                self:moveCursorUp(true)
+            elseif next_byte == "B" then -- cursor down
+                self:moveCursorDown(true)
+            elseif next_byte == "C" then -- cursor right
+                self:rightChar(true)
+            elseif next_byte == "D" then -- cursor left
+                self:leftChar(true)
+            elseif next_byte == "F" then -- enter graphics mode
+                logger.dbg("KOTerm: enter graphics mode not supported")
+            elseif next_byte == "G" then -- exit graphics mod
+                logger.dbg("KOTerm: leave graphics mode not supported")
+            elseif next_byte == "H" then -- cursor home
+                self:moveCursorToRowCol(1, 1)
+            elseif next_byte == "I" then -- reverse line feed (cursor up and insert line)
+                self:reverseLineFeed(true)
+            elseif next_byte == "J" then -- clear to end of screen
+                self:clearToEndOfScreen()
+            elseif next_byte == "K" then -- clear to end of line
+                self:delToEndOfLine(true)
+            elseif next_byte == "L" then -- insert line
+                logger.dbg("KOTerm: insert not supported")
+            elseif next_byte == "M" then -- remove line
+                logger.dbg("KOTerm: remove line not supported")
+            elseif next_byte == "Y" then -- set cursor pos (row, col)
+                self.sequence_state = "escY"
+            elseif next_byte == "Z" then -- ident(ify)
+                self:transmit("\027/K") -- identify as VT52 without printer
+            elseif next_byte == "=" then -- alternate keypad
+                self:enterAlternateKeypad()
+            elseif next_byte == ">" then -- exit alternate keypad
+                self:exitAlternateKeypad()
+            elseif next_byte == "[" then
+                self.sequence_state = "CSI1"
+            end
+        elseif self.sequence_state == "escY" then
+            param1 = next_byte
+            self.sequence_state = "escYrow"
+        elseif self.sequence_state == "escYrow" then
+            param2 = next_byte
+            -- row and column are offsetted with 32 (' ')
+            if param1 ~= 0 and param2 ~= 0 then
+                local row = param1 and (param1:byte() - (" "):byte() + 1) or 1
+                local col = param2 and (param2:byte() - (" "):byte() + 1) or 1
+                self:moveCursorToRowCol(row, col)
+                param1, param2, param3 = 0, 0, 0
+            end
+            self.sequence_state = ""
+        elseif self.sequence_state == "CSI1" then
+            if next_byte == "s" then -- save cursor pos
+                logger.dbg("KOTerm: save cursor pos not implemented")
+                --- @todo
+            elseif next_byte == "u" then -- restore cursor pos
+                logger.dbg("KOTerm: restore cursor pos not implemented")
+                --- @todo
+            elseif next_byte == "?" then
+                self.sequence_state = "escParam2"
+            elseif isNum(next_byte) then
+                param1 = param1 * 10 + next_byte:byte() - ("0"):byte()
+            else
+                if next_byte == ";" then
+                    self.sequence_state = "escParam2"
+                else
+                    pos = pos - 1
+                    self.sequence_state = "escOtherCmd"
+                end
+            end
+        elseif self.sequence_state == "escParam2" then
+            if isNum(next_byte) then
+                param2 = param2 * 10 + next_byte:byte() - ("0"):byte()
+            else
+                if next_byte == ";" then
+                    self.sequence_state = "escParam3"
+                else
+                    pos = pos - 1
+                    self.sequence_state = "escOtherCmd"
+                end
+            end
+        elseif self.sequence_state == "escParam3" then
+            if isNum(next_byte) then
+                param3 = param3 * 10 + next_byte:byte() - ("0"):byte()
+            else
+                pos = pos - 1
+                self.sequence_state = "escOtherCmd"
+            end
+        elseif self.sequence_state == "escOtherCmd" then
+            if not self:_helperVT52VT100(next_byte, param1, param2, param3) then
+                -- drop other VT100 sequences
+                logger.info("xxxxxxxxx ANSI-final: not supported", next_byte,
+                    next_byte:byte(), next_byte)
+            end
+            param1, param2, param3 = 0, 0, 0
+            self.sequence_state = ""
+        else
+            logger.dbg("KOTerm: detected error in esc sequence, not my fault.")
+            self.sequence_state = ""
+        end -- self.sequence_state
+
+        pos = pos + 1
+    end
 end
 
 return TermInputText

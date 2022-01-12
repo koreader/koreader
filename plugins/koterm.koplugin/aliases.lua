@@ -139,7 +139,7 @@ function Aliases:editAlias(alias_name, alias_command)
                             table.remove(self.kv_pairs, 2)
                             table.remove(self.kv_pairs, 1)
                             table.sort(self.kv_pairs, function(a, b) return a[1] < b[1] end)
-                            table.insert(self.kv_pairs, 1, { _("Tap here to enter a new alias"), "",
+                            table.insert(self.kv_pairs, 1, { _("Tap here to create a new alias"), "",
                                 callback = function() self:editAlias(self, "", "") end })
                             table.insert(self.kv_pairs, 2, "---")
                             self:save()
