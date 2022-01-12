@@ -5,12 +5,13 @@ This plugin provides a terminal emulator (VT52 (+some ANSI))
 local Device = require("device")
 
 -- grantpt and friends are necessary (introduced on Android in API 21).
--- So sorry for the Tolinos with (Android 4.4.x)
+-- So sorry for the Tolinos with (Android 4.4.x).
+-- Maybe https://f-droid.org/de/packages/jackpal.androidterm/ could be an alternative then.
 if Device:isAndroid() then
     local A, android = pcall(require, "android")  -- luacheck: ignore
     local api = android.app.activity.sdkVersion
     if api < 21 then
-        return { disabled = true }
+        return
     end
 end
 
@@ -60,8 +61,6 @@ local ctrl_x = "\024"
 local ctrl_z = "\026"
 ]]
 
-local esc = "\027"
-
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
 local Terminal = WidgetContainer:new{
@@ -72,7 +71,6 @@ local Terminal = WidgetContainer:new{
     buffer_size = 1024 * G_reader_settings:readSetting("KOTerm_buffer_size", 16), -- size in kB
     buffer_used_approx = 0,
     refresh_time = 0.2,
-    sequence_state = "",
     koterm_home = ".",
 }
 
@@ -162,8 +160,8 @@ function Terminal:spawnShell(cols, rows)
         self:transmit(" stty cols " .. cols .. " rows " .. rows .."\n")
     end
 
---    self:transmit("source ./plugins/koterm.koplugin/profile\n")
-    self:interpretAnsiSeq(self:receive())
+    self.input_widget:resize(rows, cols)
+    self.input_widget:interpretAnsiSeq(self:receive())
 
     logger.info("KOTerm: spawn done")
 end
@@ -188,7 +186,12 @@ function Terminal:refresh(reset)
 
     local next_text = self:receive()
     if next_text ~= "" then
-        self:interpretAnsiSeq(next_text)
+        self.input_widget:interpretAnsiSeq(next_text)
+        if #self.input_dialog:getInputText() > self.buffer_size then
+            local input = self.input_dialog:getInputText()
+            input = input:sub(#input - self.buffer_size)
+            self.input_dialog:setInputText(input)
+        end
         if self.is_shell_open then
             UIManager:tickAfterNext(function()
                 UIManager:scheduleIn(self.refresh_time, Terminal.refresh, self)
@@ -208,181 +211,12 @@ function Terminal:refresh(reset)
     end
 end
 
+
 function Terminal:transmit(chars)
     C.write(self.ptmx, chars, #chars)
     self:refresh(true)
 end
 
-function Terminal:_helperVT52VT100(cmd, param1, param2, param3)
-    if cmd == "A" then -- cursor up
-        self.input_widget:moveCursorUp(true)
-        return true
-    elseif cmd == "B" then -- cursor down
-        self.input_widget:moveCursorDown(true)
-        return true
-    elseif cmd == "C" then -- cursor right
-        self.input_widget:rightChar(true)
-        return true
-    elseif cmd == "D" then -- cursor left
-        self.input_widget:leftChar(true)
-        return true
-    elseif cmd == "H" then -- cursor home
-        param1 = param1 == 0 and 1 or param1
-        param2 = param2 == 0 and 1 or param2
-        self.input_widget:moveCursorToRowCol(param1, param2, self.maxr, self.maxc)
-        return true
-    elseif cmd == "J" then -- clear to end of screen
-        self.input_widget:clearToEndOfScreen()
-        return true
-    elseif cmd == "K" then -- clear to end of line
-        self.input_widget:delToEndOfLine(true)
-        return true
-    elseif cmd == "m" then
-        return true
-    end
-    return false
-end
-
-local function isNum(char)
-    if #char ~= 1 then return end
-    if char:byte() >= ("0"):byte() and char:byte() <= ("9"):byte() then
-        return true
-    end
-end
-
-function Terminal:interpretAnsiSeq(text)
-    local pos = 1
-    local param1, param2, param3 = 0, 0, 0
-
-    while pos <= #text do
-        local next_byte = text:sub(pos, pos)
-        if self.sequence_state == "" then
-            local function isPrintable(ch)
-                return ch:byte() >= 32 or ch == "\010" or ch == "\013" or ch == "\008"
-            end
-            if next_byte == esc then
-                self.sequence_state = "esc"
-            elseif isPrintable(next_byte) then
-                local part = next_byte
-                -- all bytes up to the next control sequence
-                while pos < #text and isPrintable(next_byte) do
-                    next_byte = text:sub(pos+1, pos+1)
-                    if next_byte ~= "" and pos < #text and isPrintable(next_byte) then
-                        part = part .. next_byte
-                        pos = pos + 1
-                    end
-                end
-                self.input_widget:addChars(part, true)
-            end
-        elseif self.sequence_state == "esc" then
-            self.sequence_state = ""
-            if next_byte == "A" then -- cursor up
-                self.input_widget:moveCursorUp(true)
-            elseif next_byte == "B" then -- cursor down
-                self.input_widget:moveCursorDown(true)
-            elseif next_byte == "C" then -- cursor right
-                self.input_widget:rightChar(true)
-            elseif next_byte == "D" then -- cursor left
-                self.input_widget:leftChar(true)
-            elseif next_byte == "F" then -- enter graphics mode
-                logger.dbg("KOTerm: enter graphics mode not supported")
-            elseif next_byte == "G" then -- exit graphics mod
-                logger.dbg("KOTerm: leave graphics mode not supported")
-            elseif next_byte == "H" then -- cursor home
-                self.input_widget:moveCursorToRowCol(1, 1, self.maxr, self.maxc)
-            elseif next_byte == "I" then -- reverse line feed (cursor up and insert line)
-                self.input_widget:reverseLineFeed(true)
-            elseif next_byte == "J" then -- clear to end of screen
-                self.input_widget:clearToEndOfScreen()
-            elseif next_byte == "K" then -- clear to end of line
-                self.input_widget:delToEndOfLine(true)
-            elseif next_byte == "L" then -- insert line
-                logger.dbg("KOTerm: insert not supported")
-            elseif next_byte == "M" then -- remove line
-                logger.dbg("KOTerm: remove line not supported")
-            elseif next_byte == "Y" then -- set cursor pos (row, col)
-                self.sequence_state = "escY"
-            elseif next_byte == "Z" then -- ident(ify)
-                self:transmit("\027/K") -- identify as VT52 without printer
-            elseif next_byte == "=" then -- alternate keypad
-                self.input_widget:enterAlternateKeypad(self.maxr, self.maxc)
-            elseif next_byte == ">" then -- exit alternate keypad
-                self.input_widget:exitAlternateKeypad()
-            elseif next_byte == "[" then
-                self.sequence_state = "CSI1"
-            end
-        elseif self.sequence_state == "escY" then
-            param1 = next_byte
-            self.sequence_state = "escYrow"
-        elseif self.sequence_state == "escYrow" then
-            param2 = next_byte
-            -- row and column are offsetted with 32 (' ')
-            if param1 ~= 0 and param2 ~= 0 then
-                local row = param1 and (param1:byte() - (" "):byte() + 1) or 1
-                local col = param2 and (param2:byte() - (" "):byte() + 1) or 1
-                self.input_widget:moveCursorToRowCol(row, col, self.maxr, self.maxc)
-                param1, param2, param3 = 0, 0, 0
-            end
-            self.sequence_state = ""
-        elseif self.sequence_state == "CSI1" then
-            if next_byte == "s" then -- save cursor pos
-                logger.dbg("KOTerm: save cursor pos not implemented")
-                --- @todo
-            elseif next_byte == "u" then -- restore cursor pos
-                logger.dbg("KOTerm: restore cursor pos not implemented")
-                --- @todo
-            elseif next_byte == "?" then
-                self.sequence_state = "escParam2"
-            elseif isNum(next_byte) then
-                param1 = param1 * 10 + next_byte:byte() - ("0"):byte()
-            else
-                if next_byte == ";" then
-                    self.sequence_state = "escParam2"
-                else
-                    pos = pos - 1
-                    self.sequence_state = "escOtherCmd"
-                end
-            end
-        elseif self.sequence_state == "escParam2" then
-            if isNum(next_byte) then
-                param2 = param2 * 10 + next_byte:byte() - ("0"):byte()
-            else
-                if next_byte == ";" then
-                    self.sequence_state = "escParam3"
-                else
-                    pos = pos - 1
-                    self.sequence_state = "escOtherCmd"
-                end
-            end
-        elseif self.sequence_state == "escParam3" then
-            if isNum(next_byte) then
-                param3 = param3 * 10 + next_byte:byte() - ("0"):byte()
-            else
-                pos = pos - 1
-                self.sequence_state = "escOtherCmd"
-            end
-        elseif self.sequence_state == "escOtherCmd" then
-            if not self:_helperVT52VT100(next_byte, param1, param2, param3) then
-                -- drop other VT100 sequences
-                logger.info("xxxxxxxxx ANSI-final: not supported", next_byte,
-                    next_byte:byte(), next_byte)
-            end
-            param1, param2, param3 = 0, 0, 0
-            self.sequence_state = ""
-        else
-            logger.dbg("KOTerm: detected error in esc sequence, not my fault.")
-            self.sequence_state = ""
-        end -- self.sequence_state
-
-        pos = pos + 1
-        if #self.input_dialog:getInputText() > self.buffer_size then
-            local input = self.input_dialog:getInputText()
-            input = input:sub(#input - self.buffer_size)
-            self.input_dialog:setInputText(input)
-        end
-    end
-
-end
 
 --- kills a running shell
 -- @param ask if true ask if a shell is running, don't kill
@@ -420,6 +254,7 @@ function Terminal:getCharSize()
     }
     return tmp:getSize().w
 end
+
 function Terminal:generateInputDialog()
     return InputDialog:new{
         title =  _("KOTerm: Terminal Emulator"),
@@ -441,7 +276,7 @@ function Terminal:generateInputDialog()
             {
             text = "Esc",
             callback = function()
-                self:transmit(esc)
+                self:transmit("\027")
             end,
             },
             {
