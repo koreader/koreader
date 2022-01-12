@@ -20,6 +20,7 @@ export PS1
 # Source a user profile if it exists.
 USER_PROFILE="${KOTERM_HOME}/profile.user"
 if [ -f "${USER_PROFILE}" ]; then
+    # shellcheck disable=SC1090
     . "${USER_PROFILE}"
 fi
 
@@ -28,5 +29,6 @@ fi
 # to change it manually.
 ALIASES="${KOTERM_HOME}/aliases"
 if [ -f "${ALIASES}" ]; then
+    # shellcheck disable=SC1090
     . "${ALIASES}"
 fi
