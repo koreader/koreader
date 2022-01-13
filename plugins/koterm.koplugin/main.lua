@@ -71,7 +71,7 @@ local Terminal = WidgetContainer:new{
     buffer_size = 1024 * G_reader_settings:readSetting("KOTerm_buffer_size", 16), -- size in kB
     buffer_used_approx = 0,
     refresh_time = 0.2,
-    koterm_home = ".",
+    koterm_data = ".",
 }
 
 function Terminal:init()
@@ -83,8 +83,8 @@ function Terminal:init()
     self.chunk_size = CHUNK_SIZE
     self.chunk = ffi.new('uint8_t[?]', self.chunk_size)
 
-    self.koterm_home = DataStorage:getDataDir() .. "/scripts"
-    lfs.mkdir(self.koterm_home)
+    self.koterm_data = DataStorage:getDataDir()
+    lfs.mkdir(self.koterm_data .. "/scripts")
     os.remove("koterm.pid") -- clean leftover from last run
 end
 
@@ -142,7 +142,7 @@ function Terminal:spawnShell(cols, rows)
         C.setenv("TERM", "vt52", 1)
         C.setenv("ENV", "./plugins/koterm.koplugin/profile", 1)
         C.setenv("BASH_ENV", "./plugins/koterm.koplugin/profile", 1)
-        C.setenv("KOTERM_HOME", self.koterm_home, 1)
+        C.setenv("KOTERM_DATA", self.koterm_data, 1)
         if C.execlp(shell, shell) ~= 0 then
             -- the following two prints are shown in the KOTerm emulator.
             print("KOTerm: something has gone really wrong in spawning the shell\n\n:-(\n")
@@ -239,10 +239,18 @@ function Terminal:killShell(ask)
         -- do other things before killing first
         self.is_shell_open = false
         self.history = ""
-        os.remove("koterm.pid")  -- check this todo
+        os.remove("koterm.pid")
         C.close(self.ptmx)
 
         C.kill(pid, C.SIGTERM)
+
+        local status = ffi.new('int[1]')
+        -- status = tonumber(status[0])
+        -- If still running: ret = 0 , status = 0
+        -- If exited: ret = pid , status = 0 or 9 if killed
+        -- If no more running: ret = -1 , status = 0
+        C.waitpid(pid, status, 0) -- wait until shell is terminated
+
         return -1
     end
 end
@@ -327,7 +335,7 @@ function Terminal:generateInputDialog()
             text = "☰", -- settings menu
             callback = function ()
                 UIManager:close(self.input_widget.keyboard)
-                Aliases:show(self.koterm_home .. "/aliases",
+                Aliases:show(self.koterm_data .. "/scripts/aliases",
                     function()
                         UIManager:show(self.input_widget.keyboard)
                         UIManager:setDirty(self.input_dialog, "fast") -- is there a better solution
@@ -416,15 +424,15 @@ function Terminal:addToMainMenu(menu_items)
             {
                 text = _("About KOTerm"),
                 callback = function()
-                    local about_text = T(_([[
-KOTerm is a terminal emulator, which starts a shell (command prompt).
+                    local about_text = _([[KOTerm is a terminal emulator, which starts a shell (command prompt).
+
+There are two environment variables KOTERM_HOME and KOTERM_DATA containing the path of the install and the data folders.
 
 Commands to be executed on start can be placed in:
-'%1/profile.user'.
+'$KOTERM_DATA/scripts/profile.user'.
 
 Aliases (shortcuts) to frequently used commands can be placed in:
-'%1/aliases'.]]),
-self.koterm_home)
+'$KOTERM_DATA/scripts/aliases'.]])
 
                     UIManager:show(InfoMessage:new{
                         text = about_text,

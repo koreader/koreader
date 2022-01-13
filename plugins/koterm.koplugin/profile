@@ -5,7 +5,13 @@
 # You may change the contents of 'aliases' and 'profile.user'
 #
 
-PATH="${PATH}:${KOTERM_HOME}/scripts"
+KOTERM_HOME="$(pwd)"
+# make KOTERM_DATA an absolute path
+# shellcheck disable=SC2164
+cd "${KOTERM_DATA}"
+KOTERM_DATA="$(pwd)"
+
+PATH="${PATH}:${KOTERM_DATA}/scripts"
 TERM="vt52"
 
 PS1="$ "
@@ -13,12 +19,13 @@ if [ "$(id -u)" -eq "0" ]; then
     PS1="# "
 fi
 
+export KOTERM_DATA
 export PATH
 export TERM
 export PS1
 
 # Source a user profile if it exists.
-USER_PROFILE="${KOTERM_HOME}/profile.user"
+USER_PROFILE="${KOTERM_DATA}/scripts/profile.user"
 if [ -f "${USER_PROFILE}" ]; then
     # shellcheck disable=SC1090
     . "${USER_PROFILE}"
@@ -27,7 +34,7 @@ fi
 # Source command aliases if they exist.
 # These will be managed by koterm.koplugin so you don't need
 # to change it manually.
-ALIASES="${KOTERM_HOME}/aliases"
+ALIASES="${KOTERM_DATA}/scripts/aliases"
 if [ -f "${ALIASES}" ]; then
     # shellcheck disable=SC1090
     . "${ALIASES}"
