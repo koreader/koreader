@@ -401,16 +401,28 @@ end
 
 function TermInputText:_helperVT52VT100(cmd, param1, param2, param3)
     if cmd == "A" then -- cursor up
-        self:moveCursorUp(true)
+        param1 = param1 == 0 and 1 or param1
+        for i = 1, param1 do
+            self:moveCursorUp(true)
+        end
         return true
     elseif cmd == "B" then -- cursor down
-        self:moveCursorDown(true)
+        param1 = param1 == 0 and 1 or param1
+        for i = 1, param1 do
+            self:moveCursorDown(true)
+        end
         return true
     elseif cmd == "C" then -- cursor right
-        self:rightChar(true)
+        param1 = param1 == 0 and 1 or param1
+        for i = 1, param1 do
+            self:rightChar(true)
+        end
         return true
     elseif cmd == "D" then -- cursor left
-        self:leftChar(true)
+        param1 = param1 == 0 and 1 or param1
+        for i = 1, param1 do
+            self:leftChar(true)
+        end
         return true
     elseif cmd == "H" then -- cursor home
         param1 = param1 == 0 and 1 or param1
