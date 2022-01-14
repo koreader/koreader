@@ -15,7 +15,7 @@ function NetworkListener:onToggleWifi()
     if not NetworkMgr:isConnected() then
         UIManager:show(InfoMessage:new{
             text = _("Turning on Wi-Fi…"),
-            timeout = 1,
+            timeout = 1, -- timeout value is necessary, the message will be deleted by next message
         })
         UIManager:forceRePaint()
 
@@ -32,7 +32,7 @@ function NetworkListener:onToggleWifi()
         end
         UIManager:show(InfoMessage:new{
             text = _("Turning off Wi-Fi…"),
-            timeout = 1,
+            timeout = 1, -- timeout value is necessary, the message will be deleted by next message
         })
         UIManager:forceRePaint()
 
