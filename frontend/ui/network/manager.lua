@@ -115,7 +115,7 @@ function NetworkMgr:restoreWifiAsync() end
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     UIManager:show(InfoMessage:new{
         text = _("Turning on Wi-Fi…"),
-        timeout = 1,
+        timeout = 1, -- timeout value is necessary, the message will be deleted by next message
     })
     UIManager:forceRePaint()
 
@@ -128,7 +128,7 @@ end
 function NetworkMgr:toggleWifiOff(complete_callback)
     UIManager:show(InfoMessage:new{
         text = _("Turning off Wi-Fi…"),
-        timeout = 1,
+        timeout = 1, -- timeout value is necessary, the message will be deleted by next message
     })
     UIManager:forceRePaint()
 
