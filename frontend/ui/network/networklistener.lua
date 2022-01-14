@@ -17,6 +17,7 @@ function NetworkListener:onToggleWifi()
             text = _("Turning on Wi-Fi…"),
             timeout = 1,
         })
+        UIManager:forceRePaint()
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
@@ -29,6 +30,12 @@ function NetworkListener:onToggleWifi()
         local complete_callback = function()
             UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         end
+        UIManager:show(InfoMessage:new{
+            text = _("Turning off Wi-Fi…"),
+            timeout = 1,
+        })
+        UIManager:forceRePaint()
+
         NetworkMgr:turnOffWifi(complete_callback)
 
         UIManager:show(InfoMessage:new{
@@ -54,7 +61,7 @@ end
 function NetworkListener:onInfoWifiOn()
     if not NetworkMgr:isOnline() then
         UIManager:show(InfoMessage:new{
-            text = _("Enabling wifi…"),
+            text = _("Enabling Wi-Fi…"),
             timeout = 1,
         })
 
