@@ -113,6 +113,12 @@ function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
+    UIManager:show(InfoMessage:new{
+        text = _("Turning on Wi-Fi…"),
+        timeout = 1,
+    })
+    UIManager:forceRePaint()
+
     self.wifi_was_on = true
     G_reader_settings:makeTrue("wifi_was_on")
     self.wifi_toggle_long_press = long_press
@@ -120,6 +126,12 @@ function NetworkMgr:toggleWifiOn(complete_callback, long_press)
 end
 
 function NetworkMgr:toggleWifiOff(complete_callback)
+    UIManager:show(InfoMessage:new{
+        text = _("Turning off Wi-Fi…"),
+        timeout = 1,
+    })
+    UIManager:forceRePaint()
+
     self.wifi_was_on = false
     G_reader_settings:makeFalse("wifi_was_on")
     self:turnOffWifi(complete_callback)
