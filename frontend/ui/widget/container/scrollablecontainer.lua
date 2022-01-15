@@ -49,7 +49,6 @@ local ScrollableContainer = InputContainer:new{
     _crop_w = nil,
     _crop_h = nil,
     _crop_dx = 0,
-    _mirroredUI = BD.mirroredUILayout(),
 }
 
 function ScrollableContainer:getScrollbarWidth(scroll_bar_width)
@@ -140,7 +139,7 @@ function ScrollableContainer:initState()
             }
             self._crop_h = self.dimen.h - 3*self.scroll_bar_width
         end
-        if self._mirroredUI then
+        if BD.mirroredUILayout() then
             if self._v_scroll_bar then
                 self._crop_dx = self.dimen.w - self._crop_w
             end
@@ -198,7 +197,7 @@ function ScrollableContainer:scrollToRatio(ratio_x, ratio_y)
 end
 
 function ScrollableContainer:_scrollBy(dx, dy)
-    if self._mirroredUI then
+    if BD.mirroredUILayout() then
         dx = -dx
     end
     self._scroll_offset_x = self._scroll_offset_x + Math.round(dx)
@@ -263,9 +262,11 @@ function ScrollableContainer:paintTo(bb, x, y)
         self:initState()
     end
 
+    local _mirroredUI = BD.mirroredUILayout()
+
     if not self._is_scrollable then
         -- nothing to scroll: pass-through
-        if self._mirroredUI then -- behave as LeftContainer
+        if _mirroredUI then -- behave as LeftContainer
             x = x + (self.dimen.w - self[1]:getSize().w)
         end
         self[1]:paintTo(bb, x, y)
@@ -286,7 +287,7 @@ function ScrollableContainer:paintTo(bb, x, y)
     -- to erase bits that may not be overwritten after a scroll
     self._bb:fill(Blitbuffer.COLOR_WHITE)
     local dx
-    if self._mirroredUI then
+    if _mirroredUI then
         dx = self._max_scroll_offset_x - self._scroll_offset_x - self._crop_dx
     else
         dx = self._scroll_offset_x
@@ -296,14 +297,14 @@ function ScrollableContainer:paintTo(bb, x, y)
 
     -- Draw our scrollbars over
     if self._h_scroll_bar then
-        if self._mirroredUI then
+        if _mirroredUI then
             self._h_scroll_bar:paintTo(bb, x + self._h_scroll_bar_shift, y + self.dimen.h - 2*self.scroll_bar_width)
         else
             self._h_scroll_bar:paintTo(bb, x, y + self.dimen.h - 2*self.scroll_bar_width)
         end
     end
     if self._v_scroll_bar then
-        if self._mirroredUI then
+        if _mirroredUI then
             self._v_scroll_bar:paintTo(bb, x + self.scroll_bar_width, y)
         else
             self._v_scroll_bar:paintTo(bb, x + self.dimen.w - 2*self.scroll_bar_width, y)

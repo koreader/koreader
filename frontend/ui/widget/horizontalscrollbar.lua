@@ -24,7 +24,6 @@ local HorizontalScrollBar = InputContainer:new{
     -- extra touchable height (for scrolling with pan) can be larger than
     -- the provided height (this is added on each side)
     extra_touch_on_side_heightratio = 1, -- make it 3 x height
-    _mirroredUI = BD.mirroredUILayout(),
 }
 
 function HorizontalScrollBar:init()
@@ -77,7 +76,7 @@ end
 function HorizontalScrollBar:onTapScroll(arg, ges)
     if self.scroll_callback then
         local ratio = (ges.pos.x - self.touch_dimen.x) / self.width
-        if self._mirroredUI then
+        if BD.mirroredUILayout() then
             ratio = 1 - ratio
         end
         self.scroll_callback(ratio)
@@ -112,7 +111,7 @@ function HorizontalScrollBar:paintTo(bb, x, y)
     }
     bb:paintBorder(x, y, self.width, self.height,
                    self.bordersize, self.bordercolor, self.radius)
-    if self._mirroredUI then
+    if BD.mirroredUILayout() then
         bb:paintRect(x + self.bordersize + (1-self.high) * self.width, y + self.bordersize,
                      math.max((self.width - 2 * self.bordersize) * (self.high - self.low), self.min_thumb_size),
                      self.height - 2 * self.bordersize,
