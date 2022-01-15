@@ -636,6 +636,36 @@ function TouchMenu:_recalculatePageLayout()
     self.page_num = math.ceil(#self.item_table / self.perpage)
 end
 
+local function getBatterySymbol(is_charging, capacity)
+    if is_charging then
+        return ""
+    else
+        if capacity >= 100 then
+            return ""
+        elseif capacity >= 90 then
+            return ""
+        elseif capacity >= 80 then
+            return ""
+        elseif capacity >= 70 then
+            return ""
+        elseif capacity >= 60 then
+            return ""
+        elseif capacity >= 50 then
+            return ""
+        elseif capacity >= 40 then
+            return ""
+        elseif capacity >= 30 then
+            return ""
+        elseif capacity >= 20 then
+            return ""
+        elseif capacity >= 10 then
+            return ""
+        else
+            return ""
+        end
+    end
+end
+
 function TouchMenu:updateItems()
     local old_dimen = self.dimen and self.dimen:copy()
     self:_recalculatePageLayout()
@@ -687,37 +717,16 @@ function TouchMenu:updateItems()
 
     local time_info_txt = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
     local powerd = Device:getPowerDevice()
-    local batt_lvl = powerd:getCapacity()
-    local batt_symbol
-    if powerd:isCharging() then
-        batt_symbol = ""
-    else
-        if batt_lvl >= 100 then
-            batt_symbol = ""
-        elseif batt_lvl >= 90 then
-            batt_symbol = ""
-        elseif batt_lvl >= 80 then
-            batt_symbol = ""
-        elseif batt_lvl >= 70 then
-            batt_symbol = ""
-        elseif batt_lvl >= 60 then
-            batt_symbol = ""
-        elseif batt_lvl >= 50 then
-            batt_symbol = ""
-        elseif batt_lvl >= 40 then
-            batt_symbol = ""
-        elseif batt_lvl >= 30 then
-            batt_symbol = ""
-        elseif batt_lvl >= 20 then
-            batt_symbol = ""
-        elseif batt_lvl >= 10 then
-            batt_symbol = ""
-        else
-            batt_symbol = ""
-        end
-    end
     if Device:hasBattery() then
+        local batt_lvl = powerd:getCapacity()
+        local batt_symbol = getBatterySymbol(powerd:isCharging(), batt_lvl)
         time_info_txt = BD.wrap(time_info_txt) .. " " .. BD.wrap("⌁") .. BD.wrap(batt_symbol) ..  BD.wrap(batt_lvl .. "%")
+
+        if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+            local aux_batt_lvl = powerd:getAuxCapacity()
+            local aux_batt_symbol = getBatterySymbol(powerd:isAuxCharging(), aux_batt_lvl)
+            time_info_txt = time_info_txt .. " " .. BD.wrap("+") .. BD.wrap(aux_batt_symbol) ..  BD.wrap(aux_batt_lvl .. "%")
+        end
     end
     self.time_info:setText(time_info_txt)
 

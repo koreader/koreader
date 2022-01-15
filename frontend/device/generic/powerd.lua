@@ -1,12 +1,15 @@
+local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local BasePowerD = {
     fl_min = 0,                       -- min frontlight intensity
     fl_max = 10,                      -- max frontlight intensity
     fl_intensity = nil,               -- frontlight intensity
-    battCapacity = 0,                 -- battery capacity
+    batt_capacity = 0,                -- battery capacity
+    aux_batt_capacity = 0,            -- auxiliary battery capacity
     device = nil,                     -- device object
 
-    last_capacity_pull_time = 0,      -- timestamp of last pull
+    last_capacity_pull_time = TimeVal:new{ sec = 0, usec = 0},      -- timestamp of last pull
+    last_aux_capacity_pull_time = TimeVal:new{ sec = 0, usec = 0},  -- timestamp of last pull
 
     is_fl_on = false,                 -- whether the frontlight is on
 }
@@ -27,9 +30,12 @@ end
 function BasePowerD:init() end
 function BasePowerD:setIntensityHW(intensity) end
 function BasePowerD:getCapacityHW() return 0 end
+function BasePowerD:getAuxCapacityHW() return 0 end
+function BasePowerD:isAuxBatteryConnectedHW() return false end
 function BasePowerD:getDismissBatteryStatus() return self.battery_warning end
 function BasePowerD:setDismissBatteryStatus(status) self.battery_warning = status end
 function BasePowerD:isChargingHW() return false end
+function BasePowerD:isAuxChargingHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
 function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
@@ -133,16 +139,39 @@ function BasePowerD:setIntensity(intensity)
 end
 
 function BasePowerD:getCapacity()
-    local now_ts = os.time()
-    if now_ts - self.last_capacity_pull_time >= 60 then
-        self.battCapacity = self:getCapacityHW()
+    -- NOTE: UIManager *should* be loaded at this point.
+    --       If that doesn't hold, c.f., :stateChanged below.
+    local UIManager = require("ui/uimanager")
+    local now_ts = UIManager:getTime()
+
+    if (now_ts - self.last_aux_capacity_pull_time):tonumber() >= 60 then
+        self.batt_capacity = self:getCapacityHW()
         self.last_capacity_pull_time = now_ts
     end
-    return self.battCapacity
+    return self.batt_capacity
 end
 
 function BasePowerD:isCharging()
     return self:isChargingHW()
+end
+
+function BasePowerD:getAuxCapacity()
+    local UIManager = require("ui/uimanager")
+    local now_ts = UIManager:getTime()
+
+    if (now_ts - self.last_aux_capacity_pull_time):tonumber() >= 60 then
+        self.aux_batt_capacity = self:getAuxCapacityHW()
+        self.last_aux_capacity_pull_time = now_ts
+    end
+    return self.aux_batt_capacity
+end
+
+function BasePowerD:isAuxCharging()
+    return self:isAuxChargingHW()
+end
+
+function BasePowerD:isAuxBatteryConnected()
+    return self:isAuxBatteryConnectedHW()
 end
 
 function BasePowerD:stateChanged()
