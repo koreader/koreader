@@ -216,7 +216,9 @@ function Kindle:intoScreenSaver()
                 -- nil it, in case user switched ScreenSaver modes during our lifetime.
                 self.orig_rotation_mode = nil
             end
-            Screensaver:show()
+            -- Wait some time, just in case the native screensaver rears its ugly head
+            local UIManager = require("ui/uimanager")
+            UIManager:scheduleIn(1, function() Screensaver:show() end)
         else
             -- Let the native system handle screensavers on SO devices...
             if os.getenv("AWESOME_STOPPED") == "yes" then
