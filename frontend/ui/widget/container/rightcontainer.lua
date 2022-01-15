@@ -2,12 +2,11 @@
 RightContainer aligns its content (1 widget) at the right of its own dimensions
 --]]
 
-local BD = require("ui/bidi")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local RightContainer = WidgetContainer:new{
     allow_mirroring = true,
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
 }
 
 function RightContainer:paintTo(bb, x, y)

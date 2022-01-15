@@ -2,7 +2,6 @@
 A layout widget that puts objects above each other.
 --]]
 
-local BD = require("ui/bidi")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local OverlapGroup = WidgetContainer:new{
@@ -15,7 +14,7 @@ local OverlapGroup = WidgetContainer:new{
     -- It's usually safer to set it to false on the OverlapGroup,
     -- but some thinking is needed when many of them are nested.
     allow_mirroring = true,
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
     _size = nil,
 }
 

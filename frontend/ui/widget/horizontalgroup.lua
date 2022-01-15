@@ -2,14 +2,13 @@
 A layout widget that puts objects besides each other.
 --]]
 
-local BD = require("ui/bidi")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
 
 local HorizontalGroup = WidgetContainer:new{
     align = "center",
     allow_mirroring = true,
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
     _size = nil,
 }
 

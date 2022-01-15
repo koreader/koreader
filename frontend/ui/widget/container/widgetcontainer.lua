@@ -13,6 +13,7 @@ Child widgets are stored in WidgetContainer as conventional array items:
 It handles event propagation and painting (with different alignments) for its children.
 ]]
 
+local BD = require("ui/bidi")
 local Geom = require("ui/geometry")
 local Widget = require("ui/widget/widget")
 local Device = require("device")
@@ -24,6 +25,7 @@ end
 local WidgetContainer = Widget:new()
 
 function WidgetContainer:init()
+    self._mirroredUI = BD.mirroredUILayout()
     if self.dimen then
         if self.initDimen then
             self:initDimen()

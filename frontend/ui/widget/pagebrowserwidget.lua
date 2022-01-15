@@ -37,7 +37,7 @@ local PageBrowserWidget = InputContainer:new{
     -- Should only be nil on the first launch via ReaderThumbnail
     launcher = nil,
 
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
 }
 
 function PageBrowserWidget:init()

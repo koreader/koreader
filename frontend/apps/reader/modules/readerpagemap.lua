@@ -24,7 +24,7 @@ local ReaderPageMap = InputContainer:new{
     label_color = Blitbuffer.COLOR_BLACK,
     show_page_labels = nil,
     use_page_labels = nil,
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
 }
 
 function ReaderPageMap:init()

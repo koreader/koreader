@@ -52,7 +52,7 @@ local ProgressWidget = Widget:new{
     fill_from_right = false,
     allow_mirroring = true,
     alt = nil, -- table with alternate pages to mark with different color (in the form {{ini1, len1}, {ini2, len2}, ...})
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
     _orig_margin_v = nil,
     _orig_bordersize = nil,
 }

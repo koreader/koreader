@@ -14,7 +14,6 @@ Example:
 
 ]]
 
-local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -29,7 +28,7 @@ local CheckMark = InputContainer:new{
     width = 0,
     height = 0,
     baseline = 0,
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
 }
 
 function CheckMark:init()

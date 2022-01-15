@@ -1,4 +1,3 @@
-local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Geom = require("ui/geometry")
@@ -24,7 +23,7 @@ local HorizontalScrollBar = InputContainer:new{
     -- extra touchable height (for scrolling with pan) can be larger than
     -- the provided height (this is added on each side)
     extra_touch_on_side_heightratio = 1, -- make it 3 x height
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
 }
 
 function HorizontalScrollBar:init()

@@ -18,7 +18,6 @@ Example:
 
 --]]
 
-local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local Size = require("ui/size")
@@ -40,7 +39,7 @@ local FrameContainer = WidgetContainer:new{
     height = nil,
     invert = false,
     allow_mirroring = true,
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
 }
 
 function FrameContainer:getSize()

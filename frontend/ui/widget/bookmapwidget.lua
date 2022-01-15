@@ -41,7 +41,7 @@ local BookMapRow = InputContainer:new{
     -- Many other options not described here, see BookMapWidget:update()
     -- for the complete list.
 
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
 }
 
 function BookMapRow:getPageX(page, right_edge)
@@ -522,7 +522,7 @@ local BookMapWidget = InputContainer:new{
     -- Extra symbols to show below pages
     extra_symbols_pages = nil,
 
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
 
     -- Make this local subwidget available for reuse by PageBrowser
     BookMapRow = BookMapRow,

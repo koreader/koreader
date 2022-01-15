@@ -11,7 +11,6 @@ area, it's probably some 'show_parent' forwarding missing from the main
 widget to some of the inner widgets: chase the missing ones and add them.
 --]]
 
-local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Geom = require("ui/geometry")
@@ -49,7 +48,7 @@ local ScrollableContainer = InputContainer:new{
     _crop_w = nil,
     _crop_h = nil,
     _crop_dx = 0,
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil, -- inherited from WidgetContainer
 }
 
 function ScrollableContainer:getScrollbarWidth(scroll_bar_width)
