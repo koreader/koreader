@@ -354,6 +354,8 @@ local KoboCadmus = Kobo:new{
     },
     boot_rota = C.FB_ROTATE_CW,
     battery_sysfs = "/sys/class/power_supply/battery",
+    hasAuxBattery = yes,
+    aux_battery_sysfs = "/sys/class/misc/cilix",
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
@@ -431,6 +433,7 @@ function Kobo:init()
     self.powerd = require("device/kobo/powerd"):new{
         device = self,
         battery_sysfs = self.battery_sysfs,
+        aux_battery_sysfs = self.aux_battery_sysfs,
     }
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
     self.input = require("device/input"):new{
