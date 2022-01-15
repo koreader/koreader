@@ -43,6 +43,7 @@ local _ = require("gettext")
 local Bidi = {
     _mirrored_ui_layout = false,
     _rtl_ui_text = false,
+    _inverted = false,
 }
 
 -- Setup UI mirroring and RTL text for UI language
@@ -124,6 +125,22 @@ end
 -- is to be done
 function Bidi.mirroredUILayout()
     return Bidi._mirrored_ui_layout
+end
+
+-- This fuction can be used by document widgets to temporarily match a widget
+-- to the document page turn direction instead of the UI layout direction.
+function Bidi.invert()
+    if G_reader_settings:isTrue("invert_ui_layout_mirroring") and not Bidi._inverted then
+        Bidi._mirrored_ui_layout = not Bidi._mirrored_ui_layout
+        Bidi._inverted = true
+    end
+end
+
+function Bidi.resetInvert()
+    if Bidi._inverted then
+        Bidi._mirrored_ui_layout = not Bidi._mirrored_ui_layout
+        Bidi._inverted = false
+    end
 end
 
 -- This function might only be useful in some rare cases (RTL text
