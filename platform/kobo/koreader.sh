@@ -17,31 +17,37 @@ if [ "${SCRIPT_DIR}" != "/tmp" ]; then
 fi
 
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
-IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+# Swap every CPU at once if available
+if [ -d "/sys/devices/system/cpu/cpufreq/policy0" ]; then
+    CPUFREQ_SYSFS_PATH="/sys/devices/system/cpu/cpufreq/policy0"
+else
+    CPUFREQ_SYSFS_PATH="/sys/devices/system/cpu/cpu0/cpufreq"
+fi
+IFS= read -r current_cpufreq_gov <"${CPUFREQ_SYSFS_PATH}/scaling_governor"
 # NOTE: What's available depends on the HW, so, we'll have to take it step by step...
 #       Roughly follow Nickel's behavior (which prefers interactive), and prefer interactive, then ondemand, and finally conservative/dvfs.
 if [ "${current_cpufreq_gov}" != "interactive" ]; then
-    if grep -q "interactive" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+    if grep -q "interactive" "${CPUFREQ_SYSFS_PATH}/scaling_available_governors"; then
         ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
-        echo "interactive" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+        echo "interactive" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
     elif [ "${current_cpufreq_gov}" != "ondemand" ]; then
-        if grep -q "ondemand" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+        if grep -q "ondemand" "${CPUFREQ_SYSFS_PATH}/scaling_available_governors"; then
             # NOTE: This should never really happen: every kernel that supports ondemand already supports interactive ;).
             #       They were both introduced on Mk. 6
             ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
-            echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+            echo "ondemand" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
         elif [ -e "/sys/devices/platform/mxc_dvfs_core.0/enable" ]; then
             # The rest of this block assumes userspace is available...
-            if grep -q "userspace" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+            if grep -q "userspace" "${CPUFREQ_SYSFS_PATH}/scaling_available_governors"; then
                 ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
                 export CPUFREQ_DVFS="true"
 
                 # If we can use conservative, do so, but we'll tweak it a bit to make it somewhat useful given our load patterns...
                 # We unfortunately don't have any better choices on those kernels,
                 # the only other governors available are powersave & performance (c.f., #4114)...
-                if grep -q "conservative" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+                if grep -q "conservative" "${CPUFREQ_SYSFS_PATH}/scaling_available_governors"; then
                     export CPUFREQ_CONSERVATIVE="true"
-                    echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    echo "conservative" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
                     # NOTE: The knobs survive a governor switch, which is why we do this now ;).
                     echo "2" >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
                     echo "50" >"/sys/devices/system/cpu/cpufreq/conservative/freq_step"
@@ -60,7 +66,7 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
                 #       (There's also a bug(?) where that behavior is inverted for the *first* Wi-Fi session after a cold boot...)
                 if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
                     # Wi-Fi is enabled, make sure DVFS is on
-                    echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    echo "userspace" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
                     echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
                 else
                     # Wi-Fi is disabled, make sure DVFS is off
@@ -68,12 +74,12 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
 
                     # Switch to conservative to avoid being stuck at max clock if we can...
                     if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
-                        echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                        echo "conservative" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
                     else
                         # Otherwise, we'll be pegged at max clock...
-                        echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                        echo "userspace" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
                         # The kernel should already be taking care of that...
-                        cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+                        cat "${CPUFREQ_SYSFS_PATH}/scaling_max_freq" >"${CPUFREQ_SYSFS_PATH}/scaling_setspeed"
                     fi
                 fi
             fi
@@ -558,7 +564,7 @@ fi
 
 # Restore original CPUFreq governor if need be...
 if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
-    echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    echo "${ORIG_CPUFREQ_GOV}" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
 
     # NOTE: Leave DVFS alone, it'll be handled by Nickel if necessary.
 fi
