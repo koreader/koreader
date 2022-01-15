@@ -448,6 +448,10 @@ function ReaderBookmark:updateHighlightsIfNeeded()
 end
 
 function ReaderBookmark:onShowBookmark(match_table)
+    if self.view.inverse_reading_order then
+        BD.invert()
+    end
+
     self.select_mode = false
     self.filtered_mode = match_table and true or false
     self:updateHighlightsIfNeeded()
@@ -822,6 +826,7 @@ function ReaderBookmark:onShowBookmark(match_table)
 
     bm_menu.close_callback = function()
         UIManager:close(self.bookmark_menu)
+        BD.resetinvert()
     end
 
     self.refresh = function()

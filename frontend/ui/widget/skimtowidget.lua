@@ -23,6 +23,10 @@ local Screen = Device.screen
 local SkimToWidget = FocusManager:new{}
 
 function SkimToWidget:init()
+    if self.ui.view.inverse_reading_order then
+        BD.invert()
+    end
+
     local screen_width = Screen:getWidth()
     local screen_height = Screen:getHeight()
 
@@ -338,6 +342,7 @@ function SkimToWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.skimto_frame.dimen
     end)
+    BD.resetinvert()
 end
 
 function SkimToWidget:onShow()
