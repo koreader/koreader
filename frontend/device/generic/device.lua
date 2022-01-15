@@ -33,6 +33,7 @@ local Device = {
 
     -- hardware feature tests: (these are functions!)
     hasBattery = yes,
+    hasAuxBattery = no,
     hasKeyboard = no,
     hasKeys = no,
     hasDPad = no,

@@ -14,6 +14,7 @@ local KoboPowerD = BasePowerD:new{
     fl = nil,
 
     battery_sysfs = nil,
+    aux_battery_sysfs = nil,
     fl_warmth_min = 0, fl_warmth_max = 100,
     fl_warmth = nil,
     fl_was_on = nil,
@@ -92,6 +93,28 @@ function KoboPowerD:init()
     -- Setup the sysfs paths
     self.batt_capacity_file = self.battery_sysfs .. "/capacity"
     self.is_charging_file = self.battery_sysfs .. "/status"
+
+    if self.device:hasAuxBattery() then
+        self.aux_batt_capacity_file = self.aux_battery_sysfs .. "/cilix_bat_capacity"
+        self.aux_batt_connected_file = self.aux_battery_sysfs .. "/cilix_conn" -- or "active"
+        self.aux_batt_charging_file = self.aux_battery_sysfs .. "/charge_status" -- "usb_conn" would not allow us to detect the "Full" state
+
+        self.getAuxCapacityHW = function(this)
+            return this:read_int_file(this.aux_batt_capacity_file)
+        end
+
+        self.isAuxBatteryConnectedHW = function(this)
+            return this:read_int_file(this.aux_batt_connected_file) == 1
+        end
+
+        self.isAuxChargingHW = function(this)
+            -- 0 when not charging
+            -- 3 when full
+            -- 2 when charging via DCP and/or when battery is high (> 70%)
+            local charge_status = this:read_int_file(this.aux_batt_charging_file)
+            return charge_status ~= 0 and charge_status ~= 3
+        end
+    end
 
     -- Default values in case self:_syncKoboLightOnStart() does not find
     -- any previously saved setting (and for unit tests where it will
