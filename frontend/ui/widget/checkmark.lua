@@ -29,14 +29,13 @@ local CheckMark = InputContainer:new{
     width = 0,
     height = 0,
     baseline = 0,
-    _mirroredUI = BD.mirroredUILayout(),
 }
 
 function CheckMark:init()
     -- Adjust these checkmarks if mirroring UI (para_direction_rtl should
     -- follow BD.mirroredUILayout(), and not the set or reverted text
     -- direction, for proper rendering on the right).
-    local para_direction_rtl = self._mirroredUI
+    local para_direction_rtl = BD.mirroredUILayout()
     local checked_widget = TextWidget:new{
         text = " ✓", -- preceded by thin space for better alignment
         face = self.face,

@@ -52,7 +52,6 @@ local ProgressWidget = Widget:new{
     fill_from_right = false,
     allow_mirroring = true,
     alt = nil, -- table with alternate pages to mark with different color (in the form {{ini1, len1}, {ini2, len2}, ...})
-    _mirroredUI = BD.mirroredUILayout(),
     _orig_margin_v = nil,
     _orig_bordersize = nil,
 }
@@ -70,6 +69,7 @@ function ProgressWidget:paintTo(bb, x, y)
     }
     if self.dimen.w == 0 or self.dimen.h == 0 then return end
 
+    local _mirroredUI = BD.mirroredUILayout()
     -- We'll draw every bar element in order, bottom to top.
     local fill_width = my_size.w - 2*(self.margin_h + self.bordersize)
     local fill_y = y + self.margin_v + self.bordersize
@@ -100,7 +100,7 @@ function ProgressWidget:paintTo(bb, x, y)
         for i=1, #self.alt do
             local tick_x = fill_width * ((self.alt[i][1] - 1) / self.last)
             local width = fill_width * (self.alt[i][2] / self.last)
-            if self._mirroredUI then
+            if _mirroredUI then
                 tick_x = fill_width - tick_x - width
             end
             tick_x = math.floor(tick_x)
@@ -117,7 +117,7 @@ function ProgressWidget:paintTo(bb, x, y)
     -- Main fill bar for the specified percentage.
     if self.percentage >= 0 and self.percentage <= 1 then
         local fill_x = x + self.margin_h + self.bordersize
-        if self.fill_from_right or (self._mirroredUI and not self.fill_from_right) then
+        if self.fill_from_right or (_mirroredUI and not self.fill_from_right) then
             fill_x = fill_x + (fill_width * (1 - self.percentage))
             fill_x = math.floor(fill_x)
         end
@@ -133,7 +133,7 @@ function ProgressWidget:paintTo(bb, x, y)
     if self.ticks and self.last and self.last > 0 then
         for i, tick in ipairs(self.ticks) do
             local tick_x = fill_width * (tick / self.last)
-            if self._mirroredUI then
+            if _mirroredUI then
                 tick_x = fill_width - tick_x
             end
             tick_x = math.floor(tick_x)
