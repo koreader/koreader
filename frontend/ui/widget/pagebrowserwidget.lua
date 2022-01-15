@@ -36,8 +36,6 @@ local PageBrowserWidget = InputContainer:new{
     focus_page = nil,
     -- Should only be nil on the first launch via ReaderThumbnail
     launcher = nil,
-
-    _mirroredUI = BD.mirroredUILayout(),
 }
 
 function PageBrowserWidget:init()
@@ -253,7 +251,7 @@ function PageBrowserWidget:updateLayout()
     for idx = 1, self.nb_grid_items do
         local row = math.floor((idx-1)/self.nb_cols) -- start from 0
         local col = (idx-1) % self.nb_cols
-        if self._mirroredUI then
+        if BD.mirroredUILayout() then
             col = self.nb_cols - col - 1
         end
         local offset_x = self.grid_item_margin*(col+1) + self.grid_item_width*col
@@ -475,7 +473,7 @@ function PageBrowserWidget:update()
     }
     self.row[1] = row
 
-    if self._mirroredUI then
+    if BD.mirroredUILayout() then
         self.view_finder_x = row:getPageX(grid_page_end)
         self.view_finder_w = row:getPageX(grid_page_start, true) - self.view_finder_x
         if blank_page_slots_after_end > 0 then
