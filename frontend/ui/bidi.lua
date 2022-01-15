@@ -43,6 +43,7 @@ local _ = require("gettext")
 local Bidi = {
     _mirrored_ui_layout = false,
     _rtl_ui_text = false,
+    _invert = false,
 }
 
 -- Setup UI mirroring and RTL text for UI language
@@ -281,6 +282,20 @@ end
 function Bidi._filepath_rtl(path)
     local dirpath, filename = util.splitFilePathName(path)
     return Bidi.ltr(Bidi._path(dirpath) .. Bidi._filename_auto_ext_right(filename))
+end
+
+function Bidi.invert()
+    if G_reader_settings:isTrue("invert_ui_layout_mirroring") then
+	    Bidi._mirrored_ui_layout = not Bidi._mirrored_ui_layout
+	    Bidi._invert = true
+    end
+end
+
+function Bidi.resetinvert()
+    if Bidi._invert then
+	    Bidi._mirrored_ui_layout = not Bidi._mirrored_ui_layout
+	    Bidi._invert = false
+    end
 end
 
 return Bidi
