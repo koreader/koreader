@@ -27,6 +27,10 @@ local TermInputText = InputText:extend{
     maxc = 80,
     strike_callback = nil,
     sequence_state = "",
+
+    store_pos_dec = 1,
+    store_pos_sco = 1,
+    store_position = 1, -- when entered alternate keypad
 }
 
 function TermInputText:onTapTextBox(arg, ges)
@@ -34,7 +38,8 @@ function TermInputText:onTapTextBox(arg, ges)
     return true
 end
 
-function TermInputText:addChars(chars, skip_callback)
+function TermInputText:addChars(chars, skip_callback, skip_table_concat)
+    -- the same as in inputtext.lua
     if not chars then
         -- VirtualKeyboard:addChar(key) gave us 'nil' once (?!)
         -- which would crash table.concat()
@@ -44,10 +49,14 @@ function TermInputText:addChars(chars, skip_callback)
         UIManager:scheduleIn(0.3, function() self.enter_callback() end)
         return
     end
+
+    -- this is an addon to inputtext.lua
     if self.strike_callback and not skip_callback then
         self.strike_callback(chars)
         return
     end
+
+    -- the same as in inputtext.lua
     if self.readonly or not self:isTextEditable(true) then
         return
     end
@@ -57,6 +66,7 @@ function TermInputText:addChars(chars, skip_callback)
         self.charpos = 1 -- move cursor to the first position
     end
 
+    -- this is a modification of inputtext.lua
     local chars_list = util.splitToChars(chars) -- for UTF8
     for i = 1, #chars_list do
         if chars_list[i] == "\n" then
@@ -107,7 +117,11 @@ function TermInputText:addChars(chars, skip_callback)
             self.charpos = self.charpos + 1
         end
     end
-    self:initTextBox(table.concat(self.charlist), true)
+
+    -- the same as in inputtext.lua
+    if not skip_table_concat then
+        self:initTextBox(table.concat(self.charlist), true)
+    end
     return
 end
 dbg:guard(TermInputText, "addChars",
@@ -259,7 +273,8 @@ function TermInputText:leftChar(skip_callback)
     if not left_char or left_char == "\n" then
         return
     end
-    InputText.leftChar(self)
+    --InputText.leftChar(self)
+    self.charpos = self.charpos - 1
 end
 
 function TermInputText:rightChar(skip_callback)
@@ -325,6 +340,10 @@ function TermInputText:delChar()
     InputText.delChar(self)
 end
 
+function TermInputText:delToStartOfLine()
+    return
+end
+
 function TermInputText:scrollDown(skip_callback)
     if self.strike_callback and not skip_callback then
         self.strike_callback(esc_seq.page_down)
@@ -353,8 +372,8 @@ function TermInputText:goToStartOfLine(skip_callback)
                 self.charpos = self.charpos - 1
             end
             self.charpos = self.charpos + 1
+            self.text_widget:moveCursorToCharPos(self.charpos)
         end
-        self.text_widget:moveCursorToCharPos(self.charpos)
         return
     end
     InputText.goToStartOfLine(self)
@@ -427,6 +446,7 @@ function TermInputText:_helperVT52VT100(cmd, param1, param2, param3)
     elseif cmd == "H" then -- cursor home
         param1 = param1 == 0 and 1 or param1
         param2 = param2 == 0 and 1 or param2
+        print("xxx", param1, param2)
         self:moveCursorToRowCol(param1, param2)
         return true
     elseif cmd == "J" then -- clear to end of screen
@@ -441,6 +461,10 @@ function TermInputText:_helperVT52VT100(cmd, param1, param2, param3)
     elseif cmd == "n" then
         --- @todo
         return true
+    elseif cmd == "r" then
+        --- @todo
+        print("xxxxxxxxxxxxxxxxxxxxxxxx KOTERM set scroll region", param1, param2)
+        return true
     end
     return false
 end
@@ -451,17 +475,22 @@ local function isNum(char)
         return true
     end
 end
+local function isPrintable(ch)
+    return ch:byte() >= 32 or ch == "\010" or ch == "\013"
+end
+
 
 function TermInputText:interpretAnsiSeq(text)
     local pos = 1
     local param1, param2, param3 = 0, 0, 0
 
+    for i = 1, #text do
+        print("xxxxx", i, text:sub(i,i):byte(), text:sub(i,i))
+    end
+
     while pos <= #text do
         local next_byte = text:sub(pos, pos)
         if self.sequence_state == "" then
-            local function isPrintable(ch)
-                return ch:byte() >= 32 or ch == "\010" or ch == "\013" or ch == "\008"
-            end
             if next_byte == esc then
                 self.sequence_state = "esc"
             elseif isPrintable(next_byte) then
@@ -474,7 +503,9 @@ function TermInputText:interpretAnsiSeq(text)
                         pos = pos + 1
                     end
                 end
-                self:addChars(part, true)
+                self:addChars(part, true, true)
+            elseif next_byte == "\008" then
+                self.charpos = self.charpos - 1
             end
         elseif self.sequence_state == "esc" then
             self.sequence_state = ""
@@ -512,7 +543,14 @@ function TermInputText:interpretAnsiSeq(text)
                 self:exitAlternateKeypad()
             elseif next_byte == "[" then
                 self.sequence_state = "CSI1"
+            elseif next_byte == "7" then
+                self.store_pos_dec = self.charpos
+                print("xxxx store  pos", self.charpos)
+            elseif next_byte == "8" then
+                self.charpos = self.store_pos_dec
+                print("xxxx restorepos", self.charpos)
             end
+
         elseif self.sequence_state == "escY" then
             param1 = next_byte
             self.sequence_state = "escYrow"
@@ -528,11 +566,9 @@ function TermInputText:interpretAnsiSeq(text)
             self.sequence_state = ""
         elseif self.sequence_state == "CSI1" then
             if next_byte == "s" then -- save cursor pos
-                logger.dbg("KOTerm: save cursor pos not implemented")
-                --- @todo
+                self.store_pos_sco = self.charpos
             elseif next_byte == "u" then -- restore cursor pos
-                logger.dbg("KOTerm: restore cursor pos not implemented")
-                --- @todo
+                self.charpos = self.store_pos_sco
             elseif next_byte == "?" then
                 self.sequence_state = "escParam2"
             elseif isNum(next_byte) then
@@ -567,7 +603,7 @@ function TermInputText:interpretAnsiSeq(text)
             if not self:_helperVT52VT100(next_byte, param1, param2, param3) then
                 -- drop other VT100 sequences
                 logger.info("xxxxxxxxx ANSI-final: not supported", next_byte,
-                    next_byte:byte(), next_byte)
+                    next_byte:byte(), next_byte, param1, param2, param3)
             end
             param1, param2, param3 = 0, 0, 0
             self.sequence_state = ""
@@ -578,6 +614,8 @@ function TermInputText:interpretAnsiSeq(text)
 
         pos = pos + 1
     end
+
+    self:initTextBox(table.concat(self.charlist), true)
 end
 
 return TermInputText
