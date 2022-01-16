@@ -993,7 +993,7 @@ function ReaderBookmark:updateBookmark(item)
     end
 end
 
-function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note)
+function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note, new_text)
     local bookmark
     if from_highlight then
         -- Called by ReaderHighlight:editHighlight, we need to find the bookmark
@@ -1017,10 +1017,18 @@ function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note)
     else
         bookmark = item
     end
+    local input_text = bookmark.text_orig
+    if new_text then
+        if self:isBookmarkAutoText(bookmark) then
+            input_text = new_text
+        else
+            input_text = input_text .. "\n\n" .. new_text
+        end
+    end
     self.input = InputDialog:new{
         title = _("Edit note"),
         description = "   " .. T(_("Page: %1"), bookmark.mandatory) .. "     " .. T(_("Time: %1"), bookmark.datetime),
-        input = bookmark.text_orig,
+        input = input_text,
         allow_newline = true,
         add_scroll_buttons = true,
         use_available_height = true,
