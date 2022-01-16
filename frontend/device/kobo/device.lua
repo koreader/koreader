@@ -387,6 +387,16 @@ local KoboIo = Kobo:new{
     },
 }
 
+function Kobo:_refreshChargingLED()
+    if G_reader_settings:nilOrTrue("enable_charging_led") then
+        if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
+            self:toggleChargingLED(self.powerd:isAuxCharging())
+        else
+            self:toggleChargingLED(self.powerd:isCharging())
+        end
+    end
+end
+
 function Kobo:init()
     -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
     local mxcfb_bypass_wait_for
@@ -499,11 +509,10 @@ function Kobo:init()
         end
     end
 
-    -- We have no way of querying the current state of the charging LED, so, our only sane choices are:
-    -- * Do nothing
-    -- * Turn it off on startup
-    -- I've chosen the latter, as I find it vaguely saner, more useful, and it matches Nickel's behavior (I think).
+    -- We have no way of querying the current state of the charging LED, so, start from scratch.
+    -- Much like Nickel, start by turning it off.
     self:toggleChargingLED(false)
+    self:_refreshChargingLED()
 
     -- Only enable a single core on startup
     self:enableCPUCores(1)
@@ -877,6 +886,9 @@ function Kobo:resume()
         f:write("a\n")
         f:close()
     end
+
+    -- A full suspend may have toggled the LED off.
+    self:_refreshChargingLED()
 end
 
 function Kobo:saveSettings()
