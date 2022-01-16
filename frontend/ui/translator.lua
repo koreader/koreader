@@ -477,13 +477,13 @@ Show translated text in TextViewer, with alternate translations
 @string target_lang[opt] (`"en"`, `"fr"`, `…`)
 @string source_lang[opt="auto"] (`"en"`, `"fr"`, `…`) or `"auto"` to auto-detect source language
 --]]
-function Translator:showTranslation(text, target_lang, source_lang)
+function Translator:showTranslation(text, target_lang, source_lang, from_highlight, page, index)
     if Device:hasClipboard() then
         Device.input.setClipboardText(text)
     end
 
     local NetworkMgr = require("ui/network/manager")
-    if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang) end) then
+    if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang, from_highlight, page, index) end) then
         return
     end
 
@@ -491,11 +491,11 @@ function Translator:showTranslation(text, target_lang, source_lang)
     -- translation service query.
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-        self:_showTranslation(text, target_lang, source_lang)
+        self:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
     end)
 end
 
-function Translator:_showTranslation(text, target_lang, source_lang)
+function Translator:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
     if not target_lang then
         target_lang = self:getTargetLanguage()
     end
@@ -602,6 +602,37 @@ function Translator:_showTranslation(text, target_lang, source_lang)
                     text = _("Copy all"),
                     callback = function()
                         Device.input.setClipboardText(text_all)
+                    end,
+                },
+            }
+        )
+    end
+    if from_highlight then
+        local ui = require("apps/reader/readerui").instance
+        table.insert(buttons_table, 1,
+            {
+                {
+                    text = _("Save main translation to note"),
+                    callback = function()
+                        UIManager:close(textviewer)
+                        UIManager:close(ui.highlight.highlight_dialog)
+                        if page then
+                            ui.highlight:editHighlight(page, index, false, text_main)
+                        else
+                            ui.highlight:addNote(text_main)
+                        end
+                    end,
+                },
+                {
+                    text = _("Save all to note"),
+                    callback = function()
+                        UIManager:close(textviewer)
+                        UIManager:close(ui.highlight.highlight_dialog)
+                        if page then
+                            ui.highlight:editHighlight(page, index, false, text_all)
+                        else
+                            ui.highlight:addNote(text_all)
+                        end
                     end,
                 },
             }
