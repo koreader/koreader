@@ -477,13 +477,13 @@ Show translated text in TextViewer, with alternate translations
 @string target_lang[opt] (`"en"`, `"fr"`, `…`)
 @string source_lang[opt="auto"] (`"en"`, `"fr"`, `…`) or `"auto"` to auto-detect source language
 --]]
-function Translator:showTranslation(text, target_lang, source_lang)
+function Translator:showTranslation(text, target_lang, source_lang, from_highlight, page, index)
     if Device:hasClipboard() then
         Device.input.setClipboardText(text)
     end
 
     local NetworkMgr = require("ui/network/manager")
-    if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang) end) then
+    if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang, from_highlight, page, index) end) then
         return
     end
 
@@ -491,11 +491,11 @@ function Translator:showTranslation(text, target_lang, source_lang)
     -- translation service query.
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-        self:_showTranslation(text, target_lang, source_lang)
+        self:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
     end)
 end
 
-function Translator:_showTranslation(text, target_lang, source_lang)
+function Translator:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
     if not target_lang then
         target_lang = self:getTargetLanguage()
     end
@@ -524,6 +524,7 @@ function Translator:_showTranslation(text, target_lang, source_lang)
         source_lang = result[3]
     end
     local output = {}
+    local text_main = ""
 
     -- For both main and alternate translations, we may get multiple slices
     -- of the original text and its translations.
@@ -539,7 +540,8 @@ function Translator:_showTranslation(text, target_lang, source_lang)
             table.insert(translated, t)
         end
         table.insert(output, "▣ " .. table.concat(source, " "))
-        table.insert(output, "● " .. table.concat(translated, " "))
+        text_main = "● " .. table.concat(translated, " ")
+        table.insert(output, text_main)
     end
 
     if result[6] and type(result[6]) == "table" and #result[6] > 0 then
@@ -574,14 +576,79 @@ function Translator:_showTranslation(text, target_lang, source_lang)
     end
 
     -- table.insert(output, require("dump")(result)) -- for debugging
-    UIManager:show(TextViewer:new{
+    local text_all = table.concat(output, "\n")
+    local textviewer
+    local buttons_table = {
+        {
+            {
+                text = _("Close"),
+                is_enter_default = true,
+                callback = function()
+                    UIManager:close(textviewer)
+                end,
+            },
+        },
+    }
+    if Device:hasClipboard() then
+        table.insert(buttons_table, 1,
+            {
+                {
+                    text = _("Copy main translation"),
+                    callback = function()
+                        Device.input.setClipboardText(text_main)
+                    end,
+                },
+                {
+                    text = _("Copy all"),
+                    callback = function()
+                        Device.input.setClipboardText(text_all)
+                    end,
+                },
+            }
+        )
+    end
+    if from_highlight then
+        local ui = require("apps/reader/readerui").instance
+        table.insert(buttons_table, 1,
+            {
+                {
+                    text = _("Save main translation to note"),
+                    callback = function()
+                        UIManager:close(textviewer)
+                        UIManager:close(ui.highlight.highlight_dialog)
+                        if page then
+                            ui.highlight:editHighlight(page, index, false, text_main)
+                        else
+                            ui.highlight:addNote(text_main)
+                        end
+                    end,
+                },
+                {
+                    text = _("Save all to note"),
+                    callback = function()
+                        UIManager:close(textviewer)
+                        UIManager:close(ui.highlight.highlight_dialog)
+                        if page then
+                            ui.highlight:editHighlight(page, index, false, text_all)
+                        else
+                            ui.highlight:addNote(text_all)
+                        end
+                    end,
+                },
+            }
+        )
+    end
+    textviewer = TextViewer:new{
         title = T(_("Translation from %1"), self:getLanguageName(source_lang, "?")),
+        title_multilines = true,
             -- Showing the translation target language in this title may make
             -- it quite long and wrapped, taking valuable vertical spacing
-        text = table.concat(output, "\n"),
+        text = text_all,
         height = math.floor(Screen:getHeight() * 0.8),
         justified = G_reader_settings:nilOrTrue("dict_justify"),
-    })
+        buttons_table = buttons_table,
+    }
+    UIManager:show(textviewer)
 end
 
 return Translator
