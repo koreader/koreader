@@ -100,7 +100,9 @@ function KoboPowerD:init()
         self.aux_batt_charging_file = self.aux_battery_sysfs .. "/charge_status" -- "usb_conn" would not allow us to detect the "Full" state
 
         self.getAuxCapacityHW = function(this)
-            return this:read_int_file(this.aux_batt_capacity_file)
+            -- NOTE: The first few reads after connecting to the PowerCover may fail, in which case,
+            --       we pass that detail along to PowerD so that it may retry the call sooner.
+            return this:unchecked_read_int_file(this.aux_batt_capacity_file)
         end
 
         self.isAuxBatteryConnectedHW = function(this)
@@ -110,7 +112,7 @@ function KoboPowerD:init()
         self.isAuxChargingHW = function(this)
             -- 0 when not charging
             -- 3 when full
-            -- 2 when charging via DCP and/or when battery is high (> 70%)
+            -- 2 when charging via DCP
             local charge_status = this:read_int_file(this.aux_batt_charging_file)
             return charge_status ~= 0 and charge_status ~= 3
         end
