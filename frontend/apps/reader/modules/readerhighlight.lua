@@ -118,11 +118,11 @@ function ReaderHighlight:init()
                 end,
             }
         end,
-        ["07_translate"] = function(_self)
+        ["07_translate"] = function(_self, page, index)
             return {
                 text = _("Translate"),
                 callback = function()
-                    _self:translate(_self.selected_text)
+                    _self:translate(_self.selected_text, page, index)
                     -- We don't call _self:onClose(), so one can still see
                     -- the highlighted text when moving the translated
                     -- text window, and also if NetworkMgr:promptWifiOn()
@@ -723,7 +723,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
                 text = _("…"),
                 callback = function()
                     self.selected_text = self.view.highlight.saved[page][index]
-                    self:onShowHighlightMenu()
+                    self:onShowHighlightMenu(page, index)
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
                 end,
@@ -801,7 +801,7 @@ function ReaderHighlight:removeFromHighlightDialog(idx)
     return button
 end
 
-function ReaderHighlight:onShowHighlightMenu()
+function ReaderHighlight:onShowHighlightMenu(page, index)
     if not self.selected_text then
         return
     end
@@ -810,7 +810,7 @@ function ReaderHighlight:onShowHighlightMenu()
 
     local columns = 2
     for idx, fn_button in ffiUtil.orderedPairs(self._highlight_buttons) do
-        local button = fn_button(self)
+        local button = fn_button(self, page, index)
         if not button.show_in_highlight_dialog_func or button.show_in_highlight_dialog_func() then
             if #highlight_buttons[#highlight_buttons] >= columns then
                 table.insert(highlight_buttons, {})
@@ -1300,9 +1300,9 @@ function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
     end
 end
 
-function ReaderHighlight:translate(selected_text)
+function ReaderHighlight:translate(selected_text, page, index)
     if selected_text.text ~= "" then
-        self:onTranslateText(selected_text.text)
+        self:onTranslateText(selected_text.text, page, index)
     -- or we will do OCR
     elseif self.hold_pos then
         local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text)
@@ -1322,8 +1322,8 @@ dbg:guard(ReaderHighlight, "translate",
             "translate must not be called with nil selected_text!")
     end)
 
-function ReaderHighlight:onTranslateText(text)
-    Translator:showTranslation(text)
+function ReaderHighlight:onTranslateText(text, page, index)
+    Translator:showTranslation(text, false, false, true, page, index)
 end
 
 function ReaderHighlight:onHoldRelease()
@@ -1629,9 +1629,10 @@ If you wish your highlights to be saved in the document, just move it to a writa
     end
 end
 
-function ReaderHighlight:addNote()
+function ReaderHighlight:addNote(text)
     local page, index = self:saveHighlight()
-    self:editHighlight(page, index, true)
+    if text then self:clear() end
+    self:editHighlight(page, index, true, text)
     UIManager:close(self.edit_highlight_dialog)
     self.edit_highlight_dialog = nil
     self.ui:handleEvent(Event:new("AddNote"))
@@ -1687,15 +1688,16 @@ function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
         logger.dbg("delete highlight from document", removed)
         self.ui.document:deleteHighlight(page, removed)
     end
+    UIManager:setDirty(self.dialog, "ui")
 end
 
-function ReaderHighlight:editHighlight(page, i, is_new_note)
+function ReaderHighlight:editHighlight(page, i, is_new_note, text)
     local item = self.view.highlight.saved[page][i]
     self.ui.bookmark:renameBookmark({
         page = self.ui.document.info.has_pages and page or item.pos0,
         datetime = item.datetime,
         pboxes = item.pboxes
-    }, true, is_new_note)
+    }, true, is_new_note, text)
 end
 
 function ReaderHighlight:editHighlightStyle(page, i)
