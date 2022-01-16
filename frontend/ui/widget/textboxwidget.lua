@@ -24,6 +24,7 @@ local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local logger = require("logger")
@@ -1858,7 +1859,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    local hold_duration = UIManager:getTime() - self.hold_start_tv
+    local hold_duration = TimeVal.now() - self.hold_start_tv
 
     -- If page contains an image, check if Hold is on this image and deal
     -- with it directly
