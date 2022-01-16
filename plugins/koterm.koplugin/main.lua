@@ -51,16 +51,6 @@ int tcdrain(int fd) __attribute__((nothrow, leaf));
 int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
 ]]
 
---[[
-local ctrl_c = "\003"
-local ctrl_f = "\006" -- right
-local ctrl_b = "\002" -- left
-local ctrl_n = "\014" -- down
-local ctrl_p = "\016" -- up
-local ctrl_x = "\024"
-local ctrl_z = "\026"
-]]
-
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
 local Terminal = WidgetContainer:new{
@@ -211,12 +201,10 @@ function Terminal:refresh(reset)
     end
 end
 
-
 function Terminal:transmit(chars)
     C.write(self.ptmx, chars, #chars)
     self:refresh(true)
 end
-
 
 --- kills a running shell
 -- @param ask if true ask if a shell is running, don't kill
