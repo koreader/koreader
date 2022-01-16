@@ -152,23 +152,19 @@ function DictQuickLookup:init()
                 },
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration)
-                    local lookup_target
-                    if hold_duration < TimeVal:new{ sec = 3, usec = 0 } then
-                        -- do this lookup in the same domain (dict/wikipedia)
-                        lookup_target = self.is_wiki and "LookupWikipedia" or "LookupWord"
-                    else
+                    -- do this lookup in the same domain (dict/wikipedia)
+                    local lookup_wikipedia = self.is_wiki
+                    if hold_duration >= TimeVal:new{ sec = 3, usec = 0 } then
                         -- but allow switching domain with a long hold
-                        lookup_target = self.is_wiki and "LookupWord" or "LookupWikipedia"
+                        lookup_wikipedia = not lookup_wikipedia
                     end
-                    if lookup_target == "LookupWikipedia" then
-                        self:resyncWikiLanguages()
+                    -- We don't pass self.highlight to subsequent lookup, we want the
+                    -- first to be the only one to unhighlight selection when closed
+                    if lookup_wikipedia then
+                        self:lookupWikipedia(false, text)
+                    else
+                        self.ui:handleEvent(Event:new("LookupWord", text))
                     end
-                    self.ui:handleEvent(
-                        -- don't pass self.highlight to subsequent lookup, we want
-                        -- the first to be the only one to unhighlight selection
-                        -- when closed
-                        Event:new(lookup_target, text)
-                    )
                 end
             },
             -- These will be forwarded to MovableContainer after some checks
@@ -185,9 +181,9 @@ function DictQuickLookup:init()
 
     -- And here comes the initial widget layout...
     if self.is_wiki then
-        -- Keep a copy of self.wiki_languages for use
-        -- by DictQuickLookup:resyncWikiLanguages()
-        self.wiki_languages_copy = self.wiki_languages and {unpack(self.wiki_languages)} or nil
+        -- Get a copy of ReaderWikipedia.wiki_languages, with the current result
+        -- lang first (rotated, or added)
+        self.wiki_languages, self.update_wiki_languages_on_close = self.ui.wikipedia:getWikiLanguages(self.lang)
     end
 
     -- Bigger window if fullpage Wikipedia article being shown,
@@ -319,7 +315,7 @@ function DictQuickLookup:init()
                         local ConfirmBox = require("ui/widget/confirmbox")
                         -- if forced_lang was specified, it may not be in our wiki_languages,
                         -- but ReaderWikipedia will have put it in result.lang
-                        local lang = self.lang or self.wiki_languages_copy[1]
+                        local lang = self.lang or self.wiki_languages[1]
                         -- Find a directory to save file into
                         local dir
                         if G_reader_settings:isTrue("wikipedia_save_in_book_dir") and not self:isDocless() then
@@ -386,7 +382,7 @@ function DictQuickLookup:init()
                     id = "close",
                     text = _("Close"),
                     callback = function()
-                        UIManager:close(self)
+                        self:onClose()
                     end,
                 },
             },
@@ -473,12 +469,14 @@ function DictQuickLookup:init()
                     enabled = self:canSearch(),
                     callback = function()
                         if self.is_wiki then
-                            self:resyncWikiLanguages(true) -- rotate & resync them
-                            UIManager:close(self)
-                            self:lookupWikipedia()
+                            -- We're rotating: forward this flag from the one we're closing so
+                            -- that ReaderWikipedia can give it to the one we'll be showing
+                            self.window_list.rotated_update_wiki_languages_on_close = self.update_wiki_languages_on_close
+                            self:lookupWikipedia(false, nil, nil, self.wiki_languages[2])
+                            self:onClose(true)
                         else
                             self.ui:handleEvent(Event:new("HighlightSearch"))
-                            UIManager:close(self)
+                            self:onClose(true) -- don't unhighlight (or we might erase a search hit)
                         end
                     end,
                 },
@@ -486,7 +484,6 @@ function DictQuickLookup:init()
                     id = "close",
                     text = _("Close"),
                     callback = function()
-                        -- UIManager:close(self)
                         self:onClose()
                     end,
                 },
@@ -1094,7 +1091,7 @@ function DictQuickLookup:onTap(arg, ges_ev)
     return true
 end
 
-function DictQuickLookup:onClose()
+function DictQuickLookup:onClose(no_clear)
     UIManager:close(self)
     for i = #self.window_list, 1, -1 do
         local window = self.window_list[i]
@@ -1102,7 +1099,13 @@ function DictQuickLookup:onClose()
             table.remove(self.window_list, i)
         end
     end
-    if self.highlight then
+    if self.update_wiki_languages_on_close then
+        -- except if we got no result for current language
+        if not self.results.no_result then
+            self.ui:handleEvent(Event:new("UpdateWikiLanguages", self.wiki_languages))
+        end
+    end
+    if self.highlight and not no_clear then
         -- delay unhighlight of selection, so we can see where we stopped when
         -- back from our journey into dictionary or wikipedia
         local clear_id = self.highlight:getClearId()
@@ -1114,18 +1117,8 @@ function DictQuickLookup:onClose()
 end
 
 function DictQuickLookup:onHoldClose(no_clear)
-    self:onClose()
-    for i = #self.window_list, 1, -1 do
-        local window = self.window_list[i]
-        -- if one holds a highlight, let's clear it like in onClose()
-        if window.highlight and not no_clear then
-            local clear_id = window.highlight:getClearId()
-            UIManager:scheduleIn(0.5, function()
-                window.highlight:clear(clear_id)
-            end)
-        end
-        UIManager:close(window)
-        table.remove(self.window_list, i)
+    while #self.window_list > 0 do
+        self.window_list[#self.window_list]:onClose(no_clear)
     end
     return true
 end
@@ -1258,15 +1251,12 @@ end
 function DictQuickLookup:inputLookup()
     local word = self.input_dialog:getInputText()
     if word and word ~= "" then
-        local event
-        if self.is_wiki then
-            event = "LookupWikipedia"
-            self:resyncWikiLanguages()
-        else
-            event = "LookupWord"
-        end
         -- Trust that input text does not need any cleaning (allows querying for "-suffix")
-        self.ui:handleEvent(Event:new(event, word, true))
+        if self.is_wiki then
+            self:lookupWikipedia(false, word, true)
+        else
+            self.ui:handleEvent(Event:new("LookupWord", word, true))
+        end
     end
 end
 
@@ -1274,40 +1264,32 @@ function DictQuickLookup:closeInputDialog()
     UIManager:close(self.input_dialog)
 end
 
-function DictQuickLookup:resyncWikiLanguages(rotate)
-    -- Resync the current language or rotate it from its state when
-    -- this window was created (we may have rotated it later in other
-    -- wikipedia windows that we closed and went back here, and its
-    -- state would not be what the wikipedia language button is showing.
-    if not self.wiki_languages_copy then
-        return
+function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
+    if not lang then
+        -- Use the lang of the current or nearest is_wiki DictQuickLookup.
+        -- Otherwise, first lang in ReaderWikipedia.wiki_languages will be used.
+        for i = #self.window_list, 1, -1 do
+            local window = self.window_list[i]
+            if window.is_wiki and window.lang then
+                lang = window.lang
+                break
+            end
+        end
     end
-    if rotate then
-        -- rotate our saved wiki_languages copy
-        local current_lang = table.remove(self.wiki_languages_copy, 1)
-        table.insert(self.wiki_languages_copy, current_lang)
+    if not word then
+        if get_fullpage then
+            -- we use the word of the displayed result's definition, which
+            -- is the exact title of the full wikipedia page
+            word = self.lookupword
+            is_sane = true
+        else
+            -- we use the original word that was querried
+            word = self.word
+            is_sane = false
+        end
     end
-    -- re-set self.wiki_languages with original (possibly rotated) items
-    for i, lang in ipairs(self.wiki_languages_copy) do
-        self.wiki_languages[i] = lang
-    end
-end
-
-function DictQuickLookup:lookupWikipedia(get_fullpage)
-    local word
-    local is_sane
-    if get_fullpage then
-        -- we use the word of the displayed result's definition, which
-        -- is the exact title of the full wikipedia page
-        word = self.lookupword
-        is_sane = true
-    else
-        -- we use the original word that was querried
-        word = self.word
-        is_sane = false
-    end
-    self:resyncWikiLanguages()
-    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_box, get_fullpage))
+    -- Keep providing self.word_boxes so new windows keep being positionned to not hide it
+    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_boxes, get_fullpage, lang))
 end
 
 return DictQuickLookup
