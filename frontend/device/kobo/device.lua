@@ -387,7 +387,7 @@ local KoboIo = Kobo:new{
     },
 }
 
-function Kobo:_refreshChargingLED()
+function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
             self:toggleChargingLED(self.powerd:isAuxCharging())
@@ -512,7 +512,7 @@ function Kobo:init()
     -- We have no way of querying the current state of the charging LED, so, start from scratch.
     -- Much like Nickel, start by turning it off.
     self:toggleChargingLED(false)
-    self:_refreshChargingLED()
+    self:setupChargingLED()
 
     -- Only enable a single core on startup
     self:enableCPUCores(1)
@@ -888,7 +888,7 @@ function Kobo:resume()
     end
 
     -- A full suspend may have toggled the LED off.
-    self:_refreshChargingLED()
+    self:setupChargingLED()
 end
 
 function Kobo:saveSettings()

@@ -111,6 +111,17 @@ function BasePowerD:read_int_file(file)
     end
 end
 
+function BasePowerD:unchecked_read_int_file(file)
+    local fd = io.open(file, "r")
+    if fd then
+        local int = fd:read("*number")
+        fd:close()
+        return int
+    else
+        return
+    end
+end
+
 function BasePowerD:read_str_file(file)
     local fd = io.open(file, "r")
     if fd then
@@ -160,8 +171,12 @@ function BasePowerD:getAuxCapacity()
     local now_ts = UIManager:getTime()
 
     if (now_ts - self.last_aux_capacity_pull_time):tonumber() >= 60 then
-        self.aux_batt_capacity = self:getAuxCapacityHW()
-        self.last_aux_capacity_pull_time = now_ts
+        local aux_batt_capa = self:getAuxCapacityHW()
+        -- If the read failed, don't update our cache, and retry next time.
+        if aux_batt_capa then
+            self.aux_batt_capacity = aux_batt_capa
+            self.last_aux_capacity_pull_time = now_ts
+        end
     end
     return self.aux_batt_capacity
 end

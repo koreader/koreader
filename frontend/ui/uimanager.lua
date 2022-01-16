@@ -1759,17 +1759,15 @@ end
 
 -- The common operations that should be performed when the device is plugged to a power source.
 function UIManager:_beforeCharging()
-    if G_reader_settings:nilOrTrue("enable_charging_led") then
-        Device:toggleChargingLED(true)
-    end
+    -- Leave the kernel some time to figure it out ;o).
+    self:scheduleIn(0.5, function() Device:setupChargingLED() end)
     self:broadcastEvent(Event:new("Charging"))
 end
 
 -- The common operations that should be performed when the device is unplugged from a power source.
 function UIManager:_afterNotCharging()
-    if G_reader_settings:nilOrTrue("enable_charging_led") then
-        Device:toggleChargingLED(false)
-    end
+    -- Leave the kernel some time to figure it out ;o).
+    self:scheduleIn(0.5, function() Device:setupChargingLED() end)
     self:broadcastEvent(Event:new("NotCharging"))
 end
 
