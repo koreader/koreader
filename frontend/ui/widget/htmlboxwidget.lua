@@ -9,6 +9,7 @@ local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Mupdf = require("ffi/mupdf")
 local Screen = Device.screen
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
@@ -229,7 +230,7 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    local hold_duration = UIManager:getTime() - self.hold_start_tv
+    local hold_duration = TimeVal.now() - self.hold_start_tv
 
     local page = self.document:openPage(self.page_number)
     local lines = page:getPageText()
