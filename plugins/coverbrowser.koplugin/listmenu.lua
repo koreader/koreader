@@ -576,7 +576,7 @@ function ListMenuItem:update()
             end
             if bookinfo.unsupported then
                 -- Let's show this fact in place of the anyway empty authors slot
-                authors = T(_("(no book information: %1)"), bookinfo.unsupported)
+                authors = T(_("(no book information: %1)"), _(bookinfo.unsupported))
             end
             -- Build title and authors texts with decreasing font size
             -- till it fits in the space available
