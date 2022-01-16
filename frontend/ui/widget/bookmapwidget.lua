@@ -1027,6 +1027,7 @@ On a newly opened book, the book map will start in grid mode showing all chapter
 end
 
 function BookMapWidget:onClose(close_all_parents)
+    BD.resetinvert()
     -- Close this widget
     logger.dbg("closing BookMapWidget")
     UIManager:close(self)

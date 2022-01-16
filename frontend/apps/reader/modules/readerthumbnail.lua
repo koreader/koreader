@@ -1,3 +1,4 @@
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Cache = require("cache")
 local Device = require("device")
@@ -78,6 +79,10 @@ function ReaderThumbnail:addToMainMenu(menu_items)
 end
 
 function ReaderThumbnail:onShowBookMap()
+    if self.view.inverse_reading_order then
+        BD.invert()
+    end
+
     local BookMapWidget = require("ui/widget/bookmapwidget")
     UIManager:show(BookMapWidget:new{
         ui = self.ui,
