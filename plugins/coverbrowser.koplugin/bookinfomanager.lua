@@ -114,6 +114,18 @@ local BOOKINFO_SELECT_SQL = "SELECT " .. table.concat(BOOKINFO_COLS_SET, ",") ..
                             "WHERE directory=? AND filename=? AND in_progress=0;"
 local BOOKINFO_IN_PROGRESS_SQL = "SELECT in_progress, filename, unsupported FROM bookinfo WHERE directory=? AND filename=?;"
 
+-- We need these _ litterals for them to be made available to translators. the english "string" is
+-- what is inserted in the DB, and it will be translated only when read from the DB and displayed.
+local UNSUPPORTED_REASONS = {
+    not_readable_by_engine = {
+               string = "not readable by engine",
+        translation = _("not readable by engine")
+    },
+    too_many_interruptions_or_crashes = {
+               string = "too many interruptions or crashes",
+        translation = _("too many interruptions or crashes")
+    }
+}
 
 local BookInfoManager = {}
 
@@ -439,7 +451,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         logger.info("Seen", prev_tries, "previous attempts at info extraction", filepath, ", too many, ignoring it.")
         tried_enough = true
         dbrow.in_progress = 0     -- row will exist, we'll never be called again
-        dbrow.unsupported = _("too many interruptions or crashes") -- but caller will now it failed
+        dbrow.unsupported = UNSUPPORTED_REASONS.too_many_interruptions_or_crashes.string
         dbrow.cover_fetched = 'Y' -- so we don't try again if we're called later with cover_specs
     end
     -- Insert the temporary "in progress" record (or the definitive "unsupported" record)
@@ -548,7 +560,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         loaded = false
     end
     if not loaded then
-        dbrow.unsupported = _("not readable by engine")
+        dbrow.unsupported = UNSUPPORTED_REASONS.not_readable_by_engine.string
         dbrow.cover_fetched = 'Y' -- so we don't try again if we're called later if cover_specs
     end
     dbrow.in_progress = 0 -- extraction completed (successful or definitive failure)
