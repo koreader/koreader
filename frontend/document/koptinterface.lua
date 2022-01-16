@@ -6,7 +6,6 @@ local CacheItem = require("cacheitem")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
-local Device = require("device")
 local DocCache = require("document/doccache")
 local Document = require("document/document")
 local FFIUtil = require("ffi/util")
@@ -111,7 +110,7 @@ function KoptInterface:waitForContext(kc)
 
     if waited or self.bg_thread then
         -- Background thread is done, go back to a single CPU core.
-        Device:enableCPUCores(1)
+        CanvasContext:enableCPUCores(1)
         self.bg_thread = nil
     end
 
@@ -392,7 +391,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
     local cached = DocCache:check(hash, TileCacheItem)
     if not cached then
         if hinting then
-            Device:enableCPUCores(2)
+            CanvasContext:enableCPUCores(2)
         end
 
         local page_size = Document.getNativePageDimensions(doc, pageno)
@@ -425,7 +424,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         DocCache:insert(hash, tile)
 
         if hinting then
-            Device:enableCPUCores(1)
+            CanvasContext:enableCPUCores(1)
         end
 
         return tile
@@ -464,7 +463,7 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, rend
     local cached = DocCache:check(hash)
     if not cached then
         if hinting then
-            Device:enableCPUCores(2)
+            CanvasContext:enableCPUCores(2)
         end
 
         local kc = self:createContext(doc, pageno, bbox)
