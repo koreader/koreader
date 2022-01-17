@@ -256,9 +256,6 @@ function Device:init()
                 if FileManager.instance then
                     FileManager.instance:reinit(FileManager.instance.path,
                         FileManager.instance.focused_file)
-                    UIManager:setDirty(FileManager.instance.banner, function()
-                        return "ui", FileManager.instance.banner.dimen
-                    end)
                 end
             elseif ev.code == SDL_WINDOWEVENT_MOVED then
                 self.window.left = ev.value.data1
