@@ -796,6 +796,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                     enabled = actions_enabled,
                     callback = function()
                         UIManager:close(bm_dialog)
+                        BD.resetinvert()
                         bookmark:onSearchBookmark(bm_menu)
                     end,
                 },
@@ -1102,6 +1103,10 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
                 {
                     text = _("Cancel"),
                     callback = function()
+                        if bm_menu and self.view.inverse_reading_order then
+                            BD.invert()
+                            bm_menu:switchItemTable(nil, bm_menu.item_table)
+                        end
                         UIManager:close(input_dialog)
                     end,
                 },
