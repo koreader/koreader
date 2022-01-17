@@ -59,9 +59,6 @@ function FileManager:onSetRotationMode(rotation)
         Screen:setRotationMode(rotation)
         if FileManager.instance then
             self:reinit(self.path, self.focused_file)
-            if self.select_mode then
-                self.title_bar:setRightIcon("check")
-            end
         end
     end
     return true
@@ -810,6 +807,9 @@ function FileManager:reinit(path, focused_file)
     -- looks unnecessary (cheap with classic mode, less cheap with
     -- CoverBrowser plugin's cover image renderings)
     -- self:onRefresh()
+    if self.select_mode then
+        self.title_bar:setRightIcon("check")
+    end
 end
 
 function FileManager:getCurrentDir()
