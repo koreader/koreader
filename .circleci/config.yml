@@ -59,7 +59,7 @@ jobs:
           command: .ci/fetch.sh
       - run:
           name: check
-          command: eval "$(luarocks path --bin)" && ./kodev check
+          command: .ci/check.sh
       - run:
           name: build
           command: .ci/build.sh
