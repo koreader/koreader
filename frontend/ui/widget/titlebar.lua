@@ -323,8 +323,9 @@ function TitleBar:init()
 
     if self.info_text then
         local h_padding = self.info_text_h_padding or self.title_h_padding
+        local v_padding = self.with_bottom_line and Size.padding.default or 0
         local filler_and_info_text = VerticalGroup:new{
-            VerticalSpan:new{ width = self.titlebar_height },
+            VerticalSpan:new{ width = self.titlebar_height + v_padding },
             HorizontalGroup:new{
                 HorizontalSpan:new{ width = h_padding },
                 TextBoxWidget:new{
