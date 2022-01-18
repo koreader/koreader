@@ -79,7 +79,11 @@ function Terminal:init()
 end
 
 function Terminal:spawnShell(cols, rows)
-    if self.is_shell_open then return end
+    if self.is_shell_open then
+        self.input_widget:resize(rows, cols)
+        self.input_widget:interpretAnsiSeq(self:receive())
+        return
+    end
 
     local shell = G_reader_settings:readSetting("KOTerm_shell", "sh")
 
@@ -177,11 +181,7 @@ function Terminal:refresh(reset)
     local next_text = self:receive()
     if next_text ~= "" then
         self.input_widget:interpretAnsiSeq(next_text)
-        if #self.input_dialog:getInputText() > self.buffer_size then
-            local input = self.input_dialog:getInputText()
-            input = input:sub(#input - self.buffer_size)
-            self.input_dialog:setInputText(input)
-        end
+        self.input_widget:trimBuffer(self.buffer_size)
         if self.is_shell_open then
             UIManager:tickAfterNext(function()
                 UIManager:scheduleIn(self.refresh_time, Terminal.refresh, self)
@@ -270,6 +270,12 @@ function Terminal:generateInputDialog()
             end,
             },
             {
+            text = "/",  -- slash
+            callback = function()
+                self:transmit("/")
+            end,
+            },
+            {
             text = "Esc",
             callback = function()
                 self:transmit("\027")
@@ -298,7 +304,7 @@ function Terminal:generateInputDialog()
             callback = function()
                 self.history = ""
                 self.input = {}
-                self.input_dialog:setInputText("")
+                self.input_dialog:setInputText("$ ")
             end,
             },
             {
@@ -339,6 +345,12 @@ function Terminal:generateInputDialog()
                     choice1_text = _("Close"),
                     choice1_callback = function()
                         self.history = self.input_dialog:getInputText()
+                        -- trim trialing spaces and newlines
+                        while self.history:sub(#self.history,#self.history) == "\n"
+                            or self.history:sub(#self.history,#self.history) == " " do
+                            self.history = self.history:sub(1, #self.history - 1)
+                        end
+
                         UIManager:close(self.input_dialog)
                         if self.touchmenu_instance then
                             self.touchmenu_instance:updateItems()
@@ -414,6 +426,8 @@ function Terminal:addToMainMenu(menu_items)
                 callback = function()
                     local about_text = _([[KOTerm is a terminal emulator, which starts a shell (command prompt).
 
+You can use 'shfm' as a file manager, '?' shows shfm´s help message.
+
 There are two environment variables KOTERM_HOME and KOTERM_DATA containing the path of the install and the data folders.
 
 Commands to be executed on start can be placed in:
@@ -487,7 +501,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                         value_max = 30,
                         value_hold_step = 2,
                         default_value = 16,
-                        title_text = _("KOTerm font size"),
+                        title_text = _("KOTerm buffer size"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("KOTerm_buffer_size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
