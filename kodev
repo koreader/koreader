@@ -1043,7 +1043,7 @@ function kodev-check() {
     fi
 
     echo -e "\n${ANSI_GREEN}Luacheck results"
-    luacheck -q {reader,setupkoenv,datastorage}.lua frontend plugins spec
+    $(command -v luacheck) -q {reader,setupkoenv,datastorage}.lua frontend plugins spec
 
     exit "${exit_code}"
 }
