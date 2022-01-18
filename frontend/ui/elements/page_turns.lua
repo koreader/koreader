@@ -122,6 +122,15 @@ local PageTurns = {
                     end,
                 })
             end,
+        },
+        {
+            text = _("Invert ui layout mirroring"),
+            checked_func = function()
+                return G_reader_settings:isTrue("invert_ui_layout_mirroring")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("invert_ui_layout_mirroring")
+            end,
         }
     }
 }
