@@ -5,7 +5,6 @@ local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
-local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MovableContainer = require("ui/widget/container/movablecontainer")
@@ -21,7 +20,6 @@ local T = require("ffi/util").template
 
 local SpinWidget = InputContainer:new{
     title_text = "",
-    title_face = Font:getFace("x_smalltfont"),
     info_text = nil,
     width = nil,
     width_factor = nil, -- number between 0 and 1, factor to the smallest of screen width and height
@@ -114,7 +112,6 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         align = "left",
         with_bottom_line = true,
         title = self.title_text,
-        title_face = self.title_face,
         title_shrink_font_to_fit = true,
         info_text = self.info_text,
         show_parent = self,
