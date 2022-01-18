@@ -42,7 +42,7 @@ function AutoSuspend:_enabledShutdown()
 end
 
 function AutoSuspend:_schedule(shutdown_only)
-    if not self:_enabled() and (Device:canPowerOff() and not self:_enabledShutdown()) then
+    if not self:_enabled() and Device:canPowerOff() and not self:_enabledShutdown() then
         logger.dbg("AutoSuspend:_schedule is disabled")
         return
     end
@@ -61,10 +61,10 @@ function AutoSuspend:_schedule(shutdown_only)
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
-    if delay_shutdown <= 0 then
+    if self:_enabledShutdown() and delay_shutdown <= 0 then
         logger.dbg("AutoSuspend: initiating shutdown")
         UIManager:poweroff_action()
-    elseif delay_suspend <= 0 and not shutdown_only then
+    elseif self:_enabled() and delay_suspend <= 0 and not shutdown_only then
         logger.dbg("AutoSuspend: will suspend the device")
         UIManager:suspend()
     else
@@ -223,6 +223,7 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
         extra_text = _("Disable"),
         extra_callback = function(_self)
             self[setting] = -1 -- disable with a negative time/number
+            G_reader_settings:saveSetting(setting, -1)
             self:_unschedule()
             if touchmenu_instance then touchmenu_instance:updateItems() end
             UIManager:show(InfoMessage:new{
