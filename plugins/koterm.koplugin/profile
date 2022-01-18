@@ -11,7 +11,7 @@ KOTERM_HOME="$(pwd)"
 cd "${KOTERM_DATA}"
 KOTERM_DATA="$(pwd)"
 
-PATH="${PATH}:${KOTERM_DATA}/scripts"
+PATH="${PATH}:${KOTERM_DATA}/scripts:${KOTERM_HOME}/plugins/koterm.koplugin/"
 TERM="vt52"
 
 PS1="$ "
@@ -19,11 +19,17 @@ if [ "$(id -u)" -eq "0" ]; then
     PS1="# "
 fi
 
+EDITOR="nano"
+
+SHFM_OPENER="${KOTERM_HOME}/plugins/koterm.koplugin/shfm_opener.sh"
+
+export EDITOR
 export KOTERM_HOME
 export KOTERM_DATA
 export PATH
-export TERM
 export PS1
+export SHFM_OPENER
+export TERM
 
 # Source a user profile if it exists.
 USER_PROFILE="${KOTERM_DATA}/scripts/profile.user"
@@ -40,3 +46,5 @@ if [ -f "${ALIASES}" ]; then
     # shellcheck disable=SC1090
     . "${ALIASES}"
 fi
+
+echo "You can use shfm as a filemanager, ? shows help in shfm."
