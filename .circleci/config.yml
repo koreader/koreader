@@ -59,7 +59,7 @@ jobs:
           command: .ci/fetch.sh
       - run:
           name: check
-          command: ./kodev check
+          command: source .ci/common.sh && ./kodev check
       - run:
           name: build
           command: .ci/build.sh
