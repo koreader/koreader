@@ -157,7 +157,6 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         align = "left",
         with_bottom_line = true,
         title = self.title_text,
-        title_face = self.title_face,
         title_shrink_font_to_fit = true,
         info_text = self.info_text,
         show_parent = self,
