@@ -56,7 +56,7 @@ function Usage:percentageRate()
 end
 
 function Usage:percentageRatePerHour()
-    return self:percentageRate() / 3600
+    return self:percentageRate() * 3600
 end
 
 function Usage:remainingTime()
