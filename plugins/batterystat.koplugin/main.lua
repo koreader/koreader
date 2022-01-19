@@ -47,24 +47,28 @@ function Usage:append(state)
     self.time = self.time + os.difftime(curr.timestamp - state.timestamp)
 end
 
-function Usage:percentageRatePerHour()
+function Usage:percentageRate()
     if self.time == 0 then
         return 0
     else
-        return 3600 * self.percentage / self.time
+        return self.percentage / self.time
     end
 end
 
+function Usage:percentageRatePerHour()
+    return self:percentageRate() / 3600
+end
+
 function Usage:remainingTime()
-    if self:percentageRatePerHour() == 0 then return "N/A" end
+    if self:percentageRate() == 0 then return "N/A" end
     local curr = State:new()
-    return curr.percentage / self:percentageRatePerHour()
+    return curr.percentage / self:percentageRate()
 end
 
 function Usage:chargingTime()
-    if self:percentageRatePerHour() == 0 then return "N/A" end
+    if self:percentageRate() == 0 then return "N/A" end
     local curr = State:new()
-    return math.abs(curr.percentage - 100) / self:percentageRatePerHour()
+    return math.abs(curr.percentage - 100) / self:percentageRate()
 end
 
 local function shorten(number)
