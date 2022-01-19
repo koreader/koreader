@@ -232,13 +232,16 @@ function ReaderBookmark:isBookmarkInPositionOrder(a, b)
         local b_page = self.ui.document:getPageFromXPointer(b.page)
         if a_page == b_page then -- both bookmarks in the same page
             local compare_xp = self.ui.document:compareXPointers(a.page, b.page)
-            if compare_xp == 0 then -- both bookmarks with the same start
-                if a.highlighted and b.highlighted then -- both are highlights, compare ends
-                    return self.ui.document:compareXPointers(a.pos1, b.pos1) < 0
+            if compare_xp then
+                if compare_xp == 0 then -- both bookmarks with the same start
+                    if a.highlighted and b.highlighted then -- both are highlights, compare ends
+                        return self.ui.document:compareXPointers(a.pos1, b.pos1) < 0
+                    end
+                    return a.highlighted -- have page bookmarks before highlights
                 end
-                return a.highlighted -- have page bookmarks before highlights
+                return compare_xp < 0
             end
-            return compare_xp < 0
+            -- if compare_xp is nil, some xpointer is invalid and will be sorted first to page 1
         end
         return a_page > b_page
     end
