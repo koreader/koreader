@@ -232,7 +232,7 @@ function InputDialog:init()
     -- Vertical spaces added before and after InputText
     -- (these will be adjusted later to center the input text if needed)
     -- (can be disabled by setting condensed=true)
-    local padding_width = self.condensed and 0 or Size.padding.large
+    local padding_width = self.condensed and 0 or Size.padding.default
     local vspan_before_input_text = VerticalSpan:new{ width = padding_width }
     local vspan_after_input_text = VerticalSpan:new{ width = padding_width }
 
