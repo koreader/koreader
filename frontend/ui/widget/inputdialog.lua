@@ -106,13 +106,11 @@ local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
-local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -171,14 +169,8 @@ local InputDialog = InputContainer:new{
     text_width = nil,
     text_height = nil,
 
-    title_face = Font:getFace("x_smalltfont"),
-    description_face = Font:getFace("x_smallinfofont"),
+    bottom_v_padding = 0,
     input_face = Font:getFace("x_smallinfofont"),
-
-    title_padding = Size.padding.default,
-    title_margin = Size.margin.title,
-    desc_padding = Size.padding.default, -- Use the same as title for their
-    desc_margin = Size.margin.title,     -- texts to be visually aligned
     input_padding = Size.padding.default,
     input_margin = Size.margin.default,
     button_padding = Size.padding.default,
@@ -226,53 +218,23 @@ function InputDialog:init()
     end
 
     -- Title & description
-    self.title_widget = FrameContainer:new{
-        padding = self.title_padding,
-        margin = self.title_margin,
-        bordersize = 0,
-        TextWidget:new{
-            text = self.title,
-            face = self.title_face,
-            max_width = self.width,
-        }
+    self.title_bar = TitleBar:new{
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        title = self.title,
+        title_multilines = true,
+        bottom_v_padding = self.bottom_v_padding,
+        info_text = self.description,
+        show_parent = self,
     }
-    self.title_bar = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
-        }
-    }
-    if self.description then
-        self.description_widget = FrameContainer:new{
-            padding = self.desc_padding,
-            margin = self.desc_margin,
-            bordersize = 0,
-            TextBoxWidget:new{
-                text = self.description,
-                face = self.description_face,
-                width = self.width - 2*self.desc_padding - 2*self.desc_margin,
-            }
-        }
-    else
-        self.description_widget = VerticalSpan:new{ width = 0 }
-    end
 
     -- Vertical spaces added before and after InputText
     -- (these will be adjusted later to center the input text if needed)
-    local vspan_before_input_text = VerticalSpan:new{ width = 0 }
-    local vspan_after_input_text = VerticalSpan:new{ width = 0 }
-    -- We add the same vertical space used under description after the input widget
     -- (can be disabled by setting condensed=true)
-    if not self.condensed then
-        local desc_pad_height = self.desc_margin + self.desc_padding
-        if self.description then
-            vspan_before_input_text.width = 0 -- already provided by description_widget
-            vspan_after_input_text.width = desc_pad_height
-        else
-            vspan_before_input_text.width = desc_pad_height
-            vspan_after_input_text.width = desc_pad_height
-        end
-    end
+    local padding_width = self.condensed and 0 or Size.padding.large
+    local vspan_before_input_text = VerticalSpan:new{ width = padding_width }
+    local vspan_after_input_text = VerticalSpan:new{ width = padding_width }
 
     -- Buttons
     -- In case of re-init(), keep backup of original buttons and restore them
@@ -340,9 +302,7 @@ function InputDialog:init()
         -- Find out available height
         local available_height = self.screen_height
                                     - 2*self.border_size
-                                    - self.title_widget:getSize().h
-                                    - self.title_bar:getSize().h
-                                    - self.description_widget:getSize().h
+                                    - self.title_bar:getHeight()
                                     - vspan_before_input_text:getSize().h
                                     - input_pad_height
                                     - vspan_after_input_text:getSize().h
@@ -427,9 +387,7 @@ function InputDialog:init()
     -- Combine all
     self.vgroup = VerticalGroup:new{
         align = "left",
-        self.title_widget,
         self.title_bar,
-        self.description_widget,
         vspan_before_input_text,
         CenterContainer:new{
             dimen = Geom:new{
