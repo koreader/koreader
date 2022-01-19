@@ -38,6 +38,10 @@ local TitleBar = OverlapGroup:extend{
     subtitle_fullwidth = false, -- true to allow subtitle to extend below the buttons
     subtitle_multilines = false, -- multilines if overflow
 
+    info_text = nil, -- additional text displayed below bottom line
+    info_text_face = Font:getFace("x_smallinfofont"),
+    info_text_h_padding = nil, -- default to title_h_padding
+
     title_top_padding = nil, -- computed if none provided
     title_h_padding = Size.padding.large, -- horizontal padding (this replaces button_padding on the inner/title side)
     title_subtitle_v_padding = Screen:scaleBySize(3),
@@ -315,6 +319,24 @@ function TitleBar:init()
         self:clear()
         self:init()
         return
+    end
+
+    if self.info_text then
+        local h_padding = self.info_text_h_padding or self.title_h_padding
+        local v_padding = self.with_bottom_line and Size.padding.default or 0
+        local filler_and_info_text = VerticalGroup:new{
+            VerticalSpan:new{ width = self.titlebar_height + v_padding },
+            HorizontalGroup:new{
+                HorizontalSpan:new{ width = h_padding },
+                TextBoxWidget:new{
+                    text = self.info_text,
+                    face = self.info_text_face,
+                    width = self.width - 2 * h_padding,
+                }
+            }
+        }
+        table.insert(self, filler_and_info_text)
+        self.titlebar_height = filler_and_info_text:getSize().h + self.bottom_v_padding
     end
 
     self.dimen = Geom:new{

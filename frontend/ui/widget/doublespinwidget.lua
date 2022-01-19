@@ -8,15 +8,13 @@ local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -153,37 +151,16 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
             right_vertical_group
         }
     }
-    local widget_title = FrameContainer:new{
-        padding = Size.padding.default,
-        margin = Size.margin.title,
-        bordersize = 0,
-        TextWidget:new{
-            text = self.title_text,
-            face = self.title_face,
-            max_width = self.width - 2 * (Size.padding.default + Size.margin.title),
-        },
+
+    local title_bar = TitleBar:new{
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        title = self.title_text,
+        title_shrink_font_to_fit = true,
+        info_text = self.info_text,
+        show_parent = self,
     }
-    local widget_line = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
-        }
-    }
-    local widget_info
-    if self.info_text then
-        widget_info = FrameContainer:new{
-            padding = Size.padding.default,
-            margin = Size.margin.small,
-            bordersize = 0,
-            TextBoxWidget:new{
-                text = self.info_text,
-                face = Font:getFace("x_smallinfofont"),
-                width = math.floor(self.width * 0.9),
-            }
-        }
-    else
-        widget_info = VerticalSpan:new{ width = 0 }
-    end
 
     local buttons = {}
     if self.default_values then
@@ -259,9 +236,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            widget_title,
-            widget_line,
-            widget_info,
+            title_bar,
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,

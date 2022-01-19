@@ -5,15 +5,12 @@ local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
-local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -22,7 +19,6 @@ local Screen = Device.screen
 
 local RadioButtonWidget = InputContainer:new{
     title_text = "",
-    title_face = Font:getFace("x_smalltfont"),
     info_text = nil,
     width = nil,
     width_factor = nil,
@@ -92,22 +88,16 @@ function RadioButtonWidget:update()
         value_widget,
     }
 
-    local value_title = FrameContainer:new{
-        padding = Size.padding.default,
-        margin = Size.margin.title,
-        bordersize = 0,
-        TextWidget:new{
-            text = self.title_text,
-            max_width = self.width - 2 * (Size.padding.default + Size.margin.title),
-            face = self.title_face,
-        },
+    local title_bar = TitleBar:new{
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        title = self.title_text,
+        title_shrink_font_to_fit = true,
+        info_text = self.info_text,
+        show_parent = self,
     }
-    local value_line = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
-        }
-    }
+
     local buttons = {
         {
             {
@@ -162,21 +152,8 @@ function RadioButtonWidget:update()
 
     local vgroup = VerticalGroup:new{
         align = "left",
-        value_title,
-        value_line,
+        title_bar,
     }
-    if self.info_text then
-        table.insert(vgroup, FrameContainer:new{
-            padding = Size.padding.default,
-            margin = Size.margin.small,
-            bordersize = 0,
-            TextBoxWidget:new{
-                text = self.info_text,
-                face = Font:getFace("x_smallinfofont"),
-                width = math.floor(self.width * 0.9),
-            }
-        })
-    end
     table.insert(vgroup, CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
