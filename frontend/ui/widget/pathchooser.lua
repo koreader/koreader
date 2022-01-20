@@ -51,6 +51,9 @@ end
 function PathChooser:onMenuSelect(item)
     local path = item.path
     if path:sub(-2, -1) == "/." then -- with show_current_dir_for_hold
+        if self.select_directory then -- let non-touch device can select the folder
+            return self:onMenuHold(item)
+        end
         -- Don't navigate to same directory
         return true
     end
@@ -68,6 +71,9 @@ function PathChooser:onMenuSelect(item)
         return true
     end
     if attr.mode ~= "directory" then
+        if self.select_file then -- let non-touch device can select the file
+            return self:onMenuHold(item)
+        end
         -- Do nothing if Tap on other than directories
         return true
     end
