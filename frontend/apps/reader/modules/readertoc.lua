@@ -653,7 +653,8 @@ function ReaderToc:onShowToc()
     if #self.toc > 0 and not self.toc[1].text then
         local has_hidden_flows = self.ui.document:hasHiddenFlows()
         for _, v in ipairs(self.toc) do
-            v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title, true)
+            v.indent = self.toc_indent:rep(v.depth-1)
+            v.text = self:cleanUpTocTitle(v.title, true)
             v.mandatory = v.page
             if has_hidden_flows then
                 local flow = self.ui.document:getPageFlow(v.page)
@@ -726,7 +727,6 @@ function ReaderToc:onShowToc()
             if v.depth < depth then
                 v.state = self.expand_button:new{
                     callback = function() self:expandToc(i) end,
-                    indent = self.toc_indent:rep(v.depth-1),
                 }
             end
             if v.depth < self.collapse_depth then
@@ -744,7 +744,7 @@ function ReaderToc:onShowToc()
     local toc_menu = Menu:new{
         title = _("Table of Contents"),
         item_table = self.collapsed_toc,
-        state_size = can_collapse and button_size or nil,
+        state_w = can_collapse and button_size.w or 0,
         ui = self.ui,
         is_borderless = true,
         is_popout = false,
@@ -876,7 +876,6 @@ function ReaderToc:expandToc(index)
     -- change state of current node to expanded
     cur_node.state = self.collapse_button:new{
         callback = function() self:collapseToc(index) end,
-        indent = self.toc_indent:rep(cur_depth-1),
     }
     self:updateCurrentNode()
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
@@ -912,7 +911,6 @@ function ReaderToc:collapseToc(index)
     -- change state of current node to collapsed
     cur_node.state = self.expand_button:new{
         callback = function() self:expandToc(index) end,
-        indent = self.toc_indent:rep(cur_depth-1),
     }
     self:updateCurrentNode()
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
