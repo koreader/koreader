@@ -12,9 +12,9 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local Size = require("ui/size")
+local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util  = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = Device.screen
@@ -26,7 +26,6 @@ local ReaderToc = InputContainer:new{
     ticks = nil,
     ticks_flattened = nil,
     ticks_flattened_filtered = nil,
-    toc_indent = "    ",
     collapsed_toc = {},
     collapse_depth = 2,
     expanded_nodes = {},
@@ -648,12 +647,25 @@ function ReaderToc:onShowToc()
         BD.invert()
     end
 
+    local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
+    local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
+    local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
+
     self:fillToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
+        -- Have the width of 4 spaces be the unit of indentation
+        local tmp = TextWidget:new{
+            text = "    ",
+            face = Font:getFace("smallinfofont", items_font_size),
+            }
+        local toc_indent = tmp:getSize().w
+        tmp:free()
+
         local has_hidden_flows = self.ui.document:hasHiddenFlows()
         for _, v in ipairs(self.toc) do
-            v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title, true)
+            v.indent = toc_indent * (v.depth-1)
+            v.text = self:cleanUpTocTitle(v.title, true)
             v.mandatory = v.page
             if has_hidden_flows then
                 local flow = self.ui.document:getPageFlow(v.page)
@@ -691,9 +703,6 @@ function ReaderToc:onShowToc()
         end
     end
 
-    local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
-    local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
-    local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
     -- Estimate expand/collapse icon size
     -- *2/5 to acount for Menu top title and bottom icons, and add some space between consecutive icons
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
@@ -726,7 +735,6 @@ function ReaderToc:onShowToc()
             if v.depth < depth then
                 v.state = self.expand_button:new{
                     callback = function() self:expandToc(i) end,
-                    indent = self.toc_indent:rep(v.depth-1),
                 }
             end
             if v.depth < self.collapse_depth then
@@ -744,7 +752,7 @@ function ReaderToc:onShowToc()
     local toc_menu = Menu:new{
         title = _("Table of Contents"),
         item_table = self.collapsed_toc,
-        state_size = can_collapse and button_size or nil,
+        state_w = can_collapse and button_size.w or 0,
         ui = self.ui,
         is_borderless = true,
         is_popout = false,
@@ -801,14 +809,12 @@ function ReaderToc:onShowToc()
     end
 
     function toc_menu:onMenuHold(item)
-        -- Trim toc_indent
-        local trimmed_text = util.ltrim(item.text)
         -- Match the items' width
         local infomessage = InfoMessage:new{
             width = Screen:getWidth() - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
             alignment = "center",
             show_icon = false,
-            text = trimmed_text,
+            text = item.text,
             face = Font:getFace("infofont", self.items_font_size),
         }
         UIManager:show(infomessage)
@@ -876,7 +882,6 @@ function ReaderToc:expandToc(index)
     -- change state of current node to expanded
     cur_node.state = self.collapse_button:new{
         callback = function() self:collapseToc(index) end,
-        indent = self.toc_indent:rep(cur_depth-1),
     }
     self:updateCurrentNode()
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
@@ -912,7 +917,6 @@ function ReaderToc:collapseToc(index)
     -- change state of current node to collapsed
     cur_node.state = self.expand_button:new{
         callback = function() self:expandToc(index) end,
-        indent = self.toc_indent:rep(cur_depth-1),
     }
     self:updateCurrentNode()
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
