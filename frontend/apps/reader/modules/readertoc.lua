@@ -648,14 +648,12 @@ function ReaderToc:onShowToc()
         BD.invert()
     end
 
-    local _mirroredUI = BD.mirroredUILayout()
     self:fillToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
         local has_hidden_flows = self.ui.document:hasHiddenFlows()
         for _, v in ipairs(self.toc) do
             v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title, true)
-            v.bidi_wrap_func = _mirroredUI and BD.rtl or nil
             v.mandatory = v.page
             if has_hidden_flows then
                 local flow = self.ui.document:getPageFlow(v.page)
