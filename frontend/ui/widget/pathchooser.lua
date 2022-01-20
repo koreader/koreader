@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local Device = require("device")
 local FileChooser = require("ui/widget/filechooser")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
@@ -51,7 +52,7 @@ end
 function PathChooser:onMenuSelect(item)
     local path = item.path
     if path:sub(-2, -1) == "/." then -- with show_current_dir_for_hold
-        if self.select_directory then -- let non-touch device can select the folder
+        if not Device:isTouchDevice() and self.select_directory then -- let non-touch device can select the folder
             return self:onMenuHold(item)
         end
         -- Don't navigate to same directory
@@ -71,7 +72,7 @@ function PathChooser:onMenuSelect(item)
         return true
     end
     if attr.mode ~= "directory" then
-        if self.select_file then -- let non-touch device can select the file
+        if not Device:isTouchDevice() and self.select_file then -- let non-touch device can select the file
             return self:onMenuHold(item)
         end
         -- Do nothing if Tap on other than directories
