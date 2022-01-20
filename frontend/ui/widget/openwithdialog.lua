@@ -13,7 +13,6 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -25,20 +24,6 @@ local OpenWithDialog = InputDialog:extend{}
 function OpenWithDialog:init()
     -- init title and buttons in base class
     InputDialog.init(self)
-
-    -- replace single line title with a multiline one,
-    -- as the filename might be long
-    self.title_widget:free()
-    self.title_widget = FrameContainer:new{
-        padding = self.title_padding,
-        margin = self.title_margin,
-        bordersize = 0,
-        TextBoxWidget:new{
-            text = self.title,
-            width = self.width - 2*self.title_padding - 2*self.title_margin,
-            face = self.title_face,
-        },
-    }
 
     self.face = Font:getFace("cfont", 22)
     self.element_width = math.floor(self.width * 0.9)
@@ -99,7 +84,6 @@ function OpenWithDialog:init()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            self.title_widget,
             self.title_bar,
             VerticalSpan:new{
                 width = Size.span.vertical_large*2,

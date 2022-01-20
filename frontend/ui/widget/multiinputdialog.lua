@@ -96,6 +96,7 @@ local MultiInputDialog = InputDialog:extend{
     fields = {},
     description_padding = Size.padding.default,
     description_margin = Size.margin.small,
+    bottom_v_padding = Size.padding.default,
 }
 
 function MultiInputDialog:init()
@@ -103,7 +104,6 @@ function MultiInputDialog:init()
     InputDialog.init(self)
     local VerticalGroupData = VerticalGroup:new{
         align = "left",
-        self.title_widget,
         self.title_bar,
     }
 

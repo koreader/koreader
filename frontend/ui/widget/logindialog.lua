@@ -19,6 +19,7 @@ local LoginDialog = InputDialog:extend{
     username_hint = "username",
     password = "",
     password_hint = "password",
+    bottom_v_padding = Size.padding.default,
 }
 
 function LoginDialog:init()
@@ -52,7 +53,6 @@ function LoginDialog:init()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            self.title_widget,
             self.title_bar,
             -- username input
             CenterContainer:new{
