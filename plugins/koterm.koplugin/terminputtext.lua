@@ -614,10 +614,6 @@ function TermInputText:formatTerminal(clear)
 end
 
 function TermInputText:moveCursorToRowCol(r, c)
-    if r==1 and c==1 and not self.store_position then
-        self.store_position = self.charpos
-    end
-
     self:formatTerminal()
 
     local cur_r, cur_c = 1, 0
