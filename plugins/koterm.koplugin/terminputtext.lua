@@ -40,15 +40,21 @@ local TermInputText = InputText:extend{
     strike_callback = nil,
     sequence_state = "",
 
-    store_pos_dec = 1,
-    store_pos_sco = 1,
-    store_position = 1, -- when entered alternate keypad
+    store_pos_dec = nil,
+    store_pos_sco = nil,
+    store_position = nil, -- when entered alternate keypad
 
     scroll_region_bottom = nil,
     scroll_region_top = nil,
     scroll_region_line = nil,
 
     wrap = true,
+
+    alternate_buffer = nil,
+    alternate_buffer_charpos = nil,
+
+    save_buffer = nil,
+    save_buffer_charpos = nil,
 }
 
 -- disable positioning cursor by tap in emulator mode
@@ -99,7 +105,7 @@ function TermInputText:trimBuffer(new_size)
                 self.store_pos_dec = 1
             end
         end
-        if self.store_position then
+        if self.store_pos_sco then
             self.store_pos_sco = self.store_pos_sco - shift_pos
             if self.store_pos_sco < 1 then
                 self.store_pos_sco = 1
@@ -175,12 +181,37 @@ function TermInputText:_helperVT52VT100(cmd, mode, param1, param2, param3)
         --- if param2 == 25 then set cursor visible
         if param2 == 7 then -- enable wrap around
             self.wrap = true
+        elseif param2 == 47 then -- save screen
+--            self.charpos = self.store_position
+            self.save_buffer = self.charlist
+            self.save_buffer_charpos = self.charpos
+            self.charlist = {}
+            self.charpos = 1
+            print("xxxxxxxxxxxx save screen")
+        elseif param2 == 1049 then -- enable alternate buffer
+            self.alternate_buffer = self.charlist
+            self.alternate_buffer_charpos = self.charpos
+            self.charlist = {}
+            self.charpos = 1
+            print("xxxxxxxxxxxx enable alternate buffer")
         end
         return true
     elseif cmd == "l" and mode == "?" then --
         --- if param2 == 25 then set cursor invisible
         if param2 == 7 then -- enable wrap around
             self.wrap = false
+        elseif param2 == 47 then -- restore screen
+            self.charlist = self.save_buffer or self.charlist
+            self.charpos = self.save_buffer_charpos or self.charpos
+            self.save_buffer = nil
+            self.save_buffer_charpos = nil
+            print("xxxxxxxxxxxx restore screen")
+        elseif param2 == 1049 then -- disable alternate buffer
+            self.charlist = self.alternate_buffer or self.charlist
+            self.charpos = self.alternate_buffer_charpos or self.charpos
+            self.alternate_buffer = nil
+            self.alternate_buffer_charpos = nil
+            print("xxxxxxxxxxxx disable alternate buffer")
         end
         return true
     elseif cmd == "m" then
