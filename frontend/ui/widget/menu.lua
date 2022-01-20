@@ -167,17 +167,14 @@ function MenuItem:init()
     end
 
     -- State button and indentation for tree expand/collapse (for TOC)
-    local state_button_width = self.state_size.w or 0
-    local state_button = self.state or HorizontalSpan:new{
-        width = state_button_width,
-    }
-    local state_indent = self.state and self.state.indent or ""
+    local state_button = self.state or HorizontalSpan:new{}
+    local state_indent = self.table.indent or 0
+    local state_width = state_indent + self.state_w
     local state_container = LeftContainer:new{
         dimen = Geom:new{w = math.floor(self.content_width / 2), h = self.dimen.h},
         HorizontalGroup:new{
-            TextWidget:new{
-                text = state_indent,
-                face = Font:getFace(self.font, self.font_size),
+            HorizontalSpan:new{
+                width = state_indent,
             },
             state_button,
         }
@@ -207,7 +204,7 @@ function MenuItem:init()
     }
     local mandatory_w = mandatory_widget:getWidth()
 
-    local available_width = self.content_width - state_button_width - text_mandatory_padding - mandatory_w
+    local available_width = self.content_width - state_width - text_mandatory_padding - mandatory_w
     local item_name
 
     -- Whether we show text on a single or multiple lines, we don't want it shortened
@@ -370,7 +367,7 @@ function MenuItem:init()
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
         HorizontalGroup:new{
             HorizontalSpan:new{
-                width = self.state_size.w,
+                width = state_width,
             },
             item_name,
         }
@@ -1074,7 +1071,7 @@ function Menu:updateItems(select_number)
             local item_tmp = MenuItem:new{
                 show_parent = self.show_parent,
                 state = self.item_table[i].state,
-                state_size = self.state_size or {},
+                state_w = self.state_w or 0,
                 text = Menu.getMenuText(self.item_table[i]),
                 bidi_wrap_func = self.item_table[i].bidi_wrap_func,
                 mandatory = self.item_table[i].mandatory,
