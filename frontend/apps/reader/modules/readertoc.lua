@@ -856,10 +856,9 @@ end
 
 -- expand TOC node of index in raw toc table
 function ReaderToc:expandToc(index)
-    for k, v in ipairs(self.expanded_nodes) do
-        if v == index then return end
-    end
-    table.insert(self.expanded_nodes, index)
+    if self.expanded_nodes[index] == true then return end
+
+    self.expanded_nodes[index] = true
     local cur_node = self.toc[index]
     local cur_depth = cur_node.depth
     local collapsed_index = nil
@@ -891,11 +890,8 @@ end
 
 -- collapse TOC node of index in raw toc table
 function ReaderToc:collapseToc(index)
-    for k, v in ipairs(self.expanded_nodes) do
-        if v == index then
-            table.remove(self.expanded_nodes, k)
-            break
-        end
+    if self.expanded_nodes[index] == true then
+        self.expanded_nodes[index] = nil
     end
     local cur_node = self.toc[index]
     local cur_depth = cur_node.depth
@@ -910,11 +906,8 @@ function ReaderToc:collapseToc(index)
             if v.state then
                 v.state:free()
                 v.state = self.expand_button:new{}
-                for y, z in ipairs(self.expanded_nodes) do
-                    if z == v.index then
-                        table.remove(self.expanded_nodes, y)
-                        break
-                    end
+                if self.expanded_nodes[v.index] == true then
+                    self.expanded_nodes[v.index] = nil
                 end
             end
             table.remove(self.collapsed_toc, i)
