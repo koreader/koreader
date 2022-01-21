@@ -883,6 +883,7 @@ function ReaderToc:expandToc(index)
         end
     end
     -- change state of current node to expanded
+    cur_node.state:free()
     cur_node.state = self.collapse_button:new{}
     self:updateCurrentNode()
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
@@ -907,6 +908,7 @@ function ReaderToc:collapseToc(index)
         end
         if is_child_node then
             if v.state then
+                v.state:free()
                 v.state = self.expand_button:new{}
                 for y, z in ipairs(self.expanded_nodes) do
                     if z == v.index then
@@ -925,6 +927,7 @@ function ReaderToc:collapseToc(index)
         end
     end
     -- change state of current node to collapsed
+    cur_node.state:free()
     cur_node.state = self.expand_button:new{}
     self:updateCurrentNode()
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
