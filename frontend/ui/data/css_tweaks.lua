@@ -834,6 +834,7 @@ This only works with footnotes that have specific attributes set by the publishe
                 css = [[
 ol.references > li {
     -cr-hint: footnote-inpage;
+    list-style-position: -cr-outside;
     margin: 0 !important;
 }
 /* hide backlinks */
@@ -848,6 +849,7 @@ ol.references > li > .mw-cite-backlink { display: none; }
                 css = [[
 ol.references > li {
     -cr-hint: footnote-inpage;
+    list-style-position: -cr-outside;
     margin: 0 !important;
     font-size: 0.8rem !important;
 }
