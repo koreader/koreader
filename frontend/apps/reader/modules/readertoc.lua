@@ -663,7 +663,8 @@ function ReaderToc:onShowToc()
         tmp:free()
 
         local has_hidden_flows = self.ui.document:hasHiddenFlows()
-        for _, v in ipairs(self.toc) do
+        for k, v in ipairs(self.toc) do
+            v.index = k
             v.indent = toc_indent * (v.depth-1)
             v.text = self:cleanUpTocTitle(v.title, true)
             v.mandatory = v.page
@@ -715,6 +716,8 @@ function ReaderToc:onShowToc()
         icon_height = icon_size,
         bordersize = 0,
         show_parent = self,
+        callback = function(index) self:expandToc(index) end,
+        onTapSelectButton = function() end, -- pass through taps to onMenuSelect
     }
 
     self.collapse_button = Button:new{
@@ -724,6 +727,8 @@ function ReaderToc:onShowToc()
         icon_height = icon_size,
         bordersize = 0,
         show_parent = self,
+        callback = function(index) self:collapseToc(index) end,
+        onTapSelectButton = function() end, -- pass through taps to onMenuSelect
     }
 
     -- update collapsible state
@@ -733,9 +738,7 @@ function ReaderToc:onShowToc()
             local v = self.toc[i]
             -- node v has child node(s)
             if v.depth < depth then
-                v.state = self.expand_button:new{
-                    callback = function() self:expandToc(i) end,
-                }
+                v.state = self.expand_button:new{}
             end
             if v.depth < self.collapse_depth then
                 table.insert(self.collapsed_toc, 1, v)
@@ -796,7 +799,7 @@ function ReaderToc:onShowToc()
             end
         end
         if do_toggle_state then
-            item.state.callback()
+            item.state.callback(item.index)
         else
             toc_menu:close_callback()
             self.ui.link:addCurrentLocationToStack()
@@ -880,9 +883,8 @@ function ReaderToc:expandToc(index)
         end
     end
     -- change state of current node to expanded
-    cur_node.state = self.collapse_button:new{
-        callback = function() self:collapseToc(index) end,
-    }
+    if cur_node.state then cur_node.state:free() end
+    cur_node.state = self.collapse_button:new{}
     self:updateCurrentNode()
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
@@ -905,6 +907,16 @@ function ReaderToc:collapseToc(index)
             is_child_node = false
         end
         if is_child_node then
+            if v.state then
+                v.state:free()
+                v.state = self.expand_button:new{}
+                for y, z in ipairs(self.expanded_nodes) do
+                    if z == v.index then
+                        table.remove(self.expanded_nodes, y)
+                        break
+                    end
+                end
+            end
             table.remove(self.collapsed_toc, i)
         else
             i = i + 1
@@ -915,9 +927,8 @@ function ReaderToc:collapseToc(index)
         end
     end
     -- change state of current node to collapsed
-    cur_node.state = self.expand_button:new{
-        callback = function() self:expandToc(index) end,
-    }
+    cur_node.state:free()
+    cur_node.state = self.expand_button:new{}
     self:updateCurrentNode()
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, -1)
 end
