@@ -1,15 +1,10 @@
+local NewsHelpers = require("http_utilities")
 local Version = require("version")
-local ffiutil = require("ffi/util")
-local http = require("socket.http")
 local logger = require("logger")
-local ltn12 = require("ltn12")
-local socket = require("socket")
 local socket_url = require("socket.url")
-local socketutil = require("socketutil")
 local _ = require("gettext")
-local T = ffiutil.template
 
-local EpubDownloadBackend = {
+local EpubBuilder = {
    -- Can be set so HTTP requests will be done under Trapper and
    -- be interruptible
    trap_widget = nil,
@@ -17,8 +12,89 @@ local EpubDownloadBackend = {
    -- and error() with this code. We make the value of this error
    -- accessible here so that caller can know it's a user dismiss.
    dismissed_error_code = "Interrupted by user",
+   title = nil,
+   ncx_toc = nil,
+   ncx_manifest = nil,
+   ncx_contents = nil,
+   ncx_images = nil,
 }
-local max_redirects = 5; --prevent infinite redirects
+
+function EpubBuilder:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+
+    return o
+end
+
+function EpubBuilder:build(abs_output_path)
+    -- Open the zip file (with .tmp for now, as crengine may still
+    -- have a handle to the final epub_path, and we don't want to
+    -- delete a good one if we fail/cancel later)
+    local tmp_path = abs_output_path .. ".tmp"
+    local ZipWriter = require("ffi/zipwriter")
+    local epub = ZipWriter:new{}
+
+    if not epub:open(tmp_path) then
+        logger.dbg("Failed to open tmp_path")
+        return false
+    end
+
+    epub:add("mimetype", "application/epub+zip")
+    epub:add("META-INF/container.xml", [[
+<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>]])
+
+    -- Add the manifest.
+    if not self.ncx_manifest or #self.ncx_manifest == 0 then
+        error("EPUB does not contain a valid manifest.")
+    end
+    --logger.dbg("Adding Manifest:", self.ncx_manifest)
+    epub:add("OEBPS/content.opf", table.concat(self.ncx_manifest))
+
+    -- Add the table of contents.
+    if not self.ncx_toc or #self.ncx_toc == 0 then
+        error("EPUB does not contain a valid table of contents.")
+    end
+    --logger.dbg("Adding TOC:", self.ncx_toc)
+    epub:add("OEBPS/toc.ncx", table.concat(self.ncx_toc))
+
+    -- Add the contents.
+    if not self.ncx_contents or #self.ncx_manifest == 0 then
+        error("EPUB does not contain any content.")
+    end
+    --logger.dbg("Adding Content:", self.ncx_contents)
+
+    for index, content in ipairs(self.ncx_contents) do
+        epub:add("OEBPS/" .. content.filename, content.html)
+    end
+
+    -- Add the images.
+    --logger.dbg("Adding Images:", self.ncx_images)
+    if self.ncx_images then
+        for index, image in ipairs(self.ncx_images) do
+            epub:add(
+                "OEBPS/" .. image.path,
+                image.content,
+                image.no_compression
+            )
+        end
+    end
+
+    epub:close()
+    os.rename(tmp_path, abs_output_path)
+
+    collectgarbage()
+
+end
+
+function EpubBuilder:release()
+    -- Stub for cleanup methods
+end
 
 -- filter HTML using CSS selector
 local function filter(text, element)
@@ -68,79 +144,9 @@ local function filter(text, element)
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
--- Get URL content
-local function getUrlContent(url, timeout, maxtime, redirectCount)
-    logger.dbg("getUrlContent(", url, ",", timeout, ",", maxtime, ",", redirectCount, ")")
-    if not redirectCount then
-        redirectCount = 0
-    elseif redirectCount == max_redirects then
-        error("EpubDownloadBackend: reached max redirects: ", redirectCount)
-    end
-
-    if not timeout then timeout = 10 end
-    logger.dbg("timeout:", timeout)
-
-    local sink = {}
-    local parsed = socket_url.parse(url)
-    socketutil:set_timeout(timeout, maxtime or 30)
-    local request = {
-        url     = url,
-        method  = "GET",
-        sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
-    }
-    logger.dbg("request:", request)
-    local code, headers, status = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
-    logger.dbg("After http.request")
-    local content = table.concat(sink) -- empty or content accumulated till now
-    logger.dbg("type(code):", type(code))
-    logger.dbg("code:", code)
-    logger.dbg("headers:", headers)
-    logger.dbg("status:", status)
-    logger.dbg("#content:", #content)
-
-    if code == socketutil.TIMEOUT_CODE or
-       code == socketutil.SSL_HANDSHAKE_CODE or
-       code == socketutil.SINK_TIMEOUT_CODE
-    then
-        logger.warn("request interrupted:", code)
-        return false, code
-    end
-    if headers == nil then
-        logger.warn("No HTTP headers:", code, status)
-        return false, "Network or remote server unavailable"
-    end
-    if not code or string.sub(code, 1, 1) ~= "2" then -- all 200..299 HTTP codes are OK
-        if code and code > 299 and code < 400  and headers and headers.location then -- handle 301, 302...
-           local redirected_url = headers.location
-           local parsed_redirect_location = socket_url.parse(redirected_url)
-           if not parsed_redirect_location.host then
-             parsed_redirect_location.host = parsed.host
-             parsed_redirect_location.scheme = parsed.scheme
-             redirected_url = socket_url.build(parsed_redirect_location)
-           end
-           logger.dbg("getUrlContent: Redirecting to url: ", redirected_url)
-           return getUrlContent(redirected_url, timeout, maxtime, redirectCount + 1)
-        else
-           error("EpubDownloadBackend: Don't know how to handle HTTP response status: ", status)
-        end
-        logger.warn("HTTP status not okay:", code, status)
-        return false, "Remote server error or unavailable"
-    end
-    if headers and headers["content-length"] then
-        -- Check we really got the announced content size
-        local content_length = tonumber(headers["content-length"])
-        if #content ~= content_length then
-            return false, "Incomplete content received"
-        end
-    end
-    logger.dbg("Returning content ok")
-    return true, content
-end
-
-function EpubDownloadBackend:getResponseAsString(url)
-    logger.dbg("EpubDownloadBackend:getResponseAsString(", url, ")")
-    local success, content = getUrlContent(url)
+function EpubBuilder:getResponseAsString(url)
+    logger.dbg("EpubBuilder:getResponseAsString(", url, ")")
+    local success, content = NewsHelpers:getUrlContent(url)
     if (success) then
         return content
     else
@@ -148,36 +154,12 @@ function EpubDownloadBackend:getResponseAsString(url)
     end
 end
 
-function EpubDownloadBackend:setTrapWidget(trap_widget)
+function EpubBuilder:setTrapWidget(trap_widget)
     self.trap_widget = trap_widget
 end
 
-function EpubDownloadBackend:resetTrapWidget()
+function EpubBuilder:resetTrapWidget()
     self.trap_widget = nil
-end
-
-function EpubDownloadBackend:loadPage(url)
-    local completed, success, content
-    if self.trap_widget then -- if previously set with EpubDownloadBackend:setTrapWidget()
-        local Trapper = require("ui/trapper")
-        local timeout, maxtime = 30, 60
-        -- We use dismissableRunInSubprocess with complex return values:
-        completed, success, content = Trapper:dismissableRunInSubprocess(function()
-            return getUrlContent(url, timeout, maxtime)
-        end, self.trap_widget)
-        if not completed then
-            error(self.dismissed_error_code) -- "Interrupted by user"
-        end
-    else
-        local timeout, maxtime = 10, 60
-        success, content = getUrlContent(url, timeout, maxtime)
-    end
-    logger.dbg("success:", success, "type(content):", type(content), "content:", content:sub(1, 500), "...")
-    if not success then
-        error(content)
-    else
-        return content
-    end
 end
 
 local ext_to_mimetype = {
@@ -195,29 +177,15 @@ local ext_to_mimetype = {
     ttf = "application/truetype",
     woff = "application/font-woff",
 }
--- Create an epub file (with possibly images)
-function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element)
-    logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
-    -- Use Trapper to display progress and ask questions through the UI.
-    -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
-    -- Trapper:info() and Trapper:confirm() will just use logger.
-    local UI = require("ui/trapper")
-    -- We may need to build absolute urls for non-absolute links and images urls
+-- GetPublishableHtml
+function EpubBuilder:getImagesAndHtml(html, url, include_images, filter_enable, filter_element)
     local base_url = socket_url.parse(url)
-
-    local cancelled = false
-    local page_htmltitle = html:match([[<title>(.*)</title>]])
-    logger.dbg("page_htmltitle is ", page_htmltitle)
---    local sections = html.sections -- Wikipedia provided TOC
-    local bookid = "bookid_placeholder" --string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
-    -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
-    -- should it changes if content is updated (as now, including the wikipedia revisionId),
-    -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then html = filter(html, filter_element) end
     local images = {}
     local seen_images = {}
     local imagenum = 1
     local cover_imgid = nil -- best candidate for cover among our images
+    html = filter_enable and filter(html, filter_element) or html
+
     local processImg = function(img_tag)
         local src = img_tag:match([[src="([^"]*)"]])
         if src == nil or src == "" then
@@ -272,13 +240,20 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 width = width,
                 height = height,
             }
-            table.insert(images, cur_image)
+
             seen_images[src] = cur_image
             -- Use first image of reasonable size (not an icon) and portrait-like as cover-image
             if not cover_imgid and width and width > 50 and height and height > 50 and height > width then
                 logger.dbg("Found a suitable cover image")
                 cover_imgid = imgid
+                cur_image["cover_image"] = true
             end
+
+            table.insert(
+                images,
+                cur_image
+            )
+
             imagenum = imagenum + 1
         end
         -- crengine will NOT use width and height attributes, but it will use
@@ -296,130 +271,53 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
         local style = table.concat(style_props, "; ")
         return string.format([[<img src="%s" style="%s" alt=""/>]], cur_image.imgpath, style)
     end
-    html = html:gsub("(<%s*img [^>]*>)", processImg)
-    logger.dbg("Images found in html:", images)
 
-    -- See what to do with images
-    local use_img_2x = false
-    if not include_images then
+    if include_images then
+        html = html:gsub("(<%s*img [^>]*>)", processImg)
+    else
         -- Remove img tags to avoid little blank squares of missing images
         html = html:gsub("<%s*img [^>]*>", "")
         -- We could remove the whole image container <div class="thumb"...> ,
         -- but it's a lot of nested <div> and not easy to do.
         -- So the user will see the image legends and know a bit about
-        -- the images he chose to not get.
+        -- the images they chose to not get.
     end
 
-    UI:info(T(_("%1\n\nBuilding EPUB…"), message))
-    -- Open the zip file (with .tmp for now, as crengine may still
-    -- have a handle to the final epub_path, and we don't want to
-    -- delete a good one if we fail/cancel later)
-    local epub_path_tmp = epub_path .. ".tmp"
-    local ZipWriter = require("ffi/zipwriter")
-    local epub = ZipWriter:new{}
-    if not epub:open(epub_path_tmp) then
-        logger.dbg("Failed to open epub_path_tmp")
-        return false
-    end
+    -- Force a GC to free the memory we used (the second call may help
+    -- reclaim more memory).
+    collectgarbage()
+    collectgarbage()
+    return images, html
+end
 
-    -- We now create and add all the required epub files
+function EpubBuilder:setTitle(title)
+    self.title = title
+end
 
-    -- ----------------------------------------------------------------
-    -- /mimetype : always "application/epub+zip"
-    epub:add("mimetype", "application/epub+zip")
 
-    -- ----------------------------------------------------------------
-    -- /META-INF/container.xml : always the same content
-    epub:add("META-INF/container.xml", [[
-<?xml version="1.0"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles>
-    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
-  </rootfiles>
-</container>]])
-    logger.dbg("Added META-INF/container.xml")
-
-    -- ----------------------------------------------------------------
-    -- OEBPS/content.opf : metadata + list of other files (paths relative to OEBPS/ directory)
-    -- Other possible items in this file that are of no interest to crengine :
-    --   In <manifest> :
-    --     <item id="cover" href="title.html" media-type="application/xhtml+xml"/>
-    --     <item id="cover-image" href="images/cover.png" media-type="image/png"/>
-    -- (crengine only uses <meta name="cover" content="cover-image" /> to get the cover image)
-    --   In <spine toc="ncx"> :
-    --     <itemref idref="cover" linear="no"/>
-    --   And a <guide> section :
-    --     <guide>
-    --       <reference href="title.html" type="cover" title="Cover"/>
-    --       <reference href="toc.html" type="toc" title="Table of Contents" href="toc.html" />
-    --     </guide>
-    local content_opf_parts = {}
-    -- head
-    local meta_cover = "<!-- no cover image -->"
-    if include_images and cover_imgid then
-        meta_cover = string.format([[<meta name="cover" content="%s"/>]], cover_imgid)
-    end
-    logger.dbg("meta_cover:", meta_cover)
-    table.insert(content_opf_parts, string.format([[
-<?xml version='1.0' encoding='utf-8'?>
-<package xmlns="http://www.idpf.org/2007/opf"
-        xmlns:dc="http://purl.org/dc/elements/1.1/"
-        unique-identifier="bookid" version="2.0">
-  <metadata>
-    <dc:title>%s</dc:title>
-    <dc:publisher>KOReader %s</dc:publisher>
-    %s
-  </metadata>
-  <manifest>
-    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
-    <item id="content" href="content.html" media-type="application/xhtml+xml"/>
-    <item id="css" href="stylesheet.css" media-type="text/css"/>
-]], page_htmltitle, Version:getCurrentRevision(), meta_cover))
-    -- images files
-    if include_images then
-        for inum, img in ipairs(images) do
-            table.insert(content_opf_parts, string.format([[    <item id="%s" href="%s" media-type="%s"/>%s]], img.imgid, img.imgpath, img.mimetype, "\n"))
-        end
-    end
-    -- tail
-    table.insert(content_opf_parts, [[
-  </manifest>
-  <spine toc="ncx">
-    <itemref idref="content"/>
-  </spine>
-</package>
-]])
-    epub:add("OEBPS/content.opf", table.concat(content_opf_parts))
-    logger.dbg("Added OEBPS/content.opf")
-
-    -- ----------------------------------------------------------------
-    -- OEBPS/stylesheet.css
-    --- @todo We told it we'd include a stylesheet.css, so it's probably best
-    -- that we do. In theory, we could try to fetch any *.css files linked in
-    -- the main html.
-    epub:add("OEBPS/stylesheet.css", [[
-/* Empty */
-]])
-    logger.dbg("Added OEBPS/stylesheet.css")
-
-    -- ----------------------------------------------------------------
-    -- OEBPS/toc.ncx : table of content
+function EpubBuilder:addToc(chapters)
     local toc_ncx_parts = {}
     local depth = 0
-    local cur_level = 0
-    local np_end = [[</navPoint>]]
-    local num = 1
-    -- Add our own first section for first page, with page name as title
-    table.insert(toc_ncx_parts, string.format([[<navPoint id="navpoint-%s" playOrder="%s"><navLabel><text>%s</text></navLabel><content src="content.html"/>]], num, num, page_htmltitle))
-    table.insert(toc_ncx_parts, np_end)
-    --- @todo Not essential for most articles, but longer articles might benefit
-    -- from parsing <h*> tags and constructing a proper TOC
-    while cur_level > 0 do
-        table.insert(toc_ncx_parts, np_end)
-        cur_level = cur_level - 1
+    local num = 0
+
+    for index, chapter in ipairs(chapters) do
+        -- Add nav part for each chapter.
+        table.insert(
+            toc_ncx_parts,
+            string.format([[<navPoint id="navpoint-%s" playOrder="%s"><navLabel><text>%s</text></navLabel><content src="%s.html"/></navPoint>]],
+                num,
+                num,
+                chapter.title,
+                chapter.md5
+            )
+        )
+        num = num + 1
     end
-    -- Prepend NCX head
-    table.insert(toc_ncx_parts, 1, string.format([[
+    -- Prepend NCX head.
+    table.insert(
+        toc_ncx_parts,
+        1,
+        string.format([[
 <?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
@@ -433,99 +331,172 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     <text>%s</text>
   </docTitle>
   <navMap>
-]], bookid, depth, page_htmltitle))
-    -- Append NCX tail
-    table.insert(toc_ncx_parts, [[
+]],
+"placeholder_bookid",
+depth,
+self.title
+        )
+    )
+    -- Append NCX tail.
+    table.insert(
+        toc_ncx_parts,
+        [[
   </navMap>
 </ncx>
-]])
-    epub:add("OEBPS/toc.ncx", table.concat(toc_ncx_parts))
-    logger.dbg("Added OEBPS/toc.ncx")
-
-    -- ----------------------------------------------------------------
-    -- OEBPS/content.html
-    epub:add("OEBPS/content.html", html)
-    logger.dbg("Added OEBPS/content.html")
-
-    -- Force a GC to free the memory we used till now (the second call may
-    -- help reclaim more memory).
-    collectgarbage()
-    collectgarbage()
-
-    -- ----------------------------------------------------------------
-    -- OEBPS/images/*
-    if include_images then
-        local nb_images = #images
-        for inum, img in ipairs(images) do
-            -- Process can be interrupted at this point between each image download
-            -- by tapping while the InfoMessage is displayed
-            -- We use the fast_refresh option from image #2 for a quicker download
-            local go_on = UI:info(T(_("%1\n\nRetrieving image %2 / %3 …"), message, inum, nb_images), inum >= 2)
-            if not go_on then
-                logger.dbg("cancelled")
-                cancelled = true
-                break
-            end
-            local src = img.src
-            if use_img_2x and img.src2x then
-                src = img.src2x
-            end
-            logger.dbg("Getting img ", src)
-            local success, content = getUrlContent(src)
-            -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
-            if success then
-                logger.dbg("success, size:", #content)
-            else
-                logger.dbg("failed fetching:", src)
-            end
-            if success then
-                -- Images do not need to be compressed, so spare some cpu cycles
-                local no_compression = true
-                if img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
-                    no_compression = false
-                end
-                epub:add("OEBPS/"..img.imgpath, content, no_compression)
-                logger.dbg("Adding OEBPS/"..img.imgpath)
-            else
-                go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
-                if not go_on then
-                    cancelled = true
-                    break
-                end
-            end
-        end
-    end
-
-    -- Done with adding files
-    if cancelled then
-        if UI:confirm(_("Download did not complete.\nDo you want to create an EPUB with the already downloaded images?"), _("Don't create"), _("Create")) then
-            cancelled = false
-        end
-    end
-    if cancelled then
-        UI:info(_("Canceled. Cleaning up…"))
-    else
-        UI:info(T(_("%1\n\nPacking EPUB…"), message))
-    end
-    epub:close()
-
-    if cancelled then
-        -- Build was cancelled, remove half created .epub
-        if lfs.attributes(epub_path_tmp, "mode") == "file" then
-            os.remove(epub_path_tmp)
-        end
-        return false
-    end
-
-    -- Finally move the .tmp to the final file
-    os.rename(epub_path_tmp, epub_path)
-    logger.dbg("successfully created:", epub_path)
-
-    -- Force a GC to free the memory we used (the second call may help
-    -- reclaim more memory).
-    collectgarbage()
-    collectgarbage()
-    return true
+]]
+    )
+    self.ncx_toc = toc_ncx_parts
 end
 
-return EpubDownloadBackend
+function EpubBuilder:addManifest(chapters, images)
+    local content_opf_parts = {}
+    local spine_parts = {}
+    local meta_cover = "<!-- no cover image -->"
+
+    if #images > 0 then
+        for inum, image in ipairs(images) do
+            table.insert(
+                content_opf_parts,
+                string.format([[<item id="%s" href="%s" media-type="%s"/>%s]],
+                    image.imgid,
+                    image.imgpath,
+                    image.mimetype,
+                    "\n"
+                )
+            )
+            -- See if the image has the tag we previously set indicating
+            -- it can be used as a cover image.
+            if image.cover_image then
+                meta_cover = string.format([[<meta name="cover" content="%s"/>]], image.imgid)
+            end
+        end
+    end
+
+    if #chapters > 0 then
+        for index, chapter in ipairs(chapters) do
+            table.insert(
+                content_opf_parts,
+                string.format([[<item id="%s" href="%s.html" media-type="application/xhtml+xml"/>%s]],
+                    chapter.md5,
+                    chapter.md5,
+                    "\n"
+                )
+            )
+            table.insert(
+                spine_parts,
+                string.format([[<itemref idref="%s"/>%s]],
+                    chapter.md5,
+                    "\n"
+                )
+            )
+        end
+    end
+
+    logger.dbg("meta_cover:", meta_cover)
+
+    table.insert(
+        content_opf_parts,
+        1,
+        string.format([[<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf"
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        unique-identifier="bookid" version="2.0">
+  <metadata>
+    <dc:title>%s</dc:title>
+    <dc:publisher>KOReader %s</dc:publisher>
+    %s
+  </metadata>
+  <manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+]], self.title, Version:getCurrentRevision(), meta_cover)
+    )
+    -- tail
+    table.insert(
+        content_opf_parts,
+        string.format([[
+  </manifest>
+  <spine toc="ncx">
+%s
+  </spine>
+</package>
+]], table.concat(spine_parts)
+        )
+    )
+
+    self.ncx_manifest = content_opf_parts
+end
+
+function EpubBuilder:addContents(chapters)
+    local contents = {}
+
+    for index, chapter in ipairs(chapters) do
+        table.insert(
+            contents,
+            {
+                filename = chapter.md5 .. ".html",
+                html = chapter.html,
+            }
+        )
+    end
+
+    self.ncx_contents = contents
+end
+
+function EpubBuilder:addImages(images)
+    local images_table = {}
+
+    for index, image in ipairs(images) do
+        if not image.src then
+            return
+        end
+
+        local src = image.src
+        local success, content = NewsHelpers:getUrlContent(src)
+        -- success, content = NewsHelpers:getUrlContent(src..".unexistant") -- to simulate failure
+        if success then
+            logger.dbg("EpubBuilder:addImages = success, size:", #content)
+        else
+            logger.dbg("EpubBuilder:addImages = failure fetching:", src)
+        end
+
+        if success then
+            -- Images do not need to be compressed, so spare some cpu cycles
+            local no_compression = true
+            if image.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
+                no_compression = false
+            end
+            table.insert(
+                images_table,
+                {
+                    path = image.imgpath,
+                    content = content,
+                    compression = no_compression
+                }
+            )
+        end
+    end
+
+    self.ncx_images = images_table
+
+end
+
+-- There can be multiple links.
+-- For now we just assume the first link is probably the right one.
+--- @todo Write unit tests.
+-- Some feeds that can be used for unit test.
+-- http://fransdejonge.com/feed/ for multiple links.
+-- https://github.com/koreader/koreader/commits/master.atom for single link with attributes.
+function EpubBuilder:getFeedLink(possible_link)
+    local E = {}
+    logger.dbg("Possible link", possible_link)
+    if type(possible_link) == "string" then
+        return possible_link
+    elseif (possible_link._attr or E).href then
+        return possible_link._attr.href
+    elseif ((possible_link[1] or E)._attr or E).href then
+        return possible_link[1]._attr.href
+    end
+end
+
+
+return EpubBuilder
