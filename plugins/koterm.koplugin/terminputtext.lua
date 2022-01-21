@@ -50,11 +50,8 @@ local TermInputText = InputText:extend{
 
     wrap = true,
 
-    alternate_buffer = nil,
-    alternate_buffer_charpos = nil,
-
-    save_buffer = nil,
-    save_buffer_charpos = nil,
+    alternate_buffer = {},
+    save_buffer = {},
 }
 
 -- disable positioning cursor by tap in emulator mode
@@ -120,6 +117,43 @@ function TermInputText:trimBuffer(new_size)
     end
 end
 
+function TermInputText:saveBuffer(buffer)
+    table.insert(self[buffer],
+        {
+            self.charlist,
+            self.charpos,
+            self.store_pos_sco,
+            self.store_position,
+            self.scroll_region_bottom,
+            self.scroll_region_top,
+            self.scroll_region_line,
+            self.wrap,
+        })
+    self.charlist = {}
+    self.charpos = 1
+    self.store_pos_dec = nil
+    self.store_pos_sco = nil
+    self.store_position = nil
+    self.scroll_region_bottom = nil
+    self.scroll_region_top = nil
+    self.scroll_region_line = nil
+    self.wrap = true
+end
+
+function TermInputText:restoreBuffer(buffer)
+    local former_buffer = table.remove(self[buffer])
+    if type(former_buffer[1]) == "table" then
+        self.charlist,
+        self.charpos,
+        self.store_pos_sco,
+        self.store_position,
+        self.scroll_region_bottom,
+        self.scroll_region_top,
+        self.scroll_region_line,
+        self.wrap = unpack(former_buffer)
+    end
+end
+
 function TermInputText:_helperVT52VT100(cmd, mode, param1, param2, param3)
     if cmd == "A" then -- cursor up
         param1 = param1 == 0 and 1 or param1
@@ -182,17 +216,10 @@ function TermInputText:_helperVT52VT100(cmd, mode, param1, param2, param3)
         if param2 == 7 then -- enable wrap around
             self.wrap = true
         elseif param2 == 47 then -- save screen
---            self.charpos = self.store_position
-            self.save_buffer = self.charlist
-            self.save_buffer_charpos = self.charpos
-            self.charlist = {}
-            self.charpos = 1
+            self:saveBuffer("save_buffer")
             print("xxxxxxxxxxxx save screen")
         elseif param2 == 1049 then -- enable alternate buffer
-            self.alternate_buffer = self.charlist
-            self.alternate_buffer_charpos = self.charpos
-            self.charlist = {}
-            self.charpos = 1
+            self:saveBuffer("alternate_buffer")
             print("xxxxxxxxxxxx enable alternate buffer")
         end
         return true
@@ -201,16 +228,10 @@ function TermInputText:_helperVT52VT100(cmd, mode, param1, param2, param3)
         if param2 == 7 then -- enable wrap around
             self.wrap = false
         elseif param2 == 47 then -- restore screen
-            self.charlist = self.save_buffer or self.charlist
-            self.charpos = self.save_buffer_charpos or self.charpos
-            self.save_buffer = nil
-            self.save_buffer_charpos = nil
+            self:restoreBuffer("save_buffer")
             print("xxxxxxxxxxxx restore screen")
         elseif param2 == 1049 then -- disable alternate buffer
-            self.charlist = self.alternate_buffer or self.charlist
-            self.charpos = self.alternate_buffer_charpos or self.charpos
-            self.alternate_buffer = nil
-            self.alternate_buffer_charpos = nil
+            self:restoreBuffer("alternate_buffer")
             print("xxxxxxxxxxxx disable alternate buffer")
         end
         return true
