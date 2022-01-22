@@ -73,31 +73,29 @@ function IconButton:update()
 end
 
 function IconButton:initGesListener()
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapIconButton = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                },
-                doc = "Tap IconButton",
+    self.ges_events = {
+        TapIconButton = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
             },
-            HoldIconButton = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = self.dimen,
-                },
-                doc = "Hold IconButton",
+            doc = "Tap IconButton",
+        },
+        HoldIconButton = {
+            GestureRange:new{
+                ges = "hold",
+                range = self.dimen,
             },
-            HoldReleaseIconButton = {
-                GestureRange:new{
-                    ges = "hold_release",
-                    range = self.dimen,
-                },
-                doc = "Hold Release IconButton",
-            }
+            doc = "Hold IconButton",
+        },
+        HoldReleaseIconButton = {
+            GestureRange:new{
+                ges = "hold_release",
+                range = self.dimen,
+            },
+            doc = "Hold Release IconButton",
         }
-    end
+    }
 end
 
 function IconButton:onTapIconButton()
