@@ -41,6 +41,7 @@ local DEBUG = require("dbg")
 local Screen = require("device").screen
 local Blitbuffer = require("ffi/blitbuffer")
 local InputText = require("ui/widget/inputtext")
+local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 
 DEBUG:turnOn()
 
@@ -260,7 +261,7 @@ readerwindow = CenterContainer:new{
 reader = ReaderUI:new{
     dialog = readerwindow,
     dimen = Geom:new{ w = Screen:getWidth() - 100, h = Screen:getHeight() - 100 },
-    document = DocumentRegistry:openDocument("spec/front/unit/data/2col.pdf")
+    document = DocumentRegistry:openDocument("test/sample.pdf")
     --document = DocumentRegistry:openDocument("spec/front/unit/data/djvu3spec.djvu")
 }
 readerwindow[1][1] = reader
@@ -448,9 +449,9 @@ end
 -----------------------------------------------------------------------
 --UIManager:show(Background:new())
 --UIManager:show(TestGrid)
-UIManager:show(TestVisible)
-UIManager:show(Clock:new())
--- UIManager:show(M)
+--UIManager:show(TestVisible)
+--UIManager:show(Clock:new())
+--UIManager:show(M)
 --UIManager:show(Quiz)
 --UIManager:show(readerwindow)
 --UIManager:show(touch_menu)
@@ -460,5 +461,6 @@ UIManager:show(Clock:new())
 -- testKeyValuePage()
 -- testTouchProbe()
 -- testBookStatus()
-testNetworkSetting()
+--testNetworkSetting()
+UIManager:show(DoubleSpinWidget:new{})
 UIManager:run()
