@@ -150,10 +150,15 @@ function BasePowerD:setIntensity(intensity)
 end
 
 function BasePowerD:getCapacity()
-    -- NOTE: UIManager *should* be loaded at this point.
-    --       If that doesn't hold, c.f., :stateChanged below.
-    local UIManager = require("ui/uimanager")
-    local now_ts = UIManager:getTime()
+    -- BasePowerD is loaded before UIManager.
+    -- Nothing *currently* calls this before UIManager is actually loaded, but future-proof this anyway.
+    local now_ts
+    if package.loaded["ui/uimanager"] ~= nil then
+        local UIManager = require("ui/uimanager")
+        now_ts = UIManager:getTime()
+    else
+        now_ts = TimeVal:now()
+    end
 
     if (now_ts - self.last_aux_capacity_pull_time):tonumber() >= 60 then
         self.batt_capacity = self:getCapacityHW()
@@ -167,8 +172,13 @@ function BasePowerD:isCharging()
 end
 
 function BasePowerD:getAuxCapacity()
-    local UIManager = require("ui/uimanager")
-    local now_ts = UIManager:getTime()
+    local now_ts
+    if package.loaded["ui/uimanager"] ~= nil then
+        local UIManager = require("ui/uimanager")
+        now_ts = UIManager:getTime()
+    else
+        now_ts = TimeVal:now()
+    end
 
     if (now_ts - self.last_aux_capacity_pull_time):tonumber() >= 60 then
         local aux_batt_capa = self:getAuxCapacityHW()
