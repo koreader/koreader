@@ -1536,18 +1536,12 @@ function ReaderHighlight:getHighlightBookmarkItem()
         self:highlightFromHoldPos()
     end
     if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
-        local datetime = os.date("%Y-%m-%d %H:%M:%S")
-        local page = self.ui.document.info.has_pages and
-                self.hold_pos.page or self.selected_text.pos0
-        local chapter_name = self.ui.toc:getTocTitleByPage(page)
         return {
-            page = page,
+            page = self.ui.paging and self.hold_pos.page or self.selected_text.pos0,
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
-            datetime = datetime,
             notes = cleanupSelectedText(self.selected_text.text),
             highlighted = true,
-            chapter = chapter_name,
         }
     end
 end
@@ -1561,8 +1555,7 @@ function ReaderHighlight:saveHighlight()
             self.view.highlight.saved[page] = {}
         end
         local datetime = os.date("%Y-%m-%d %H:%M:%S")
-        local pg_or_xp = self.ui.document.info.has_pages and
-                self.hold_pos.page or self.selected_text.pos0
+        local pg_or_xp = self.ui.paging and page or self.selected_text.pos0
         local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
         local hl_item = {
             datetime = datetime,
@@ -1571,46 +1564,21 @@ function ReaderHighlight:saveHighlight()
             pos1 = self.selected_text.pos1,
             pboxes = self.selected_text.pboxes,
             drawer = self.view.highlight.saved_drawer,
-            chapter = chapter_name
+            chapter = chapter_name,
         }
         table.insert(self.view.highlight.saved[page], hl_item)
         local bookmark_item = self:getHighlightBookmarkItem()
         if bookmark_item then
+            bookmark_item.datetime = datetime
+            bookmark_item.chapter = chapter_name
             self.ui.bookmark:addBookmark(bookmark_item)
         end
-        --[[
-        -- disable exporting highlights to My Clippings
-        -- since it's not portable and there is a better Evernote plugin
-        -- to do the same thing
-        if self.selected_text.text ~= "" then
-            self:exportToClippings(page, hl_item)
-        end
-        --]]
         if self.selected_text.pboxes then
             self:exportToDocument(page, hl_item)
         end
         return page, #self.view.highlight.saved[page]
     end
 end
-
---[[
-function ReaderHighlight:exportToClippings(page, item)
-    logger.dbg("export highlight to clippings", item)
-    local clippings = io.open("/mnt/us/documents/My Clippings.txt", "a+")
-    if clippings and item.text then
-        local current_locale = os.setlocale()
-        os.setlocale("C")
-        clippings:write(self.document.file:gsub("(.*/)(.*)", "%2").."\n")
-        clippings:write("- KOReader Highlight Page "..page.." ")
-        clippings:write("| Added on "..os.date("%A, %b %d, %Y %I:%M:%S %p\n\n"))
-        -- My Clippings only holds one line of highlight
-        clippings:write(item["text"]:gsub("\n", " ").."\n")
-        clippings:write("==========\n")
-        clippings:close()
-        os.setlocale(current_locale)
-    end
-end
---]]
 
 function ReaderHighlight:exportToDocument(page, item)
     local setting = G_reader_settings:readSetting("save_document")

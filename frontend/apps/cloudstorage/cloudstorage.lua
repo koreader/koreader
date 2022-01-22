@@ -16,9 +16,10 @@ local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local T = require("ffi/util").template
 local _ = require("gettext")
+local N_ = _.ngettext
 local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local CloudStorage = Menu:extend{
     cloud_servers = {
@@ -435,11 +436,11 @@ function CloudStorage:synchronizeCloud(item)
             local text
             if downloaded_files == 0 and failed_files == 0 then
                 text = _("No files to download from Dropbox.")
-            elseif downloaded_files > 0 and failed_files == 0 then
-                text = T(_("Successfully downloaded %1 files from Dropbox to local storage."), downloaded_files)
             else
-                text = T(_("Successfully downloaded %1 files from Dropbox to local storage.\nFailed to download %2 files."),
-                    downloaded_files, failed_files)
+                text = T(N_("Successfully downloaded 1 file from Dropbox to local storage.", "Successfully downloaded %1 files from Dropbox to local storage.", downloaded_files), downloaded_files)
+                if failed_files > 0 then
+                    text = text .. "\n" .. T(N_("Failed to download 1 file.", "Failed to download %1 files.", failed_files), failed_files)
+                end
             end
             UIManager:show(InfoMessage:new{
                 text = text,
