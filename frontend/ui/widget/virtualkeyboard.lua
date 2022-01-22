@@ -472,8 +472,11 @@ function VirtualKeyPopup:onCloseWidget()
 end
 
 function VirtualKeyPopup:onPressKey()
-    self:getFocusItem():handleEvent(Event:new("TapSelect"))
-    return true
+    local item = self:getFocusItem()
+    if item then
+        item:handleEvent(Event:new("TapSelect"))
+    end
+    return item
 end
 
 function VirtualKeyPopup:init()
@@ -848,8 +851,11 @@ function VirtualKeyboard:onClose()
 end
 
 function VirtualKeyboard:onPressKey()
-    self:getFocusItem():handleEvent(Event:new("TapSelect"))
-    return true
+    local item = self:getFocusItem()
+    if item then
+        item:handleEvent(Event:new("TapSelect"))
+    end
+    return item
 end
 
 function VirtualKeyboard:_refresh(want_flash, fullscreen)

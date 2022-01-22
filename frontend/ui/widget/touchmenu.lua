@@ -963,7 +963,11 @@ function TouchMenu:onBack()
 end
 
 function TouchMenu:onPress()
-    self:getFocusItem():handleEvent(Event:new("TapSelect"))
+    local item = self:getFocusItem()
+    if item then
+        item:handleEvent(Event:new("TapSelect"))
+    end
+    return item
 end
 
 return TouchMenu

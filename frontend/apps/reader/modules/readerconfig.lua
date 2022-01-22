@@ -26,9 +26,7 @@ function ReaderConfig:init()
             ShowConfigMenu = { {{"Press","AA"}}, doc = "show config dialog" },
         }
     end
-    if Device:isTouchDevice() then
-        self:initGesListener()
-    end
+    self:initGesListener()
     if G_reader_settings:has("activate_menu") then
         self.activation_menu = G_reader_settings:readSetting("activate_menu")
     else
