@@ -160,7 +160,7 @@ function BasePowerD:getCapacity()
         now_ts = TimeVal:now()
     end
 
-    if (now_ts - self.last_aux_capacity_pull_time):tonumber() >= 60 then
+    if (now_ts - self.last_capacity_pull_time):tonumber() >= 60 then
         self.batt_capacity = self:getCapacityHW()
         self.last_capacity_pull_time = now_ts
     end
