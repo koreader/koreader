@@ -93,7 +93,7 @@ function DictQuickLookup:init()
         self.key_events = {
             ReadPrevResult = {{Input.group.PgBack}, doc = "read prev result"},
             ReadNextResult = {{Input.group.PgFwd}, doc = "read next result"},
-            Close = { {"Back"}, doc = "close quick lookup" }
+            Close = { {Input.group.Back}, doc = "close quick lookup" }
         }
     end
     if Device:isTouchDevice() then

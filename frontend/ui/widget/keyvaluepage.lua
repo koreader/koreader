@@ -283,7 +283,7 @@ function KeyValuePage:init()
 
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close page" },
+            Close = { {Input.group.Back}, doc = "close page" },
             NextPage = {{Input.group.PgFwd}, doc = "next page"},
             PrevPage = {{Input.group.PgBack}, doc = "prev page"},
         }

@@ -137,6 +137,7 @@ local Input = {
         Cursor = { "Up", "Down", "Left", "Right" },
         PgFwd = { "RPgFwd", "LPgFwd" },
         PgBack = { "RPgBack", "LPgBack" },
+        Back = { "Back" },
         Alphabet = {
             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
             "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
@@ -247,6 +248,10 @@ function Input:init()
             self.event_map[key] = value
         end
         logger.info("loaded custom event map", custom_event_map)
+    end
+
+    if G_reader_settings:isTrue("backspace_as_back") then
+        table.insert(self.group.Back, "Backspace")
     end
 end
 

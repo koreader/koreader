@@ -101,6 +101,7 @@ local order = {
         "back_to_exit",
         "back_in_filemanager",
         "back_in_reader",
+        "backspace_as_back",
         "----------------------------",
         "page_turns_non_touch",
         "android_volume_keys",

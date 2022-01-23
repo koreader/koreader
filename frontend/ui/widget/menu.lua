@@ -925,7 +925,7 @@ function Menu:init()
 
     if Device:hasKeys() then
         -- set up keyboard events
-        self.key_events.Close = { {"Back"}, doc = "close menu" }
+        self.key_events.Close = { {Input.group.Back}, doc = "close menu" }
         if Device:hasFewKeys() then
             self.key_events.Close = { {"Left"}, doc = "close menu" }
         end

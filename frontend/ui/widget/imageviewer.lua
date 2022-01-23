@@ -81,7 +81,7 @@ local ImageViewer = InputContainer:new{
 function ImageViewer:init()
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close viewer" },
+            Close = { {Device.input.group.Back}, doc = "close viewer" },
             ZoomIn = { {Device.input.group.PgBack}, doc = "Zoom In" },
             ZoomOut = { {Device.input.group.PgFwd}, doc = "Zoom out" },
         }

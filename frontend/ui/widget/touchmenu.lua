@@ -474,7 +474,7 @@ function TouchMenu:init()
         }
     }
 
-    self.key_events.Back = { {"Back"}, doc = "back to upper menu or close touchmenu" }
+    self.key_events.Back = { {Input.group.Back}, doc = "back to upper menu or close touchmenu" }
     if Device:hasFewKeys() then
         self.key_events.Back = { {"Left"}, doc = "back to upper menu or close touchmenu" }
     end
