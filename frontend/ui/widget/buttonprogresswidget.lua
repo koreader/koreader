@@ -209,7 +209,7 @@ function ButtonProgressWidget:update()
                 self.hold_callback("+")
             end,
         }
-        
+
         if self.thin_grey_style then
             button.frame.color = Blitbuffer.COLOR_DARK_GRAY
         end
@@ -266,7 +266,7 @@ function ButtonProgressWidget:setPosition(position, default_position)
 end
 
 function ButtonProgressWidget:onTapSelect(arg, gev)
-    if gev == nil then        
+    if gev == nil then
         self:circlePosition()
     end
 end

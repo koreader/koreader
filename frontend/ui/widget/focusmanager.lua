@@ -59,7 +59,7 @@ function FocusManager:onFocusMove(args)
         or (dy ~= 0 and not self.movement_allowed.y) then
         return true
     end
-    
+
     if not self.layout[self.selected.y] or not self.layout[self.selected.y][self.selected.x] then
         return true
     end
