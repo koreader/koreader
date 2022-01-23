@@ -838,19 +838,6 @@ function VirtualKeyboard:onPressKey()
     return true
 end
 
-function VirtualKeyboard:onFocusMove(args)
-
-    -- for example devices with just a DPad - defer to parent to
-    -- move focus among keys
-    if not Device:hasKeyboard() then
-        FocusManager.onFocusMove(self, args)
-        return false
-    end
-
-    -- no focus more - move within the text field
-    return false
-end
-
 function VirtualKeyboard:_refresh(want_flash, fullscreen)
     local refresh_type = "ui"
     if want_flash then
