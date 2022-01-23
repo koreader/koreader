@@ -191,6 +191,11 @@ function BasePowerD:getAuxCapacity()
     return self.aux_batt_capacity
 end
 
+function BasePowerD:invalidateCapacityCache()
+    self.last_capacity_pull_time = TimeVal:new{ sec = 0, usec = 0}
+    self.last_aux_capacity_pull_time = TimeVal:new{ sec = 0, usec = 0}
+end
+
 function BasePowerD:isAuxCharging()
     return self:isAuxChargingHW()
 end
