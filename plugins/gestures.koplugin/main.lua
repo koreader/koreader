@@ -6,12 +6,14 @@ local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
+local GestureDetector = require("device/gesturedetector")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Screen = require("device").screen
+local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local util = require("util")
 local T = FFIUtil.template
@@ -118,8 +120,8 @@ function Gestures:init()
     if not lfs.attributes(gestures_path, "mode") then
         FFIUtil.copyFile(defaults_path, gestures_path)
     end
-    self.ignore_hold_corners = G_reader_settings:readSetting("ignore_hold_corners")
-    self.multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled")
+    self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
+    self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     self.defaults = LuaSettings:open(defaults_path).data[self.ges_mode]
@@ -240,9 +242,10 @@ function Gestures:genSubItem(ges, separator, hold_callback)
     return {
         text_func = function() return self:gestureTitleFunc(ges) end,
         enabled_func = enabled_func,
-        sub_item_table = self:genMenu(ges),
+        sub_item_table_func = function() return self:genMenu(ges) end,
         separator = separator,
         hold_callback = hold_callback,
+        menu_item_id = ges,
     }
 end
 
@@ -440,18 +443,13 @@ function Gestures:addIntervals(menu_items)
                 text = _("Text selection rate"),
                 keep_menu_open = true,
                 callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local current_value = G_reader_settings:readSetting("hold_pan_rate")
-                    if not current_value then
-                        current_value = Screen.low_pan_rate and 5.0 or 30.0
-                    end
+                    local default_value = Screen.low_pan_rate and 5.0 or 30.0
+                    local current_value = G_reader_settings:readSetting("hold_pan_rate", default_value)
                     local items = SpinWidget:new{
                         title_text = _("Text selection rate"),
-                        info_text = T(_([[
+                        info_text = _([[
 The rate is how often screen will be refreshed per second while selecting text.
-Higher values mean faster screen updates, but also use more CPU.
-
-Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
+Higher values mean faster screen updates, but also use more CPU.]]),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = current_value,
                         value_min = 1.0,
@@ -459,7 +457,7 @@ Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
                         value_step = 1,
                         value_hold_step = 15,
                         ok_text = _("Set rate"),
-                        default_value = Screen.low_pan_rate and 5.0 or 30.0,
+                        default_value = default_value,
                         callback = function(spin)
                             G_reader_settings:saveSetting("hold_pan_rate", spin.value)
                             UIManager:broadcastEvent(Event:new("UpdateHoldPanRate"))
@@ -473,15 +471,12 @@ Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
                 text = _("Tap interval"),
                 keep_menu_open = true,
                 callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         title_text = _("Tap interval"),
-                        info_text = T(_([[
+                        info_text = _([[
 Any other taps made within this interval after a first tap will be considered accidental and ignored.
 
-The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).
-Default value: %1]]), GestureDetector.TAP_INTERVAL/1000),
+The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_tap_interval")/1000,
                         value_min = 0,
@@ -502,16 +497,14 @@ Default value: %1]]), GestureDetector.TAP_INTERVAL/1000),
                 text = _("Tap interval on keyboard"),
                 keep_menu_open = true,
                 callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
                     local items = SpinWidget:new{
                         title_text = _("Tap interval on keyboard"),
                         info_text = _([[
 Any other taps made within this interval after a first tap will be considered accidental and ignored.
 
-The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).
-Default value: 0]]),
+The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = (G_reader_settings:readSetting("ges_tap_interval_on_keyboard") or 0)/1000,
+                        value = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)/1000,
                         value_min = 0,
                         value_max = 2000,
                         value_step = 50,
@@ -529,15 +522,12 @@ Default value: 0]]),
                 text = _("Double tap interval"),
                 keep_menu_open = true,
                 callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         title_text = _("Double tap interval"),
-                        info_text = T(_([[
+                        info_text = _([[
 When double tap is enabled, this sets the time to wait for the second tap. A single tap will take at least this long to be detected.
 
-The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
-Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
+The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_double_tap_interval")/1000,
                         value_min = 100,
@@ -558,15 +548,12 @@ Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
                 text = _("Two finger tap duration"),
                 keep_menu_open = true,
                 callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         title_text = _("Two finger tap duration"),
-                        info_text = T(_([[
+                        info_text = _([[
 This sets the allowed duration of any of the two fingers touch/release for the combined event to be considered a two finger tap.
 
-The duration value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
-Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
+The duration value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_two_finger_tap_duration")/1000,
                         value_min = 100,
@@ -584,18 +571,15 @@ Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
                 end,
             },
             {
-                text = _("Hold interval"),
+                text = _("Long-press interval"),
                 keep_menu_open = true,
                 callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
-                        title_text = _("Hold interval"),
-                        info_text = T(_([[
-If a touch is not released in this interval, it is considered a hold (or long-press). On document's text, single word selection is then triggered.
+                        title_text = _("Long-press interval"),
+                        info_text = _([[
+If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will then be triggered.
 
-The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
-Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
+The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_hold_interval")/1000,
                         value_min = 100,
@@ -613,47 +597,15 @@ Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
                 end,
             },
             {
-                text = _("Pan delay interval"),
-                keep_menu_open = true,
-                callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local GestureDetector = require("device/gesturedetector")
-                    local items = SpinWidget:new{
-                        title_text = _("Pan delay interval"),
-                        info_text = T(_([[
-This is used where necessary to reduce potential activation of panning when swiping is intended (e.g., for the menu or for multiswipe).
-
-The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
-Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
-                        width = math.floor(Screen:getWidth() * 0.75),
-                        value = GestureDetector:getInterval("ges_pan_delayed_interval")/1000,
-                        value_min = 100,
-                        value_max = 2000,
-                        value_step = 100,
-                        value_hold_step = 500,
-                        ok_text = _("Set interval"),
-                        default_value = GestureDetector.PAN_DELAYED_INTERVAL/1000,
-                        callback = function(spin)
-                            G_reader_settings:saveSetting("ges_pan_delayed_interval", spin.value*1000)
-                            GestureDetector:setNewInterval("ges_pan_delayed_interval", spin.value*1000)
-                        end
-                    }
-                    UIManager:show(items)
-                end,
-            },
-            {
                 text = _("Swipe interval"),
                 keep_menu_open = true,
                 callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
                         title_text = _("Swipe interval"),
-                        info_text = T(_([[
+                        info_text = _([[
 This sets the maximum delay between the start and the end of a swipe for it to be considered a swipe. Above this interval, it's considered panning.
 
-The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
-Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
+The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_swipe_interval")/1000,
                         value_min = 100,
@@ -682,7 +634,7 @@ function Gestures:addToMainMenu(menu_items)
                 text = _("Turn on multiswipes"),
                 checked_func = function() return self.multiswipes_enabled end,
                 callback = function()
-                    G_reader_settings:saveSetting("multiswipes_enabled", not self.multiswipes_enabled)
+                    G_reader_settings:toggle("multiswipes_enabled")
                     self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
                 end,
                 help_text = multiswipes_info_text,
@@ -703,16 +655,12 @@ function Gestures:addToMainMenu(menu_items)
                 sub_item_table = self:genSubItemTable({"tap_top_left_corner", "tap_top_right_corner", "tap_left_bottom_corner", "tap_right_bottom_corner"}),
             },
             {
-                text = _("Hold corner"),
+                text = _("Long-press on corner"),
                 sub_item_table = self:genSubItemTable({"hold_top_left_corner", "hold_top_right_corner", "hold_bottom_left_corner", "hold_bottom_right_corner"}),
             },
             {
-                text = _("Short diagonal swipe"),
-                sub_item_table = self:genMenu("short_diagonal_swipe"),
-            },
-            {
                 text = _("One-finger swipe"),
-                sub_item_table = self:genSubItemTable({"one_finger_swipe_left_edge_down", "one_finger_swipe_left_edge_up", "one_finger_swipe_right_edge_down", "one_finger_swipe_right_edge_up", "one_finger_swipe_top_edge_right", "one_finger_swipe_top_edge_left", "one_finger_swipe_bottom_edge_right", "one_finger_swipe_bottom_edge_left"}),
+                sub_item_table = self:genSubItemTable({"short_diagonal_swipe", "one_finger_swipe_left_edge_down", "one_finger_swipe_left_edge_up", "one_finger_swipe_right_edge_down", "one_finger_swipe_right_edge_up", "one_finger_swipe_top_edge_right", "one_finger_swipe_top_edge_left", "one_finger_swipe_bottom_edge_right", "one_finger_swipe_bottom_edge_left"}),
             },
             {
                 text = _("Double tap"),
@@ -804,6 +752,7 @@ function Gestures:setupGesture(ges)
         ratio_w = DTAP_ZONE_BOTTOM_RIGHT.w,
         ratio_h = DTAP_ZONE_BOTTOM_RIGHT.h,
     }
+    -- NOTE: The defaults are effectively mapped to DTAP_ZONE_BACKWARD & DTAP_ZONE_FORWARD
     local zone_left = {
         ratio_x = DDOUBLE_TAP_ZONE_PREV_CHAPTER.x,
         ratio_y = DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
@@ -818,6 +767,7 @@ function Gestures:setupGesture(ges)
     }
 
     local overrides_tap_corner
+    local overrides_double_tap_corner
     local overrides_hold_corner
     local overrides_vertical_edge, overrides_horizontal_edge
     local overrides_pan, overrides_pan_release
@@ -840,6 +790,10 @@ function Gestures:setupGesture(ges)
             "readermenu_tap",
             "tap_forward",
             "tap_backward",
+        }
+        overrides_double_tap_corner = {
+            "double_tap_left_side",
+            "double_tap_right_side",
         }
         overrides_hold_corner = {
             -- As hold corners are "ignored" by default, and we have
@@ -908,15 +862,19 @@ function Gestures:setupGesture(ges)
     elseif ges == "double_tap_top_left_corner" then
         ges_type = "double_tap"
         zone = zone_top_left_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "double_tap_top_right_corner" then
         ges_type = "double_tap"
         zone = zone_top_right_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "double_tap_bottom_right_corner" then
         ges_type = "double_tap"
         zone = zone_bottom_right_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "double_tap_bottom_left_corner" then
         ges_type = "double_tap"
         zone = zone_bottom_left_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "hold_top_left_corner" then
         ges_type = "hold"
         zone = zone_top_left_corner
@@ -1107,7 +1065,8 @@ function Gestures:gestureAction(action, ges)
         or (ges.ges == "hold" and self.ignore_hold_corners) then
         return
     else
-         Dispatcher:execute(self.ui, action_list, ges)
+        self.ui:handleEvent(Event:new("HandledAsSwipe"))
+        Dispatcher:execute(action_list, ges)
     end
     return true
 end
@@ -1118,12 +1077,12 @@ function Gestures:multiswipeAction(multiswipe_directions, ges)
             text = _("You have just performed your first multiswipe gesture.") .."\n\n".. multiswipes_info_text,
             ok_text = _("Turn on"),
             ok_callback = function()
-                G_reader_settings:saveSetting("multiswipes_enabled", true)
+                G_reader_settings:makeTrue("multiswipes_enabled")
                 self.multiswipes_enabled = true
             end,
             cancel_text = _("Turn off"),
             cancel_callback = function()
-                G_reader_settings:saveSetting("multiswipes_enabled", false)
+                G_reader_settings:makeFalse("multiswipes_enabled")
                 self.multiswipes_enabled = false
             end,
         })

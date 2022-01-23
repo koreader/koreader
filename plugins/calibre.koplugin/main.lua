@@ -8,6 +8,7 @@
 --]]
 
 local BD = require("ui/bidi")
+local CalibreExtensions = require("extensions")
 local CalibreSearch = require("search")
 local CalibreWireless = require("wireless")
 local Dispatcher = require("dispatcher")
@@ -59,9 +60,9 @@ function Calibre:closeWirelessConnection()
 end
 
 function Calibre:onDispatcherRegisterActions()
-    Dispatcher:registerAction("calibre_search", { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,})
-    Dispatcher:registerAction("calibre_browse_tags", { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,})
-    Dispatcher:registerAction("calibre_browse_series", { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true, separator=true,})
+    Dispatcher:registerAction("calibre_search", { category="none", event="CalibreSearch", title=_("Calibre metadata search"), general=true,})
+    Dispatcher:registerAction("calibre_browse_tags", { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), general=true,})
+    Dispatcher:registerAction("calibre_browse_series", { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), general=true, separator=true,})
 end
 
 function Calibre:init()
@@ -109,7 +110,7 @@ function Calibre:addToMainMenu(menu_items)
     -- insert the metadata search
     if G_reader_settings:isTrue("calibre_search_from_reader") or not self.ui.view then
         menu_items.find_book_in_calibre_catalog = {
-            text = _("Find a book via calibre metadata"),
+            text = _("Calibre metadata search"),
             callback = function()
                 CalibreSearch:ShowSearch()
             end
@@ -133,10 +134,10 @@ function Calibre:getSearchMenuTable()
                         text = path,
                         keep_menu_open = true,
                         checked_func = function()
-                            return cache:readSetting(path)
+                            return cache:isTrue(path)
                         end,
                         callback = function()
-                            cache:saveSetting(path, not cache:readSetting(path))
+                            cache:toggle(path)
                             cache:flush()
                             CalibreSearch:invalidateCache()
                         end,
@@ -165,8 +166,7 @@ function Calibre:getSearchMenuTable()
                 return G_reader_settings:isTrue("calibre_search_from_reader")
             end,
             callback = function()
-                local current = G_reader_settings:isTrue("calibre_search_from_reader")
-                G_reader_settings:saveSetting("calibre_search_from_reader", not current)
+                G_reader_settings:toggle("calibre_search_from_reader")
                 UIManager:show(InfoMessage:new{
                     text = _("This will take effect on next restart."),
                 })
@@ -226,7 +226,8 @@ function Calibre:getWirelessMenuTable()
         local enabled = G_reader_settings:nilOrTrue("calibre_wireless")
         return enabled and not CalibreWireless.calibre_socket
     end
-    return {
+
+    local t = {
         {
             text = _("Enable wireless client"),
             separator = true,
@@ -248,7 +249,7 @@ function Calibre:getWirelessMenuTable()
             end,
         },
         {
-            text = _("Set inbox directory"),
+            text = _("Set inbox folder"),
             enabled_func = isEnabled,
             callback = function()
                 CalibreWireless:setInboxDir()
@@ -336,6 +337,49 @@ function Calibre:getWirelessMenuTable()
             },
         },
     }
+
+    if not CalibreExtensions:isCustom() then
+        table.insert(t, 2, {
+            text = _("File formats"),
+            enabled_func = isEnabled,
+            sub_item_table_func = function()
+                local submenu = {
+                    {
+                        text = _("About formats"),
+                        keep_menu_open = true,
+                        separator = true,
+                        callback = function()
+                            UIManager:show(InfoMessage:new{
+                                text = string.format("%s: %s \n\n%s",
+                                _("Supported file formats"),
+                                CalibreExtensions:getInfo(),
+                                _("Unsupported formats will be converted by calibre to the first format of the list."))
+                            })
+                        end,
+                    }
+                }
+
+                for i, v in ipairs(CalibreExtensions.outputs) do
+                    table.insert(submenu, {})
+                    submenu[i+1].text = v
+                    submenu[i+1].checked_func = function()
+                        if v == CalibreExtensions.default_output then
+                            return true
+                        end
+                        return false
+                    end
+                    submenu[i+1].callback = function()
+                        if type(v) == "string" and v ~= CalibreExtensions.default_output then
+                            CalibreExtensions.default_output = v
+                            G_reader_settings:saveSetting("calibre_wireless_default_format", CalibreExtensions.default_output)
+                        end
+                    end
+                end
+                return submenu
+            end,
+        })
+    end
+    return t
 end
 
 return Calibre

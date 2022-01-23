@@ -8,16 +8,19 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
-local Font = require("ui/font")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local Persist = require("persist")
 local Screen = require("device").screen
+local Size = require("ui/size")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local socket = require("socket")
+local rapidjson = require("rapidjson")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -45,16 +48,8 @@ local function getAllMetadata(t)
                 end
             end
             for _, book in ipairs(CalibreMetadata.books) do
-                local slim_book = {}
-                slim_book.title = book.title
-                slim_book.lpath = book.lpath
-                slim_book.authors = book.authors
-                slim_book.series = book.series
-                slim_book.series_index = book.series_index
-                slim_book.tags = book.tags
-                slim_book.size = book.size
-                slim_book.rootpath = path
-                table.insert(books, #books + 1, slim_book)
+                book.rootpath = path
+                table.insert(books, #books + 1, book)
             end
             CalibreMetadata:clean()
         end
@@ -90,7 +85,7 @@ end
 local function getBooksBySeries(t, series)
     local result = {}
     for _, book in ipairs(t) do
-        if book.series and type(book.series) ~= "function" then
+        if book.series and book.series ~= rapidjson.null then
             if book.series == series then
                 table.insert(result, book)
             end
@@ -103,9 +98,11 @@ end
 local function searchByTag(t, query, case_insensitive)
     local freq = {}
     for _, book in ipairs(t) do
-        for __, tag in ipairs(book.tags) do
-            if match(tag, query, case_insensitive) then
-                freq[tag] = (freq[tag] or 0) + 1
+        if type(book.tags) == "table" then
+            for __, tag in ipairs(book.tags) do
+                if match(tag, query, case_insensitive) then
+                    freq[tag] = (freq[tag] or 0) + 1
+                end
             end
         end
     end
@@ -116,7 +113,7 @@ end
 local function searchBySeries(t, query, case_insensitive)
     local freq = {}
     for _, book in ipairs(t) do
-        if book.series and type(book.series) ~= "function" then
+        if book.series and book.series ~= rapidjson.null then
             if match(book.series, query, case_insensitive) then
                 freq[book.series] = (freq[book.series] or 0) + 1
             end
@@ -145,13 +142,13 @@ local function getBookInfo(book)
     -- all entries can be empty, except size, which is always filled by calibre.
     local title = _("Title:") .. " " .. book.title or "-"
     local authors = _("Author(s):") .. " " .. getEntries(book.authors) or "-"
-    local size = _("Size:") .. " " .. string.format("%4.1fM", book.size/1024/1024)
+    local size = _("Size:") .. " " .. util.getFriendlySize(book.size) or _("Unknown")
     local tags = getEntries(book.tags)
     if tags then
         tags = _("Tags:") .. " " .. tags
     end
     local series
-    if book.series and type(book.series) ~= "function" then
+    if book.series and book.series ~= rapidjson.null then
         series = _("Series:") .. " " .. book.series
     end
     return string.format("%s\n%s\n%s%s%s", title, authors,
@@ -172,19 +169,19 @@ local CalibreSearch = InputContainer:new{
         "find_by_path",
     },
 
+    cache_dir = DataStorage:getDataDir() .. "/cache/calibre",
     cache_libs = Persist:new{
-        path = DataStorage:getDataDir() .. "/cache/calibre-libraries.lua",
+        path = DataStorage:getDataDir() .. "/cache/calibre/libraries.lua",
     },
-
     cache_books = Persist:new{
-        path = DataStorage:getDataDir() .. "/cache/calibre-books.dat",
-        codec = "bitser",
+        path = DataStorage:getDataDir() .. "/cache/calibre/books.dat",
+        codec = "zstd",
     },
 }
 
 function CalibreSearch:ShowSearch()
     self.search_dialog = InputDialog:new{
-        title = _("Search books"),
+        title = _("Calibre metadata search"),
         input = self.search_value,
         buttons = {
             {
@@ -218,7 +215,7 @@ function CalibreSearch:ShowSearch()
                 },
                 {
                     -- @translators Search for books in calibre Library, via on-device metadata (as setup by Calibre's 'Send To Device').
-                    text = _("Find books"),
+                    text = _("Search books"),
                     enabled = true,
                     callback = function()
                         self.search_value = self.search_dialog:getInputText()
@@ -228,8 +225,6 @@ function CalibreSearch:ShowSearch()
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.8),
-        height = math.floor(Screen:getHeight() * 0.2),
     }
     UIManager:show(self.search_dialog)
     self.search_dialog:onShowKeyboard()
@@ -285,9 +280,13 @@ function CalibreSearch:bookCatalog(t, option)
             entry.text = string.format("%s - %s", book.title, book.authors[1])
         end
         entry.callback = function()
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
+            self.search_menu:onClose()
+
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(book.rootpath .. "/" .. book.lpath)
-            self.search_menu:onClose()
         end
         table.insert(catalog, entry)
     end
@@ -301,7 +300,7 @@ end
 
 -- find books, series or tags
 function CalibreSearch:find(option)
-    for _, opt in pairs(self.search_options) do
+    for _, opt in ipairs(self.search_options) do
         self[opt] = G_reader_settings:nilOrTrue("calibre_search_"..opt)
     end
 
@@ -322,22 +321,21 @@ function CalibreSearch:find(option)
     -- this shouldn't happen unless the user disabled all libraries or they are empty.
     if #self.books == 0 then
         logger.warn("no metadata to search, aborting")
-        self:prompt(_("No metadata found"))
+        self:prompt(_("No results in metadata"))
         return
     end
 
     -- measure time elapsed searching
-    local start = socket.gettime()
+    local start = TimeVal:now()
     if option == "find" then
-        local books = self:findBooks(self.books, self.search_value)
+        local books = self:findBooks(self.search_value)
         local result = self:bookCatalog(books)
         self:showresults(result)
     else
-        self:browse(option,1)
+        self:browse(option, 1)
     end
-    local elapsed = socket.gettime() - start
-    logger.info(string.format("search done in %f milliseconds (%s, %s, %s, %s, %s)",
-        elapsed * 1000,
+    logger.info(string.format("search done in %.3f milliseconds (%s, %s, %s, %s, %s)",
+        TimeVal:getDurationMs(start),
         option == "find" and "books" or option,
         "case sensitive: " .. tostring(not self.case_insensitive),
         "title: " .. tostring(self.find_by_title),
@@ -346,7 +344,7 @@ function CalibreSearch:find(option)
 end
 
 -- find books with current search options
-function CalibreSearch:findBooks(t, query)
+function CalibreSearch:findBooks(query)
     -- handle case sensitivity
     local function bookMatch(s, p)
         if not s or not p then return false end
@@ -375,7 +373,7 @@ function CalibreSearch:findBooks(t, query)
     end
     -- performs a book search
     local results = {}
-    for i, book in ipairs(t) do
+    for i, book in ipairs(self.books) do
         if bookSearch(book, query) then
             table.insert(results, #results + 1, book)
         end
@@ -389,11 +387,10 @@ function CalibreSearch:browse(option, run, chosen)
         dimen = Screen:getSize(),
     }
     self.search_menu = Menu:new{
-        width = Screen:getWidth()-15,
-        height = Screen:getHeight()-15,
+        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
+        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
-        cface = Font:getFace("smallinfofont"),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
@@ -443,17 +440,16 @@ end
 -- show search results
 function CalibreSearch:showresults(t, title)
     if not title then
-        title = _("Search Results")
+        title = _("Search results")
     end
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
     }
     self.search_menu = Menu:new{
-        width = Screen:getWidth()-15,
-        height = Screen:getHeight()-15,
+        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
+        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
-        cface = Font:getFace("smallinfofont"),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)
@@ -499,6 +495,7 @@ function CalibreSearch:prompt(message)
                 paths = paths .. "\n" .. _("SD card") .. ": " .. sd_paths
             end
 
+            lfs.mkdir(self.cache_dir)
             self.cache_libs:save(self.libraries)
             self:invalidateCache()
             self.books = self:getMetadata()
@@ -560,22 +557,39 @@ end
 
 -- get metadata from cache or calibre files
 function CalibreSearch:getMetadata()
-    local start = socket.gettime()
-    local template = "metadata: %d books imported from %s in %f milliseconds"
+    local start = TimeVal:now()
+    local template = "metadata: %d books imported from %s in %.3f milliseconds"
 
     -- try to load metadata from cache
     if self.cache_metadata then
         local function cacheIsNewer(timestamp)
-            local file_timestamp = self.cache_books:timestamp()
-            if not timestamp or not file_timestamp then return false end
+            local cache_timestamp = self.cache_books:timestamp()
+            -- stat returns a true Epoch (UTC)
+            if not timestamp or not cache_timestamp then return false end
             local Y, M, D, h, m, s = timestamp:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
-            local date = os.time({year = Y, month = M, day = D, hour = h, min = m, sec = s})
-            return file_timestamp > date
+            -- calibre also stores this in UTC (c.f., calibre.utils.date.isoformat)...
+            -- But os.time uses mktime, which converts it to *local* time...
+            -- Meaning we'll have to jump through a lot of stupid hoops to make the two agree...
+            local meta_timestamp = os.time({year = Y, month = M, day = D, hour = h, min = m, sec = s})
+            -- To that end, compute the local timezone's offset to UTC via strftime's %z token...
+            local tz = os.date("%z") -- +hhmm or -hhmm
+            -- We deal with a time_t, so, convert that to seconds...
+            local tz_sign, tz_hours, tz_minutes = tz:match("([+-])(%d%d)(%d%d)")
+            local utc_diff = (tonumber(tz_hours) * 60 * 60) + (tonumber(tz_minutes) * 60)
+            if tz_sign == "-" then
+                utc_diff = -utc_diff
+            end
+            meta_timestamp = meta_timestamp + utc_diff
+            logger.dbg("CalibreSearch:getMetadata: Cache timestamp   :", cache_timestamp, os.date("!%FT%T.000000+00:00", cache_timestamp), os.date("(%F %T %z)", cache_timestamp))
+            logger.dbg("CalibreSearch:getMetadata: Metadata timestamp:", meta_timestamp, timestamp, os.date("(%F %T %z)", meta_timestamp))
+
+            return cache_timestamp > meta_timestamp
         end
 
         local cache, err = self.cache_books:load()
         if not cache then
             logger.warn("invalid cache:", err)
+            self:invalidateCache()
         else
             local is_newer = true
             for path, enabled in pairs(self.libraries) do
@@ -585,8 +599,7 @@ function CalibreSearch:getMetadata()
                 end
             end
             if is_newer then
-                local elapsed = socket.gettime() - start
-                logger.info(string.format(template, #cache, "cache", elapsed * 1000))
+                logger.info(string.format(template, #cache, "cache", TimeVal:getDurationMs(start)))
                 return cache
             else
                 logger.warn("cache is older than metadata, ignoring it")
@@ -597,22 +610,25 @@ function CalibreSearch:getMetadata()
     -- try to load metadata from calibre files and dump it to cache file, if enabled.
     local books = getAllMetadata(self.libraries)
     if self.cache_metadata then
-        local dump = {}
+        local serialized_table = {}
         local function removeNull(t)
             for _, key in ipairs({"series", "series_index"}) do
-                if type(t[key]) == "function" then
+                if t[key] == rapidjson.null then
                     t[key] = nil
                 end
             end
             return t
         end
         for index, book in ipairs(books) do
-            table.insert(dump, index, removeNull(book))
+            table.insert(serialized_table, index, removeNull(book))
         end
-        self.cache_books:save(dump)
+        lfs.mkdir(self.cache_dir)
+        local ok, err = self.cache_books:save(serialized_table)
+        if not ok then
+            logger.info("Failed to serialize calibre metadata cache:", err)
+        end
     end
-    local elapsed = socket.gettime() - start
-    logger.info(string.format(template, #books, "calibre", elapsed * 1000))
+    logger.info(string.format(template, #books, "calibre", TimeVal:getDurationMs(start)))
     return books
 end
 

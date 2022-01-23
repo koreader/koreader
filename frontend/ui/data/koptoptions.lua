@@ -21,15 +21,50 @@ local tableOfNumbersToTableOfStrings = function(numbers)
 end
 
 local KoptOptions = {
-    prefix = 'kopt',
-    needs_redraw_on_change = true,
+    prefix = "kopt",
     {
         icon = "appbar.rotation",
         options = {
             {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
-                toggle = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
+                item_icons_func = function()
+                    if Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
+                        -- P, 0UR
+                        return {
+                            "rotation.P.90CCW",
+                            "rotation.P.0UR",
+                            "rotation.P.90CW",
+                            "rotation.P.180UD",
+                        }
+                    elseif Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT_ROTATED then
+                        -- P, 180UD
+                        return {
+                            "rotation.P.90CW",
+                            "rotation.P.180UD",
+                            "rotation.P.90CCW",
+                            "rotation.P.0UR",
+                        }
+                    elseif Screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE then
+                        -- L, 90CW
+                        return {
+                            "rotation.L.90CCW",
+                            "rotation.L.0UR",
+                            "rotation.L.90CW",
+                            "rotation.L.180UD",
+                        }
+                    else
+                        -- L, 90CCW
+                        return {
+                            "rotation.L.90CW",
+                            "rotation.L.180UD",
+                            "rotation.L.90CCW",
+                            "rotation.L.0UR",
+                        }
+                    end
+                end,
+                -- For Dispatcher & onMakeDefault's sake
+                labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
                 alternate = false,
                 values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
                 args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
@@ -48,7 +83,7 @@ local KoptOptions = {
                 name_text = _("Page Crop"),
                 -- manual=0, auto=1, semi-auto=2, none=3
                 -- ordered from least to max cropping done or possible
-                toggle = {_("none"), _("auto"), _("semi-auto"), _("manual")},
+                toggle = {C_("Page crop", "none"), C_("Page crop", "auto"), C_("Page crop", "semi-auto"), C_("Page crop", "manual")},
                 alternate = false,
                 values = {3, 1, 2, 0},
                 default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
@@ -68,12 +103,25 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "page_margin",
                 name_text = _("Margin"),
-                toggle = {_("small"), _("medium"), _("large")},
+                toggle = {C_("Page margin", "small"), C_("Page margin", "medium"), C_("Page margin", "large")},
                 values = {0.05, 0.10, 0.25},
                 default_value = DKOPTREADER_CONFIG_PAGE_MARGIN,
                 event = "MarginUpdate",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set margins to be applied after page-crop and zoom modes are applied.]]),
+            },
+            {
+                name = "auto_straighten",
+                name_text = _("Auto Straighten"),
+                toggle = {_("0°"), _("5°"), _("10°"), _("15°"), _("25°")},
+                values = {0, 5, 10, 15, 25},
+                event = "DummyEvent",
+                args = {0, 5, 10, 15, 25},
+                more_options = true,
+                default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Attempt to automatically straighten tilted source pages.
+Will rotate up to specified value.]]),
             },
         }
     },
@@ -83,8 +131,12 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "zoom_overlap_h",
                 name_text = _("Horizontal overlap"),
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 buttonprogress = true,
-                fine_tune = true,
+                more_options = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
                 default_pos = 4,
                 default_value = 36,
@@ -101,8 +153,12 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "zoom_overlap_v",
                 name_text = _("Vertical overlap"),
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 buttonprogress = true,
-                fine_tune = true,
+                more_options = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
                 default_pos = 4,
                 default_value = 36,
@@ -119,15 +175,19 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "zoom_mode_type",
                 name_text = _("Fit"),
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 toggle = {_("full"), _("width"), _("height")},
                 alternate = false,
                 values = {2, 1, 0},
-                default_value = 2,
+                default_value = 1,
                 show_func = function(config) return config and config.zoom_mode_genus > 2 end,
                 event = "DefineZoom",
                 args = {"full", "width", "height"},
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Set what to fit.]]),
+                help_text = _([[Set how the page should be resized to fit the screen.]]),
             },
             {
                 name = "zoom_range_number",
@@ -140,6 +200,10 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                     return _("Number")
                 end,
                 name_text_true_values = true,
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 show_true_value_func = function(str)
                     return string.format("%.1f", str)
                 end,
@@ -166,6 +230,10 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name = "zoom_factor",
                 name_text = _("Zoom factor"),
                 name_text_true_values = true,
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 show_true_value_func = function(str)
                     return string.format("%.1f", str)
                 end,
@@ -190,6 +258,10 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "zoom_mode_genus",
                 name_text = _("Zoom to"),
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 item_icons = {
                     "zoom.page",
@@ -200,6 +272,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 },
                 alternate = false,
                 values = {4, 3, 2, 1, 0},
+                labels = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 default_value = 4,
                 event = "DefineZoom",
                 args = {"page", "content", "columns", "rows", "manual"},
@@ -209,7 +282,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name = "zoom_direction",
                 name_text = _("Direction"),
                 enabled_func = function(config)
-                    return config.zoom_mode_genus < 3
+                    return optionsutil.enableIfEquals(config, "text_wrap", 0) and config.zoom_mode_genus < 3
                 end,
                 item_icons = {
                     "direction.LRTB",
@@ -223,6 +296,16 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 },
                 alternate = false,
                 values = {7, 6, 5, 4, 3, 2, 1, 0},
+                labels = {
+                    _("Left to Right, Top to Bottom"),
+                    _("Top to Bottom, Left to Right"),
+                    _("Left to Right, Bottom to Top"),
+                    _("Bottom to Top, Left to Right"),
+                    _("Bottom to Top, Right to Left"),
+                    _("Right to Left, Bottom to Top"),
+                    _("Top to Bottom, Right to Left"),
+                    _("Right to Left, Top to Bottom"),
+                },
                 default_value = 7,
                 event = "DefineZoom",
                 args = {7, 6, 5, 4, 3, 2, 1, 0},
@@ -251,7 +334,7 @@ left to right or reverse, top to bottom or reverse.]]),
             {
                 name = "page_gap_height",
                 name_text = _("Page Gap"),
-                toggle = {_("none"), _("small"), _("medium"), _("large")},
+                toggle = {C_("Page gap", "none"), C_("Page gap", "small"), C_("Page gap", "medium"), C_("Page gap", "large")},
                 values = {0, 8, 16, 32},
                 default_value = 8,
                 args = {0, 8, 16, 32},
@@ -276,7 +359,7 @@ left to right or reverse, top to bottom or reverse.]]),
             {
                 name = "line_spacing",
                 name_text = _("Line Spacing"),
-                toggle = {_("small"), _("medium"), _("large")},
+                toggle = {C_("Line spacing", "small"), C_("Line spacing", "medium"), C_("Line spacing", "large")},
                 values = {1.0, 1.2, 1.4},
                 default_value = DKOPTREADER_CONFIG_LINE_SPACING,
                 advanced = true,
@@ -361,7 +444,7 @@ The first option ("auto") tries to automatically align reflowed text as it is in
             {
                 name = "word_spacing",
                 name_text = _("Word Gap"),
-                toggle = {_("small"), _("auto"), _("large")},
+                toggle = {C_("Word gap", "small"), C_("Word gap", "auto"), C_("Word gap", "large")},
                 values = DKOPTREADER_CONFIG_WORD_SPACINGS,
                 default_value = DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING,
                 enabled_func = function(configurable)
@@ -377,17 +460,7 @@ The first option ("auto") tries to automatically align reflowed text as it is in
                 toggle = {_("off"), _("on")},
                 values = {0, 1},
                 default_value = DKOPTREADER_CONFIG_TEXT_WRAP,
-                events = {
-                    {
-                        event = "RedrawCurrentPage",
-                    },
-                    {
-                        event = "RestoreZoomMode",
-                    },
-                    {
-                        event = "InitScrollPageStates",
-                    },
-                },
+                event = "ReflowUpdated",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Reflow mode extracts text and images from the original document, possibly discarding some formatting, and reflows it on the screen for easier reading.
 Some of the other settings are only available when reflow mode is enabled.]]),
@@ -452,7 +525,7 @@ This can also be used to remove some gray background or to convert a grayscale o
         icon = "appbar.settings",
         options = {
             {
-                name="doc_language",
+                name = "doc_language",
                 name_text = _("Document Language"),
                 toggle = DKOPTREADER_CONFIG_DOC_LANGS_TEXT,
                 values = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
@@ -507,18 +580,6 @@ This can also be used to remove some gray background or to convert a grayscale o
                 name_text_hold_callback = optionsutil.showValues,
             },
             {
-                name = "auto_straighten",
-                name_text = _("Auto Straighten"),
-                toggle = {_("0 deg"), _("5 deg"), _("10 deg")},
-                values = {0, 5, 10},
-                default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
-                show = false, -- does not work (and slows rendering)
-                enabled_func = function(configurable)
-                    return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
-                end,
-                name_text_hold_callback = optionsutil.showValues,
-            },
-            {
                 name = "detect_indent",
                 name_text = _("Indentation"),
                 toggle = {_("off"), _("on")},
@@ -538,7 +599,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                     "column.two",
                     "column.three",
                 },
-                values = {1,2,3},
+                values = {1, 2, 3},
                 default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)

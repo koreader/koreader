@@ -1,15 +1,24 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local TimeVal = require("ui/timeval")
 local logger = require("logger")
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/linux_input_h")
 
 local function yes() return true end
 local function no() return false end
 
-local EV_ABS = 3
-local ABS_X = 00
-local ABS_Y = 01
-local ABS_MT_POSITION_X = 53
-local ABS_MT_POSITION_Y = 54
+-- returns isRm2, device_model
+local function getModel()
+    local f = io.open("/sys/devices/soc0/machine")
+    if not f then
+        error("missing sysfs entry for a remarkable")
+    end
+    local model = f:read("*line")
+    f:close()
+    return model == "reMarkable 2.0", model
+end
+
 -- Resolutions from libremarkable src/framebuffer/common.rs
 local screen_width = 1404 -- unscaled_size_check: ignore
 local screen_height = 1872 -- unscaled_size_check: ignore
@@ -17,9 +26,11 @@ local wacom_width = 15725 -- unscaled_size_check: ignore
 local wacom_height = 20967 -- unscaled_size_check: ignore
 local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
+local isRm2, rm_model = getModel()
 
 local Remarkable = Generic:new{
     isRemarkable = yes,
+    model = rm_model,
     hasKeys = yes,
     needsScreenRefreshAfterResume = no,
     hasOTAUpdates = yes,
@@ -27,6 +38,7 @@ local Remarkable = Generic:new{
     canPowerOff = yes,
     isTouchDevice = yes,
     hasFrontlight = no,
+    hasSystemFonts = yes,
     display_dpi = 226,
     -- Despite the SoC supporting it, it's finicky in practice (#6772)
     canHWInvert = no,
@@ -34,7 +46,6 @@ local Remarkable = Generic:new{
 }
 
 local Remarkable1 = Remarkable:new{
-    model = "reMarkable",
     mt_width = 767, -- unscaled_size_check: ignore
     mt_height = 1023, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event0",
@@ -45,21 +56,19 @@ local Remarkable1 = Remarkable:new{
 }
 
 function Remarkable1:adjustTouchEvent(ev, by)
-    if ev.type == EV_ABS then
-        ev.time = TimeVal:now()
+    if ev.type == C.EV_ABS then
         -- Mirror X and Y and scale up both X & Y as touch input is different res from
         -- display
-        if ev.code == ABS_MT_POSITION_X then
+        if ev.code == C.ABS_MT_POSITION_X then
             ev.value = (Remarkable1.mt_width - ev.value) *  by.mt_scale_x
         end
-        if ev.code == ABS_MT_POSITION_Y then
+        if ev.code == C.ABS_MT_POSITION_Y then
             ev.value = (Remarkable1.mt_height - ev.value) * by.mt_scale_y
         end
     end
 end
 
 local Remarkable2 = Remarkable:new{
-    model = "reMarkable 2",
     mt_width = 1403, -- unscaled_size_check: ignore
     mt_height = 1871, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event1",
@@ -70,26 +79,32 @@ local Remarkable2 = Remarkable:new{
 }
 
 function Remarkable2:adjustTouchEvent(ev, by)
-    ev.time = TimeVal:now()
-    if ev.type == EV_ABS then
+    if ev.type == C.EV_ABS then
         -- Mirror Y and scale up both X & Y as touch input is different res from
         -- display
-        if ev.code == ABS_MT_POSITION_X then
+        if ev.code == C.ABS_MT_POSITION_X then
             ev.value = (ev.value) * by.mt_scale_x
         end
-        if ev.code == ABS_MT_POSITION_Y then
+        if ev.code == C.ABS_MT_POSITION_Y then
             ev.value = (Remarkable2.mt_height - ev.value) * by.mt_scale_y
         end
+    end
+
+    -- Wacom uses CLOCK_REALTIME, but the Touchscreen spits out frozen timestamps.
+    -- Inject CLOCK_MONOTONIC timestamps at the end of every input frame in order to have consistent gesture detection across input devices.
+    -- c.f., #7536
+    if ev.type == C.EV_SYN and ev.code == C.SYN_REPORT then
+       ev.time = TimeVal:now()
     end
 end
 
 local adjustAbsEvt = function(self, ev)
-    if ev.type == EV_ABS then
-        if ev.code == ABS_X then
-            ev.code = ABS_Y
+    if ev.type == C.EV_ABS then
+        if ev.code == C.ABS_X then
+            ev.code = C.ABS_Y
             ev.value = (wacom_height - ev.value) * wacom_scale_y
-        elseif ev.code == ABS_Y then
-            ev.code = ABS_X
+        elseif ev.code == C.ABS_Y then
+            ev.code = C.ABS_X
             ev.value = ev.value * wacom_scale_x
         end
     end
@@ -167,31 +182,15 @@ function Remarkable:setDateTime(year, month, day, hour, min, sec)
     return os.execute(command) == 0
 end
 
-function Remarkable1:suspend()
-    os.execute("systemctl suspend")
-end
-
-function Remarkable2:suspend()
-    -- Need to remove brcmfmac kernel module before suspend. Otherwise the module crashes on wakeup
-    os.execute("./disable-wifi.sh")
-
-    os.execute("systemctl suspend")
-    -- While device is suspended, when the user presses the power button and wakes up the device,
-    -- a "Power" event is NOT sent.
-    -- So we schedule a manual `UIManager:resume` call just far enough in the future that it won't
-    -- trigger before the `systemctl suspend` command finishes suspending the device
-    local UIManager = require("ui/uimanager")
-    UIManager:scheduleIn(0.5, function()
-        UIManager:resume()
-    end)
-end
-
 function Remarkable:resume()
 end
 
+function Remarkable:suspend()
+    os.execute("./disable-wifi.sh")
+    os.execute("systemctl suspend")
+end
+
 function Remarkable:powerOff()
-    self.screen:clear()
-    self.screen:refreshFull()
     os.execute("systemctl poweroff")
 end
 
@@ -199,19 +198,16 @@ function Remarkable:reboot()
     os.execute("systemctl reboot")
 end
 
-local f = io.open("/sys/devices/soc0/machine")
-if not f then error("missing sysfs entry for a remarkable") end
+logger.info(string.format("Starting %s", rm_model))
 
-local deviceType = f:read("*line")
-f:close()
+function Remarkable:getDefaultCoverPath()
+    return "/usr/share/remarkable/poweroff.png"
+end
 
-logger.info("deviceType: ", deviceType)
-
-if deviceType == "reMarkable 2.0" then
+if isRm2 then
     if not os.getenv("RM2FB_SHIM") then
         error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
     end
-
     return Remarkable2
 else
     return Remarkable1

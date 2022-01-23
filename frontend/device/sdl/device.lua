@@ -55,7 +55,7 @@ local Device = Generic:new{
     model = "SDL",
     isSDL = yes,
     home_dir = os.getenv("XDG_DOCUMENTS_DIR") or os.getenv("HOME"),
-    hasBattery = SDL.getPowerInfo(),
+    hasBattery = SDL.getPowerInfo,
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
@@ -64,6 +64,7 @@ local Device = Generic:new{
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
     hasEinkScreen = no,
+    hasSystemFonts = yes,
     canSuspend = no,
     startTextInput = SDL.startTextInput,
     stopTextInput = SDL.stopTextInput,
@@ -90,7 +91,7 @@ local Device = Generic:new{
             external.when_back_callback = nil
         end
     end,
-    window = G_reader_settings:readSetting("sdl_window") or {},
+    window = G_reader_settings:readSetting("sdl_window", {}),
 }
 
 local AppImage = Device:new{
@@ -190,32 +191,26 @@ function Device:init()
                     w = 0, h = 0,
                 }
 
-                local timev = TimeVal:new(ev.time)
+                setmetatable(ev.time, TimeVal)
 
                 local fake_ges = {
                     ges = "pan",
                     distance = 200,
-                    distance_delayed = 200,
                     relative = {
                         x = 50*scrolled_x,
                         y = 100*scrolled_y,
                     },
-                    relative_delayed = {
-                        x = 50*scrolled_x,
-                        y = 100*scrolled_y,
-                    },
                     pos = pos,
-                    time = timev,
+                    time = ev.time,
                     mousewheel_direction = scrolled_y,
                 }
                 local fake_ges_release = {
                     ges = "pan_release",
                     distance = fake_ges.distance,
-                    distance_delayed = fake_ges.distance_delayed,
                     relative = fake_ges.relative,
-                    relative_delayed = fake_ges.relative_delayed,
                     pos = pos,
-                    time = timev,
+                    time = ev.time,
+                    from_mousewheel = true,
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)
                 local fake_release_ev = Event:new("Gesture", fake_ges_release)
@@ -261,15 +256,12 @@ function Device:init()
                 if FileManager.instance then
                     FileManager.instance:reinit(FileManager.instance.path,
                         FileManager.instance.focused_file)
-                    UIManager:setDirty(FileManager.instance.banner, function()
-                        return "ui", FileManager.instance.banner.dimen
-                    end)
                 end
             elseif ev.code == SDL_WINDOWEVENT_MOVED then
                 self.window.left = ev.value.data1
                 self.window.top = ev.value.data2
             elseif ev.code == SDL_TEXTINPUT then
-                UIManager:broadcastEvent(Event:new("TextInput", ev.value))
+                UIManager:sendEvent(Event:new("TextInput", tostring(ev.value)))
             end
         end,
         hasClipboardText = function()
@@ -323,28 +315,17 @@ function Device:setDateTime(year, month, day, hour, min, sec)
     end
 end
 
-function Device:exit()
-    G_reader_settings:saveSetting("sdl_window", self.window)
-    G_reader_settings:flush()
-    Generic.exit(self)
-end
+function Emulator:supportsScreensaver() return true end
 
 function Emulator:simulateSuspend()
-    local InfoMessage = require("ui/widget/infomessage")
-    local UIManager = require("ui/uimanager")
-    local _ = require("gettext")
-    UIManager:show(InfoMessage:new{
-        text = _("Suspend")
-    })
+    local Screensaver = require("ui/screensaver")
+    Screensaver:setup()
+    Screensaver:show()
 end
 
 function Emulator:simulateResume()
-    local InfoMessage = require("ui/widget/infomessage")
-    local UIManager = require("ui/uimanager")
-    local _ = require("gettext")
-    UIManager:show(InfoMessage:new{
-        text = _("Resume")
-    })
+    local Screensaver = require("ui/screensaver")
+    Screensaver:close()
 end
 
 -- fake network manager for the emulator

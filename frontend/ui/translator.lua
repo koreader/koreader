@@ -9,6 +9,7 @@ This module translates text using Google Translate.
 --  https://github.com/ssut/py-googletrans/blob/master/googletrans/client.py
 --  https://stackoverflow.com/questions/26714426/what-is-the-meaning-of-google-translate-query-params
 
+local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
@@ -182,13 +183,13 @@ end
 
 function Translator:getLanguageName(lang, default_string)
     if SUPPORTED_LANGUAGES[lang] then
-        return SUPPORTED_LANGUAGES[lang]
+        return SUPPORTED_LANGUAGES[lang], true
     elseif ALT_LANGUAGE_CODES[lang] then
-        return SUPPORTED_LANGUAGES[ALT_LANGUAGE_CODES[lang]]
+        return SUPPORTED_LANGUAGES[ALT_LANGUAGE_CODES[lang]], true
     elseif lang then
-        return lang:upper()
+        return lang:upper(), false
     end
-    return default_string
+    return default_string, false
 end
 
 -- Will be called by ReaderHighlight to make it available in Reader menu
@@ -201,7 +202,7 @@ function Translator:genSettingsMenu()
                     return T("%1 (%2)", lang_name, lang_key)
                 end,
                 checked_func = function()
-                    if G_reader_settings:readSetting(setting_name) then
+                    if G_reader_settings:has(setting_name) then
                         return lang_key == G_reader_settings:readSetting(setting_name)
                     else
                         return lang_key == default_checked_item
@@ -219,6 +220,10 @@ function Translator:genSettingsMenu()
         sub_item_table = {
             {
                 text = _("Auto-detect source language"),
+                help_text = _("This setting is best suited for foreign text found in books written in your native language."),
+                enabled_func = function()
+                    return not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
+                end,
                 checked_func = function()
                     return G_reader_settings:nilOrTrue("translator_from_auto_detect")
                 end,
@@ -231,11 +236,33 @@ function Translator:genSettingsMenu()
                     local lang = G_reader_settings:readSetting("translator_from_language")
                     return T(_("Translate from: %1"), self:getLanguageName(lang, ""))
                 end,
+                help_text = _("If a specific source language is manually selected, it will be used everywhere, in all your books."),
                 enabled_func = function()
                     return not G_reader_settings:nilOrTrue("translator_from_auto_detect")
+                        and not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
                 end,
                 sub_item_table = genLanguagesItems("translator_from_language"),
                 keep_menu_open = true,
+            },
+            {
+                text_func = function()
+                    local __, name = self:getDocumentLanguage()
+                    return T(_("Translate from book language: %1"), name or _("N/A"))
+                end,
+                help_text = _([[
+With books that specify their main language in their metadata (most EPUBs and FB2s), enabling this option will make this language the source language. Otherwise, auto-detection or the selected language will be used.
+This is useful:
+- For books in a foreign language, where consistent translation is needed and words in other languages are rare.
+- For books in familiar languages, to get definitions for words from the translation service.]]),
+                enabled_func = function()
+                    return self:getDocumentLanguage() ~= nil
+                end,
+                checked_func = function()
+                    return G_reader_settings:isTrue("translator_from_doc_lang")
+                end,
+                callback = function()
+                    G_reader_settings:flipTrue("translator_from_doc_lang")
+                end,
                 separator = true,
             },
             {
@@ -250,9 +277,47 @@ function Translator:genSettingsMenu()
     }
 end
 
+function Translator:getDocumentLanguage()
+    local ReaderUI = require("apps/reader/readerui")
+    local ui = ReaderUI:_getRunningInstance()
+    if not ui or not ui.document then
+        return
+    end
+    local props = ui.document:getProps()
+    if not props or not props.language or props.language == "" then
+        return
+    end
+    local lang = props.language
+    lang = lang:match("(.*)-") or lang
+    lang = lang:lower()
+    local name, supported = self:getLanguageName(lang, "")
+    if supported then
+        return lang, name
+    end
+    -- ReaderTypography has a map of lang aliases (that we may meet
+    -- in book metadata) to their normalized lang tag: use it
+    local ReaderTypography = require("apps/reader/modules/readertypography")
+    lang = ReaderTypography.LANG_ALIAS_TO_LANG_TAG[lang]
+    if not lang then
+        return
+    end
+    name, supported = self:getLanguageName(lang, "")
+    if supported then
+        return lang, name
+    end
+end
+
 function Translator:getSourceLanguage()
+    if G_reader_settings:isTrue("translator_from_doc_lang") then
+        local lang = self:getDocumentLanguage()
+        if lang then
+            return lang
+        end
+        -- No document or metadata lang tag not supported:
+        -- fallback to other settings
+    end
     if G_reader_settings:isFalse("translator_from_auto_detect") and
-            G_reader_settings:readSetting("translator_from_language") then
+            G_reader_settings:has("translator_from_language") then
         return G_reader_settings:readSetting("translator_from_language")
     end
     return AUTODETECT_LANGUAGE -- "auto"
@@ -284,13 +349,12 @@ Returns decoded JSON table from translate server.
 @treturn string result, or nil
 --]]
 function Translator:loadPage(text, target_lang, source_lang)
-    local socket = require('socket')
-    local url = require('socket.url')
-    local http = require('socket.http')
-    local https = require('ssl.https')
-    local ltn12 = require('ltn12')
+    local socket = require("socket")
+    local socketutil = require("socketutil")
+    local url = require("socket.url")
+    local http = require("socket.http")
+    local ltn12 = require("ltn12")
 
-    local request, sink = {}, {}
     local query = ""
     self.trans_params.tl = target_lang
     self.trans_params.sl = source_lang
@@ -308,25 +372,24 @@ function Translator:loadPage(text, target_lang, source_lang)
     parsed.query = query .. "q=" .. url.escape(text)
 
     -- HTTP request
-    request['url'] = url.build(parsed)
+    local sink = {}
+    socketutil:set_timeout()
+    local request = {
+        url     = url.build(parsed),
+        method  = "GET",
+        sink    = ltn12.sink.table(sink),
+    }
     logger.dbg("Calling", request.url)
-    request['method'] = 'GET'
-    request['sink'] = ltn12.sink.table(sink)
-    -- We may try to set a common User-Agent if it happens we're 403 Forbidden
-    -- request['headers'] = {
-    --     ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    -- }
-    http.TIMEOUT, https.TIMEOUT = 10, 10
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    -- first argument returned by skip is code
-    local _, headers, status = socket.skip(1, httpRequest(request))
+    -- Skip first argument (body, goes to the sink)
+    local code, headers, status = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
 
     -- raise error message when network is unavailable
     if headers == nil then
         error("Network is unreachable")
     end
 
-    if status ~= "HTTP/1.1 200 OK" then
+    if code ~= 200 then
         logger.warn("translator HTTP status not okay:", status)
         return
     end
@@ -414,9 +477,13 @@ Show translated text in TextViewer, with alternate translations
 @string target_lang[opt] (`"en"`, `"fr"`, `…`)
 @string source_lang[opt="auto"] (`"en"`, `"fr"`, `…`) or `"auto"` to auto-detect source language
 --]]
-function Translator:showTranslation(text, target_lang, source_lang)
+function Translator:showTranslation(text, target_lang, source_lang, from_highlight, page, index)
+    if Device:hasClipboard() then
+        Device.input.setClipboardText(text)
+    end
+
     local NetworkMgr = require("ui/network/manager")
-    if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang) end) then
+    if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang, from_highlight, page, index) end) then
         return
     end
 
@@ -424,11 +491,11 @@ function Translator:showTranslation(text, target_lang, source_lang)
     -- translation service query.
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-        self:_showTranslation(text, target_lang, source_lang)
+        self:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
     end)
 end
 
-function Translator:_showTranslation(text, target_lang, source_lang)
+function Translator:_showTranslation(text, target_lang, source_lang, from_highlight, page, index)
     if not target_lang then
         target_lang = self:getTargetLanguage()
     end
@@ -457,6 +524,7 @@ function Translator:_showTranslation(text, target_lang, source_lang)
         source_lang = result[3]
     end
     local output = {}
+    local text_main = ""
 
     -- For both main and alternate translations, we may get multiple slices
     -- of the original text and its translations.
@@ -472,7 +540,8 @@ function Translator:_showTranslation(text, target_lang, source_lang)
             table.insert(translated, t)
         end
         table.insert(output, "▣ " .. table.concat(source, " "))
-        table.insert(output, "● " .. table.concat(translated, " "))
+        text_main = "● " .. table.concat(translated, " ")
+        table.insert(output, text_main)
     end
 
     if result[6] and type(result[6]) == "table" and #result[6] > 0 then
@@ -507,14 +576,79 @@ function Translator:_showTranslation(text, target_lang, source_lang)
     end
 
     -- table.insert(output, require("dump")(result)) -- for debugging
-    UIManager:show(TextViewer:new{
+    local text_all = table.concat(output, "\n")
+    local textviewer
+    local buttons_table = {
+        {
+            {
+                text = _("Close"),
+                is_enter_default = true,
+                callback = function()
+                    UIManager:close(textviewer)
+                end,
+            },
+        },
+    }
+    if Device:hasClipboard() then
+        table.insert(buttons_table, 1,
+            {
+                {
+                    text = _("Copy main translation"),
+                    callback = function()
+                        Device.input.setClipboardText(text_main)
+                    end,
+                },
+                {
+                    text = _("Copy all"),
+                    callback = function()
+                        Device.input.setClipboardText(text_all)
+                    end,
+                },
+            }
+        )
+    end
+    if from_highlight then
+        local ui = require("apps/reader/readerui").instance
+        table.insert(buttons_table, 1,
+            {
+                {
+                    text = _("Save main translation to note"),
+                    callback = function()
+                        UIManager:close(textviewer)
+                        UIManager:close(ui.highlight.highlight_dialog)
+                        if page then
+                            ui.highlight:editHighlight(page, index, false, text_main)
+                        else
+                            ui.highlight:addNote(text_main)
+                        end
+                    end,
+                },
+                {
+                    text = _("Save all to note"),
+                    callback = function()
+                        UIManager:close(textviewer)
+                        UIManager:close(ui.highlight.highlight_dialog)
+                        if page then
+                            ui.highlight:editHighlight(page, index, false, text_all)
+                        else
+                            ui.highlight:addNote(text_all)
+                        end
+                    end,
+                },
+            }
+        )
+    end
+    textviewer = TextViewer:new{
         title = T(_("Translation from %1"), self:getLanguageName(source_lang, "?")),
+        title_multilines = true,
             -- Showing the translation target language in this title may make
             -- it quite long and wrapped, taking valuable vertical spacing
-        text = table.concat(output, "\n"),
+        text = text_all,
         height = math.floor(Screen:getHeight() * 0.8),
         justified = G_reader_settings:nilOrTrue("dict_justify"),
-    })
+        buttons_table = buttons_table,
+    }
+    UIManager:show(textviewer)
 end
 
 return Translator

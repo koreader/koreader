@@ -32,16 +32,7 @@ end
 
 function ReaderBack:_getCurrentLocation()
     if self.ui.document.info.has_pages then
-        local current_location = self.ui.paging:getBookLocation()
-        if current_location then
-            -- We need a copy, as we're getting references to
-            -- objects ReaderPaging/ReaderView may still modify
-            local res = {}
-            for i=1, #current_location do
-                res[i] = util.tableDeepCopy(current_location[i])
-            end
-            return res
-        end
+        return self.ui.paging:getBookLocation()
     else
         return {
             xpointer = self.ui.rolling:getBookLocation(),
@@ -118,8 +109,8 @@ ReaderBack.onViewRecalculate = ReaderBack._onViewPossiblyUpdated
 ReaderBack.onPagePositionUpdated = ReaderBack._onViewPossiblyUpdated
 
 function ReaderBack:onBack()
-    local back_in_reader = G_reader_settings:readSetting("back_in_reader") or "previous_location"
-    local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
+    local back_in_reader = G_reader_settings:readSetting("back_in_reader", "previous_location")
+    local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
 
     if back_in_reader == "previous_read_page" then
         if #self.location_stack > 0 then

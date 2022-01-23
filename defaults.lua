@@ -27,13 +27,13 @@ DHINTCOUNT = 1
 DRENDER_MODE = 0 -- 0 is COLOUR
 
 -- minimum cache size
-DGLOBAL_CACHE_SIZE_MINIMUM = 1024*1024*10
+DGLOBAL_CACHE_SIZE_MINIMUM = 1024*1024*16
 
 -- proportion of system free memory used as global cache
 DGLOBAL_CACHE_FREE_PROPORTION = 0.4
 
 -- maximum cache size
-DGLOBAL_CACHE_SIZE_MAXIMUM = 1024*1024*60
+DGLOBAL_CACHE_SIZE_MAXIMUM = 1024*1024*512
 
 -- background colour in non scroll mode: 8 = gray, 0 = white, 15 = black
 DBACKGROUND_COLOR = 0
@@ -88,8 +88,8 @@ DTAP_ZONE_TOP_LEFT = {x = 0, y = 0, w = 1/8, h = 1/8}
 DTAP_ZONE_TOP_RIGHT = {x = 7/8, y = 0, w = 1/8, h = 1/8}
 DTAP_ZONE_BOTTOM_LEFT = {x = 0, y = 7/8, w = 1/8, h = 1/8}
 DTAP_ZONE_BOTTOM_RIGHT = {x = 7/8, y = 7/8, w = 1/8, h = 1/8}
-DDOUBLE_TAP_ZONE_NEXT_CHAPTER = {x = 6/8, y = 0, w = 2/8, h = 2/8}
-DDOUBLE_TAP_ZONE_PREV_CHAPTER = {x = 0, y = 0, w = 2/8, h = 2/8}
+DDOUBLE_TAP_ZONE_NEXT_CHAPTER = {x = 1/4, y = 0, w = 3/4, h = 1}
+DDOUBLE_TAP_ZONE_PREV_CHAPTER = {x = 0, y = 0, w = 1/4, h = 1}
 
 -- behaviour of swipes
 DCHANGE_WEST_SWIPE_TO_EAST = false

@@ -22,7 +22,7 @@ local ButtonDialogTitle = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
     title_padding = Size.padding.large,
     title_margin = Size.margin.title,
-    use_info_style = false, -- set to true to have the same look as ConfirmBox
+    use_info_style = true, -- set to false to have bold font style of the title
     info_face = Font:getFace("infofont"),
     info_padding = Size.padding.default,
     info_margin = Size.margin.default,
@@ -65,14 +65,13 @@ function ButtonDialogTitle:init()
                         bordersize = 0,
                         TextBoxWidget:new{
                             text = self.title,
-                            width = math.floor(Screen:getWidth() * 0.8),
+                            width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
                             face = self.use_info_style and self.info_face or self.title_face,
                             alignment = self.title_align or "left",
                         },
                     },
                     VerticalSpan:new{ width = Size.span.vertical_default },
                     ButtonTable:new{
-                        width = math.floor(Screen:getWidth() * 0.9),
                         buttons = self.buttons,
                         zero_sep = true,
                         show_parent = self,
@@ -96,7 +95,7 @@ end
 
 function ButtonDialogTitle:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
 end
 

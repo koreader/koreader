@@ -5,8 +5,8 @@ local FtpApi = require("apps/cloudstorage/ftpapi")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ReaderUI = require("apps/reader/readerui")
-local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local ltn12 = require("ltn12")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -19,21 +19,19 @@ function Ftp:run(address, user, pass, path)
     return FtpApi:listFolder(url, path)
 end
 
-function Ftp:downloadFile(item, address, user, pass, path, close)
+function Ftp:downloadFile(item, address, user, pass, path, callback_close)
     local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. item.url
     logger.dbg("downloadFile url", url)
-    local response = FtpApi:ftpGet(url, "retr")
+    path = util.fixUtf8(path, "_")
+    local file, err = io.open(path, "w")
+    if not file then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Could not save file to %1:\n%2"), BD.filepath(path), err),
+        })
+        return
+    end
+    local response = FtpApi:ftpGet(url, "retr", ltn12.sink.file(file))
     if response ~= nil then
-        path = util.fixUtf8(path, "_")
-        local file, err = io.open(path, "w")
-        if not file then
-            UIManager:show(InfoMessage:new{
-                text = T(_("Could not save file to %1:\n%2"), BD.filepath(path), err),
-            })
-            return
-        end
-        file:write(response)
-        file:close()
         local __, filename = util.splitFilePathName(path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then
             UIManager:show(InfoMessage:new{
@@ -44,7 +42,13 @@ function Ftp:downloadFile(item, address, user, pass, path, close)
                 text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
                     BD.filepath(path)),
                 ok_callback = function()
-                    close()
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
+                    if callback_close then
+                        callback_close()
+                    end
+
                     ReaderUI:showReader(path)
                 end
             })
@@ -155,8 +159,6 @@ Username and password are optional.]])
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

@@ -1,5 +1,5 @@
 --[[--
-2D Geometry utilities
+Utilities for 2D geometry.
 
 All of these apply to full rectangles:
 
@@ -15,20 +15,23 @@ Some behaviour is defined for dimensions:
     Geom:new{ w = Screen:scaleBySize(600), h = Screen:scaleBySize(800), }
 
 Just use it on simple tables that have x, y and/or w, h
-or define your own types using this as a metatable
+or define your own types using this as a metatable.
+
+Where @{ffi.blitbuffer|BlitBuffer} is concerned, a point at (0, 0) means the top-left corner.
 
 ]]
 
 local Math = require("optmath")
 
 --[[--
+Represents a full rectangle (all fields are set), a point (x & y are set), or a dimension (w & h are set).
 @table Geom
 ]]
 local Geom = {
-    x = 0,
-    y = 0,
-    w = 0,
-    h = 0,
+    x = 0, -- left origin
+    y = 0, -- top origin
+    w = 0, -- width
+    h = 0, -- height
 }
 
 function Geom:new(o)
@@ -78,7 +81,7 @@ function Geom:offsetTo(x, y)
 end
 
 --[[--
-Scales rectangle (grow to bottom and to the right) or dimension
+Scales rectangle (top-left corner is rounded down, bottom-right corner is rounded up) or dimension
 
 If a single factor is given, it is applied to both width and height
 
@@ -86,20 +89,22 @@ If a single factor is given, it is applied to both width and height
 @int zy scale for y axis
 ]]
 function Geom:scaleBy(zx, zy)
-    self.w = Math.round(self.w * zx)
-    self.h = Math.round(self.h * (zy or zx))
+    self.w = math.ceil(self.w * zx - 0.001)
+    self.h = math.ceil(self.h * (zy or zx) - 0.001)
     return self
 end
 
 --[[--
-This method also takes care of x and y on top of @{Geom:scaleBy}
+This method also takes care of x and y on top of @{Geom:scaleBy},
+c.f., fz_round_rect in MµPDF,
+      <https://github.com/ArtifexSoftware/mupdf/blob/d00de0e96a4a5ec90ffc30837d40cd624a6a89e0/source/fitz/geometry.c#L400-L416>
 
 @int zx scale for x axis
 @int zy scale for y axis
 ]]
 function Geom:transformByScale(zx, zy)
-    self.x = Math.round(self.x * zx)
-    self.y = Math.round(self.y * (zx or zy))
+    self.x = math.floor(self.x * zx + 0.001)
+    self.y = math.floor(self.y * (zy or zx) + 0.001)
     self:scaleBy(zx, zy)
 end
 
@@ -139,25 +144,7 @@ Works for rectangles, dimensions and points
 @treturn Geom
 ]]
 function Geom:combine(rect_b)
-    local combined = self:copy()
-    if not rect_b or rect_b:area() == 0 then return combined end
-    if combined.x > rect_b.x then
-        combined.x = rect_b.x
-    end
-    if combined.y > rect_b.y then
-        combined.y = rect_b.y
-    end
-    if self.x + self.w > rect_b.x + rect_b.w then
-        combined.w = self.x + self.w - combined.x
-    else
-        combined.w = rect_b.x + rect_b.w - combined.x
-    end
-    if self.y + self.h > rect_b.y + rect_b.h then
-        combined.h = self.y + self.h - combined.y
-    else
-        combined.h = rect_b.y + rect_b.h - combined.y
-    end
-    return combined
+    return Geom.boundingBox({self, rect_b})
 end
 
 --[[--
@@ -168,8 +155,9 @@ Returns a new rectangle for the part that we and a given rectangle share
 ]]--
 --- @todo what happens if there is no rectangle shared? currently behaviour is undefined.
 function Geom:intersect(rect_b)
-    -- make a copy of self
     local intersected = self:copy()
+    if not rect_b or rect_b:area() == 0 then return intersected end
+
     if self.x < rect_b.x then
         intersected.x = rect_b.x
     end
@@ -195,6 +183,8 @@ Returns true if self does not share any area with rect_b
 @tparam Geom rect_b
 ]]
 function Geom:notIntersectWith(rect_b)
+    if not rect_b or rect_b:area() == 0 then return true end
+
     if (self.x >= (rect_b.x + rect_b.w))
     or (self.y >= (rect_b.y + rect_b.h))
     or (rect_b.x >= (self.x + self.w))
@@ -225,17 +215,19 @@ function Geom:setSizeTo(rect_b)
 end
 
 --[[--
-Checks whether rect_b is within current rectangle
+Checks whether geom is within current rectangle
 
 Works for dimensions, too. For points, it is basically an equality check.
 
-@tparam Geom rect_b
+@tparam Geom geom
 ]]
-function Geom:contains(rect_b)
-    if self.x <= rect_b.x
-    and self.y <= rect_b.y
-    and self.x + self.w >= rect_b.x + rect_b.w
-    and self.y + self.h >= rect_b.y + rect_b.h
+function Geom:contains(geom)
+    if not geom then return false end
+
+    if self.x <= geom.x
+    and self.y <= geom.y
+    and self.x + self.w >= geom.x + geom.w
+    and self.y + self.h >= geom.y + geom.h
     then
         return true
     end
@@ -402,6 +394,59 @@ function Geom:center()
         y = self.y + Math.round(self.h / 2),
         w = 0, h = 0,
     }
+end
+
+--[[--
+Resets an existing Geom object to zero.
+@treturn Geom
+]]
+function Geom:clear()
+    self.x = 0
+    self.y = 0
+    self.w = 0
+    self.h = 0
+    return self
+end
+
+--[[--
+Checks if a dimension or rectangle is empty.
+@treturn bool
+]]
+function Geom:isEmpty()
+    if self.w == 0 or self.h == 0 then
+        return true
+    end
+    return false
+end
+
+--[[--
+Returns a bounding box which encompasses all passed rectangles.
+@tparam Geom rectangles to encompass
+@treturn Geom bounding box or nil if no rectangles passed
+]]
+function Geom.boundingBox(boxes)
+    local bounding_box
+    for _, geom in ipairs(boxes) do
+        -- Easier to work with (x0,x0)+(x1,y1) pairs.
+        local box = { x0 = geom.x, y0 = geom.y,
+                      x1 = geom.x + geom.w, y1 = geom.y + geom.h }
+        if not bounding_box then
+            bounding_box = box
+        else
+            if box.x0 < bounding_box.x0 then bounding_box.x0 = box.x0 end
+            if box.y0 < bounding_box.y0 then bounding_box.y0 = box.y0 end
+            if box.x1 > bounding_box.x1 then bounding_box.x1 = box.x1 end
+            if box.y1 > bounding_box.y1 then bounding_box.y1 = box.y1 end
+        end
+    end
+    if bounding_box then
+        return Geom:new{
+            x = bounding_box.x0,
+            y = bounding_box.y0,
+            w = bounding_box.x1 - bounding_box.x0,
+            h = bounding_box.y1 - bounding_box.y0,
+        }
+    end
 end
 
 return Geom

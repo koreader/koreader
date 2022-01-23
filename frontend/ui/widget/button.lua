@@ -25,13 +25,15 @@ local GestureRange = require("ui/gesturerange")
 local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = Device.screen
+local logger = require("logger")
 
 local Button = InputContainer:new{
-    text = nil, -- mandatory
+    text = nil, -- mandatory (unless icon is provided)
     text_func = nil,
     icon = nil,
     icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
@@ -51,6 +53,7 @@ local Button = InputContainer:new{
     padding_v = nil,
     width = nil,
     max_width = nil,
+    avoid_text_truncation = true,
     text_font_face = "cfont",
     text_font_size = 20,
     text_font_bold = true,
@@ -63,6 +66,11 @@ function Button:init()
         self.text = self.text_func()
     end
 
+    -- Point tap_input to hold_input if requested
+    if self.call_hold_input_on_tap then
+        self.tap_input = self.hold_input
+    end
+
     if not self.padding_h then
         self.padding_h = self.padding
     end
@@ -71,13 +79,55 @@ function Button:init()
     end
 
     if self.text then
+        local max_width = self.max_width and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize or nil
         self.label_widget = TextWidget:new{
             text = self.text,
-            max_width = self.max_width and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize or nil,
+            max_width = max_width,
             fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
             bold = self.text_font_bold,
             face = Font:getFace(self.text_font_face, self.text_font_size)
         }
+        self.did_truncation_tweaks = false
+        if self.avoid_text_truncation and self.label_widget:isTruncated() then
+            self.did_truncation_tweaks = true
+            local max_height = self.label_widget:getSize().h
+            local font_size_2_lines = TextBoxWidget:getFontSizeToFitHeight(max_height, 2, 0)
+            while self.label_widget:isTruncated() do
+                local new_size = self.label_widget.face.orig_size - 1
+                if new_size < font_size_2_lines then
+                    -- Switch to a 2-lines TextBoxWidget
+                    self.label_widget:free()
+                    self.label_widget = TextBoxWidget:new{
+                        text = self.text,
+                        line_height = 0,
+                        alignment = "center",
+                        width = max_width,
+                        height = max_height,
+                        height_adjust = true,
+                        height_overflow_show_ellipsis = true,
+                        fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+                        bold = self.text_font_bold,
+                        face = Font:getFace(self.text_font_face, font_size_2_lines)
+                    }
+                    if not self.label_widget.has_split_inside_word then
+                        break
+                    end
+                    -- No good wrap opportunity (split inside a word): ignore this TextBoxWidget
+                    -- and go on with a TextWidget with the smaller font size
+                end
+                if new_size < 8 then -- don't go too small
+                    break
+                end
+                self.label_widget:free()
+                self.label_widget = TextWidget:new{
+                    text = self.text,
+                    max_width = max_width,
+                    fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+                    bold = self.text_font_bold,
+                    face = Font:getFace(self.text_font_face, new_size)
+                }
+            end
+        end
     else
         self.label_widget = IconWidget:new{
             icon = self.icon,
@@ -94,6 +144,7 @@ function Button:init()
     -- set FrameContainer content
     self.frame = FrameContainer:new{
         margin = self.margin,
+        show_parent = self.show_parent,
         bordersize = self.bordersize,
         background = self.background,
         radius = self.radius,
@@ -142,15 +193,27 @@ function Button:init()
 end
 
 function Button:setText(text, width)
-    self.text = text
-    self.width = width
-    self:init()
+    if text ~= self.text then
+        -- Don't trash the frame if we're already a text button, and we're keeping the geometry intact
+        if self.text and width and width == self.width and not self.did_truncation_tweaks then
+            self.text = text
+            self.label_widget:setText(text)
+        else
+            self.text = text
+            self.width = width
+            self.label_widget:free()
+            self:init()
+        end
+    end
 end
 
-function Button:setIcon(icon)
-    self.icon = icon
-    self.width = nil
-    self:init()
+function Button:setIcon(icon, width)
+    if icon ~= self.icon then
+        self.icon = icon
+        self.width = width
+        self.label_widget:free()
+        self:init()
+    end
 end
 
 function Button:onFocus()
@@ -169,11 +232,10 @@ function Button:enable()
     if not self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
-            self.enabled = true
         else
             self.label_widget.dim = false
-            self.enabled = true
         end
+        self.enabled = true
     end
 end
 
@@ -181,11 +243,21 @@ function Button:disable()
     if self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
-            self.enabled = false
         else
             self.label_widget.dim = true
-            self.enabled = false
         end
+        self.enabled = false
+    end
+end
+
+-- This is used by pagination buttons with a hold_input registered that we want to *sometimes* inhibit,
+-- meaning we want the Button disabled, but *without* dimming the text...
+function Button:disableWithoutDimming()
+    self.enabled = false
+    if self.text then
+        self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
+    else
+        self.label_widget.dim = false
     end
 end
 
@@ -222,125 +294,169 @@ function Button:showHide(show)
     end
 end
 
-function Button:onTapSelectButton()
-    if self.enabled and self.callback then
-        if G_reader_settings:isFalse("flash_ui") then
-            self.callback()
+-- Used by onTapSelectButton to handle visual feedback when flash_ui is enabled
+function Button:_doFeedbackHighlight()
+    -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
+    if self.text then
+        -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
+        -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
+        if self[1].radius == nil then
+            self[1].radius = Size.radius.button
+            -- And here, it's easier to just invert the bg/fg colors ourselves,
+            -- so as to preserve the rounded corners in one step.
+            self[1].background = self[1].background:invert()
+            self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+            -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
+            -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
         else
-            -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
-            if self.text then
-                -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
-                -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
-                if self[1].radius == nil then
-                    self[1].radius = Size.radius.button
-                    -- And here, it's easier to just invert the bg/fg colors ourselves,
-                    -- so as to preserve the rounded corners in one step.
-                    self[1].background = self[1].background:invert()
-                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
-                    -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
-                    -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
-                else
-                    self[1].invert = true
-                end
-
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                -- But do make sure the invert flag is set in both cases, mainly for the early return check below
-                self[1].invert = true
-            else
-                self[1].invert = true
-                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-            end
-            UIManager:setDirty(nil, function()
-                return "fast", self[1].dimen
-            end)
-
-            -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
-            if not self.vsync then
-                -- NOTE: Allow bundling the highlight with the callback when we request vsync, to prevent further delays
-                UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
-            end
-            self.callback()
-            UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
-            if self.vsync then
-                -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already,
-                --       (i.e., Kobo Mk. 7).
-                UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
-                                         -- because that would have a chance to noticeably delay it until the unhighlight.
-            end
-
-            if not self[1] or not self[1].invert or not self[1].dimen then
-                -- If the frame widget no longer exists (destroyed, re-init'ed by setText(), or is no longer inverted: we have nothing to invert back
-                -- NOTE: This cannot catch orphaned Button instances, c.f., the isSubwidgetShown(self) check below for that.
-                return true
-            end
-
-            -- Reset colors early, regardless of what we do later, to avoid code duplication
-            self[1].invert = false
-            if self.text then
-                if self[1].radius == Size.radius.button then
-                    self[1].radius = nil
-                    self[1].background = self[1].background:invert()
-                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
-                end
-            end
-
-            -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
-            local top_widget = UIManager:getTopWidget()
-            if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
-                -- If the button can no longer be found inside a shown widget, abort early
-                -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., ButtonTable) :()
-                if not UIManager:isSubwidgetShown(self) then
-                    return true
-                end
-
-                -- If our parent is no longer the toplevel widget, toplevel is now a true modal, and our highlight would clash with that modal's region,
-                -- we have no other choice than repainting the full stack...
-                if top_widget ~= self.show_parent and top_widget ~= "VirtualKeyboard" and top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                    -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
-                    UIManager:waitForVSync()
-                    UIManager:setDirty(self.show_parent, function()
-                        return "ui", self[1].dimen
-                    end)
-
-                    -- It's a sane exit, handle the return the same way.
-                    if self.readonly ~= true then
-                        return true
-                    end
-                end
-
-                if self.text then
-                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                else
-                    UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-                end
-                -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
-                UIManager:setDirty(nil, function()
-                    return self.enabled and "fast" or "ui", self[1].dimen
-                end)
-                --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
-            else
-                -- This branch will mainly be taken by stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level,
-                -- (hence the exception in the check above).
-                return true
-            end
+            self[1].invert = true
         end
-    elseif self.tap_input then
-        self:onInput(self.tap_input)
-    elseif type(self.tap_input_func) == "function" then
-        self:onInput(self.tap_input_func())
+
+        -- This repaints *now*, unlike setDirty
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+    else
+        self[1].invert = true
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
     end
+    UIManager:setDirty(nil, "fast", self[1].dimen)
+end
+
+function Button:_undoFeedbackHighlight(is_translucent)
+    if self.text then
+        if self[1].radius == Size.radius.button then
+            self[1].radius = nil
+            self[1].background = self[1].background:invert()
+            self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+        else
+            self[1].invert = false
+        end
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+    else
+        self[1].invert = false
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+    end
+
+    if is_translucent then
+        -- If our parent belongs to a translucent MovableContainer, we need to repaint it on unhighlight in order to honor alpha,
+        -- because our highlight/unhighlight will have made the Button fully opaque.
+        -- UIManager will detect transparency and then takes care of also repainting what's underneath us to avoid alpha layering glitches.
+        UIManager:setDirty(self.show_parent, "ui", self[1].dimen)
+    else
+        -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
+        -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
+        UIManager:setDirty(nil, self.enabled and "fast" or "ui", self[1].dimen)
+    end
+end
+
+function Button:onTapSelectButton()
+    if self.enabled or self.allow_tap_when_disabled then
+        if self.callback then
+            if G_reader_settings:isFalse("flash_ui") then
+                self.callback()
+            else
+                -- NOTE: We have a few tricks up our sleeve in case our parent is inside a translucent MovableContainer...
+                local is_translucent = self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha
+
+                -- Highlight
+                --
+                self:_doFeedbackHighlight()
+
+                -- Force the refresh by draining the refresh queue *now*, so we have a chance to see the highlight on its own, before whatever the callback will do.
+                if not self.vsync then
+                    -- NOTE: Except when a Button is flagged vsync, in which case we *want* to bundle the highlight with the callback, to prevent further delays
+                    UIManager:forceRePaint()
+
+                    -- NOTE: Yield to the kernel for a tiny slice of time, otherwise, writing to the same fb region as the refresh we've just requested may be race-y,
+                    --       causing mild variants of our friend the papercut refresh glitch ;).
+                    --       Remember that the whole eInk refresh dance is completely asynchronous: we *request* a refresh from the kernel,
+                    --       but it's up to the EPDC to schedule that however it sees fit...
+                    --       The other approach would be to *ask* the EPDC to block until it's *completely* done,
+                    --       but that's too much (because we only care about it being done *reading* the fb),
+                    --       and that could take upwards of 300ms, which is also way too much ;).
+                    UIManager:yieldToEPDC()
+                end
+
+                -- Unhighlight
+                --
+                -- We'll *paint* the unhighlight now, because at this point we can still be sure that our widget exists,
+                -- and that anything we do will not impact whatever the callback does (i.e., that we draw *below* whatever the callback might show).
+                -- We won't *fence* the refresh (i.e., it's queued, but we don't actually drain the queue yet), though, to ensure that we do not delay the callback, and that the unhighlight essentially blends into whatever the callback does.
+                -- Worst case scenario, we'll simply have "wasted" a tiny subwidget repaint if the callback closed us,
+                -- but doing it this way allows us to avoid a large array of potential interactions with whatever the callback may paint/refresh if we were to handle the unhighlight post-callback,
+                -- which would require a number of possibly brittle heuristics to handle.
+                -- NOTE: If a Button is marked vsync, we want to keep it highlighted for now (in order for said highlight to be visible during the callback refresh), we'll remove the highlight post-callback.
+                if not self.vsync then
+                    self:_undoFeedbackHighlight(is_translucent)
+                end
+
+                -- Callback
+                --
+                self.callback()
+
+                -- Check if the callback reset transparency...
+                is_translucent = is_translucent and self.show_parent.movable.alpha
+
+                UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
+                if self.vsync then
+                    -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence via MXCFB_WAIT_FOR_UPDATE_COMPLETE already, (i.e., Kobo Mk. 7).
+                    UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
+                                                -- because that would have a chance to noticeably delay it until the unhighlight.
+                end
+
+                -- Unhighlight
+                --
+                -- NOTE: If a Button is marked vsync, we have a guarantee from the programmer that the widget it belongs to is still alive and top-level post-callback,
+                --       so we can do this safely without risking UI glitches.
+                if self.vsync then
+                    self:_undoFeedbackHighlight(is_translucent)
+                    UIManager:forceRePaint()
+                end
+            end
+        elseif self.tap_input then
+            self:onInput(self.tap_input)
+        elseif type(self.tap_input_func) == "function" then
+            self:onInput(self.tap_input_func())
+        end
+    end
+
     if self.readonly ~= true then
         return true
     end
 end
 
+-- Allow repainting and refreshing *a* specific Button, instead of the full screen/parent stack
+function Button:refresh()
+    -- We can only be called on a Button that's already been painted once, which allows us to know where we're positioned,
+    -- thanks to the frame's geometry.
+    -- e.g., right after a setText or setIcon is a no-go, as those kill the frame.
+    --       (Although, setText, if called with the current width, will conserve the frame).
+    if not self[1].dimen then
+        logger.dbg("Button:", self, "attempted a repaint in an unpainted frame!")
+        return
+    end
+    UIManager:widgetRepaint(self[1], self[1].dimen.x, self.dimen.y)
+
+    UIManager:setDirty(nil, function()
+        return self.enabled and "fast" or "ui", self[1].dimen
+    end)
+end
+
 function Button:onHoldSelectButton()
-    if self.hold_callback and (self.enabled or self.allow_hold_when_disabled) then
-        self.hold_callback()
-    elseif self.hold_input then
-        self:onInput(self.hold_input, true)
-    elseif type(self.hold_input_func) == "function" then
-        self:onInput(self.hold_input_func(), true)
+    -- If we're going to process this hold, we must make
+    -- sure to also handle its hold_release below, so it's
+    -- not propagated up to a MovableContainer
+    self._hold_handled = nil
+    if self.enabled or self.allow_hold_when_disabled then
+        if self.hold_callback then
+            self.hold_callback()
+            self._hold_handled = true
+        elseif self.hold_input then
+            self:onInput(self.hold_input, true)
+            self._hold_handled = true
+        elseif type(self.hold_input_func) == "function" then
+            self:onInput(self.hold_input_func(), true)
+            self._hold_handled = true
+        end
     end
     if self.readonly ~= true then
         return true
@@ -348,12 +464,8 @@ function Button:onHoldSelectButton()
 end
 
 function Button:onHoldReleaseSelectButton()
-    -- Safe-guard for when used inside a MovableContainer,
-    -- which would handle HoldRelease and process it like
-    -- a Hold if we wouldn't return true here
-    if self.hold_callback and (self.enabled or self.allow_hold_when_disabled) then
-        return true
-    elseif self.hold_input or type(self.hold_input_func) == "function" then
+    if self._hold_handled then
+        self._hold_handled = nil
         return true
     end
     return false

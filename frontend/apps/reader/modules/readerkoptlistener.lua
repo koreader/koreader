@@ -1,6 +1,7 @@
 local EventListener = require("ui/widget/eventlistener")
 local Event = require("ui/event")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
+local UIManager = require("ui/uimanager")
 local util = require("util")
 
 local ReaderKoptListener = EventListener:new{}
@@ -16,15 +17,16 @@ end
 
 function ReaderKoptListener:onReadSettings(config)
     -- normal zoom mode is zoom mode used in non-reflow mode.
-    local normal_zoom_mode = config:readSetting("normal_zoom_mode") or
-                    G_reader_settings:readSetting("zoom_mode") or "page"
+    local normal_zoom_mode = config:readSetting("normal_zoom_mode")
+                          or ReaderZooming:combo_to_mode(G_reader_settings:readSetting("kopt_zoom_mode_genus"), G_reader_settings:readSetting("kopt_zoom_mode_type"))
     normal_zoom_mode = util.arrayContains(ReaderZooming.available_zoom_modes, normal_zoom_mode)
-                    and normal_zoom_mode
-                    or "page"
+                   and normal_zoom_mode
+                    or ReaderZooming.DEFAULT_ZOOM_MODE
     self.normal_zoom_mode = normal_zoom_mode
     self:setZoomMode(normal_zoom_mode)
-    self.document.configurable.contrast = config:readSetting("kopt_contrast") or
-                    G_reader_settings:readSetting("kopt_contrast") or 1.0
+    self.document.configurable.contrast = config:readSetting("kopt_contrast")
+                                       or G_reader_settings:readSetting("kopt_contrast")
+                                       or 1.0
     self.ui:handleEvent(Event:new("GammaUpdate", 1/self.document.configurable.contrast))
     -- since K2pdfopt v2.21 negative value of word spacing is also used, for config
     -- compatability we should manually change previous -1 to a more reasonable -0.2
@@ -69,6 +71,13 @@ function ReaderKoptListener:onDocLangUpdate(lang)
     else
         self.document.configurable.word_spacing = DKOPTREADER_CONFIG_WORD_SPACINGS[3]
     end
+end
+
+function ReaderKoptListener:onConfigChange(option_name, option_value)
+    self.document.configurable[option_name] = option_value
+    self.ui:handleEvent(Event:new("StartActivityIndicator"))
+    UIManager:setDirty("all", "partial")
+    return true
 end
 
 return ReaderKoptListener

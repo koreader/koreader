@@ -159,13 +159,26 @@ h1 + h6, h2 + h6, h3 + h6, h4 + h6, h5 + h6 { page-break-before: avoid !importan
                 id = "text_align_most_justify",
                 title = _("Justify most text"),
                 description = _("Text justification is the default, but it may be overridden by publisher styles. This will re-enable it for most common text elements."),
-                css = [[body, p, li { text-align: justify !important; }]],
+                css = [[
+body, p, li { text-align: justify !important; }
+pre {
+    -cr-only-if: txt-document;
+        text-align: justify !important;
+        white-space: normal;
+}
+                ]],
             },
             {
                 id = "text_align_all_justify",
                 title = _("Justify all elements"),
                 description = _("Text justification is the default, but it may be overridden by publisher styles. This will force justification on all elements, some of which may not be centered as expected."),
-                css = [[* { text-align: justify !important; }]],
+                css = [[
+* { text-align: justify !important; }
+pre {
+    -cr-only-if: txt-document;
+        white-space: normal;
+}
+                ]],
                 separator = true,
             },
             {
@@ -185,7 +198,7 @@ Languages like Arabic or Hebrew use right-to-left writing systems (Right-To-Left
 Usually, the publisher will have set the appropriate tags to enable RTL rendering. But if these are missing, or if you're reading plain text documents, you may want to manually enable RTL with these tweaks.
 Note that in the absence of such specifications, KOReader will try to detect the language of each paragraph to set the appropriate rendering per paragraph.
 
-You may also want to enable, in the top menu → Gear → Navigation →, Invert page turn taps and swipes.]]),
+You may also want to enable, in the top menu → Gear → Taps and gestures → Page turns → Invert page turn taps and swipes.]]),
                 separator = true,
             },
             {
@@ -292,6 +305,14 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
                 ]],
             },
             {
+                id = "line_break_cre_loose";
+                title = _("Ignore publisher line-break restrictions"),
+                description = _([[
+A publisher might use non-breaking spaces and hyphens to avoid line breaking between some words, which is not always necessary and may have been added to make reading easier. This can cause large word spacing on some lines.
+Ignoring them will only use KOReader's own typography rules for line breaking.]]),
+                css = [[* { line-break: -cr-loose; }]],
+            },
+            {
                 id = "ligature_all_no_common_ligature";
                 title = _("Disable common ligatures"),
                 description = _("Disable common ligatures, which are enabled by default in 'best' kerning mode."),
@@ -303,12 +324,49 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
                 separator = true,
             },
             {
-                id = "ruby_inline";
-                title = _("Render <ruby> content inline"),
-                description = _("Disable handling of <ruby> tags and render them inline."),
-                css = [[
-ruby { display: inline !important; }
-                ]],
+                title = _("Ruby"),
+                {
+                    title = _("About ruby"),
+                    info_text = _([[
+Ruby characters are small glosses on writing in Asian languages (Hanzi, Kanji, Hanja, etc.) to show the pronunciation of the logographs.
+These tweaks can help make ruby easier to read or ignore.]]),
+                    separator = true,
+                },
+                {
+                    id = "ruby_font_sans_serif";
+                    title = _("Sans-serif font for ruby"),
+                    description = _([[
+Use a sans serif font to display all ruby text for a more 'book-like' feeling.
+Also force the regular text weight when used with lighter or bolder fonts.]]),
+                    css = [[
+rt, rubyBox[T=rt] {
+    font-family: "Noto Sans CJK SC" !important;
+    font-weight: 400 !important;
+}
+                    ]],
+                },
+                {
+                    id = "ruby_font_size_larger";
+                    title = _("Larger ruby text size"),
+                    description = _("Increase ruby text size."),
+                    css = [[rt, rubyBox[T=rt] { font-size: 50% !important; }]],
+                    separator = true,
+                },
+                {
+                    id = "ruby_most_line_height_larger";
+                    title = _("Larger spacing between ruby lines"),
+                    description = _([[
+Increase line spacing of most text, so that lines keep an even spacing whether or not they include ruby.
+Further small adjustments can be done with 'Line Spacing' in the bottom menu.]]),
+                    css = [[p, li { line-height: 2 !important; }]],
+                    -- no need for priority, this has higher specificity than lineheight_all_inherit below
+                },
+                {
+                    id = "ruby_inline";
+                    title = _("Render ruby content inline"),
+                    description = _("Disable handling of <ruby> tags and render them inline."),
+                    css = [[ruby { display: inline !important; }]],
+                },
             },
             separator = true,
         },
@@ -318,8 +376,7 @@ ruby { display: inline !important; }
                 id = "font_family_all_inherit";
                 title = _("Ignore publisher font families"),
                 description = _("Disable font-family specified in embedded styles."),
-                -- we have to use this trick, font-family handling by crengine is a bit complex
-                css = [[* { font-family: "NoSuchFont" !important; }]],
+                css = [[* { font-family: inherit !important; }]],
             },
             {
                 id = "font_size_all_inherit";
@@ -540,6 +597,17 @@ table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse
             separator = true,
         },
         {
+            id = "a_italic";
+            title = _("Links always italic"),
+            css = [[a, a * { font-style: italic !important; }]],
+        },
+        {
+            id = "a_not_italic";
+            title = _("Links never italic"),
+            css = [[a, a * { font-style: normal !important; }]],
+            separator = true,
+        },
+        {
             id = "a_underline";
             title = _("Links always underlined"),
             css = [[a[href], a[href] * { text-decoration: underline !important; }]],
@@ -577,18 +645,18 @@ width: 100% !important;
     {
         title = _("Miscellaneous"),
         {
-            title = _("Alternative TOC hints"),
+            title = _("Alternative ToC hints"),
             {
-                title = _("About alternative TOC"),
+                title = _("About alternative ToC"),
                 info_text = _([[
-An alternative table of contents can be built with a long-press on the "Table of contents" menu item.
+An alternative table of contents can be built via a dedicated option in the "Settings" menu below the "Table of contents" menu entry.
 
-The TOC will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
-If the document contains no headings, or all are ignored, the alternative TOC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.
+The ToC will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
+If the document contains no headings, or all are ignored, the alternative ToC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.
 
-Hints can be set to other non-heading elements in a user style tweak, so they can be used as TOC items. Since this would be quite book-specific, please see the final tweak for some examples.
+Hints can be set to other non-heading elements in a user style tweak, so they can be used as ToC items. Since this would be quite book-specific, please see the final tweak for some examples.
 
-After applying these tweaks, the alternative TOC needs to be rebuilt by long-pressing "Table of contents" twice: once to restore the original TOC, and once to build the alternative TOC again.]]),
+After applying these tweaks, the alternative ToC needs to be rebuilt by toggling it twice in its menu: once to restore the original ToC, and once to build the alternative ToC again.]]),
                 separator = true,
             },
             {
@@ -629,9 +697,9 @@ After applying these tweaks, the alternative TOC needs to be rebuilt by long-pre
             },
             {
                 id = "alt_toc_level_example";
-                title = _("Example of book specific TOC hints"),
+                title = _("Example of book specific ToC hints"),
                 description = _([[
-If headings or document fragments do not result in a usable TOC, you can inspect the HTML and look for elements that contain chapter titles. Then you can set hints to their class names.
+If headings or document fragments do not result in a usable ToC, you can inspect the HTML and look for elements that contain chapter titles. Then you can set hints to their class names.
 This is just an example, that will need to be adapted into a user style tweak.]]),
                 css = [[
 .book_n    { -cr-hint: toc-level1; }
@@ -719,9 +787,11 @@ This only works with footnotes that have specific attributes set by the publishe
                 -- Restrict this to non-FB2 documents, as FB2 can have <a type="note">
                 css = [[
 *[type~="note"],
+*[type~="endnote"],
 *[type~="footnote"],
 *[type~="rearnote"],
 *[role~="doc-note"],
+*[role~="doc-endnote"],
 *[role~="doc-footnote"],
 *[role~="doc-rearnote"]
 {
@@ -741,9 +811,11 @@ This only works with footnotes that have specific attributes set by the publishe
                 -- and we don't want to have them smaller
                 css = [[
 *[type~="note"],
+*[type~="endnote"],
 *[type~="footnote"],
 *[type~="rearnote"],
 *[role~="doc-note"],
+*[role~="doc-endnote"],
 *[role~="doc-footnote"],
 *[role~="doc-rearnote"]
 {
@@ -762,6 +834,7 @@ This only works with footnotes that have specific attributes set by the publishe
                 css = [[
 ol.references > li {
     -cr-hint: footnote-inpage;
+    list-style-position: -cr-outside;
     margin: 0 !important;
 }
 /* hide backlinks */
@@ -776,6 +849,7 @@ ol.references > li > .mw-cite-backlink { display: none; }
                 css = [[
 ol.references > li {
     -cr-hint: footnote-inpage;
+    list-style-position: -cr-outside;
     margin: 0 !important;
     font-size: 0.8rem !important;
 }
@@ -797,7 +871,9 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 css = [[
 .footnote, .footnotes, .fn,
 .note, .note1, .note2, .note3,
-.ntb, .ntb-txt, .ntb-txt-j
+.ntb, .ntb-txt, .ntb-txt-j,
+.przypis, .przypis1, /* Polish footnotes */
+.voetnoten /* Dutch footnotes */
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
@@ -813,7 +889,9 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 css = [[
 .footnote, .footnotes, .fn,
 .note, .note1, .note2, .note3,
-.ntb, .ntb-txt, .ntb-txt-j
+.ntb, .ntb-txt, .ntb-txt-j,
+.przypis, .przypis1, /* Polish footnotes */
+.voetnoten /* Dutch footnotes */
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
@@ -821,20 +899,6 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 }
                 ]],
             },
-        },
-        {
-            id = "epub_switch_show_case";
-            title = _("Toggle alternative EPUB content"),
-            description = _([[
-The EPUB3 format allows a
-<epub:switch> <epub:case> <epub:default>
-construct to provide alternative content to engines that support optional features.
-KOReader currently falls back to hiding all <epub:case> content and shows the <epub:default> content (usually an image).
-This tweak toggles this behavior, and may show the <epub:case> content as plain text.]]),
-            css = [[
-switch > case    { display: inline; }
-switch > default { display: none; }
-            ]],
         },
         {
             id = "no_pseudo_element_before_after";

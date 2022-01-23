@@ -1,7 +1,7 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local Device = require("device")
 local FileChooser = require("ui/widget/filechooser")
-local Font = require("ui/font")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
@@ -17,9 +17,6 @@ local PathChooser = FileChooser:extend{
     is_popout = false,
     covers_fullscreen = true, -- set it to false if you set is_popout = true
     is_borderless = true,
-    -- smaller font to allow displaying our long titles
-    tface = Font:getFace("smalltfont"),
-
     select_directory = true, -- allow selecting directories
     select_file = true,      -- allow selecting files
     show_files = true, -- show files, even if select_files=false
@@ -30,20 +27,24 @@ local PathChooser = FileChooser:extend{
 function PathChooser:init()
     if self.title == true then -- default title depending on options
         if self.select_directory and not self.select_file then
-            self.title = _("Long-press to select directory")
+            self.title = _("Long-press to choose a folder")
         elseif not self.select_directory and self.select_file then
-            self.title = _("Long-press to select file")
+            self.title = _("Long-press to choose a file")
         else
-            self.title = _("Long-press to select")
+            self.title = _("Long-press to choose")
         end
     end
-    self.show_hidden = G_reader_settings:readSetting("show_hidden")
+    self.show_hidden = G_reader_settings:isTrue("show_hidden")
     if not self.show_files then
         self.file_filter = function() return false end -- filter out regular files
     end
     if self.select_directory then
-        -- Let FileChooser display "Long press to select current directory"
+        -- Let FileChooser display "Long-press to choose current folder"
         self.show_current_dir_for_hold = true
+    end
+    self.title_bar_left_icon = "home"
+    self.onLeftButtonTap = function()
+        self:goHome()
     end
     FileChooser.init(self)
 end
@@ -51,6 +52,9 @@ end
 function PathChooser:onMenuSelect(item)
     local path = item.path
     if path:sub(-2, -1) == "/." then -- with show_current_dir_for_hold
+        if not Device:isTouchDevice() and self.select_directory then -- let non-touch device can select the folder
+            return self:onMenuHold(item)
+        end
         -- Don't navigate to same directory
         return true
     end
@@ -68,6 +72,9 @@ function PathChooser:onMenuSelect(item)
         return true
     end
     if attr.mode ~= "directory" then
+        if not Device:isTouchDevice() and self.select_file then -- let non-touch device can select the file
+            return self:onMenuHold(item)
+        end
         -- Do nothing if Tap on other than directories
         return true
     end
@@ -104,15 +111,15 @@ function PathChooser:onMenuHold(item)
         if self.detailed_file_info then
             local filesize = util.getFormattedSize(attr.size)
             local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
-            title = T(_("Select this file?\n\n%1\n\nFile size: %2 bytes\nLast modified: %3"),
+            title = T(_("Choose this file?\n\n%1\n\nFile size: %2 bytes\nLast modified: %3"),
                         BD.filepath(path), filesize, lastmod)
         else
-            title = T(_("Select this file?\n\n%1"), BD.filepath(path))
+            title = T(_("Choose this file?\n\n%1"), BD.filepath(path))
         end
     elseif attr.mode == "directory" then
-        title = T(_("Select this directory?\n\n%1"), BD.dirpath(path))
+        title = T(_("Choose this folder?\n\n%1"), BD.dirpath(path))
     else -- just in case we get something else
-        title = T(_("Select this path?\n\n%1"), BD.path(path))
+        title = T(_("Choose this path?\n\n%1"), BD.path(path))
     end
     local onConfirm = self.onConfirm
     self.button_dialog = ButtonDialogTitle:new{
@@ -126,7 +133,7 @@ function PathChooser:onMenuHold(item)
                     end,
                 },
                 {
-                    text = _("Select"),
+                    text = _("Choose"),
                     callback = function()
                         if onConfirm then
                             onConfirm(path)

@@ -1,14 +1,12 @@
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local SkimToWidget = require("apps/reader/skimtowidget")
+local SkimToWidget = require("ui/widget/skimtowidget")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
 local ReaderGoto = InputContainer:new{
-    goto_menu_title = _("Go to"),
-    skim_menu_title = _("Skim document"),
 }
 
 function ReaderGoto:init()
@@ -16,15 +14,14 @@ function ReaderGoto:init()
 end
 
 function ReaderGoto:addToMainMenu(menu_items)
-    -- insert goto command to main reader menu
     menu_items.go_to = {
-        text = self.goto_menu_title,
+        text = _("Go to page"),
         callback = function()
             self:onShowGotoDialog()
         end,
     }
     menu_items.skim_to = {
-        text = self.skim_menu_title,
+        text = _("Skim document"),
         callback = function()
             self:onShowSkimtoDialog()
         end,
@@ -32,23 +29,10 @@ function ReaderGoto:addToMainMenu(menu_items)
 end
 
 function ReaderGoto:onShowGotoDialog()
-    local dialog_title, goto_btn, curr_page
+    local curr_page
     if self.document.info.has_pages then
-        dialog_title = _("Go to Page")
-        goto_btn = {
-            is_enter_default = true,
-            text = _("Page"),
-            callback = function() self:gotoPage() end,
-        }
         curr_page = self.ui.paging.current_page
     else
-        dialog_title = _("Go to Location")
-        goto_btn = {
-            is_enter_default = true,
-            text = _("Location"),
-            callback = function() self:gotoPage() end,
-        }
-        -- only CreDocument has this method
         curr_page = self.document:getCurrentPage()
     end
     local input_hint
@@ -59,8 +43,9 @@ function ReaderGoto:onShowGotoDialog()
     else
         input_hint = T("@%1 (1 - %2)", curr_page, self.document:getPageCount())
     end
+    input_hint = input_hint .. string.format("  %.2f%%", curr_page / self.document:getPageCount() * 100)
     self.goto_dialog = InputDialog:new{
-        title = dialog_title,
+        title = _("Enter page number or percentage"),
         input_hint = input_hint,
         description = self.document:hasHiddenFlows() and
             _([[
@@ -71,15 +56,7 @@ x for an absolute page number
         buttons = {
             {
                 {
-                    text = _("Cancel"),
-                    enabled = true,
-                    callback = function()
-                        self:close()
-                    end,
-                },
-                {
-                    text = _("Skim mode"),
-                    enabled = true,
+                    text = _("Skim"),
                     callback = function()
                         self:close()
                         self.skimto = SkimToWidget:new{
@@ -94,7 +71,27 @@ x for an absolute page number
 
                     end,
                 },
-                goto_btn,
+                {
+                    text = _("Go to %"),
+                    callback = function()
+                        self:gotoPercent()
+                    end,
+                }
+            },
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self:close()
+                    end,
+                },
+                {
+                    text = _("Go to page"),
+                    is_enter_default = true,
+                    callback = function()
+                        self:gotoPage()
+                    end,
+                }
             },
         },
         input_type = "number",
@@ -168,6 +165,15 @@ function ReaderGoto:gotoPage()
                 end
             end
         end
+    end
+end
+
+function ReaderGoto:gotoPercent()
+    local number = self.goto_dialog:getInputValue()
+    if number then
+        self.ui.link:addCurrentLocationToStack()
+        self.ui:handleEvent(Event:new("GotoPercent", number))
+        self:close()
     end
 end
 

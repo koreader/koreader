@@ -23,7 +23,6 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -38,6 +37,7 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -46,79 +46,13 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local KeyValueTitle = VerticalGroup:new{
-    kv_page = nil,
-    title = "",
-    tface = Font:getFace("tfont"),
-    align = "left",
-    use_top_page_count = false,
-}
-
-function KeyValueTitle:init()
-    self.close_button = CloseButton:new{ window = self }
-    local btn_width = self.close_button:getSize().w
-    -- title and close button
-    table.insert(self, OverlapGroup:new{
-        dimen = { w = self.width },
-        TextWidget:new{
-            text = self.title,
-            max_width = self.width - btn_width,
-            face = self.tface,
-        },
-        self.close_button,
-    })
-    -- page count and separation line
-    self.title_bottom = OverlapGroup:new{
-        dimen = { w = self.width, h = Size.line.thick },
-        LineWidget:new{
-            dimen = Geom:new{ w = self.width, h = Size.line.thick },
-            background = Blitbuffer.COLOR_DARK_GRAY,
-            style = "solid",
-        },
-    }
-    if self.use_top_page_count then
-        self.page_cnt = FrameContainer:new{
-            padding = Size.padding.default,
-            margin = 0,
-            bordersize = 0,
-            background = Blitbuffer.COLOR_WHITE,
-            -- overlap offset x will be updated in setPageCount method
-            overlap_offset = {0, -15},
-            TextWidget:new{
-                text = "",  -- page count
-                fgcolor = Blitbuffer.COLOR_DARK_GRAY,
-                face = Font:getFace("smallffont"),
-            },
-        }
-        table.insert(self.title_bottom, self.page_cnt)
-    end
-    table.insert(self, self.title_bottom)
-    table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
-end
-
-function KeyValueTitle:setPageCount(curr, total)
-    if total == 1 then
-        -- remove page count if there is only one page
-        table.remove(self.title_bottom, 2)
-        return
-    end
-    self.page_cnt[1]:setText(curr .. "/" .. total)
-    self.page_cnt.overlap_offset[1] = (self.width - self.page_cnt:getSize().w - 10)
-    self.title_bottom[2] = self.page_cnt
-end
-
-function KeyValueTitle:onClose()
-    self.kv_page:onClose()
-    return true
-end
-
-
 local KeyValueItem = InputContainer:new{
     key = nil,
     value = nil,
     value_lang = nil,
-    cface = Font:getFace("smallinfofont"),
-    tface = Font:getFace("smallinfofontbold"),
+    font_size = 20, -- will be adjusted depending on keyvalues_per_page
+    key_font_name = "smallinfofontbold",
+    value_font_name = "smallinfofont",
     width = nil,
     height = nil,
     textviewer_width = nil,
@@ -145,18 +79,18 @@ function KeyValueItem:init()
     local available_width = frame_internal_width - middle_padding
 
     -- Default widths (and position of value widget) if each text fits in 1/2 screen width
-    local key_w = frame_internal_width / 2 - middle_padding
-    local value_w = frame_internal_width / 2
+    local key_w = math.floor(frame_internal_width / 2 - middle_padding)
+    local value_w = math.floor(frame_internal_width / 2)
 
     local key_widget = TextWidget:new{
         text = self.key,
         max_width = available_width,
-        face = self.tface,
+        face = Font:getFace(self.key_font_name, self.font_size),
     }
     local value_widget = TextWidget:new{
         text = tvalue,
         max_width = available_width,
-        face = self.cface,
+        face = Font:getFace(self.value_font_name, self.font_size),
         lang = self.value_lang,
     }
     local key_w_rendered = key_widget:getWidth()
@@ -232,8 +166,9 @@ function KeyValueItem:init()
     if fit_right_align and value_align_right and value_widget:getWidth() < value_w then
         -- Because of truncation at glyph boundaries, value_widget
         -- may be a tad smaller than the specified value_w:
-        -- add some padding to key_w so value is pushed to the screen right border
-        key_w = key_w + ( value_w - value_widget:getWidth() )
+        -- adjust key_w so value is pushed to the screen right border
+        value_w = value_widget:getWidth()
+        key_w = available_width - value_w
     end
     key_widget:setMaxWidth(key_w)
 
@@ -251,6 +186,8 @@ function KeyValueItem:init()
 
     self[1] = FrameContainer:new{
         padding = frame_padding,
+        padding_top = 0,
+        padding_bottom = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
         HorizontalGroup:new{
@@ -281,35 +218,28 @@ function KeyValueItem:onTap()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
+            -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
+
+            -- Highlight
+            --
             self[1].invert = true
             UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self[1].dimen
-            end)
+            UIManager:setDirty(nil, "fast", self[1].dimen)
 
-            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
+            UIManager:yieldToEPDC()
+
+            -- Unhighlight
+            --
+            self[1].invert = false
+            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, "ui", self[1].dimen)
+
+            -- Callback
+            --
             self.callback()
-            UIManager:forceRePaint()
-            --UIManager:waitForVSync()
 
-            -- Has to be scheduled *after* the dict delays for the lookup history pages...
-            UIManager:scheduleIn(0.75, function()
-                self[1].invert = false
-                -- Skip the repaint if we've ended up below something, which is likely.
-                if UIManager:getTopWidget() ~= self.show_parent then
-                    -- It's generally tricky to get accurate dimensions out of whatever was painted above us,
-                    -- so cheat by comparing against the previous refresh region...
-                    if self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                        return true
-                    end
-                end
-                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-                UIManager:setDirty(nil, function()
-                    return "ui", self[1].dimen
-                end)
-                --UIManager:forceRePaint()
-            end)
+            UIManager:forceRePaint()
         end
     end
     return true
@@ -319,6 +249,7 @@ function KeyValueItem:onHold()
     local textviewer = TextViewer:new{
         title = self.key,
         text = self.value,
+        text_face = Font:getFace("x_smallinfofont", self.font_size),
         lang = self.value_lang,
         width = self.textviewer_width,
         height = self.textviewer_height,
@@ -335,10 +266,10 @@ local KeyValuePage = InputContainer:new{
     values_lang = nil,
     -- index for the first item to show
     show_page = 1,
-    use_top_page_count = false,
     -- aligment of value when key or value overflows its reserved width (for
     -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
     value_overflow_align = "left",
+    single_page = nil, -- show all items on one single page (and make them small)
 }
 
 function KeyValuePage:init()
@@ -369,7 +300,7 @@ function KeyValuePage:init()
     -- return button
     --- @todo: alternative icon if BD.mirroredUILayout()
     self.page_return_arrow = self.page_return_arrow or Button:new{
-        icon = "back.top",
+        icon = BD.mirroredUILayout() and "back.top.rtl" or "back.top",
         callback = function() self:onReturn() end,
         bordersize = 0,
         show_parent = self,
@@ -410,15 +341,21 @@ function KeyValuePage:init()
     self.page_info_spacer = HorizontalSpan:new{
         width = Screen:scaleBySize(32),
     }
-    self.page_return_spacer = HorizontalSpan:new{
-        width = self.page_return_arrow:getSize().w
-    }
 
     if self.callback_return == nil and self.return_button == nil then
         self.page_return_arrow:hide()
     elseif self.callback_return == nil then
         self.page_return_arrow:disable()
     end
+    self.return_button = HorizontalGroup:new{
+        HorizontalSpan:new{
+            width = Size.span.horizontal_small,
+        },
+        self.page_return_arrow,
+        HorizontalSpan:new{
+            width = self.dimen.w - self.page_return_arrow:getSize().w - Size.span.horizontal_small,
+        },
+    }
 
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
@@ -433,78 +370,129 @@ function KeyValuePage:init()
             hint_func = function()
                 return "(" .. "1 - " .. self.pages .. ")"
             end,
+            deny_blank_input = true,
             callback = function(input)
                 local page = tonumber(input)
                 if page and page >= 1 and page <= self.pages then
                     self:goToPage(page)
                 end
             end,
+            ok_text = _("Go to page"),
         },
+        call_hold_input_on_tap = true,
         bordersize = 0,
-        margin = Screen:scaleBySize(20),
         text_font_face = "pgfont",
         text_font_bold = false,
     }
     self.page_info = HorizontalGroup:new{
-        self.page_return_arrow,
         self.page_info_first_chev,
         self.page_info_spacer,
         self.page_info_left_chev,
+        self.page_info_spacer,
         self.page_info_text,
+        self.page_info_spacer,
         self.page_info_right_chev,
         self.page_info_spacer,
         self.page_info_last_chev,
-        self.page_return_spacer,
     }
+
+    local padding = Size.padding.large
+    self.item_width = self.dimen.w - 2 * padding
 
     local footer = BottomContainer:new{
         dimen = self.dimen:copy(),
         self.page_info,
     }
+    if self.single_page then
+        footer = nil
+    end
 
-    local padding = Size.padding.large
-    self.item_width = self.dimen.w - 2 * padding
-    self.item_height = Size.item.height_default
-    -- setup title bar
-    self.title_bar = KeyValueTitle:new{
-        title = self.title,
-        width = self.item_width,
-        height = self.item_height,
-        use_top_page_count = self.use_top_page_count,
-        kv_page = self,
+    local page_return = BottomContainer:new{
+        dimen = self.dimen:copy(),
+        self.return_button,
     }
+
+    self.title_bar = TitleBar:new{
+        title = self.title,
+        fullscreen = self.covers_fullscreen,
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        bottom_line_color = Blitbuffer.COLOR_DARK_GRAY,
+        bottom_line_h_padding = padding,
+        close_callback = function() self:onClose() end,
+    }
+
     -- setup main content
-    self.item_margin = self.item_height / 4
-    local line_height = self.item_height + 2 * self.item_margin
-    local content_height = self.dimen.h - self.title_bar:getSize().h - self.page_info:getSize().h
-    self.items_per_page = math.floor(content_height / line_height)
+    local available_height = self.dimen.h
+                         - self.title_bar:getHeight()
+                         - Size.span.vertical_large -- for above page_info (as title_bar adds one itself)
+                         - (self.single_page and 0 or self.page_info:getSize().h)
+                         - 2*Size.line.thick
+                            -- account for possibly 2 separator lines added
+
+    local force_items_per_page
+    if self.single_page then
+        force_items_per_page = math.max(#self.kv_pairs,
+            G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage())
+    end
+
+    self.items_per_page = force_items_per_page or
+        G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
+    self.item_height = math.floor(available_height / self.items_per_page)
+    -- Put half of the pixels lost by floor'ing between title and content
+    local content_height = self.items_per_page * self.item_height
+    local span_height = math.floor((available_height - content_height) / 2)
+
+    -- Font size is not configurable: we can get a good one from the following
+    local TextBoxWidget = require("ui/widget/textboxwidget")
+    local line_extra_height = 1.0 -- ~ 2em -- unscaled_size_check: ignore
+        -- (gives a font size similar to the fixed one from former implementation at 14 items per page)
+    self.items_font_size = TextBoxWidget:getFontSizeToFitHeight(self.item_height, 1, line_extra_height)
+
     self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
     self.main_content = VerticalGroup:new{}
 
-    -- set textviewer height to let our title fully visible
+    -- set textviewer height to let our title fully visible (but hide the bottom line)
     self.textviewer_width = self.item_width
-    self.textviewer_height = self.dimen.h - 2*self.title_bar:getSize().h
+    self.textviewer_height = self.dimen.h - 2 * (self.title_bar:getHeight() - Size.padding.default - Size.line.thick)
 
     self:_populateItems()
 
     local content = OverlapGroup:new{
-        dimen = self.dimen:copy(),
         allow_mirroring = false,
+        dimen = self.dimen:copy(),
         VerticalGroup:new{
             align = "left",
             self.title_bar,
-            self.main_content,
+            VerticalSpan:new{ width = span_height },
+            HorizontalGroup:new{
+                HorizontalSpan:new{ width = padding },
+                self.main_content,
+            }
         },
+        page_return,
         footer,
     }
     -- assemble page
     self[1] = FrameContainer:new{
+        width = self.dimen.w,
         height = self.dimen.h,
-        padding = padding,
+        padding = 0,
+        margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
-        content
+        content,
     }
+end
+
+function KeyValuePage:getDefaultKeyValuesPerPage()
+    -- Get a default according to Screen DPI (roughly following
+    -- the former implementation building logic)
+    local default_item_height = Size.item.height_default * 1.5 -- we were adding 1/2 as margin
+    local nb_items = math.floor(Screen:getHeight() / default_item_height)
+    nb_items = nb_items - 3 -- account for title and footer heights
+    return nb_items
 end
 
 function KeyValuePage:nextPage()
@@ -531,37 +519,44 @@ end
 -- make sure self.item_margin and self.item_height are set before calling this
 function KeyValuePage:_populateItems()
     self.page_info:resetLayout()
+    self.return_button:resetLayout()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
     for idx = 1, self.items_per_page do
         local entry = self.kv_pairs[idx_offset + idx]
         if entry == nil then break end
 
-        table.insert(self.main_content,
-                     VerticalSpan:new{ width = self.item_margin })
         if type(entry) == "table" then
-            table.insert(
-                self.main_content,
-                KeyValueItem:new{
-                    height = self.item_height,
-                    width = self.item_width,
-                    key = entry[1],
-                    value = entry[2],
-                    value_lang = self.values_lang,
-                    callback = entry.callback,
-                    callback_back = entry.callback_back,
-                    textviewer_width = self.textviewer_width,
-                    textviewer_height = self.textviewer_height,
-                    value_overflow_align = self.value_overflow_align,
-                    value_align = self.value_align,
-                    show_parent = self,
-                }
-            )
+            table.insert(self.main_content, KeyValueItem:new{
+                height = self.item_height,
+                width = self.item_width,
+                font_size = self.items_font_size,
+                key = entry[1],
+                value = entry[2],
+                value_lang = self.values_lang,
+                callback = entry.callback,
+                callback_back = entry.callback_back,
+                textviewer_width = self.textviewer_width,
+                textviewer_height = self.textviewer_height,
+                value_overflow_align = self.value_overflow_align,
+                value_align = self.value_align,
+                show_parent = self,
+            })
+            if entry.separator then
+                table.insert(self.main_content, LineWidget:new{
+                    background = Blitbuffer.COLOR_LIGHT_GRAY,
+                    dimen = Geom:new{
+                        w = self.item_width,
+                        h = Size.line.thick
+                    },
+                    style = "solid",
+                })
+            end
         elseif type(entry) == "string" then
+            -- deprecated, use separator=true on a regular k/v table
+            -- (kept in case some user plugins would use this)
             local c = string.sub(entry, 1, 1)
             if c == "-" then
-                table.insert(self.main_content,
-                             VerticalSpan:new{ width = self.item_margin })
                 table.insert(self.main_content, LineWidget:new{
                     background = Blitbuffer.COLOR_LIGHT_GRAY,
                     dimen = Geom:new{
@@ -572,19 +567,34 @@ function KeyValuePage:_populateItems()
                 })
             end
         end
-        table.insert(self.main_content,
-                     VerticalSpan:new{ width = self.item_margin })
     end
-    self.page_info_text:setText(T(_("Page %1 of %2"), self.show_page, self.pages))
-    self.page_info_left_chev:showHide(self.pages > 1)
-    self.page_info_right_chev:showHide(self.pages > 1)
-    self.page_info_first_chev:showHide(self.pages > 2)
-    self.page_info_last_chev:showHide(self.pages > 2)
 
-    self.page_info_left_chev:enableDisable(self.show_page > 1)
-    self.page_info_right_chev:enableDisable(self.show_page < self.pages)
-    self.page_info_first_chev:enableDisable(self.show_page > 1)
-    self.page_info_last_chev:enableDisable(self.show_page < self.pages)
+    -- update page information
+    if self.pages >= 1 then
+        self.page_info_text:setText(T(_("Page %1 of %2"), self.show_page, self.pages))
+        if self.pages > 1 then
+            self.page_info_text:enable()
+        else
+            self.page_info_text:disableWithoutDimming()
+        end
+        self.page_info_left_chev:show()
+        self.page_info_right_chev:show()
+        self.page_info_first_chev:show()
+        self.page_info_last_chev:show()
+
+        self.page_info_left_chev:enableDisable(self.show_page > 1)
+        self.page_info_right_chev:enableDisable(self.show_page < self.pages)
+        self.page_info_first_chev:enableDisable(self.show_page > 1)
+        self.page_info_last_chev:enableDisable(self.show_page < self.pages)
+    else
+        self.page_info_text:setText(_("No items"))
+        self.page_info_text:disableWithoutDimming()
+
+        self.page_info_left_chev:hide()
+        self.page_info_right_chev:hide()
+        self.page_info_first_chev:hide()
+        self.page_info_last_chev:hide()
+    end
 
     UIManager:setDirty(self, function()
         return "ui", self.dimen

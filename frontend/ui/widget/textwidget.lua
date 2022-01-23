@@ -50,6 +50,7 @@ local TextWidget = Widget:new{
     _height = 0,
     _baseline_h = 0,
     _maxlength = 1200,
+    _is_truncated = nil,
 
     -- Additional properties only used when using xtext
     use_xtext = G_reader_settings:nilOrTrue("use_xtext"),
@@ -122,6 +123,7 @@ function TextWidget:updateSize()
         self._length = 0
         return
     end
+    self._is_truncated = false
 
     -- Compute width:
     if self.use_xtext then
@@ -170,6 +172,7 @@ function TextWidget:updateSize()
         -- smaller than max_width when dropping the truncated glyph).
         tsize = RenderText:sizeUtf8Text(0, self.max_width, self.face, self._text_to_draw, true, self.bold)
         self._length = math.floor(tsize.x)
+        self._is_truncated = true
     end
 end
 dbg:guard(TextWidget, "updateSize",
@@ -211,6 +214,9 @@ function TextWidget:_measureWithXText()
                 -- no bold: xtext does synthetized bold with normal metrics
         end
         local max_width = self.max_width - reserved_width
+        if max_width <= 0 then -- avoid _xtext:makeLine() crash
+            max_width = self.max_width
+        end
         if self.truncate_left then
             line_start = self._xtext:getSegmentFromEnd(max_width)
         end
@@ -227,6 +233,7 @@ function TextWidget:_measureWithXText()
                 self._shape_idx_to_substitute_with_ellipsis = self._shape_end
             end
         end
+        self._is_truncated = true
     end
 end
 
@@ -294,6 +301,11 @@ function TextWidget:getWidth()
     return self._length
 end
 
+function TextWidget:isTruncated()
+    self:updateSize()
+    return self._is_truncated
+end
+
 function TextWidget:getBaseline()
     self:updateSize()
     return self._baseline_h
@@ -302,7 +314,6 @@ end
 function TextWidget:setText(text)
     if text ~= self.text then
         self.text = text
-        self._updated = false
         self:free()
     end
 end
@@ -315,7 +326,6 @@ dbg:guard(TextWidget, "setText",
 function TextWidget:setMaxWidth(max_width)
     if max_width ~= self.max_width then
         self.max_width = max_width
-        self._updated = false
         self:free()
     end
 end
@@ -363,10 +373,13 @@ function TextWidget:paintTo(bb, x, y)
 end
 
 function TextWidget:free()
+    --print("TextWidget:free on", self)
     -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
     if self._xtext then
         self._xtext:free()
+        self._xtext = nil
     end
+    self._updated = false
 end
 
 function TextWidget:onCloseWidget()

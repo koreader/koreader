@@ -1,9 +1,10 @@
+local DateTimeWidget = require("ui/widget/datetimewidget")
 local InfoMessage = require("ui/widget/infomessage")
-local TimeWidget = require("ui/widget/timewidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
-local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local ReadTimer = WidgetContainer:new{
@@ -13,7 +14,9 @@ local ReadTimer = WidgetContainer:new{
 
 function ReadTimer:init()
     self.alarm_callback = function()
-        if self.time == 0 then return end -- How could this happen?
+        -- Don't do anything if we were unscheduled
+        if self.time == 0 then return end
+
         self.time = 0
         UIManager:show(InfoMessage:new{
             text = T(_("Read timer alarm\nTime's up. It's %1 now."), os.date("%c")),
@@ -26,9 +29,14 @@ function ReadTimer:scheduled()
     return self.time ~= 0
 end
 
-function ReadTimer:remainingMinutes()
+function ReadTimer:remaining()
     if self:scheduled() then
-        return os.difftime(self.time, os.time()) / 60
+        local td = os.difftime(self.time, os.time())
+        if td > 0 then
+            return td
+        else
+            return 0
+        end
     else
         return math.huge
     end
@@ -36,10 +44,11 @@ end
 
 function ReadTimer:remainingTime()
     if self:scheduled() then
-        local remain_time = os.difftime(self.time, os.time()) / 60
-        local remain_hours = math.floor(remain_time / 60)
-        local remain_minutes = math.floor(remain_time - 60 * remain_hours)
-        return remain_hours, remain_minutes
+        local remainder = self:remaining()
+        local hours = math.floor(remainder / 3600)
+        local minutes = math.floor(remainder % 3600 / 60)
+        local seconds = math.floor(remainder % 60)
+        return hours, minutes, seconds
     end
 end
 
@@ -50,12 +59,18 @@ function ReadTimer:unschedule()
     end
 end
 
+function ReadTimer:rescheduleIn(seconds)
+    self.time = os.time() + seconds
+    UIManager:scheduleIn(seconds, self.alarm_callback)
+end
+
 function ReadTimer:addToMainMenu(menu_items)
     menu_items.read_timer = {
         text_func = function()
             if self:scheduled() then
-                return T(_("Read timer (%1m)"),
-                    string.format("%.2f", self:remainingMinutes()))
+                local user_duration_format = G_reader_settings:readSetting("duration_format")
+                return T(_("Read timer (%1)"),
+                    util.secondsToClockDuration(user_duration_format, self:remaining(), false))
             else
                 return _("Read timer")
             end
@@ -65,54 +80,40 @@ function ReadTimer:addToMainMenu(menu_items)
         end,
         sub_item_table = {
             {
-                text = _("Time"),
+                text = _("Set time"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local now_t = os.date("*t")
                     local curr_hour = now_t.hour
                     local curr_min = now_t.min
-                    local curr_sec_from_midnight = curr_hour*3600 + curr_min*60
-                    local time_widget = TimeWidget:new{
+                    local time_widget = DateTimeWidget:new{
+                        is_date = false,
                         hour = curr_hour,
                         min = curr_min,
-                        ok_text = _("Set timer"),
-                        title_text =  _("Set reader timer"),
+                        ok_text = _("Set alarm"),
+                        title_text =  _("New alarm"),
+                        info_text = _("Enter a time in hours and minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()
-                            local timer_sec_from_mignight = time.hour*3600 + time.min*60
-                            local seconds
-                            if timer_sec_from_mignight > curr_sec_from_midnight then
-                                seconds = timer_sec_from_mignight - curr_sec_from_midnight
-                            else
-                                seconds = 24*3600 - (curr_sec_from_midnight - timer_sec_from_mignight)
-                            end
-                            if seconds > 0 and seconds < 18*3600 then
-                                self.time = os.time() + seconds
-                                UIManager:scheduleIn(seconds, self.alarm_callback)
-                                local hr_str = ""
-                                local min_str = ""
-                                local hr = math.floor(seconds/3600)
-                                if hr > 0 then
-                                    hr_str = T(N_("1 hour", "%1 hours", hr), hr)
-                                end
-                                local min = math.floor((seconds%3600)/60)
-                                if min > 0 then
-                                    min_str = T(N_("1 minute", "%1 minutes", min), min)
-                                    if hr_str ~= "" then
-                                        hr_str = hr_str .. " "
-                                    end
-                                end
+                            local then_t = now_t
+                            then_t.hour = time.hour
+                            then_t.min = time.min
+                            then_t.sec = 0
+                            local seconds = os.difftime(os.time(then_t), os.time())
+                            if seconds > 0 then
+                                self:rescheduleIn(seconds)
+                                local user_duration_format = G_reader_settings:readSetting("duration_format")
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer set to: %1:%2.\n\nThat's %3%4 from now."),
+                                    -- @translators %1:%2 is a clock time (HH:MM), %3 is a duration
+                                    text = T(_("Timer set for %1:%2.\n\nThat's %3 from now."),
                                         string.format("%02d", time.hour), string.format("%02d", time.min),
-                                        hr_str, min_str),
+                                        util.secondsToClockDuration(user_duration_format, seconds, false)),
                                     timeout = 5,
                                 })
-                            --current time or time > 18h
-                            elseif seconds == 0 or seconds >= 18*3600 then
+                            else
                                 UIManager:show(InfoMessage:new{
-                                    text = _("Timer could not be set. You have selected current time or time in past"),
+                                    text = _("Timer could not be set. The selected time is in the past."),
                                     timeout = 5,
                                 })
                             end
@@ -122,7 +123,7 @@ function ReadTimer:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Minutes from now"),
+                text = _("Set interval"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local remain_time = {}
@@ -134,37 +135,28 @@ function ReadTimer:addToMainMenu(menu_items)
                             remain_minutes = remain_time[2]
                         end
                     end
-                    local time_widget = TimeWidget:new{
+                    local time_widget = DateTimeWidget:new{
+                        is_date = false,
                         hour = remain_hours or 0,
                         min = remain_minutes or 0,
                         hour_max = 17,
                         ok_text = _("Set timer"),
-                        title_text =  _("Set reader timer from now (hours:minutes)"),
+                        title_text =  _("Set reader timer"),
+                        info_text = _("Enter a time in hours and minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()
                             local seconds = time.hour * 3600 + time.min * 60
                             if seconds > 0 then
-                                self.time = os.time() + seconds
-                                UIManager:scheduleIn(seconds, self.alarm_callback)
-                                local hr_str = ""
-                                local min_str = ""
-                                local hr = time.hour
-                                if hr > 0 then
-                                    hr_str = T(N_("1 hour", "%1 hours", hr), hr)
-                                end
-                                local min = time.min
-                                if min > 0 then
-                                    min_str = T(N_("1 minute", "%1 minutes", min), min)
-                                    if hr_str ~= "" then
-                                        hr_str = hr_str .. " "
-                                    end
-                                end
+                                self:rescheduleIn(seconds)
+                                local user_duration_format = G_reader_settings:readSetting("duration_format")
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer set for %1%2."), hr_str, min_str),
+                                    -- @translators This is a duration
+                                    text = T(_("Timer will expire in %1."),
+                                             util.secondsToClockDuration(user_duration_format, seconds, true)),
                                     timeout = 5,
                                 })
-                                remain_time = {hr, min}
+                                remain_time = {time.hour, time.min}
                                 G_reader_settings:saveSetting("reader_timer_remain_time", remain_time)
                             end
                         end
@@ -185,6 +177,26 @@ function ReadTimer:addToMainMenu(menu_items)
             },
         },
     }
+end
+
+-- The UI ticks on a MONOTONIC time domain, while this plugin deals with REAL wall clock time.
+function ReadTimer:onResume()
+    if self:scheduled() then
+        logger.dbg("ReadTimer: onResume with an active timer")
+        local remainder = self:remaining()
+
+        if remainder == 0 then
+            -- Make sure we fire the alarm right away if it expired during suspend...
+            self:alarm_callback()
+            self:unschedule()
+        else
+            -- ...and that we re-schedule the timer against the REAL time if it's still ticking.
+            logger.dbg("ReadTimer: Rescheduling in", remainder, "seconds")
+            self:unschedule()
+            self:rescheduleIn(remainder)
+        end
+
+    end
 end
 
 return ReadTimer

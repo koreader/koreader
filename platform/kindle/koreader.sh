@@ -64,6 +64,9 @@ PILLOW_SOFT_DISABLED="no"
 USED_WMCTRL="no"
 PASSCODE_DISABLED="no"
 
+# List of services we stop in order to reclaim a tiny sliver of RAM...
+TOGGLED_SERVICES="stored webreader kfxreader kfxview todo tmd rcm archive scanner otav3 otaupd"
+
 REEXEC_FLAGS=""
 # Keep track of if we were started through KUAL
 if [ "${1}" = "--kual" ]; then
@@ -121,6 +124,10 @@ ko_update_check() {
         logmsg "Updating KOReader . . ."
         # Let our checkpoint script handle the detailed visual feedback...
         eips_print_bottom_centered "Updating KOReader" 3
+        # Setup the FBInk daemon
+        export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
+        rm -f "${FBINK_NAMED_PIPE}"
+        FBINK_PID="$(/var/tmp/fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
         FILESIZE="$(stat -c %b "${NEWUPDATE}")"
@@ -132,8 +139,9 @@ ko_update_check() {
         #       which we cannot use because it's been mounted noexec for a few years now...
         cp -pf "${KOREADER_DIR}/tar" /var/tmp/gnutar
         # shellcheck disable=SC2016
-        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='/var/tmp/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -C "/mnt/us" -xf "${NEWUPDATE}"
+        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "/mnt/us" -xf "${NEWUPDATE}"
         fail=$?
+        kill -TERM "${FBINK_PID}"
         # And remove our temporary tar binary...
         rm -f /var/tmp/gnutar
         # Cleanup behind us...
@@ -153,8 +161,9 @@ ko_update_check() {
             eips_print_bottom_centered "Update failed :(" 2
             eips_print_bottom_centered "KOReader may fail to function properly" 1
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
-        unset BLOCKS CPOINTS
+        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        unset CPOINTS FBINK_NAMED_PIPE
+        unset BLOCKS FILESIZE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
     fi
@@ -184,9 +193,6 @@ export EXT_FONT_DIR="/usr/java/lib/fonts;/mnt/us/fonts;/var/local/font/mnt;/mnt/
 # Only setup IPTables on devices where it makes sense to do so (FW 5.x & K4)
 if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; then
     logmsg "Setting up IPTables rules . . ."
-    # accept input ports for zsync plugin
-    iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
-    iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
     # accept input ports for calibre companion
     iptables -A INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
 fi
@@ -276,6 +282,11 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                 usleep 2500000
             fi
         fi
+
+        # Murder a few services to reclaim some RAM...
+        for job in ${TOGGLED_SERVICES}; do
+            stop "${job}"
+        done
     fi
 fi
 
@@ -348,6 +359,11 @@ fi
 
 # Display chrome bar if need be (upstart & framework up only)
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
+    # Resume the services we murdered
+    for job in ${TOGGLED_SERVICES}; do
+        start "${job}"
+    done
+
     # Depending on the FW version, we may have handled things in a few different manners...
     if [ "${AWESOME_STOPPED}" = "yes" ]; then
         logmsg "Resuming awesome . . ."
@@ -392,8 +408,6 @@ if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; t
     logmsg "Restoring IPTables rules . . ."
     # restore firewall rules
     iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
-    iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
-    iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
 fi
 
 if [ "${PASSCODE_DISABLED}" = "yes" ]; then

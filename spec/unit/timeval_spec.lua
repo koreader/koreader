@@ -20,25 +20,42 @@ describe("TimeVal module", function()
         local timev2 = TimeVal:new{ sec = 10, usec = 6000}
         local timev3 = TimeVal:new{ sec = 10, usec = 50000000}
 
-        assert.is.same({sec = 15,usec = 11000}, timev1 + timev2)
-        assert.is.same({sec = 65,usec = 5000}, timev1 + timev3)
+        assert.is.same({sec = 15, usec = 11000}, timev1 + timev2)
+        assert.is.same({sec = 65, usec = 5000}, timev1 + timev3)
     end)
 
     it("should subtract", function()
         local timev1 = TimeVal:new{ sec = 5, usec = 5000}
         local timev2 = TimeVal:new{ sec = 10, usec = 6000}
 
-        assert.is.same({sec = 5,usec = 1000}, timev2 - timev1)
-        assert.is.same({sec = -5,usec = -1000}, timev1 - timev2)
-    end)
+        assert.is.same({sec = 5, usec = 1000}, timev2 - timev1)
+        local backwards_sub = timev1 - timev2
+        assert.is.same({sec = -6, usec = 999000}, backwards_sub)
 
-    it("should guard against reverse subtraction logic", function()
-        dbg:turnOn()
-        TimeVal = package.reload("ui/timeval")
-        local timev1 = TimeVal:new{ sec = 5, usec = 5000}
-        local timev2 = TimeVal:new{ sec = 10, usec = 5000}
+        -- Check that to/from float conversions behave, even for negative values.
+        assert.is.same(-5.001, backwards_sub:tonumber())
+        assert.is.same({sec = -6, usec = 999000}, TimeVal:fromnumber(-5.001))
 
-        assert.has.errors(function() return timev1 - timev2 end)
+        local tv = TimeVal:new{ sec = -6, usec = 1000 }
+        assert.is.same(-5.999, tv:tonumber())
+        assert.is.same({sec = -6, usec = 1000}, TimeVal:fromnumber(-5.999))
+
+        -- We lose precision because of rounding if we go higher resolution than a ms...
+        tv = TimeVal:new{ sec = -6, usec = 101 }
+        assert.is.same(-5.9999, tv:tonumber())
+        assert.is.same({sec = -6, usec = 100}, TimeVal:fromnumber(-5.9999))
+        --                                 ^ precision loss
+
+        tv = TimeVal:new{ sec = -6, usec = 11 }
+        assert.is.same(-6, tv:tonumber())
+        --              ^ precision loss
+        assert.is.same({sec = -6, usec = 10}, TimeVal:fromnumber(-5.99999))
+        --                                ^ precision loss
+
+        tv = TimeVal:new{ sec = -6, usec = 1 }
+        assert.is.same(-6, tv:tonumber())
+        --              ^ precision loss
+        assert.is.same({sec = -6, usec = 1}, TimeVal:fromnumber(-5.999999))
     end)
 
     it("should derive sec and usec from more than 1 sec worth of usec", function()

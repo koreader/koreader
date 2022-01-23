@@ -8,7 +8,7 @@ package.cpath =
 
 -- set search path for 'ffi.load()'
 local ffi = require("ffi")
-local dummy = require("ffi/posix_h")
+require("ffi/posix_h")
 local C = ffi.C
 if ffi.os == "Windows" then
     C._putenv("PATH=libs;common;")
@@ -24,7 +24,7 @@ ffi.load = function(lib)
 
     if not lib_path then
         io.write("ffi.load (warning): ", re, "\n")
-        error('Not able to load dynamic library: ' .. lib)
+        error("Not able to load dynamic library: " .. lib)
     else
         io.write("ffi.load (assisted searchpath): ", lib_path, "\n")
         return ffi_load(lib_path)

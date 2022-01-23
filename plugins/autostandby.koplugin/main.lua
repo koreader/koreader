@@ -44,6 +44,11 @@ function AutoStandby:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+function AutoStandby:onCloseWidget()
+    logger.dbg("AutoStandby:onCloseWidget() instance=", tostring(self))
+    UIManager:unschedule(AutoStandby.allow)
+end
+
 function AutoStandby:addToMainMenu(menu_items)
     menu_items.autostandby = {
         sorting_hint = "device",
@@ -63,7 +68,7 @@ function AutoStandby:addToMainMenu(menu_items)
     }
 end
 
--- We've received touch/key event, so delay stadby accordingly
+-- We've received touch/key event, so delay standby accordingly
 function AutoStandby:onInputEvent()
     logger.dbg("AutoStandby:onInputevent() instance=", tostring(self))
     local config = self.settings.data
@@ -136,7 +141,6 @@ function AutoStandby:genSpinMenuItem(text, cfg, min, max)
         enabled_func = function() return self:isAllowedByConfig() end,
         callback = function()
             local spin = SpinWidget:new {
-                width = math.floor(Device.screen:getWidth() * 0.6),
                 value = self.settings:readSetting(cfg),
                 value_min = min and min() or 0,
                 value_max = max and max() or 9999,

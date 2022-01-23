@@ -1,25 +1,25 @@
 describe("UIManager spec", function()
-    local UIManager, util
+    local TimeVal, UIManager
     local now, wait_until
     local noop = function() end
 
     setup(function()
         require("commonrequire")
-        util = require("ffi/util")
+        TimeVal = require("ui/timeval")
         UIManager = require("ui/uimanager")
     end)
 
     it("should consume due tasks", function()
-        now = { util.gettime() }
-        local future = { now[1] + 60000, now[2] }
-        local future2 = {future[1] + 5, future[2]}
+        now = TimeVal:now()
+        local future = TimeVal:new{ sec = now.sec + 60000, usec = now.usec }
+        local future2 = TimeVal:new{ sec = future.sec + 5, usec = future.usec}
         UIManager:quit()
         UIManager._task_queue = {
-            { time = {now[1] - 10, now[2] }, action = noop },
-            { time = {now[1], now[2] - 5 }, action = noop },
-            { time = now, action = noop },
-            { time = future, action = noop },
-            { time = future2, action = noop },
+            { time = TimeVal:new{ sec = now.sec - 10, usec = now.usec }, action = noop, args = {}, argc = 0 },
+            { time = TimeVal:new{ sec = now.sec, usec = now.usec - 5 }, action = noop, args = {}, argc = 0 },
+            { time = now, action = noop, args = {}, argc = 0 },
+            { time = future, action = noop, args = {}, argc = 0 },
+            { time = future2, action = noop, args = {}, argc = 0 },
         }
         UIManager:_checkTasks()
         assert.are.same(2, #UIManager._task_queue, 2)
@@ -28,34 +28,34 @@ describe("UIManager spec", function()
     end)
 
     it("should calcualte wait_until properly in checkTasks routine", function()
-        now = { util.gettime() }
-        local future = { now[1] + 60000, now[2] }
+        now = TimeVal:now()
+        local future = TimeVal:new{ sec = now.sec + 60000, usec = now.usec }
         UIManager:quit()
         UIManager._task_queue = {
-            { time = {now[1] - 10, now[2] }, action = noop },
-            { time = {now[1], now[2] - 5 }, action = noop },
-            { time = now, action = noop },
-            { time = future, action = noop },
-            { time = {future[1] + 5, future[2]}, action = noop },
+            { time = TimeVal:new{ sec = now.sec - 10, usec = now.usec }, action = noop, args = {}, argc = 0 },
+            { time = TimeVal:new{ sec = now.sec, usec = now.usec - 5 }, action = noop, args = {}, argc = 0 },
+            { time = now, action = noop, args = {}, argc = 0 },
+            { time = future, action = noop, args = {}, argc = 0 },
+            { time = TimeVal:new{ sec = future.sec + 5, usec = future.usec }, action = noop, args = {}, argc = 0 },
         }
         wait_until, now = UIManager:_checkTasks()
         assert.are.same(future, wait_until)
     end)
 
     it("should return nil wait_until properly in checkTasks routine", function()
-        now = { util.gettime() }
+        now = TimeVal:now()
         UIManager:quit()
         UIManager._task_queue = {
-            { time = {now[1] - 10, now[2] }, action = noop },
-            { time = {now[1], now[2] - 5 }, action = noop },
-            { time = now, action = noop },
+            { time = TimeVal:new{ sec = now.sec - 10, usec = now.usec }, action = noop, args = {}, argc = 0 },
+            { time = TimeVal:new{ sec = now.sec, usec = now.usec - 5 }, action = noop, args = {}, argc = 0 },
+            { time = now, action = noop, args = {}, argc = 0 },
         }
         wait_until, now = UIManager:_checkTasks()
         assert.are.same(nil, wait_until)
     end)
 
     it("should insert new task properly in empty task queue", function()
-        now = { util.gettime() }
+        now = TimeVal:now()
         UIManager:quit()
         UIManager._task_queue = {}
         assert.are.same(0, #UIManager._task_queue)
@@ -65,11 +65,11 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task properly in single task queue", function()
-        now = { util.gettime() }
-        local future = { now[1]+10000, now[2] }
+        now = TimeVal:now()
+        local future = TimeVal:new{ sec = now.sec + 10000, usec = now.usec }
         UIManager:quit()
         UIManager._task_queue = {
-            { time = future, action = '1' },
+            { time = future, action = '1', args = {}, argc = 0 },
         }
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'quz')
@@ -78,7 +78,7 @@ describe("UIManager spec", function()
 
         UIManager:quit()
         UIManager._task_queue = {
-            { time = now, action = '1' },
+            { time = now, action = '1', args = {}, argc = 0 },
         }
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'foo')
@@ -90,65 +90,67 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task in ascendant order", function()
-        now = { util.gettime() }
+        now = TimeVal:now()
         UIManager:quit()
         UIManager._task_queue = {
-            { time = {now[1] - 10, now[2] }, action = '1' },
-            { time = {now[1], now[2] - 5 }, action = '2' },
-            { time = now, action = '3' },
+            { time = TimeVal:new{ sec = now.sec - 10, usec = now.usec }, action = '1', args = {}, argc = 0 },
+            { time = TimeVal:new{ sec = now.sec, usec = now.usec - 5 }, action = '2', args = {}, argc = 0 },
+            { time = now, action = '3', args = {}, argc = 0 },
         }
         -- insert into the tail slot
         UIManager:scheduleIn(10, 'foo')
         assert.are.same('foo', UIManager._task_queue[4].action)
         -- insert into the second slot
-        UIManager:schedule({now[1]-5, now[2]}, 'bar')
+        UIManager:schedule(TimeVal:new{ sec = now.sec - 5, usec = now.usec }, 'bar')
         assert.are.same('bar', UIManager._task_queue[2].action)
         -- insert into the head slot
-        UIManager:schedule({now[1]-15, now[2]}, 'baz')
+        UIManager:schedule(TimeVal:new{ sec = now.sec - 15, usec = now.usec }, 'baz')
         assert.are.same('baz', UIManager._task_queue[1].action)
         -- insert into the last second slot
         UIManager:scheduleIn(5, 'qux')
         assert.are.same('qux', UIManager._task_queue[6].action)
         -- insert into the middle slot
-        UIManager:schedule({now[1], now[2]-1}, 'quux')
+        UIManager:schedule(TimeVal:new{ sec = now.sec, usec = now.usec - 1 }, 'quux')
         assert.are.same('quux', UIManager._task_queue[5].action)
     end)
 
     it("should unschedule all the tasks with the same action", function()
-        now = { util.gettime() }
+        now = TimeVal:now()
         UIManager:quit()
         UIManager._task_queue = {
-            { time = {now[1] - 15, now[2] }, action = '3' },
-            { time = {now[1] - 10, now[2] }, action = '1' },
-            { time = {now[1], now[2] - 6 }, action = '3' },
-            { time = {now[1], now[2] - 5 }, action = '2' },
-            { time = now, action = '3' },
+            { time = TimeVal:new{ sec = now.sec - 15, usec = now.usec }, action = '3', args = {}, argc = 0 },
+            { time = TimeVal:new{ sec = now.sec - 10, usec = now.usec }, action = '1', args = {}, argc = 0 },
+            { time = TimeVal:new{ sec = now.sec, usec = now.usec - 6 }, action = '3', args = {}, argc = 0 },
+            { time = TimeVal:new{ sec = now.sec, usec = now.usec - 5 }, action = '2', args = {}, argc = 0 },
+            { time = now, action = '3', args = {}, argc = 0 },
         }
         -- insert into the tail slot
         UIManager:unschedule('3')
         assert.are.same({
-            { time = {now[1] - 10, now[2] }, action = '1' },
-            { time = {now[1], now[2] - 5 }, action = '2' },
+            { time = TimeVal:new{ sec = now.sec - 10, usec = now.usec }, action = '1', args = {}, argc = 0 },
+            { time = TimeVal:new{ sec = now.sec, usec = now.usec - 5 }, action = '2', args = {}, argc = 0 },
         }, UIManager._task_queue)
     end)
 
     it("should not have race between unschedule and _checkTasks", function()
-        now = { util.gettime() }
+        now = TimeVal:now()
         local run_count = 0
         local task_to_remove = function()
             run_count = run_count + 1
         end
         UIManager:quit()
         UIManager._task_queue = {
-            { time = { now[1], now[2]-5 }, action = task_to_remove },
+            { time = TimeVal:new{ sec = now.sec, usec = now.usec - 5 }, action = task_to_remove, args = {}, argc = 0 },
             {
-                time = { now[1]-10, now[2] },
+                time = TimeVal:new{ sec = now.sec - 10, usec = now.usec },
                 action = function()
                     run_count = run_count + 1
                     UIManager:unschedule(task_to_remove)
-                end
+                end,
+                args = {},
+                argc = 0
             },
-            { time = now, action = task_to_remove },
+            { time = now, action = task_to_remove, args = {}, argc = 0 },
         }
         UIManager:_checkTasks()
         assert.are.same(2, run_count)
@@ -324,33 +326,76 @@ describe("UIManager spec", function()
         UIManager:broadcastEvent("foo")
         assert.is.same(#UIManager._window_stack, 0)
 
+        -- Remember that the stack is processed top to bottom!
+        -- Test making a hole in the middle of the stack.
         UIManager._window_stack = {
             {
                 widget = {
                     handleEvent = function()
-                        UIManager._window_stack[1] = nil
-                        UIManager._window_stack[2] = nil
-                        UIManager._window_stack[3] = nil
+                        assert.truthy(true)
                     end
                 }
             },
             {
                 widget = {
                     handleEvent = function()
-                        assert.falsy(true);
+                        assert.falsy(true)
                     end
                 }
             },
             {
                 widget = {
                     handleEvent = function()
-                        assert.falsy(true);
+                        assert.falsy(true)
+                    end
+                }
+            },
+            {
+                widget = {
+                    handleEvent = function()
+                        table.remove(UIManager._window_stack, #UIManager._window_stack - 2)
+                        table.remove(UIManager._window_stack, #UIManager._window_stack - 2)
+                        table.remove(UIManager._window_stack, #UIManager._window_stack - 1)
+                    end
+                }
+            },
+            {
+                widget = {
+                    handleEvent = function()
+                        assert.truthy(true)
                     end
                 }
             },
         }
         UIManager:broadcastEvent("foo")
-        assert.is.same(0, #UIManager._window_stack)
+        assert.is.same(2, #UIManager._window_stack)
+
+        -- Test inserting a new widget in the stack
+        local new_widget = {
+            widget = {
+                handleEvent = function()
+                    assert.truthy(true)
+                end
+            }
+        }
+        UIManager._window_stack = {
+            {
+                widget = {
+                    handleEvent = function()
+                        table.insert(UIManager._window_stack, new_widget)
+                    end
+                }
+            },
+            {
+                widget = {
+                    handleEvent = function()
+                        assert.truthy(true)
+                    end
+                }
+            },
+        }
+        UIManager:broadcastEvent("foo")
+        assert.is.same(3, #UIManager._window_stack)
     end)
 
     it("should handle stack change when closing widgets", function()

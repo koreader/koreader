@@ -3,8 +3,6 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local BookInfoManager = require("bookinfomanager")
-local Screen = require("device").screen
-local T = require("ffi/util").template
 
 --[[
     This plugin provides additional display modes to file browsers (File Manager
@@ -52,15 +50,7 @@ local CoverBrowser = InputContainer:new{
 }
 
 function CoverBrowser:init()
-    self.full_featured = true
-    -- (Could be set to false for some platforms to provide a fallback
-    -- option with only a menu for managing a few core settings)
-
     self.ui.menu:registerToMainMenu(self)
-
-    if not self.full_featured then -- nothing else than menu registration
-        return
-    end
 
     if init_done then -- things already patched according to current modes
         return
@@ -75,7 +65,7 @@ function CoverBrowser:init()
             BookInfoManager:saveSetting("filemanager_display_mode", "list_image_meta")
             BookInfoManager:saveSetting("history_display_mode", "mosaic_image")
         end
-        G_reader_settings:saveSetting("coverbrowser_initial_default_setup_done", true)
+        G_reader_settings:makeTrue("coverbrowser_initial_default_setup_done")
     end
 
     self:setupFileManagerDisplayMode(BookInfoManager:getSetting("filemanager_display_mode"))
@@ -90,87 +80,6 @@ end
 function CoverBrowser:addToMainMenu(menu_items)
     -- We add it only to FileManager menu
     if self.ui.view then -- Reader
-        return
-    end
-
-    -- Items available even if not full_featured
-    -- (settings used by core, that fit in this menu)
-    local generic_items = {
-        {
-            text_func = function()
-                local current_state = _("Show new files in bold")
-                if G_reader_settings:readSetting("show_file_in_bold") == "opened" then
-                    current_state = _("Show opened files in bold")
-                elseif G_reader_settings:readSetting("show_file_in_bold") == false then
-                    current_state = _("Show files in bold") -- with checkmark unchecked
-                end
-                if self.full_featured then
-                    -- Inform that this settings applies only to classic file chooser
-                    current_state = T(_("(Classic mode) %1"), current_state)
-                end
-                return current_state
-            end,
-            checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") ~= false end,
-            sub_item_table = {
-                {
-                    text = _("Don't show files in bold"),
-                    checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") == false end,
-                    callback = function()
-                        G_reader_settings:saveSetting("show_file_in_bold", false)
-                        self:refreshFileManagerInstance()
-                    end,
-                },
-                {
-                    text = _("Show opened files in bold"),
-                    checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") == "opened" end,
-                    callback = function()
-                        G_reader_settings:saveSetting("show_file_in_bold", "opened")
-                        self:refreshFileManagerInstance()
-                    end,
-                },
-                {
-                    text = _("Show new (not yet opened) files in bold"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("show_file_in_bold") ~= false and G_reader_settings:readSetting("show_file_in_bold") ~= "opened"
-                    end,
-                    callback = function()
-                        G_reader_settings:delSetting("show_file_in_bold")
-                        self:refreshFileManagerInstance()
-                    end,
-                },
-            },
-            separator = true,
-        },
-        {
-            text = _("Shorten home directory"),
-            checked_func = function()
-                return G_reader_settings:nilOrTrue("shorten_home_dir")
-            end,
-            callback = function()
-                G_reader_settings:flipNilOrTrue("shorten_home_dir")
-                if FileManager.instance then FileManager.instance:reinit() end
-            end,
-        },
-        {
-            text = _("Auto-remove deleted or purged items from history"),
-            checked_func = function() return G_reader_settings:readSetting("autoremove_deleted_items_from_history") end,
-            callback = function() G_reader_settings:flipNilOrFalse("autoremove_deleted_items_from_history") end,
-        },
-        {
-            text = _("Show filename in Open last/previous menu items"),
-            checked_func = function() return G_reader_settings:readSetting("open_last_menu_show_filename") end,
-            callback = function() G_reader_settings:flipNilOrFalse("open_last_menu_show_filename") end,
-        },
-    }
-
-    if not self.full_featured then
-        -- Make the generic items directly as 1st level items,
-        -- and use alternate name for main menu, not mentionning
-        -- "display mode" that are not available
-        menu_items.filemanager_display_mode = {
-            text = _("File browser settings"),
-            sub_item_table = generic_items
-        }
         return
     end
 
@@ -268,7 +177,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                         callback = function()
                            self:setupHistoryDisplayMode("list_image_filename")
                         end,
-                        separator = true,
                     },
                 },
             },
@@ -316,153 +224,154 @@ function CoverBrowser:addToMainMenu(menu_items)
                         callback = function()
                             self:setupCollectionDisplayMode("list_image_filename")
                         end,
-                        separator = true,
                     },
                 },
-                separator = true,
             },
-            -- Misc settings
+        },
+    }
+
+    -- add Mosaic / Detailed list mode settings to File browser Settings submenu
+    -- next to Classic mode settings
+    if menu_items.filebrowser_settings == nil then return end
+    table.insert (menu_items.filebrowser_settings.sub_item_table, 4, {
+        text = _("Mosaic and detailed list settings"),
+        separator = true,
+        sub_item_table = {
             {
-                text = _("Other settings"),
+                text = _("Items per page"),
+                help_text = _([[This sets the number of files and folders per page in display modes other than classic.]]),
+                -- Best to not "keep_menu_open = true", to see how this apply on the full view
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    -- "files_per_page" should have been saved with an adequate value
+                    -- the first time Detailed list was shown. Fallback to a start
+                    -- value of 10 if it hasn't.
+                    local curr_items = BookInfoManager:getSetting("files_per_page") or 10
+                    local items = SpinWidget:new{
+                        value = curr_items,
+                        value_min = 4,
+                        value_max = 20,
+                        default_value = 10,
+                        keep_shown_on_apply = true,
+                        title_text =  _("Items per page"),
+                        callback = function(spin)
+                            BookInfoManager:saveSetting("files_per_page", spin.value)
+                            self.ui:onRefresh()
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+            },
+            {
+                text = _("Display hints"),
                 sub_item_table = {
                     {
-                        text = _("Display hints"),
-                        sub_item_table = {
-                            {
-                                text = _("Show hint for books with description"),
-                                checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
-                                callback = function()
-                                    if BookInfoManager:getSetting("no_hint_description") then
-                                        BookInfoManager:saveSetting("no_hint_description", false)
-                                    else
-                                        BookInfoManager:saveSetting("no_hint_description", true)
-                                    end
-                                    self:refreshFileManagerInstance()
-                                end,
-                            },
-                            {
-                                text = _("Show hint for opened books in history"),
-                                checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
-                                callback = function()
-                                    if BookInfoManager:getSetting("history_hint_opened") then
-                                        BookInfoManager:saveSetting("history_hint_opened", false)
-                                    else
-                                        BookInfoManager:saveSetting("history_hint_opened", true)
-                                    end
-                                    self:refreshFileManagerInstance()
-                                end,
-                            },
-                            {
-                                text = _("Show hint for opened books in favorites"),
-                                checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
-                                callback = function()
-                                    if BookInfoManager:getSetting("collections_hint_opened") then
-                                        BookInfoManager:saveSetting("collections_hint_opened", false)
-                                    else
-                                        BookInfoManager:saveSetting("collections_hint_opened", true)
-                                    end
-                                    self:refreshFileManagerInstance()
-                                end,
-                            }
-                        }
-                    },
-                    {
-                        text = _("Series"),
-                        sub_item_table = {
-                            {
-                                text = _("Append series metadata to authors"),
-                                checked_func = function() return series_mode == "append_series_to_authors" end,
-                                callback = function()
-                                    if series_mode == "append_series_to_authors" then
-                                        series_mode = nil
-                                    else
-                                        series_mode = "append_series_to_authors"
-                                    end
-                                    BookInfoManager:saveSetting("series_mode", series_mode)
-                                    self:refreshFileManagerInstance()
-                                end,
-                            },
-                            {
-                                text = _("Append series metadata to title"),
-                                checked_func = function() return series_mode == "append_series_to_title" end,
-                                callback = function()
-                                    if series_mode == "append_series_to_title" then
-                                        series_mode = nil
-                                    else
-                                        series_mode = "append_series_to_title"
-                                    end
-                                    BookInfoManager:saveSetting("series_mode", series_mode)
-                                    self:refreshFileManagerInstance()
-                                end,
-                            },
-                            {
-                                text = _("Show series metadata in separate line"),
-                                checked_func = function() return series_mode == "series_in_separate_line" end,
-                                callback = function()
-                                    if series_mode == "series_in_separate_line" then
-                                        series_mode = nil
-                                    else
-                                        series_mode = "series_in_separate_line"
-                                    end
-                                    BookInfoManager:saveSetting("series_mode", series_mode)
-                                    self:refreshFileManagerInstance()
-                                end,
-                            },
-                        },
-                        separator = true
-                    },
-                    {
-                        text = _("(Detailed list) Files per page"),
-                        help_text = _([[This sets the number of files and directories per page in non-'classic' display modes.]]),
-                        -- Best to not "keep_menu_open = true", to see how this apply on the full view
+                        text = _("Show hint for books with description"),
+                        checked_func = function() return not BookInfoManager:getSetting("no_hint_description") end,
                         callback = function()
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            -- "files_per_page" should have been saved with an adequate value
-                            -- the first time Detailed list was shown. Fallback to a start
-                            -- value of 10 if it hasn't.
-                            local curr_items = BookInfoManager:getSetting("files_per_page") or 10
-                            local items = SpinWidget:new{
-                                width = math.floor(Screen:getWidth() * 0.6),
-                                value = curr_items,
-                                value_min = 4,
-                                value_max = 20,
-                                keep_shown_on_apply = true,
-                                title_text =  _("Files per page"),
-                                callback = function(spin)
-                                    BookInfoManager:saveSetting("files_per_page", spin.value)
-                                    self.ui:onRefresh()
-                                end
-                            }
-                            UIManager:show(items)
-                        end,
-                    },
-                    {
-                        text = _("Show number of pages read instead of progress %"),
-                        checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
-                        callback = function()
-                            if BookInfoManager:getSetting("show_pages_read_as_progress") then
-                                BookInfoManager:saveSetting("show_pages_read_as_progress", false)
+                            if BookInfoManager:getSetting("no_hint_description") then
+                                BookInfoManager:saveSetting("no_hint_description", false)
                             else
-                                BookInfoManager:saveSetting("show_pages_read_as_progress", true)
+                                BookInfoManager:saveSetting("no_hint_description", true)
                             end
                             self:refreshFileManagerInstance()
                         end,
                     },
                     {
-                        text = _("Show number of pages left to read"),
-                        checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
+                        text = _("Show hint for opened books in history"),
+                        checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
                         callback = function()
-                            if BookInfoManager:getSetting("show_pages_left_in_progress") then
-                                BookInfoManager:saveSetting("show_pages_left_in_progress", false)
+                            if BookInfoManager:getSetting("history_hint_opened") then
+                                BookInfoManager:saveSetting("history_hint_opened", false)
                             else
-                                BookInfoManager:saveSetting("show_pages_left_in_progress", true)
+                                BookInfoManager:saveSetting("history_hint_opened", true)
                             end
                             self:refreshFileManagerInstance()
                         end,
-                        separator = true
                     },
-                    -- generic_items will be inserted here
+                    {
+                        text = _("Show hint for opened books in favorites"),
+                        checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
+                        callback = function()
+                            if BookInfoManager:getSetting("collections_hint_opened") then
+                                BookInfoManager:saveSetting("collections_hint_opened", false)
+                            else
+                                BookInfoManager:saveSetting("collections_hint_opened", true)
+                            end
+                            self:refreshFileManagerInstance()
+                        end,
+                    }
+                }
+            },
+            {
+                text = _("Series"),
+                sub_item_table = {
+                    {
+                        text = _("Append series metadata to authors"),
+                        checked_func = function() return series_mode == "append_series_to_authors" end,
+                        callback = function()
+                            if series_mode == "append_series_to_authors" then
+                                series_mode = nil
+                            else
+                                series_mode = "append_series_to_authors"
+                            end
+                            BookInfoManager:saveSetting("series_mode", series_mode)
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Append series metadata to title"),
+                        checked_func = function() return series_mode == "append_series_to_title" end,
+                        callback = function()
+                            if series_mode == "append_series_to_title" then
+                                series_mode = nil
+                            else
+                                series_mode = "append_series_to_title"
+                            end
+                            BookInfoManager:saveSetting("series_mode", series_mode)
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
+                    {
+                        text = _("Show series metadata in separate line"),
+                        checked_func = function() return series_mode == "series_in_separate_line" end,
+                        callback = function()
+                            if series_mode == "series_in_separate_line" then
+                                series_mode = nil
+                            else
+                                series_mode = "series_in_separate_line"
+                            end
+                            BookInfoManager:saveSetting("series_mode", series_mode)
+                            self:refreshFileManagerInstance()
+                        end,
+                    },
                 },
+                separator = true
+            },
+            {
+                text = _("Show number of pages read instead of progress %"),
+                checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
+                callback = function()
+                    if BookInfoManager:getSetting("show_pages_read_as_progress") then
+                        BookInfoManager:saveSetting("show_pages_read_as_progress", false)
+                    else
+                        BookInfoManager:saveSetting("show_pages_read_as_progress", true)
+                    end
+                    self:refreshFileManagerInstance()
+                end,
+            },
+            {
+                text = _("Show number of pages left to read"),
+                checked_func = function() return BookInfoManager:getSetting("show_pages_left_in_progress") end,
+                callback = function()
+                    if BookInfoManager:getSetting("show_pages_left_in_progress") then
+                        BookInfoManager:saveSetting("show_pages_left_in_progress", false)
+                    else
+                        BookInfoManager:saveSetting("show_pages_left_in_progress", true)
+                    end
+                    self:refreshFileManagerInstance()
+                end,
+                separator = true,
             },
             {
                 text = _("Book info cache management"),
@@ -538,13 +447,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                 },
             },
         },
-    }
-    -- Finally, insert the generic items at end of "Other settings" submenu
-    local sub_item_table = menu_items.filemanager_display_mode.sub_item_table
-    local generic_items_target = sub_item_table[#sub_item_table-1].sub_item_table -- second to last
-    for _, item in pairs(generic_items) do
-        table.insert(generic_items_target, item)
-    end
+    })
 end
 
 function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)

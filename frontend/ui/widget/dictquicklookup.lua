@@ -2,7 +2,6 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
@@ -12,7 +11,6 @@ local GestureRange = require("ui/gesturerange")
 local IconButton = require("ui/widget/iconbutton")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local LineWidget = require("ui/widget/linewidget")
 local Math = require("optmath")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -20,6 +18,9 @@ local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local TimeVal = require("ui/timeval")
+local TitleBar = require("ui/widget/titlebar")
+local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -48,8 +49,8 @@ local DictQuickLookup = InputContainer:new{
     dict_index = 1,
     width = nil,
     height = nil,
-    -- box of highlighted word, quick lookup window tries to not hide the word
-    word_box = nil,
+    -- sboxes containing highlighted text, quick lookup window tries to not hide the word
+    word_boxes = nil,
 
     -- refresh_callback will be called before we trigger full refresh in onSwipe
     refresh_callback = nil,
@@ -60,6 +61,25 @@ local highlight_strings = {
     highlight =_("Highlight"),
     unhighlight = _("Unhighlight"),
 }
+
+function DictQuickLookup:canSearch()
+    if self.is_wiki then
+        -- In the Wiki variant of this widget, the Search button is coopted to cycle between enabled languages.
+        if #self.wiki_languages > 1 then
+            return true
+        end
+    else
+        if self:isDocless() then
+            return false
+        end
+        -- This is to prevent an ineffective button when we're launched from the Reader's menu.
+        if self.highlight then
+            return true
+        end
+    end
+
+    return false
+end
 
 function DictQuickLookup:init()
     self.dict_font_size = G_reader_settings:readSetting("dict_font_size") or 20
@@ -109,7 +129,7 @@ function DictQuickLookup:init()
             --             -- don't pass self.highlight to subsequent lookup, we want
             --             -- the first to be the only one to unhighlight selection
             --             -- when closed
-            --             Event:new("LookupWord", word, self.word_box))
+            --             Event:new("LookupWord", word, true, {self.word_box}))
             --     end
             -- },
             -- Allow selection of one or more words (see textboxwidget.lua) :
@@ -132,23 +152,19 @@ function DictQuickLookup:init()
                 },
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration)
-                    local lookup_target
-                    if hold_duration < 3.0 then
-                        -- do this lookup in the same domain (dict/wikipedia)
-                        lookup_target = self.is_wiki and "LookupWikipedia" or "LookupWord"
-                    else
+                    -- do this lookup in the same domain (dict/wikipedia)
+                    local lookup_wikipedia = self.is_wiki
+                    if hold_duration >= TimeVal:new{ sec = 3, usec = 0 } then
                         -- but allow switching domain with a long hold
-                        lookup_target = self.is_wiki and "LookupWord" or "LookupWikipedia"
+                        lookup_wikipedia = not lookup_wikipedia
                     end
-                    if lookup_target == "LookupWikipedia" then
-                        self:resyncWikiLanguages()
+                    -- We don't pass self.highlight to subsequent lookup, we want the
+                    -- first to be the only one to unhighlight selection when closed
+                    if lookup_wikipedia then
+                        self:lookupWikipedia(false, text)
+                    else
+                        self.ui:handleEvent(Event:new("LookupWord", text))
                     end
-                    self.ui:handleEvent(
-                        -- don't pass self.highlight to subsequent lookup, we want
-                        -- the first to be the only one to unhighlight selection
-                        -- when closed
-                        Event:new(lookup_target, text)
-                    )
                 end
             },
             -- These will be forwarded to MovableContainer after some checks
@@ -161,65 +177,13 @@ function DictQuickLookup:init()
     -- We no longer support setting a default dict with Tap on title.
     -- self:changeToDefaultDict()
     -- Now, dictionaries can be ordered (although not yet per-book), so trust the order set
-    self:changeDictionary(1) -- this will call self:update()
-end
+    self:changeDictionary(1, true) -- don't call update
 
--- Whether currently DictQuickLookup is working without a document.
-function DictQuickLookup:isDocless()
-    return self.ui == nil or self.ui.highlight == nil
-end
-
-function DictQuickLookup:getHtmlDictionaryCss()
-    -- Using Noto Sans because Nimbus doesn't contain the IPA symbols.
-    -- 'line-height: 1.3' to have it similar to textboxwidget,
-    -- and follow user's choice on justification
-    local css_justify = G_reader_settings:nilOrTrue("dict_justify") and "text-align: justify;" or ""
-    local css = [[
-        @page {
-            margin: 0;
-            font-family: 'Noto Sans';
-        }
-
-        body {
-            margin: 0;
-            line-height: 1.3;
-            ]]..css_justify..[[
-        }
-
-        blockquote, dd {
-            margin: 0 1em;
-        }
-    ]]
-    -- MuPDF doesn't currently scale CSS pixels, so we have to use a font-size based measurement.
-    -- Unfortunately MuPDF doesn't properly support `rem` either, which it bases on a hard-coded
-    -- value of `16px`, so we have to go with `em` (or `%`).
-    --
-    -- These `em`-based margins can vary slightly, but it's the best available compromise.
-    --
-    -- We also keep left and right margin the same so it'll display as expected in RTL.
-    -- Because MuPDF doesn't currently support `margin-start`, this results in a slightly
-    -- unconventional but hopefully barely noticeable right margin for <dd>.
-
-    if self.css then
-        return css .. self.css
-    end
-    return css
-end
-
-function DictQuickLookup:update()
-    local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
-    local orig_moved_offset = self.movable and self.movable:getMovedOffset()
-    -- Free our previous widget and subwidgets' resources (especially
-    -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
-    -- and scheduled image_update_action)
-    if self[1] then
-        self[1]:free()
-    end
-
+    -- And here comes the initial widget layout...
     if self.is_wiki then
-        -- Keep a copy of self.wiki_languages for use
-        -- by DictQuickLookup:resyncWikiLanguages()
-        self.wiki_languages_copy = self.wiki_languages and {unpack(self.wiki_languages)} or nil
+        -- Get a copy of ReaderWikipedia.wiki_languages, with the current result
+        -- lang first (rotated, or added)
+        self.wiki_languages, self.update_wiki_languages_on_close = self.ui.wikipedia:getWikiLanguages(self.lang)
     end
 
     -- Bigger window if fullpage Wikipedia article being shown,
@@ -236,57 +200,23 @@ function DictQuickLookup:update()
     -- components, when we know how much height they are taking.
 
     -- Dictionary title
-    -- (a bit convoluted with margin & padding but no border, but let's
-    -- do as other widgets to get the same look)
-    local title_margin = Size.margin.title
-    local title_padding = Size.padding.default
-    local title_width = inner_width - 2*title_padding -2*title_margin
-    local close_button = CloseButton:new{ window = self, padding_top = title_margin, }
-    local dict_title_text = TextWidget:new{
-        text = self.displaydictname,
-        face = Font:getFace("x_smalltfont"),
-        bold = true,
-        max_width = title_width - close_button:getSize().w + close_button.padding_left
-            -- Allow text to eat on the CloseButton padding_left (which
-            -- is quite large to ensure a bigger tap area)
-    }
-    local dict_title_widget = dict_title_text
-    if self.is_wiki then
-        -- Visual hint: title left aligned for dict, but centered for Wikipedia
-        dict_title_widget = CenterContainer:new{
-            dimen = Geom:new{
-                w = title_width,
-                h = dict_title_text:getSize().h,
-            },
-            dict_title_text,
-        }
-    end
-    self.dict_title = FrameContainer:new{
-        margin = title_margin,
-        bordersize = 0,
-        padding = title_padding,
-        dict_title_widget,
-    }
-    local title_bar = OverlapGroup:new{
-        dimen = {
-            w = inner_width,
-            h = self.dict_title:getSize().h
-        },
-        self.dict_title,
-        close_button,
-    }
-    local title_sep = LineWidget:new{
-        dimen = Geom:new{
-            w = inner_width,
-            h = Size.line.thick,
-        }
+    self.dict_title = TitleBar:new{
+        width = inner_width,
+        title = self.displaydictname,
+        with_bottom_line = true,
+        bottom_v_padding = 0, -- padding handled below
+        close_callback = function() self:onClose() end,
+        close_hold_callback = function() self:onHoldClose() end,
+        -- visual hint: title left aligned for dict, centered for Wikipedia
+        align = self.is_wiki and "center" or "left",
+        show_parent = self,
     }
 
     -- This padding and the resulting width apply to the content
     -- below the title:  lookup word and definition
     local content_padding_h = Size.padding.large
     local content_padding_v = Size.padding.large -- added via VerticalSpan
-    local content_width = inner_width - 2*content_padding_h
+    self.content_width = inner_width - 2*content_padding_h
 
     -- Spans between components
     local top_to_word_span = VerticalSpan:new{ width = content_padding_v }
@@ -328,12 +258,19 @@ function DictQuickLookup:update()
             self:lookupInputWord(self.lookupword)
         end,
         overlap_align = "right",
+        show_parent = self,
     }
     local lookup_edit_button_w = lookup_edit_button:getSize().w
     -- Nb of results (if set)
     local lookup_word_nb
     local lookup_word_nb_w = 0
     if self.displaynb then
+        self.displaynb_text = TextWidget:new{
+            text = self.displaynb,
+            face = Font:getFace("cfont", word_font_size),
+            padding = 0, -- smaller height for better aligmnent with icon
+        }
+
         lookup_word_nb = FrameContainer:new{
             margin = 0,
             bordersize = 0,
@@ -341,29 +278,25 @@ function DictQuickLookup:update()
             padding_left = Size.padding.small,
             padding_right = lookup_edit_button_w + Size.padding.default,
             overlap_align = "right",
-            TextWidget:new{
-                text = self.displaynb,
-                face = Font:getFace("cfont", word_font_size),
-                padding = 0, -- smaller height for better aligmnent with icon
-            }
+            self.displaynb_text,
         }
         lookup_word_nb_w = lookup_word_nb:getSize().w
     end
     -- Lookup word
-    local lookup_word_text = TextWidget:new{
+    self.lookup_word_text = TextWidget:new{
         text = self.displayword,
         face = Font:getFace(word_font_face, word_font_size),
         bold = true,
-        max_width = content_width - math.max(lookup_edit_button_w, lookup_word_nb_w),
+        max_width = self.content_width - math.max(lookup_edit_button_w, lookup_word_nb_w),
         padding = 0, -- to be aligned with lookup_word_nb
     }
     -- Group these 3 widgets
     local lookup_word = OverlapGroup:new{
         dimen = {
-            w = content_width,
+            w = self.content_width,
             h = lookup_height,
         },
-        lookup_word_text,
+        self.lookup_word_text,
         lookup_edit_button,
         lookup_word_nb, -- last, as this might be nil
     }
@@ -375,13 +308,14 @@ function DictQuickLookup:update()
         buttons = {
             {
                 {
+                    id = "save",
                     text = _("Save as EPUB"),
                     callback = function()
                         local InfoMessage = require("ui/widget/infomessage")
                         local ConfirmBox = require("ui/widget/confirmbox")
                         -- if forced_lang was specified, it may not be in our wiki_languages,
                         -- but ReaderWikipedia will have put it in result.lang
-                        local lang = self.lang or self.wiki_languages_copy[1]
+                        local lang = self.lang or self.wiki_languages[1]
                         -- Find a directory to save file into
                         local dir
                         if G_reader_settings:isTrue("wikipedia_save_in_book_dir") and not self:isDocless() then
@@ -390,12 +324,12 @@ function DictQuickLookup:update()
                                 dir = last_file:match("(.*)/")
                             end
                         end
-                        if not dir then dir = G_reader_settings:readSetting("wikipedia_save_dir") end
-                        if not dir then dir = G_reader_settings:readSetting("home_dir") end
-                        if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+                        if not dir then dir = G_reader_settings:readSetting("wikipedia_save_dir")
+                                           or G_reader_settings:readSetting("home_dir")
+                                           or require("apps/filemanager/filemanagerutil").getDefaultDir() end
                         if not dir or not util.pathExists(dir) then
                             UIManager:show(InfoMessage:new{
-                                text = _("No directory to save article to could be found."),
+                                text = _("No folder to save article to could be found."),
                             })
                             return
                         end
@@ -418,15 +352,17 @@ function DictQuickLookup:update()
                                                     self:onHoldClose(true)
                                                     -- close current ReaderUI in 1 sec, and create a new one
                                                     UIManager:scheduleIn(1.0, function()
-                                                        local ReaderUI = require("apps/reader/readerui")
-                                                        local reader = ReaderUI:_getRunningInstance()
-                                                        if reader then
+                                                        UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
+                                                        if self.ui then
                                                             -- close Highlight menu if any still shown
-                                                            if reader.highlight then
-                                                                reader.highlight:onClose()
+                                                            if self.ui.highlight and self.ui.highlight.highlight_dialog then
+                                                                self.ui.highlight:onClose()
                                                             end
-                                                            reader:onClose()
+                                                            self.ui:onClose()
                                                         end
+
+                                                        local ReaderUI = require("apps/reader/readerui")
                                                         ReaderUI:showReader(epub_path)
                                                     end)
                                                 end,
@@ -443,9 +379,10 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
+                    id = "close",
                     text = _("Close"),
                     callback = function()
-                        UIManager:close(self)
+                        self:onClose()
                     end,
                 },
             },
@@ -459,6 +396,7 @@ function DictQuickLookup:update()
         buttons = {
             {
                 {
+                    id = "prev_dict",
                     text = prev_dict_text,
                     vsync = true,
                     enabled = self:isPrevDictAvaiable(),
@@ -470,18 +408,25 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
+                    id = "highlight",
                     text = self:getHighlightText(),
-                    enabled = self.highlight ~= nil,
+                    enabled = not self:isDocless() and self.highlight ~= nil,
                     callback = function()
                         if self:getHighlightText() == highlight_strings.highlight then
                             self.ui:handleEvent(Event:new("Highlight"))
                         else
                             self.ui:handleEvent(Event:new("Unhighlight"))
                         end
-                        self:update()
+                        -- Just update, repaint and refresh *this* button
+                        local this = self.button_table:getButtonById("highlight")
+                        if not this then return end
+                        this:enableDisable(self.highlight ~= nil)
+                        this:setText(self:getHighlightText(), this.width)
+                        this:refresh()
                     end,
                 },
                 {
+                    id = "next_dict",
                     text = next_dict_text,
                     vsync = true,
                     enabled = self:isNextDictAvaiable(),
@@ -495,6 +440,7 @@ function DictQuickLookup:update()
             },
             {
                 {
+                    id = "wikipedia",
                     -- if dictionary result, do the same search on wikipedia
                     -- if already wiki, get the full page for the current result
                     text_func = function()
@@ -513,28 +459,31 @@ function DictQuickLookup:update()
                 },
                 -- Rotate thru available wikipedia languages, or Search in book if dict window
                 {
+                    id = "search",
                     -- if more than one language, enable it and display "current lang > next lang"
                     -- otherwise, just display current lang
                     text = self.is_wiki
                         and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
                                                         or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
                         or _("Search"),
-                    enabled = not self.is_wiki and true or #self.wiki_languages > 1,
+                    enabled = self:canSearch(),
                     callback = function()
                         if self.is_wiki then
-                            self:resyncWikiLanguages(true) -- rotate & resync them
-                            UIManager:close(self)
-                            self:lookupWikipedia()
+                            -- We're rotating: forward this flag from the one we're closing so
+                            -- that ReaderWikipedia can give it to the one we'll be showing
+                            self.window_list.rotated_update_wiki_languages_on_close = self.update_wiki_languages_on_close
+                            self:lookupWikipedia(false, nil, nil, self.wiki_languages[2])
+                            self:onClose(true)
                         else
                             self.ui:handleEvent(Event:new("HighlightSearch"))
-                            UIManager:close(self)
+                            self:onClose(true) -- don't unhighlight (or we might erase a search hit)
                         end
                     end,
                 },
                 {
+                    id = "close",
                     text = _("Close"),
                     callback = function()
-                        -- UIManager:close(self)
                         self:onClose()
                     end,
                 },
@@ -545,6 +494,7 @@ function DictQuickLookup:update()
             -- add a new first row with a single button to follow this link.
             table.insert(buttons, 1, {
                 {
+                    id = "link",
                     text = _("Follow Link"),
                     callback = function()
                         local link = self.selected_link.link or self.selected_link
@@ -560,7 +510,7 @@ function DictQuickLookup:update()
     -- reach out from the content to the borders a bit more
     local buttons_padding = Size.padding.default
     local buttons_width = inner_width - 2*buttons_padding
-    local button_table = ButtonTable:new{
+    self.button_table = ButtonTable:new{
         width = buttons_width,
         button_font_face = "cfont",
         button_font_size = 20,
@@ -589,13 +539,12 @@ function DictQuickLookup:update()
     self.align = "center"
 
     local others_height = frame_bordersize * 2 -- DictQuickLookup border
-                        + title_bar:getSize().h
-                        + title_sep:getSize().h
+                        + self.dict_title:getHeight()
                         + top_to_word_span:getSize().h
                         + lookup_word:getSize().h
                         + word_to_definition_span:getSize().h
                         + definition_to_bottom_span:getSize().h
-                        + button_table:getSize().h
+                        + self.button_table:getSize().h
 
     -- To properly adjust the definition to the height of text, we need
     -- the line height a ScrollTextWidget will use for the current font
@@ -605,8 +554,9 @@ function DictQuickLookup:update()
         local test_widget = ScrollTextWidget:new{
             text = "z",
             face = self.content_face,
-            width = content_width,
+            width = self.content_width,
             height = self.definition_height,
+            for_measurement_only = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
         }
         self.definition_line_height = test_widget:getLineHeight()
         test_widget:free()
@@ -630,16 +580,32 @@ function DictQuickLookup:update()
         local nb_lines = Math.round(self.definition_height / self.definition_line_height)
         self.definition_height = nb_lines * self.definition_line_height
         self.height = self.definition_height + others_height
-        if self.word_box then
+        if self.word_boxes and #self.word_boxes > 0 then
             -- Try to not hide the highlighted word. We don't want to always
             -- get near it if we can stay center, so that more context around
             -- the word is still visible with the dict result.
             -- But if we were to be drawn over the word, move a bit if possible.
-            local box = self.word_box
-            -- Don't stick to the box, ensure a minimal padding between box and window
-            local box_dict_padding = Size.padding.small
-            local word_box_top = box.y - box_dict_padding
-            local word_box_bottom = box.y + box.h + box_dict_padding
+
+            -- In most cases boxes will be a single sbox, but handle multiple
+            -- sboxes by taking the top and bottom y values.
+            local word_box_top
+            local word_box_bottom
+            for _, box in ipairs(self.word_boxes) do
+                local box_top = box.y
+                local box_bottom = box.y + box.h
+                if not word_box_top or word_box_top > box_top then
+                    word_box_top = box_top
+                end
+                if not word_box_bottom or word_box_bottom < box_bottom then
+                    word_box_bottom = box_bottom
+                end
+            end
+
+            -- Don't stick to the box, ensure a minimal padding between box and
+            -- window.
+            word_box_top = word_box_top - Size.padding.small
+            word_box_bottom = word_box_bottom + Size.padding.small
+
             local half_visible_height = (avail_height - self.height) / 2
             if word_box_bottom > half_visible_height and word_box_top <= half_visible_height + self.height then
                 -- word would be covered by our centered window
@@ -658,34 +624,8 @@ function DictQuickLookup:update()
         end
     end
 
-    local text_widget
-    if self.is_html then
-        text_widget = ScrollHtmlWidget:new{
-            html_body = self.definition,
-            css = self:getHtmlDictionaryCss(),
-            default_font_size = Screen:scaleBySize(self.dict_font_size),
-            width = content_width,
-            height = self.definition_height,
-            dialog = self,
-            html_link_tapped_callback = function(link)
-                self.html_dictionary_link_tapped_callback(self.dictionary, link)
-            end,
-         }
-    else
-        text_widget = ScrollTextWidget:new{
-            text = self.definition,
-            face = self.content_face,
-            width = content_width,
-            height = self.definition_height,
-            dialog = self,
-            justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
-            lang = self.lang and self.lang:lower(), -- only available on wikipedia results
-            para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
-            auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
-            image_alt_face = self.image_alt_face,
-            images = self.images,
-        }
-    end
+    -- Instantiate self.text_widget
+    self:_instantiateScrollWidget()
 
     -- word definition
     self.definition_widget = FrameContainer:new{
@@ -694,7 +634,7 @@ function DictQuickLookup:update()
         padding_right = content_padding_h,
         margin = 0,
         bordersize = 0,
-        text_widget,
+        self.text_widget,
     }
 
     self.dict_frame = FrameContainer:new{
@@ -705,8 +645,7 @@ function DictQuickLookup:update()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            title_bar,
-            title_sep,
+            self.dict_title,
             top_to_word_span,
             -- word
             CenterContainer:new{
@@ -730,9 +669,9 @@ function DictQuickLookup:update()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = inner_width,
-                    h = button_table:getSize().h,
+                    h = self.button_table:getSize().h,
                 },
-                button_table,
+                self.button_table,
             }
         }
     }
@@ -751,7 +690,6 @@ function DictQuickLookup:update()
         },
         self.dict_frame,
     }
-    self.movable:setMovedOffset(orig_moved_offset)
 
     self[1] = WidgetContainer:new{
         align = self.align,
@@ -759,9 +697,167 @@ function DictQuickLookup:update()
         self.movable,
     }
     UIManager:setDirty(self, function()
-        local update_region = self.dict_frame and self.dict_frame.dimen and self.dict_frame.dimen:combine(orig_dimen) or orig_dimen
-        logger.dbg("update dict region", update_region)
-        return "partial", update_region
+        return "partial", self.dict_frame.dimen
+    end)
+end
+
+-- Whether currently DictQuickLookup is working without a document.
+function DictQuickLookup:isDocless()
+    return self.ui == nil or self.ui.highlight == nil
+end
+
+function DictQuickLookup:getHtmlDictionaryCss()
+    -- Using Noto Sans because Nimbus doesn't contain the IPA symbols.
+    -- 'line-height: 1.3' to have it similar to textboxwidget,
+    -- and follow user's choice on justification
+    local css_justify = G_reader_settings:nilOrTrue("dict_justify") and "text-align: justify;" or ""
+    local css = [[
+        @page {
+            margin: 0;
+            font-family: 'Noto Sans';
+        }
+
+        body {
+            margin: 0;
+            line-height: 1.3;
+            ]]..css_justify..[[
+        }
+
+        blockquote, dd {
+            margin: 0 1em;
+        }
+
+        ol, ul, menu {
+            margin: 0; padding: 0 1.7em;
+        }
+    ]]
+    -- For reference, MuPDF declarations with absolute units:
+    --  "blockquote{margin:1em 40px}"
+    --  "dd{margin:0 0 0 40px}"
+    --  "ol,ul,menu {margin:1em 0;padding:0 0 0 30pt}"
+    --  "hr{border-width:1px;}"
+    --  "td,th{padding:1px}"
+    --
+    -- MuPDF doesn't currently scale CSS pixels, so we have to use a font-size based measurement.
+    -- Unfortunately MuPDF doesn't properly support `rem` either, which it bases on a hard-coded
+    -- value of `16px`, so we have to go with `em` (or `%`).
+    --
+    -- These `em`-based margins can vary slightly, but it's the best available compromise.
+    --
+    -- We also keep left and right margin the same so it'll display as expected in RTL.
+    -- Because MuPDF doesn't currently support `margin-start`, this results in a slightly
+    -- unconventional but hopefully barely noticeable right margin for <dd>.
+    --
+    -- For <ul> and <ol>, bullets and numbers are displayed in the margin/padding, so
+    -- we need a bit more for them to not get truncated (1.7em allows for 2 digits list
+    -- item numbers). Unfortunately, because we want this also for RTL, this space is
+    -- wasted on the other side...
+
+    if self.css then
+        return css .. self.css
+    end
+    return css
+end
+
+-- Used in init & update to instantiate the Scroll*Widget that self.text_widget points to
+function DictQuickLookup:_instantiateScrollWidget()
+    if self.is_html then
+        self.shw_widget = ScrollHtmlWidget:new{
+            html_body = self.definition,
+            css = self:getHtmlDictionaryCss(),
+            default_font_size = Screen:scaleBySize(self.dict_font_size),
+            width = self.content_width,
+            height = self.definition_height,
+            dialog = self,
+            html_link_tapped_callback = function(link)
+                self.html_dictionary_link_tapped_callback(self.dictionary, link)
+            end,
+        }
+        self.text_widget = self.shw_widget
+    else
+        self.stw_widget = ScrollTextWidget:new{
+            text = self.definition,
+            face = self.content_face,
+            width = self.content_width,
+            height = self.definition_height,
+            dialog = self,
+            justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
+            lang = self.lang and self.lang:lower(), -- only available on wikipedia results
+            para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
+            auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
+            image_alt_face = self.image_alt_face,
+            images = self.images,
+        }
+        self.text_widget = self.stw_widget
+    end
+end
+
+function DictQuickLookup:update()
+    -- self[1] is a WidgetContainer, its free method will call free on each of its child widget with a free method.
+    -- Here, that's the definitions' TextBoxWidget & HtmlBoxWidget,
+    -- to release their bb, MuPDF instance, and scheduled image_update_action.
+    self[1]:free()
+
+    -- Update TextWidgets
+    self.dict_title:setTitle(self.displaydictname)
+    if self.displaynb then
+        self.displaynb_text:setText(self.displaynb)
+    end
+    self.lookup_word_text:setText(self.displayword)
+
+    -- Update Buttons
+    if not self.is_wiki_fullpage then
+        local prev_dict_btn = self.button_table:getButtonById("prev_dict")
+        if prev_dict_btn then
+            prev_dict_btn:enableDisable(self:isPrevDictAvaiable())
+        end
+        local next_dict_btn = self.button_table:getButtonById("next_dict")
+        if next_dict_btn then
+            next_dict_btn:enableDisable(self:isNextDictAvaiable())
+        end
+    end
+
+    -- Update main text widgets
+    if self.is_html and self.shw_widget then
+        -- Re-use our ScrollHtmlWidget (self.shw_widget)
+        -- NOTE: The recursive free via our WidgetContainer (self[1]) above already released the previous MµPDF document instance ;)
+        self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
+        -- Scroll back to top
+        self.text_widget:resetScroll()
+    elseif not self.is_html and self.stw_widget then
+        -- Re-use our ScrollTextWidget (self.stw_widget)
+        -- Update properties that may change across results (as done in DictQuickLookup:_instantiateScrollWidget())
+        self.text_widget.text_widget.text = self.definition
+        self.text_widget.text_widget.charlist = nil -- (required when use_xtext=false for proper re-init)
+        self.text_widget.text_widget.lang = self.lang and self.lang:lower()
+        self.text_widget.text_widget.para_direction_rtl = self.rtl_lang
+        self.text_widget.text_widget.images = self.images
+        -- Scroll back to the top, àla TextBoxWidget:scrollToTop
+        self.text_widget.text_widget.virtual_line_num = 1
+        -- NOTE: The recursive free via our WidgetContainer (self[1]) above already free'd us ;)
+        self.text_widget.text_widget:init()
+        -- Reset the scrollbar's state
+        self.text_widget:resetScroll()
+    else
+        -- We jumped from HTML to Text (or vice-versa), we need a new widget instance
+        self:_instantiateScrollWidget()
+        -- Update *all* the references to self.text_widget
+        self.definition_widget[1] = self.text_widget
+        -- Destroy the previous "opposite type" widget
+        if self.is_html then
+            self.stw_widget = nil
+        else
+            self.shw_widget = nil
+        end
+    end
+
+    -- If we're translucent, reset alpha to make the new definition actually readable.
+    if self.movable.alpha then
+        self.movable.alpha = nil
+    end
+
+    UIManager:setDirty(self, function()
+        return "partial", self.dict_frame.dimen
     end)
 end
 
@@ -786,12 +882,10 @@ function DictQuickLookup:getInitialVisibleArea()
 end
 
 function DictQuickLookup:onCloseWidget()
-    -- Free our widget and subwidgets' resources (especially
-    -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
-    -- and scheduled image_update_action)
-    if self[1] then
-        self[1]:free()
-    end
+    -- Our TextBoxWidget/HtmlBoxWidget/TextWidget/ImageWidget are proper child widgets,
+    -- so this event will propagate to 'em, and they'll free their resources.
+
+    -- What's left is stuff that isn't directly in our widget tree...
     if self.images_cleanup_needed then
         logger.dbg("freeing lookup results images blitbuffers")
         for _, r in ipairs(self.results) do
@@ -803,11 +897,11 @@ function DictQuickLookup:onCloseWidget()
             end
         end
     end
+
     -- NOTE: Drop region to make it a full-screen flash
     UIManager:setDirty(nil, function()
         return "flashui", nil
     end)
-    return true
 end
 
 function DictQuickLookup:onShow()
@@ -869,7 +963,7 @@ function DictQuickLookup:changeToLastDict()
     end
 end
 
-function DictQuickLookup:changeDictionary(index)
+function DictQuickLookup:changeDictionary(index, skip_update)
     if not self.results[index] then return end
     self.dict_index = index
     self.dictionary = self.results[index].dict
@@ -919,7 +1013,10 @@ function DictQuickLookup:changeDictionary(index)
         end
     end
 
-    self:update()
+    -- Don't call update when called from init
+    if not skip_update then
+        self:update()
+    end
 end
 
 --[[ No longer used
@@ -994,7 +1091,7 @@ function DictQuickLookup:onTap(arg, ges_ev)
     return true
 end
 
-function DictQuickLookup:onClose()
+function DictQuickLookup:onClose(no_clear)
     UIManager:close(self)
     for i = #self.window_list, 1, -1 do
         local window = self.window_list[i]
@@ -1002,7 +1099,13 @@ function DictQuickLookup:onClose()
             table.remove(self.window_list, i)
         end
     end
-    if self.highlight then
+    if self.update_wiki_languages_on_close then
+        -- except if we got no result for current language
+        if not self.results.no_result then
+            self.ui:handleEvent(Event:new("UpdateWikiLanguages", self.wiki_languages))
+        end
+    end
+    if self.highlight and not no_clear then
         -- delay unhighlight of selection, so we can see where we stopped when
         -- back from our journey into dictionary or wikipedia
         local clear_id = self.highlight:getClearId()
@@ -1014,18 +1117,8 @@ function DictQuickLookup:onClose()
 end
 
 function DictQuickLookup:onHoldClose(no_clear)
-    self:onClose()
-    for i = #self.window_list, 1, -1 do
-        local window = self.window_list[i]
-        -- if one holds a highlight, let's clear it like in onClose()
-        if window.highlight and not no_clear then
-            local clear_id = window.highlight:getClearId()
-            UIManager:scheduleIn(0.5, function()
-                window.highlight:clear(clear_id)
-            end)
-        end
-        UIManager:close(window)
-        table.remove(self.window_list, i)
+    while #self.window_list > 0 do
+        self.window_list[#self.window_list]:onClose(no_clear)
     end
     return true
 end
@@ -1105,11 +1198,32 @@ end
 
 function DictQuickLookup:lookupInputWord(hint)
     self.input_dialog = InputDialog:new{
-        title = _("Input lookup word"),
+        title = _("Enter a word or phrase to look up"),
         input = hint,
         input_hint = hint or "",
         input_type = "text",
         buttons = {
+            {
+                {
+                    text = _("Translate"),
+                    is_enter_default = false,
+                    callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self:closeInputDialog()
+                        Translator:showTranslation(self.input_dialog:getInputText())
+                    end,
+                },
+                {
+                    text = _("Search Wikipedia"),
+                    is_enter_default = self.is_wiki,
+                    callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self.is_wiki = true
+                        self:closeInputDialog()
+                        self:inputLookup()
+                    end,
+                },
+            },
             {
                 {
                     text = _("Cancel"),
@@ -1118,15 +1232,16 @@ function DictQuickLookup:lookupInputWord(hint)
                     end,
                 },
                 {
-                    text = _("Lookup"),
-                    is_enter_default = true,
+                    text = _("Search dictionary"),
+                    is_enter_default = not self.is_wiki,
                     callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self.is_wiki = false
                         self:closeInputDialog()
-                        self:onClose()
                         self:inputLookup()
                     end,
                 },
-            }
+            },
         },
     }
     UIManager:show(self.input_dialog)
@@ -1136,15 +1251,12 @@ end
 function DictQuickLookup:inputLookup()
     local word = self.input_dialog:getInputText()
     if word and word ~= "" then
-        local event
-        if self.is_wiki then
-            event = "LookupWikipedia"
-            self:resyncWikiLanguages()
-        else
-            event = "LookupWord"
-        end
         -- Trust that input text does not need any cleaning (allows querying for "-suffix")
-        self.ui:handleEvent(Event:new(event, word, true))
+        if self.is_wiki then
+            self:lookupWikipedia(false, word, true)
+        else
+            self.ui:handleEvent(Event:new("LookupWord", word, true))
+        end
     end
 end
 
@@ -1152,42 +1264,32 @@ function DictQuickLookup:closeInputDialog()
     UIManager:close(self.input_dialog)
 end
 
-function DictQuickLookup:resyncWikiLanguages(rotate)
-    -- Resync the current language or rotate it from its state when
-    -- this window was created (we may have rotated it later in other
-    -- wikipedia windows that we closed and went back here, and its
-    -- state would not be what the wikipedia language button is showing.
-    if not self.wiki_languages_copy then
-        return
+function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
+    if not lang then
+        -- Use the lang of the current or nearest is_wiki DictQuickLookup.
+        -- Otherwise, first lang in ReaderWikipedia.wiki_languages will be used.
+        for i = #self.window_list, 1, -1 do
+            local window = self.window_list[i]
+            if window.is_wiki and window.lang then
+                lang = window.lang
+                break
+            end
+        end
     end
-    if rotate then
-        -- rotate our saved wiki_languages copy
-        local current_lang = table.remove(self.wiki_languages_copy, 1)
-        table.insert(self.wiki_languages_copy, current_lang)
+    if not word then
+        if get_fullpage then
+            -- we use the word of the displayed result's definition, which
+            -- is the exact title of the full wikipedia page
+            word = self.lookupword
+            is_sane = true
+        else
+            -- we use the original word that was querried
+            word = self.word
+            is_sane = false
+        end
     end
-    -- re-set self.wiki_languages with original (possibly rotated) items
-    for i, lang in ipairs(self.wiki_languages_copy) do
-        self.wiki_languages[i] = lang
-    end
-end
-
-function DictQuickLookup:lookupWikipedia(get_fullpage)
-    local word
-    local is_sane
-    if get_fullpage then
-        -- we use the word of the displayed result's definition, which
-        -- is the exact title of the full wikipedia page
-        word = self.lookupword
-        is_sane = true
-    else
-        -- we use the original word that was querried
-        word = self.word
-        is_sane = false
-    end
-    self:resyncWikiLanguages()
-    -- (With Event, we need to pass false instead of nil if word_box is nil,
-    -- otherwise next arguments are discarded)
-    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_box and self.word_box or false, get_fullpage))
+    -- Keep providing self.word_boxes so new windows keep being positionned to not hide it
+    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_boxes, get_fullpage, lang))
 end
 
 return DictQuickLookup

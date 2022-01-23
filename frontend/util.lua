@@ -98,6 +98,11 @@ function util.gsplit(str, pattern, capture, capture_empty_entity)
     end)
 end
 
+-- Stupid helper for the duration stuff
+local function passthrough(n)
+    return n
+end
+
 --[[--
 Converts seconds to a clock string.
 
@@ -106,27 +111,42 @@ Source: <a href="https://gist.github.com/jesseadams/791673">https://gist.github.
 ---- @int seconds number of seconds
 ---- @bool withoutSeconds if true 00:00, if false 00:00:00
 ---- @treturn string clock string in the form of 00:00 or 00:00:00
-function util.secondsToClock(seconds, withoutSeconds)
+function util.secondsToClock(seconds, withoutSeconds, withDays)
     seconds = tonumber(seconds)
-    if seconds == 0 or seconds ~= seconds then
+    if not seconds then
+        if withoutSeconds then
+            return "--:--"
+        else
+            return "--:--:--"
+        end
+    elseif seconds == 0 or seconds ~= seconds then
         if withoutSeconds then
             return "00:00"
         else
             return "00:00:00"
         end
     else
-        local round = withoutSeconds and require("optmath").round or math.floor
-        local hours = string.format("%02.f", math.floor(seconds / 3600))
-        local mins = string.format("%02.f", round(seconds / 60 - (hours * 60)))
-        if mins == "60" then
-            mins = string.format("%02.f", 0)
-            hours = string.format("%02.f", hours + 1)
+        local round = withoutSeconds and require("optmath").round or passthrough
+        local days = "0"
+        local hours
+        if withDays then
+            days = string.format("%d", seconds / (24*3600)) -- implicit math.floor for string.format
+            hours = string.format("%02d", (seconds / 3600) % 24)
+        else
+            hours = string.format("%02d", seconds / 3600)
         end
+        local mins = string.format("%02d", round(seconds % 3600 / 60))
         if withoutSeconds then
-            return hours .. ":" .. mins
+            if mins == "60" then
+                -- Can only happen because of rounding, which only happens if withoutSeconds...
+                mins = string.format("%02d", 0)
+                hours = string.format("%02d", hours + 1)
+            end
+            return  (days ~= "0" and (days .. "d") or "") .. hours .. ":" .. mins
+        else
+            local secs = string.format("%02d", seconds % 60)
+            return (days ~= "0" and (days .. "d") or "") .. hours .. ":" .. mins .. ":" .. secs
         end
-        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
-        return hours .. ":" .. mins .. ":" .. secs
     end
 end
 
@@ -134,8 +154,10 @@ end
 ---- @int seconds number of seconds
 ---- @bool withoutSeconds if true 1h30', if false 1h30'10''
 ---- @bool hmsFormat, if true format 1h30m10s
----- @treturn string clock string in the form of 1h30' or 1h30'10''
-function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
+---- @bool withDays, if true format 1d12h30m10s
+---- @treturn string clock string in the form of 1h30'10'' or 1h30m10s
+function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays)
+    local SECONDS_SYMBOL = "\""
     seconds = tonumber(seconds)
     if seconds == 0 then
         if withoutSeconds then
@@ -148,75 +170,70 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             if hmsFormat then
                 return T(_("%1s"), "0")
             else
-                return "0''"
+                return "0" .. SECONDS_SYMBOL
             end
         end
     elseif seconds < 60 then
         if withoutSeconds and seconds < 30 then
             if hmsFormat then
+                -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
                 return T(_("%1m"), "0")
             else
                 return "0'"
             end
         elseif withoutSeconds and seconds >= 30 then
             if hmsFormat then
+                -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
                 return T(_("%1m"), "1")
             else
                 return "1'"
             end
         else
             if hmsFormat then
-                return T(_("%1m%2s"), "0", string.format("%02.f", seconds))
+                -- @translators This is the 'm' for minute and 's' for seconds, like in 30m30s. This is a duration.
+                return T(_("%1m%2s"), "0", string.format("%02d", seconds))
             else
-                return "0'" .. string.format("%02.f", seconds) .. "''"
+                return "0'" .. string.format("%02d", seconds) .. SECONDS_SYMBOL
             end
         end
     else
-        local round = withoutSeconds and require("optmath").round or math.floor
-        local hours = string.format("%.f", math.floor(seconds / 3600))
-        local mins = string.format("%02.f", round(seconds / 60 - (hours * 60)))
-        if mins == "60" then
-            mins = string.format("%02.f", 0)
-            hours = string.format("%.f", hours + 1)
-        end
+        local time_string = util.secondsToClock(seconds, withoutSeconds, withDays)
         if withoutSeconds then
-            if hours == "0" then
-                mins = string.format("%.f", round(seconds / 60))
-                if hmsFormat then
-                    return T(_("%1m"), mins)
-                else
-                    return mins .. "'"
-                end
-            end
-            -- @translators This is the 'h' for hour, like in 1h30. This is a duration.
-            return T(_("%1h%2"), hours, mins)
-        end
-        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
-        if hours == "0" then
-            mins = string.format("%.f", round(seconds / 60))
-            if hmsFormat then
-                -- @translators This is the 'm' for minute and the 's' for second, like in 1m30s. This is a duration.
-                return T(_("%1m%2s"), mins, secs)
-            else
-                return mins .. "'" .. secs .. "''"
-            end
+            time_string = time_string .. ":"
         end
         if hmsFormat then
-            if secs == "00" then
-                -- @translators This is the 'h' for hour and the 'm' for minute, like in 1h30m. This is a duration.
-                return T(_("%1h%2m"), hours, mins)
-            else
-                -- @translators This is the 'h' for hour, the 'm' for minute and the 's' for second, like in 1h30m30s. This is a duration.
-                return T(_("%1h%2m%3s"), hours, mins, secs)
-            end
-
+            -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
+            time_string = time_string:gsub(":", _("h"), 1)
+            -- @translators This is the 'm' for minute, like in 1h30m30s. This is a duration.
+            time_string = time_string:gsub(":", _("m"), 1)
+            time_string = time_string:gsub("^00" .. _("h"), "") -- delete leading "00h"
+            time_string = time_string:gsub("^0", "") -- delete leading "0"
+            -- @translators This is the 's' for second, like in 1h30m30s. This is a duration.
+            return withoutSeconds and time_string or (time_string .. _("s"))
         else
-            if secs == "00" then
-                return T(_("%1h%2'"), hours, mins)
-            else
-                return T(_("%1h%2'%3''"), hours, mins, secs)
-            end
+            -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
+            time_string = time_string:gsub(":", _("h"), 1)
+            time_string = time_string:gsub(":", "'", 1)
+            time_string = time_string:gsub("^00" .. _("h"), "") -- delete leading "00h"
+            time_string = time_string:gsub("^0", "") -- delete leading "0"
+            return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
         end
+    end
+end
+
+--- Converts seconds to a clock type (classic or modern), based on the given format preference
+--- "Classic" format calls secondsToClock, and "Modern" format calls secondsToHClock
+---- @string Either "modern" for 1h30'10" or "classic" for 1:30:10
+---- @bool withoutSeconds if true 1h30' or 1h30m, if false 1h30'10" or 1h30m10s
+---- @bool hmsFormat, modern format only, if true format 1h30m or 1h30m10s
+---- @bool withDays, if hours>=24 include days in clock string 1d12h10m10s
+---- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h30m, 1h30m10s
+function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat, withDays)
+    if format == "modern" then
+        return util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays)
+    else
+        -- Assume "classic" to give safe default
+        return util.secondsToClock(seconds, withoutSeconds, withDays)
     end
 end
 
@@ -244,18 +261,33 @@ if jit.os == "Windows" then
         end
     end
 else
-    function util.secondsToHour(seconds, twelve_hour_clock)
+    function util.secondsToHour(seconds, twelve_hour_clock, pad_with_spaces)
         if twelve_hour_clock then
             if os.date("%p", seconds) == "AM" then
-                -- @translators This is the time in the morning using a 12-hour clock (%-I is the hour, %M the minute).
-                return os.date(_("%-I:%M AM"), seconds)
+                if pad_with_spaces then
+                    -- @translators This is the time in the morning using a 12-hour clock (%_I is the hour, %M the minute).
+                    return os.date(_("%_I:%M AM"), seconds)
+                else
+                    -- @translators This is the time in the morning using a 12-hour clock (%-I is the hour, %M the minute).
+                    return os.date(_("%-I:%M AM"), seconds)
+                end
             else
-                -- @translators This is the time in the afternoon using a 12-hour clock (%-I is the hour, %M the minute).
-                return os.date(_("%-I:%M PM"), seconds)
+                if pad_with_spaces then
+                    -- @translators This is the time in the afternoon using a 12-hour clock (%_I is the hour, %M the minute).
+                    return os.date(_("%_I:%M PM"), seconds)
+                else
+                    -- @translators This is the time in the afternoon using a 12-hour clock (%-I is the hour, %M the minute).
+                    return os.date(_("%-I:%M PM"), seconds)
+                end
             end
         else
-            -- @translators This is the time using a 24-hour clock (%-H is the hour, %M the minute).
-            return os.date(_("%-H:%M"), seconds)
+            if pad_with_spaces then
+                -- @translators This is the time using a 24-hour clock (%_H is the hour, %M the minute).
+                return os.date(_("%_H:%M"), seconds)
+            else
+                -- @translators This is the time using a 24-hour clock (%-H is the hour, %M the minute).
+                return os.date(_("%-H:%M"), seconds)
+            end
         end
     end
 end
@@ -266,7 +298,8 @@ end
 ---- @treturn string date string
 function util.secondsToDate(seconds, twelve_hour_clock)
     local BD = require("ui/bidi")
-    local time = util.secondsToHour(seconds, twelve_hour_clock)
+    -- In order to keep stuff aligned, we'll want to *keep* the padding, but using blanks instead of zeroes.
+    local time = util.secondsToHour(seconds, twelve_hour_clock, true)
     -- @translators This is the date (%Y is the year, %m the month, %d the day)
     local day = os.date(_("%Y-%m-%d"), seconds)
     return BD.wrap(day) .. " " .. BD.wrap(time)
@@ -357,6 +390,44 @@ function util.arrayAppend(t1, t2)
     end
 end
 
+--[[--
+Remove elements from an array, fast.
+
+Swap & pop, like <http://lua-users.org/lists/lua-l/2013-11/msg00027.html> / <https://stackoverflow.com/a/28942022>, but preserving order.
+c.f., <https://stackoverflow.com/a/53038524>
+
+@table t Lua array to filter
+@func keep_cb Filtering callback. Takes three arguments: table, index, new index. Returns true to *keep* the item. See link above for potential uses of the third argument.
+
+@usage
+
+local foo = { "a", "b", "c", "b", "d", "e" }
+local function drop_b(t, i, j)
+    -- Discard any item with value "b"
+    return t[i] ~= "b"
+end
+util.arrayRemove(foo, drop_b)
+]]
+function util.arrayRemove(t, keep_cb)
+    local j, n = 1, #t
+
+    for i = 1, n do
+        if keep_cb(t, i, j) then
+            -- Move i's kept value to j's position, if it's not already there.
+            if i ~= j then
+                t[j] = t[i]
+                t[i] = nil
+            end
+            -- Increment position of where we'll place the next kept value.
+            j = j + 1
+        else
+            t[i] = nil
+        end
+    end
+
+    return t
+end
+
 --- Reverse array elements in-place in table t
 ---- @param t Lua table
 function util.arrayReverse(t)
@@ -373,7 +444,7 @@ end
 --- and if so, return the index.
 ---- @param t Lua table
 ---- @param v
----- @function callback(v1, v2)
+---- @func callback(v1, v2)
 function util.arrayContains(t, v, cb)
     cb = cb or function(v1, v2) return v1 == v2 end
     for _k, _v in ipairs(t) do
@@ -437,11 +508,16 @@ function util.lastIndexOf(string, ch)
     if i == nil then return -1 else return i - 1 end
 end
 
+--- Pattern which matches a single well-formed UTF-8 character, including
+--- theoretical >4-byte extensions.
+-- Taken from <https://www.lua.org/manual/5.4/manual.html#pdf-utf8.charpattern>
+util.UTF8_CHAR_PATTERN = '[%z\1-\127\194-\253][\128-\191]*'
+
 --- Reverse the individual greater-than-single-byte characters
 -- @string string to reverse
 -- Taken from <https://github.com/blitmap/lua-utf8-simple#utf8reverses>
 function util.utf8Reverse(text)
-    text = text:gsub('[%z\1-\127\194-\244][\128-\191]*', function (c) return #c > 1 and c:reverse() end)
+    text = text:gsub(util.UTF8_CHAR_PATTERN, function (c) return #c > 1 and c:reverse() end)
     return text:reverse()
 end
 
@@ -470,7 +546,7 @@ function util.splitToChars(text)
         --   characters directly, but only as a pair.
         local hi_surrogate
         local hi_surrogate_uchar
-        for uchar in string.gmatch(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+        for uchar in text:gmatch(util.UTF8_CHAR_PATTERN) do
             charcode = BaseUtil.utf8charcode(uchar)
             -- (not sure why we need this prevcharcode check; we could get
             -- charcode=nil with invalid UTF-8, but should we then really
@@ -505,14 +581,47 @@ end
 ---- @string c
 ---- @treturn boolean true if CJK
 function util.isCJKChar(c)
-    return string.match(c, "[\228-\234][\128-\191].") == c
+    -- Smallest CJK codepoint is 0x1100 which requires at least 3 utf8 bytes to
+    -- encode (U+07FF is the largest codepoint that can be represented in 2
+    -- bytes with utf8). So if the character is shorter than 3 bytes it's
+    -- definitely not CJK and no need to decode it.
+    if #c < 3 then
+        return false
+    end
+    local code = BaseUtil.utf8charcode(c)
+    -- The weird bracketing is intentional -- we use the lowest possible
+    -- codepoint as a shortcut so if the codepoint is below U+1100 we
+    -- immediately return false.
+    return -- BMP (Plane 0)
+            code >=  0x1100 and (code <=  0x11FF  or -- Hangul Jamo
+           (code >=  0x2E80 and  code <=  0x9FFF) or -- Numerous CJK Blocks (NB: has some gaps)
+           (code >=  0xA960 and  code <=  0xA97F) or -- Hangul Jamo Extended-A
+           (code >=  0xAC00 and  code <=  0xD7AF) or -- Hangul Syllables
+           (code >=  0xD7B0 and  code <=  0xD7FF) or -- Hangul Jame Extended-B
+           (code >=  0xF900 and  code <=  0xFAFF) or -- CJK Compatibility Ideographs
+           (code >=  0xFE30 and  code <=  0xFE4F) or -- CJK Compatibility Forms
+           (code >=  0xFF00 and  code <=  0xFFEF) or -- Halfwidth and Fullwidth Forms
+           -- SIP (Plane 2)
+           (code >= 0x20000 and  code <= 0x2A6DF) or -- CJK Unified Ideographs Extension B
+           (code >= 0x2A700 and  code <= 0x2B73F) or -- CJK Unified Ideographs Extension C
+           (code >= 0x2B740 and  code <= 0x2B81F) or -- CJK Unified Ideographs Extension D
+           (code >= 0x2B820 and  code <= 0x2CEAF) or -- CJK Unified Ideographs Extension E
+           (code >= 0x2CEB0 and  code <= 0x2EBEF) or -- CJK Unified Ideographs Extension F
+           (code >= 0x2F800 and  code <= 0x2FA1F) or -- CJK Compatibility Ideographs Supplement
+           -- TIP (Plane 3)
+           (code >= 0x30000 and  code <= 0x3134F))   -- CJK Unified Ideographs Extension G
 end
 
 --- Tests whether str contains CJK characters
 ---- @string str
 ---- @treturn boolean true if CJK
 function util.hasCJKChar(str)
-    return string.match(str, "[\228-\234][\128-\191].") ~= nil
+    for c in str:gmatch(util.UTF8_CHAR_PATTERN) do
+        if util.isCJKChar(c) then
+            return true
+        end
+    end
+    return false
 end
 
 --- Split texts into a list of words, spaces and punctuation marks.
@@ -523,8 +632,10 @@ function util.splitToWords(text)
     for word in util.gsplit(text, "[%s%p]+", true) do
         -- if space split word contains CJK characters
         if util.hasCJKChar(word) then
-            -- split with CJK characters
-            for char in util.gsplit(word, "[\228-\234\192-\255][\128-\191]+", true) do
+            -- split all non-ASCII characters separately (FIXME ideally we
+            -- would split only the CJK characters, but you cannot define CJK
+            -- characters trivially with a byte-only Lua pattern).
+            for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
                 table.insert(wlist, char)
             end
         else
@@ -638,14 +749,15 @@ end
 
 --- Recursively scan directory for files inside
 -- @string path
--- @function callback(fullpath, name, attr)
+-- @func callback(fullpath, name, attr)
 function util.findFiles(dir, cb)
     local function scan(current)
         local ok, iter, dir_obj = pcall(lfs.dir, current)
         if not ok then return end
         for f in iter, dir_obj do
             local path = current.."/"..f
-            local attr = lfs.attributes(path)
+            -- lfs can return nil here, as it will follow symlinks!
+            local attr = lfs.attributes(path) or {}
             if attr.mode == "directory" then
                 if f ~= "." and f ~= ".." then
                     scan(path)
@@ -800,7 +912,8 @@ function util.getSafeFilename(str, path, limit, limit_ext)
     limit = limit or 240
     limit_ext = limit_ext or 10
 
-    if path then
+    -- Always assume the worst on Android (#7837)
+    if path and not BaseUtil.isAndroid() then
         local file_system = util.getFilesystemType(path)
         if file_system ~= "vfat" and file_system ~= "fuse.fsp" then
             replaceFunc = replaceSlashChar
@@ -1200,20 +1313,106 @@ function util.checkLuaSyntax(lua_text)
     return err
 end
 
--- Simple startsWith / endsWith string helpers
--- c.f., http://lua-users.org/wiki/StringRecipes
--- @param str string: source string
--- @param start string: string to match
--- @return boolean: true on success
+--- Simple startsWith string helper.
+--
+-- C.f., <http://lua-users.org/wiki/StringRecipes>.
+-- @string str source string
+-- @string start string to match
+-- @treturn bool true on success
 function util.stringStartsWith(str, start)
    return str:sub(1, #start) == start
 end
 
--- @param str string: source string
--- @param ending string: string to match
--- @return boolean: true on success
+--- Simple endsWith string helper.
+-- @string str source string
+-- @string ending string to match
+-- @treturn bool true on success
 function util.stringEndsWith(str, ending)
    return ending == "" or str:sub(-#ending) == ending
+end
+
+local WrappedFunction_mt = {
+    __call = function(self, ...)
+        if self.before_callback then
+            self.before_callback(self.target_table, ...)
+        end
+        if self.func then
+            return self.func(...)
+        end
+    end,
+}
+
+--- Wrap (or replace) a table method with a custom method, in a revertable way.
+-- This allows you extend the features of an existing module by modifying its
+-- internal methods, and then revert them back to normal later if necessary.
+--
+-- The most notable use-case for this is VirtualKeyboard's inputbox method
+-- wrapping to allow keyboards to add more complicated state-machines to modify
+-- how characters are input.
+--
+-- The returned table is the same table `target_table[target_field_name]` is
+-- set to. In addition to being callable, the new method has two sub-methods:
+--
+--  * `:revert()` will un-wrap the method and revert it to the original state.
+--
+--    Note that if a method is wrapped multiple times, reverting it will revert
+--    it to the state of the method when util.wrapMethod was called (and if
+--    called on the table returned from util.wrapMethod, that is the state when
+--    that particular util.wrapMethod was called).
+--
+--  * `:raw_call(...)` will call the original method with the given arguments
+--    and return whatever it returns.
+--
+--    This makes it more ergonomic to use the wrapped table methods in the case
+--    where you've replaced the regular function with your own implementation
+--    but you need to call the original functions inside your implementation.
+--
+--  * `:raw_method_call(...)` will call the original method with the arguments
+--    `(target_table, ...)` and return whatever it returns. Note that the
+--    target_table used is the one associated with the util.wrapMethod call.
+--
+--    This makes it more ergonomic to use the wrapped table methods in the case
+--    where you've replaced the regular function with your own implementation
+--    but you need to call the original functions inside your implementation.
+--
+--    This is effectively short-hand for `:raw_call(target_table, ...)`.
+--
+-- This is loosely based on busted/luassert's spies implementation (MIT).
+--   <https://github.com/Olivine-Labs/luassert/blob/v1.7.11/src/spy.lua>
+--
+-- @tparam table target_table The table whose method will be wrapped.
+-- @tparam string target_field_name The name of the field to wrap.
+-- @tparam nil|func new_func If non-nil, this function will be called instead of the original function after wrapping.
+-- @tparam nil|func before_callback If non-nil, this function will be called (with the arguments (target_table, ...)) before the function is called.
+function util.wrapMethod(target_table, target_field_name, new_func, before_callback)
+    local old_func = target_table[target_field_name]
+    local wrapped = setmetatable({
+        target_table = target_table,
+        target_field_name = target_field_name,
+        old_func = old_func,
+
+        before_callback = before_callback,
+        func = new_func or old_func,
+
+        revert = function(self)
+            if not self.reverted then
+                self.target_table[self.target_field_name] = self.old_func
+                self.reverted = true
+            end
+        end,
+
+        raw_call = function(self, ...)
+            if self.old_func then
+                return self.old_func(...)
+            end
+        end,
+
+        raw_method_call = function(self, ...)
+            return self:raw_call(self.target_table, ...)
+        end,
+    }, WrappedFunction_mt)
+    target_table[target_field_name] = wrapped
+    return wrapped
 end
 
 return util

@@ -1,31 +1,22 @@
 local Screensaver = require("ui/screensaver")
 local _ = require("gettext")
 
-local function screensaverType() return G_reader_settings:readSetting("screensaver_type") end
-local function screensaverDelay() return G_reader_settings:readSetting("screensaver_delay") end
-local function lastFile()
+local function hasLastFile()
+    if G_reader_settings:hasNot("lastfile") then
+        return false
+    end
+
     local lfs = require("libs/libkoreader-lfs")
     local last_file = G_reader_settings:readSetting("lastfile")
-    if last_file and lfs.attributes(last_file, "mode") == "file" then
-        return last_file
-    end
+    return last_file and lfs.attributes(last_file, "mode") == "file"
 end
-local function whiteBackground() return G_reader_settings:isTrue("screensaver_white_background") end
-local function noBackground() return G_reader_settings:isTrue("screensaver_no_background") end
-local function stretchImages() return G_reader_settings:isTrue("screensaver_stretch_images") end
-local function messagePosition() return G_reader_settings:readSetting("screensaver_message_position") end
-local function showMessage() return G_reader_settings:isTrue("screensaver_show_message") end
 
 return {
     {
         text = _("Use last book's cover as screensaver"),
-        enabled_func = function() return lastFile() ~= nil end,
+        enabled_func = hasLastFile,
         checked_func = function()
-            if screensaverType() == "cover" then
-                return true
-            else
-                return false
-            end
+            return G_reader_settings:readSetting("screensaver_type") == "cover"
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "cover")
@@ -33,13 +24,9 @@ return {
     },
     {
         text = _("Use book status as screensaver"),
-        enabled_func = function() return lastFile() ~= nil end,
+        enabled_func = hasLastFile,
         checked_func = function()
-            if screensaverType() == "bookstatus" then
-                return true
-            else
-                return false
-            end
+            return G_reader_settings:readSetting("screensaver_type") == "bookstatus"
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "bookstatus")
@@ -48,11 +35,7 @@ return {
     {
         text = _("Use random image from folder as screensaver"),
         checked_func = function()
-            if screensaverType() == "random_image" then
-                return true
-            else
-                return false
-            end
+            return G_reader_settings:readSetting("screensaver_type") == "random_image"
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "random_image")
@@ -61,11 +44,7 @@ return {
     {
         text = _("Use document cover as screensaver"),
         checked_func = function()
-            if screensaverType() == "document_cover" then
-                return true
-            else
-                return false
-            end
+            return G_reader_settings:readSetting("screensaver_type") == "document_cover"
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "document_cover")
@@ -74,11 +53,7 @@ return {
     {
         text = _("Use image as screensaver"),
         checked_func = function()
-            if screensaverType() == "image_file" then
-                return true
-            else
-                return false
-            end
+            return G_reader_settings:readSetting("screensaver_type") == "image_file"
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "image_file")
@@ -86,13 +61,11 @@ return {
     },
     {
         text = _("Use reading progress as screensaver"),
-        enabled_func = function() return Screensaver.getReaderProgress ~= nil and lastFile() ~= nil end,
+        enabled_func = function()
+            return Screensaver.getReaderProgress ~= nil and hasLastFile()
+        end,
         checked_func = function()
-            if screensaverType() == "readingprogress" then
-                return true
-            else
-                return false
-            end
+            return G_reader_settings:readSetting("screensaver_type") == "readingprogress"
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "readingprogress")
@@ -101,11 +74,7 @@ return {
     {
         text = _("Leave screen as it is"),
         checked_func = function()
-            if screensaverType() == "disable" then
-                return true
-            else
-                return false
-            end
+            return G_reader_settings:readSetting("screensaver_type") == "disable"
         end,
         callback = function()
             G_reader_settings:saveSetting("screensaver_type", "disable")
@@ -114,9 +83,11 @@ return {
     },
     {
         text = _("Add message to screensaver"),
-        checked_func = showMessage,
+        checked_func = function()
+            return G_reader_settings:isTrue("screensaver_show_message")
+        end,
         callback = function()
-            G_reader_settings:saveSetting("screensaver_show_message", not showMessage())
+            G_reader_settings:toggle("screensaver_show_message")
         end,
         separator = true,
     },
@@ -152,131 +123,178 @@ return {
                 end,
             },
             {
-                text = _("White background behind message and images"),
-                checked_func = whiteBackground,
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_white_background", not whiteBackground())
-                    G_reader_settings:flipFalse("screensaver_no_background")
-                end,
-            },
-            {
-                text = _("Leave background as-is behind message and images"),
-                checked_func = noBackground,
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_no_background", not noBackground())
-                    G_reader_settings:flipFalse("screensaver_white_background")
-                end,
-            },
-            {
-                text = _("Stretch covers and images to fit screen"),
-                checked_func = stretchImages,
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_stretch_images", not stretchImages())
-                end,
-                separator = true,
-            },
-            {
-                text = _("Screensaver message position"),
+                text = _("Covers and images settings"),
                 sub_item_table = {
                     {
-                        text = _("Top"),
+                        text = _("Black background"),
                         checked_func = function()
-                            return messagePosition() == "top"
+                            return G_reader_settings:readSetting("screensaver_img_background") == "black"
                         end,
                         callback = function()
-                            G_reader_settings:saveSetting("screensaver_message_position", "top")
-                        end
+                            G_reader_settings:saveSetting("screensaver_img_background", "black")
+                        end,
                     },
                     {
-                        text = _("Middle"),
+                        text = _("White background"),
                         checked_func = function()
-                            return messagePosition() == "middle" or messagePosition() == nil
+                            return G_reader_settings:readSetting("screensaver_img_background") == "white"
                         end,
                         callback = function()
-                            G_reader_settings:saveSetting("screensaver_message_position", "middle")
-                        end
+                            G_reader_settings:saveSetting("screensaver_img_background", "white")
+                        end,
                     },
                     {
-                        text = _("Bottom"),
+                        text = _("Leave background as-is"),
                         checked_func = function()
-                            return messagePosition() == "bottom"
+                            return G_reader_settings:readSetting("screensaver_img_background") == "none"
                         end,
                         callback = function()
-                            G_reader_settings:saveSetting("screensaver_message_position", "bottom")
-                        end
+                            G_reader_settings:saveSetting("screensaver_img_background", "none")
+                        end,
                     },
-                }
+                    {
+                        text_func = function()
+                            if G_reader_settings:nilOrFalse("screensaver_stretch_images") then
+                                return _("Stretch to fit screen")
+                            elseif G_reader_settings:readSetting("screensaver_stretch_limit_percentage") then
+                                return _("Stretch to fit screen (with limit)")
+                            else
+                                return _("Stretch to fit screen")
+                            end
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_stretch_images")
+                        end,
+                        callback = function(touchmenu_instance)
+                            Screensaver:setStretchLimit(touchmenu_instance)
+                        end,
+                        separator = true,
+                    },
+                },
             },
             {
-                text = _("Delay when exit from screensaver"),
+                text = _("Message settings"),
+                sub_item_table = {
+                    {
+                        text = _("Black background behind message"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("screensaver_msg_background") == "black"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_msg_background", "black")
+                        end,
+                    },
+                    {
+                        text = _("White background behind message"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("screensaver_msg_background") == "white"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_msg_background", "white")
+                        end,
+                    },
+                    {
+                        text = _("Leave background as-is behind message"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("screensaver_msg_background") == "none"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_msg_background", "none")
+                        end,
+                    },
+                    {
+                        text = _("Hide reboot/poweroff message"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
+                        end,
+                        callback = function()
+                            G_reader_settings:toggle("screensaver_hide_fallback_msg")
+                        end,
+                    },
+                    {
+                        text = _("Message position"),
+                        sub_item_table = {
+                            {
+                                text = _("Top"),
+                                checked_func = function()
+                                    return G_reader_settings:readSetting("screensaver_message_position") == "top"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("screensaver_message_position", "top")
+                                end
+                            },
+                            {
+                                text = _("Middle"),
+                                checked_func = function()
+                                    return G_reader_settings:readSetting("screensaver_message_position") == "middle"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("screensaver_message_position", "middle")
+                                end
+                            },
+                            {
+                                text = _("Bottom"),
+                                checked_func = function()
+                                    return G_reader_settings:readSetting("screensaver_message_position") == "bottom"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("screensaver_message_position", "bottom")
+                                end
+                            },
+                        },
+                    },
+                },
+            },
+            {
+                text = _("Keep the screensaver on screen after wakeup"),
                 sub_item_table = {
                     {
                         text = _("Disable"),
                         checked_func = function()
-                            if screensaverDelay() == nil or screensaverDelay() == "disable" then
-                                return true
-                            else
-                                return false
-                            end
+                            return G_reader_settings:readSetting("screensaver_delay") == "disable"
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("screensaver_delay", "disable")
                         end
                     },
                     {
-                        text = _("1 second"),
+                        text = _("For 1 second"),
                         checked_func = function()
-                            if screensaverDelay() == "1" then
-                                return true
-                            else
-                                return false
-                            end
+                            return G_reader_settings:readSetting("screensaver_delay") == "1"
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("screensaver_delay", "1")
                         end
                     },
                     {
-                        text = _("3 seconds"),
+                        text = _("For 3 seconds"),
                         checked_func = function()
-                            if screensaverDelay() == "3" then
-                                return true
-                            else
-                                return false
-                            end
+                            return G_reader_settings:readSetting("screensaver_delay") == "3"
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("screensaver_delay", "3")
                         end
                     },
                     {
-                        text = _("5 seconds"),
+                        text = _("For 5 seconds"),
                         checked_func = function()
-                            if screensaverDelay() == "5" then
-                                return true
-                            else
-                                return false
-                            end
+                            return G_reader_settings:readSetting("screensaver_delay") == "5"
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("screensaver_delay", "5")
                         end
                     },
                     {
-                        text = _("Tap to exit screensaver"),
+                        text = _("Until a tap"),
                         checked_func = function()
-                            if screensaverDelay() == "tap" then
-                                return true
-                            else
-                                return false
-                            end
+                            return G_reader_settings:readSetting("screensaver_delay") == "tap"
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("screensaver_delay", "tap")
                         end
                     },
-                }
-            }
-        }
-    }
+                },
+            },
+        },
+    },
 }

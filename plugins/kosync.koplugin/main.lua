@@ -12,10 +12,11 @@ local Screen = Device.screen
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local random = require("random")
+local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-if not G_reader_settings:readSetting("device_id") then
+if G_reader_settings:hasNot("device_id") then
     G_reader_settings:saveSetting("device_id", random.uuid())
 end
 
@@ -38,6 +39,11 @@ local SYNC_STRATEGY = {
 
     DEFAULT_FORWARD = 1,
     DEFAULT_BACKWARD = 3,
+}
+
+local CHECKSUM_METHOD = {
+    BINARY = 0,
+    FILENAME = 1
 }
 
 local function getNameStrategy(type)
@@ -99,11 +105,12 @@ local function validateUser(user, pass)
 end
 
 function KOSync:onDispatcherRegisterActions()
-    Dispatcher:registerAction("kosync_push_progress", { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,})
-    Dispatcher:registerAction("kosync_pull_progress", { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true, separator=true,})
+    Dispatcher:registerAction("kosync_push_progress", { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), reader=true,})
+    Dispatcher:registerAction("kosync_pull_progress", { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), reader=true, separator=true,})
 end
 
 function KOSync:onReaderReady()
+    --- @todo: Viable candidate for a port to the new readSetting API
     local settings = G_reader_settings:readSetting("kosync") or {}
     self.kosync_custom_server = settings.custom_server
     self.kosync_username = settings.username
@@ -112,6 +119,7 @@ function KOSync:onReaderReady()
     self.kosync_pages_before_update = settings.pages_before_update
     self.kosync_whisper_forward = settings.whisper_forward or SYNC_STRATEGY.DEFAULT_FORWARD
     self.kosync_whisper_backward = settings.whisper_backward or SYNC_STRATEGY.DEFAULT_BACKWARD
+    self.kosync_checksum_method = settings.checksum_method or CHECKSUM_METHOD.BINARY
     self.kosync_device_id = G_reader_settings:readSetting("device_id")
     --assert(self.kosync_device_id)
     if self.kosync_auto_sync then
@@ -283,7 +291,6 @@ function KOSync:addToMainMenu(menu_items)
                     local items = SpinWidget:new{
                         text = _([[This value determines how many page turns it takes to update book progress.
 If set to 0, updating progress based on page turns will be disabled.]]),
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = self.kosync_pages_before_update or 0,
                         value_min = 0,
                         value_max = 999,
@@ -298,6 +305,29 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                     }
                     UIManager:show(items)
                 end,
+            },
+            {
+                text = _("Document matching method"),
+                sub_item_table = {
+                    {
+                        text = _("Binary. Only identical files will sync progress."),
+                        checked_func = function()
+                            return self.kosync_checksum_method == CHECKSUM_METHOD.BINARY
+                        end,
+                        callback = function()
+                            self:setChecksumMethod(CHECKSUM_METHOD.BINARY)
+                        end,
+                    },
+                    {
+                        text = _("Filename. Files with the same name will sync progress."),
+                        checked_func = function()
+                            return self.kosync_checksum_method == CHECKSUM_METHOD.FILENAME
+                        end,
+                        callback = function()
+                            self:setChecksumMethod(CHECKSUM_METHOD.FILENAME)
+                        end,
+                    },
+                }
             },
         }
     }
@@ -321,6 +351,11 @@ end
 
 function KOSync:setWhisperBackward(strategy)
     self.kosync_whisper_backward = strategy
+    self:saveSettings()
+end
+
+function KOSync:setChecksumMethod(method)
+    self.kosync_checksum_method = method
     self:saveSettings()
 end
 
@@ -506,6 +541,28 @@ function KOSync:getLastProgress()
     end
 end
 
+function KOSync:getDocumentDigest()
+    if self.kosync_checksum_method == CHECKSUM_METHOD.FILENAME then
+        return self:getFileNameDigest()
+    else
+        return self:getFileDigest()
+    end
+end
+
+function KOSync:getFileDigest()
+    return self.view.document:fastDigest()
+end
+
+function KOSync:getFileNameDigest()
+    local file = self.ui.document.file
+    if not file then return end
+
+    local file_path, file_name = util.splitFilePathName(file) -- luacheck: no unused
+    if not file_name then return end
+
+    return md5(file_name)
+end
+
 function KOSync:syncToProgress(progress)
     logger.dbg("sync to", progress)
     if self.ui.document.info.has_pages then
@@ -532,7 +589,7 @@ function KOSync:updateProgress(manual)
         custom_url = self.kosync_custom_server,
         service_spec = self.path .. "/api.json"
     }
-    local doc_digest = self.view.document:fastDigest()
+    local doc_digest = self:getDocumentDigest()
     local progress = self:getLastProgress()
     local percentage = self:getLastPercent()
     local ok, err = pcall(client.update_progress,
@@ -580,7 +637,7 @@ function KOSync:getProgress(manual)
         custom_url = self.kosync_custom_server,
         service_spec = self.path .. "/api.json"
     }
-    local doc_digest = self.view.document:fastDigest()
+    local doc_digest = self:getDocumentDigest()
     local ok, err = pcall(client.get_progress,
         client,
         self.kosync_username,
@@ -693,13 +750,14 @@ function KOSync:saveSettings()
         auto_sync = self.kosync_auto_sync,
         pages_before_update = self.kosync_pages_before_update,
         whisper_forward =
-              (self.kosync_whisper_forward == SYNC_STRATEGY.DEFAULT_FORWARD
-               and nil
-               or self.kosync_whisper_forward),
+              (self.kosync_whisper_forward ~= SYNC_STRATEGY.DEFAULT_FORWARD
+               and self.kosync_whisper_forward
+               or nil),
         whisper_backward =
-              (self.kosync_whisper_backward == SYNC_STRATEGY.DEFAULT_BACKWARD
-               and nil
-               or self.kosync_whisper_backward),
+              (self.kosync_whisper_backward ~= SYNC_STRATEGY.DEFAULT_BACKWARD
+               and self.kosync_whisper_backward
+               or nil),
+        checksum_method = self.kosync_checksum_method,
     }
     G_reader_settings:saveSetting("kosync", settings)
 end

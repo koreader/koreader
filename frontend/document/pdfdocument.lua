@@ -1,6 +1,6 @@
-local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local CanvasContext = require("document/canvascontext")
+local DocCache = require("document/doccache")
 local DocSettings = require("docsettings")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
@@ -98,6 +98,10 @@ function PdfDocument:unlock(password)
     return true
 end
 
+function PdfDocument:comparePositions(pos1, pos2)
+    return self.koptinterface:comparePositions(self, pos1, pos2)
+end
+
 function PdfDocument:getPageTextBoxes(pageno)
     local page = self._document:openPage(pageno)
     local text = page:getPageText()
@@ -139,7 +143,7 @@ end
 
 function PdfDocument:getUsedBBox(pageno)
     local hash = "pgubbox|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
-    local cached = Cache:check(hash)
+    local cached = DocCache:check(hash)
     if cached then
         return cached.ubbox
     end
@@ -152,9 +156,9 @@ function PdfDocument:getUsedBBox(pageno)
     if used.x1 > pwidth then used.x1 = pwidth end
     if used.y0 < 0 then used.y0 = 0 end
     if used.y1 > pheight then used.y1 = pheight end
-    --- @todo Give size for cacheitem?  02.12 2012 (houqp)
-    Cache:insert(hash, CacheItem:new{
+    DocCache:insert(hash, CacheItem:new{
         ubbox = used,
+        size = 256, -- might be closer to 160
     })
     page:close()
     return used
@@ -162,48 +166,72 @@ end
 
 function PdfDocument:getPageLinks(pageno)
     local hash = "pglinks|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
-    local cached = Cache:check(hash)
+    local cached = DocCache:check(hash)
     if cached then
         return cached.links
     end
     local page = self._document:openPage(pageno)
     local links = page:getPageLinks()
-    Cache:insert(hash, CacheItem:new{
+    DocCache:insert(hash, CacheItem:new{
         links = links,
+        size = 64 + (8 * 32 * #links),
     })
     page:close()
     return links
 end
 
-function PdfDocument:saveHighlight(pageno, item)
+-- returns nil if file is not a pdf, true if document is a writable pdf, false else
+function PdfDocument:_checkIfWritable()
     local suffix = util.getFileNameSuffix(self.file)
-    if string.lower(suffix) ~= "pdf" then return end
-
+    if string.lower(suffix) ~= "pdf" then return nil end
     if self.is_writable == nil then
         local handle = io.open(self.file, 'r+b')
         self.is_writable = handle ~= nil
         if handle then handle:close() end
     end
-    if self.is_writable == false then
-        return false
-    end
-    self.is_edited = true
+    return self.is_writable
+end
+
+local function _quadpointsFromPboxes(pboxes)
     -- will also need mupdf_h.lua to be evaluated once
     -- but this is guaranteed at this point
-    local n = #item.pboxes
+    local n = #pboxes
     local quadpoints = ffi.new("float[?]", 8*n)
     for i=1, n do
         -- The order must be left bottom, right bottom, left top, right top.
         -- https://bugs.ghostscript.com/show_bug.cgi?id=695130
-        quadpoints[8*i-8] = item.pboxes[i].x
-        quadpoints[8*i-7] = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[8*i-6] = item.pboxes[i].x + item.pboxes[i].w
-        quadpoints[8*i-5] = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[8*i-4] = item.pboxes[i].x
-        quadpoints[8*i-3] = item.pboxes[i].y
-        quadpoints[8*i-2] = item.pboxes[i].x + item.pboxes[i].w
-        quadpoints[8*i-1] = item.pboxes[i].y
+        quadpoints[8*i-8] = pboxes[i].x
+        quadpoints[8*i-7] = pboxes[i].y + pboxes[i].h
+        quadpoints[8*i-6] = pboxes[i].x + pboxes[i].w
+        quadpoints[8*i-5] = pboxes[i].y + pboxes[i].h
+        quadpoints[8*i-4] = pboxes[i].x
+        quadpoints[8*i-3] = pboxes[i].y
+        quadpoints[8*i-2] = pboxes[i].x + pboxes[i].w
+        quadpoints[8*i-1] = pboxes[i].y
     end
+    return quadpoints, n
+end
+
+local function _quadpointsToPboxes(quadpoints, n)
+    -- reverse of previous function
+    local pboxes = {}
+    for i=1, n do
+        table.insert(pboxes, {
+            x = quadpoints[8*i-4],
+            y = quadpoints[8*i-3],
+            w = quadpoints[8*i-6] - quadpoints[8*i-4],
+            h = quadpoints[8*i-5] - quadpoints[8*i-3],
+        })
+    end
+    return pboxes
+end
+
+function PdfDocument:saveHighlight(pageno, item)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
     local page = self._document:openPage(pageno)
     local annot_type = C.PDF_ANNOT_HIGHLIGHT
     if item.drawer == "lighten" then
@@ -213,7 +241,41 @@ function PdfDocument:saveHighlight(pageno, item)
     elseif item.drawer == "strikeout" then
         annot_type = C.PDF_ANNOT_STRIKEOUT
     end
-    page:addMarkupAnnotation(quadpoints, n, annot_type)
+    page:addMarkupAnnotation(quadpoints, n, annot_type) -- may update/adjust quadpoints
+    -- Update pboxes with the possibly adjusted coordinates (this will have it updated
+    -- in self.view.highlight.saved[page])
+    item.pboxes = _quadpointsToPboxes(quadpoints, n)
+    page:close()
+    self:resetTileCacheValidity()
+end
+
+function PdfDocument:deleteHighlight(pageno, item)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
+    local page = self._document:openPage(pageno)
+    local annot = page:getMarkupAnnotation(quadpoints, n)
+    if annot ~= nil then
+        page:deleteMarkupAnnotation(annot)
+        self:resetTileCacheValidity()
+    end
+    page:close()
+end
+
+function PdfDocument:updateHighlightContents(pageno, item, contents)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
+    local page = self._document:openPage(pageno)
+    local annot = page:getMarkupAnnotation(quadpoints, n)
+    if annot ~= nil then
+        page:updateMarkupAnnotation(annot, contents)
+        self:resetTileCacheValidity()
+    end
     page:close()
 end
 
@@ -223,9 +285,16 @@ function PdfDocument:writeDocument()
 end
 
 function PdfDocument:close()
-    if self.is_edited then
-        self:writeDocument()
+    -- NOTE: We can't just rely on Document:close's return code for that, as we need self._document
+    --       in :writeDocument, and it would have been destroyed.
+    local DocumentRegistry = require("document/documentregistry")
+    if DocumentRegistry:getReferenceCount(self.file) == 1 then
+        -- We're the final reference to this Document instance.
+        if self.is_edited then
+            self:writeDocument()
+        end
     end
+
     Document.close(self)
 end
 
@@ -275,8 +344,8 @@ function PdfDocument:findText(pattern, origin, reverse, caseInsensitive, page)
     return self.koptinterface:findText(self, pattern, origin, reverse, caseInsensitive, page)
 end
 
-function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
-    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, render_mode)
+function PdfDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, hinting)
+    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
 end
 
 function PdfDocument:hintPage(pageno, zoom, rotation, gamma, render_mode)
@@ -291,6 +360,7 @@ function PdfDocument:register(registry)
     --- Document types ---
     registry:addProvider("cbt", "application/vnd.comicbook+tar", self, 100)
     registry:addProvider("cbz", "application/vnd.comicbook+zip", self, 100)
+    registry:addProvider("cbz", "application/x-cbz", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("epub", "application/epub+zip", self, 50)
     registry:addProvider("epub3", "application/epub+zip", self, 50)
     registry:addProvider("fb2", "application/fb2", self, 80)

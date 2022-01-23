@@ -15,6 +15,7 @@ local Screen = Device.screen
 
 local IconButton = InputContainer:new{
     icon = "notice-warning",
+    icon_rotation_angle = 0,
     dimen = nil,
     -- show_parent is used for UIManager:setDirty, so we can trigger repaint
     show_parent = nil,
@@ -27,11 +28,13 @@ local IconButton = InputContainer:new{
     padding_left = nil,
     enabled = true,
     callback = nil,
+    allow_flash = true, -- set to false for any IconButton that may close its container
 }
 
 function IconButton:init()
     self.image = IconWidget:new{
         icon = self.icon,
+        rotation_angle = self.icon_rotation_angle,
         width = self.width,
         height = self.height,
     }
@@ -85,6 +88,13 @@ function IconButton:initGesListener()
                     range = self.dimen,
                 },
                 doc = "Hold IconButton",
+            },
+            HoldReleaseIconButton = {
+                GestureRange:new{
+                    ges = "hold_release",
+                    range = self.dimen,
+                },
+                doc = "Hold Release IconButton",
             }
         }
     end
@@ -92,44 +102,70 @@ end
 
 function IconButton:onTapIconButton()
     if not self.callback then return end
-    if G_reader_settings:isFalse("flash_ui") then
+    if G_reader_settings:isFalse("flash_ui") or not self.allow_flash then
         self.callback()
     else
+        -- c.f., ui/widget/button for more gnarly details about the implementation, but the flow of the flash_ui codepath essentially goes like this:
+        -- 1. Paint the highlight
+        -- 2. Refresh the highlighted item (so we can see the highlight)
+        -- 3. Paint the unhighlight
+        -- 4. Do NOT refresh the highlighted item, but enqueue a refresh request
+        -- 5. Run the callback
+        -- 6. Explicitly drain the paint & refresh queues; i.e., refresh (so we get to see both the callback results, and the unhighlight).
+
+        -- Highlight
+        --
         self.image.invert = true
-        -- For ConfigDialog icons, we can't avoid that initial repaint...
         UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
-        UIManager:setDirty(nil, function()
-            return "fast", self.dimen
-        end)
+        UIManager:setDirty(nil, "fast", self.dimen)
 
-        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+
+        -- Unhighlight
+        --
+        self.image.invert = false
+        UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+
+        -- Callback
+        --
         self.callback()
-        UIManager:forceRePaint()
-        --UIManager:waitForVSync()
 
-        -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget; e.g., the Home/+ buttons in the FM), we're done
-        if UIManager:getTopWidget() == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
-            self.image.invert = false
-            UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
-            --UIManager:forceRePaint()
-        end
+        -- NOTE: plugins/coverbrowser.koplugin/covermenu (ab)uses UIManager:clearRenderStack,
+        --       so we need to enqueue the actual refresh request for the unhighlight post-callback,
+        --       otherwise, it's lost.
+        --       This changes nothing in practice, since we follow by explicitly requesting to drain the refresh queue ;).
+        UIManager:setDirty(nil, "fast", self.dimen)
+
+        UIManager:forceRePaint()
     end
     return true
 end
 
 function IconButton:onHoldIconButton()
+    -- If we're going to process this hold, we must make
+    -- sure to also handle its hold_release below, so it's
+    -- not propagated up to a MovableContainer
+    self._hold_handled = nil
     if self.enabled and self.hold_callback then
         self.hold_callback()
     elseif self.hold_input then
         self:onInput(self.hold_input)
     elseif type(self.hold_input_func) == "function" then
         self:onInput(self.hold_input_func())
-    elseif self.hold_callback == nil then return end
+    elseif not self.hold_callback then -- nil or false
+        return
+    end
+    self._hold_handled = true
     return true
+end
+
+function IconButton:onHoldReleaseIconButton()
+    if self._hold_handled then
+        self._hold_handled = nil
+        return true
+    end
+    return false
 end
 
 function IconButton:onFocus()
@@ -145,6 +181,14 @@ end
 
 function IconButton:onTapSelect()
     self:onTapIconButton()
+end
+
+function IconButton:setIcon(icon)
+    if icon ~= self.icon then
+        self.icon = icon
+        self:free()
+        self:init()
+    end
 end
 
 return IconButton

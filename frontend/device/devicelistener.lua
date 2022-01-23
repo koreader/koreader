@@ -12,7 +12,7 @@ local T = require("ffi/util").template
 local DeviceListener = InputContainer:new{}
 
 local function _setSetting(name)
-    G_reader_settings:saveSetting(name, true)
+    G_reader_settings:makeTrue(name)
 end
 
 local function _unsetSetting(name)
@@ -51,9 +51,7 @@ function DeviceListener:onShowIntensity()
     else
         new_text = T(_("Frontlight intensity set to %1."), powerd:frontlightIntensity())
     end
-    UIManager:show(Notification:new{
-        text = new_text,
-    })
+    Notification:notify(new_text)
     return true
 end
 
@@ -62,9 +60,7 @@ function DeviceListener:onShowWarmth(value)
     if powerd.fl_warmth ~= nil then
         -- powerd.fl_warmth holds the warmth-value in the internal koreader scale [0,100]
         -- powerd.fl_warmth_max is the maximum value the hardware accepts
-        UIManager:show(Notification:new{
-            text = T(_("Warmth set to %1."), math.floor(powerd.fl_warmth/100*powerd.fl_warmth_max)),
-        })
+        Notification:notify(T(_("Warmth set to %1%."), math.floor(powerd.fl_warmth)))
     end
     return true
 end
@@ -174,13 +170,6 @@ if Device:hasFrontlight() then
         local powerd = Device:getPowerDevice()
         if powerd.fl_warmth == nil then return false end
 
-        if powerd.auto_warmth then
-            UIManager:show(Notification:new{
-                text = _("Warmth is handled automatically."),
-            })
-            return true
-        end
-
         local delta_int
         --received gesture
 
@@ -220,9 +209,7 @@ if Device:hasFrontlight() then
         else
             new_text = _("Frontlight disabled.")
         end
-        UIManager:show(Notification:new{
-            text = new_text,
-        })
+        Notification:notify(new_text)
         return true
     end
 
@@ -356,8 +343,10 @@ function DeviceListener:onRestart()
 end
 
 function DeviceListener:onFullRefresh()
-    self.ui:handleEvent(Event:new("UpdateFooter"))
-    UIManager:setDirty("all", "full")
+    if self.ui and self.ui.view then
+        self.ui:handleEvent(Event:new("UpdateFooter", self.ui.view.footer_visible))
+    end
+    UIManager:setDirty(nil, "full")
 end
 
 return DeviceListener

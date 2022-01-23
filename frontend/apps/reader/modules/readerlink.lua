@@ -11,6 +11,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LinkBox = require("ui/widget/linkbox")
 local Notification = require("ui/widget/notification")
+local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
@@ -89,6 +90,12 @@ function ReaderLink:init()
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
     end)
+    if G_reader_settings:isTrue("opening_page_location_stack") then
+        -- Add location at book opening to stack
+        self.ui:registerPostReadyCallback(function()
+            self:addCurrentLocationToStack()
+        end)
+    end
     -- For relative local file links
     local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
     self.document_dir = directory
@@ -144,6 +151,25 @@ end
 
 function ReaderLink:addToMainMenu(menu_items)
     -- insert table to main reader menu
+    menu_items.go_to_previous_location = {
+        text = _("Go back to previous location"),
+        enabled_func = function() return #self.location_stack > 0 end,
+        callback = function() self:onGoBackLink() end,
+        hold_callback = function(touchmenu_instance)
+            UIManager:show(ConfirmBox:new{
+                text = _("Clear location history?"),
+                ok_text = _("Clear"),
+                ok_callback = function()
+                    self:onClearLocationStack()
+                    touchmenu_instance:closeMenu()
+                end,
+            })
+        end,
+    }
+    if not Device:isTouchDevice() then
+        -- Menu items below aren't needed.
+        return
+    end
     menu_items.follow_links = {
         text = _("Links"),
         sub_item_table = {
@@ -325,7 +351,7 @@ The recommended value is -2.]]),
                     end
                     return spin_widget
                 end
-                local show_absolute_font_size_widget = G_reader_settings:readSetting("footnote_popup_absolute_font_size") ~= nil
+                local show_absolute_font_size_widget = G_reader_settings:has("footnote_popup_absolute_font_size")
                 spin_widget = get_font_size_widget(show_absolute_font_size_widget)
                 UIManager:show(spin_widget)
             end,
@@ -335,21 +361,6 @@ This allows you to specify how much smaller or larger it should be relative to t
             separator = true,
         })
     end
-    menu_items.go_to_previous_location = {
-        text = _("Go back to previous location"),
-        enabled_func = function() return #self.location_stack > 0 end,
-        callback = function() self:onGoBackLink() end,
-        hold_callback = function(touchmenu_instance)
-            UIManager:show(ConfirmBox:new{
-                text = _("Clear location history?"),
-                ok_text = _("Clear"),
-                ok_callback = function()
-                    self:onClearLocationStack()
-                    touchmenu_instance:closeMenu()
-                end,
-            })
-        end,
-    }
 end
 
 --- Check if a xpointer to <a> node really points to itself
@@ -513,6 +524,21 @@ function ReaderLink:onClearLocationStack(show_notification)
     return true
 end
 
+function ReaderLink:getPreviousLocationPages()
+    local previous_locations = {}
+    if #self.location_stack > 0 then
+        for num, location in ipairs(self.location_stack) do
+            if self.ui.rolling and location.xpointer then
+                previous_locations[self.ui.document:getPageFromXPointer(location.xpointer)] = num
+            end
+            if self.ui.paging and location[1] and location[1].page then
+                previous_locations[location[1].page] = num
+            end
+        end
+    end
+    return previous_locations
+end
+
 --- Goes to link.
 -- (This is called by other modules (highlight, search) to jump to a xpointer,
 -- they should not provide allow_footnote_popup=true)
@@ -652,6 +678,24 @@ function ReaderLink:onGoToExternalLink(link_url)
     end
     -- Set up buttons for alternative external link handling methods
     local alt_handlers_buttons = {}
+    table.insert(alt_handlers_buttons, {
+        text = _("Copy"),
+        callback = function()
+            UIManager:close(dialog)
+            Device.input.setClipboardText(link_url)
+        end,
+    })
+    table.insert(alt_handlers_buttons, {
+        text = _("Show QR code"),
+        callback = function()
+            UIManager:close(dialog)
+            UIManager:show(QRMessage:new{
+                text = link_url,
+                width = Device.screen:getWidth(),
+                height = Device.screen:getHeight()
+            })
+        end,
+    })
     if self.ui.wallabag then
         table.insert(alt_handlers_buttons, {
             text = _("Add to Wallabag"),
@@ -740,7 +784,6 @@ function ReaderLink:onGoToExternalLink(link_url)
     end
     dialog = ButtonDialogTitle:new{
         title = text,
-        use_info_style = true,
         buttons = buttons,
     }
     UIManager:show(dialog)

@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local T = require("ffi/util").template
+local logger = require("logger")
 
 local optionsutil = {}
 
@@ -13,7 +14,7 @@ function optionsutil.enableIfEquals(configurable, option, value)
     return configurable[option] == value
 end
 
-function optionsutil.showValues(configurable, option, prefix)
+function optionsutil.showValues(configurable, option, prefix, document)
     local default = G_reader_settings:readSetting(prefix.."_"..option.name)
     local current = configurable[option.name]
     local value_default, value_current
@@ -98,6 +99,10 @@ function optionsutil.showValues(configurable, option, prefix)
     if option.help_text then
         help_text = T("\n%1\n", option.help_text)
     end
+    if option.help_text_func then
+        -- Allow for concatenating a dynamic help_text_func to a static help_text
+        help_text = T("%1\n%2\n", help_text, option.help_text_func(configurable, document))
+    end
     local text
     local name_text = option.name_text_func
                       and option.name_text_func(configurable)
@@ -140,6 +145,60 @@ Default margins:
                 current[1], current[2],
                 default[1], default[2])
         })
+    end
+end
+
+function optionsutil:generateOptionText()
+    local CreOptions = require("ui/data/creoptions")
+
+    self.option_text_table = {}
+    self.option_args_table = {}
+    for i = 1, #CreOptions do
+        for j = 1, #CreOptions[i].options do
+            local option = CreOptions[i].options[j]
+            if option.event then
+                if option.labels then
+                    self.option_text_table[option.event] = option.labels
+                elseif option.toggle then
+                    self.option_text_table[option.event] = option.toggle
+                end
+                self.option_args_table[option.event] = option.args
+            end
+        end
+    end
+end
+
+function optionsutil:getOptionText(event, val)
+    if not self.option_text_table then
+        self:generateOptionText()
+    end
+    if not event or val == nil then
+        logger.err("[OptionsCatalog:getOptionText] Either event or val not set. This should not happen!")
+        return ""
+    end
+    if not self.option_text_table[event] then
+        logger.err("[OptionsCatalog:getOptionText] Event:" .. event .. " not found in option_text_table")
+        return ""
+    end
+
+    local text
+    if type(val) == "number" then
+        text = self.option_text_table[event][val + 1] -- options count from zero
+    end
+
+    -- if there are args, try to find the adequate toggle
+    if self.option_args_table[event] then
+        for i, args in pairs(self.option_args_table[event]) do
+            if args == val then
+                text = self.option_text_table[event][i]
+            end
+        end
+    end
+
+    if text then
+        return text
+    else
+        return val
     end
 end
 

@@ -2,15 +2,17 @@ local Blitbuffer = require("ffi/blitbuffer")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
 local Document = require("document/document")
-local FFIUtil = require("ffi/util")
 local FontList = require("fontlist")
 local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
+local TimeVal = require("ui/timeval")
+local buffer = require("string.buffer")
 local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local lru = require("ffi/lru")
 
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
@@ -69,11 +71,13 @@ local CreDocument = Document:new{
 function CreDocument:zipContentExt(fname)
     local std_out = io.popen("unzip ".."-qql \""..fname.."\"")
     if std_out then
+        local size, ext
         for line in std_out:lines() do
-            local size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
-            -- return the extention
-            if size and ext then return string.lower(ext) end
+            size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
+            if size and ext then break end
         end
+        std_out:close()
+        if ext then return string.lower(ext) end
     end
 end
 
@@ -118,6 +122,14 @@ function CreDocument:engineInit()
                 end
             end
         end
+        -- Make sure registered fonts have a proper entry at weight 400 and 700 when
+        -- possible, to avoid having synthesized fonts for these normal and bold weights.
+        -- This allows restoring a bit of the previous behaviour of crengine when it
+        -- wasn't handling font styles, and associated for each typeface one single
+        -- font to regular (400) and one to bold (700).
+        -- It should ensure we use real fonts (and not synthesized ones) for normal text
+        -- and bold text with the font_base_weight setting set to its default value of 0 (=400).
+        cre.regularizeRegisteredFontsWeights(true) -- true to print what modifications were made
 
         engine_initialized = true
     end
@@ -200,6 +212,23 @@ function CreDocument:setupDefaultView()
     self._document:readDefaults()
     logger.dbg("CreDocument: applied cr3.ini default settings.")
 
+    -- Disable crengine image scaling options (we prefer scaling them via crengine.render.dpi)
+    self._document:setIntProperty("crengine.image.scaling.zoomin.block.mode", 0)
+    self._document:setIntProperty("crengine.image.scaling.zoomin.block.scale", 1)
+    self._document:setIntProperty("crengine.image.scaling.zoomin.inline.mode", 0)
+    self._document:setIntProperty("crengine.image.scaling.zoomin.inline.scale", 1)
+    self._document:setIntProperty("crengine.image.scaling.zoomout.block.mode", 0)
+    self._document:setIntProperty("crengine.image.scaling.zoomout.block.scale", 1)
+    self._document:setIntProperty("crengine.image.scaling.zoomout.inline.mode", 0)
+    self._document:setIntProperty("crengine.image.scaling.zoomout.inline.scale", 1)
+
+    -- If switching to two pages on view, we want it to behave like two columns
+    -- and each view to be a single page number (instead of the default of two).
+    -- This ensures that page number and count are consistent between top and
+    -- bottom status bars, that SkimTo -1/+1 don't do nothing every other tap,
+    -- and that reading statistics do not see half of the pages never read.
+    self._document:setIntProperty("window.pages.two.visible.as.one.page.number", 1)
+
     -- set fallback font faces (this was formerly done in :init(), but it
     -- affects crengine calcGlobalSettingsHash() and would invalidate the
     -- cache from the main currently being read document when we just
@@ -211,16 +240,16 @@ function CreDocument:setupDefaultView()
     self._document:adjustFontSizes(CanvasContext:getDPI())
 
     -- set top status bar font size
-    if G_reader_settings:readSetting("cre_header_status_font_size") then
+    if G_reader_settings:has("cre_header_status_font_size") then
         self._document:setIntProperty("crengine.page.header.font.size",
             G_reader_settings:readSetting("cre_header_status_font_size"))
     end
 
     -- One can set these to change from white background
-    if G_reader_settings:readSetting("cre_background_color") then
+    if G_reader_settings:has("cre_background_color") then
         self:setBackgroundColor(G_reader_settings:readSetting("cre_background_color"))
     end
-    if G_reader_settings:readSetting("cre_background_image") then
+    if G_reader_settings:has("cre_background_image") then
         self:setBackgroundImage(G_reader_settings:readSetting("cre_background_image"))
     end
 end
@@ -260,6 +289,13 @@ function CreDocument:render()
     logger.dbg("CreDocument: rendering done.")
 end
 
+function CreDocument:getDocumentRenderingHash()
+    if self.been_rendered then
+        return self._document:getDocumentRenderingHash()
+    end
+    return 0
+end
+
 function CreDocument:_readMetadata()
     Document._readMetadata(self) -- will grab/update self.info.number_of_pages
     if self.been_rendered then
@@ -271,10 +307,19 @@ function CreDocument:_readMetadata()
 end
 
 function CreDocument:close()
-    Document.close(self)
-    if self.buffer then
-        self.buffer:free()
-        self.buffer = nil
+    -- Let Document do the refcount check, and tell us if we actually need to tear down the instance.
+    if Document.close(self) then
+        -- Yup, final Document instance, we can safely destroy internal data.
+        -- (Document already took care of our self._document userdata).
+        if self.buffer then
+            self.buffer:free()
+            self.buffer = nil
+        end
+
+        -- Only exists if the call cache is enabled
+        if self._callCacheDestroy then
+            self._callCacheDestroy()
+        end
     end
 end
 
@@ -295,8 +340,8 @@ function CreDocument:setHideNonlinearFlows(hide_nonlinear_flows)
     end
 end
 
-function CreDocument:getPageCount()
-    return self._document:getPages()
+function CreDocument:getPageCount(internal)
+    return self._document:getPages(internal)
 end
 
 -- Whether the document has any non-linear flow to care about
@@ -516,25 +561,14 @@ function CreDocument:getWordFromPosition(pos)
         if text_range.pos0 and text_range.pos1 then
             -- get segments from these pos, to build the overall box
             local word_boxes = self._document:getWordBoxesFromPositions(text_range.pos0, text_range.pos1, true)
-            if #word_boxes > 0 then
-                local overall_box
-                for i = 1, #word_boxes do
-                    local line_box = word_boxes[i]
-                    if not overall_box then
-                        overall_box = line_box
-                    else
-                        if line_box.x0 < overall_box.x0 then overall_box.x0 = line_box.x0 end
-                        if line_box.y0 < overall_box.y0 then overall_box.y0 = line_box.y0 end
-                        if line_box.x1 > overall_box.x1 then overall_box.x1 = line_box.x1 end
-                        if line_box.y1 > overall_box.y1 then overall_box.y1 = line_box.y1 end
-                    end
-                end
-                wordbox.sbox = Geom:new{
-                    x = overall_box.x0,
-                    y = overall_box.y0,
-                    w = overall_box.x1 - overall_box.x0,
-                    h = overall_box.y1 - overall_box.y0,
-                }
+            -- convert to Geom so we can use Geom.boundingBox
+            for i=1, #word_boxes do
+                local v = word_boxes[i]
+                word_boxes[i] = { x = v.x0,        y = v.y0,
+                                  w = v.x1 - v.x0, h = v.y1 - v.y0 }
+            end
+            wordbox.sbox = Geom.boundingBox(word_boxes)
+            if wordbox.sbox then
                 box_found = true
             end
         end
@@ -609,6 +643,7 @@ end
 
 function CreDocument:compareXPointers(xp1, xp2)
     -- Returns 1 if XPointers are ordered (if xp2 is after xp1), -1 if not, 0 if same
+    -- Returns nil if any of XPointers are invalid
     return self._document:compareXPointers(xp1, xp2)
 end
 
@@ -658,16 +693,16 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- We also honor the current smooth scaling setting,
     -- as well as the global SW dithering setting.
 
-    --local start_ts = FFIUtil.getTimestamp()
+    --local start_tv = TimeVal:now()
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
-    --local end_ts = FFIUtil.getTimestamp()
-    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_ts - start_ts) * 1000))
+    --local end_tv = TimeVal:now()
+    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_tv - start_tv):tomsecs()))
 
-    --start_ts = FFIUtil.getTimestamp()
+    --start_tv = TimeVal:now()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
-    --end_ts = FFIUtil.getTimestamp()
-    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (end_ts - start_ts) * 1000))
+    --end_tv = TimeVal:now()
+    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (end_tv - start_tv):tomsecs()))
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
@@ -676,7 +711,14 @@ function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
 end
 
 function CreDocument:drawCurrentViewByPage(target, x, y, rect, page)
-    self._document:gotoPage(page)
+    if not self.no_page_sync then
+        -- Avoid syncing page when this flag is set, when selecting text
+        -- across pages in 2-page mode and flipping half the screen
+        -- (currently only set by ReaderHighlight:onHoldPan())
+        -- self._document:gotoPage(page)
+        -- This allows this method to not be cached by cre call cache
+        self:gotoPage(page)
+    end
     self:drawCurrentView(target, x, y, rect)
 end
 
@@ -733,8 +775,9 @@ function CreDocument:getScreenPositionFromXPointer(xp)
     if self._view_mode == self.PAGE_VIEW_MODE then
         if self:getVisiblePageCount() > 1 then
             -- Correct coordinates if on the 2nd page in 2-pages mode
-            local next_page = self:getCurrentPage() + 1
-            if next_page <= self:getPageCount() then
+            -- getPageStartY() and getPageOffsetX() expects internal page numbers
+            local next_page = self:getCurrentPage(true) + 1
+            if next_page <= self:getPageCount(true) then
                 local next_top_y = self._document:getPageStartY(next_page)
                 if doc_y >= next_top_y then
                     screen_y = doc_y - next_top_y
@@ -786,8 +829,9 @@ function CreDocument:getTextFromXPointer(xp)
     end
 end
 
-function CreDocument:getTextFromXPointers(pos0, pos1)
-    return self._document:getTextFromXPointers(pos0, pos1)
+function CreDocument:getTextFromXPointers(pos0, pos1, draw_selection)
+    local draw_segmented_selection = draw_selection -- always use segmented selections
+    return self._document:getTextFromXPointers(pos0, pos1, draw_selection, draw_segmented_selection)
 end
 
 function CreDocument:getHTMLFromXPointer(xp, flags, from_final_parent)
@@ -814,9 +858,9 @@ function CreDocument:gotoPos(pos)
     self._document:gotoPos(pos)
 end
 
-function CreDocument:gotoPage(page)
+function CreDocument:gotoPage(page, internal)
     logger.dbg("CreDocument: goto page", page, "flow", self:getPageFlow(page))
-    self._document:gotoPage(page)
+    self._document:gotoPage(page, internal)
 end
 
 function CreDocument:gotoLink(link)
@@ -834,8 +878,8 @@ function CreDocument:goForward(link)
     self._document:goForward()
 end
 
-function CreDocument:getCurrentPage()
-    return self._document:getCurrentPage()
+function CreDocument:getCurrentPage(internal)
+    return self._document:getCurrentPage(internal)
 end
 
 function CreDocument:setFontFace(new_font_face)
@@ -902,7 +946,7 @@ function CreDocument:setupFallbackFontFaces()
     -- names than ',' or ';', without the need to have to use quotes.
     local s_fallbacks = table.concat(fallbacks, "|")
     logger.dbg("CreDocument: set fallback font faces:", s_fallbacks)
-    self._document:setStringProperty("crengine.font.fallback.face", s_fallbacks)
+    self._document:setStringProperty("crengine.font.fallback.faces", s_fallbacks)
 end
 
 -- To use the new crengine language typography facilities (hyphenation, line breaking,
@@ -1035,9 +1079,12 @@ function CreDocument:setInterlineSpacePercent(percent)
     self._document:setDefaultInterlineSpace(percent)
 end
 
-function CreDocument:toggleFontBolder(toggle)
-    logger.dbg("CreDocument: toggle font bolder", toggle)
-    self._document:setIntProperty("font.face.weight.embolden", toggle)
+function CreDocument:setFontBaseWeight(weight)
+    -- In frontend, we use: 0, 1, -0.5, a delta from the regular weight of 400.
+    -- crengine expects for these: 400, 500, 350
+    local cre_weight = math.floor(400 + weight*100)
+    logger.dbg("CreDocument: set font base weight", weight, "=", cre_weight)
+    self._document:setIntProperty("font.face.base.weight", cre_weight)
 end
 
 function CreDocument:getGammaLevel()
@@ -1128,6 +1175,8 @@ function CreDocument:setTxtPreFormatted(enabled)
     self._document:setIntProperty("crengine.file.txt.preformatted", enabled)
 end
 
+-- get crengine internal visible page count (to be used when doing specific
+-- screen position handling)
 function CreDocument:getVisiblePageCount()
     return self._document:getVisiblePageCount()
 end
@@ -1135,6 +1184,11 @@ end
 function CreDocument:setVisiblePageCount(new_count)
     logger.dbg("CreDocument: set visible page count", new_count)
     self._document:setVisiblePageCount(new_count, false)
+end
+
+-- get visible page number count (to be used when only interested in page numbers)
+function CreDocument:getVisiblePageNumberCount()
+    return self._document:getVisiblePageNumberCount()
 end
 
 function CreDocument:setBatteryState(state)
@@ -1162,10 +1216,21 @@ function CreDocument:setBackgroundImage(img_path) -- use nil to unset
     self._document:setBackgroundImage(img_path)
 end
 
-function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
-    logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive)
+function CreDocument:checkRegex(pattern)
+    logger.dbg("CreDocument: check regex ", pattern)
+    return self._document:checkRegex(pattern)
+end
+
+function CreDocument:getAndClearRegexSearchError()
+    local retval = self._document:getAndClearRegexSearchError()
+    logger.dbg("CreDocument: getAndClearRegexSearchError", retval)
+    return retval
+end
+
+function CreDocument:findText(pattern, origin, reverse, caseInsensitive, page, regex, max_hits)
+    logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive, regex, max_hits)
     return self._document:findText(
-        pattern, origin, reverse, caseInsensitive and 1 or 0)
+        pattern, origin, reverse, caseInsensitive and 1 or 0, regex and 1 or 0, max_hits or 200)
 end
 
 function CreDocument:enableInternalHistory(toggle)
@@ -1255,18 +1320,22 @@ end
 
 function CreDocument:register(registry)
     registry:addProvider("azw", "application/vnd.amazon.mobi8-ebook", self, 90)
+    registry:addProvider("azw", "application/x-mobi8-ebook", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("chm", "application/vnd.ms-htmlhelp", self, 90)
     registry:addProvider("doc", "application/msword", self, 90)
     registry:addProvider("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", self, 90)
     registry:addProvider("epub", "application/epub+zip", self, 100)
     registry:addProvider("epub3", "application/epub+zip", self, 100)
     registry:addProvider("fb2", "application/fb2", self, 90)
+    registry:addProvider("fb2", "text/fb2+xml", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("fb2.zip", "application/zip", self, 90)
+    registry:addProvider("fb2.zip", "application/fb2+zip", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("fb3", "application/fb3", self, 90)
     registry:addProvider("htm", "text/html", self, 100)
     registry:addProvider("html", "text/html", self, 100)
     registry:addProvider("htm.zip", "application/zip", self, 100)
     registry:addProvider("html.zip", "application/zip", self, 100)
+    registry:addProvider("html.zip", "application/html+zip", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("log", "text/plain", self)
     registry:addProvider("log.zip", "application/zip", self)
     registry:addProvider("md", "text/plain", self)
@@ -1277,10 +1346,12 @@ function CreDocument:register(registry)
     registry:addProvider("pdb", "application/vnd.palm", self, 90)
     -- Palmpilot Resource File
     registry:addProvider("prc", "application/vnd.palm", self)
+    registry:addProvider("rtf", "application/rtf", self, 90)
+    registry:addProvider("rtf.zip", "application/rtf+zip", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("tcr", "application/tcr", self)
     registry:addProvider("txt", "text/plain", self, 90)
     registry:addProvider("txt.zip", "application/zip", self, 90)
-    registry:addProvider("rtf", "application/rtf", self, 90)
+    registry:addProvider("txt.zip", "application/txt+zip", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("xhtml", "application/xhtml+xml", self, 100)
     registry:addProvider("xml", "application/xml", self, 90)
     registry:addProvider("zip", "application/zip", self, 10)
@@ -1291,6 +1362,9 @@ end
 
 -- no-op that will be wrapped by setupCallCache
 function CreDocument:resetCallCache() end
+
+-- no-op that will be wrapped by setupCallCache
+function CreDocument:resetBufferCache() end
 
 -- Optimise usage of some of the above methods by caching their results,
 -- either globally, or per page/pos for those whose result may depend on
@@ -1315,84 +1389,77 @@ function CreDocument:setupCallCache()
 
     -- reset full cache
     self._callCacheReset = function()
-        self._call_cache = {}
-        self._call_cache_tags_lru = {}
+        -- "Global" cache, a simple key, value store for *this* document
+        self._global_call_cache = {}
+        -- "Tags" cache, an LRU cache of per-tag simple key, value stores. 10 slots.
+        if self._tag_list_call_cache then
+            self._tag_list_call_cache:clear()
+        else
+            self._tag_list_call_cache = lru.new(10, nil, false)
+        end
+        -- i.e., the only thing that follows any sort of LRU eviction logic is the *list* of tag caches.
+        -- Each individual cache itself is just a simple key, value store (i.e., a hash map).
+        -- Points to said per-tag cache for the current tag.
+        self._tag_call_cache = nil
+        -- Stores the key for said current tag
+        self._current_call_cache_tag = nil
+    end
+    self._callCacheDestroy = function()
+        --- @note: Explicitly destroying the references to the caches is apparently necessary to get their content collected by the GC...
+        ---        c.f., https://github.com/koreader/koreader/pull/7634#discussion_r627820424
+        self._global_call_cache = nil
+        self._tag_list_call_cache = nil
+        self._tag_call_cache = nil
+        self._current_call_cache_tag = nil
     end
     -- global cache
     self._callCacheGet = function(key)
-        return self._call_cache[key]
+        return self._global_call_cache[key]
     end
     self._callCacheSet = function(key, value)
-        self._call_cache[key] = value
+        self._global_call_cache[key] = value
     end
 
-    -- nb of by-tag sub-caches to keep
-    self._call_cache_keep_tags_nb = 10
     -- current tag (page, pos) sub-cache
     self._callCacheSetCurrentTag = function(tag)
-        if not self._call_cache[tag] then
-            self._call_cache[tag] = {}
+        -- If it already exists, return it and make it the MRU
+        self._tag_call_cache = self._tag_list_call_cache:get(tag)
+        if not self._tag_call_cache then
+            -- Otherwise, create it and insert it in the list cache, evicting the LRU tag cache if necessary.
+            self._tag_call_cache = {}
+            self._tag_list_call_cache:set(tag, self._tag_call_cache)
         end
-        self._call_cache_current_tag = tag
-        -- clean up LRU tag list
-        if self._call_cache_tags_lru[1] ~= tag then
-            for i = #self._call_cache_tags_lru, 1, -1 do
-                if self._call_cache_tags_lru[i] == tag then
-                    table.remove(self._call_cache_tags_lru, i)
-                elseif i > self._call_cache_keep_tags_nb then
-                    self._call_cache[self._call_cache_tags_lru[i]] = nil
-                    table.remove(self._call_cache_tags_lru, i)
-                end
-            end
-            table.insert(self._call_cache_tags_lru, 1, tag)
-        end
+        self._current_call_cache_tag = tag
     end
     self._callCacheGetCurrentTag = function(tag)
-        return self._call_cache_current_tag
+        return self._current_call_cache_tag
     end
     -- per current tag cache
     self._callCacheTagGet = function(key)
-        if self._call_cache_current_tag and self._call_cache[self._call_cache_current_tag] then
-            return self._call_cache[self._call_cache_current_tag][key]
+        if self._tag_call_cache then
+            return self._tag_call_cache[key]
         end
     end
     self._callCacheTagSet = function(key, value)
-        if self._call_cache_current_tag and self._call_cache[self._call_cache_current_tag] then
-            self._call_cache[self._call_cache_current_tag][key] = value
+        if self._tag_call_cache then
+            self._tag_call_cache[key] = value
         end
     end
     self._callCacheReset()
-
-    -- serialize function arguments as a single string, to be used as a table key
-    local asString = function(...)
-        local sargs = {} -- args as string
-        for i, arg in ipairs({...}) do
-            local sarg
-            if type(arg) == "table" then
-                -- We currently don't get nested tables, and only keyword tables
-                local items = {}
-                for k, v in pairs(arg) do
-                    table.insert(items, tostring(k)..tostring(v))
-                end
-                table.sort(items)
-                sarg = table.concat(items, "|")
-            else
-                sarg = tostring(arg)
-            end
-            table.insert(sargs, sarg)
-        end
-        return table.concat(sargs, "|")
-    end
 
     local no_op = function() end
     local addStatMiss = no_op
     local addStatHit = no_op
     local dumpStats = no_op
+    local now = no_op
     if do_stats then
         -- cache statistics
         self._call_cache_stats = {}
+        now = function()
+            return TimeVal:now()
+        end
         addStatMiss = function(name, starttime, not_cached)
-            local duration = FFIUtil.getTimestamp() - starttime
+            local duration = TimeVal:getDuration(starttime)
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {0, 0.0, 1, duration, not_cached}
             else
@@ -1402,8 +1469,7 @@ function CreDocument:setupCallCache()
             end
         end
         addStatHit = function(name, starttime)
-            local duration = FFIUtil.getTimestamp() - starttime
-            if not duration then duration = 0.0 end
+            local duration = TimeVal:getDuration(starttime)
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {1, duration, 0, 0.0}
             else
@@ -1420,12 +1486,12 @@ function CreDocument:setupCallCache()
             local util = require("util")
             local res = {}
             table.insert(res, "CRE call cache content:")
-            table.insert(res, string.format("     all: %d items", util.tableSize(self._call_cache)))
-            table.insert(res, string.format("  global: %d items", util.tableSize(self._call_cache) - #self._call_cache_tags_lru))
-            table.insert(res, string.format("    tags: %d items", #self._call_cache_tags_lru))
-            for i=1, #self._call_cache_tags_lru do
-                table.insert(res, string.format("          '%s': %d items", self._call_cache_tags_lru[i],
-                        util.tableSize(self._call_cache[self._call_cache_tags_lru[i]])))
+            table.insert(res, string.format("     all: %d items", util.tableSize(self._global_call_cache) + self._tag_list_call_cache:used_slots()))
+            table.insert(res, string.format("  global: %d items", util.tableSize(self._global_call_cache)))
+            table.insert(res, string.format("    tags: %d items", self._tag_list_call_cache:used_slots()))
+            for tag, tag_cache in self._tag_list_call_cache:pairs() do
+                table.insert(res, string.format("          '%s': %d items", tag,
+                        util.tableSize(tag_cache)))
             end
             local hit_keys = {}
             local nohit_keys = {}
@@ -1483,7 +1549,7 @@ function CreDocument:setupCallCache()
                     total_duration = total_duration + missed_duration + hits_duration
                 end
             end
-            local pct_duration_saved = 100.0 * total_duration_saved / (total_duration+total_duration_saved)
+            local pct_duration_saved = 100.0 * total_duration_saved / (total_duration + total_duration_saved)
             table.insert(res, string.format("  cpu time used: %.3fs, saved: %.3fs (%d%% saved)", total_duration, total_duration_saved, pct_duration_saved))
             return table.concat(res, "\n")
         end
@@ -1502,6 +1568,7 @@ function CreDocument:setupCallCache()
             local cache_global = false
             local set_tag = nil
             local set_arg = nil
+            local set_arg2 = nil
             local is_cached = false
 
             -- Assume all set* may change rendering
@@ -1521,13 +1588,19 @@ function CreDocument:setupCallCache()
             elseif name == "highlightXPointer" then add_buffer_trash = true
             elseif name == "getWordFromPosition" then add_buffer_trash = true
             elseif name == "getTextFromPositions" then add_buffer_trash = true
+            elseif name == "getTextFromXPointers" then add_buffer_trash = true
             elseif name == "findText" then add_buffer_trash = true
+            elseif name == "resetBufferCache" then add_buffer_trash = true
 
             -- These may change page/pos
-            elseif name == "gotoPage" then set_tag = "page" ; set_arg = 2
+            elseif name == "gotoPage" then set_tag = "page" ; set_arg = 2 ; set_arg2 = 3
             elseif name == "gotoPos" then set_tag = "pos" ; set_arg = 2
-            elseif name == "drawCurrentViewByPage" then set_tag = "page" ; set_arg = 6
             elseif name == "drawCurrentViewByPos" then set_tag = "pos" ; set_arg = 6
+            -- elseif name == "drawCurrentViewByPage" then set_tag = "page" ; set_arg = 6
+            -- drawCurrentViewByPage() has some tweaks when browsing half-pages for
+            -- text selection in two-pages mode: no need to wrap it, as it uses
+            -- internally 2 other functions that are themselves wrapped
+
             -- gotoXPointer() is for cre internal fixup, we always use gotoPage/Pos
             -- (goBack, goForward, gotoLink are not used)
 
@@ -1537,13 +1610,13 @@ function CreDocument:setupCallCache()
             elseif name == "getCurrentPage" then no_wrap = true
             elseif name == "getCurrentPos" then no_wrap = true
             elseif name == "getVisiblePageCount" then no_wrap = true
+            elseif name == "getVisiblePageNumberCount" then no_wrap = true
             elseif name == "getCoverPageImage" then no_wrap = true
             elseif name == "getDocumentFileContent" then no_wrap = true
             elseif name == "getHTMLFromXPointer" then no_wrap = true
             elseif name == "getHTMLFromXPointers" then no_wrap = true
             elseif name == "getImageFromPosition" then no_wrap = true
             elseif name == "getTextFromXPointer" then no_wrap = true
-            elseif name == "getTextFromXPointers" then no_wrap = true
             elseif name == "getPageOffsetX" then no_wrap = true
             elseif name == "getNextVisibleWordStart" then no_wrap = true
             elseif name == "getNextVisibleWordEnd" then no_wrap = true
@@ -1594,14 +1667,20 @@ function CreDocument:setupCallCache()
                 self[name] = function(...)
                     if do_log then logger.dbg("callCache:", name, "setting tag") end
                     local val = select(set_arg, ...)
+                    if set_arg2 then
+                        local val2 = select(set_arg2, ...)
+                        if val2 ~= nil then
+                            val = val .. tostring(val2)
+                        end
+                    end
                     self._callCacheSetCurrentTag(set_tag .. val)
                     return func(...)
                 end
             elseif cache_by_tag then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime = FFIUtil.getTimestamp()
-                    local cache_key = name .. asString(select(2, ...))
+                    local starttime = now()
+                    local cache_key = name .. buffer.encode({select(2, ...)})
                     local results = self._callCacheTagGet(cache_key)
                     if results then
                         if do_log then logger.dbg("callCache:", name, "cache hit:", cache_key) end
@@ -1621,8 +1700,8 @@ function CreDocument:setupCallCache()
             elseif cache_global then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime = FFIUtil.getTimestamp()
-                    local cache_key = name .. asString(select(2, ...))
+                    local starttime = now()
+                    local cache_key = name .. buffer.encode({select(2, ...)})
                     local results = self._callCacheGet(cache_key)
                     if results then
                         if do_log then logger.dbg("callCache:", name, "cache hit:", cache_key) end
@@ -1641,7 +1720,7 @@ function CreDocument:setupCallCache()
             if do_stats_include_not_cached and not is_cached then
                 local func2 = self[name] -- might already be wrapped
                 self[name] = function(...)
-                    local starttime = FFIUtil.getTimestamp()
+                    local starttime = now()
                     local results = { func2(...) }
                     addStatMiss(name, starttime, true) -- not_cached = true
                     return unpack(results)
@@ -1652,8 +1731,8 @@ function CreDocument:setupCallCache()
     -- We override a bit more specifically the one responsible for drawing page
     self.drawCurrentView = function(_self, target, x, y, rect, pos)
         local do_draw = false
-        local current_tag = self._callCacheGetCurrentTag()
-        local current_buffer_tag = self._callCacheGet("current_buffer_tag")
+        local current_tag = _self._callCacheGetCurrentTag()
+        local current_buffer_tag = _self._callCacheGet("current_buffer_tag")
         if _self.buffer and (_self.buffer.w ~= rect.w or _self.buffer.h ~= rect.h) then
             do_draw = true
         elseif not _self.buffer then
@@ -1663,12 +1742,12 @@ function CreDocument:setupCallCache()
         elseif current_buffer_tag ~= current_tag then
             do_draw = true
         end
-        local starttime = FFIUtil.getTimestamp()
+        local starttime = now()
         if do_draw then
             if do_log then logger.dbg("callCache: ########## drawCurrentView: full draw") end
             CreDocument.drawCurrentView(_self, target, x, y, rect, pos)
             addStatMiss("drawCurrentView", starttime)
-            self._callCacheSet("current_buffer_tag", current_tag)
+            _self._callCacheSet("current_buffer_tag", current_tag)
         else
             if do_log then logger.dbg("callCache: ---------- drawCurrentView: light draw") end
             target:blitFrom(_self.buffer, x, y, 0, 0, rect.w, rect.h)
@@ -1678,8 +1757,8 @@ function CreDocument:setupCallCache()
     -- Dump statistics on close
     if do_stats then
         self.close = function(_self)
-            CreDocument.close(_self)
             dumpStats()
+            CreDocument.close(_self)
         end
     end
 end

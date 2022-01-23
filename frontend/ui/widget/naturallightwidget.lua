@@ -377,11 +377,10 @@ end
 function NaturalLightWidget:onCloseWidget()
     self:closeKeyboard()
     UIManager:setDirty(nil, function()
-        return "partial", self.nl_frame.dimen
+        return "flashui", self.nl_frame.dimen
     end)
     -- Tell frontlight widget that we're closed
     self.fl_widget:naturalLightConfigClose()
-    return true
 end
 
 function NaturalLightWidget:onShow()

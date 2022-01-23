@@ -24,11 +24,11 @@ local wikipedia_history = nil
 local ReaderWikipedia = ReaderDictionary:extend{
     -- identify itself
     is_wiki = true,
-    wiki_languages = {},
     disable_history = G_reader_settings:isTrue("wikipedia_disable_history"),
 }
 
 function ReaderWikipedia:init()
+    self.wiki_languages = {}
     self.ui.menu:registerToMainMenu(self)
     if not wikipedia_history then
         wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", { name = "WikipediaHistory" })
@@ -37,7 +37,7 @@ end
 
 function ReaderWikipedia:lookupInput()
     self.input_dialog = InputDialog:new{
-        title = _("Enter words to look up on Wikipedia"),
+        title = _("Enter a word or phrase to look up"),
         input = "",
         input_type = "text",
         buttons = {
@@ -52,6 +52,7 @@ function ReaderWikipedia:lookupInput()
                     text = _("Search Wikipedia"),
                     is_enter_default = true,
                     callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
                         UIManager:close(self.input_dialog)
                         -- Trust that input text does not need any cleaning (allows querying for "-suffix")
                         self:onLookupWikipedia(self.input_dialog:getInputText(), true)
@@ -106,6 +107,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             end
             UIManager:show(KeyValuePage:new{
                 title = _("Wikipedia history"),
+                value_overflow_align = "right",
                 kv_pairs = kv_pairs,
             })
         end,
@@ -168,21 +170,21 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                 end,
             },
             { -- setting used by dictquicklookup
-                text = _("Set Wikipedia 'Save as EPUB' directory"),
+                text = _("Set Wikipedia 'Save as EPUB' folder"),
                 keep_menu_open = true,
                 callback = function()
                     local choose_directory = function()
                         -- Default directory as chosen by DictQuickLookup
                         local default_dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                        if not default_dir then default_dir = G_reader_settings:readSetting("home_dir") end
-                        if not default_dir then default_dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+                                         or G_reader_settings:readSetting("home_dir")
+                                         or require("apps/filemanager/filemanagerutil").getDefaultDir()
                         local dialog
                         dialog = ButtonDialogTitle:new{
-                            title = T(_("Current Wikipedia 'Save as EPUB' directory:\n\n%1\n"), BD.dirpath(default_dir)),
+                            title = T(_("Current Wikipedia 'Save as EPUB' folder:\n\n%1\n"), BD.dirpath(default_dir)),
                             buttons = {
                                 {
                                     {
-                                        text = _("Keep this directory"),
+                                        text = _("Keep this folder"),
                                         callback = function()
                                             UIManager:close(dialog)
                                         end,
@@ -190,16 +192,16 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                 },
                                 {
                                     {
-                                    text = _("Select another directory"),
+                                    text = _("Choose other folder"),
                                     callback = function()
                                         UIManager:close(dialog)
                                         -- Use currently read book's directory as starting point,
                                         -- so a user reading a wikipedia article can quickly select
                                         -- it to save related new articles in the same directory
                                         local dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                                        if not dir then dir = G_reader_settings:readSetting("home_dir") end
-                                        if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
-                                        if not dir then dir = "/" end
+                                                 or G_reader_settings:readSetting("home_dir")
+                                                 or require("apps/filemanager/filemanagerutil").getDefaultDir()
+                                                 or "/"
                                         -- If this directory has no subdirectory, we would be displaying
                                         -- a single "..", so use parent directory in that case.
                                         local has_subdirectory = false
@@ -223,7 +225,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                             onConfirm = function(path)
                                                 G_reader_settings:saveSetting("wikipedia_save_dir", path)
                                                 UIManager:show(InfoMessage:new{
-                                                    text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), BD.dirpath(path)),
+                                                    text = T(_("Wikipedia 'Save as EPUB' folder set to:\n%1"), BD.dirpath(path)),
                                                 })
                                             end
                                         }
@@ -248,7 +250,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                             local text = _([[
 Wikipedia articles can be saved as an EPUB for more comfortable reading.
 
-You can select an existing directory, or use a default directory named "Wikipedia" in your reader's home directory.
+You can choose an existing folder, or use a default folder named "Wikipedia" in your reader's home folder.
 
 Where do you want them saved?]])
                             UIManager:show(ConfirmBox:new{
@@ -260,10 +262,10 @@ Where do you want them saved?]])
                                     end
                                     G_reader_settings:saveSetting("wikipedia_save_dir", wikipedia_dir)
                                     UIManager:show(InfoMessage:new{
-                                        text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), BD.dirpath(wikipedia_dir)),
+                                        text = T(_("Wikipedia 'Save as EPUB' folder set to:\n%1"), BD.dirpath(wikipedia_dir)),
                                     })
                                 end,
-                                cancel_text = _("Select directory"),
+                                cancel_text = _("Choose folder"),
                                 cancel_callback = function()
                                     choose_directory()
                                 end,
@@ -276,7 +278,7 @@ Where do you want them saved?]])
                 end,
             },
             { -- setting used by dictquicklookup
-                text = _("Save Wikipedia EPUB in current book directory"),
+                text = _("Save Wikipedia EPUB in current book folder"),
                 checked_func = function()
                     return G_reader_settings:isTrue("wikipedia_save_in_book_dir")
                 end,
@@ -297,14 +299,18 @@ Where do you want them saved?]])
             },
             {
                 text = _("Clean Wikipedia history"),
+                enabled_func = function()
+                    return wikipedia_history:has("wikipedia_history")
+                end,
                 keep_menu_open = true,
-                callback = function()
+                callback = function(touchmenu_instance)
                     UIManager:show(ConfirmBox:new{
                         text = _("Clean Wikipedia history?"),
                         ok_text = _("Clean"),
                         ok_callback = function()
                             -- empty data table to replace current one
                             wikipedia_history:reset{}
+                            touchmenu_instance:updateItems()
                         end,
                     })
                 end,
@@ -342,7 +348,8 @@ function ReaderWikipedia:initLanguages(word)
     -- Fill self.wiki_languages with languages to propose
     local wikipedia_languages = G_reader_settings:readSetting("wikipedia_languages")
     if type(wikipedia_languages) == "table" and #wikipedia_languages > 0 then
-        -- use this setting, no need to guess
+        -- use this setting, no need to guess: we reference the setting table, so
+        -- any update to it will have it saved in settings
         self.wiki_languages = wikipedia_languages
     else
         -- guess some languages
@@ -396,10 +403,11 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
     self:initLanguages(word)
     local lang
     if forced_lang then
-        -- use provided lang (from readerlink when noticing that an external link is a wikipedia url)
+        -- use provided lang (from readerlink when noticing that an external link is a wikipedia url,
+        -- of from Wikipedia lookup history, or when switching to next language in DictQuickLookup)
         lang = forced_lang
     else
-        -- use first lang from self.wiki_languages, which may have been rotated by DictQuickLookup
+        -- use first lang from self.wiki_languages
         lang = self.wiki_languages[1]
     end
     logger.dbg("lookup word:", word, box, get_fullpage)
@@ -441,7 +449,7 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
     else
         self.lookup_msg = T(_("Searching Wikipedia %2 for:\n%1"), "%1", lang:upper())
         req_failure_text = _("Failed searching Wikipedia.")
-        no_result_text = _("No Wikipedia articles matching search term.")
+        no_result_text = _("No results.")
     end
     self:showLookupInfo(display_word)
 
@@ -518,9 +526,63 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
                 lang = lang,
             }
         }
+        -- Also put this as a k/v into the results array: if we end up with this
+        -- after lang rotation, DictQuickLookup will not update this lang rotation.
+        results.no_result = true
         logger.dbg("dummy result table:", word, results)
     end
     self:showDict(word, results, box)
+end
+
+function ReaderWikipedia:getWikiLanguages(first_lang)
+    -- Always return a copy of ours
+    local wiki_languages = {unpack(self.wiki_languages)}
+    local is_first_lang = first_lang == wiki_languages[1]
+    if not is_first_lang then
+        -- return a wiki_languages with requested lang at first
+        if util.arrayContains(wiki_languages, first_lang) then
+            -- first_lang in the list: rotate until it is first
+            while wiki_languages[1] ~= first_lang do
+                table.insert(wiki_languages, table.remove(wiki_languages, 1))
+            end
+        else
+            -- first_lang not in the list: add it first
+            table.insert(wiki_languages, 1, first_lang)
+        end
+    end
+    local update_wiki_languages_on_close = false
+    if self.dict_window_list.rotated_update_wiki_languages_on_close ~= nil then
+        -- Flag set by DictQuickLookup when rotating, forwarding the flag
+        -- of the rotated out DictQuickLookup instance: trust it
+        update_wiki_languages_on_close = self.dict_window_list.rotated_update_wiki_languages_on_close
+        self.dict_window_list.rotated_update_wiki_languages_on_close = nil
+    else
+        -- Not a rotation. Only if it's the first request with the current
+        -- first language, we will have it (and any lang rotation from it)
+        -- update the main ReaderWikipedia.wiki_languages. That is, queries
+        -- from Wikipedia url links for another language, or from Wikipedia
+        -- lookup history with other languages (and any lang rotation made
+        -- from them) won't update it.
+        if is_first_lang then
+            update_wiki_languages_on_close = true
+            for i=1, #self.dict_window_list-1 do -- (ignore the last one, which is the one calling this)
+                if self.dict_window_list[i].is_wiki then
+                    -- Another upper Wikipedia result: only this one may update it
+                    update_wiki_languages_on_close = false
+                    break
+                end
+            end
+        end
+    end
+    return wiki_languages, update_wiki_languages_on_close
+end
+
+function ReaderWikipedia:onUpdateWikiLanguages(wiki_languages)
+    -- Update our self.wiki_languages in-place
+    while table.remove(self.wiki_languages) do end
+    for _, lang in ipairs(wiki_languages) do
+        table.insert(self.wiki_languages, lang)
+    end
 end
 
 -- override onSaveSettings in ReaderDictionary

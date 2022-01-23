@@ -88,18 +88,20 @@ function ReaderPageMap:resetLayout()
 end
 
 function ReaderPageMap:onReadSettings(config)
-    local h_margins = config:readSetting("copt_h_page_margins") or
-        G_reader_settings:readSetting("copt_h_page_margins") or
-        DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+    local h_margins = config:readSetting("copt_h_page_margins")
+                   or G_reader_settings:readSetting("copt_h_page_margins")
+                   or DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
     self.max_left_label_width = Screen:scaleBySize(h_margins[1])
     self.max_right_label_width = Screen:scaleBySize(h_margins[2])
 
-    self.show_page_labels = config:readSetting("pagemap_show_page_labels")
-    if self.show_page_labels == nil then
+    if config:has("pagemap_show_page_labels") then
+        self.show_page_labels = config:isTrue("pagemap_show_page_labels")
+    else
         self.show_page_labels = G_reader_settings:nilOrTrue("pagemap_show_page_labels")
     end
-    self.use_page_labels = config:readSetting("pagemap_use_page_labels")
-    if self.use_page_labels == nil then
+    if config:has("pagemap_use_page_labels") then
+        self.use_page_labels = config:isTrue("pagemap_use_page_labels")
+    else
         self.use_page_labels = G_reader_settings:isTrue("pagemap_use_page_labels")
     end
 end
@@ -207,6 +209,11 @@ function ReaderPageMap:onShowPageList()
         page_list.current = cur_page_idx
     end
 
+    -- We use the per-page and font-size settings set for the ToC
+    local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or 14
+    local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
+    local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
+
     local pl_menu = Menu:new{
         title = _("Reference page numbers list"),
         item_table = page_list,
@@ -214,10 +221,12 @@ function ReaderPageMap:onShowPageList()
         is_popout = false,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        cface = Font:getFace("x_smallinfofont"),
-        perpage = G_reader_settings:readSetting("items_per_page") or 14,
+        items_per_page = items_per_page,
+        items_font_size = items_font_size,
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
         single_line = true,
+        align_baselines = true,
+        with_dots = items_with_dots,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -347,14 +356,14 @@ function ReaderPageMap:addToMainMenu(menu_items)
                             return use_page_labels and _("Renderer") or _("Renderer (★)")
                         end,
                         choice1_callback = function()
-                             G_reader_settings:saveSetting("pagemap_use_page_labels", false)
+                             G_reader_settings:makeFalse("pagemap_use_page_labels")
                              if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                         choice2_text_func = function()
                             return use_page_labels and _("Reference (★)") or _("Reference")
                         end,
                         choice2_callback = function()
-                            G_reader_settings:saveSetting("pagemap_use_page_labels", true)
+                            G_reader_settings:makeTrue("pagemap_use_page_labels")
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     })
@@ -380,14 +389,14 @@ function ReaderPageMap:addToMainMenu(menu_items)
                             return show_page_labels and _("Hide") or _("Hide (★)")
                         end,
                         choice1_callback = function()
-                             G_reader_settings:saveSetting("pagemap_show_page_labels", false)
+                             G_reader_settings:makeFalse("pagemap_show_page_labels")
                              if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                         choice2_text_func = function()
                             return show_page_labels and _("Show (★)") or _("Show")
                         end,
                         choice2_callback = function()
-                            G_reader_settings:saveSetting("pagemap_show_page_labels", true)
+                            G_reader_settings:makeTrue("pagemap_show_page_labels")
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     })
@@ -401,7 +410,6 @@ function ReaderPageMap:addToMainMenu(menu_items)
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local spin_w = SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = self.label_font_size,
                         value_min = 8,
                         value_max = 20,

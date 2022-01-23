@@ -8,7 +8,6 @@ local ReaderUI = require("apps/reader/readerui")
 local WebDavApi = require("apps/cloudstorage/webdavapi")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local WebDav = {}
@@ -17,7 +16,7 @@ function WebDav:run(address, user, pass, path)
     return WebDavApi:listFolder(address, user, pass, path)
 end
 
-function WebDav:downloadFile(item, address, username, password, local_path, close)
+function WebDav:downloadFile(item, address, username, password, local_path, callback_close)
     local code_response = WebDavApi:downloadFile(address .. WebDavApi:urlEncode( item.url ), username, password, local_path)
     if code_response == 200 then
         local __, filename = util.splitFilePathName(local_path)
@@ -30,7 +29,13 @@ function WebDav:downloadFile(item, address, username, password, local_path, clos
                 text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
                     BD.filepath(local_path)),
                 ok_callback = function()
-                    close()
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
+                    if callback_close then
+                        callback_close()
+                    end
+
                     ReaderUI:showReader(local_path)
                 end
             })
@@ -120,6 +125,14 @@ The start folder is appended to the server path.]])
                     text = text_button_ok,
                     callback = function()
                         local fields = MultiInputDialog:getFields()
+
+                        -- make sure the URL is a valid path
+                        if fields[5] ~= "" then
+                            if string.sub(fields[5], 1, 1) ~= '/' then
+                                fields[5] = '/' .. fields[5]
+                            end
+                        end
+
                         if fields[1] ~= "" and fields[2] ~= "" then
                             if item then
                                 -- edit
@@ -139,8 +152,6 @@ The start folder is appended to the server path.]])
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

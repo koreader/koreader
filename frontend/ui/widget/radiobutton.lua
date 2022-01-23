@@ -20,8 +20,10 @@ local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 
@@ -36,20 +38,51 @@ local RadioButton = InputContainer:new{
 }
 
 function RadioButton:init()
-    self._checked_widget = TextWidget:new{
-        text = "◉ " .. self.text,
+    local fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY
+    local dummy_widget = TextWidget:new{ -- to get width of radiomark
+        text = "◉ ",
         face = self.face,
-        max_width = self.max_width,
     }
-    self._unchecked_widget = TextWidget:new{
-        text = "◯ " .. self.text,
+    local radiomark_width = dummy_widget:getSize().w
+    dummy_widget:free()
+    local text_widget = TextBoxWidget:new{
+        text = self.text,
         face = self.face,
-        max_width = self.max_width,
+        width = self.max_width - radiomark_width,
+        fgcolor = fgcolor,
     }
-    self._empty_widget = TextWidget:new{
-        text = "" .. self.text,
+    local checked_widget = TextBoxWidget:new{
+        text = "◉ ",
         face = self.face,
-        max_width = self.max_width,
+        width = radiomark_width,
+        fgcolor = fgcolor,
+    }
+    local unchecked_widget = TextBoxWidget:new{
+        text = "◯ ",
+        face = self.face,
+        width = radiomark_width,
+        fgcolor = fgcolor,
+    }
+    local empty_widget = TextBoxWidget:new{
+        text = "",
+        face = self.face,
+        width = radiomark_width,
+        fgcolor = fgcolor,
+    }
+    self._checked_widget = HorizontalGroup:new{
+        align = "top",
+        checked_widget,
+        text_widget,
+    }
+    self._unchecked_widget = HorizontalGroup:new{
+        align = "top",
+        unchecked_widget,
+        text_widget,
+    }
+    self._empty_widget = HorizontalGroup:new{
+        align = "top",
+        empty_widget,
+        text_widget,
     }
     self._widget_size = self._unchecked_widget:getSize()
     if self.width == nil then
@@ -87,6 +120,7 @@ function RadioButton:update()
         background = self.background,
         radius = self.radius,
         padding = self.padding,
+        show_parent = self.show_parent,
         LeftContainer:new{
             dimen = Geom:new{
                 w = self.width,
@@ -113,25 +147,30 @@ function RadioButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            -- While I'd like to only flash the button itself, we have to make do with flashing the full width of the TextWidget...
+            -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
+
+            -- Highlight
+            --
+            -- self.frame's width is based on self.width, so we effectively flash the full width, not only the button/text's width.
+            -- This matches the behavior of Menu & TouchMenu.
             self.frame.invert = true
-            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
+            UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:setDirty(nil, "fast", self.dimen)
 
-            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
-            self.callback()
-            --UIManager:forceRePaint() -- Unnecessary, the check/uncheck process involves too many repaints already
-            --UIManager:waitForVSync()
+            UIManager:yieldToEPDC()
 
+            -- Unhighlight
+            --
             self.frame.invert = false
-            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
-            --UIManager:forceRePaint()
+            UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:setDirty(nil, "ui", self.dimen)
+
+            -- Callback
+            --
+            self.callback()
+
+            UIManager:forceRePaint()
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)
@@ -157,9 +196,7 @@ function RadioButton:check(callback)
     self.checked = true
     self:update()
     UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
-    UIManager:setDirty(nil, function()
-        return "fast", self.dimen
-    end)
+    UIManager:setDirty(nil, "ui", self.dimen)
 end
 
 function RadioButton:unCheck()
@@ -167,9 +204,7 @@ function RadioButton:unCheck()
     self.checked = false
     self:update()
     UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
-    UIManager:setDirty(nil, function()
-        return "fast", self.dimen
-    end)
+    UIManager:setDirty(nil, "ui", self.dimen)
 end
 
 return RadioButton

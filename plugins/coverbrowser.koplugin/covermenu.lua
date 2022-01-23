@@ -7,6 +7,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local _ = require("gettext")
 local util = require("util")
@@ -48,10 +49,11 @@ function CoverMenu:updateItems(select_number)
     local old_dimen = self.dimen and self.dimen:copy()
     -- self.layout must be updated for focusmanager
     self.layout = {}
-    self.item_group:free() -- avoid memory leaks by calling free() on all our sub-widgets
     self.item_group:clear()
-    -- strange, best here if resetLayout() are done after _recalculateDimen(),
-    -- unlike what is done in menu.lua
+    -- NOTE: Our various _recalculateDimen overloads appear to have a stronger dependency
+    --       on the rest of the widget elements being properly laid-out,
+    --       so we have to run it *first*, unlike in Menu.
+    --       Otherwise, various layout issues arise (e.g., MosaicMenu's page_info is misaligned).
     self:_recalculateDimen()
     self.page_info:resetLayout()
     self.return_button:resetLayout()
@@ -112,7 +114,7 @@ function CoverMenu:updateItems(select_number)
     self:updatePageInfo(select_number)
 
     if self.show_path then
-        self.path_text:setText(BD.directory(self.path))
+        self.title_bar:setSubTitle(BD.directory(filemanagerutil.abbreviate(self.path)))
     end
     self.show_parent.dithered = self._has_cover_images
     UIManager:setDirty(self.show_parent, function()
@@ -242,7 +244,7 @@ function CoverMenu:updateItems(select_number)
                     UIManager:close(self.file_dialog)
                 end
 
-                -- Fudge the "Purge .sdr" button ([1][3]) callback to also trash the cover_info_cache
+                -- Fudge the "Reset settings" button ([1][3]) callback to also trash the cover_info_cache
                 local orig_purge_callback = orig_buttons[1][3].callback
                 orig_buttons[1][3].callback = function()
                     -- Wipe the cache
@@ -334,17 +336,17 @@ function CoverMenu:updateItems(select_number)
                                     })
                                 end
                                 UIManager:close(self.file_dialog)
-                                DocumentRegistry:closeDocument(file)
+                                document:close()
                             end
                         end,
                     },
                     { -- Allow user to directly view description in TextViewer
-                        text = bookinfo.description and _("View book description") or _("No book description"),
+                        text = _("Book description"),
                         enabled = bookinfo.description and true or false,
                         callback = function()
                             local description = util.htmlToPlainTextIfHtml(bookinfo.description)
                             local textviewer = TextViewer:new{
-                                title = bookinfo.title,
+                                title = _("Description:"),
                                 text = description,
                             }
                             UIManager:close(self.file_dialog)
@@ -467,17 +469,17 @@ function CoverMenu:onHistoryMenuHold(item)
                         })
                     end
                     UIManager:close(self.histfile_dialog)
-                    DocumentRegistry:closeDocument(file)
+                    document:close()
                 end
             end,
         },
         { -- Allow user to directly view description in TextViewer
-            text = bookinfo.description and _("View book description") or _("No book description"),
+            text = _("Book description"),
             enabled = bookinfo.description and true or false,
             callback = function()
                 local description = util.htmlToPlainTextIfHtml(bookinfo.description)
                 local textviewer = TextViewer:new{
-                    title = bookinfo.title,
+                    title = _("Description:"),
                     text = description,
                 }
                 UIManager:close(self.histfile_dialog)
@@ -589,17 +591,17 @@ function CoverMenu:onCollectionsMenuHold(item)
                         })
                     end
                     UIManager:close(self.collfile_dialog)
-                    DocumentRegistry:closeDocument(file)
+                    document:close()
                 end
             end,
         },
         { -- Allow user to directly view description in TextViewer
-            text = bookinfo.description and _("View book description") or _("No book description"),
+            text = _("Book description"),
             enabled = bookinfo.description and true or false,
             callback = function()
                 local description = util.htmlToPlainTextIfHtml(bookinfo.description)
                 local textviewer = TextViewer:new{
-                    title = bookinfo.title,
+                    title = _("Description:"),
                     text = description,
                 }
                 UIManager:close(self.collfile_dialog)
@@ -697,6 +699,7 @@ function CoverMenu:tapPlus()
     -- Call original function: it will create a ButtonDialogTitle
     -- and store it as self.file_dialog, and UIManager:show() it.
     CoverMenu._FileManager_tapPlus_orig(self)
+    if self.file_dialog.select_mode then return end -- do not change select menu
 
     -- Remember some of this original ButtonDialogTitle properties
     local orig_title = self.file_dialog.title

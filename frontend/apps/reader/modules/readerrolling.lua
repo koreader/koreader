@@ -4,8 +4,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
-local Notification = require("ui/widget/notification")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Size = require("ui/size")
@@ -41,15 +39,12 @@ local band = bit.band
 --]]
 local ReaderRolling = InputContainer:new{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
-    old_doc_height = nil,
-    old_page = nil,
+    rendering_hash = 0,
     current_pos = 0,
-    inverse_reading_order = nil,
     -- only used for page view mode
     current_page= nil,
     xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
-    show_overlap_enable = nil,
     cre_top_bar_enabled = false,
     visible_pages = 1,
     -- With visible_pages=2, in 2-pages mode, ensure the first
@@ -117,11 +112,11 @@ function ReaderRolling:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
+    self.pan_interval = TimeVal:new{ usec = 1000000 / self.pan_rate }
 
     table.insert(self.ui.postInitCallback, function()
+        self.rendering_hash = self.ui.document:getDocumentRenderingHash()
         self.ui.document:_readMetadata()
-        self.old_doc_height = self.ui.document.info.doc_height
-        self.old_page = self.ui.document.info.number_of_pages
     end)
     table.insert(self.ui.postReaderCallback, function()
         self:updatePos()
@@ -141,9 +136,9 @@ function ReaderRolling:onReadSettings(config)
     -- and highlights with old XPATHs.
     -- (EPUB will use the same correct DOM code no matter what DOM version
     -- we request here.)
-    if not config:readSetting("cre_dom_version") then
+    if config:hasNot("cre_dom_version") then
         -- Not previously set, guess which DOM version to use
-        if config:readSetting("last_xpointer") then
+        if config:has("last_xpointer") then
             -- We have a last_xpointer: this book was previously opened
             -- with possibly a very old version: request the oldest
             config:saveSetting("cre_dom_version", self.ui.document:getOldestDomVersion())
@@ -168,7 +163,7 @@ function ReaderRolling:onReadSettings(config)
         self.ui.typeset:ensureSanerBlockRenderingFlags()
         -- And check if we can migrate to a newest DOM version after
         -- the book is loaded (unless the user told us not to).
-        if not config:readSetting("cre_keep_old_dom_version") then
+        if config:nilOrFalse("cre_keep_old_dom_version") then
             self.ui:registerPostReadyCallback(function()
                 self:checkXPointersAndProposeDOMVersionUpgrade()
             end)
@@ -211,15 +206,6 @@ function ReaderRolling:onReadSettings(config)
             end
         end
     end
-    self.show_overlap_enable = config:readSetting("show_overlap_enable")
-    if self.show_overlap_enable == nil then
-        self.show_overlap_enable = DSHOWOVERLAP
-    end
-
-    self.inverse_reading_order = config:readSetting("inverse_reading_order")
-    if self.inverse_reading_order == nil then
-        self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
-    end
 
     -- This self.visible_pages may not be the current nb of visible pages
     -- as crengine may decide to not ensure that in some conditions.
@@ -231,8 +217,9 @@ function ReaderRolling:onReadSettings(config)
         G_reader_settings:readSetting("copt_visible_pages") or 1
     self.ui.document:setVisiblePageCount(self.visible_pages)
 
-    self.hide_nonlinear_flows = config:readSetting("hide_nonlinear_flows")
-    if self.hide_nonlinear_flows == nil then
+    if config:has("hide_nonlinear_flows") then
+        self.hide_nonlinear_flows = config:isTrue("hide_nonlinear_flows")
+    else
         self.hide_nonlinear_flows = G_reader_settings:isTrue("hide_nonlinear_flows")
     end
     self.ui.document:setHideNonlinearFlows(self.hide_nonlinear_flows)
@@ -254,6 +241,7 @@ end
 -- in scroll mode percent_finished must be save before close document
 -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
+    self.current_header_height = nil -- show unload progress bar at top
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
     self.ui.doc_settings:saveSetting("cache_file_path", cache_file_path)
@@ -298,7 +286,7 @@ end
 
 function ReaderRolling:onSaveSettings()
     -- remove last_percent config since its deprecated
-    self.ui.doc_settings:saveSetting("last_percent", nil)
+    self.ui.doc_settings:delSetting("last_percent")
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     -- in scrolling mode, the document may already be closed,
     -- so we have to check the condition to avoid crash function self:getLastPercent()
@@ -306,8 +294,6 @@ function ReaderRolling:onSaveSettings()
     if self.ui.document then
         self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     end
-    self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
-    self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("visible_pages", self.visible_pages)
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
 end
@@ -325,36 +311,28 @@ function ReaderRolling:setupTouchZones()
     self.onGesture = nil
     if not Device:isTouchDevice() then return end
 
-    local forward_zone = {
-        ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
-        ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
-    }
-    local backward_zone = {
-        ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
-        ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
-    }
-
-    local do_mirror = BD.mirroredUILayout()
-    if self.inverse_reading_order then
-        do_mirror = not do_mirror
-    end
-    if do_mirror then
-        forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
-        backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
-    end
+    local forward_zone, backward_zone = self.view:getTapZones()
 
     self.ui:registerTouchZones({
         {
             id = "tap_forward",
             ges = "tap",
             screen_zone = forward_zone,
-            handler = function() return self:onGotoViewRel(1) end,
+            handler = function()
+                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
+                    return self:onGotoViewRel(1)
+                end
+            end,
         },
         {
             id = "tap_backward",
             ges = "tap",
             screen_zone = backward_zone,
-            handler = function() return self:onGotoViewRel(-1) end,
+            handler = function()
+                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
+                    return self:onGotoViewRel(-1)
+                end
+            end,
         },
         {
             id = "rolling_swipe",
@@ -362,16 +340,23 @@ function ReaderRolling:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onSwipe(nil, ges) end
+            handler = function(ges) return self:onSwipe(nil, ges) end,
         },
         {
             id = "rolling_pan",
             ges = "pan",
-            rate = self.pan_rate,
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onPan(nil, ges) end
+            handler = function(ges) return self:onPan(nil, ges) end,
+        },
+        {
+            id = "rolling_pan_release",
+            ges = "pan_release",
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function(ges) return self:onPanRelease(nil, ges) end,
         },
     })
 end
@@ -381,93 +366,6 @@ function ReaderRolling:getLastProgress()
 end
 
 function ReaderRolling:addToMainMenu(menu_items)
-    --- @fixme Repeated code with ReaderPaging read from left to right.
-    menu_items.invert_page_turn_gestures = {
-        text = _("Invert page turn taps and swipes"),
-        checked_func = function() return self.inverse_reading_order end,
-        callback = function()
-            self.ui:handleEvent(Event:new("ToggleReadingOrder"))
-        end,
-        hold_callback = function(touchmenu_instance)
-            local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
-            UIManager:show(MultiConfirmBox:new{
-                text = inverse_reading_order and _("The default (★) for newly opened books is right-to-left (RTL) page turning.\n\nWould you like to change it?")
-                or _("The default (★) for newly opened books is left-to-right (LTR) page turning.\n\nWould you like to change it?"),
-                choice1_text_func = function()
-                    return inverse_reading_order and _("LTR") or _("LTR (★)")
-                end,
-                choice1_callback = function()
-                     G_reader_settings:saveSetting("inverse_reading_order", false)
-                     if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-                choice2_text_func = function()
-                    return inverse_reading_order and _("RTL (★)") or _("RTL")
-                end,
-                choice2_callback = function()
-                    G_reader_settings:saveSetting("inverse_reading_order", true)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-            })
-        end,
-    }
-    --- @fixme repeated code with page overlap menu for readerpaging
-    -- needs to keep only one copy of the logic as for the DRY principle.
-    -- The difference between the two menus is only the enabled func.
-    local overlap_lines_help_text = _([[
-When page overlap is enabled, some lines from the previous page will be displayed on the next page.
-You can set how many lines are shown.]])
-    local page_overlap_menu = {
-        {
-            text = _("Page overlap"),
-            checked_func = function()
-                return self.show_overlap_enable
-            end,
-            callback = function()
-                self.show_overlap_enable = not self.show_overlap_enable
-                if not self.show_overlap_enable then
-                    self.view:resetDimArea()
-                end
-            end
-        },
-        {
-            text_func = function()
-                return T(_("Number of lines: %1"), G_reader_settings:readSetting("copt_overlap_lines") or 1)
-            end,
-            enabled_func = function()
-                return self.show_overlap_enable
-            end,
-            callback = function(touchmenu_instance)
-                local SpinWidget = require("ui/widget/spinwidget")
-                UIManager:show(SpinWidget:new{
-                    width = math.floor(Screen:getWidth() * 0.75),
-                    value = G_reader_settings:readSetting("copt_overlap_lines") or 1,
-                    value_min = 1,
-                    value_max = 10,
-                    precision = "%d",
-                    ok_text = _("Set"),
-                    title_text =  _("Set overlapped lines"),
-                    info_text = overlap_lines_help_text,
-                    callback = function(spin)
-                        G_reader_settings:saveSetting("copt_overlap_lines", spin.value)
-                        touchmenu_instance:updateItems()
-                    end,
-                })
-            end,
-            keep_menu_open = true,
-            help_text = overlap_lines_help_text,
-            separator = true,
-        },
-    }
-    local overlap_enabled_func = function() return self.show_overlap_enable end
-    for _, menu_entry in ipairs(self.view:genOverlapStyleMenu(overlap_enabled_func)) do
-        table.insert(page_overlap_menu, menu_entry)
-    end
-    menu_items.page_overlap = {
-        text = _("Page overlap"),
-        enabled_func = function() return self.view.view_mode ~= "page" end,
-        help_text = _([[When page overlap is enabled, some lines from the previous pages are shown on the next page.]]),
-        sub_item_table = page_overlap_menu,
-    }
     if self.ui.document:hasNonLinearFlows() then
         local hide_nonlinear_text = _("When hide non-linear fragments is enabled, any non-linear fragments will be hidden from the normal page flow. Such fragments will always remain accessible through links, the table of contents and the 'Go to' dialog. This only works in single-page mode.")
         menu_items.hide_nonlinear_flows = {
@@ -497,7 +395,7 @@ end
 
 function ReaderRolling:getLastPercent()
     if self.view.view_mode == "page" then
-        return self.current_page / self.old_page
+        return self.current_page / self.ui.document.info.number_of_pages
     else
         --- @fixme the calculated percent is not accurate in "scroll" mode.
         return self.ui.document:getPosFromXPointer(
@@ -505,42 +403,178 @@ function ReaderRolling:getLastPercent()
     end
 end
 
+function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay)
+    self.scroll_method = scroll_method
+    self.scroll_activation_delay = TimeVal:new{ usec = scroll_activation_delay * 1000 }
+    if inertial_scroll_enabled then
+        self.ui.scrolling:setInertialScrollCallbacks(
+            function(distance) -- do_scroll_callback
+                if not self.ui.document then
+                    return false
+                end
+                UIManager.currently_scrolling = true
+                local prev_pos = self.current_pos
+                self:_gotoPos(prev_pos + distance)
+                return self.current_pos ~= prev_pos
+            end,
+            function() -- scroll_done_callback
+                UIManager.currently_scrolling = false
+                if self.ui.document then
+                    self.xpointer = self.ui.document:getXPointer()
+                end
+                UIManager:setDirty(self.view.dialog, "partial")
+            end
+        )
+    else
+        self.ui.scrolling:setInertialScrollCallbacks(nil, nil)
+    end
+end
+
 function ReaderRolling:onSwipe(_, ges)
+    if self._pan_has_scrolled then
+        -- We did some panning but released after a short amount of time,
+        -- so this gesture ended up being a Swipe - and this swipe was
+        -- not handled by the other modules (so, not opening the menus).
+        -- Do as :onPanRelese() and ignore this swipe.
+        self:onPanRelease() -- no arg, so we know there we come from here
+        return true
+    else
+        self._pan_started = false
+        UIManager.currently_scrolling = false
+    end
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
-        if self.inverse_reading_order then
-            self:onGotoViewRel(-1)
-        else
-            self:onGotoViewRel(1)
+        if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
+            if self.view.inverse_reading_order then
+                self:onGotoViewRel(-1)
+            else
+                self:onGotoViewRel(1)
+            end
+            return true
         end
     elseif direction == "east" then
-        if self.inverse_reading_order then
-            self:onGotoViewRel(1)
-        else
-            self:onGotoViewRel(-1)
+        if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
+            if self.view.inverse_reading_order then
+                self:onGotoViewRel(1)
+            else
+                self:onGotoViewRel(-1)
+            end
+            return true
         end
-    else
-        -- update footer (time & battery)
-        self.view.footer:onUpdateFooter()
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
     end
 end
 
 function ReaderRolling:onPan(_, ges)
-    if self.view.view_mode == "scroll" then
-        local distance_type = "distance"
-        if self.ui.gesture and self.ui.gesture.multiswipes_enabled then
-            distance_type = "distance_delayed"
+    if ges.direction == "north" or ges.direction == "south" then
+        if ges.mousewheel_direction and self.view.view_mode == "page" then
+            -- Mouse wheel generates a Pan event: in page mode, move one
+            -- page per event. Scroll mode is handled in the 'else' branch
+            -- and use the wheeled distance.
+            UIManager:broadcastEvent(Event:new("GotoViewRel", -1 * ges.mousewheel_direction))
+        elseif self.view.view_mode == "scroll" then
+            if not self._pan_started then
+                self._pan_started = true
+                -- Re-init state variables
+                self._pan_has_scrolled = false
+                self._pan_prev_relative_y = 0
+                self._pan_to_scroll_later = 0
+                self._pan_real_last_time = TimeVal.zero
+                if ges.mousewheel_direction then
+                    self._pan_activation_time = false
+                else
+                    self._pan_activation_time = ges.time + self.scroll_activation_delay
+                end
+                -- We will restore the previous position if this pan
+                -- ends up being a swipe or a multiswipe
+                self._pan_pos_at_pan_start = self.current_pos
+            end
+            local scroll_now = false
+            if self._pan_activation_time and ges.time >= self._pan_activation_time then
+                self._pan_activation_time = false -- We can go on, no need to check again
+            end
+            if not self._pan_activation_time and ges.time - self._pan_real_last_time >= self.pan_interval then
+                scroll_now = true
+                self._pan_real_last_time = ges.time
+            end
+            local scroll_dist = 0
+            if self.scroll_method == self.ui.scrolling.SCROLL_METHOD_CLASSIC then
+                -- Scroll by the distance the finger moved since last pan event,
+                -- having the document follows the finger
+                scroll_dist = self._pan_prev_relative_y - ges.relative.y
+                self._pan_prev_relative_y = ges.relative.y
+                if not self._pan_has_scrolled then
+                    -- Avoid checking this for each pan, no need once we have scrolled
+                    if self.ui.scrolling:cancelInertialScroll() or self.ui.scrolling:cancelledByTouch() then
+                        -- If this pan or its initial touch did cancel some inertial scrolling,
+                        -- ignore activation delay to allow continuous scrolling
+                        self._pan_activation_time = false
+                        scroll_now = true
+                        self._pan_real_last_time = ges.time
+                    end
+                end
+                self.ui.scrolling:accountManualScroll(scroll_dist, ges.time)
+            elseif self.scroll_method == self.ui.scrolling.SCROLL_METHOD_TURBO then
+                -- Legacy scrolling "buggy" behaviour, that can actually be nice
+                -- Scroll by the distance from the initial finger position, this distance
+                -- controlling the speed of the scrolling)
+                if scroll_now then
+                    scroll_dist = -ges.relative.y
+                end
+                -- We don't accumulate in _pan_to_scroll_later
+            elseif self.scroll_method == self.ui.scrolling.SCROLL_METHOD_ON_RELEASE then
+                self._pan_to_scroll_later = -ges.relative.y
+                if scroll_now then
+                    self._pan_has_scrolled = true -- so we really apply it later
+                end
+                scroll_dist = 0
+                scroll_now = false
+            end
+            if scroll_now then
+                local dist = self._pan_to_scroll_later + scroll_dist
+                self._pan_to_scroll_later = 0
+                if dist ~= 0 then
+                    self._pan_has_scrolled = true
+                    UIManager.currently_scrolling = true
+                    self:_gotoPos(self.current_pos + dist)
+                        -- (We'll update self.xpointer only when done moving, at
+                        -- release/swipe time as it might be expensive)
+                end
+            else
+                self._pan_to_scroll_later = self._pan_to_scroll_later + scroll_dist
+            end
         end
-        if ges.direction == "north" then
-            self:_gotoPos(self.current_pos + ges[distance_type])
-        elseif ges.direction == "south" then
-            self:_gotoPos(self.current_pos - ges[distance_type])
+    end
+    return true
+end
+
+function ReaderRolling:onPanRelease(_, ges)
+    if self._pan_has_scrolled and self._pan_to_scroll_later ~= 0 then
+        self:_gotoPos(self.current_pos + self._pan_to_scroll_later)
+    end
+    self._pan_started = false
+    UIManager.currently_scrolling = false
+    if self._pan_has_scrolled then
+        self._pan_has_scrolled = false
+        self.xpointer = self.ui.document:getXPointer()
+        -- Don't do any inertial scrolling if pan events come from
+        -- a mousewheel (which may have itself some inertia)
+        if (ges and ges.from_mousewheel) or not self.ui.scrolling:startInertialScroll() then
+            UIManager:setDirty(self.view.dialog, "partial")
         end
-    --this is only use when mouse wheel is used
-    elseif ges.mousewheel_direction and self.view.view_mode == "page" then
-        UIManager:broadcastEvent(Event:new("GotoViewRel", -1 * ges.mousewheel_direction))
+    end
+end
+
+function ReaderRolling:onHandledAsSwipe()
+    if self._pan_started then
+        -- Restore original position as this pan we've started handling
+        -- has ended up being a multiswipe or handled as a swipe to open
+        -- top or bottom menus
+        self:_gotoPos(self._pan_pos_at_pan_start)
+        self._pan_started = false
+        self._pan_has_scrolled = false
+        UIManager.currently_scrolling = false
+        -- No specific refresh: the swipe/multiswipe might show other stuff,
+        -- and we'd want to avoid a flashing refresh
     end
     return true
 end
@@ -560,7 +594,7 @@ function ReaderRolling:onResume()
 end
 
 function ReaderRolling:onGotoNextChapter()
-    local visible_page_count = self.ui.document:getVisiblePageCount()
+    local visible_page_count = self.ui.document:getVisiblePageNumberCount()
     local pageno = self.current_page + (visible_page_count > 1 and 1 or 0)
     local new_page
     if self.ui.document:hasHiddenFlows() then
@@ -646,8 +680,10 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
     --   followed_link_marker = true: maker shown and not auto removed
     --   followed_link_marker = <number>: removed after <number> seconds
     -- (no real need for a menu item, the default is the finest)
-    local marker_setting = G_reader_settings:readSetting("followed_link_marker")
-    if marker_setting == nil then
+    local marker_setting
+    if G_reader_settings:has("followed_link_marker") then
+        marker_setting = G_reader_settings:readSetting("followed_link_marker")
+    else
         marker_setting = 1 -- default is: shown and removed after 1 second
     end
 
@@ -666,7 +702,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- In the middle margin, on the right of text
                     -- Same trick as below, assuming page2_x is equal to page 1 right x
                     screen_x = math.floor(Screen:getWidth() * 0.5)
-                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
+                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage(true)+1)
                     marker_w = page2_x + marker_w - screen_x
                     screen_x = screen_x - marker_w
                 else
@@ -680,7 +716,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- This is a bit tricky with how the middle margin is sized
                     -- by crengine (see LVDocView::updateLayout() in lvdocview.cpp)
                     screen_x = math.floor(Screen:getWidth() * 0.5)
-                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
+                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage(true)+1)
                     marker_w = page2_x + marker_w - screen_x
                 end
             end
@@ -714,7 +750,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
             end
             -- Paint directly to the screen and force a regional refresh
             Screen.bb:paintRect(screen_x, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
-            Screen["refreshFast"](Screen, screen_x, screen_y, marker_w, marker_h)
+            Screen:refreshFast(screen_x, screen_y, marker_w, marker_h)
             if delayed_unmark then
                 self.unmark_func = function()
                     self.unmark_func = nil
@@ -725,7 +761,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- it directly to screen and triggering a regional refresh.
                     if self.mark_orig_content_bb then
                         Screen.bb:blitFrom(self.mark_orig_content_bb, screen_x, screen_y, 0, 0, marker_w, marker_h)
-                        Screen["refreshUI"](Screen, screen_x, screen_y, marker_w, marker_h)
+                        Screen:refreshUI(screen_x, screen_y, marker_w, marker_h)
                         self.mark_orig_content_bb:free()
                         self.mark_orig_content_bb = nil
                     end
@@ -752,7 +788,7 @@ function ReaderRolling:onGotoViewRel(diff)
         local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height
         local pan_diff = diff * page_visible_height
-        if self.show_overlap_enable then
+        if self.view.page_overlap_enable then
             local overlap_lines = G_reader_settings:readSetting("copt_overlap_lines") or 1
             local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * overlap_lines
             if pan_diff > overlap_h then
@@ -769,7 +805,7 @@ function ReaderRolling:onGotoViewRel(diff)
             self.ui:handleEvent(Event:new("EndOfBook"))
         end
     elseif self.view.view_mode == "page" then
-        local page_count = self.ui.document:getVisiblePageCount()
+        local page_count = self.ui.document:getVisiblePageNumberCount()
         local old_page = self.current_page
         -- we're in paged mode, so round up
         if diff > 0 then
@@ -816,7 +852,6 @@ function ReaderRolling:onPanning(args, _)
 end
 
 function ReaderRolling:onZoom()
-    --- @todo Re-read doc_height info after font or lineheight changes.  05.06 2012 (houqp)
     self:updatePos()
 end
 
@@ -832,16 +867,24 @@ function ReaderRolling:onUpdatePos()
         -- we have set above) to avoid multiple refreshes.
         return true
     end
+
+    UIManager:discardEvents(math.huge) -- Discard any past and upcoming input events for the next hour.
+    Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
+
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
     -- the previous xpointer accurately:
     self.ui.document:getCurrentPos()
+
     -- Otherwise, _readMetadata() would do that, but the positioning
     -- would not work as expected, for some reason (it worked
     -- previously because of some bad setDirty() in ConfigDialog widgets
     -- that were triggering a full repaint of crengine (so, the needed
     -- rerendering) before updatePos() is called.
     self:updatePos()
+
+    Device:setIgnoreInput(false) -- Allow processing of events (on Android).
+    UIManager:discardEvents(true) -- Discard events, which might have occured (double tap).
 end
 
 function ReaderRolling:updatePos()
@@ -849,38 +892,34 @@ function ReaderRolling:updatePos()
         -- document closed since we were scheduleIn'ed
         return
     end
-    -- reread document height
-    self.ui.document:_readMetadata()
-    -- update self.current_pos if the height of document has been changed.
-    local new_height = self.ui.document.info.doc_height
-    local new_page = self.ui.document.info.number_of_pages
-    if self.old_doc_height ~= new_height or self.old_page ~= new_page then
+    -- Check if the document has been re-rendered
+    local new_rendering_hash = self.ui.document:getDocumentRenderingHash()
+    if new_rendering_hash ~= self.rendering_hash then
+        logger.dbg("rendering hash changed:", self.rendering_hash, ">", new_rendering_hash)
+        self.rendering_hash = new_rendering_hash
+        -- A few things like page numbers may have changed
+        self.ui.document:resetCallCache() -- be really sure this cache is reset
+        self.ui.document:_readMetadata() -- get updated document height and nb of pages
         if self.hide_nonlinear_flows then
             self.ui.document:cacheFlows()
         end
         self:_gotoXPointer(self.xpointer)
-        self.old_doc_height = new_height
-        self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
     end
-    self:updateTopStatusBarMarkers()
+    self:onUpdateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
+    self.current_header_height = self.view.view_mode == "page" and self.ui.document:getHeaderHeight() or 0
     -- Allow for the new rendering to be shown before possibly showing
-    -- the "Styles have changes..." ConfirmBox so the user can decide
+    -- the "Styles have changed..." ConfirmBox so the user can decide
     -- if it is really needed
     UIManager:scheduleIn(0.1, function ()
         self:onCheckDomStyleCoherence()
     end)
 end
 
---[[
-    switching screen mode should not change current page number
---]]
 function ReaderRolling:onChangeViewMode()
-    self.ui.document:_readMetadata()
-    self.old_doc_height = self.ui.document.info.doc_height
-    self.old_page = self.ui.document.info.number_of_pages
-    self.ui:handleEvent(Event:new("UpdateToc"))
+    self.current_header_height = self.view.view_mode == "page" and self.ui.document:getHeaderHeight() or 0
+    -- Restore current position when switching page/scroll mode
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
         -- Ensure a whole screen refresh is always enqueued
@@ -896,7 +935,8 @@ function ReaderRolling:onRedrawCurrentView()
     if self.view.view_mode == "page" then
         self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     else
-        self.ui:handleEvent(Event:new("PosUpdate", self.current_pos))
+        self.current_page = self.ui.document:getCurrentPage()
+        self.ui:handleEvent(Event:new("PosUpdate", self.current_pos, self.current_page))
     end
     return true
 end
@@ -915,8 +955,7 @@ function ReaderRolling:onSetDimensions(dimen)
         self.ui.document:enableInternalHistory(true)
         -- Set document dimensions
         self.ui.document:setViewDimen(Screen:getSize())
-        -- Re-setup previous position
-        self:onChangeViewMode()
+        -- Re-render document (and update TOC, re set position)
         self:onUpdatePos()
         -- Re-disable internal history, with required redraw
         self.ui.document:enableInternalHistory(false)
@@ -940,7 +979,7 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
     local max_pos = self.ui.document.info.doc_height - self.ui.dimen.h + self.view.footer:getHeight()
     if new_pos > max_pos then new_pos = max_pos end
     -- adjust dim_area according to new_pos
-    if self.view.view_mode ~= "page" and self.show_overlap_enable and do_dim_area then
+    if self.view.view_mode ~= "page" and self.view.page_overlap_enable and do_dim_area then
         local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height
         local panned_step = new_pos - self.current_pos
@@ -955,16 +994,17 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
         if self.current_pos > max_pos - self.ui.dimen.h/2 then
             -- Avoid a fully dimmed page when reaching end of document
             -- (the scroll would bump and not be a full page long)
-            self.view:resetDimArea()
+            self.view.dim_area:clear()
         end
     else
-        self.view:resetDimArea()
+        self.view.dim_area:clear()
     end
     self.ui.document:gotoPos(new_pos)
     -- The current page we get in scroll mode may be a bit innacurate,
     -- but we give it anyway to onPosUpdate so footer and statistics can
     -- keep up with page.
-    self.ui:handleEvent(Event:new("PosUpdate", new_pos, self.ui.document:getCurrentPage()))
+    self.current_page = self.ui.document:getCurrentPage()
+    self.ui:handleEvent(Event:new("PosUpdate", new_pos, self.current_page))
 end
 
 function ReaderRolling:_gotoPercent(new_percent)
@@ -975,8 +1015,9 @@ function ReaderRolling:_gotoPercent(new_percent)
     end
 end
 
-function ReaderRolling:_gotoPage(new_page, free_first_page)
-    if self.ui.document:getVisiblePageCount() > 1 and not free_first_page then
+function ReaderRolling:_gotoPage(new_page, free_first_page, internal)
+    if self.ui.document:getVisiblePageCount() > 1 and not free_first_page
+            and (internal or self.ui.document:getVisiblePageNumberCount() == 2) then
         -- Ensure we always have the first of the two pages odd
         if self.odd_or_even_first_page == 1 then -- odd
             if band(new_page, 1) == 0 then
@@ -990,11 +1031,12 @@ function ReaderRolling:_gotoPage(new_page, free_first_page)
             end
         end
     end
-    self.ui.document:gotoPage(new_page)
+    self.ui.document:gotoPage(new_page, internal)
     if self.view.view_mode == "page" then
         self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
     else
-        self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getCurrentPos(), self.ui.document:getCurrentPage()))
+        self.current_page = self.ui.document:getCurrentPage()
+        self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getCurrentPos(), self.current_page))
     end
 end
 
@@ -1017,16 +1059,15 @@ end
 --]]
 
 function ReaderRolling:onSetVisiblePages(visible_pages)
-    -- crengine may decide to not ensure the value we request
-    -- (for example, in 2-pages mode, it may stop being ensured
-    -- when we increase the font size up to a point where a line
-    -- would contain less that 20 glyphs).
-    -- crengine may enforce visible_page=1 when:
-    --   - not in page mode but in scroll mode
-    --   - screen w/h < 6/5
-    --   - w < 20*em
-    -- We nevertheless update the setting (that will saved) with what
-    -- the user has requested - and not what crengine has enforced.
+    -- By default, crengine may decide to not ensure the value we request
+    -- (for example, in 2-pages mode, it may stop being ensured when we
+    -- increase the font size up to a point where a line would contain
+    -- less that 20 glyphs).
+    -- But we have CreDocument:setVisiblePageCount() provide only_if_sane=false
+    -- so these checks are not done.
+    -- We nevertheless update the setting (that will be saved) with what
+    -- the user has requested - and not what crengine has enforced, and
+    -- always query crengine for if it ends up ensuring it or not.
     self.visible_pages = visible_pages
     local prev_visible_pages = self.ui.document:getVisiblePageCount()
     self.ui.document:setVisiblePageCount(visible_pages)
@@ -1036,21 +1077,18 @@ function ReaderRolling:onSetVisiblePages(visible_pages)
     end
 end
 
-function ReaderRolling:onSetStatusLine(status_line, on_read_settings)
-    -- status_line values:
-    -- in crengine: 0=header enabled, 1=disabled
-    -- in koreader: 0=top status bar, 1=bottom mini bar
+function ReaderRolling:onSetStatusLine(status_line)
+    -- Enable or disable crengine header status line
+    -- Note that for crengine, 0=header enabled, 1=header disabled
     self.ui.document:setStatusLineProp(status_line)
     self.cre_top_bar_enabled = status_line == 0
-    if not on_read_settings then
-        -- Ignore this event when it is first sent by ReaderCoptListener
-        -- on book loading, so we stay with the saved footer settings
-        self.view.footer:setVisible(status_line == 1)
-    end
+    -- (We used to toggle the footer when toggling the top status bar,
+    -- but people seem to like having them both, and it feels more
+    -- practicable to have the independant.)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
-function ReaderRolling:updateTopStatusBarMarkers()
+function ReaderRolling:onUpdateTopStatusBarMarkers()
     if not self.cre_top_bar_enabled then
         return
     end
@@ -1104,8 +1142,8 @@ function ReaderRolling:handleEngineCallback(ev, ...)
     -- ignore other events
 end
 
-local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2 }
-local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ usec = 500000 }
+local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2, usec = 0 }
+local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ sec = 0, usec = 500000 }
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then
@@ -1115,6 +1153,7 @@ function ReaderRolling:showEngineProgress(percent)
         -- so allow disabling it.
         return
     end
+
     if percent then
         local now = TimeVal:now()
         if self.engine_progress_update_not_before and now < self.engine_progress_update_not_before then
@@ -1126,10 +1165,20 @@ function ReaderRolling:showEngineProgress(percent)
             self.engine_progress_update_not_before = now + ENGINE_PROGRESS_INITIAL_DELAY
             return
         end
+
         -- Widget size and position: best to anchor it at top left,
         -- so it does not override the footer or a bookmark dogear
         local x = 0
         local y = Size.margin.small
+        -- On the first rendering the progress indicator should be on top.
+        -- On further renderings the progress indicator should be on top,
+        --    or if the top status bar is enabled, just below that.
+        -- On toggling the top status bar, the location of the progress indicator
+        --    should be on the location it would be expected in respect of the (old) drawn text.
+        if self.ui.document.been_rendered and self.current_header_height then
+            y = y + self.current_header_height
+        end
+
         local w = math.floor(Screen:getWidth() / 3)
         local h = Size.line.progress
         if self.engine_progress_widget then
@@ -1138,6 +1187,7 @@ function ReaderRolling:showEngineProgress(percent)
             self.engine_progress_widget = ProgressWidget:new{
                 width = w,
                 height = h,
+                fillcolor = Blitbuffer.COLOR_BLACK, -- we need pure B&W for refreshFast
                 percentage = percent,
                 margin_h = 0,
                 margin_v = 0,
@@ -1152,7 +1202,7 @@ function ReaderRolling:showEngineProgress(percent)
         -- as UIManager won't get a change to run until loading/rendering
         -- is finished.
         self.engine_progress_widget:paintTo(Screen.bb, x, y)
-        Screen["refreshFast"](Screen, x, y, w, h)
+        Screen:refreshFast(x, y, w, h)
         self.engine_progress_update_not_before = now + ENGINE_PROGRESS_UPDATE_DELAY
     else
         -- Done: cleanup
@@ -1287,11 +1337,14 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
         -- Switch to default block rendering mode if this book has it set to "legacy",
         -- unless the user had set the global mode to be "legacy".
         -- (see ReaderTypeset:onReadSettings() for the logic of block_rendering_mode)
-        local g_block_rendering_mode = G_reader_settings:readSetting("copt_block_rendering_mode")
+        local g_block_rendering_mode
+        if G_reader_settings:has("copt_block_rendering_mode") then
+            g_block_rendering_mode = G_reader_settings:readSetting("copt_block_rendering_mode")
+        else
+            -- nil means: use default
+            g_block_rendering_mode = 3 -- default in ReaderTypeset:onReadSettings()
+        end
         if g_block_rendering_mode ~= 0 then -- default is not "legacy"
-            if not g_block_rendering_mode then -- nil means: use default
-                g_block_rendering_mode = 3 -- default in ReaderTypeset:onReadSettings()
-            end
             -- This setting is actually saved by self.ui.document.configurable
             local block_rendering_mode = self.ui.document.configurable.block_rendering_mode
             if block_rendering_mode == 0 then
@@ -1351,7 +1404,7 @@ Note that %1 (out of %2) xpaths from your bookmarks and highlights have been nor
         }},
         cancel_text = _("Not for this book"),
         cancel_callback = function()
-            self.ui.doc_settings:saveSetting("cre_keep_old_dom_version", true)
+            self.ui.doc_settings:makeTrue("cre_keep_old_dom_version")
         end,
         ok_text = _("Upgrade now"),
         ok_callback = function()
@@ -1394,20 +1447,6 @@ function ReaderRolling:onToggleHideNonlinear()
     -- the footer needs updating, and TOC markers may come or go.
     self.ui.document:cacheFlows()
     self.ui:handleEvent(Event:new("UpdateToc"))
-end
-
--- Duplicated in ReaderPaging
-function ReaderRolling:onToggleReadingOrder()
-    self.inverse_reading_order = not self.inverse_reading_order
-    self:setupTouchZones()
-    local is_rtl = BD.mirroredUILayout()
-    if self.inverse_reading_order then
-        is_rtl = not is_rtl
-    end
-    UIManager:show(Notification:new{
-        text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
-    })
-    return true
 end
 
 return ReaderRolling

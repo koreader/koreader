@@ -37,13 +37,10 @@ function ButtonDialog:init()
             }
         }
     end
-    self[1] = CenterContainer:new{
-        dimen = Screen:getSize(),
-        MovableContainer:new{
+    self.movable = MovableContainer:new{
             alpha = self.alpha,
             FrameContainer:new{
                 ButtonTable:new{
-                    width = math.floor(Screen:getWidth() * 0.9),
                     buttons = self.buttons,
                     show_parent = self,
                 },
@@ -56,19 +53,23 @@ function ButtonDialog:init()
                 padding_top = 0,
                 padding_bottom = 0,
             }
-        }
+    }
+
+    self[1] = CenterContainer:new{
+        dimen = Screen:getSize(),
+        self.movable,
     }
 end
 
 function ButtonDialog:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self[1][1].dimen
+        return "ui", self.movable.dimen
     end)
 end
 
 function ButtonDialog:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self[1][1].dimen
+        return "flashui", self.movable.dimen
     end)
 end
 
@@ -87,7 +88,7 @@ end
 
 function ButtonDialog:paintTo(...)
     InputContainer.paintTo(self, ...)
-    self.dimen = self[1][1].dimen -- FrameContainer
+    self.dimen = self.movable.dimen
 end
 
 return ButtonDialog

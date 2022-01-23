@@ -83,7 +83,7 @@ function Send2Ebook:addToMainMenu(menu_items)
                 callback = self.removeReadActicles,
             },
             {
-                text = _("Set custom download directory"),
+                text = _("Set custom download folder"),
                 keep_menu_open = true,
                 callback =  self.setCustomDownloadDirectory,
             },

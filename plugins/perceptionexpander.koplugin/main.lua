@@ -30,7 +30,7 @@ local PerceptionExpander = Widget:extend{
 function PerceptionExpander:init()
     if not self.settings then self:readSettingsFile() end
 
-    self.is_enabled = self.settings:readSetting("is_enabled") or false
+    self.is_enabled = self.settings:isTrue("is_enabled")
     if not self.is_enabled then
         return
     end
@@ -152,8 +152,6 @@ function PerceptionExpander:showSettingsDialog()
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.8),
-        height = math.floor(Screen:getHeight() * 0.3),
     }
     UIManager:show(self.settings_dialog)
     self.settings_dialog:onShowKeyboard()

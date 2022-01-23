@@ -29,8 +29,9 @@ function ReaderConfig:init()
     if Device:isTouchDevice() then
         self:initGesListener()
     end
-    self.activation_menu = G_reader_settings:readSetting("activate_menu")
-    if self.activation_menu == nil then
+    if G_reader_settings:has("activate_menu") then
+        self.activation_menu = G_reader_settings:readSetting("activate_menu")
+    else
         self.activation_menu = "swipe_tap"
     end
 end
@@ -129,6 +130,7 @@ function ReaderConfig:onShowConfigMenu()
     -- show last used panel when opening config dialog
     self.config_dialog:onShowConfigPanel(self.last_panel_index)
     UIManager:show(self.config_dialog)
+    self.ui:handleEvent(Event:new("HandledAsSwipe")) -- cancel any pan scroll made
 
     return true
 end

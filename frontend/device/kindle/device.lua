@@ -109,6 +109,15 @@ local Kindle = Generic:new{
     -- NOTE: Newer devices will turn the frontlight off at 0
     canTurnFrontlightOff = yes,
     home_dir = "/mnt/us",
+    -- New devices are REAGL-aware, default to REAGL
+    isREAGL = yes,
+    -- Rex & Zelda devices sport an updated driver.
+    isZelda = no,
+    isRex = no,
+    -- But of course, some devices don't actually support all the features the kernel exposes...
+    isNightModeChallenged = no,
+    -- NOTE: While this ought to behave on Zelda/Rex, turns out, nope, it really doesn't work on *any* of 'em :/ (c.f., ko#5884).
+    canHWDither = no,
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -178,14 +187,14 @@ function Kindle:intoScreenSaver()
             -- NOTE: Meaning this is not a SO device ;)
             local Screensaver = require("ui/screensaver")
             -- NOTE: Pilefered from Device:onPowerEvent @ frontend/device/generic/device.lua
+            -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
+            Screensaver:setup()
             -- Mostly always suspend in Portrait/Inverted Portrait mode...
             -- ... except when we just show an InfoMessage or when the screensaver
             -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
             -- We also exclude full-screen widgets that work fine in Landscape mode,
             -- like ReadingProgress and BookStatus (c.f., #5724)
-            local screensaver_type = G_reader_settings:readSetting("screensaver_type")
-            if screensaver_type ~= "message" and screensaver_type ~= "disable" and
-               screensaver_type ~= "readingprogress" and screensaver_type ~= "bookstatus" then
+            if Screensaver:modeExpectsPortrait() then
                 self.orig_rotation_mode = self.screen:getRotationMode()
                 -- Leave Portrait & Inverted Portrait alone, that works just fine.
                 if bit.band(self.orig_rotation_mode, 1) == 1 then
@@ -197,10 +206,8 @@ function Kindle:intoScreenSaver()
 
                 -- On eInk, if we're using a screensaver mode that shows an image,
                 -- flash the screen to white first, to eliminate ghosting.
-                if self:hasEinkScreen() and
-                   screensaver_type == "cover" or screensaver_type == "random_image" or
-                   screensaver_type == "image_file" then
-                    if not G_reader_settings:isTrue("screensaver_no_background") then
+                if self:hasEinkScreen() and Screensaver:modeIsImage() then
+                    if Screensaver:withBackground() then
                         self.screen:clear()
                     end
                     self.screen:refreshFull()
@@ -276,6 +283,7 @@ end
 
 local Kindle2 = Kindle:new{
     model = "Kindle2",
+    isREAGL = no,
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
@@ -287,6 +295,7 @@ local Kindle2 = Kindle:new{
 
 local KindleDXG = Kindle:new{
     model = "KindleDXG",
+    isREAGL = no,
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
@@ -298,6 +307,7 @@ local KindleDXG = Kindle:new{
 
 local Kindle3 = Kindle:new{
     model = "Kindle3",
+    isREAGL = no,
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
@@ -308,6 +318,7 @@ local Kindle3 = Kindle:new{
 
 local Kindle4 = Kindle:new{
     model = "Kindle4",
+    isREAGL = no,
     hasKeys = yes,
     hasDPad = yes,
     canHWInvert = no,
@@ -318,6 +329,7 @@ local Kindle4 = Kindle:new{
 
 local KindleTouch = Kindle:new{
     model = "KindleTouch",
+    isREAGL = no,
     isTouchDevice = yes,
     hasKeys = yes,
     touch_dev = "/dev/input/event3",
@@ -325,6 +337,7 @@ local KindleTouch = Kindle:new{
 
 local KindlePaperWhite = Kindle:new{
     model = "KindlePaperWhite",
+    isREAGL = no,
     isTouchDevice = yes,
     hasFrontlight = yes,
     canTurnFrontlightOff = no,
@@ -384,6 +397,18 @@ local KindleOasis = Kindle:new{
 
 local KindleOasis2 = Kindle:new{
     model = "KindleOasis2",
+    isZelda = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasKeys = yes,
+    hasGSensor = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
+}
+
+local KindleOasis3 = Kindle:new{
+    model = "KindleOasis3",
+    isZelda = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
     hasKeys = yes,
@@ -400,6 +425,7 @@ local KindleBasic2 = Kindle:new{
 
 local KindlePaperWhite4 = Kindle:new{
     model = "KindlePaperWhite4",
+    isRex = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
     display_dpi = 300,
@@ -411,6 +437,10 @@ local KindlePaperWhite4 = Kindle:new{
 
 local KindleBasic3 = Kindle:new{
     model = "KindleBasic3",
+    isRex = yes,
+    -- NOTE: Apparently, the KT4 doesn't actually support the fancy nightmode waveforms, c.f., ko/#5076
+    --       It also doesn't handle HW dithering, c.f., base/#1039
+    isNightModeChallenged = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
     touch_dev = "/dev/input/event2",
@@ -428,6 +458,7 @@ function Kindle2:init()
     }
     self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
     Kindle.init(self)
 end
 
@@ -444,6 +475,7 @@ function KindleDXG:init()
     self.keyboard_layout = require("device/kindle/keyboard_layout")
     self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
     Kindle.init(self)
 end
 
@@ -456,11 +488,12 @@ function Kindle3:init()
     }
     self.input = require("device/input"):new{
         device = self,
-        event_map = require("device/kindle/event_map_keyboard"),
+        event_map = require("device/kindle/event_map_kindle4"),
     }
     self.keyboard_layout = require("device/kindle/keyboard_layout")
     self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
     Kindle.init(self)
 end
 
@@ -762,6 +795,10 @@ function KindleOasis2:init()
     self.input.open("fake_events")
 end
 
+-- For now, assume that the KOA3 doesn't do anything differently than the KOA2.
+--- @fixme: That means, possibly among other things, that frontlight warmth needs to be implemented.
+KindleOasis3.init = KindleOasis2.init
+
 function KindleBasic2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -844,6 +881,7 @@ KindleOasis2.exit = KindleTouch.exit
 KindleBasic2.exit = KindleTouch.exit
 KindlePaperWhite4.exit = KindleTouch.exit
 KindleBasic3.exit = KindleTouch.exit
+KindleOasis3.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -896,6 +934,7 @@ local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
                   "0T7", "0TJ", "0TK", "0TL", "0TM", "0TN", "102", "103",
                   "16Q", "16R", "16S", "16T", "16U", "16V" }
 local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
+local koa3_set = Set { "11L", "0WQ", "0WP", "0WN", "0WM", "0WL" }
 
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
     local kindle_devcode = string.sub(kindle_sn,3,4)
@@ -936,6 +975,8 @@ else
         return KindlePaperWhite4
     elseif kt4_set[kindle_devcode_v2] then
         return KindleBasic3
+    elseif koa3_set[kindle_devcode_v2] then
+        return KindleOasis3
     end
 end
 

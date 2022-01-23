@@ -6,7 +6,6 @@ local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
-local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
@@ -15,6 +14,7 @@ local Version = require("version")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 
 local ota_dir = DataStorage:getDataDir() .. "/ota/"
@@ -48,21 +48,6 @@ local ota_channels = {
     stable = _("Stable"),
     nightly = _("Development"),
 }
-
-local function showRestartMessage()
-    UIManager:show(ConfirmBox:new{
-        text = _("KOReader will be updated on next restart.\nWould you like to restart now?"),
-        ok_text = _("Restart"),
-        ok_callback = function()
-            local save_quit = function()
-                Device:saveSettings()
-                UIManager:quit()
-                UIManager._exit_code = 85
-            end
-            UIManager:broadcastEvent(Event:new("Exit", save_quit))
-        end,
-    })
-end
 
 -- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
 function OTAManager:_isKindleWarioOrMore()
@@ -166,6 +151,8 @@ end
 function OTAManager:checkUpdate()
     local http = require("socket.http")
     local ltn12 = require("ltn12")
+    local socket = require("socket")
+    local socketutil = require("socketutil")
 
     local update_file = (self:getOTAType() == "link") and self:getLinkFilename() or self:getZsyncFilename()
 
@@ -173,11 +160,14 @@ function OTAManager:checkUpdate()
     local local_update_file = ota_dir .. update_file
     -- download zsync file from OTA server
     logger.dbg("downloading update file", ota_update_file)
-    local _, c, _ = http.request{
-        url = ota_update_file,
-        sink = ltn12.sink.file(io.open(local_update_file, "w"))}
-    if c ~= 200 then
-        logger.warn("cannot find update file", c)
+    socketutil:set_timeout()
+    local code, _, status = socket.skip(1, http.request{
+        url     = ota_update_file,
+        sink    = ltn12.sink.file(io.open(local_update_file, "w")),
+    })
+    socketutil:reset_timeout()
+    if code ~= 200 then
+        logger.warn("cannot find update file:", status or code or "network unreachable")
         return
     end
     -- parse OTA package version
@@ -219,6 +209,13 @@ function OTAManager:checkUpdate()
 end
 
 function OTAManager:fetchAndProcessUpdate()
+    if Device:hasOTARunning() then
+        UIManager:show(InfoMessage:new{
+            text = _("Download already scheduled. You'll be notified when it's ready."),
+        })
+        return
+    end
+
     local ota_version, local_version, link, ota_package = OTAManager:checkUpdate()
 
     if ota_version == 0 then
@@ -234,34 +231,37 @@ function OTAManager:fetchAndProcessUpdate()
         local update_message = T(_("Do you want to update?\nInstalled version: %1\nAvailable version: %2"),
                                  BD.ltr(local_version),
                                  BD.ltr(ota_version))
-        local update_ok_text = _("Update")
+        local update_ok_text = C_("Application update | Button", "Update")
         if ota_version < local_version then
+            -- Android cannot downgrade APKs. The user needs to uninstall current app first.
+            -- Instead of doing the auto-update when ready we just download the APK using the browser.
+            if Device:isAndroid() then
+                UIManager:show(ConfirmBox:new{
+                    text = T(_("The currently installed version is newer than the available version.\nYou'll need to uninstall the app before installing a previous version.\nDownload anyway?\n\nInstalled version: %1\nAvailable version: %2"),
+                        BD.ltr(local_version),
+                        BD.ltr(ota_version)),
+                    ok_text = _("Download"),
+                    ok_callback = function()
+                        Device:openLink(link)
+                    end,
+                })
+                return
+            end
             update_message =  T(_("The currently installed version is newer than the available version.\nWould you still like to continue and downgrade?\nInstalled version: %1\nAvailable version: %2"),
                                 BD.ltr(local_version),
                                 BD.ltr(ota_version))
             update_ok_text = _("Downgrade")
         end
 
+        local wait_for_download = _("Downloading may take several minutes…")
+
         if OTAManager:getOTAType() == "link" then
             UIManager:show(ConfirmBox:new{
                 text = update_message,
                 ok_text = update_ok_text,
                 ok_callback = function()
-                    local isAndroid, android = pcall(require, "android")
-                    if isAndroid then
-                        -- try to download the package
-                        local ok = android.download(link, ota_package)
-                        if ok == 1 then
-                            android.notification(T(_("The file %1 already exists."), ota_package))
-                        elseif ok == 0 then
-                            android.notification(T(_("Downloading %1"), ota_package))
-                        else
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Your device seems to be unable to download packages.\nRetry using the browser?"),
-                                ok_text = _("Retry"),
-                                ok_callback = function() Device:openLink(link) end,
-                            })
-                        end
+                    if Device:isAndroid() then
+                        Device:download(link, ota_package, wait_for_download)
                     elseif Device:isSDL() then
                         Device:openLink(link)
                     end
@@ -273,12 +273,12 @@ function OTAManager:fetchAndProcessUpdate()
                 ok_text = update_ok_text,
                 ok_callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = _("Downloading may take several minutes…"),
+                        text = wait_for_download,
                         timeout = 3,
                     })
                     UIManager:scheduleIn(1, function()
                         if OTAManager:zsync() == 0 then
-                            showRestartMessage()
+                            Device:install()
                             -- Make it clear that zsync is done
                             if self.can_pretty_print then
                                 os.execute("./fbink -q -y -7 -pm ' '  ' '")
@@ -304,7 +304,7 @@ function OTAManager:fetchAndProcessUpdate()
                                     -- And then relaunch zsync in full download mode...
                                     UIManager:scheduleIn(1, function()
                                         if OTAManager:zsync(true) == 0 then
-                                            showRestartMessage()
+                                            Device:install()
                                             -- Make it clear that zsync is done
                                             if self.can_pretty_print then
                                                 os.execute("./fbink -q -y -7 -pm ' '  ' '")
@@ -453,7 +453,7 @@ end
 
 function OTAManager:getOTAMenuTable()
     return {
-        text = _("Update"),
+        text = C_("Application update | Menu", "Update"),
         hold_callback = function()
             local connect_callback = function()
                 OTAManager:fetchAndProcessUpdate()
@@ -462,7 +462,7 @@ function OTAManager:getOTAMenuTable()
         end,
         sub_item_table = {
             {
-                text = _("Check for update"),
+                text = _("Check for updates"),
                 callback = function()
                     local connect_callback = function()
                         OTAManager:fetchAndProcessUpdate()

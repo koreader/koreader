@@ -327,7 +327,7 @@ function ReaderStyleTweak:updateCssText(apply)
 end
 
 function ReaderStyleTweak:onReadSettings(config)
-    self.enabled = not (config:readSetting("style_tweaks_enabled") == false)
+    self.enabled = config:nilOrTrue("style_tweaks_enabled")
     self.doc_tweaks = config:readSetting("style_tweaks") or {}
     -- Default globally enabled style tweaks (for new installations)
     -- are defined in css_tweaks.lua
@@ -342,7 +342,7 @@ function ReaderStyleTweak:onSaveSettings()
     if self.enabled then
         self.ui.doc_settings:delSetting("style_tweaks_enabled")
     else
-        self.ui.doc_settings:saveSetting("style_tweaks_enabled", false)
+        self.ui.doc_settings:makeFalse("style_tweaks_enabled")
     end
     self.ui.doc_settings:saveSetting("style_tweaks", util.tableSize(self.doc_tweaks) > 0 and self.doc_tweaks or nil)
     G_reader_settings:saveSetting("style_tweaks", self.global_tweaks)
@@ -359,7 +359,7 @@ function ReaderStyleTweak:init()
     -- enabled tweaks / none (without the need to disable each of
     -- them)
     table.insert(self.tweaks_table, {
-        text = _("Enable style tweaks (hold for info)"),
+        text = _("Enable style tweaks (long-press for help)"),
         checked_func = function() return self.enabled end,
         callback = function()
             self.enabled = not self.enabled
@@ -547,7 +547,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
     local book_tweak_item = {
         text_func = function()
             if self.book_style_tweak then
-                return _("Book-specific tweak (hold to edit)")
+                return _("Book-specific tweak (long-press to edit)")
             else
                 return _("Book-specific tweak")
             end

@@ -18,6 +18,7 @@ local IconButton = require("ui/widget/iconbutton")
 local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local Notification = require("ui/widget/notification")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -85,11 +86,18 @@ function OptionTextItem:onTapSelect()
         item.underline_container.color = Blitbuffer.COLOR_WHITE
     end
     self.underline_container.color = Blitbuffer.COLOR_BLACK
+
+    Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_ICON)
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
-                    self.events, self.current_item, self.hide_on_apply)
+                    self.current_item, self.hide_on_apply)
+
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
+    end)
+
+    UIManager:tickAfterNext(function()
+        Notification:resetNotifySource()
     end)
     return true
 end
@@ -157,18 +165,25 @@ function OptionIconItem:onTapSelect()
     end
     --self[1][1].invert = true
     self.underline_container.color = Blitbuffer.COLOR_BLACK
+
+    Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_ICON)
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
-                    self.events, self.current_item, self.hide_on_apply)
+                    self.current_item, self.hide_on_apply)
+
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
+    end)
+
+    UIManager:tickAfterNext(function()
+        Notification:resetNotifySource()
     end)
     return true
 end
 
 function OptionIconItem:onHoldSelect()
     self.config:onMakeDefault(self.name, self.name_text,
-                    self.values, self.values, self.current_item)
+                    self.values, self.labels or self.values, self.current_item)
     return true
 end
 
@@ -189,7 +204,7 @@ function ConfigOption:init()
     local padding_button = Size.padding.button -- padding for underline below letters and icons
 
     --- @todo Restore setting when there are more advanced settings.
-    --local show_advanced = G_reader_settings:readSetting("show_advanced") or false
+    --local show_advanced = G_reader_settings:isTrue("show_advanced")
     local show_advanced = true
 
     -- Get the width needed by the longest option name shown on the left
@@ -299,7 +314,7 @@ function ConfigOption:init()
                     hold_callback = function()
                         if self.options[c].name_text_hold_callback then
                             self.options[c].name_text_hold_callback(self.config.configurable, self.options[c],
-                                self.config.config_options.prefix)
+                                self.config.config_options.prefix, self.config.document)
                         end
                     end,
                 }
@@ -472,7 +487,7 @@ function ConfigOption:init()
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
-                    option_item.name_text = name_text
+                    option_item.name_text = name_text or self.options[c].alt_name_text
                     option_item.item_text = self.options[c].item_text
                     option_item.values = self.options[c].values
                     option_item.args = self.options[c].args
@@ -486,8 +501,11 @@ function ConfigOption:init()
             end
 
             -- Icons (ex: columns, text align, with PDF)
-            if self.options[c].item_icons then
-                local items_count = #self.options[c].item_icons
+            local item_icons = self.options[c].item_icons_func and
+                               self.options[c].item_icons_func(self.config.configurable, self.config.document) or
+                               self.options[c].item_icons
+            if item_icons then
+                local items_count = #item_icons
                 local icon_max_height = math.min(option_height, max_icon_height)
                 local icon_max_width = math.floor(option_widget_width / items_count)
                 local icon_size = math.min(icon_max_height, icon_max_width)
@@ -497,25 +515,26 @@ function ConfigOption:init()
                 -- We don't want the underline to be that far away from the image content,
                 -- so we use some negative padding to eat a bit on their padding.
                 local underline_padding = - math.floor(0.05 * icon_size)
-                for d = 1, #self.options[c].item_icons do
+                for d = 1, items_count do
                     local option_item = OptionIconItem:new{
                         icon = IconWidget:new{
-                            icon = self.options[c].item_icons[d],
+                            icon = item_icons[d],
                             dim = not enabled,
                             width = icon_size,
                             height = icon_size,
                         },
                         underline_padding = underline_padding,
                         padding_left = d > 1 and horizontal_half_padding,
-                        padding_right = d < #self.options[c].item_icons and horizontal_half_padding,
+                        padding_right = d < items_count and horizontal_half_padding,
                         color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
                         enabled = enabled,
                     }
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
-                    option_item.name_text = name_text
+                    option_item.name_text = name_text or self.options[c].alt_name_text
                     option_item.values = self.options[c].values
+                    option_item.labels = self.options[c].labels
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
                     option_item.current_item = d
@@ -550,7 +569,6 @@ function ConfigOption:init()
                     values = self.options[c].values,
                     args = self.options[c].args,
                     event = self.options[c].event,
-                    events = self.options[c].events,
                     hide_on_apply = self.options[c].hide_on_apply,
                     config = self.config,
                     enabled = enabled,
@@ -560,8 +578,12 @@ function ConfigOption:init()
                             if self.options[c].show_true_value_func and not self.options[c].more_options_param.show_true_value_func then
                                 self.options[c].more_options_param.show_true_value_func = self.options[c].show_true_value_func
                             end
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
+                            UIManager:tickAfterNext(function()
+                                Notification:resetNotifySource()
+                            end)
                         end
                     end
                 }
@@ -587,19 +609,27 @@ function ConfigOption:init()
                     num_buttons = #self.options[c].values,
                     position = self.options[c].default_pos,
                     callback = function(arg)
+
                         if arg == "-" or arg == "+" then
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_FINE)
                             self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply,
+                                self.options[c].event, self.options[c].args, arg, self.options[c].hide_on_apply,
                                 self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                         else
+                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply)
+                                self.options[c].event, self.options[c].args, arg, self.options[c].hide_on_apply)
                         end
+
                         UIManager:setDirty(self.config, function()
                             return "fast", switch.dimen
+                        end)
+                        UIManager:tickAfterNext(function()
+                            Notification:resetNotifySource()
                         end)
                     end,
                     hold_callback = function(arg)
@@ -868,11 +898,15 @@ function ConfigDialog:update()
             panel_index = self.panel_index,
         }
     end
+    if self.config_panel then
+        self.config_panel:free()
+    end
     self.config_panel = ConfigPanel:new{
         index = self.panel_index,
         config_dialog = self,
     }
 
+    local old_dimen = self.dialog_frame and self.dialog_frame.dimen and self.dialog_frame.dimen:copy() or Geom:new{}
     self.dialog_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         padding_bottom = 0, -- ensured by MenuBar
@@ -881,6 +915,10 @@ function ConfigDialog:update()
             self.config_menubar,
         },
     }
+    -- Ensure we have a sane-ish Geom object *before* paintTo gets called,
+    -- to avoid weirdness in race-y SwipeCloseMenu calls...
+    self.dialog_frame.dimen = old_dimen
+
     -- Reset the focusmanager cursor
     self.selected.y=#self.layout
     self.selected.x=self.panel_index
@@ -920,8 +958,7 @@ function ConfigDialog:onShowConfigPanel(index)
 end
 
 function ConfigDialog:onConfigChoice(option_name, option_value)
-    self.configurable[option_name] = option_value
-    self.ui:handleEvent(Event:new("StartActivityIndicator"))
+    self.ui:handleEvent(Event:new("ConfigChange", option_name, option_value))
     return true
 end
 
@@ -930,31 +967,14 @@ function ConfigDialog:onConfigEvent(option_event, option_arg, when_applied_callb
     return true
 end
 
-function ConfigDialog:onConfigEvents(option_events, arg_index)
-    for i=1, #option_events do
-        option_events[i].args = option_events[i].args or {}
-        self.ui:handleEvent(Event:new(option_events[i].event, option_events[i].args[arg_index]))
-    end
-    return true
-end
-
-function ConfigDialog:onConfigChoose(values, name, event, args, events, position, hide_on_apply)
+function ConfigDialog:onConfigChoose(values, name, event, args, position, hide_on_apply)
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
             self.skip_paint = nil
-            if self.config_options.needs_redraw_on_change then
-                -- Some Kopt document event handlers just save their setting,
-                -- and need a full repaint for kopt to load these settings,
-                -- notice the change, and redraw the document
-                UIManager:setDirty("all", "partial")
-            else
-                -- CreDocument event handlers do their own refresh:
-                -- we can just redraw our frame
-                UIManager:setDirty(self, function()
-                    return "ui", self.dialog_frame.dimen
-                end)
-            end
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
         end
         local when_applied_callback = nil
         if type(hide_on_apply) == "number" then -- timeout
@@ -974,9 +994,6 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
             args = args or {}
             self:onConfigEvent(event, args[position], when_applied_callback)
         end
-        if events then
-            self:onConfigEvents(events, position)
-        end
         -- Even if each toggle refreshes itself when toggled, we still
         -- need to update and repaint the whole config panel, as other
         -- toggles may have their state (enabled/disabled) modified
@@ -989,23 +1006,14 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
 end
 
 -- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
-function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction, hide_on_apply, params)
+function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, direction, hide_on_apply, params)
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
             self.skip_paint = nil
-            if self.config_options.needs_redraw_on_change then
-                -- Some Kopt document event handlers just save their setting,
-                -- and need a full repaint for kopt to load these settings,
-                -- notice the change, and redraw the document
-                UIManager:setDirty("all", "partial")
-            else
-                -- CreDocument event handlers do their own refresh:
-                -- we can just redraw our frame
-                UIManager:setDirty(self, function()
-                    return "ui", self.dialog_frame.dimen
-                end)
-            end
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
         end
         local when_applied_callback = nil
         if type(hide_on_apply) == "number" then -- timeout
@@ -1074,9 +1082,6 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
             end
             self:onConfigEvent(event, arg, when_applied_callback)
         end
-        if events then
-            self:onConfigEvents(events, direction)
-        end
         -- Even if each toggle refreshes itself when toggled, we still
         -- need to update and repaint the whole config panel, as other
         -- toggles may have their state (enabled/disabled) modified
@@ -1100,24 +1105,15 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
             if self.skip_paint and not keep_skip_paint then
                 self.skip_paint = nil
             end
-            if self.config_options.needs_redraw_on_change then
-                -- Some Kopt document event handlers just save their setting,
-                -- and need a full repaint for kopt to load these settings,
-                -- notice the change, and redraw the document
-                UIManager:setDirty("all", "partial")
+            if self.skip_paint then
+                -- Redraw anything below the now hidden ConfigDialog
+                UIManager:setDirty("all", function()
+                    return "partial", self.dialog_frame.dimen
+                end)
             else
-                -- CreDocument event handlers do their own refresh:
-                -- we can just redraw our frame
-                if self.skip_paint then
-                    -- Redraw anything below the now hidden ConfigDialog
-                    UIManager:setDirty("all", function()
-                        return "partial", self.dialog_frame.dimen
-                    end)
-                else
-                    UIManager:setDirty(self, function()
-                        return "ui", self.dialog_frame.dimen
-                    end)
-                end
+                UIManager:setDirty(self, function()
+                    return "ui", self.dialog_frame.dimen
+                end)
             end
         end
         local hide_on_picker_show = more_options_param.hide_on_picker_show
@@ -1146,7 +1142,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                 event = more_options_param.event
             end
             local widget
-            if more_options_param.left_min then -- DoubleSpingWidget
+            if more_options_param.left_min then -- DoubleSpinWidget
                 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                 -- (No support for value_table - add it if needed)
                 local curr_values
@@ -1157,9 +1153,9 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     curr_values = self.configurable[name]
                 end
                 widget = DoubleSpinWidget:new{
+                    width_factor = more_options_param.widget_width_factor,
                     title_text =  name_text or _("Set values"),
                     info_text = more_options_param.info_text,
-                    width = math.floor(Screen:getWidth() * 0.6),
                     left_text = more_options_param.left_text,
                     right_text = more_options_param.right_text,
                     left_value = curr_values[1],
@@ -1194,7 +1190,11 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             -- it actually do it when provided a callback as argument
                             local dummy_callback = when_applied_callback and function() end
                             args = args or {}
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             self:onConfigEvent(event, value_tables, dummy_callback)
+                            UIManager:tickAfterNext(function()
+                                Notification:resetNotifySource()
+                            end)
                             self:update()
                         end
                     end,
@@ -1211,14 +1211,15 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             text = T(_("Set default %1 to %2?"), (name_text or ""), values_string),
                             ok_text = T(_("Set as default")),
                             ok_callback = function()
+                                local setting_name
                                 if more_options_param.names then
-                                    name = self.config_options.prefix.."_"..more_options_param.names[1]
-                                    G_reader_settings:saveSetting(name, left_value)
-                                    name = self.config_options.prefix.."_"..more_options_param.names[2]
-                                    G_reader_settings:saveSetting(name, right_value)
+                                    setting_name = self.config_options.prefix.."_"..more_options_param.names[1]
+                                    G_reader_settings:saveSetting(setting_name, left_value)
+                                    setting_name = self.config_options.prefix.."_"..more_options_param.names[2]
+                                    G_reader_settings:saveSetting(setting_name, right_value)
                                 else
-                                    name = self.config_options.prefix.."_"..name
-                                    G_reader_settings:saveSetting(name, value_tables)
+                                    setting_name = self.config_options.prefix.."_"..name
+                                    G_reader_settings:saveSetting(setting_name, value_tables)
                                 end
                                 self:update()
                                 UIManager:setDirty(self, function()
@@ -1251,9 +1252,9 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     end
                 end
                 widget = SpinWidget:new{
+                    width_factor = more_options_param.widget_width_factor,
                     title_text =  name_text or _("Set value"),
                     info_text = more_options_param.info_text,
-                    width = math.floor(Screen:getWidth() * 0.6),
                     value = curr_items,
                     value_index = value_index,
                     value_table = more_options_param.value_table,
@@ -1286,6 +1287,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             -- it actually do it when provided a callback as argument
                             local dummy_callback = when_applied_callback and function() end
                             args = args or {}
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             if more_options_param.value_table then
                                 if more_options_param.args_table then
                                     self:onConfigEvent(event, more_options_param.args_table[spin.value_index], dummy_callback)
@@ -1295,6 +1297,9 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             else
                                 self:onConfigEvent(event, spin.value, dummy_callback)
                             end
+                            UIManager:tickAfterNext(function()
+                                Notification:resetNotifySource()
+                            end)
                             self:update()
                         end
                     end,
@@ -1310,15 +1315,15 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             text = T(_("Set default %1 to %2?"), (name_text or ""), value_string),
                             ok_text = T(_("Set as default")),
                             ok_callback = function()
-                                name = self.config_options.prefix.."_"..name
+                                local setting_name = self.config_options.prefix.."_"..name
                                 if more_options_param.value_table then
                                     if more_options_param.args_table then
-                                        G_reader_settings:saveSetting(name, more_options_param.args_table[spin.value_index])
+                                        G_reader_settings:saveSetting(setting_name, more_options_param.args_table[spin.value_index])
                                     else
-                                        G_reader_settings:saveSetting(name, spin.value_index)
+                                        G_reader_settings:saveSetting(setting_name, spin.value_index)
                                     end
                                 else
-                                    G_reader_settings:saveSetting(name, spin.value)
+                                    G_reader_settings:saveSetting(setting_name, spin.value)
                                 end
                                 self:update()
                                 UIManager:setDirty(self, function()
@@ -1427,13 +1432,13 @@ function ConfigDialog:onTapCloseMenu(arg, ges_ev)
 end
 
 function ConfigDialog:onSwipeCloseMenu(arg, ges_ev)
-    local range = {
+    local range = Geom:new{
         x = DTAP_ZONE_CONFIG.x * Screen:getWidth(),
         y = DTAP_ZONE_CONFIG.y * Screen:getHeight(),
         w = DTAP_ZONE_CONFIG.w * Screen:getWidth(),
         h = DTAP_ZONE_CONFIG.h * Screen:getHeight(),
     }
-    local range_ext = {
+    local range_ext = Geom:new{
         x = DTAP_ZONE_CONFIG_EXT.x * Screen:getWidth(),
         y = DTAP_ZONE_CONFIG_EXT.y * Screen:getHeight(),
         w = DTAP_ZONE_CONFIG_EXT.w * Screen:getWidth(),

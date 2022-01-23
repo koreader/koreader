@@ -35,6 +35,7 @@ The following key is required for a device object:
     * isColorEnabled() -> boolean
 ]]--
 function CanvasContext:init(device)
+    self.device = device
     self.screen = device.screen
     self.isAndroid = device.isAndroid
     self.isDesktop = device.isDesktop
@@ -42,9 +43,10 @@ function CanvasContext:init(device)
     self.isKindle = device.isKindle
     self.isPocketBook = device.isPocketBook
     self.should_restrict_JIT = device.should_restrict_JIT
+    self.hasSystemFonts = device.hasSystemFonts
     self:setColorRenderingEnabled(device.screen.isColorEnabled())
 
-    -- NOTE: Kobo's fb is BGR, not RGB. Handle the conversion in MuPDF if needed.
+    -- NOTE: At 32bpp, Kobo's fb is BGR, not RGB. Handle the conversion in MuPDF if needed.
     if device:hasBGRFrameBuffer() then
         self.is_bgr = true
         Mupdf.bgr = true
@@ -74,6 +76,10 @@ end
 
 function CanvasContext:scaleBySize(px)
     return self.screen:scaleBySize(px)
+end
+
+function CanvasContext:enableCPUCores(amount)
+    return self.device:enableCPUCores(amount)
 end
 
 return CanvasContext

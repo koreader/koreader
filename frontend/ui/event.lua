@@ -30,6 +30,9 @@ Event:new("GotoPage", 1)
 function Event:new(name, ...)
     local o = {
         handler = "on"..name,
+        -- Minor trickery to handle nils, c.f., http://lua-users.org/wiki/VarargTheSecondClassCitizen
+        --- @fixme: Move to table.pack() (which stores the count in the field `n`) here & table.unpack() in @{ui.widget.eventlistener|EventListener} once we build LuaJIT w/ 5.2 compat.
+        argc = select('#', ...),
         args = {...}
     }
     setmetatable(o, self)

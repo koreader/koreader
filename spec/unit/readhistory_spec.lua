@@ -367,7 +367,7 @@ describe("ReadHistory module", function()
 
     it("should automatically remove deleted items from history if setting has been set",
        function()
-           G_reader_settings:saveSetting("autoremove_deleted_items_from_history", "true")
+           G_reader_settings:saveSetting("autoremove_deleted_items_from_history", true)
            testAutoRemoveDeletedItems()
            G_reader_settings:delSetting("autoremove_deleted_items_from_history")
        end)
@@ -380,7 +380,7 @@ describe("ReadHistory module", function()
 
     it("should not automatically remove deleted items from history if setting has been set to false",
        function()
-           G_reader_settings:saveSetting("autoremove_deleted_items_from_history", "false")
+           G_reader_settings:saveSetting("autoremove_deleted_items_from_history", false)
            testDoNotAutoRemoveDeletedItems()
            G_reader_settings:delSetting("autoremove_deleted_items_from_history")
        end)

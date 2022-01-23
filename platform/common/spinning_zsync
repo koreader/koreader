@@ -8,7 +8,7 @@
 # NOTE: We inherit WITH_PIPEFAIL from the env via OTAManager, because of course old busybox ash versions abort on set -o failures...
 #       c.f., https://github.com/koreader/koreader/pull/5844
 if [ "${WITH_PIPEFAIL}" = "true" ]; then
-    # shellcheck disable=SC2039
+    # shellcheck disable=SC3040
     set -o pipefail
 fi
 

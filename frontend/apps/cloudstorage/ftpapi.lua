@@ -20,16 +20,15 @@ function FtpApi:generateUrl(address, user, pass)
     return generated_url
 end
 
-function FtpApi:ftpGet(u, command)
-    local t = {}
+function FtpApi:ftpGet(u, command, sink)
     local p = url.parse(u)
     p.user = util.urlDecode(p.user)
     p.password = util.urlDecode(p.password)
     p.command = command
-    p.sink = ltn12.sink.table(t)
+    p.sink = sink
     p.type = "i"  -- binary
     local r, e = ftp.get(p)
-    return r and table.concat(t), e
+    return r, e
 end
 
 function FtpApi:listFolder(address_path, folder_path)
@@ -38,12 +37,16 @@ function FtpApi:listFolder(address_path, folder_path)
     local type
     local extension
     local file_name
-    local ls_ftp = self:ftpGet(address_path, "nlst")
-    if ls_ftp == nil then return false end
+    local tbl = {}
+    local sink = ltn12.sink.table(tbl)
+    local ls_ftp, e = self:ftpGet(address_path, "nlst", sink)
+    if ls_ftp == nil then
+        return false, e
+    end
     if folder_path == "/" then
         folder_path = ""
     end
-    for item in (ls_ftp..'\n'):gmatch'(.-)\r?\n' do
+    for item in (table.concat(tbl)..'\n'):gmatch'(.-)\r?\n' do
         if item ~= '' then
             file_name = item:match("([^/]+)$")
             extension = item:match("^.+(%..+)$")

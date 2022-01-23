@@ -13,16 +13,13 @@ local T = FFIUtil.template
 local function yes() return true end
 local function no() return false end
 
-local function canUpdateApk()
-    -- disable updates on fdroid builds, since they manage their own repo.
-    return (android.prop.flavor ~= "fdroid")
-end
-
 local function getCodename()
     local api = android.app.activity.sdkVersion
     local codename = ""
 
-    if api > 29 then
+    if api > 30 then
+        codename = "S"
+    elseif api == 30 then
         codename = "R"
     elseif api == 29 then
         codename = "Q"
@@ -60,6 +57,8 @@ local external = require("device/thirdparty"):new{
         { "GoldenFree", "GoldenDict Free", false, "mobi.goldendict.android.free", "send" },
         { "GoldenPro", "GoldenDict Pro", false, "mobi.goldendict.android", "send" },
         { "Kiwix", "Kiwix", false, "org.kiwix.kiwixmobile", "text" },
+        { "LookUp", "Look Up", false, "gaurav.lookup", "send" },
+        { "LookUpPro", "Look Up Pro", false, "gaurav.lookuppro", "send" },
         { "Mdict", "Mdict", false, "cn.mdict", "send" },
         { "QuickDic", "QuickDic", false, "de.reimardoeffinger.quickdic", "quickdic" },
     },
@@ -76,7 +75,7 @@ local Device = Generic:new{
     hasExitOptions = no,
     hasEinkScreen = function() return android.isEink() end,
     hasColorScreen = function() return not android.isEink() end,
-    hasFrontlight = yes,
+    hasFrontlight = android.hasLights,
     hasNaturalLight = android.isWarmthDevice,
     canRestart = no,
     canSuspend = no,
@@ -85,12 +84,14 @@ local Device = Generic:new{
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     isHapticFeedbackEnabled = yes,
     hasClipboard = yes,
-    hasOTAUpdates = canUpdateApk,
+    hasOTAUpdates = android.ota.isEnabled,
+    hasOTARunning = function() return android.ota.isRunning end,
     hasFastWifiStatusQuery = yes,
+    hasSystemFonts = yes,
     canOpenLink = yes,
     openLink = function(self, link)
         if not link or type(link) ~= "string" then return end
-        return android.openLink(link) == 0
+        return android.openLink(link)
     end,
     canImportFiles = function() return android.app.activity.sdkVersion >= 19 end,
     hasExternalSD = function() return android.getExternalSdPath() end,
@@ -131,16 +132,20 @@ function Device:init()
         device = self,
         event_map = require("device/android/event_map"),
         handleMiscEv = function(this, ev)
+            local Event = require("ui/event")
             local UIManager = require("ui/uimanager")
             logger.dbg("Android application event", ev.code)
             if ev.code == C.APP_CMD_SAVE_STATE then
-                return "SaveState"
+                UIManager:broadcastEvent(Event:new("FlushSettings"))
             elseif ev.code == C.APP_CMD_DESTROY then
                 UIManager:quit()
             elseif ev.code == C.APP_CMD_GAINED_FOCUS
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:_updateWindow()
+            elseif ev.code == C.APP_CMD_LOST_FOCUS
+                or ev.code == C.APP_CMD_TERM_WINDOW then
+                this.device.input:resetState()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
                 -- orientation and size changes
                 if android.screen.width ~= android.getScreenWidth()
@@ -148,7 +153,6 @@ function Device:init()
                     this.device.screen:resize()
                     local new_size = this.device.screen:getSize()
                     logger.info("Resizing screen to", new_size)
-                    local Event = require("ui/event")
                     local FileManager = require("apps/filemanager/filemanager")
                     UIManager:broadcastEvent(Event:new("SetDimensions", new_size))
                     UIManager:broadcastEvent(Event:new("ScreenResize", new_size))
@@ -156,44 +160,64 @@ function Device:init()
                     if FileManager.instance then
                         FileManager.instance:reinit(FileManager.instance.path,
                             FileManager.instance.focused_file)
-                        UIManager:setDirty(FileManager.instance.banner, function()
-                            return "ui", FileManager.instance.banner.dimen
-                        end)
                     end
                 end
                 -- to-do: keyboard connected, disconnected
             elseif ev.code == C.APP_CMD_RESUME then
+                if not android.prop.brokenLifecycle then
+                    UIManager:broadcastEvent(Event:new("Resume"))
+                end
                 if external.when_back_callback then
                     external.when_back_callback()
                     external.when_back_callback = nil
                 end
-                local new_file = android.getIntent()
-                if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
-                    -- we cannot blit to a window here since we have no focus yet.
-                    local InfoMessage = require("ui/widget/infomessage")
-                    local BD = require("ui/bidi")
-                    UIManager:scheduleIn(0.1, function()
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Opening file '%1'."), BD.filepath(new_file)),
-                            timeout = 0.0,
-                        })
-                    end)
-                    UIManager:scheduleIn(0.2, function()
-                        require("apps/reader/readerui"):doShowReader(new_file)
-                    end)
+
+                if android.ota.isPending then
+                    UIManager:scheduleIn(0.1, self.install)
                 else
-                    -- check if we're resuming from importing content.
-                    local content_path = android.getLastImportedPath()
-                    if content_path ~= nil then
-                        local FileManager = require("apps/filemanager/filemanager")
-                        UIManager:scheduleIn(0.5, function()
-                            if FileManager.instance then
-                                FileManager.instance:onRefresh()
-                            else
-                                FileManager:showFiles(content_path)
-                            end
+                    local new_file = android.getIntent()
+                    if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
+                        -- we cannot blit to a window here since we have no focus yet.
+                        local InfoMessage = require("ui/widget/infomessage")
+                        local BD = require("ui/bidi")
+                        UIManager:scheduleIn(0.1, function()
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Opening file '%1'."), BD.filepath(new_file)),
+                                timeout = 0.0,
+                            })
                         end)
+                        UIManager:scheduleIn(0.2, function()
+                            require("apps/reader/readerui"):doShowReader(new_file)
+                        end)
+                    else
+                        -- check if we're resuming from importing content.
+                        local content_path = android.getLastImportedPath()
+                        if content_path ~= nil then
+                            local FileManager = require("apps/filemanager/filemanager")
+                            UIManager:scheduleIn(0.5, function()
+                                if FileManager.instance then
+                                    FileManager.instance:onRefresh()
+                                else
+                                    FileManager:showFiles(content_path)
+                                end
+                            end)
+                        end
                     end
+                end
+            elseif ev.code == C.APP_CMD_PAUSE then
+                if not android.prop.brokenLifecycle then
+                    UIManager:broadcastEvent(Event:new("Suspend"))
+                end
+            elseif ev.code == C.AEVENT_POWER_CONNECTED then
+                UIManager:broadcastEvent(Event:new("Charging"))
+            elseif ev.code == C.AEVENT_POWER_DISCONNECTED then
+                UIManager:broadcastEvent(Event:new("NotCharging"))
+            elseif ev.code == C.AEVENT_DOWNLOAD_COMPLETE then
+                android.ota.isRunning = false
+                if android.isResumed() then
+                    self:install()
+                else
+                    android.ota.isPending = true
                 end
             end
         end,
@@ -284,6 +308,7 @@ function Device:performHapticFeedback(type)
 end
 
 function Device:setIgnoreInput(enable)
+    logger.dbg("android.setIgnoreInput", enable)
     android.setIgnoreInput(enable)
 end
 
@@ -363,8 +388,8 @@ function Device:info()
     return common_text..platform_text..eink_text..wakelocks_text
 end
 
-function Device:epdTest()
-    android.einkTest()
+function Device:test()
+    android.runTest()
 end
 
 function Device:exit()
@@ -380,42 +405,33 @@ function Device:canExecuteScript(file)
 end
 
 function Device:isValidPath(path)
-    return android.isPathInsideSandbox(path)
-end
+    -- the fast check
+    if android.isPathInsideSandbox(path) then
+        return true
+    end
 
---swallow all events
-local function processEvents()
-    local events = ffi.new("int[1]")
-    local source = ffi.new("struct android_poll_source*[1]")
-    local poll_state = android.lib.ALooper_pollAll(-1, nil, events, ffi.cast("void**", source))
-    if poll_state >= 0 then
-        if source[0] ~= nil then
-            if source[0].id == C.LOOPER_ID_MAIN then
-                local cmd = android.glue.android_app_read_cmd(android.app)
-                android.glue.android_app_pre_exec_cmd(android.app, cmd)
-                android.glue.android_app_post_exec_cmd(android.app, cmd)
-            elseif source[0].id == C.LOOPER_ID_INPUT then
-                local event = ffi.new("AInputEvent*[1]")
-                while android.lib.AInputQueue_getEvent(android.app.inputQueue, event) >= 0 do
-                    if android.lib.AInputQueue_preDispatchEvent(android.app.inputQueue, event[0]) == 0 then
-                        android.lib.AInputQueue_finishEvent(android.app.inputQueue, event[0], 1)
-                    end
-                end
-            end
-        end
+    -- the thorough check
+    local real_ext_storage = FFIUtil.realpath(android.getExternalStoragePath())
+    local real_path = FFIUtil.realpath(path)
+
+    if real_path then
+        return real_path:sub(1, #real_ext_storage) == real_ext_storage
+    else
+        return false
     end
 end
 
 function Device:showLightDialog()
+    -- Delay it until next tick so that the event loop gets a chance to drain the input queue,
+    -- and consume the APP_CMD_LOST_FOCUS event.
+    -- This helps prevent ANRs on Tolino (c.f., #6583 & #7552).
+    local UIManager = require("ui/uimanager")
+    UIManager:nextTick(function() self:_showLightDialog() end)
+end
+
+function Device:_showLightDialog()
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
-    repeat
-        processEvents() -- swallow all events, including the last one
-        FFIUtil.usleep(25000) -- sleep 25ms before next check if dialog was quit
-    until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
-
-    local GestureDetector = require("device/gesturedetector")
-    GestureDetector:clearStates()
 
     local action = android.lights.dialogState()
     if action == C.ALIGHTS_DIALOG_OK then
@@ -440,6 +456,54 @@ end
 
 function Device:untar(archive, extract_to)
     return android.untar(archive, extract_to)
+end
+
+function Device:download(link, name, ok_text)
+    local ConfirmBox = require("ui/widget/confirmbox")
+    local InfoMessage = require("ui/widget/infomessage")
+    local UIManager = require("ui/uimanager")
+    local ok = android.download(link, name)
+    if ok == C.ADOWNLOAD_EXISTS then
+        self:install()
+    elseif ok == C.ADOWNLOAD_OK then
+        android.ota.isRunning = true
+        UIManager:show(InfoMessage:new{
+            text = ok_text,
+            timeout = 3,
+        })
+    elseif ok == C.ADOWNLOAD_FAILED then
+        UIManager:show(ConfirmBox:new{
+            text = _("Your device seems to be unable to download packages.\nRetry using the browser?"),
+            ok_text = _("Retry"),
+            ok_callback = function() self:openLink(link) end,
+        })
+    end
+end
+
+function Device:install()
+    local ConfirmBox = require("ui/widget/confirmbox")
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    UIManager:show(ConfirmBox:new{
+        text = _("Update is ready. Install it now?"),
+        ok_text = _("Install"),
+        ok_callback = function()
+            UIManager:broadcastEvent(Event:new("FlushSettings"))
+            UIManager:tickAfterNext(function()
+                android.ota.install()
+                android.ota.isPending = false
+            end)
+        end,
+    })
+end
+
+-- todo: Wouldn't we like an android.deviceIdentifier() method, so we can use better default paths?
+function Device:getDefaultCoverPath()
+    if android.prop.product == "ntx_6sl" then -- Tolino HD4 and other
+        return android.getExternalStoragePath() .. "/suspend_others.jpg"
+    else
+        return android.getExternalStoragePath() .. "/cover.jpg"
+    end
 end
 
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",

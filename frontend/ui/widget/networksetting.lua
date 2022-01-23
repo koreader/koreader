@@ -237,6 +237,7 @@ function NetworkItem:connect()
     end
 
     -- Do what it says on the tin, and only trigger the connect_callback on a *successful* connect.
+    -- NOTE: This callback comes from NetworkManager, where it's named complete_callback.
     if success and self.setting_ui.connect_callback then
         self.setting_ui.connect_callback()
     end
@@ -264,7 +265,8 @@ end
 
 function NetworkItem:saveAndConnectToNetwork(password_input)
     local new_passwd = password_input:getInputText()
-    if new_passwd == nil or string.len(new_passwd) == 0 then
+    -- Dont set a empty password if WPA encryption, go through if it’s an open AP
+    if (new_passwd == nil or #new_passwd == 0) and string.find(self.info.flags, "WPA") then
         UIManager:show(InfoMessage:new{
             text = _("Password cannot be empty."),
         })
@@ -285,7 +287,7 @@ function NetworkItem:onEditNetwork()
     password_input = InputDialog:new{
         title = self.info.ssid,
         input = self.info.password,
-        input_hint = "password",
+        input_hint = _("password (leave empty for open networks)"),
         input_type = "text",
         text_type = "password",
         buttons = {
@@ -327,7 +329,7 @@ function NetworkItem:onAddNetwork()
     password_input = InputDialog:new{
         title = self.info.ssid,
         input = "",
-        input_hint = "password",
+        input_hint = _("password (leave empty for open networks)"),
         input_type = "text",
         text_type = "password",
         buttons = {
@@ -354,9 +356,11 @@ function NetworkItem:onAddNetwork()
 end
 
 function NetworkItem:onTapSelect(arg, ges_ev)
-    if not string.find(self.info.flags, "WPA") then
+    -- Open AP dont have specific flag so we can’t include them alongside WPA
+    -- so we exclude WEP instead (more encryption to exclude? not really future proof)
+    if string.find(self.info.flags, "WEP") then
         UIManager:show(InfoMessage:new{
-            text = _("Networks without WPA/WPA2 encryption are not supported.")
+            text = _("Networks with WEP encryption are not supported.")
         })
         return
     end
@@ -481,7 +485,7 @@ function NetworkSetting:init()
         if connected_item ~= nil then
             obtainIP()
             if G_reader_settings:nilOrTrue("auto_dismiss_wifi_scan") then
-                UIManager:close(self, 'ui', self.dimen)
+                UIManager:close(self, "ui", self.dimen)
             end
             UIManager:show(InfoMessage:new{
                 text = T(_("Connected to network %1"), BD.wrap(connected_item.info.ssid)),

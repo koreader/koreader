@@ -22,25 +22,22 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TextWidget = require("ui/widget/textwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
-local Screen = Device.screen
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 
 local CheckButton = InputContainer:new{
     callback = nil,
     hold_callback = nil,
     checked = false,
     enabled = true,
-    face = Font:getFace("cfont"),
-    overlap_align = "right",
+    face = Font:getFace("smallinfofont"),
+    background = Blitbuffer.COLOR_WHITE,
     text = nil,
-    toggle_text = nil,
-    max_width = nil,
-    window = nil,
-
-    padding = Screen:scaleBySize(5),
-    margin = Screen:scaleBySize(5),
-    bordersize = Screen:scaleBySize(3),
+    parent = nil, -- parent widget, must be set by the caller
+    width = nil, -- default value: parent widget's input widget width
+    -- If the parent widget has no input widget, the width must be set by the caller.
 }
 
 function CheckButton:init()
@@ -52,21 +49,32 @@ function CheckButton:initCheckButton(checked)
     self._checkmark = CheckMark:new{
         checked = self.checked,
         enabled = self.enabled,
+        face = self.face,
         parent = self.parent or self,
         show_parent = self.show_parent or self,
     }
-    self._textwidget = TextWidget:new{
+    self._textwidget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        max_width = self.max_width,
+        width = (self.width or self.parent._input_widget.width) - self._checkmark.dimen.w,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
-    self._horizontalgroup = HorizontalGroup:new{
-        self._checkmark,
+    local textbox_shift = math.max(0, self._checkmark.baseline - self._textwidget:getBaseline())
+    self._verticalgroup = VerticalGroup:new{
+        align = "left",
+        VerticalSpan:new{
+            width = textbox_shift,
+        },
         self._textwidget,
+    }
+    self._horizontalgroup = HorizontalGroup:new{
+        align = "top",
+        self._checkmark,
+        self._verticalgroup,
     }
     self._frame = FrameContainer:new{
         bordersize = 0,
+        background = self.background,
         margin = 0,
         padding = 0,
         self._horizontalgroup,
@@ -89,65 +97,96 @@ function CheckButton:initCheckButton(checked)
                     range = self.dimen,
                 },
                 doc = "Hold Button",
+            },
+            -- Safe-guard for when used inside a MovableContainer
+            HoldReleaseCheckButton = {
+                GestureRange:new{
+                    ges = "hold_release",
+                    range = self.dimen,
+                },
+                doc = "Hold Release Button",
             }
         }
     end
 end
 
 function CheckButton:onTapCheckButton()
-    if self.enabled and self.callback then
-        if G_reader_settings:isFalse("flash_ui") then
-            self.callback()
-        else
-            self[1].invert = true
-            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
-
-            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
-            UIManager:forceRePaint()
-            self.callback()
-            --UIManager:forceRePaint() -- Unnecessary, the check/uncheck process involves too many repaints already
-            --UIManager:waitForVSync()
-
-            self[1].invert = false
-            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
-            --UIManager:forceRePaint()
-        end
-    elseif self.tap_input then
+    if not self.enabled then return true end
+    if self.tap_input then
         self:onInput(self.tap_input)
     elseif type(self.tap_input_func) == "function" then
         self:onInput(self.tap_input_func())
+    else
+        if G_reader_settings:isFalse("flash_ui") then
+            self:toggleCheck()
+            if self.callback then
+                self.callback()
+            end
+        else
+            -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
+
+            local highlight_dimen = self.dimen
+
+            -- Highlight
+            --
+            self[1].invert = true
+            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "fast", highlight_dimen)
+
+            UIManager:forceRePaint()
+            UIManager:yieldToEPDC()
+
+            -- Unhighlight
+            --
+            self[1].invert = false
+            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
+
+            -- Callback
+            --
+            self:toggleCheck()
+            if self.callback then
+                self.callback()
+            end
+
+            UIManager:forceRePaint()
+        end
     end
     return true
 end
 
 function CheckButton:onHoldCheckButton()
-    if self.enabled and self.hold_callback then
-        self.hold_callback()
-    elseif self.hold_input then
-        self:onInput(self.hold_input)
-    elseif type(self.hold_input_func) == "function" then
-        self:onInput(self.hold_input_func())
+    -- If we're going to process this hold, we must make
+    -- sure to also handle its hold_release below, so it's
+    -- not propagated up to a MovableContainer
+    self._hold_handled = nil
+    if self.enabled then
+        if self.hold_callback then
+            self.hold_callback()
+            self._hold_handled = true
+        elseif self.hold_input then
+            self:onInput(self.hold_input, true)
+            self._hold_handled = true
+        elseif type(self.hold_input_func) == "function" then
+            self:onInput(self.hold_input_func(), true)
+            self._hold_handled = true
+        end
     end
     return true
 end
 
-function CheckButton:check()
-    self:initCheckButton(true)
-    UIManager:setDirty(self.parent, function()
-        return "fast", self.dimen
-    end)
+function CheckButton:onHoldReleaseCheckButton()
+    if self._hold_handled then
+        self._hold_handled = nil
+        return true
+    end
+    return false
 end
 
-function CheckButton:unCheck()
-    self:initCheckButton(false)
+function CheckButton:toggleCheck()
+    self:initCheckButton(not self.checked)
     UIManager:setDirty(self.parent, function()
-        return "fast", self.dimen
+        return "ui", self.dimen
     end)
 end
 
@@ -164,7 +203,6 @@ function CheckButton:disable()
     self:initCheckButton(false)
     UIManager:setDirty(self.parent, function()
         return "ui", self.dimen
-        -- best to use "ui" instead of "fast" when we make things gray
     end)
 end
 

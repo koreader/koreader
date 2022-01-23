@@ -18,6 +18,3 @@
 [submodule "l10n"]
 	path = l10n
 	url = https://github.com/koreader/koreader-translations.git
-[submodule "metadata"]
-	path = metadata
-	url = https://github.com/koreader/koreader-metadata

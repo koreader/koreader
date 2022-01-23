@@ -90,7 +90,7 @@ describe("Readerview module", function()
             },
         }
         assert.are.same(saved_ctx, ctx)
-        assert.is.near(0.95011876484561, zoom, 0.0001)
+        assert.is.near(0.95024316487116200491, zoom, 0.0001)
 
         assert.is.same(view.state.page, 1)
         assert.is.same(view.visible_area.x, 0)
@@ -144,7 +144,7 @@ describe("Readerview module", function()
         }
 
         assert.are.same(saved_ctx, ctx)
-        assert.is.near(0.95011876484561, zoom, 0.0001)
+        assert.is.near(0.95024316487116200491, zoom, 0.0001)
 
         assert.is.same(view.state.page, 1)
         assert.is.same(view.visible_area.x, 0)

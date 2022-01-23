@@ -10,6 +10,7 @@ to a widget, you can simply invoke the handleEvent method like the following:
 ```lua
 widget_foo:handleEvent(Event:new("Timeout"))
 ```
+If the widget can be destroyed during the event you should call @{ui.uimanager:sendEvent|UIManager:sendEvent} to propagate the event from the topmost widget or @{ui.uimanager:broadcastEvent|UIManager:broadcastEvent} to send the event to all widgets.
 
 Events are passed to child Widgets (or child containers) before their own handler sees them. See the implementation of WidgetContainer:handleEvent(). So a child widget, for instance a text input widget, gets the input events before the layout manager. The child widgets can "consume" an event by returning `true` from the event handler. Thus a text input widget just implements an input handler and consumes left/right presses, returning `true` in those cases. It can even make its return code dependent on whether the cursor is on the last position (do not consume press to right) or first position (do not consume press to left) to have proper focus movement in those cases.
 
@@ -25,12 +26,11 @@ recalculate the view based on the new typesetting.
 
 ## Event propagation ##
 
-Most of the UI components is a subclass of
-@{ui.widget.container.widgetcontainer|WidgetContainer}. A WidgetContainer is an array that
-stores a list of children widgets.
+Most UI components are a subclass of @{ui.widget.container.widgetcontainer|WidgetContainer}.
+A WidgetContainer is an array that stores a list of children widgets.
 
-When @{ui.widget.container.widgetcontainer:handleEvent|WidgetContainer:handleEvent} is called with a new
-event, it will run roughly the following code:
+When @{ui.widget.container.widgetcontainer:handleEvent|WidgetContainer:handleEvent} is called with a new event,
+it will run roughly the following code:
 
 ```lua
 -- First propagate event to its children
@@ -40,8 +40,8 @@ for _, widget in ipairs(self) do
         return true
     end
 end
--- If not consumed by children, try consume by itself
-return self["on"..event.name](self, unpack(event.args))
+-- If not consumed by children, consume it ourself
+return self["on"..event.name](self, unpack(event.args, 1, event.argc))
 ```
 
 ## Event system

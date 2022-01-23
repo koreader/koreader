@@ -46,8 +46,6 @@ if lang_locale then
     _.changeLang(lang_locale)
 end
 
-local dummy = require("ffi/posix_h")
-
 -- Try to turn the C blitter on/off, and synchronize setting so that UI config reflects real state
 local bb = require("ffi/blitbuffer")
 bb:setUseCBB(is_cbb_enabled)
@@ -174,13 +172,12 @@ if Device:hasEinkScreen() then
     end
 end
 
--- Handle global settings migration
-local SettingsMigration = require("ui/data/settings_migration")
-SettingsMigration:migrateSettings(G_reader_settings)
-
 -- Document renderers canvas
 local CanvasContext = require("document/canvascontext")
 CanvasContext:init(Device)
+
+-- Handle one time migration stuff (settings, deprecation, ...) in case of an upgrade...
+require("ui/data/onetime_migration")
 
 -- Touch screen (this may display some widget, on first install on Kobo Touch,
 -- so have it done after CanvasContext:init() but before Bidi.setup() to not
@@ -212,7 +209,7 @@ local UIManager = require("ui/uimanager")
 -- and we are not (yet?) able to guess that fact)
 if Device:hasColorScreen() and not G_reader_settings:has("color_rendering") then
     -- enable it to prevent further display of this message
-    G_reader_settings:saveSetting("color_rendering", true)
+    G_reader_settings:makeTrue("color_rendering")
     local InfoMessage = require("ui/widget/infomessage")
     UIManager:show(InfoMessage:new{
         text = _("Documents will be rendered in color on this device.\nIf your device is grayscale, you can disable color rendering in the screen sub-menu for reduced memory usage."),
@@ -287,6 +284,7 @@ else
     if start_with == "last" and last_file then
         local ReaderUI = require("apps/reader/readerui")
         UIManager:nextTick(function()
+            -- Instantiate RD
             ReaderUI:showReader(last_file)
         end)
         exit_code = UIManager:run()
@@ -295,14 +293,17 @@ else
         local home_dir =
             G_reader_settings:readSetting("home_dir") or Device.home_dir or lfs.currentdir()
         UIManager:nextTick(function()
+            -- Instantiate FM
             FileManager:showFiles(home_dir)
         end)
-        -- Always open history on top of filemanager so closing history
-        -- doesn't result in exit.
+        -- Always open FM modules on top of filemanager, so closing 'em doesn't result in an exit
+        -- because of an empty widget stack, and so they can interact with the FM instance as expected.
         if start_with == "history" then
             local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
             UIManager:nextTick(function()
-                FileManagerHistory:onShowHist(last_file)
+                FileManagerHistory:new{
+                    ui = FileManager.instance,
+                }:onShowHist()
             end)
         elseif start_with == "favorites" then
             local FileManagerCollection = require("apps/filemanager/filemanagercollection")
@@ -341,7 +342,6 @@ local function exitReader()
 
     -- Save current rotation (or the original rotation if ScreenSaver temporarily modified it) to remember it for next startup
     G_reader_settings:saveSetting("closed_rotation_mode", Device.orig_rotation_mode or Device.screen:getRotationMode())
-
     G_reader_settings:close()
 
     -- Close lipc handles

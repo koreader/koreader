@@ -86,7 +86,7 @@ function MultiConfirmBox:init()
         TextBoxWidget:new{
             text = self.text,
             face = self.face,
-            width = math.floor(Screen:getWidth() * 2/3),
+            width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 2/3),
         }
     }
 
@@ -156,7 +156,7 @@ end
 
 function MultiConfirmBox:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
 end
 

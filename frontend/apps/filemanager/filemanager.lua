@@ -1,8 +1,7 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
-local Button = require("ui/widget/button")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
-local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
@@ -17,25 +16,20 @@ local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearche
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
-local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local LanguageSupport = require("languagesupport")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local PluginLoader = require("pluginloader")
 local ReadCollection = require("readcollection")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
-local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
-local Size = require("ui/size")
-local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
 local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
@@ -44,13 +38,16 @@ local BaseUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
+local N_ = _.ngettext
 local Screen = Device.screen
 local T = BaseUtil.template
 
 local FileManager = InputContainer:extend{
     title = _("KOReader"),
     root_path = lfs.currentdir(),
-    onExit = function() end,
+
+    clipboard = nil, -- for single file operations
+    selected_files = nil, -- for group file operations
 
     mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
@@ -60,11 +57,8 @@ local FileManager = InputContainer:extend{
 function FileManager:onSetRotationMode(rotation)
     if rotation ~= nil and rotation ~= Screen:getRotationMode() then
         Screen:setRotationMode(rotation)
-        if self.instance then
-            self:reinit(self.instance.path, self.instance.focused_file)
-            UIManager:setDirty(self.instance.banner, function()
-                return "ui", self.instance.banner.dimen
-            end)
+        if FileManager.instance then
+            self:reinit(self.path, self.focused_file)
         end
     end
     return true
@@ -101,77 +95,33 @@ end
 function FileManager:onSetDimensions(dimen)
     -- update listening according to new screen dimen
     if Device:isTouchDevice() then
-        self:initGesListener()
+        self:updateTouchZonesOnScreenResize(dimen)
     end
 end
 
 function FileManager:setupLayout()
     self.show_parent = self.show_parent or self
-    local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE)
-    local home_button = IconButton:new{
-        icon = "home",
-        width = icon_size,
-        height = icon_size,
-        padding = Size.padding.default,
-        padding_left = Size.padding.large,
-        padding_right = Size.padding.large,
-        padding_bottom = 0,
-        callback = function() self:goHome() end,
-        hold_callback = function() self:setHome() end,
+    self.title_bar = TitleBar:new{
+        fullscreen = "true",
+        align = "center",
+        title = self.title,
+        title_top_padding = Screen:scaleBySize(6),
+        subtitle = BD.directory(filemanagerutil.abbreviate(self.root_path)),
+        subtitle_truncate_left = true,
+        subtitle_fullwidth = true,
+        button_padding = Screen:scaleBySize(5),
+        left_icon = "home",
+        left_icon_size_ratio = 1,
+        left_icon_tap_callback = function() self:goHome() end,
+        left_icon_hold_callback = function() self:setHome() end,
+        right_icon = "plus",
+        right_icon_size_ratio = 1,
+        right_icon_tap_callback = function() self:onShowPlusMenu() end,
+        right_icon_hold_callback = false, -- propagate long-press to dispatcher
     }
 
-    local plus_button = IconButton:new{
-        icon = "plus",
-        width = icon_size,
-        height = icon_size,
-        padding = Size.padding.default,
-        padding_left = Size.padding.large,
-        padding_right = Size.padding.large,
-        padding_bottom = 0,
-        callback = function() self:onShowPlusMenu() end,
-    }
-
-    self.path_text = TextWidget:new{
-        face = Font:getFace("xx_smallinfofont"),
-        text = BD.directory(filemanagerutil.abbreviate(self.root_path)),
-        max_width = Screen:getWidth() - 2*Size.padding.small,
-        truncate_left = true,
-    }
-
-    self.banner = FrameContainer:new{
-        padding = 0,
-        bordersize = 0,
-        VerticalGroup:new {
-            CenterContainer:new {
-                dimen = { w = Screen:getWidth(), h = nil },
-                HorizontalGroup:new {
-                    home_button,
-                    VerticalGroup:new {
-                        Button:new {
-                            readonly = true,
-                            bordersize = 0,
-                            padding = 0,
-                            text_font_bold = false,
-                            text_font_face = "smalltfont",
-                            text_font_size = 24,
-                            text = self.title,
-                            width = Screen:getWidth() - 2 * icon_size - 4 * Size.padding.large,
-                        },
-                    },
-                    plus_button,
-                }
-            },
-            CenterContainer:new{
-                dimen = { w = Screen:getWidth(), h = nil },
-                self.path_text,
-            },
-            VerticalSpan:new{ width = Screen:scaleBySize(5) },
-        }
-    }
-
-    local g_show_hidden = G_reader_settings:readSetting("show_hidden")
-    local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
-    local show_unsupported = G_reader_settings:readSetting("show_unsupported")
+    local show_hidden = G_reader_settings:isTrue("show_hidden") or DSHOWHIDDENFILES
+    local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local file_chooser = FileChooser:new{
         -- remember to adjust the height when new item is added to the group
         path = self.root_path,
@@ -181,11 +131,10 @@ function FileManager:setupLayout()
         show_parent = self.show_parent,
         show_hidden = show_hidden,
         width = Screen:getWidth(),
-        height = Screen:getHeight() - self.banner:getSize().h,
+        height = Screen:getHeight() - self.title_bar:getHeight(),
         is_popout = false,
         is_borderless = true,
         has_close_button = true,
-        perpage = G_reader_settings:readSetting("items_per_page"),
         show_unsupported = show_unsupported,
         file_filter = function(filename)
             if DocumentRegistry:hasProvider(filename) then
@@ -196,22 +145,30 @@ function FileManager:setupLayout()
         -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
         return_arrow_propagation = true,
         -- allow Menu widget to delegate handling of some gestures to GestureManager
-        is_file_manager = true,
+        filemanager = self,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once
 
+    local file_manager = self
+
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(BD.directory(filemanagerutil.abbreviate(path)))
-        UIManager:setDirty(FileManager.instance, function()
-            return "ui", FileManager.instance.path_text.dimen, FileManager.instance.dithered
-        end)
+        file_manager.title_bar:setSubTitle(BD.directory(filemanagerutil.abbreviate(path)))
         return true
     end
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
-        FileManager.instance:onClose()
-        ReaderUI:showReader(file)
+        if file_manager.select_mode then
+            if file_manager.selected_files[file] then
+                file_manager.selected_files[file] = nil
+            else
+                file_manager.selected_files[file] = true
+            end
+            self:refreshPath()
+        else
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:showReader(file)
+        end
         return true
     end
 
@@ -221,13 +178,16 @@ function FileManager:setupLayout()
     local deleteFile = function(file) self:deleteFile(file) end
     local renameFile = function(file) self:renameFile(file) end
     local setHome = function(path) self:setHome(path) end
-    local fileManager = self
 
     function file_chooser:onFileHold(file)  -- luacheck: ignore
+        local is_file = lfs.attributes(file, "mode") == "file"
+        local is_folder = lfs.attributes(file, "mode") == "directory"
+        local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
         local buttons = {
             {
                 {
                     text = C_("File", "Copy"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         copyFile(file)
                         UIManager:close(self.file_dialog)
@@ -235,19 +195,19 @@ function FileManager:setupLayout()
                 },
                 {
                     text = C_("File", "Paste"),
-                    enabled = fileManager.clipboard and true or false,
+                    enabled = file_manager.clipboard and true or false,
                     callback = function()
                         pasteHere(file)
                         UIManager:close(self.file_dialog)
                     end,
                 },
                 {
-                    text = _("Purge .sdr"),
-                    enabled = DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
+                    text = _("Reset settings"),
+                    enabled = is_file and DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = T(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(self.file_dialog.title)),
-                            ok_text = _("Purge"),
+                            text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(file)),
+                            ok_text = _("Reset"),
                             ok_callback = function()
                                 filemanagerutil.purgeSettings(file)
                                 require("readhistory"):fileSettingsPurged(file)
@@ -261,6 +221,7 @@ function FileManager:setupLayout()
             {
                 {
                     text = _("Cut"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         cutFile(file)
                         UIManager:close(self.file_dialog)
@@ -268,47 +229,51 @@ function FileManager:setupLayout()
                 },
                 {
                     text = _("Delete"),
+                    enabled = is_not_parent_folder,
                     callback = function()
+                        UIManager:close(self.file_dialog)
                         UIManager:show(ConfirmBox:new{
-                            text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                            text = is_file and T(_("Delete file?\n\n%1\n\nIf you delete a file, it is permanently lost."), BD.filepath(file)) or
+                                T(_("Delete folder?\n\n%1\n\nIf you delete a folder, its content is permanently lost."), BD.filepath(file)),
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 deleteFile(file)
                                 require("readhistory"):fileDeleted(file)
                                 self:refreshPath()
-                                UIManager:close(self.file_dialog)
                             end,
                         })
                     end,
                 },
                 {
                     text = _("Rename"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        fileManager.rename_dialog = InputDialog:new{
-                            title = _("Rename file"),
+                        file_manager.rename_dialog = InputDialog:new{
+                            title = is_file and _("Rename file") or _("Rename folder"),
                             input = BaseUtil.basename(file),
                             buttons = {{
                                 {
                                     text = _("Cancel"),
                                     enabled = true,
                                     callback = function()
-                                        UIManager:close(fileManager.rename_dialog)
+                                        UIManager:close(file_manager.rename_dialog)
                                     end,
                                 },
                                 {
                                     text = _("Rename"),
                                     enabled = true,
                                     callback = function()
-                                        renameFile(file)
-                                        self:refreshPath()
-                                        UIManager:close(fileManager.rename_dialog)
+                                        if file_manager.rename_dialog:getInputText() ~= "" then
+                                            renameFile(file)
+                                            UIManager:close(file_manager.rename_dialog)
+                                        end
                                     end,
                                 },
                             }},
                         }
-                        UIManager:show(fileManager.rename_dialog)
-                        fileManager.rename_dialog:onShowKeyboard()
+                        UIManager:show(file_manager.rename_dialog)
+                        file_manager.rename_dialog:onShowKeyboard()
                     end,
                 }
             },
@@ -317,7 +282,7 @@ function FileManager:setupLayout()
             },
         }
 
-        if lfs.attributes(file, "mode") == "file" and Device:canExecuteScript(file) then
+        if is_file and Device:canExecuteScript(file) then
             -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
             table.insert(buttons[3],
                 {
@@ -358,23 +323,23 @@ function FileManager:setupLayout()
             )
         end
 
-        if lfs.attributes(file, "mode") == "file" then
+        if is_file then
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
-                    enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1 or fileManager.texteditor,
+                    enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1 or file_manager.texteditor,
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local one_time_providers = {}
-                        if fileManager.texteditor then
+                        if file_manager.texteditor then
                             table.insert(one_time_providers, {
                                 provider_name = _("Text editor"),
                                 callback = function()
-                                    fileManager.texteditor:checkEditFile(file)
+                                    file_manager.texteditor:checkEditFile(file)
                                 end,
                             })
                         end
-                        self:showSetProviderButtons(file, FileManager.instance, ReaderUI, one_time_providers)
+                        self:showSetProviderButtons(file, one_time_providers)
                     end,
                 },
                 {
@@ -419,11 +384,11 @@ function FileManager:setupLayout()
                 })
             end
         end
-        if lfs.attributes(file, "mode") == "directory" then
+        if is_folder then
             local realpath = BaseUtil.realpath(file)
             table.insert(buttons, {
                 {
-                    text = _("Set as HOME directory"),
+                    text = _("Set as HOME folder"),
                     callback = function()
                         setHome(realpath)
                         UIManager:close(self.file_dialog)
@@ -433,7 +398,7 @@ function FileManager:setupLayout()
         end
 
         local title
-        if lfs.attributes(file, "mode") == "directory" then
+        if is_folder then
             title = BD.directory(file:match("([^/]+)$"))
         else
             title = BD.filename(file:match("([^/]+)$"))
@@ -449,7 +414,7 @@ function FileManager:setupLayout()
     end
 
     self.layout = VerticalGroup:new{
-        self.banner,
+        self.title_bar,
         file_chooser,
     }
 
@@ -477,26 +442,38 @@ function FileManager:setupLayout()
     end
 end
 
+function FileManager:registerModule(name, ui_module, always_active)
+    if name then
+        self[name] = ui_module
+        ui_module.name = "filemanager" .. name
+    end
+    table.insert(self, ui_module)
+    if always_active then
+        -- to get events even when hidden
+        table.insert(self.active_widgets, ui_module)
+    end
+end
+
+-- NOTE: The only thing that will *ever* instantiate a new FileManager object is our very own showFiles below!
 function FileManager:init()
     self:setupLayout()
+    self.active_widgets = {}
 
-    local screenshoter = Screenshoter:new{ prefix = 'FileManager' }
-    table.insert(self, screenshoter) -- for regular events
-    self.active_widgets = { screenshoter } -- to get events even when hidden
+    self:registerModule("screenshot", Screenshoter:new{
+        prefix = 'FileManager',
+        ui = self,
+    }, true)
 
-    table.insert(self, self.menu)
-    table.insert(self, FileManagerHistory:new{
-        ui = self,
-    })
-    table.insert(self, FileManagerCollection:new{
-        ui = self,
-    })
-    table.insert(self, FileManagerFileSearcher:new{ ui = self })
-    table.insert(self, FileManagerShortcuts:new{ ui = self })
-    table.insert(self, ReaderDictionary:new{ ui = self })
-    table.insert(self, ReaderWikipedia:new{ ui = self })
-    table.insert(self, ReaderDeviceStatus:new{ ui = self })
-    table.insert(self, DeviceListener:new{ ui = self })
+    self:registerModule("menu", self.menu)
+    self:registerModule("history", FileManagerHistory:new{ ui = self })
+    self:registerModule("collections", FileManagerCollection:new{ ui = self })
+    self:registerModule("filesearcher", FileManagerFileSearcher:new{ ui = self })
+    self:registerModule("folder_shortcuts", FileManagerShortcuts:new{ ui = self })
+    self:registerModule("languagesupport", LanguageSupport:new{ ui = self })
+    self:registerModule("dictionary", ReaderDictionary:new{ ui = self })
+    self:registerModule("wikipedia", ReaderWikipedia:new{ ui = self })
+    self:registerModule("devicestatus", ReaderDeviceStatus:new{ ui = self })
+    self:registerModule("devicelistener", DeviceListener:new{ ui = self })
 
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
@@ -505,10 +482,8 @@ function FileManager:init()
                 plugin_module, { ui = self, })
             -- Keep references to the modules which do not register into menu.
             if ok then
-                local name = plugin_module.name
-                if name then self[name] = plugin_or_err end
-                table.insert(self, plugin_or_err)
-                logger.info("FM loaded plugin", name,
+                self:registerModule(plugin_module.name, plugin_or_err)
+                logger.dbg("FM loaded plugin", plugin_module.name,
                             "at", plugin_module.path)
             end
         end
@@ -519,12 +494,22 @@ function FileManager:init()
         table.insert(self, NetworkListener:new{ ui = self })
     end
 
+    self:initGesListener()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
+
+    -- NOTE: ReaderUI has a _getRunningInstance method for this, because it used to store the instance reference in a private module variable.
+    if FileManager.instance == nil then
+        logger.dbg("Spinning up new FileManager instance", tostring(self))
+    else
+        -- Should never happen, given what we did in showFiles...
+        logger.err("FileManager instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(FileManager.instance), debug.traceback())
+    end
+    FileManager.instance = self
 end
 
 function FileChooser:onBack()
-    local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-    local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager") or "default"
+    local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
+    local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager", "default")
     if back_in_filemanager == "default" then
         if back_to_exit == "always" then
             return self:onClose()
@@ -547,11 +532,6 @@ function FileChooser:onBack()
     end
 end
 
-function FileManager:onShowPlusMenu()
-    self:tapPlus()
-    return true
-end
-
 function FileManager:onSwipeFM(ges)
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
@@ -562,135 +542,248 @@ function FileManager:onSwipeFM(ges)
     return true
 end
 
+function FileManager:onShowPlusMenu()
+    self:tapPlus()
+    return true
+end
+
+function FileManager:onToggleSelectMode()
+    logger.dbg("toggle select mode")
+    self.select_mode = not self.select_mode
+    self.selected_files = self.select_mode and {} or nil
+    self.title_bar:setRightIcon(self.select_mode and "check" or "plus")
+    self:onRefresh()
+end
+
 function FileManager:tapPlus()
-    local buttons = {
-        {
+    local title, buttons
+    if self.select_mode then
+        local select_count = util.tableSize(self.selected_files)
+        local actions_enabled = select_count > 0
+        title = actions_enabled and T(N_("1 file selected", "%1 files selected", select_count), select_count)
+            or _("No files selected")
+        buttons = {
             {
-                text = _("New folder"),
-                callback = function()
-                    UIManager:close(self.file_dialog)
-                    self.input_dialog = InputDialog:new{
-                        title = _("Create new folder"),
-                        input_type = "text",
-                        buttons = {
-                            {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        self:closeInputDialog()
-                                    end,
-                                },
-                                {
-                                    text = _("Create"),
-                                    callback = function()
-                                        self:closeInputDialog()
-                                        local new_folder = self.input_dialog:getInputText()
-                                        if new_folder and new_folder ~= "" then
-                                            self:createFolder(self.file_chooser.path, new_folder)
-                                        end
-                                    end,
-                                },
-                            }
-                        },
-                    }
-                    UIManager:show(self.input_dialog)
-                    self.input_dialog:onShowKeyboard()
-                end,
+                {
+                    text = _("Select all files in folder"),
+                    callback = function()
+                        self.file_chooser:selectAllFilesInFolder()
+                        self:onRefresh()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+                {
+                    text = _("Copy"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Copy selected files to the current folder?"),
+                            ok_text = _("Copy"),
+                            ok_callback = function()
+                                self.cutfile = false
+                                for file in pairs(self.selected_files) do
+                                    self.clipboard = file
+                                    self:pasteHere(self.file_chooser.path)
+                                end
+                                self:onToggleSelectMode()
+                                UIManager:close(self.file_dialog)
+                            end,
+                        })
+                    end
+                },
             },
-        },
-        {
             {
-                text = _("Paste"),
-                enabled = self.clipboard and true or false,
-                callback = function()
-                    self:pasteHere(self.file_chooser.path)
-                    self:onRefresh()
-                    UIManager:close(self.file_dialog)
-                end,
+                {
+                    text = _("Deselect all"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        self.selected_files = {}
+                        self:onRefresh()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+                {
+                    text = _("Move"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Move selected files to the current folder?"),
+                            ok_text = _("Move"),
+                            ok_callback = function()
+                                self.cutfile = true
+                                for file in pairs(self.selected_files) do
+                                    self.clipboard = file
+                                    self:pasteHere(self.file_chooser.path)
+                                end
+                                self:onToggleSelectMode()
+                                UIManager:close(self.file_dialog)
+                            end,
+                        })
+                    end
+                },
             },
-        },
-        {
             {
-                text = _("Set as HOME directory"),
-                callback = function()
-                    self:setHome(self.file_chooser.path)
-                    UIManager:close(self.file_dialog)
-                end
-            }
-        },
-        {
+                {
+                    text = _("Exit select mode"),
+                    callback = function()
+                        self:onToggleSelectMode()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+                {
+                    text = _("Delete"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Delete selected files?\nIf you delete a file, it is permanently lost."),
+                            ok_text = _("Delete"),
+                            ok_callback = function()
+                                local readhistory = require("readhistory")
+                                for file in pairs(self.selected_files) do
+                                    self:deleteFile(file)
+                                    readhistory:fileDeleted(file)
+                                end
+                                self:onToggleSelectMode()
+                                UIManager:close(self.file_dialog)
+                            end,
+                        })
+                    end
+                },
+            },
+            {},
             {
-                text = _("Go to HOME directory"),
-                callback = function()
-                    self:goHome()
-                    UIManager:close(self.file_dialog)
-                end
-            }
-        },
-        {
+                {
+                    text = _("New folder"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        self:createFolder()
+                    end,
+                },
+                {
+                    text = _("Folder shortcuts"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        self:handleEvent(Event:new("ShowFolderShortcutsDialog"))
+                    end
+                },
+            },
+        }
+    else
+        title = BD.dirpath(filemanagerutil.abbreviate(self.file_chooser.path))
+        buttons = {
             {
-                text = _("Open random document"),
-                callback = function()
-                    self:openRandomFile(self.file_chooser.path)
-                    UIManager:close(self.file_dialog)
-                end
-            }
-        },
-        {
+                {
+                    text = _("Select files"),
+                    callback = function()
+                        self:onToggleSelectMode()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+            },
             {
-                text = _("Folder shortcuts"),
-                callback = function()
-                    self:handleEvent(Event:new("ShowFolderShortcutsDialog"))
-                    UIManager:close(self.file_dialog)
-                end
+                {
+                    text = _("New folder"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        self:createFolder()
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Paste"),
+                    enabled = self.clipboard and true or false,
+                    callback = function()
+                        self:pasteHere(self.file_chooser.path)
+                        self:onRefresh()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Set as HOME folder"),
+                    callback = function()
+                        self:setHome(self.file_chooser.path)
+                        UIManager:close(self.file_dialog)
+                    end
+                }
+            },
+            {
+                {
+                    text = _("Go to HOME folder"),
+                    callback = function()
+                        self:goHome()
+                        UIManager:close(self.file_dialog)
+                    end
+                }
+            },
+            {
+                {
+                    text = _("Open random document"),
+                    callback = function()
+                        self:openRandomFile(self.file_chooser.path)
+                        UIManager:close(self.file_dialog)
+                    end
+                }
+            },
+            {
+                {
+                    text = _("Folder shortcuts"),
+                    callback = function()
+                        self:handleEvent(Event:new("ShowFolderShortcutsDialog"))
+                        UIManager:close(self.file_dialog)
+                    end
+                }
             }
         }
-    }
 
-    if Device:canImportFiles() then
-        table.insert(buttons, 3, {
-            {
-                text = _("Import files here"),
-                enabled = Device:isValidPath(self.file_chooser.path),
-                callback = function()
-                    local current_dir = self.file_chooser.path
-                    UIManager:close(self.file_dialog)
-                    Device.importFile(current_dir)
-                end,
-            },
-        })
-    end
-
-    if Device:hasExternalSD() then
-        table.insert(buttons, 4, {
-            {
-                text_func = function()
-                    if Device:isValidPath(self.file_chooser.path) then
-                        return _("Switch to SDCard")
-                    else
-                        return _("Switch to internal storage")
-                    end
-                end,
-                callback = function()
-                    if Device:isValidPath(self.file_chooser.path) then
-                        local ok, sd_path = Device:hasExternalSD()
+        if Device:canImportFiles() then
+            table.insert(buttons, 4, {
+                {
+                    text = _("Import files here"),
+                    enabled = Device:isValidPath(self.file_chooser.path),
+                    callback = function()
+                        local current_dir = self.file_chooser.path
                         UIManager:close(self.file_dialog)
-                        if ok then
-                            self.file_chooser:changeToPath(sd_path)
+                        Device.importFile(current_dir)
+                    end,
+                },
+            })
+        end
+
+        if Device:hasExternalSD() then
+            table.insert(buttons, 5, {
+                {
+                    text_func = function()
+                        if Device:isValidPath(self.file_chooser.path) then
+                            return _("Switch to SDCard")
+                        else
+                            return _("Switch to internal storage")
                         end
-                    else
-                        UIManager:close(self.file_dialog)
-                        self.file_chooser:changeToPath(Device.home_dir)
-                    end
-                end,
-            },
-        })
+                    end,
+                    callback = function()
+                        if Device:isValidPath(self.file_chooser.path) then
+                            local ok, sd_path = Device:hasExternalSD()
+                            UIManager:close(self.file_dialog)
+                            if ok then
+                                self.file_chooser:changeToPath(sd_path)
+                            end
+                        else
+                            UIManager:close(self.file_dialog)
+                            self.file_chooser:changeToPath(Device.home_dir)
+                        end
+                    end,
+                },
+            })
+        end
     end
 
     self.file_dialog = ButtonDialogTitle:new{
-        title = BD.dirpath(filemanagerutil.abbreviate(self.file_chooser.path)),
+        title = title,
         title_align = "center",
         buttons = buttons,
+        select_mode = self.select_mode, -- for coverbrowser
     }
     UIManager:show(self.file_dialog)
 end
@@ -714,11 +807,14 @@ function FileManager:reinit(path, focused_file)
     -- looks unnecessary (cheap with classic mode, less cheap with
     -- CoverBrowser plugin's cover image renderings)
     -- self:onRefresh()
+    if self.select_mode then
+        self.title_bar:setRightIcon("check")
+    end
 end
 
 function FileManager:getCurrentDir()
-    if self.instance then
-        return self.instance.file_chooser.path
+    if FileManager.instance then
+        return FileManager.instance.file_chooser.path
     end
 end
 
@@ -744,13 +840,35 @@ end
 
 function FileManager:onClose()
     logger.dbg("close filemanager")
+    PluginLoader:finalize()
     self:handleEvent(Event:new("SaveSettings"))
     G_reader_settings:flush()
     UIManager:close(self)
-    if self.onExit then
-        self:onExit()
-    end
     return true
+end
+
+function FileManager:onCloseWidget()
+    if FileManager.instance == self then
+        logger.dbg("Tearing down FileManager", tostring(self))
+    else
+        logger.warn("FileManager instance mismatch! Closed", tostring(self), "while the active one is supposed to be", tostring(FileManager.instance))
+    end
+    FileManager.instance = nil
+end
+
+function FileManager:onShowingReader()
+    -- Allows us to optimize out a few useless refreshes in various CloseWidgets handlers...
+    self.tearing_down = true
+    -- Clear the dither flag to prevent it from infecting the queue and re-inserting a full-screen refresh...
+    self.dithered = nil
+
+    self:onClose()
+end
+
+-- Same as above, except we don't close it yet. Useful for plugins that need to close custom Menus before calling showReader.
+function FileManager:onSetupShowReader()
+    self.tearing_down = true
+    self.dithered = nil
 end
 
 function FileManager:onRefresh()
@@ -759,19 +877,7 @@ function FileManager:onRefresh()
 end
 
 function FileManager:goHome()
-    local home_dir = G_reader_settings:readSetting("home_dir")
-    if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory"  then
-        -- Try some sane defaults, depending on platform
-        home_dir = Device.home_dir
-    end
-    if home_dir then
-        -- Jump to the first page if we're already home
-        if self.file_chooser.path and home_dir == self.file_chooser.path then
-            self.file_chooser:onGotoPage(1)
-        else
-            self.file_chooser:changeToPath(home_dir)
-        end
-    else
+    if not self.file_chooser:goHome() then
         self:setHome()
     end
     return true
@@ -780,7 +886,7 @@ end
 function FileManager:setHome(path)
     path = path or self.file_chooser.path
     UIManager:show(ConfirmBox:new{
-        text = T(_("Set '%1' as HOME directory?"), BD.dirpath(path)),
+        text = T(_("Set '%1' as HOME folder?"), BD.dirpath(path)),
         ok_text = _("Set as HOME"),
         ok_callback = function()
             G_reader_settings:saveSetting("home_dir", path)
@@ -796,9 +902,8 @@ function FileManager:openRandomFile(dir)
             text = T(_("Do you want to open %1?"), BD.filename(BaseUtil.basename(random_file))),
             choice1_text = _("Open"),
             choice1_callback = function()
-                FileManager.instance:onClose()
+                local ReaderUI = require("apps/reader/readerui")
                 ReaderUI:showReader(random_file)
-
             end,
             -- @translators Another file. This is a button on the open random file dialog. It presents a file with the choices Open/Another.
             choice2_text = _("Another"),
@@ -827,6 +932,7 @@ end
 function FileManager:pasteHere(file)
     if self.clipboard then
         file = BaseUtil.realpath(file)
+        local orig_basename = BaseUtil.basename(self.clipboard)
         local orig = BaseUtil.realpath(self.clipboard)
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
@@ -836,15 +942,10 @@ function FileManager:pasteHere(file)
             if DocSettings:hasSidecarFile(orig) then
                 BaseUtil.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
             end
-            if BaseUtil.execute(self.cp_bin, "-r", orig, dest) == 0 then
+            if BaseUtil.execute(self.cp_bin, "-r", orig, dest) ~= 0 then
                 UIManager:show(InfoMessage:new {
-                    text = T(_("Copied to: %1"), BD.dirpath(dest)),
-                    timeout = 2,
-                })
-            else
-                UIManager:show(InfoMessage:new {
-                    text = T(_("An error occurred while trying to copy %1"), BD.filepath(orig)),
-                    timeout = 2,
+                    text = T(_("Failed to copy:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
+                    icon = "notice-warning",
                 })
             end
         end
@@ -859,14 +960,10 @@ function FileManager:pasteHere(file)
                 local dest_file = string.format("%s/%s", dest, BaseUtil.basename(orig))
                 require("readhistory"):updateItemByPath(orig, dest_file) -- (will update "lastfile" if needed)
                 ReadCollection:updateItemByPath(orig, dest_file)
-                UIManager:show(InfoMessage:new {
-                    text = T(_("Moved to: %1"), BD.dirpath(dest)),
-                    timeout = 2,
-                })
             else
                 UIManager:show(InfoMessage:new {
-                    text = T(_("An error occurred while trying to move %1"), BD.filepath(orig)),
-                    timeout = 2,
+                    text = T(_("Failed to move:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
+                    icon = "notice-warning",
                 })
             end
         end
@@ -882,9 +979,9 @@ function FileManager:pasteHere(file)
         if mode == "file" or mode == "directory" then
             local text
             if mode == "file" then
-                text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filename(basename))
+                text = T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(basename))
             else
-                text = T(_("The directory %1 already exists. Do you want to overwrite it?"), BD.directory(basename))
+                text = T(_("Folder already exists:\n%1\nOverwrite folder?"), BD.directory(basename))
             end
 
             UIManager:show(ConfirmBox:new {
@@ -904,20 +1001,51 @@ function FileManager:pasteHere(file)
     end
 end
 
-function FileManager:createFolder(curr_folder, new_folder)
-    local folder = string.format("%s/%s", curr_folder, new_folder)
-    local code = BaseUtil.execute(self.mkdir_bin, folder)
-    local text
-    if code == 0 then
-        self:onRefresh()
-        text = T(_("Folder created:\n%1"), BD.directory(new_folder))
-    else
-        text = _("The folder has not been created.")
-    end
-    UIManager:show(InfoMessage:new{
-        text = text,
-        timeout = 2,
-    })
+function FileManager:createFolder()
+    local input_dialog, check_button_enter_folder
+    input_dialog = InputDialog:new{
+        title = _("New folder"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Create"),
+                    is_enter_default = true,
+                    callback = function()
+                        local new_folder_name = input_dialog:getInputText()
+                        if new_folder_name == "" then return end
+                        UIManager:close(input_dialog)
+                        local new_folder = string.format("%s/%s", self.file_chooser.path, new_folder_name)
+                        if BaseUtil.execute(self.mkdir_bin, new_folder) == 0 then
+                            if check_button_enter_folder.checked then
+                                self.file_chooser:changeToPath(new_folder)
+                            else
+                                self.file_chooser:refreshPath()
+                            end
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Failed to create folder:\n%1"), BD.directory(new_folder_name)),
+                                icon = "notice-warning",
+                            })
+                        end
+                    end,
+                },
+            }
+        },
+    }
+    check_button_enter_folder = CheckButton:new{
+        text = _("Enter folder after creation"),
+        checked = false,
+        parent = input_dialog,
+    }
+    input_dialog:addWidget(check_button_enter_folder)
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
 end
 
 function FileManager:deleteFile(file)
@@ -925,7 +1053,8 @@ function FileManager:deleteFile(file)
     local file_abs_path = BaseUtil.realpath(file)
     if file_abs_path == nil then
         UIManager:show(InfoMessage:new{
-            text = T(_("File %1 not found"), BD.filepath(file)),
+            text = T(_("File not found:\n%1"), BD.filepath(file)),
+            icon = "notice-warning",
         })
         return
     end
@@ -948,52 +1077,83 @@ function FileManager:deleteFile(file)
             doc_settings:purge()
         end
         ReadCollection:removeItemByPath(file, is_dir)
-        UIManager:show(InfoMessage:new{
-            text = T(_("Deleted %1"), BD.filepath(file)),
-            timeout = 2,
-        })
     else
         UIManager:show(InfoMessage:new{
-            text = T(_("An error occurred while trying to delete %1"), BD.filepath(file)),
+            text = T(_("Failed to delete:\n%1"), BD.filepath(file)),
+            icon = "notice-warning",
         })
     end
 end
 
 function FileManager:renameFile(file)
-    if BaseUtil.basename(file) ~= self.rename_dialog:getInputText() then
-        local dest = BaseUtil.joinPath(BaseUtil.dirname(file), self.rename_dialog:getInputText())
-        if self:moveFile(file, dest) then
-            require("readhistory"):updateItemByPath(file, dest) -- (will update "lastfile" if needed)
-            ReadCollection:updateItemByPath(file, dest)
-            if lfs.attributes(dest, "mode") == "file" then
-                local doc = require("docsettings")
-                local move_history = true;
-                if lfs.attributes(doc:getHistoryPath(file), "mode") == "file" and
-                   not self:moveFile(doc:getHistoryPath(file), doc:getHistoryPath(dest)) then
-                   move_history = false
+    local basename = self.rename_dialog:getInputText()
+    if BaseUtil.basename(file) ~= basename then
+        local dest = BaseUtil.joinPath(BaseUtil.dirname(file), basename)
+        local function doRenameFile()
+            if self:moveFile(file, dest) then
+                require("readhistory"):updateItemByPath(file, dest) -- (will update "lastfile" if needed)
+                ReadCollection:updateItemByPath(file, dest)
+                if lfs.attributes(dest, "mode") == "file" then
+                    local doc = require("docsettings")
+                    local move_history = true
+                    if lfs.attributes(doc:getHistoryPath(file), "mode") == "file" and
+                       not self:moveFile(doc:getHistoryPath(file), doc:getHistoryPath(dest)) then
+                       move_history = false
+                    end
+                    if lfs.attributes(doc:getSidecarDir(file), "mode") == "directory" and
+                       not self:moveFile(doc:getSidecarDir(file), doc:getSidecarDir(dest)) then
+                       move_history = false
+                    end
+                    if not move_history then
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Renamed file:\n%1\nto:\n%2\n\nFailed to move history data.\nThe reading history may be lost."),
+                                BD.filepath(file), BD.filepath(dest)),
+                            icon = "notice-warning",
+                        })
+                    end
                 end
-                if lfs.attributes(doc:getSidecarDir(file), "mode") == "directory" and
-                   not self:moveFile(doc:getSidecarDir(file), doc:getSidecarDir(dest)) then
-                   move_history = false
-                end
-                if move_history then
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Renamed from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
-                        timeout = 2,
-                    })
+            else
+                UIManager:show(InfoMessage:new{
+                    text = T(_("Failed to rename:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
+                    icon = "notice-warning",
+                })
+            end
+        end
+
+        local mode_dest = lfs.attributes(dest, "mode")
+        local mode_file = lfs.attributes(file, "mode")
+        if mode_dest then
+            local text, ok_text
+            if mode_dest ~= mode_file then
+                if mode_file == "file" then
+                    text = T(_("Folder already exists:\n%1\nFile cannot be renamed."), BD.directory(basename))
                 else
-                    UIManager:show(InfoMessage:new{
-                        text = T(
-                            _("Failed to move history data of %1 to %2.\nThe reading history may be lost."),
-                            BD.filepath(file), BD.filepath(dest)),
-                    })
+                    text = T(_("File already exists:\n%1\nFolder cannot be renamed."), BD.filename(basename))
                 end
+                UIManager:show(InfoMessage:new {
+                    text = text,
+                    icon = "notice-warning",
+                })
+            else
+                if mode_file == "file" then
+                    text = T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(basename))
+                    ok_text = _("Overwrite")
+                else
+                    text = T(_("Folder already exists:\n%1\nMove the folder inside it?"), BD.directory(basename))
+                    ok_text = _("Move")
+                end
+                UIManager:show(ConfirmBox:new {
+                    text = text,
+                    ok_text = ok_text,
+                    ok_callback = function()
+                        doRenameFile()
+                        self:onRefresh()
+                    end,
+                })
             end
         else
-            UIManager:show(InfoMessage:new{
-                text = T(
-                    _("Failed to rename from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
-            })
+            doRenameFile()
+            self:onRefresh()
         end
     end
 end
@@ -1002,7 +1162,7 @@ function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
         strcoll = {_("filename"), _("Sort by filename")},
-        numeric = {_("numeric"), _("Sort by filename (natural sorting)")},
+        natural = {_("natural"), _("Sort by filename (natural sorting)")},
         strcoll_mixed = {_("name mixed"), _("Sort by name – mixed files and folders")},
         access = {_("date read"), _("Sort by last read date")},
         change = {_("date added"), _("Sort by date added")},
@@ -1038,7 +1198,7 @@ function FileManager:getSortingMenuTable()
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
-            set_collate_table("numeric"),
+            set_collate_table("natural"),
             set_collate_table("strcoll_mixed"),
             set_collate_table("access"),
             set_collate_table("change"),
@@ -1098,7 +1258,15 @@ function FileManager:getStartWithMenuTable()
     }
 end
 
+--- @note: This is the *only* safe way to instantiate a new FileManager instance!
 function FileManager:showFiles(path, focused_file)
+    -- Warn about and close any pre-existing FM instances first...
+    if FileManager.instance then
+        logger.warn("FileManager instance mismatch! Tried to spin up a new instance, while we still have an existing one:", tostring(FileManager.instance))
+        -- Close the old one first!
+        FileManager.instance:onClose()
+    end
+
     path = path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
     self:setRotationMode()
@@ -1107,12 +1275,8 @@ function FileManager:showFiles(path, focused_file)
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         root_path = path,
         focused_file = focused_file,
-        onExit = function()
-            self.instance = nil
-        end
     }
     UIManager:show(file_manager)
-    self.instance = file_manager
 end
 
 --- A shortcut to execute mv.
@@ -1135,6 +1299,10 @@ end
 
 function FileManager:onHome()
     return self:goHome()
+end
+
+function FileManager:onRefreshContent()
+    self:onRefresh()
 end
 
 return FileManager

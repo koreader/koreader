@@ -64,11 +64,10 @@ function BookInfo:show(file, book_props)
     table.insert(kv_pairs, { _("Format:"), filetype:upper() })
     table.insert(kv_pairs, { _("Size:"), size })
     table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", file_modification) })
-    table.insert(kv_pairs, { _("Directory:"), BD.dirpath(filemanagerutil.abbreviate(directory)) })
-    table.insert(kv_pairs, "----")
+    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(directory)), separator = true })
 
     -- book_props may be provided if caller already has them available
-    -- but it may lack 'pages', that we may get from sidecar file
+    -- but it may lack "pages", that we may get from sidecar file
     if not book_props or not book_props.pages then
         -- check there is actually a sidecar file before calling DocSettings:open()
         -- that would create an empty sidecar directory
@@ -76,24 +75,24 @@ function BookInfo:show(file, book_props)
             local doc_settings = DocSettings:open(file)
             if doc_settings then
                 if not book_props then
-                    -- Files opened after 20170701 have a 'doc_props' setting with
-                    -- complete metadata and 'doc_pages' with accurate nb of pages
-                    book_props = doc_settings:readSetting('doc_props')
+                    -- Files opened after 20170701 have a "doc_props" setting with
+                    -- complete metadata and "doc_pages" with accurate nb of pages
+                    book_props = doc_settings:readSetting("doc_props")
                 end
                 if not book_props then
-                    -- File last opened before 20170701 may have a 'stats' setting
+                    -- File last opened before 20170701 may have a "stats" setting.
                     -- with partial metadata, or empty metadata if statistics plugin
                     -- was not enabled when book was read (we can guess that from
                     -- the fact that stats.page = 0)
-                    local stats = doc_settings:readSetting('stats')
+                    local stats = doc_settings:readSetting("stats")
                     if stats and stats.pages ~= 0 then
                         -- Let's use them as is (which was what was done before), even if
                         -- incomplete, to avoid expensive book opening
                         book_props = stats
                     end
                 end
-                -- Files opened after 20170701 have an accurate 'doc_pages' setting
-                local doc_pages = doc_settings:readSetting('doc_pages')
+                -- Files opened after 20170701 have an accurate "doc_pages" setting.
+                local doc_pages = doc_settings:readSetting("doc_pages")
                 if doc_pages and book_props then
                     book_props.pages = doc_pages
                 end
@@ -101,7 +100,7 @@ function BookInfo:show(file, book_props)
         end
     end
 
-    -- If still no book_props (book never opened or empty 'stats'), open the
+    -- If still no book_props (book never opened or empty "stats"), open the
     -- document to get them
     if not book_props then
         local document = DocumentRegistry:openDocument(file)
@@ -127,7 +126,7 @@ function BookInfo:show(file, book_props)
                 book_props = document:getProps()
                 book_props.pages = pages
             end
-            DocumentRegistry:closeDocument(file)
+            document:close()
         end
     end
 
@@ -220,7 +219,7 @@ function BookInfo:show(file, book_props)
                     fullscreen = true,
                 }
             end
-            DocumentRegistry:closeDocument(file)
+            document:close()
         end
         if not widget then
             widget = InfoMessage:new{
@@ -270,7 +269,7 @@ function BookInfo:onShowBookDescription()
         description = util.htmlToPlainTextIfHtml(description)
         local TextViewer = require("ui/widget/textviewer")
         UIManager:show(TextViewer:new{
-            title = _("Book description:"),
+            title = _("Description:"),
             text = description,
         })
     else

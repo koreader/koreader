@@ -68,6 +68,10 @@ function DjvuDocument:getProps()
     return props
 end
 
+function DjvuDocument:comparePositions(pos1, pos2)
+    return self.koptinterface:comparePositions(self, pos1, pos2)
+end
+
 function DjvuDocument:getPageTextBoxes(pageno)
     return self._document:getPageText(pageno)
 end
@@ -136,8 +140,8 @@ function DjvuDocument:findText(pattern, origin, reverse, caseInsensitive, page)
     return self.koptinterface:findText(self, pattern, origin, reverse, caseInsensitive, page)
 end
 
-function DjvuDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
-    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, render_mode)
+function DjvuDocument:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, hinting)
+    return self.koptinterface:renderPage(self, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
 end
 
 function DjvuDocument:hintPage(pageno, zoom, rotation, gamma, render_mode)
@@ -150,6 +154,8 @@ end
 
 function DjvuDocument:register(registry)
     registry:addProvider("djvu", "image/vnd.djvu", self, 100)
+    registry:addProvider("djvu", "application/djvu", self, 100) -- Alternative mimetype for OPDS.
+    registry:addProvider("djvu", "image/x-djvu", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("djv", "image/vnd.djvu", self, 100)
 end
 

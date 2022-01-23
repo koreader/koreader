@@ -1,11 +1,10 @@
-local DateWidget = require("ui/widget/datewidget")
+local DateTimeWidget = require("ui/widget/datetimewidget")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
-local TimeWidget = require("ui/widget/timewidget")
 local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = Device.screen
@@ -81,7 +80,47 @@ common_settings.time = {
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("twelve_hour_clock")
+            UIManager:broadcastEvent(Event:new("TimeFormatChanged"))
         end,
+        },
+        {
+            text_func = function ()
+                local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+                local text = duration_format == "classic" and _("Classic") or _("Modern")
+                return T(_("Duration format: %1"), text)
+            end,
+            sub_item_table = {
+                {
+                    text_func = function()
+                        local util = require('util');
+                        -- sample text shows 1:23:45
+                        local duration_format_str = util.secondsToClockDuration("classic", 5025, false);
+                        return T(_("Classic (%1)"), duration_format_str)
+                    end,
+                    checked_func = function()
+                        return G_reader_settings:readSetting("duration_format") == "classic"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("duration_format", "classic")
+                        UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
+                    end,
+                },
+                {
+                    text_func = function()
+                        local util = require('util');
+                        -- sample text shows 1h23m45s
+                        local duration_format_str = util.secondsToClockDuration("modern", 5025, false);
+                        return T(_("Modern (%1)"), duration_format_str)
+                    end,
+                    checked_func = function()
+                        return G_reader_settings:readSetting("duration_format") == "modern"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("duration_format", "modern")
+                        UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
+                    end,
+                },
+            }
         }
     }
 }
@@ -93,7 +132,8 @@ if Device:setDateTime() then
             local now_t = os.date("*t")
             local curr_hour = now_t.hour
             local curr_min = now_t.min
-            local time_widget = TimeWidget:new{
+            local time_widget = DateTimeWidget:new{
+                is_date = false,
                 hour = curr_hour,
                 min = curr_min,
                 ok_text = _("Set time"),
@@ -123,7 +163,7 @@ if Device:setDateTime() then
             local curr_year = now_t.year
             local curr_month = now_t.month
             local curr_day = now_t.day
-            local date_widget = DateWidget:new{
+            local date_widget = DateTimeWidget:new{
                 year = curr_year,
                 month = curr_month,
                 day = curr_day,
@@ -156,8 +196,8 @@ if Device:isKobo() then
             return G_reader_settings:isTrue("ignore_power_sleepcover")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("ignore_power_sleepcover")
-            G_reader_settings:flipFalse("ignore_open_sleepcover")
+            G_reader_settings:toggle("ignore_power_sleepcover")
+            G_reader_settings:makeFalse("ignore_open_sleepcover")
             UIManager:show(InfoMessage:new{
                 text = _("This will take effect on next restart."),
             })
@@ -170,8 +210,8 @@ if Device:isKobo() then
             return G_reader_settings:isTrue("ignore_open_sleepcover")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("ignore_open_sleepcover")
-            G_reader_settings:flipFalse("ignore_power_sleepcover")
+            G_reader_settings:toggle("ignore_open_sleepcover")
+            G_reader_settings:makeFalse("ignore_power_sleepcover")
             UIManager:show(InfoMessage:new{
                 text = _("This will take effect on next restart."),
             })
@@ -197,17 +237,21 @@ common_settings.screen = {
 common_settings.screen_rotation = require("ui/elements/screen_rotation_menu_table")
 common_settings.screen_dpi = require("ui/elements/screen_dpi_menu_table")
 common_settings.screen_eink_opt = require("ui/elements/screen_eink_opt_menu_table")
-common_settings.menu_activate = require("ui/elements/menu_activate")
-common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
-common_settings.ignore_hold_corners = {
-    text = _("Ignore hold on corners"),
-    checked_func = function()
-        return G_reader_settings:isTrue("ignore_hold_corners")
-    end,
-    callback = function()
-        UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
-    end,
-}
+common_settings.screen_notification = require("ui/elements/screen_notification_menu_table")
+
+if Device:isTouchDevice() then
+    common_settings.menu_activate = require("ui/elements/menu_activate")
+    common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
+    common_settings.ignore_hold_corners = {
+        text = _("Ignore long-press on corners"),
+        checked_func = function()
+            return G_reader_settings:isTrue("ignore_hold_corners")
+        end,
+        callback = function()
+            UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
+        end,
+    }
+end
 
 -- NOTE: Allow disabling color if it's mistakenly enabled on a Grayscale screen (after a settings import?)
 if Screen:isColorEnabled() or Screen:isColorScreen() then
@@ -290,7 +334,7 @@ end
 
 if Device:isTouchDevice() then
     common_settings.keyboard_layout = {
-        text = _("Keyboard layout"),
+        text = _("Keyboard"),
         sub_item_table = require("ui/elements/menu_keyboard_layout"),
     }
     common_settings.taps_and_gestures = {
@@ -306,83 +350,77 @@ local back_to_exit_str = {
     always = {_("Always"), _("always")},
     disable ={_("Disable"), _("disable")},
 }
+local function genGenericMenuEntry(title, setting, value, default)
+    return {
+        text = title,
+        checked_func = function()
+            return G_reader_settings:readSetting(setting, default) == value
+        end,
+        callback = function()
+            G_reader_settings:saveSetting(setting, value)
+        end,
+    }
+end
+
 common_settings.back_to_exit = {
     text_func = function()
-        local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-        return T(_("Back to exit (%1)"),
-                 back_to_exit_str[back_to_exit][2])
+        local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt") -- set "back_to_exit" to "prompt"
+        return T(_("Back to exit: %1"), back_to_exit_str[back_to_exit][2])
     end,
     sub_item_table = {
-        {
-            text = back_to_exit_str.prompt[1],
-            checked_func = function()
-                local setting = G_reader_settings:readSetting("back_to_exit")
-                return setting == "prompt" or setting == nil
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_to_exit", "prompt")
-            end,
-        },
-        {
-            text = back_to_exit_str.always[1],
-            checked_func = function()
-                return G_reader_settings:readSetting("back_to_exit")
-                           == "always"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_to_exit", "always")
-            end,
-        },
-        {
-            text = back_to_exit_str.disable[1],
-            checked_func = function()
-                return G_reader_settings:readSetting("back_to_exit")
-                           == "disable"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_to_exit", "disable")
-            end,
-        },
+        genGenericMenuEntry(back_to_exit_str.prompt[1], "back_to_exit", "prompt"),
+        genGenericMenuEntry(back_to_exit_str.always[1], "back_to_exit", "always"),
+        genGenericMenuEntry(back_to_exit_str.disable[1], "back_to_exit", "disable"),
     },
 }
 common_settings.back_in_filemanager = {
-    text = _("Back in file browser"),
+    text_func = function()
+        local menu_info = ""
+        local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager", "default") -- set "back_in_filemanager" to "default"
+        if back_in_filemanager == "default" then
+            menu_info = _("back to exit")
+        elseif back_in_filemanager == "parent_folder" then
+            menu_info = _("parent folder")
+        end
+        return T(_("Back in file browser: %1"), menu_info)
+    end,
     sub_item_table = {
         {
             text_func = function()
-                local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-                return T(_("Back to exit (%1)"),
-                         back_to_exit_str[back_to_exit][2])
+                local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
+                return T(_("Back to exit (%1)"), back_to_exit_str[back_to_exit][2])
             end,
             checked_func = function()
-                local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager")
-                return back_in_filemanager == nil or back_in_filemanager == "default"
+                return G_reader_settings:readSetting("back_in_filemanager", "default") == "default"
             end,
             callback = function()
                 G_reader_settings:saveSetting("back_in_filemanager", "default")
             end,
         },
-        {
-            text = _("Go to parent folder"),
-            checked_func = function()
-                return G_reader_settings:readSetting("back_in_filemanager")
-                           == "parent_folder"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_in_filemanager", "parent_folder")
-            end,
-        },
+        genGenericMenuEntry(_("Go to parent folder"), "back_in_filemanager", "parent_folder"),
     },
 }
 common_settings.back_in_reader = {
     -- All these options are managed by ReaderBack
-    text = _("Back in reader"),
+    text_func = function()
+        local menu_info = ""
+        local back_in_reader = G_reader_settings:readSetting("back_in_reader", "previous_location") -- set "back_in_reader" to "previous_location"
+        if back_in_reader == "default" then
+            menu_info = _("back to exit")
+        elseif back_in_reader == "filebrowser" then
+            menu_info = _("file browser")
+        elseif back_in_reader == "previous_location" then
+            menu_info = _("previous location")
+        elseif back_in_reader == "previous_read_page" then
+            menu_info = _("previous read page")
+        end
+        return T(_("Back in reader: %1"), menu_info)
+    end,
     sub_item_table = {
         {
             text_func = function()
-                local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-                return T(_("Back to exit (%1)"),
-                         back_to_exit_str[back_to_exit][2])
+                local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
+                return T(_("Back to exit (%1)"), back_to_exit_str[back_to_exit][2])
             end,
             checked_func = function()
                 return G_reader_settings:readSetting("back_in_reader") == "default"
@@ -391,51 +429,23 @@ common_settings.back_in_reader = {
                 G_reader_settings:saveSetting("back_in_reader", "default")
             end,
         },
-        {
-            text = _("Go to file browser"),
-            checked_func = function()
-                return G_reader_settings:readSetting("back_in_reader") == "filebrowser"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_in_reader", "filebrowser")
-            end,
-        },
-        {
-            text = _("Go to previous location"),
-            checked_func = function()
-                local back_in_reader = G_reader_settings:readSetting("back_in_reader")
-                return back_in_reader == "previous_location" or back_in_reader == nil
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_in_reader", "previous_location")
-            end,
-        },
-        {
-            text = _("Go to previous read page"),
-            checked_func = function()
-                return G_reader_settings:readSetting("back_in_reader") == "previous_read_page"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_in_reader", "previous_read_page")
-            end,
-        },
+        genGenericMenuEntry(_("Go to file browser"), "back_in_reader", "filebrowser"),
+        genGenericMenuEntry(_("Go to previous location"), "back_in_reader", "previous_location"),
+        genGenericMenuEntry(_("Go to previous read page"), "back_in_reader", "previous_read_page"),
     },
 }
-if Device:hasKeys() then
-    common_settings.invert_page_turn_buttons = {
-        text = _("Invert page turn buttons"),
+common_settings.opening_page_location_stack = {
+        text = _("Add opening page to location history"),
         checked_func = function()
-            return G_reader_settings:isTrue("input_invert_page_turn_keys")
+            return G_reader_settings:isTrue("opening_page_location_stack")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
-            Device:invertButtons()
+            G_reader_settings:flipNilOrFalse("opening_page_location_stack")
         end,
-    }
-end
+}
 
 -- Auto-save settings: default value, info text and warning, and menu items
-if G_reader_settings:readSetting("auto_save_settings_interval_minutes") == nil then
+if G_reader_settings:hasNot("auto_save_settings_interval_minutes") then
     -- Default to auto save every 15 mn
     G_reader_settings:saveSetting("auto_save_settings_interval_minutes", 15)
 end
@@ -477,248 +487,91 @@ end
 
 common_settings.document = {
     text = _("Document"),
+    -- submenus are filled by menu_order
+}
+
+common_settings.document_auto_save = {
+    text_func = function()
+        local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
+        local s_interval
+        if interval == false then
+            s_interval = _("only on close")
+        else
+            s_interval = T(N_("every 1 m", "every %1 m", interval), interval)
+        end
+        return T(_("Auto-save book metadata: %1"), s_interval)
+    end,
+    help_text = auto_save_help_text,
     sub_item_table = {
-        {
-            text_func = function()
-                local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-                local s_interval
-                if interval == false then
-                    s_interval = _("only on close")
-                else
-                    s_interval = T(N_("every 1 m", "every %1 m", interval), interval)
-                end
-                return T(_("Auto-save book metadata: %1"), s_interval)
+        genAutoSaveMenuItem(false),
+        genAutoSaveMenuItem(5),
+        genAutoSaveMenuItem(15),
+        genAutoSaveMenuItem(30),
+        genAutoSaveMenuItem(60),
+        warn_about_auto_save and {
+            text = _("Important info about this auto-save option"),
+            keep_menu_open = true,
+            callback = function()
+                UIManager:show(InfoMessage:new{ text = auto_save_help_text, })
             end,
-            help_text = auto_save_help_text,
-            sub_item_table = {
-                genAutoSaveMenuItem(false),
-                genAutoSaveMenuItem(5),
-                genAutoSaveMenuItem(15),
-                genAutoSaveMenuItem(60),
-                warn_about_auto_save and {
-                    text = _("Important info about this auto-save option"),
-                    keep_menu_open = true,
-                    callback = function()
-                        UIManager:show(InfoMessage:new{ text = auto_save_help_text, })
-                    end,
-                } or nil,
-            },
-        },
-        {
-            text = _("Save document (write highlights into PDF)"),
-            sub_item_table = {
-                {
-                    text = _("Prompt"),
-                    checked_func = function()
-                        local setting = G_reader_settings:readSetting("save_document")
-                        return setting == "prompt" or setting == nil
-                    end,
-                    callback = function()
-                        G_reader_settings:delSetting("save_document")
-                    end,
-                },
-                {
-                    text = _("Always"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("save_document")
-                                   == "always"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("save_document", "always")
-                    end,
-                },
-                {
-                    text = _("Disable"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("save_document")
-                                   == "disable"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("save_document", "disable")
-                    end,
-                },
-            },
-        },
-        {
-            text = _("End of document action"),
-            sub_item_table = {
-                {
-                    text = _("Always mark as read"),
-                    checked_func = function()
-                        return G_reader_settings:isTrue("end_document_auto_mark")
-                    end,
-                    callback = function()
-                        G_reader_settings:flipNilOrFalse("end_document_auto_mark")
-                    end,
-                    separator = true,
-                },
-                {
-                    text = _("Ask with pop-up dialog"),
-                    checked_func = function()
-                        local setting = G_reader_settings:readSetting("end_document_action")
-                        return setting == "pop-up" or setting == nil
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "pop-up")
-                    end,
-                },
-                {
-                    text = _("Do nothing"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "nothing"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "nothing")
-                    end,
-                },
-                {
-                    text = _("Book status"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "book_status"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "book_status")
-                    end,
-                },
-                {
-                    text = _("Delete file"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "delete_file"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "delete_file")
-                    end,
-                },
-                {
-                    text = _("Open next file"),
-                    enabled_func = function()
-                        return G_reader_settings:readSetting("collate")
-                            ~= "access"
-                    end,
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "next_file"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "next_file")
-                    end,
-                },
-                {
-                    text = _("Go to beginning"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "goto_beginning"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "goto_beginning")
-                    end,
-                },
-                {
-                    text = _("Return to file browser"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "file_browser"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "file_browser")
-                    end,
-                },
-                {
-                    text = _("Mark book as read"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "mark_read"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "mark_read")
-                    end,
-                },
-                {
-                    text = _("Book status and return to file browser"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "book_status_file_browser"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "book_status_file_browser")
-                    end,
-                },
-            }
-        },
-        {
-            text = _("Highlight action"),
-            sub_item_table = {
-                {
-                    text = _("Enable on single word selection"),
-                    checked_func = function()
-                        return G_reader_settings:isTrue("highlight_action_on_single_word")
-                    end,
-                    callback = function()
-                        G_reader_settings:flipNilOrFalse("highlight_action_on_single_word")
-                    end,
-                    separator = true,
-                },
-                {
-                    text = _("Ask with popup dialog"),
-                    checked_func = function()
-                        return G_reader_settings:nilOrFalse("default_highlight_action")
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", nil)
-                    end,
-                },
-                {
-                    text = _("Highlight"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "highlight"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "highlight")
-                    end,
-                },
-                {
-                    text = _("Translate"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "translate"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "translate")
-                    end,
-                },
-                {
-                    text = _("Wikipedia"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "wikipedia"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "wikipedia")
-                    end,
-                },
-                {
-                    text = _("Dictionary"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "dictionary"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "dictionary")
-                    end,
-                },
-                {
-                    text = _("Fulltext search"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "search"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "search")
-                    end,
-                },
-            }
-        },
+        } or nil,
     },
 }
+
+common_settings.document_save = {
+    text = _("Save document (write highlights into PDF)"),
+    sub_item_table = {
+        genGenericMenuEntry(_("Prompt"), "save_document", "prompt", "prompt"), -- set "save_document" to "prompt"
+        genGenericMenuEntry(_("Always"), "save_document", "always"),
+        genGenericMenuEntry(_("Disable"), "save_document", "disable"),
+    },
+}
+
+common_settings.document_end_action = {
+    text = _("End of document action"),
+    sub_item_table = {
+        {
+            text = _("Always mark as read"),
+            checked_func = function()
+                return G_reader_settings:isTrue("end_document_auto_mark")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("end_document_auto_mark")
+            end,
+            separator = true,
+        },
+        genGenericMenuEntry(_("Ask with popup dialog"), "end_document_action", "pop-up", "pop-up"),
+        genGenericMenuEntry(_("Do nothing"), "end_document_action", "nothing"),
+        genGenericMenuEntry(_("Book status"), "end_document_action", "book_status"),
+        genGenericMenuEntry(_("Delete file"), "end_document_action", "delete_file"),
+        {
+            text = _("Open next file"),
+            enabled_func = function()
+                return G_reader_settings:readSetting("collate") ~= "access"
+            end,
+            checked_func = function()
+                return G_reader_settings:readSetting("end_document_action") == "next_file"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "next_file")
+            end,
+        },
+        genGenericMenuEntry(_("Go to beginning"), "end_document_action", "goto_beginning"),
+        genGenericMenuEntry(_("Return to file browser"), "end_document_action", "file_browser"),
+        genGenericMenuEntry(_("Mark book as read"), "end_document_action", "mark_read"),
+        genGenericMenuEntry(_("Book status and return to file browser"), "end_document_action", "book_status_file_browser"),
+    }
+}
+
 common_settings.language = Language:getLangMenuTable()
 
 common_settings.screenshot = {
-    text = _("Screenshot directory"),
+    text = _("Screenshot folder"),
     callback = function()
         local Screenshoter = require("ui/widget/screenshoter")
         Screenshoter:chooseFolder()
     end,
+    keep_menu_open = true,
 }
 
 return common_settings

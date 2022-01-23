@@ -1,7 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
-local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local Configurable = require("configurable")
+local DocCache = require("document/doccache")
 local DrawContext = require("ffi/drawcontext")
 local CanvasContext = require("document/canvascontext")
 local Geom = require("ui/geometry")
@@ -91,11 +91,30 @@ function Document:unlock(password)
 end
 
 -- this might be overridden by a document implementation
+-- (in which case, do make sure it calls this one, too, to avoid refcounting mismatches in DocumentRegistry!)
+-- Returns true if the Document instance needs to be destroyed (no more live refs),
+-- false if not (i.e., we've just decreased the refcount, so, leave internal engine data alone).
+-- nil if all hell broke loose.
 function Document:close()
     local DocumentRegistry = require("document/documentregistry")
-    if self.is_open and DocumentRegistry:closeDocument(self.file) == 0 then
-        self.is_open = false
-        self._document:close()
+    if self.is_open then
+        local refcount = DocumentRegistry:closeDocument(self.file)
+        if refcount == 0 then
+            self.is_open = false
+            self._document:close()
+            self._document = nil
+
+            -- NOTE: DocumentRegistry:openDocument will force a GC sweep the next time we open a Document.
+            --       MµPDF will also do a bit of spring cleaning of its internal cache when opening a *different* document.
+            return true
+        else
+            -- This can happen in perfectly sane contexts (i.e., Reader -> History -> View fullsize cover on the *same* book).
+            logger.dbg("Document: Decreased refcount to", refcount, "for", self.file)
+            return false
+        end
+    else
+        logger.warn("Tried to close an already closed document:", self.file)
+        return nil
     end
 end
 
@@ -162,14 +181,14 @@ end
 -- this might be overridden by a document implementation
 function Document:getNativePageDimensions(pageno)
     local hash = "pgdim|"..self.file.."|"..pageno
-    local cached = Cache:check(hash)
+    local cached = DocCache:check(hash)
     if cached then
         return cached[1]
     end
     local page = self._document:openPage(pageno)
     local page_size_w, page_size_h = page:getSize(self.dc_null)
     local page_size = Geom:new{ w = page_size_w, h = page_size_h }
-    Cache:insert(hash, CacheItem:new{ page_size })
+    DocCache:insert(hash, CacheItem:new{ page_size })
     page:close()
     return page_size
 end
@@ -237,7 +256,8 @@ function Document:getPageDimensions(pageno, zoom, rotation)
         -- switch orientation
         native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w
     end
-    native_dimen:scaleBy(zoom)
+    -- Apply the zoom factor, and round to integer in a sensible manner
+    native_dimen:transformByScale(zoom)
     return native_dimen
 end
 
@@ -286,6 +306,7 @@ function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
             w = bbox.x1 - bbox.x0,
             h = bbox.y1 - bbox.y0,
         }
+        --- @note: Should we round this regardless of zoom?
         if zoom ~= 1 then
             ubbox_dimen:transformByScale(zoom)
         end
@@ -353,35 +374,62 @@ function Document:postRenderPage()
     return nil
 end
 
+function Document:getTileCacheValidity()
+    return self.tile_cache_validity_ts
+end
+
+function Document:setTileCacheValidity(ts)
+    self.tile_cache_validity_ts = ts
+end
+
+function Document:resetTileCacheValidity()
+    self.tile_cache_validity_ts = os.time()
+end
+
 function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, color)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
                     ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode..(color and "|color" or "")
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
-function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
+function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, hinting)
     local hash_excerpt
     local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, self.render_color)
-    local tile = Cache:check(hash, TileCacheItem)
+    local tile = DocCache:check(hash, TileCacheItem)
     if not tile then
         hash_excerpt = hash.."|"..tostring(rect)
-        tile = Cache:check(hash_excerpt)
+        tile = DocCache:check(hash_excerpt)
     end
-    if tile then return tile end
+    if tile then
+        if self.tile_cache_validity_ts then
+            if tile.created_ts and tile.created_ts >= self.tile_cache_validity_ts then
+                return tile
+            end
+            logger.dbg("discarding stale cached tile")
+        else
+            return tile
+        end
+    end
 
+    if hinting then
+        CanvasContext:enableCPUCores(2)
+    end
     self:preRenderPage()
 
     local page_size = self:getPageDimensions(pageno, zoom, rotation)
     -- this will be the size we actually render
     local size = page_size
     -- we prefer to render the full page, if it fits into cache
-    if not Cache:willAccept(size.w * size.h + 64) then
+    if not DocCache:willAccept(size.w * size.h * (self.render_color and 4 or 1) + 512) then
         -- whole page won't fit into cache
         logger.dbg("rendering only part of the page")
         --- @todo figure out how to better segment the page
         if not rect then
             logger.warn("aborting, since we do not have a specification for that part")
             -- required part not given, so abort
+            if hinting then
+                CanvasContext:enableCPUCores(1)
+            end
             return
         end
         -- only render required part
@@ -392,11 +440,12 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     -- prepare cache item with contained blitbuffer
     tile = TileCacheItem:new{
         persistent = true,
-        size = size.w * size.h + 64, -- estimation
+        created_ts = os.time(),
         excerpt = size,
         pageno = pageno,
         bb = Blitbuffer.new(size.w, size.h, self.render_color and self.color_bb_type or nil)
     }
+    tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
 
     -- create a draw context
     local dc = DrawContext.new()
@@ -420,9 +469,12 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     local page = self._document:openPage(pageno)
     page:draw(dc, tile.bb, size.x, size.y, render_mode)
     page:close()
-    Cache:insert(hash, tile)
+    DocCache:insert(hash, tile)
 
     self:postRenderPage()
+    if hinting then
+        CanvasContext:enableCPUCores(1)
+    end
     return tile
 end
 
@@ -430,7 +482,7 @@ end
 --- @todo this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation, gamma, render_mode)
     logger.dbg("hinting page", pageno)
-    self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)
+    self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode, true)
 end
 
 --[[
@@ -480,6 +532,14 @@ function Document:getPageText(pageno)
 end
 
 function Document:saveHighlight(pageno, item)
+    return nil
+end
+
+function Document:deleteHighlight(pageno, item)
+    return nil
+end
+
+function Document:updateHighlightContents(pageno, item, contents)
     return nil
 end
 

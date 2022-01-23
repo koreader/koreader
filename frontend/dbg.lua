@@ -1,3 +1,23 @@
+--[[--
+This module provides development-only asserts and other debug guards.
+
+Instead of a regular Lua @{assert}(), use @{dbg.dassert}() which can be toggled at runtime.
+
+    dbg.dassert(important_variable ~= nil)
+
+For checking whether the input given to a function is sane, you can use @{dbg.guard}().
+
+    dbg:guard(NickelConf.frontLightLevel, "set",
+        function(new_intensity)
+            assert(type(new_intensity) == "number",
+                   "Wrong brightness value type (expected number)!")
+            assert(new_intensity >= 0 and new_intensity <= 100,
+                   "Wrong brightness value given!")
+        end)
+
+These functions don't do anything when debugging is turned off.
+--]]--
+
 local logger = require("logger")
 local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
@@ -28,12 +48,15 @@ local function LvDEBUG(lv, ...)
     end
 end
 
+--- Turn on debug mode.
+-- This should only be used in tests and at the user's request.
 function Dbg:turnOn()
     if self.is_on == true then return end
     self.is_on = true
     logger:setLevel(logger.levels.dbg)
 
     Dbg_mt.__call = function(dbg, ...) LvDEBUG(math.huge, ...) end
+    --- Pass a guard function to detect bad input values.
     Dbg.guard = function(_, mod, method, pre_guard, post_guard)
         local old_method = mod[method]
         mod[method] = function(...)
@@ -47,6 +70,7 @@ function Dbg:turnOn()
             return unpack(values)
         end
     end
+    --- Use this instead of a regular Lua @{assert}().
     Dbg.dassert = function(check, msg)
         assert(check, msg)
         return check
@@ -63,6 +87,8 @@ function Dbg:turnOn()
     end
 end
 
+--- Turn off debug mode.
+-- This should only be used in tests and at the user's request.
 function Dbg:turnOff()
     if self.is_on == false then return end
     self.is_on = false
@@ -78,16 +104,20 @@ function Dbg:turnOff()
     end
 end
 
+--- Turn on verbose mode.
+-- This should only be used in tests and at the user's request.
 function Dbg:setVerbose(verbose)
     self.is_verbose = verbose
 end
 
+--- Simple table dump.
 function Dbg:v(...)
     if self.is_verbose then
         LvDEBUG(math.huge, ...)
     end
 end
 
+--- Log @{ui.event|Event} to dedicated log file.
 function Dbg:logEv(ev)
     local ev_value = tostring(ev.value)
     local log = ev.type.."|"..ev.code.."|"
@@ -98,6 +128,7 @@ function Dbg:logEv(ev)
     end
 end
 
+--- Simple traceback.
 function Dbg:traceback()
     LvDEBUG(math.huge, debug.traceback())
 end

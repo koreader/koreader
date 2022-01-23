@@ -266,6 +266,9 @@ function InputContainer:onGesture(ev)
             end
         end
     end
+    if self.stop_events_propagation then
+        return true
+    end
 end
 
 function InputContainer:onInput(input, ignore_first_hold_release)
@@ -275,7 +278,7 @@ function InputContainer:onInput(input, ignore_first_hold_release)
         input = input.input_func and input.input_func() or input.input,
         input_hint = input.hint_func and input.hint_func() or input.hint or "",
         input_type = input.type or "number",
-        buttons =  input.buttons or {
+        buttons = input.buttons or {
             {
                 {
                     text = input.cancel_text or _("Cancel"),
@@ -287,6 +290,7 @@ function InputContainer:onInput(input, ignore_first_hold_release)
                     text = input.ok_text or _("OK"),
                     is_enter_default = true,
                     callback = function()
+                        if input.deny_blank_input and self.input_dialog:getInputText() == "" then return end
                         input.callback(self.input_dialog:getInputText())
                         self:closeInputDialog()
                     end,

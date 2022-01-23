@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -9,6 +10,7 @@ local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("ffi/util")
 local _ = require("gettext")
+local T = util.template
 
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
@@ -44,18 +46,17 @@ end
 
 function FileManagerHistory:onMenuHold(item)
     local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
-    local currently_opened_file = readerui_instance and readerui_instance.document.file
+    local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.histfile_dialog = nil
     local buttons = {
         {
             {
-                text = _("Purge .sdr"),
+                text = _("Reset settings"),
                 enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(item.file)),
                 callback = function()
-                    local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
-                        text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(item.text)),
-                        ok_text = _("Purge"),
+                        text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(item.file)),
+                        ok_text = _("Reset"),
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)
                             require("readhistory"):fileSettingsPurged(item.file)
@@ -79,9 +80,8 @@ function FileManagerHistory:onMenuHold(item)
                 text = _("Delete"),
                 enabled = (item.file ~= currently_opened_file and lfs.attributes(item.file, "mode")) and true or false,
                 callback = function()
-                    local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
-                        text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(item.file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                        text = T(_("Are you sure that you want to delete this document?\n\n%1\n\nIf you delete a file, it is permanently lost."), BD.filepath(item.file)),
                         ok_text = _("Delete"),
                         ok_callback = function()
                             local FileManager = require("apps/filemanager/filemanager")
@@ -107,9 +107,15 @@ function FileManagerHistory:onMenuHold(item)
             {
                 text = _("Clear history of deleted files"),
                 callback = function()
-                    require("readhistory"):clearMissing()
-                    self._manager:updateItemTable()
-                    UIManager:close(self.histfile_dialog)
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Clear history of deleted files?"),
+                        ok_text = _("Clear"),
+                        ok_callback = function()
+                            require("readhistory"):clearMissing()
+                            self._manager:updateItemTable()
+                            UIManager:close(self.histfile_dialog)
+                        end,
+                    })
                 end,
              },
         },
@@ -123,6 +129,23 @@ function FileManagerHistory:onMenuHold(item)
     return true
 end
 
+-- Can't *actually* name it onSetRotationMode, or it also fires in FM itself ;).
+function FileManagerHistory:MenuSetRotationModeHandler(rotation)
+    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+        UIManager:close(self._manager.hist_menu)
+        -- Also re-layout ReaderView or FileManager itself
+        if self._manager.ui.view and self._manager.ui.view.onSetRotationMode then
+            self._manager.ui.view:onSetRotationMode(rotation)
+        elseif self._manager.ui.onSetRotationMode then
+            self._manager.ui:onSetRotationMode(rotation)
+        else
+            Screen:setRotationMode(rotation)
+        end
+        self._manager:onShowHist()
+    end
+    return true
+end
+
 function FileManagerHistory:onShowHist()
     self.hist_menu = Menu:new{
         ui = self.ui,
@@ -132,16 +155,13 @@ function FileManagerHistory:onShowHist()
         is_borderless = true,
         is_popout = false,
         onMenuHold = self.onMenuHold,
+        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
     }
+
     self:updateItemTable()
     self.hist_menu.close_callback = function()
-        -- Close it at next tick so it stays displayed
-        -- while a book is opening (avoids a transient
-        -- display of the underlying File Browser)
-        UIManager:nextTick(function()
-            UIManager:close(self.hist_menu)
-        end)
+        UIManager:close(self.hist_menu)
     end
     UIManager:show(self.hist_menu)
     return true

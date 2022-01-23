@@ -15,6 +15,7 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local Notification = require("ui/widget/notification")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -209,18 +210,25 @@ function ToggleSwitch:onTapSelect(arg, gev)
         self.args = self.args or {}
         self.config:onConfigEvent(self.event, self.args[self.position])
     end
-    if self.events then
-        self.config:onConfigEvents(self.events, self.position)
-    end
     --]]
     if self.callback then
         self.callback(self.position)
     end
     if self.toggle[self.position] ~= "⋮" then
+        if #self.values == 0 then -- this is a toggle which is not selectable (eg. increase, decrease)
+            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_FINE)
+        else
+            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
+        end
         self.config:onConfigChoose(self.values, self.name,
-            self.event, self.args, self.events, self.position, self.hide_on_apply)
+            self.event, self.args, self.position, self.hide_on_apply)
+
         UIManager:setDirty(self.config, function()
             return "ui", self.dimen
+        end)
+
+        UIManager:tickAfterNext(function()
+            Notification:setNotifySource(Notification.SOURCE_OTHER) -- only allow events, if they are activated
         end)
     end
     return true

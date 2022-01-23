@@ -22,7 +22,7 @@ local Terminal = WidgetContainer:new{
     name = "terminal",
     command = "",
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
-    items_per_page = G_reader_settings:readSetting("items_per_page") or 16,
+    items_per_page = 16,
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/terminal_shortcuts.lua"),
     shortcuts_dialog = nil,
     shortcuts_menu = nil,
@@ -32,17 +32,17 @@ local Terminal = WidgetContainer:new{
 }
 
 function Terminal:onDispatcherRegisterActions()
-    Dispatcher:registerAction("show_terminal", { category = "none", event = "TerminalStart", title = _("Show terminal"), device = true, })
+    Dispatcher:registerAction("show_terminal", { category = "none", event = "TerminalStart", title = _("Show terminal"), general=true, })
 end
 
 function Terminal:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
-    self.shortcuts = self.settings:readSetting("shortcuts") or {}
+    self.items_per_page = G_reader_settings:readSetting("items_per_page") or 16
+    self.shortcuts = self.settings:readSetting("shortcuts", {})
 end
 
 function Terminal:saveShortcuts()
-    self.settings:saveSetting("shortcuts", self.shortcuts)
     self.settings:flush()
     UIManager:show(InfoMessage:new{
         text = _("Shortcuts saved"),
@@ -226,7 +226,6 @@ function Terminal:editCommands(item)
     edit_dialog = InputDialog:new{
         title = T(_('Edit commands for "%1"'), item.text),
         input = item.commands,
-        width = Screen:getWidth() * 0.9,
         para_direction_rtl = false, -- force LTR
         input_type = "string",
         allow_newline = true,
@@ -262,7 +261,6 @@ function Terminal:editName(item)
     edit_dialog = InputDialog:new{
         title = _("Edit name"),
         input = item.text,
-        width = Screen:getWidth() * 0.9,
         para_direction_rtl = false, -- force LTR
         input_type = "string",
         allow_newline = false,
@@ -294,13 +292,12 @@ function Terminal:editName(item)
 end
 
 function Terminal:deleteShortcut(item)
-    local shortcuts = {}
-    for _, element in ipairs(self.shortcuts) do
-        if element.text ~= item.text and element.commands ~= item.commands then
-            table.insert(shortcuts, element)
+    for i = #self.shortcuts, 1, -1 do
+        local element = self.shortcuts[i]
+        if element.text == item.text and element.commands == item.commands then
+            table.remove(self.shortcuts, i)
         end
     end
-    self.shortcuts = shortcuts
     self:saveShortcuts()
     self:manageShortcuts()
 end

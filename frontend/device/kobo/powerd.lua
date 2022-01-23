@@ -1,11 +1,8 @@
 local BasePowerD = require("device/generic/powerd")
 local NickelConf = require("device/kobo/nickel_conf")
-local PluginShare = require("pluginshare")
 local SysfsLight = require ("device/sysfs_light")
 local ffiUtil = require("ffi/util")
-
-local batt_state_folder =
-        "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
+local RTC = require("ffi/rtc")
 
 -- Here, we only deal with the real hw intensity.
 -- Dealing with toggling and remembering/restoring
@@ -16,12 +13,10 @@ local KoboPowerD = BasePowerD:new{
     fl_min = 0, fl_max = 100,
     fl = nil,
 
-    batt_capacity_file = batt_state_folder .. "capacity",
-    is_charging_file = batt_state_folder .. "status",
+    battery_sysfs = nil,
+    aux_battery_sysfs = nil,
     fl_warmth_min = 0, fl_warmth_max = 100,
     fl_warmth = nil,
-    auto_warmth = false,
-    max_warmth_hour = 23,
     fl_was_on = nil,
 }
 
@@ -30,7 +25,6 @@ function KoboPowerD:_syncKoboLightOnStart()
     local new_intensity = nil
     local is_frontlight_on = nil
     local new_warmth = nil
-    local auto_warmth = nil
     local kobo_light_on_start = tonumber(KOBO_LIGHT_ON_START)
     if kobo_light_on_start then
         if kobo_light_on_start > 0 then
@@ -50,7 +44,6 @@ function KoboPowerD:_syncKoboLightOnStart()
                     -- so normalize this to [0,100] on our end.
                     new_warmth = (100 - math.floor((new_color - 1500) / 49))
                 end
-                auto_warmth = NickelConf.autoColorEnabled.get()
             end
             if is_frontlight_on == nil then
                 -- this device does not support frontlight toggle,
@@ -74,7 +67,6 @@ function KoboPowerD:_syncKoboLightOnStart()
             is_frontlight_on = G_reader_settings:readSetting("is_frontlight_on")
             if self.fl_warmth ~= nil then
                 new_warmth = G_reader_settings:readSetting("frontlight_warmth")
-                auto_warmth = G_reader_settings:readSetting("frontlight_auto_warmth")
             end
         end
     end
@@ -86,17 +78,8 @@ function KoboPowerD:_syncKoboLightOnStart()
         -- will only be used to give initial state to BasePowerD:_decideFrontlightState()
         self.initial_is_fl_on = is_frontlight_on
     end
-    -- This is always read from G_reader_settings, since we do not
-    -- support reading 'BedTime' from NickelConf.
-    local max_warmth_hour =
-        G_reader_settings:readSetting("frontlight_max_warmth_hour")
-    if max_warmth_hour then
-        self.max_warmth_hour = max_warmth_hour
-    end
-    if auto_warmth then
-        self.auto_warmth = true
-        self:calculateAutoWarmth()
-    elseif new_warmth ~= nil then
+
+    if new_warmth ~= nil then
         self.fl_warmth = new_warmth
     end
 
@@ -107,12 +90,39 @@ function KoboPowerD:_syncKoboLightOnStart()
 end
 
 function KoboPowerD:init()
+    -- Setup the sysfs paths
+    self.batt_capacity_file = self.battery_sysfs .. "/capacity"
+    self.is_charging_file = self.battery_sysfs .. "/status"
+
+    if self.device:hasAuxBattery() then
+        self.aux_batt_capacity_file = self.aux_battery_sysfs .. "/cilix_bat_capacity"
+        self.aux_batt_connected_file = self.aux_battery_sysfs .. "/cilix_conn" -- or "active"
+        self.aux_batt_charging_file = self.aux_battery_sysfs .. "/charge_status" -- "usb_conn" would not allow us to detect the "Full" state
+
+        self.getAuxCapacityHW = function(this)
+            -- NOTE: The first few reads after connecting to the PowerCover may fail, in which case,
+            --       we pass that detail along to PowerD so that it may retry the call sooner.
+            return this:unchecked_read_int_file(this.aux_batt_capacity_file)
+        end
+
+        self.isAuxBatteryConnectedHW = function(this)
+            return this:read_int_file(this.aux_batt_connected_file) == 1
+        end
+
+        self.isAuxChargingHW = function(this)
+            -- 0 when not charging
+            -- 3 when full
+            -- 2 when charging via DCP
+            local charge_status = this:read_int_file(this.aux_batt_charging_file)
+            return charge_status ~= 0 and charge_status ~= 3
+        end
+    end
+
     -- Default values in case self:_syncKoboLightOnStart() does not find
     -- any previously saved setting (and for unit tests where it will
     -- not be called)
     self.hw_intensity = 20
     self.initial_is_fl_on = true
-    self.autowarmth_job_running = false
 
     if self.device:hasFrontlight() then
         -- If this device has natural light (currently only KA1 & Forma)
@@ -179,15 +189,11 @@ function KoboPowerD:saveSettings()
         -- be turned on but we still want to save its state.
         local cur_is_fl_on = self.is_fl_on or self.fl_was_on or false
         local cur_warmth = self.fl_warmth
-        local cur_auto_warmth = self.auto_warmth
-        local cur_max_warmth_hour = self.max_warmth_hour
         -- Save intensity to koreader settings
         G_reader_settings:saveSetting("frontlight_intensity", cur_intensity)
         G_reader_settings:saveSetting("is_frontlight_on", cur_is_fl_on)
         if cur_warmth ~= nil then
             G_reader_settings:saveSetting("frontlight_warmth", cur_warmth)
-            G_reader_settings:saveSetting("frontlight_auto_warmth", cur_auto_warmth)
-            G_reader_settings:saveSetting("frontlight_max_warmth_hour", cur_max_warmth_hour)
         end
         -- And to "Kobo eReader.conf" if needed
         if KOBO_SYNC_BRIGHTNESS_WITH_NICKEL then
@@ -207,9 +213,6 @@ function KoboPowerD:saveSettings()
                 local warmth_rescaled = (100 - cur_warmth) * 49 + 1500
                 if NickelConf.colorSetting.get() ~= warmth_rescaled then
                     NickelConf.colorSetting.set(warmth_rescaled)
-                end
-                if NickelConf.autoColorEnabled.get() ~= cur_auto_warmth then
-                    NickelConf.autoColorEnabled.set(cur_auto_warmth)
                 end
             end
         end
@@ -249,67 +252,20 @@ end
 
 function KoboPowerD:setWarmth(warmth)
     if self.fl == nil then return end
-    if not warmth and self.auto_warmth then
-        self:calculateAutoWarmth()
-    end
     self.fl_warmth = warmth or self.fl_warmth
     -- Don't turn the light back on on legacy NaturalLight devices just for the sake of setting the warmth!
     -- That's because we can only set warmth independently of brightness on devices with a mixer.
     -- On older ones, calling setWarmth *will* actually set the brightness, too!
     if self.device:hasNaturalLightMixer() or self:isFrontlightOnHW() then
         self.fl:setWarmth(self.fl_warmth)
+        self:stateChanged()
     end
 end
 
--- Sets fl_warmth according to current hour and max_warmth_hour
--- and starts background job if necessary.
-function KoboPowerD:calculateAutoWarmth()
-    local current_time = os.date("%H") + os.date("%M")/60
-    local max_hour = self.max_warmth_hour
-    local diff_time = max_hour - current_time
-    if diff_time < 0 then
-        diff_time = diff_time + 24
-    end
-    if diff_time < 12 then
-        -- We are before bedtime. Use a slower progression over 5h.
-        self.fl_warmth = math.max(20 * (5 - diff_time), 0)
-    elseif diff_time > 22 then
-        -- Keep warmth at maximum for two hours after bedtime.
-        self.fl_warmth = 100
-    else
-        -- Between 2-4h after bedtime, return to zero.
-        self.fl_warmth = math.max(100 - 50 * (22 - diff_time), 0)
-    end
-    self.fl_warmth = math.floor(self.fl_warmth + 0.5)
-    -- Make sure sysfs_light actually picks that new value up without an explicit setWarmth call...
-    -- This avoids having to bypass the ramp-up on resume w/ an explicit setWarmth call on devices where brightness & warmth
-    -- are linked (i.e., when there's no mixer) ;).
-    -- NOTE: A potentially saner solution would be to ditch the internal sysfs_light current_* values,
-    --       and just pass it a pointer to this powerd instance, so it has access to fl_warmth & hw_intensity.
-    --       It seems harmless enough for warmth, but brightness might be a little trickier because of the insanity
-    --       that is hw_intensity handling because we can't actually *read* the frontlight status...
-    --       (Technically, we could, on Mk. 7 devices, but we don't,
-    --       because this is already messy enough without piling on special cases.)
-    if self.fl then
-        self.fl.current_warmth = self.fl_warmth
-    end
-    -- Enable background job for setting Warmth, if not already done.
-    if not self.autowarmth_job_running then
-        table.insert(PluginShare.backgroundJobs, {
-                         when = 180,
-                         repeated = true,
-                         executable = function()
-                             if self.auto_warmth then
-                                 self:setWarmth()
-                             end
-                         end,
-        })
-        if package.loaded["ui/uimanager"] ~= nil then
-            local Event = require("ui/event")
-            local UIManager = require("ui/uimanager")
-            UIManager:broadcastEvent(Event:new("BackgroundJobsUpdated"))
-        end
-        self.autowarmth_job_running = true
+function KoboPowerD:getWarmth()
+    if self.fl == nil then return end
+    if self.device:hasNaturalLight() then
+        return self.fl_warmth
     end
 end
 
@@ -395,9 +351,8 @@ function KoboPowerD:afterResume()
     if self.fl == nil then return end
     -- Don't bother if the light was already off on suspend
     if not self.fl_was_on then return end
-    -- Update AutoWarmth state
-    if self.fl_warmth ~= nil and self.auto_warmth then
-        self:calculateAutoWarmth()
+    -- Update warmth state
+    if self.fl_warmth ~= nil then
         -- And we need an explicit setWarmth if the device has a mixer, because turnOn won't touch the warmth on those ;).
         if self.device:hasNaturalLightMixer() then
             self:setWarmth(self.fl_warmth)
@@ -405,6 +360,9 @@ function KoboPowerD:afterResume()
     end
     -- Turn the frontlight back on
     self:turnOnFrontlight()
+
+    -- Set the system clock to the hardware clock's time.
+    RTC:HCToSys()
 end
 
 return KoboPowerD

@@ -72,10 +72,7 @@ function DocumentRegistry:hasProvider(file, mimetype)
     end
     local DocSettings = require("docsettings")
     if DocSettings:hasSidecarFile(file) then
-        local doc_settings_provider = DocSettings:open(file):readSetting("provider")
-        if doc_settings_provider then
-            return true
-        end
+        return DocSettings:open(file):has("provider")
     end
     return false
 end
@@ -134,7 +131,8 @@ function DocumentRegistry:getProviders(file)
         local added = false
         local suffix = string.sub(file, -string.len(provider.extension) - 1)
         if string.lower(suffix) == "."..provider.extension then
-            for i, prov_prev in ipairs(providers) do
+            for i = #providers, 1, -1 do
+                local prov_prev = providers[i]
                 if prov_prev.provider == provider.provider then
                     if prov_prev.weight >= provider.weight then
                         added = true
@@ -143,7 +141,7 @@ function DocumentRegistry:getProviders(file)
                     end
                 end
             end
-        -- if extension == provider.extension then
+            -- if extension == provider.extension then
             -- stick highest weighted provider at the front
             if not added and #providers >= 1 and provider.weight > providers[1].weight then
                 table.insert(providers, 1, provider)
@@ -193,6 +191,7 @@ function DocumentRegistry:mimeToExt(mimetype)
     return self.mimetype_ext[mimetype]
 end
 
+--- Returns a new Document instance on success
 function DocumentRegistry:openDocument(file, provider)
     -- force a GC, so that any previous document used memory can be reused
     -- immediately by this new document without having to wait for the
@@ -215,12 +214,15 @@ function DocumentRegistry:openDocument(file, provider)
         end
     else
         self.registry[file].refs = self.registry[file].refs + 1
+        logger.dbg("DocumentRegistry: Increased refcount to", self.registry[file].refs, "for", file)
     end
     if self.registry[file] then
         return self.registry[file].doc
     end
 end
 
+--- Does *NOT* finalize a Document instance, call its :close() instead if that's what you're looking for!
+--- (i.e., nothing but Document:close should call this!)
 function DocumentRegistry:closeDocument(file)
     if self.registry[file] then
         self.registry[file].refs = self.registry[file].refs - 1
@@ -231,12 +233,20 @@ function DocumentRegistry:closeDocument(file)
             return self.registry[file].refs
         end
     else
-        error("Try to close unregistered file.")
+        error("Tried to close an unregistered file.")
+    end
+end
+
+--- Queries the current refcount for a given file
+function DocumentRegistry:getReferenceCount(file)
+    if self.registry[file] then
+        return self.registry[file].refs
+    else
+        return nil
     end
 end
 
 -- load implementations:
-
 require("document/credocument"):register(DocumentRegistry)
 require("document/pdfdocument"):register(DocumentRegistry)
 require("document/djvudocument"):register(DocumentRegistry)

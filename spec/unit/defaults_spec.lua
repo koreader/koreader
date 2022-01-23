@@ -32,7 +32,7 @@ describe("defaults module", function()
         assert.is_same(DCREREADER_CONFIG_WORD_SPACING_LARGE, { [1] = 100, [2] = 90 })
         assert.is_same(DTAP_ZONE_BACKWARD, { ["y"] = 0, ["x"] = 0, ["h"] = 1, ["w"] = 0.25 })
         assert.is_same(DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE, { [1] = 50, [2] = 50 })
-        assert.is_same(DDOUBLE_TAP_ZONE_PREV_CHAPTER, { ["y"] = 0, ["x"] = 0, ["h"] = 0.25, ["w"] = 0.25 })
+        assert.is_same(DDOUBLE_TAP_ZONE_PREV_CHAPTER, { ["y"] = 0, ["x"] = 0, ["h"] = 1, ["w"] = 0.25 })
 
         -- in persistent
         Defaults:init()

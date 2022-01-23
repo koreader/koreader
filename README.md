@@ -11,6 +11,7 @@
 [![Weblate Status][badge-weblate]][link-weblate]
 
 [Download](https://github.com/koreader/koreader/releases) •
+[User guide](http://koreader.rocks/koreader-user-guide.pdf) •
 [Wiki](https://github.com/koreader/koreader/wiki) •
 [Developer docs](http://koreader.rocks/doc/)
 
@@ -22,15 +23,17 @@
 
 * **full-featured reading**: multi-lingual user interface with a highly customizable reader view and many typesetting options. You can set arbitrary page margins, override line spacing and choose external fonts and styles. It has multi-lingual hyphenation dictionaries bundled into the application.
 
-* **integrated** with *calibre* (search metadata, receive ebooks wirelessly, browse library via OPDS),  *Evernote* (export hightlights), *Wallabag*, *Wikipedia*, *Google Translate* and other content providers.
+* **integrated** with *calibre* (search metadata, receive ebooks wirelessly, browse library via OPDS), *Wallabag*, *Wikipedia*, *Google Translate* and other content providers.
 
 * **optimized for e-ink devices**: custom UI without animation, with paginated menus, adjustable text contrast, and easy zoom to fit content or page in paged media.
 
 * **extensible**: via plugins
 
-* **and much more**: look up words with StarDict dictionaries / Wikipedia, add your own online OPDS catalogs and RSS feeds, share ebooks with other KOReader devices wirelessly, online over-the-air software updates, an FTP client, an SSH server, …
+* **fast**: on some older devices, it has been measured to have less than half the page-turn delay as the built in reading software.
 
-Please check the [wiki][link-wiki] to discover more features and to help us document them.
+* **and much more**: look up words with StarDict dictionaries / Wikipedia, add your own online OPDS catalogs and RSS feeds, over-the-air software updates, an FTP client, an SSH server, …
+
+Please check the [user guide](http://koreader.rocks/koreader-user-guide.pdf) and the [wiki][link-wiki] to discover more features and to help us document them.
 
 ## Screenshots
 

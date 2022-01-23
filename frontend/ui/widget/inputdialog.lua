@@ -14,7 +14,7 @@ Example:
         input = "default value",
         -- A placeholder text shown in the text box.
         input_hint = _("Hint text"),
-        input_type = "string",
+        -- input_type = nil, -- default for text
         -- A description shown above the input.
         description = _("Some more description."),
         -- text_type = "password",
@@ -97,24 +97,25 @@ longer than three words it should just read "OK".
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
-local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local InputDialog = InputContainer:new{
@@ -125,10 +126,12 @@ local InputDialog = InputContainer:new{
     description = nil,
     buttons = nil,
     input_type = nil,
+    deny_keyboard_hiding = false, -- don't hide keyboard on tap outside
     enter_callback = nil,
     readonly = false, -- don't allow editing, will not show keyboard
     allow_newline = false, -- allow entering new lines (this disables any enter_callback)
     cursor_at_end = true, -- starts with cursor at end of text, ready for appending
+    use_available_height = false, -- adjust input box to fill available height on screen
     fullscreen = false, -- adjust to full screen minus keyboard
     condensed = false, -- true will prevent adding air and balance between elements
     add_scroll_buttons = false, -- add scroll Up/Down buttons to first row of buttons
@@ -158,25 +161,16 @@ local InputDialog = InputContainer:new{
     view_pos_callback = nil, -- Called with no arg to get initial top_line_num/charpos,
                              -- called with (top_line_num, charpos) to give back position on close.
 
-    -- movable = true, -- set to false if movable gestures conflicts with subwidgets gestures
-    -- for now, too much conflicts between InputText and MovableContainer, and
-    -- there's the keyboard to exclude from move area (the InputDialog could
-    -- be moved under the keyboard, and the user would be locked)
-    movable = false,
+    -- Set to false if movable gestures conflicts with subwidgets gestures
+    is_movable = true,
 
     width = nil,
 
     text_width = nil,
     text_height = nil,
 
-    title_face = Font:getFace("x_smalltfont"),
-    description_face = Font:getFace("x_smallinfofont"),
+    bottom_v_padding = 0,
     input_face = Font:getFace("x_smallinfofont"),
-
-    title_padding = Size.padding.default,
-    title_margin = Size.margin.title,
-    desc_padding = Size.padding.default, -- Use the same as title for their
-    desc_margin = Size.margin.title,     -- texts to be visually aligned
     input_padding = Size.padding.default,
     input_margin = Size.margin.default,
     button_padding = Size.padding.default,
@@ -201,13 +195,15 @@ local InputDialog = InputContainer:new{
 }
 
 function InputDialog:init()
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
     if self.fullscreen then
-        self.movable = false
+        self.is_movable = false
         self.border_size = 0
-        self.width = Screen:getWidth() - 2*self.border_size
+        self.width = self.screen_width - 2*self.border_size
         self.covers_fullscreen = true -- hint for UIManager:_repaint()
     else
-        self.width = self.width or math.floor(Screen:getWidth() * 0.8)
+        self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.8)
     end
     if self.condensed then
         self.text_width = self.width - 2*(self.border_size + self.input_padding + self.input_margin)
@@ -217,55 +213,28 @@ function InputDialog:init()
     if self.readonly then -- hide keyboard if we can't edit
         self.keyboard_hidden = true
     end
+    if self.fullscreen or self.add_nav_bar then
+        self.deny_keyboard_hiding = true
+    end
 
     -- Title & description
-    self.title_widget = FrameContainer:new{
-        padding = self.title_padding,
-        margin = self.title_margin,
-        bordersize = 0,
-        TextWidget:new{
-            text = self.title,
-            face = self.title_face,
-            max_width = self.width,
-        }
+    self.title_bar = TitleBar:new{
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        title = self.title,
+        title_multilines = true,
+        bottom_v_padding = self.bottom_v_padding,
+        info_text = self.description,
+        show_parent = self,
     }
-    self.title_bar = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
-        }
-    }
-    if self.description then
-        self.description_widget = FrameContainer:new{
-            padding = self.desc_padding,
-            margin = self.desc_margin,
-            bordersize = 0,
-            TextBoxWidget:new{
-                text = self.description,
-                face = self.description_face,
-                width = self.width - 2*self.desc_padding - 2*self.desc_margin,
-            }
-        }
-    else
-        self.description_widget = VerticalSpan:new{ width = 0 }
-    end
 
     -- Vertical spaces added before and after InputText
     -- (these will be adjusted later to center the input text if needed)
-    local vspan_before_input_text = VerticalSpan:new{ width = 0 }
-    local vspan_after_input_text = VerticalSpan:new{ width = 0 }
-    -- We add the same vertical space used under description after the input widget
     -- (can be disabled by setting condensed=true)
-    if not self.condensed then
-        local desc_pad_height = self.desc_margin + self.desc_padding
-        if self.description then
-            vspan_before_input_text.width = 0 -- already provided by description_widget
-            vspan_after_input_text.width = desc_pad_height
-        else
-            vspan_before_input_text.width = desc_pad_height
-            vspan_after_input_text.width = desc_pad_height
-        end
-    end
+    local padding_width = self.condensed and 0 or Size.padding.default
+    local vspan_before_input_text = VerticalSpan:new{ width = padding_width }
+    local vspan_after_input_text = VerticalSpan:new{ width = padding_width }
 
     -- Buttons
     -- In case of re-init(), keep backup of original buttons and restore them
@@ -312,6 +281,7 @@ function InputDialog:init()
         -- Create a dummy input widget to get some metrics
         local input_widget = InputText:new{
             text = self.fullscreen and "-" or self.input,
+            input_type = self.input_type,
             face = self.input_face,
             width = self.text_width,
             padding = self.input_padding,
@@ -319,6 +289,7 @@ function InputDialog:init()
             lang = self.lang, -- these might influence height
             para_direction_rtl = self.para_direction_rtl,
             auto_para_direction = self.auto_para_direction,
+            for_measurement_only = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
         }
         local text_height = input_widget:getTextHeight()
         local line_height = input_widget:getLineHeight()
@@ -329,17 +300,15 @@ function InputDialog:init()
         end
         input_widget:onCloseWidget() -- free() textboxwidget and keyboard
         -- Find out available height
-        local available_height = Screen:getHeight()
+        local available_height = self.screen_height
                                     - 2*self.border_size
-                                    - self.title_widget:getSize().h
-                                    - self.title_bar:getSize().h
-                                    - self.description_widget:getSize().h
+                                    - self.title_bar:getHeight()
                                     - vspan_before_input_text:getSize().h
                                     - input_pad_height
                                     - vspan_after_input_text:getSize().h
                                     - buttons_container:getSize().h
                                     - keyboard_height
-        if self.fullscreen or text_height > available_height then
+        if self.fullscreen or self.use_available_height or text_height > available_height then
             -- Don't leave unusable space in the text widget, as the user could think
             -- it's an empty line: move that space in pads after and below (for centering)
             self.text_height = math.floor(available_height / line_height) * line_height
@@ -348,7 +317,9 @@ function InputDialog:init()
             local pad_after = pad_height - pad_before
             vspan_before_input_text.width = vspan_before_input_text.width + pad_before
             vspan_after_input_text.width = vspan_after_input_text.width + pad_after
-            self.cursor_at_end = false -- stay at start if overflowed
+            if text_height > available_height then
+                self.cursor_at_end = false -- stay at start if overflowed
+            end
         else
             -- Don't leave unusable space in the text widget
             self.text_height = text_height
@@ -413,6 +384,23 @@ function InputDialog:init()
         end
     end
 
+    -- Combine all
+    self.vgroup = VerticalGroup:new{
+        align = "left",
+        self.title_bar,
+        vspan_before_input_text,
+        CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = self._input_widget:getSize().h,
+            },
+            self._input_widget,
+        },
+        -- added widgets may be inserted here
+        vspan_after_input_text,
+        buttons_container,
+    }
+
     -- Final widget
     self.dialog_frame = FrameContainer:new{
         radius = self.fullscreen and 0 or Size.radius.window,
@@ -420,38 +408,67 @@ function InputDialog:init()
         margin = 0,
         bordersize = self.border_size,
         background = Blitbuffer.COLOR_WHITE,
-        VerticalGroup:new{
-            align = "left",
-            self.title_widget,
-            self.title_bar,
-            self.description_widget,
-            vspan_before_input_text,
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.width,
-                    h = self._input_widget:getSize().h,
-                },
-                self._input_widget,
-            },
-            vspan_after_input_text,
-            buttons_container,
-        }
+        self.vgroup,
     }
     local frame = self.dialog_frame
-    if self.movable then
-        frame = MovableContainer:new{
+    if self.is_movable then
+        self.movable = MovableContainer:new{ -- (UIManager expects this as 'self.movable')
             self.dialog_frame,
         }
+        frame = self.movable
     end
     local keyboard_height = self.keyboard_hidden and 0
                                 or self._input_widget:getKeyboardDimen().h
     self[1] = CenterContainer:new{
         dimen = Geom:new{
-            w = Screen:getWidth(),
-            h = Screen:getHeight() - keyboard_height,
+            w = self.screen_width,
+            h = self.screen_height - keyboard_height,
         },
+        ignore_if_over = "height",
         frame
     }
+    if Device:isTouchDevice() then -- is used to hide the keyboard with a tap outside of inputbox
+        self.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = self[1].dimen, -- screen above the keyboard
+                },
+            },
+        }
+    end
+    if self._added_widgets then
+        for _, widget in ipairs(self._added_widgets) do
+            self:addWidget(widget, true)
+        end
+    end
+end
+
+function InputDialog:addWidget(widget, re_init)
+    if not re_init then -- backup widget for re-init
+        widget = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = widget:getSize().h,
+            },
+            widget,
+        }
+        if not self._added_widgets then
+            self._added_widgets = {}
+        end
+        table.insert(self._added_widgets, widget)
+    end
+    -- insert widget before the bottom buttons and their previous vspan
+    table.insert(self.vgroup, #self.vgroup-1, widget)
+end
+
+function InputDialog:onTap()
+    if self.deny_keyboard_hiding then
+        return
+    end
+    if self._input_widget.onCloseKeyboard then
+        self._input_widget:onCloseKeyboard()
+    end
 end
 
 function InputDialog:getInputText()
@@ -491,7 +508,7 @@ end
 function InputDialog:onCloseWidget()
     self:onClose()
     UIManager:setDirty(nil, self.fullscreen and "full" or function()
-        return "partial", self.dialog_frame.dimen
+        return "ui", self.dialog_frame.dimen
     end)
 end
 
@@ -501,10 +518,28 @@ function InputDialog:onShowKeyboard(ignore_first_hold_release)
     end
 end
 
+function InputDialog:toggleKeyboard(force_hide)
+    if force_hide and self.keyboard_hidden then return end
+    self.keyboard_hidden = not self.keyboard_hidden
+    self.input = self:getInputText() -- re-init with up-to-date text
+    self:onClose() -- will close keyboard and save view position
+    self:free()
+    self:init()
+    if not self.keyboard_hidden then
+        self:onShowKeyboard()
+    end
+end
+
 function InputDialog:onKeyboardHeightChanged()
     self.input = self:getInputText() -- re-init with up-to-date text
     self:onClose() -- will close keyboard and save view position
     self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
+    if self._added_widgets then
+        -- prevent these externally added widgets from being freed as :init() will re-add them
+        for i = 1, #self._added_widgets do
+            table.remove(self.vgroup, #self.vgroup-2)
+        end
+    end
     self:free()
     -- Restore original text_height (or reset it if none to force recomputing it)
     self.text_height = self.orig_text_height or nil
@@ -711,14 +746,137 @@ function InputDialog:_addScrollButtons(nav_bar)
                 text = self.keyboard_hidden and "↑⌨" or "↓⌨",
                 id = "keyboard",
                 callback = function()
-                    self.keyboard_hidden = not self.keyboard_hidden
-                    self.input = self:getInputText() -- re-init with up-to-date text
-                    self:onClose() -- will close keyboard and save view position
-                    self:free()
-                    self:init()
-                    if not self.keyboard_hidden then
-                        self:onShowKeyboard()
-                    end
+                    self:toggleKeyboard()
+                end,
+            })
+        end
+        if self.fullscreen then
+            -- Add a button to search for a string in the edited text
+            table.insert(row, {
+                text = _("Find"),
+                callback = function()
+                    local keyboard_hidden_state = not self.keyboard_hidden
+                    self:toggleKeyboard(true) -- hide text editor keyboard
+                    local input_dialog
+                    input_dialog = InputDialog:new{
+                        title = _("Enter text to search for"),
+                        stop_events_propagation = true, -- avoid interactions with upper InputDialog
+                        input = self.search_value,
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(input_dialog)
+                                        self.keyboard_hidden = keyboard_hidden_state
+                                        self:toggleKeyboard()
+                                    end,
+                                },
+                                {
+                                    text = _("Find first"),
+                                    callback = function()
+                                        self.search_value = input_dialog:getInputText()
+                                        if self.search_value ~= "" then
+                                            UIManager:close(input_dialog)
+                                            self.keyboard_hidden = keyboard_hidden_state
+                                            self:toggleKeyboard()
+                                            local msg
+                                            local char_pos = self._input_widget:searchString(self.search_value, self.case_sensitive, 1)
+                                            if char_pos > 0 then
+                                                self._input_widget:moveCursorToCharPos(char_pos)
+                                                msg = T(_("Found in line %1."), self._input_widget:getLineNums())
+                                            else
+                                                msg = _("Not found.")
+                                            end
+                                            UIManager:show(Notification:new{
+                                                text = msg,
+                                            })
+                                        end
+                                    end,
+                                },
+                                {
+                                    text = _("Find next"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        self.search_value = input_dialog:getInputText()
+                                        if self.search_value ~= "" then
+                                            UIManager:close(input_dialog)
+                                            self.keyboard_hidden = keyboard_hidden_state
+                                            self:toggleKeyboard()
+                                            local msg
+                                            local char_pos = self._input_widget:searchString(self.search_value, self.case_sensitive)
+                                            if char_pos > 0 then
+                                                self._input_widget:moveCursorToCharPos(char_pos)
+                                                msg = T(_("Found in line %1."), self._input_widget:getLineNums())
+                                            else
+                                                msg = _("Not found.")
+                                            end
+                                            UIManager:show(Notification:new{
+                                                text = msg,
+                                            })
+                                        end
+                                    end,
+                                },
+                            },
+                        },
+                    }
+
+                    self.check_button_case = CheckButton:new{
+                        text = _("Case sensitive"),
+                        checked = self.case_sensitive,
+                        parent = input_dialog,
+                        callback = function()
+                            self.case_sensitive = self.check_button_case.checked
+                        end,
+                    }
+                    input_dialog:addWidget(self.check_button_case)
+
+                    UIManager:show(input_dialog)
+                    input_dialog:onShowKeyboard()
+                end,
+            })
+            -- Add a button to go to the line by its number in the file
+            table.insert(row, {
+                text = _("Go"),
+                callback = function()
+                    local keyboard_hidden_state = not self.keyboard_hidden
+                    self:toggleKeyboard(true) -- hide text editor keyboard
+                    local cur_line_num, last_line_num = self._input_widget:getLineNums()
+                    local input_dialog
+                    input_dialog = InputDialog:new{
+                        title = _("Enter line number"),
+                        -- @translators %1 is the current line number, %2 is the last line number
+                        input_hint = T(_("%1 (1 - %2)"), cur_line_num, last_line_num),
+                        input_type = "number",
+                        stop_events_propagation = true, -- avoid interactions with upper InputDialog
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(input_dialog)
+                                        self.keyboard_hidden = keyboard_hidden_state
+                                        self:toggleKeyboard()
+                                    end,
+                                },
+                                {
+                                    text = _("Go to line"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local new_line_num = tonumber(input_dialog:getInputText())
+                                        if new_line_num and new_line_num >= 1 and new_line_num <= last_line_num then
+                                            UIManager:close(input_dialog)
+                                            self.keyboard_hidden = keyboard_hidden_state
+                                            self:toggleKeyboard()
+                                            self._input_widget:moveCursorToCharPos(self._input_widget:getLineCharPos(new_line_num))
+                                        end
+                                    end,
+                                },
+                            },
+                        },
+                    }
+                    UIManager:show(input_dialog)
+                    input_dialog:onShowKeyboard()
                 end,
             })
         end

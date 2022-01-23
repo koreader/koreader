@@ -1,5 +1,5 @@
 --[[--
-ImageWidget shows an image from a file or memory
+ImageWidget shows an image from a file or memory.
 
 Show image from file example:
 
@@ -22,7 +22,6 @@ Show image from memory example:
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Cache = require("cache")
-local CacheItem = require("cacheitem")
 local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
@@ -39,21 +38,15 @@ end
 local DPI_SCALE = get_dpi_scale()
 
 local ImageCache = Cache:new{
-    max_memsize = 5*1024*1024, -- 5M of image cache
-    current_memsize = 0,
-    cache = {},
-    -- this will hold the LRU order of the cache
-    cache_order = {}
+    -- 8 MiB of image cache, with 128 slots
+    -- Overwhelmingly used for our icons, which are tiny in size, and not very numerous (< 100),
+    -- but also by ImageViewer (on files, which we never do), and ScreenSaver (again, on image files, but not covers),
+    -- hence the leeway.
+    size = 8 * 1024 * 1024,
+    avg_itemsize = 64 * 1024,
+    -- Rely on our FFI finalizer to free the BBs on GC
+    enable_eviction_cb = false,
 }
-
-local ImageCacheItem = CacheItem:new{}
-
-function ImageCacheItem:onFree()
-    if self.bb.free then
-        logger.dbg("free image blitbuffer", self.bb)
-        self.bb:free()
-    end
-end
 
 local ImageWidget = Widget:new{
     -- Can be provided with a path to a file
@@ -88,12 +81,18 @@ local ImageWidget = Widget:new{
     -- If scale_for_dpi is true image will be rescaled according to screen dpi
     scale_for_dpi = false,
 
-    -- When scale_factor is not nil, native image is scaled by this factor
-    -- (if scale_factor == 1, native image size is kept)
-    -- Special case : scale_factor == 0 : image will be scaled to best fit provided
-    -- width and height, keeping aspect ratio (scale_factor will be updated
-    -- from 0 to the factor used at _render() time)
+    -- When scale_factor is not nil, native image is scaled by this factor,
+    --   (if scale_factor == 1, native image size is kept)
+    --   Special case: scale_factor == 0 : image will be scaled to best fit provided
+    --   width and height, keeping aspect ratio (scale_factor will be updated
+    --   from 0 to the factor used at _render() time)
+    -- If scale_factor is nil and stretch_limit_percantage is provided:
+    --   If the aspect ratios of the image and the width/height provided don't differ by more than
+    --   stretch_limit_percentage, then stretch the image (as scale_factor=nil);
+    --   otherwise, scale to best fit (as scale_factor=0)
+    -- In all other cases the image will be stretched to best fit the container.
     scale_factor = nil,
+    stretch_limit_percentage = nil,
 
     -- Whether to use former blitbuffer:scale() (default to using MuPDF)
     use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling"),
@@ -151,12 +150,12 @@ function ImageWidget:_loadfile()
             hash = hash .. "|d"
             self.already_scaled_for_dpi = true -- so we don't do it again in _render()
         end
-        local cache = ImageCache:check(hash)
-        if cache then
+        local cached = ImageCache:check(hash)
+        if cached then
             -- hit cache
-            self._bb = cache.bb
+            self._bb = cached.bb
             self._bb_disposable = false -- don't touch or free a cached _bb
-            self._is_straight_alpha = cache.is_straight_alpha
+            self._is_straight_alpha = cached.is_straight_alpha
         else
             if itype == "svg" then
                 local zoom
@@ -179,11 +178,11 @@ function ImageWidget:_loadfile()
                 end
             end
 
-            -- Now, if that was *also* one of our icons, and it has an alpha channel,
-            -- compose it against a background-colored BB now, and cache *that*.
+            -- Now, if that was *also* one of our icons, we haven't explicitly requested to keep the alpha channel intact,
+            -- and it actually has an alpha channel, compose it against a background-colored BB now, and cache *that*.
             -- This helps us avoid repeating alpha-blending steps down the line,
             -- and also ensures icon highlights/unhighlights behave sensibly.
-            if self.is_icon then
+            if self.is_icon and not self.alpha then
                 local bbtype = self._bb:getType()
                 if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
                     local icon_bb = Blitbuffer.new(self._bb.w, self._bb.h, Screen.bb:getType())
@@ -223,12 +222,11 @@ function ImageWidget:_loadfile()
                 self._bb_disposable = false -- don't touch or free a cached _bb
                 -- cache this image
                 logger.dbg("cache", hash)
-                cache = ImageCacheItem:new{
+                cached = {
                     bb = self._bb,
                     is_straight_alpha = self._is_straight_alpha,
                 }
-                cache.size = tonumber(cache.bb.stride) * cache.bb.h
-                ImageCache:insert(hash, cache)
+                ImageCache:insert(hash, cached, tonumber(cached.bb.stride) * cached.bb.h)
             end
         end
     else
@@ -289,8 +287,18 @@ function ImageWidget:_render()
         self.scale_factor = self.scale_factor * DPI_SCALE
     end
 
-    -- scale to best fit container : compute scale_factor for that
+    if self.stretch_limit_percentage and not self.scale_factor then
+        -- stretch or scale to fit container, depending on self.stretch_limit_percentage
+        local screen_ratio = self.width / self.height
+        local image_ratio = bb_w / bb_h
+        local ratio_divergence_percent = math.abs(100 - image_ratio / screen_ratio * 100)
+        if ratio_divergence_percent > self.stretch_limit_percentage then
+            self.scale_factor = 0
+        end
+    end
+
     if self.scale_factor == 0 then
+        -- scale to best fit container: compute scale_factor for that
         if self.width and self.height then
             self.scale_factor = math.min(self.width / bb_w, self.height / bb_h)
             logger.dbg("ImageWidget: scale to fit, setting scale_factor to", self.scale_factor)
@@ -482,6 +490,7 @@ end
 -- (ie: in some other widget's update()), to not leak memory with
 -- BlitBuffer zombies
 function ImageWidget:free()
+    --print("ImageWidget:free on", self, "for BB?", self._bb, self._bb_disposable)
     if self._bb and self._bb_disposable and self._bb.free then
         self._bb:free()
         self._bb = nil

@@ -11,7 +11,7 @@ local Geom = require("ui/geometry")
 local Screen = Device.screen
 
 local ButtonTable = FocusManager:new{
-    width = Screen:getWidth(),
+    width = nil,
     buttons = {
         {
             {text="OK", enabled=true, callback=nil},
@@ -27,6 +27,7 @@ local ButtonTable = FocusManager:new{
 }
 
 function ButtonTable:init()
+    self.width = self.width or math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9)
     self.selected = { x = 1, y = 1 }
     self.buttons_layout = {}
     self.button_by_id = {}
@@ -52,12 +53,15 @@ function ButtonTable:init()
             local button = Button:new{
                 text = btn_entry.text,
                 text_func = btn_entry.text_func,
+                icon = btn_entry.icon,
+                icon_width = btn_entry.icon_width,
+                icon_height = btn_entry.icon_height,
                 enabled = btn_entry.enabled,
                 callback = btn_entry.callback,
                 hold_callback = btn_entry.hold_callback,
                 vsync = btn_entry.vsync,
-                width = (self.width - sizer_space)/column_cnt,
-                max_width = (self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding,
+                width = math.ceil((self.width - sizer_space)/column_cnt),
+                max_width = math.ceil((self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding),
                 bordersize = 0,
                 margin = 0,
                 padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
@@ -88,7 +92,7 @@ function ButtonTable:init()
             self:addHorizontalSep(true, true, true)
         end
         if column_cnt > 0 then
-            --Only add line that are not separator to the focusmanager
+            -- Only add lines that are not separator to the focusmanager
             table.insert(self.buttons_layout, buttons_layout_line)
         end
     end -- end for each button line

@@ -35,16 +35,16 @@ fi
 
 wpa_cli terminate
 
-[ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" down
+[ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" down
 ifconfig "${INTERFACE}" down
 
 # Some sleep in between may avoid system getting hung
 # (we test if a module is actually loaded to avoid unneeded sleeps)
-if grep -q "${WIFI_MODULE}" "/proc/modules"; then
+if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     usleep 250000
     rmmod "${WIFI_MODULE}"
 fi
-if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
     # Handle the shitty DVFS switcheroo...
     if [ -n "${CPUFREQ_DVFS}" ]; then
         echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
@@ -57,4 +57,10 @@ if grep -q "sdio_wifi_pwr" "/proc/modules"; then
     fi
     usleep 250000
     rmmod sdio_wifi_pwr
+fi
+
+# Poke the kernel via ioctl on platforms without the dedicated power module...
+if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+    usleep 250000
+    ./luajit frontend/device/kobo/ntx_io.lua 208 0
 fi

@@ -7,6 +7,7 @@ local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local RenderImage = require("ui/renderimage")
 local SQ3 = require("lua-ljsqlite3/init")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -113,6 +114,18 @@ local BOOKINFO_SELECT_SQL = "SELECT " .. table.concat(BOOKINFO_COLS_SET, ",") ..
                             "WHERE directory=? AND filename=? AND in_progress=0;"
 local BOOKINFO_IN_PROGRESS_SQL = "SELECT in_progress, filename, unsupported FROM bookinfo WHERE directory=? AND filename=?;"
 
+-- We need these _ litterals for them to be made available to translators. the english "string" is
+-- what is inserted in the DB, and it will be translated only when read from the DB and displayed.
+local UNSUPPORTED_REASONS = {
+    not_readable_by_engine = {
+               string = "not readable by engine",
+        translation = _("not readable by engine")
+    },
+    too_many_interruptions_or_crashes = {
+               string = "too many interruptions or crashes",
+        translation = _("too many interruptions or crashes")
+    }
+}
 
 local BookInfoManager = {}
 
@@ -124,9 +137,9 @@ function BookInfoManager:init()
     self.subprocesses_collector = nil
     self.subprocesses_collect_interval = 10 -- do that every 10 seconds
     self.subprocesses_pids = {}
-    self.subprocesses_last_added_ts = nil
-    self.subprocesses_killall_timeout_seconds = 300 -- cleanup timeout for stuck subprocesses
-    -- 300 seconds should be enough to open and get info from 9-10 books
+    self.subprocesses_last_added_tv = TimeVal.zero
+    self.subprocesses_killall_timeout_tv = TimeVal:new{ sec = 300, usec = 0 } -- cleanup timeout for stuck subprocesses
+    -- 300 seconds should be more than enough to open and get info from 9-10 books
     -- Whether to use former blitbuffer:scale() (default to using MuPDF)
     self.use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling")
     -- We will use a temporary directory for crengine cache while indexing
@@ -392,7 +405,6 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         -- so it does not reset our temporary cache dir when we first open
         -- a crengine book for extraction.
         require("document/credocument"):engineInit()
-        local cre = require "libs/libkoreader-cre"
         -- If we wanted to disallow caching completely:
         -- cre.initCache("", 1024*1024*32) -- empty path = no cache
         -- But it's best to use a cache for quicker and less memory
@@ -439,7 +451,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         logger.info("Seen", prev_tries, "previous attempts at info extraction", filepath, ", too many, ignoring it.")
         tried_enough = true
         dbrow.in_progress = 0     -- row will exist, we'll never be called again
-        dbrow.unsupported = _("too many interruptions or crashes") -- but caller will now it failed
+        dbrow.unsupported = UNSUPPORTED_REASONS.too_many_interruptions_or_crashes.string
         dbrow.cover_fetched = 'Y' -- so we don't try again if we're called later with cover_specs
     end
     -- Insert the temporary "in progress" record (or the definitive "unsupported" record)
@@ -543,12 +555,12 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                 end
             end
         end
-        DocumentRegistry:closeDocument(filepath)
+        document:close()
     else
         loaded = false
     end
     if not loaded then
-        dbrow.unsupported = _("not readable by engine")
+        dbrow.unsupported = UNSUPPORTED_REASONS.not_readable_by_engine.string
         dbrow.cover_fetched = 'Y' -- so we don't try again if we're called later if cover_specs
     end
     dbrow.in_progress = 0 -- extraction completed (successful or definitive failure)
@@ -616,25 +628,27 @@ end
 
 -- Background extraction management
 function BookInfoManager:collectSubprocesses()
+    self.subprocesses_collector = nil
+
     -- We need to regularly watch if a sub-process has terminated by
     -- calling waitpid() so this process does not become a zombie hanging
     -- around till we exit.
     if #self.subprocesses_pids > 0 then
-        local i = 1
-        while i <= #self.subprocesses_pids do -- clean in-place
+        -- In-place removal, hence the reverse iteration.
+        for i = #self.subprocesses_pids, 1, -1 do
             local pid = self.subprocesses_pids[i]
             if FFIUtil.isSubProcessDone(pid) then
                 table.remove(self.subprocesses_pids, i)
                 -- Prevent has been issued for each bg task spawn, we must allow for each death too.
                 UIManager:allowStandby()
-            else
-                i = i + 1
             end
         end
         if #self.subprocesses_pids > 0 then
             -- still some pids around, we'll need to collect again
-            self.subprocesses_collector = UIManager:scheduleIn(
-                self.subprocesses_collect_interval, function()
+            self.subprocesses_collector = true
+            UIManager:scheduleIn(
+                self.subprocesses_collect_interval,
+                function()
                     self:collectSubprocesses()
                 end
             )
@@ -643,13 +657,12 @@ function BookInfoManager:collectSubprocesses()
             -- the user has not left FileManager or changed page - that would
             -- have caused a terminateBackgroundJobs() - if we're here, it's
             -- that user has left reader in FileBrower and went away)
-            if FFIUtil.getTimestamp() > self.subprocesses_last_added_ts + self.subprocesses_killall_timeout_seconds then
+            if TimeVal:now() > self.subprocesses_last_added_tv + self.subprocesses_killall_timeout_tv then
                 logger.warn("Some subprocesses were running for too long, killing them")
                 self:terminateBackgroundJobs()
                 -- we'll collect them next time we're run
             end
         else
-            self.subprocesses_collector = nil
             if self.delayed_cleanup then
                 self.delayed_cleanup = false
                 -- No more subprocesses = no more crengine indexing, we can remove our
@@ -657,6 +670,11 @@ function BookInfoManager:collectSubprocesses()
                 self:cleanUp()
             end
         end
+    end
+
+    -- We're done, back to a single core
+    if #self.subprocesses_pids == 0 then
+        Device:enableCPUCores(1)
     end
 end
 
@@ -691,12 +709,16 @@ function BookInfoManager:extractInBackground(files)
             local cover_specs = files[idx].cover_specs
             logger.dbg("  BG extracting:", filepath)
             self:extractBookInfo(filepath, cover_specs)
-            FFIUtil.usleep(100000) -- give main process 100ms of free cpu to do its processing
         end
         logger.dbg("  BG extraction done")
     end
 
     self.cleanup_needed = true -- so we will remove temporary cache directory created by subprocess
+
+    -- If it's the first subprocess we're launching, enable 2 CPU cores
+    if #self.subprocesses_pids == 0 then
+        Device:enableCPUCores(2)
+    end
 
     -- Run task in sub-process, and remember its pid
     local task_pid = FFIUtil.runInSubProcess(task)
@@ -708,14 +730,16 @@ function BookInfoManager:extractInBackground(files)
     -- counter on each task, and undo that inside collectSubprocesses() zombie reaper.
     UIManager:preventStandby()
     table.insert(self.subprocesses_pids, task_pid)
-    self.subprocesses_last_added_ts = FFIUtil.getTimestamp()
+    self.subprocesses_last_added_tv = TimeVal:now()
 
     -- We need to collect terminated jobs pids (so they do not stay "zombies"
     -- and fill linux processes table)
     -- We set a single scheduled action for that
     if not self.subprocesses_collector then -- there's not one already scheduled
-        self.subprocesses_collector = UIManager:scheduleIn(
-            self.subprocesses_collect_interval, function()
+        self.subprocesses_collector = true
+        UIManager:scheduleIn(
+            self.subprocesses_collect_interval,
+            function()
                 self:collectSubprocesses()
             end
         )

@@ -7,8 +7,11 @@ local DEFAULT_PLUGIN_PATH = "plugins"
 -- plugin names that were removed and are no longer available.
 local OBSOLETE_PLUGINS = {
     calibrecompanion = true,
+    evernote = true,
+    goodreads = true,
     storagestat = true,
     kobolight = true,
+    zsync = true,
 }
 -- Deprecated plugins are still available, but show a hint about deprecation.
 local function getMenuTable(plugin)
@@ -40,6 +43,10 @@ end
 
 local PluginLoader = {
     show_info = true,
+    enabled_plugins = nil,
+    disabled_plugins = nil,
+    loaded_plugins = nil,
+    all_plugins = nil,
 }
 
 function PluginLoader:loadPlugins()
@@ -47,6 +54,7 @@ function PluginLoader:loadPlugins()
 
     self.enabled_plugins = {}
     self.disabled_plugins = {}
+    self.loaded_plugins = {}
     local lookup_path_list = { DEFAULT_PLUGIN_PATH }
     local extra_paths = G_reader_settings:readSetting("extra_plugin_paths")
     if extra_paths then
@@ -66,7 +74,9 @@ function PluginLoader:loadPlugins()
     else
         local data_dir = require("datastorage"):getDataDir()
         if data_dir ~= "." then
-            G_reader_settings:saveSetting("extra_plugin_paths", { data_dir .. "/plugins/" })
+            local extra_path = data_dir .. "/plugins/"
+            G_reader_settings:saveSetting("extra_plugin_paths", { extra_path })
+            table.insert(lookup_path_list, extra_path)
         end
     end
 
@@ -82,8 +92,8 @@ function PluginLoader:loadPlugins()
     for element in pairs(OBSOLETE_PLUGINS) do
         plugins_disabled[element] = true
     end
-    for _,lookup_path in ipairs(lookup_path_list) do
-        logger.info('Loading plugins from directory:', lookup_path)
+    for _, lookup_path in ipairs(lookup_path_list) do
+        logger.info("Loading plugins from directory:", lookup_path)
         for entry in lfs.dir(lookup_path) do
             local plugin_root = lookup_path.."/"..entry
             local mode = lfs.attributes(plugin_root, "mode")
@@ -113,7 +123,7 @@ function PluginLoader:loadPlugins()
                         table.insert(self.enabled_plugins, plugin_module)
                     end
                 else
-                    logger.info("Plugin ", mainfile, " has been disabled.")
+                    logger.dbg("Plugin ", mainfile, " has been disabled.")
                 end
                 package.path = package_path
                 package.cpath = package_cpath
@@ -122,7 +132,7 @@ function PluginLoader:loadPlugins()
     end
 
     -- set package path for all loaded plugins
-    for _,plugin in ipairs(self.enabled_plugins) do
+    for _, plugin in ipairs(self.enabled_plugins) do
         package.path = string.format("%s;%s/?.lua", package.path, plugin.path)
         package.cpath = string.format("%s;%s/lib/?.so", package.cpath, plugin.path)
     end
@@ -133,26 +143,26 @@ function PluginLoader:loadPlugins()
 end
 
 function PluginLoader:genPluginManagerSubItem()
-    local enabled_plugins, disabled_plugins = {}, {}
-    if self.all_plugins == nil then
+    if not self.all_plugins then
+        local enabled_plugins, disabled_plugins = self:loadPlugins()
         self.all_plugins = {}
-        enabled_plugins, disabled_plugins = self:loadPlugins()
-    end
 
-    for _, plugin in ipairs(enabled_plugins) do
-        local element = getMenuTable(plugin)
-        element.enable = true
-        table.insert(self.all_plugins, element)
-    end
-
-    for _, plugin in ipairs(disabled_plugins) do
-        local element = getMenuTable(plugin)
-        element.enable = false
-        if not OBSOLETE_PLUGINS[element.name] then
+        for _, plugin in ipairs(enabled_plugins) do
+            local element = getMenuTable(plugin)
+            element.enable = true
             table.insert(self.all_plugins, element)
         end
+
+        for _, plugin in ipairs(disabled_plugins) do
+            local element = getMenuTable(plugin)
+            element.enable = false
+            if not OBSOLETE_PLUGINS[element.name] then
+                table.insert(self.all_plugins, element)
+            end
+        end
+
+        table.sort(self.all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
     end
-    table.sort(self.all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
 
     local plugin_table = {}
     for __, plugin in ipairs(self.all_plugins) do
@@ -189,11 +199,29 @@ end
 function PluginLoader:createPluginInstance(plugin, attr)
     local ok, re = pcall(plugin.new, plugin, attr)
     if ok then  -- re is a plugin instance
+        self.loaded_plugins[plugin.name] = re
         return ok, re
     else  -- re is the error message
-        logger.err('Failed to initialize', plugin.name, 'plugin: ', re)
+        logger.err("Failed to initialize", plugin.name, "plugin: ", re)
         return nil, re
     end
+end
+
+--- Checks if a specific plugin is instantiated
+function PluginLoader:isPluginLoaded(name)
+   return self.loaded_plugins[name] ~= nil
+end
+
+--- Returns the current instance of a specific Plugin (if any)
+--- (NOTE: You can also usually access it via self.ui[plugin_name])
+function PluginLoader:getPluginInstance(name)
+   return self.loaded_plugins[name]
+end
+
+-- *MUST* be called on destruction of whatever called createPluginInstance!
+function PluginLoader:finalize()
+    -- Unpin stale references
+    self.loaded_plugins = {}
 end
 
 return PluginLoader

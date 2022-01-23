@@ -43,6 +43,7 @@ local TextBoxWidget = InputContainer:new{
                   -- which, with XText, makes a bold string the same width as it non-bolded.
     line_height = 0.3, -- in em
     fgcolor = Blitbuffer.COLOR_BLACK,
+    bgcolor = Blitbuffer.COLOR_WHITE,
     width = Screen:scaleBySize(400), -- in pixels
     height = nil, -- nil value indicates unscrollable text widget
     height_adjust = false, -- if true, reduce height to a multiple of line_height (for nicer centering)
@@ -103,6 +104,9 @@ local TextBoxWidget = InputContainer:new{
                                 -- (set to 0 to disable any tab handling and display a tofu glyph)
     _xtext = nil, -- for internal use
     _alt_color_for_rtl = nil, -- (for debugging) draw LTR glyphs in black, RTL glyphs in gray
+
+    -- for internal use
+    for_measurement_only = nil, -- When the widget is a one-off used to compute text height
 }
 
 function TextBoxWidget:init()
@@ -116,6 +120,20 @@ function TextBoxWidget:init()
     end
 
     self.line_height_px = Math.round( (1 + self.line_height) * self.face.size )
+    -- Get accurate initial baseline and possible height overflow (so our bb
+    -- is tall enough to draw glyphs with descender larger than line height)
+    local face_height, face_ascender = self.face.ftface:getHeightAndAscender()
+    local line_heights_diff = math.floor(self.line_height_px - face_height)
+    if line_heights_diff >= 0 then
+        -- Glyphs will fit in our line_height_px: adjust baseline.
+        self.line_glyph_baseline = math.floor(face_ascender + line_heights_diff/2)
+        self.line_glyph_extra_height = 0
+    else
+        -- Glyphs may be taller than our line_height_px
+        self.line_glyph_baseline = math.floor(face_ascender)
+        self.line_glyph_extra_height = -line_heights_diff
+    end
+
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
             w = Size.line.medium,
@@ -167,7 +185,7 @@ function TextBoxWidget:init()
             self:scrollViewToCharPos()
         end
     end
-    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    self:_updateLayout()
     if self.editable then
         self:moveCursorToCharPos(self.charpos or 1)
     end
@@ -200,6 +218,11 @@ end
 function TextBoxWidget:_evalCharWidthList()
     -- if self.charlist is provided, use it directly
     if self.charlist == nil then
+        if not self.text then
+            self.text = ""
+        elseif type(self.text) ~= "string" then
+            self.text = tostring(self.text)
+        end
         self.charlist = util.splitToChars(self.text)
     end
     -- get width of each distinct char
@@ -244,6 +267,7 @@ end
 -- Split the text into logical lines to fit into the text box.
 function TextBoxWidget:_splitToLines()
     self.vertical_string_list = {}
+    self.line_num_to_image = nil
 
     local idx = 1
     local size = #self.charlist
@@ -750,22 +774,22 @@ end
 
 ---- Lays out text.
 function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
-    local font_height = self.face.size
     if start_row_idx < 1 then start_row_idx = 1 end
     if end_row_idx > #self.vertical_string_list then end_row_idx = #self.vertical_string_list end
     local row_count = end_row_idx == 0 and 1 or end_row_idx - start_row_idx + 1
     -- We need a bb with the full height (even if we display only a few lines, we
     -- may have to draw an image bigger than these lines)
     local h = self.height or self.line_height_px * row_count
+    h = h + self.line_glyph_extra_height
     if self._bb then self._bb:free() end
     local bbtype = nil
     if self.line_num_to_image and self.line_num_to_image[start_row_idx] then
         bbtype = Screen:isColorEnabled() and Blitbuffer.TYPE_BBRGB32 or Blitbuffer.TYPE_BB8
     end
     self._bb = Blitbuffer.new(self.width, h, bbtype)
-    self._bb:fill(Blitbuffer.COLOR_WHITE)
-    local y = font_height
+    self._bb:fill(self.bgcolor)
 
+    local y = self.line_glyph_baseline
     if self.use_xtext then
         for i = start_row_idx, end_row_idx do
             local line = self.vertical_string_list[i]
@@ -843,10 +867,21 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     self:_renderImage(start_row_idx)
 end
 
+-- Lay out the full text, starting at the current line.
+-- (NOTE: This instantiates the inner bb (self._bb), so be careful about its lifecycle when you call this,
+--        c.f., TextBoxWidget:update).
+function TextBoxWidget:_updateLayout()
+    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+end
+
 function TextBoxWidget:_renderImage(start_row_idx)
     local scheduled_update = self.scheduled_update
     self.scheduled_update = nil -- reset it, so we don't have to whenever we return below
     if not self.line_num_to_image or not self.line_num_to_image[start_row_idx] then
+        -- No image, no dithering
+        if self.dialog then
+            self.dialog.dithered = false
+        end
         return -- no image on this page
     end
     local image = self.line_num_to_image[start_row_idx]
@@ -891,9 +926,22 @@ function TextBoxWidget:_renderImage(start_row_idx)
         local bbtype = image.bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
             -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
-            self._bb:pmulalphablitFrom(image.bb, self.width - image.width, 0)
+            if Screen.sw_dithering then
+                self._bb:ditherpmulalphablitFrom(image.bb, self.width - image.width, 0)
+            else
+                self._bb:pmulalphablitFrom(image.bb, self.width - image.width, 0)
+            end
         else
-            self._bb:blitFrom(image.bb, self.width - image.width, 0)
+            if Screen.sw_dithering then
+                self._bb:ditherblitFrom(image.bb, self.width - image.width, 0)
+            else
+                self._bb:blitFrom(image.bb, self.width - image.width, 0)
+            end
+        end
+
+        -- Request dithering
+        if self.dialog then
+            self.dialog.dithered = true
         end
     end
     local status_height = 0
@@ -965,7 +1013,8 @@ function TextBoxWidget:_renderImage(start_row_idx)
                                 y = self.dimen.y,
                                 w = image.width,
                                 h = image.height,
-                            }
+                            },
+                            true  -- Request dithering
                         end)
                     end
                 end)
@@ -983,7 +1032,8 @@ function TextBoxWidget:_renderImage(start_row_idx)
                         y = self.dimen.y,
                         w = image.width,
                         h = image.height,
-                    }
+                    },
+                    true  -- Request dithering
                 end)
             end
         end
@@ -1014,6 +1064,10 @@ function TextBoxWidget:getLineHeight()
     return self.line_height_px
 end
 
+function TextBoxWidget:getBaseline()
+    return self.line_glyph_baseline
+end
+
 function TextBoxWidget:getVisibleHeightRatios()
     local low = (self.virtual_line_num - 1) / #self.vertical_string_list
     local high = (self.virtual_line_num - 1 + self.lines_per_page) / #self.vertical_string_list
@@ -1034,9 +1088,12 @@ function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_e
     end
     -- We do the revert of what's done in :init():
     --   self.line_height_px = Math.round( (1 + self.line_height) * self.face.size )
-    local font_size = height_px / nb_lines / (1 + line_height_em)
-    font_size = font_size * 1000000 / Screen:scaleBySize(1000000) -- invert scaleBySize
-    return math.floor(font_size)
+    local face_size = height_px / nb_lines / (1 + line_height_em)
+    local font_size = math.floor(face_size * 1000000 / Screen:scaleBySize(1000000)) -- invert scaleBySize
+    if Screen:scaleBySize(font_size) > face_size then -- be really sure we won't get it larger
+        font_size = font_size - 1
+    end
+    return font_size
 end
 
 function TextBoxWidget:getCharPos()
@@ -1045,11 +1102,12 @@ function TextBoxWidget:getCharPos()
 end
 
 function TextBoxWidget:getSize()
-    if self.width and self.height then
-        return Geom:new{ w = self.width, h = self.height}
-    else
-        return Geom:new{ w = self.width, h = self._bb:getHeight()}
+    -- Make sure we actually have a BB, in case we're recycling an instance... (c.f., #8241)
+    if not self._bb then
+        self:_updateLayout()
     end
+
+    return Geom:new{w = self.width, h = self._bb:getHeight()}
 end
 
 function TextBoxWidget:paintTo(bb, x, y)
@@ -1063,6 +1121,7 @@ function TextBoxWidget:onCloseWidget()
 end
 
 function TextBoxWidget:free(full)
+    --print("TextBoxWidget:free", full, "on", self)
     -- logger.dbg("TextBoxWidget:free called")
     -- We are called with full=false from other methods here whenever
     -- :_renderText() is to be called to render a new page (when scrolling
@@ -1087,8 +1146,13 @@ function TextBoxWidget:free(full)
             -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
             -- (we should not free it if full=false as it is re-usable across renderings)
             self._xtext:free()
+            self._xtext = nil
             -- logger.dbg("TextBoxWidget:_xtext:free()")
         end
+
+        -- c.f., :_splitToLines
+        self.vertical_string_list = {}
+        self.line_num_to_image = nil
     end
 end
 
@@ -1097,7 +1161,7 @@ function TextBoxWidget:update(scheduled_update)
     -- We set this flag so :_renderText() can know we were called from a
     -- scheduled update and so not schedule another one
     self.scheduled_update = scheduled_update
-    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    self:_updateLayout()
     self.scheduled_update = nil
 end
 
@@ -1124,7 +1188,8 @@ function TextBoxWidget:onTapImage(arg, ges)
                         y = self.dimen.y,
                         w = image.width,
                         h = image.height,
-                    }
+                    },
+                    not self.image_show_alt_text  -- Request dithering when showing the image
                 end)
                 return true
             end
@@ -1148,7 +1213,7 @@ function TextBoxWidget:scrollDown()
                 end
             end
         end
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to first line of visible area
@@ -1166,7 +1231,7 @@ function TextBoxWidget:scrollUp()
         else
             self.virtual_line_num = self.virtual_line_num - self.lines_per_page
         end
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to first line of visible area
@@ -1190,7 +1255,7 @@ function TextBoxWidget:scrollLines(nb_lines)
     end
     self.virtual_line_num = new_line_num
     self:free(false)
-    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    self:_updateLayout()
     if self.editable then
         local x, y = self:_getXYForCharPos() -- luacheck: no unused
         if y < 0 or y >= self.text_height then
@@ -1206,7 +1271,7 @@ function TextBoxWidget:scrollToTop()
     if self.virtual_line_num > 1 then
         self:free(false)
         self.virtual_line_num = 1
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to first char
@@ -1224,7 +1289,7 @@ function TextBoxWidget:scrollToBottom()
     if self.virtual_line_num ~= ln then
         self:free(false)
         self.virtual_line_num = ln
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to last char
@@ -1255,7 +1320,7 @@ function TextBoxWidget:scrollToRatio(ratio, force_to_page)
     if line_num ~= self.virtual_line_num then
         self:free(false)
         self.virtual_line_num = line_num
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to first line of visible area
@@ -1500,13 +1565,16 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
     if x > self.width - self.cursor_line.dimen.w then
         x = self.width - self.cursor_line.dimen.w
     end
+    if self.for_measurement_only then
+        return -- we're a dummy widget used for computing text height, don't render/refresh anything
+    end
     if not self._bb then
         return -- no bb yet to render the cursor too
     end
     if self.virtual_line_num ~= self.prev_virtual_line_num then
         -- We scrolled the view: full render and refresh needed
         self:free(false)
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
         -- Store the original image of where we will draw the cursor, for a
         -- quick restore and two small refreshes when moving only the cursor
         self.cursor_restore_x = x
@@ -1683,13 +1751,11 @@ function TextBoxWidget:moveCursorRight()
 end
 
 function TextBoxWidget:moveCursorUp()
-    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
     local x, y = self:_getXYForCharPos()
     self:moveCursorToXY(x, y - self.line_height_px)
 end
 
 function TextBoxWidget:moveCursorDown()
-    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
     local x, y = self:_getXYForCharPos()
     self:moveCursorToXY(x, y + self.line_height_px)
 end
@@ -1761,7 +1827,7 @@ function TextBoxWidget:onHoldStartText(_, ges)
         return false -- let event be processed by other widgets
     end
 
-    self.hold_start_tv = TimeVal.now()
+    self.hold_start_tv = UIManager:getTime()
     return true
 end
 
@@ -1794,7 +1860,6 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
     end
 
     local hold_duration = TimeVal.now() - self.hold_start_tv
-    hold_duration = hold_duration.sec + hold_duration.usec/1000000
 
     -- If page contains an image, check if Hold is on this image and deal
     -- with it directly
@@ -1888,7 +1953,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         -- to consider when looking for word boundaries)
         local selected_text = self._xtext:getSelectedWords(sel_start_idx, sel_end_idx, 50)
 
-        logger.dbg("onHoldReleaseText (duration:", hold_duration, ") :",
+        logger.dbg("onHoldReleaseText (duration:", hold_duration:tonumber(), ") :",
                         sel_start_idx, ">", sel_end_idx, "=", selected_text)
         callback(selected_text, hold_duration)
         return true
@@ -1906,7 +1971,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
     end
 
     local selected_text = table.concat(self.charlist, "", sel_start_idx, sel_end_idx)
-    logger.dbg("onHoldReleaseText (duration:", hold_duration, ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
+    logger.dbg("onHoldReleaseText (duration:", hold_duration:tonumber(), ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
     callback(selected_text, hold_duration)
     return true
 end

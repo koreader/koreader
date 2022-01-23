@@ -78,7 +78,7 @@ function BookStatusWidget:init()
             self.summary = new_summary
         end
     end
-    self.total_pages = self.view.document:getPageCount()
+    self.total_pages = self.ui.document:getPageCount()
     stats_book = self:getStats()
 
     self.small_font_face = Font:getFace("smallffont")
@@ -144,7 +144,8 @@ end
 
 function BookStatusWidget:getStatHours()
     if stats_book.time then
-        return util.secondsToClock(stats_book.time, false)
+        local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
+        return util.secondsToClockDuration(user_duration_format, stats_book.time, false)
     else
         return _("N/A")
     end
@@ -246,7 +247,7 @@ function BookStatusWidget:generateRateGroup(width, height, rating)
 end
 
 function BookStatusWidget:setStar(num)
-    --clear previous data
+    -- clear previous data
     self.stars_container:clear()
 
     local stars_group = HorizontalGroup:new{ align = "center" }
@@ -326,7 +327,7 @@ function BookStatusWidget:genBookInfoGroup()
         }
     )
     -- progress bar
-    local read_percentage = self.view.state.page / self.total_pages
+    local read_percentage = self.ui:getCurrentPage() / self.total_pages
     local progress_bar = ProgressWidget:new{
         width = math.floor(width * 0.7),
         height = Screen:scaleBySize(10),
@@ -571,7 +572,7 @@ function BookStatusWidget:generateSwitchGroup(width)
     }
 end
 
-function BookStatusWidget:onConfigChoose(values, name, event, args, events, position)
+function BookStatusWidget:onConfigChoose(values, name, event, args, position)
     UIManager:tickAfterNext(function()
         if values then
             self:onChangeBookStatus(args, position)

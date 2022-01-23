@@ -7,7 +7,6 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local ReaderUI = require("apps/reader/readerui")
 local util = require("util")
-local Screen = require("device").screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -21,7 +20,7 @@ function DropBox:showFiles(url, password)
     return DropBoxApi:showFiles(url, password)
 end
 
-function DropBox:downloadFile(item, password, path, close)
+function DropBox:downloadFile(item, password, path, callback_close)
     local code_response = DropBoxApi:downloadFile(item.url, password, path)
     if code_response == 200 then
         local __, filename = util.splitFilePathName(path)
@@ -34,7 +33,13 @@ function DropBox:downloadFile(item, password, path, close)
                 text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
                     BD.filepath(path)),
                 ok_callback = function()
-                    close()
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
+                    if callback_close then
+                        callback_close()
+                    end
+
                     ReaderUI:showReader(path)
                 end
             })
@@ -53,6 +58,36 @@ function DropBox:downloadFileNoUI(url, password, path)
         return true
     else
         return false
+    end
+end
+
+function DropBox:uploadFile(url, password, file_path, callback_close)
+    local code_response = DropBoxApi:uploadFile(url, password, file_path)
+    local __, filename = util.splitFilePathName(file_path)
+    if code_response == 200 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("File uploaded:\n%1"), filename),
+        })
+        if callback_close then
+            callback_close()
+        end
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("Could not upload file:\n%1"), filename),
+        })
+    end
+end
+
+function DropBox:createFolder(url, password, folder_name, callback_close)
+    local code_response = DropBoxApi:createFolder(url, password, folder_name)
+    if code_response == 200 then
+        if callback_close then
+            callback_close()
+        end
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("Could not create folder:\n%1"), folder_name),
+        })
     end
 end
 
@@ -130,8 +165,6 @@ function DropBox:config(item, callback)
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

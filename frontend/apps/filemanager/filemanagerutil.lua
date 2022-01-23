@@ -29,17 +29,35 @@ function filemanagerutil.abbreviate(path)
     return path
 end
 
--- Purge doc settings in sidecar directory,
+-- Purge doc settings in sidecar directory
 function filemanagerutil.purgeSettings(file)
     local file_abs_path = util.realpath(file)
     if file_abs_path then
-        os.remove(DocSettings:getSidecarFile(file_abs_path))
-        -- Also remove backup, otherwise it will be used if we re-open this document
-        -- (it also allows for the sidecar folder to be empty and removed)
-        os.remove(DocSettings:getSidecarFile(file_abs_path)..".old")
-        -- If the sidecar folder is empty, os.remove() can delete it.
-        -- Otherwise, the following statement has no effect.
-        os.remove(DocSettings:getSidecarDir(file_abs_path))
+        DocSettings:open(file_abs_path):purge()
+    end
+end
+
+-- Purge doc settings except kept
+function filemanagerutil.resetDocumentSettings(file)
+    local settings_to_keep = {
+        bookmarks = true,
+        bookmarks_sorted = true,
+        bookmarks_version = true,
+        cre_dom_version = true,
+        highlight = true,
+        highlights_imported = true,
+        last_page = true,
+        last_xpointer = true,
+    }
+    local file_abs_path = util.realpath(file)
+    if file_abs_path then
+        local doc_settings = DocSettings:open(file_abs_path)
+        for k in pairs(doc_settings.data) do
+            if not settings_to_keep[k] then
+                doc_settings:delSetting(k)
+            end
+        end
+        doc_settings:close()
     end
 end
 

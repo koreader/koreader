@@ -71,8 +71,9 @@ function ReaderMenu:init()
             end
         end
     end
-    self.activation_menu = G_reader_settings:readSetting("activate_menu")
-    if self.activation_menu == nil then
+    if G_reader_settings:has("activate_menu") then
+        self.activation_menu = G_reader_settings:readSetting("activate_menu")
+    else
         self.activation_menu = "swipe_tap"
     end
 end
@@ -174,10 +175,37 @@ function ReaderMenu:setUpdateItemTable()
         end
     end
 
+    -- typeset tab
+    self.menu_items.reset_document_settings = {
+        text = _("Reset document settings to default"),
+        keep_menu_open = true,
+        callback = function()
+            UIManager:show(ConfirmBox:new{
+                text = _("Reset current document settings to their default values?\n\nReading position, highlights and bookmarks will be kept.\nThe document will be reloaded."),
+                ok_text = _("Reset"),
+                ok_callback = function()
+                    local current_file = self.ui.document.file
+                    self:onTapCloseMenu()
+                    self.ui:onClose()
+                    require("apps/filemanager/filemanagerutil").resetDocumentSettings(current_file)
+                    require("apps/reader/readerui"):showReader(current_file)
+                end,
+            })
+        end,
+    }
+    self.menu_items.page_overlap = require("ui/elements/page_overlap")
+
     -- settings tab
     -- insert common settings
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_settings_menu_table.lua")) do
         self.menu_items[id] = common_setting
+    end
+
+    if Device:isTouchDevice() then
+        self.menu_items.page_turns = require("ui/elements/page_turns")
+    else
+        -- Placed elsewhere than in Taps and gestures, with only a subset of menu items.
+        self.menu_items.page_turns_non_touch = require("ui/elements/page_turns")
     end
     -- insert DjVu render mode submenu just before the last entry (show advanced)
     -- this is a bit of a hack
@@ -190,16 +218,16 @@ function ReaderMenu:setUpdateItemTable()
             text = _("Exclude this book's cover from screensaver"),
             enabled_func = function()
                 return not (self.ui == nil or self.ui.document == nil)
-                    and G_reader_settings:readSetting('screensaver_type') == "cover"
+                    and G_reader_settings:readSetting("screensaver_type") == "cover"
             end,
             checked_func = function()
-                return self.ui and self.ui.doc_settings and self.ui.doc_settings:readSetting("exclude_screensaver") == true
+                return self.ui and self.ui.doc_settings and self.ui.doc_settings:isTrue("exclude_screensaver")
             end,
             callback = function()
-                if Screensaver:excluded() then
-                    self.ui.doc_settings:saveSetting("exclude_screensaver", false)
+                if Screensaver:isExcluded() then
+                    self.ui.doc_settings:makeFalse("exclude_screensaver")
                 else
-                    self.ui.doc_settings:saveSetting("exclude_screensaver", true)
+                    self.ui.doc_settings:makeTrue("exclude_screensaver")
                 end
                 self.ui:saveSettings()
             end,
@@ -229,29 +257,9 @@ function ReaderMenu:setUpdateItemTable()
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_info_menu_table.lua")) do
         self.menu_items[id] = common_setting
     end
-
-    self.menu_items.exit_menu = {
-        text = _("Exit"),
-        hold_callback = function()
-            self:exitOrRestart()
-        end,
-    }
-    self.menu_items.exit = {
-        text = _("Exit"),
-        callback = function()
-            self:exitOrRestart()
-        end,
-    }
-    self.menu_items.restart_koreader = {
-        text = _("Restart KOReader"),
-        callback = function()
-            self:exitOrRestart(function() UIManager:restartKOReader() end)
-        end,
-    }
-    if not Device:canRestart() then
-        self.menu_items.exit_menu = self.menu_items.exit
-        self.menu_items.exit = nil
-        self.menu_items.restart_koreader = nil
+    -- insert common exit for reader
+    for id, common_setting in pairs(dofile("frontend/ui/elements/common_exit_menu_table.lua")) do
+        self.menu_items[id] = common_setting
     end
 
     self.menu_items.open_previous_document = {
@@ -375,7 +383,7 @@ function ReaderMenu:onShowMenu(tab_index)
         }
     end
 
-    main_menu.close_callback = function ()
+    main_menu.close_callback = function()
         self.ui:handleEvent(Event:new("CloseReaderMenu"))
     end
 
@@ -436,6 +444,7 @@ function ReaderMenu:onSwipeShowMenu(ges)
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
         self.ui:handleEvent(Event:new("ShowMenu", self:_getTabIndexFromLocation(ges)))
+        self.ui:handleEvent(Event:new("HandledAsSwipe")) -- cancel any pan scroll made
         return true
     end
 end

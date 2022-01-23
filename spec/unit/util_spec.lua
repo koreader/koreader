@@ -88,6 +88,23 @@ describe("util module", function()
                 "彩","虹","是","通","过","太","阳","光","的","折","射","引","起","的","。",
             }, words)
         end)
+        it("should split Japanese words", function()
+            local words = util.splitToWords("色は匂へど散りぬるを我が世誰ぞ常ならむ")
+            assert.are_same({
+                "色","は","匂","へ","ど","散","り","ぬ","る","を",
+                "我","が","世","誰","ぞ","常","な","ら","む",
+            }, words)
+        end)
+        it("should split Korean words", function()
+            -- Technically splitting on spaces is correct but we treat Korean
+            -- as if it were any other CJK text.
+            local words = util.splitToWords("대한민국의 국기는 대한민국 국기법에 따라 태극기")
+            assert.are_same({
+                "대","한","민","국","의"," ","국","기","는"," ",
+                "대","한","민","국"," ","국","기","법","에"," ",
+                "따","라"," ","태","극","기",
+            }, words)
+        end)
         it("should split words of multilingual text", function()
             local words = util.splitToWords("BBC纪录片")
             assert.are_same({"BBC", "纪", "录", "片"}, words)
@@ -108,7 +125,7 @@ describe("util module", function()
                     table.insert(table_of_words, word)
                     word = ""
                 end
-                if i == #table_chars then table.insert(table_of_words, word) end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
             end
             assert.are_same({
                 "Pójdźże, ",
@@ -121,7 +138,7 @@ describe("util module", function()
                 "gavilán",
             }, table_of_words)
         end)
-        it("should split text to line - CJK", function()
+        it("should split text to line - CJK Chinese", function()
             local text = "彩虹是通过太阳光的折射引起的。"
             local word = ""
             local table_of_words = {}
@@ -134,10 +151,74 @@ describe("util module", function()
                     table.insert(table_of_words, word)
                     word = ""
                 end
-                if i == #table_chars then table.insert(table_of_words, word) end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
             end
             assert.are_same({
                 "彩","虹","是","通","过","太","阳","光","的","折","射","引","起","的","。",
+            }, table_of_words)
+        end)
+        it("should split text to line - CJK Japanese", function()
+            local text = "色は匂へど散りぬるを我が世誰ぞ常ならむ"
+            local word = ""
+            local table_of_words = {}
+            local c
+            local table_chars = util.splitToChars(text)
+            for i = 1, #table_chars  do
+                c = table_chars[i]
+                word = word .. c
+                if util.isSplittable(c) then
+                    table.insert(table_of_words, word)
+                    word = ""
+                end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
+            end
+            assert.are_same({
+                "色","は","匂","へ","ど","散","り","ぬ","る","を",
+                "我","が","世","誰","ぞ","常","な","ら","む",
+            }, table_of_words)
+        end)
+        it("should split text to line - CJK Korean", function()
+            local text = "대한민국의 국기는 대한민국 국기법에 따라 태극기"
+            local word = ""
+            local table_of_words = {}
+            local c
+            local table_chars = util.splitToChars(text)
+            for i = 1, #table_chars  do
+                c = table_chars[i]
+                word = word .. c
+                if util.isSplittable(c) then
+                    table.insert(table_of_words, word)
+                    word = ""
+                end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
+            end
+            assert.are_same({
+                "대","한","민","국","의"," ","국","기","는"," ",
+                "대","한","민","국"," ","국","기","법","에"," ",
+                "따","라"," ","태","극","기",
+            }, table_of_words)
+        end)
+        it("should split text to line - mixed CJK and latin", function()
+            local text = "This is Russian: русский язык, Chinese: 汉语, Japanese: 日本語、 Korean: 한국어。"
+            local word = ""
+            local table_of_words = {}
+            local c
+            local table_chars = util.splitToChars(text)
+            for i = 1, #table_chars  do
+                c = table_chars[i]
+                word = word .. c
+                if util.isSplittable(c) then
+                    table.insert(table_of_words, word)
+                    word = ""
+                end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
+            end
+            assert.are_same({
+                "This ", "is ",
+                "Russian: ", "русский ", "язык, ",
+                "Chinese: ", "汉","语",", ",
+                "Japanese: ", "日","本","語","、", " ",
+                "Korean: ", "한","국","어","。",
             }, table_of_words)
         end)
         it("should split text to line with next_c - unicode", function()
@@ -154,7 +235,7 @@ describe("util module", function()
                     table.insert(table_of_words, word)
                     word = ""
                 end
-                if i == #table_chars then table.insert(table_of_words, word) end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
             end
             assert.are_same({
                 "Ce ",
@@ -187,7 +268,7 @@ describe("util module", function()
                     table.insert(table_of_words, word)
                     word = ""
                 end
-                if i == #table_chars then table.insert(table_of_words, word) end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
             end
             assert.are_same({
                 "Ce ",
@@ -318,7 +399,7 @@ describe("util module", function()
 
     describe("isEmptyDir()", function()
         it("should return true on empty dir", function()
-            assert.is_true(util.isEmptyDir(DataStorage:getDataDir() .. "/data/dict")) -- should be empty during unit tests
+            assert.is_true(util.isEmptyDir(DataStorage:getDataDir() .. "/history")) -- should be empty during unit tests
         end)
         it("should return false on non-empty dir", function()
             assert.is_false(util.isEmptyDir(DataStorage:getDataDir())) -- should contain subdirectories
@@ -439,15 +520,15 @@ describe("util module", function()
                             util.secondsToHClock(110, true))
             assert.is_equal("2'",
                             util.secondsToHClock(120, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00'",
                             util.secondsToHClock(3600, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00'",
                             util.secondsToHClock(3599, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00'",
                             util.secondsToHClock(3570, true))
             assert.is_equal("59'",
                             util.secondsToHClock(3569, true))
-            assert.is_equal("10h01",
+            assert.is_equal("10h01'",
                             util.secondsToHClock(36060, true))
         end)
         it("should round seconds to minutes in 0h00m format", function()
@@ -457,30 +538,67 @@ describe("util module", function()
                 util.secondsToHClock(90, true, true))
             assert.is_equal("2m",
                 util.secondsToHClock(110, true, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00m",
                 util.secondsToHClock(3600, true, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00m",
                 util.secondsToHClock(3599, true, true))
             assert.is_equal("59m",
                 util.secondsToHClock(3569, true, true))
-            assert.is_equal("10h01",
+            assert.is_equal("10h01m",
                 util.secondsToHClock(36060, true, true))
         end)
         it("should convert seconds to 0h00'00'' format", function()
-            assert.is_equal("0''",
+            assert.is_equal("0\"",
                             util.secondsToHClock(0))
-            assert.is_equal("1'00''",
+            assert.is_equal("1'00\"",
                             util.secondsToHClock(60))
-            assert.is_equal("1'29''",
+            assert.is_equal("1'29\"",
                             util.secondsToHClock(89))
-            assert.is_equal("1'30''",
+            assert.is_equal("1'30\"",
                             util.secondsToHClock(90))
-            assert.is_equal("1'50''",
+            assert.is_equal("1'50\"",
                             util.secondsToHClock(110))
-            assert.is_equal("2'00''",
+            assert.is_equal("2'00\"",
                             util.secondsToHClock(120))
         end)
     end)
+
+    describe("secondsToClockDuration()", function()
+        it("should change type based on format", function()
+            assert.is_equal("10h01m30s",
+                            util.secondsToClockDuration("modern", 36090, false, true))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("classic", 36090, false))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("unknown", 36090, false))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration(nil, 36090, false))
+        end)
+        it("should pass along withoutSeconds", function()
+            assert.is_equal("10h01m30s",
+                            util.secondsToClockDuration("modern", 36090, false, true))
+            assert.is_equal("10h02m",
+                            util.secondsToClockDuration("modern", 36090, true, true))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("classic", 36090, false))
+            assert.is_equal("10:02",
+                            util.secondsToClockDuration("classic", 36090, true))
+        end)
+        it("should pass along hmsFormat for modern format", function()
+            assert.is_equal("10h01'30\"",
+                            util.secondsToClockDuration("modern", 36090))
+            assert.is_equal("10h01m30s",
+                            util.secondsToClockDuration("modern", 36090, false, true))
+            assert.is_equal("10h02m",
+                            util.secondsToClockDuration("modern", 36090, true, true))
+            assert.is_equal("10h02'",
+                            util.secondsToClockDuration("modern", 36090, true, false))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("classic", 36090, false, true))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("classic", 36090, false, false))
+        end)
+    end) -- end my changes
 
     describe("urlEncode() and urlDecode", function()
         it("should encode string", function()

@@ -26,10 +26,10 @@ local http = require("socket.http")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
+local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
-local Screen = require("device").screen
 
 -- constants
 local article_id_prefix = "[w-id_"
@@ -41,7 +41,7 @@ local Wallabag = WidgetContainer:new{
 }
 
 function Wallabag:onDispatcherRegisterActions()
-    Dispatcher:registerAction("wallabag_download", { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,})
+    Dispatcher:registerAction("wallabag_download", { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), general=true,})
 end
 
 function Wallabag:init()
@@ -52,6 +52,7 @@ function Wallabag:init()
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
     self.is_archiving_deleted = false
+    self.send_review_as_tags = false
     self.filter_tag = ""
     self.ignore_tags = ""
     self.articles_per_sync = 30
@@ -67,6 +68,9 @@ function Wallabag:init()
     self.directory = self.wb_settings.data.wallabag.directory
     if self.wb_settings.data.wallabag.is_delete_finished ~= nil then
         self.is_delete_finished = self.wb_settings.data.wallabag.is_delete_finished
+    end
+    if self.wb_settings.data.wallabag.send_review_as_tags ~= nil then
+        self.send_review_as_tags = self.wb_settings.data.wallabag.send_review_as_tags
     end
     if self.wb_settings.data.wallabag.is_delete_read ~= nil then
         self.is_delete_read = self.wb_settings.data.wallabag.is_delete_read
@@ -259,6 +263,18 @@ function Wallabag:addToMainMenu(menu_items)
                         },
                     },
                     {
+                        text = _("Send review as tags"),
+                        help_text = _("This allow you to write tags in the review field, separated by commas, which can then be sent to Wallabag."),
+                        keep_menu_open = true,
+                        checked_func = function()
+                            return self.send_review_as_tags or false
+                        end,
+                        callback = function()
+                            self.send_review_as_tags = not self.send_review_as_tags
+                            self:saveSettings()
+                        end,
+                    },
+                    {
                         text = _("Remove finished articles from history"),
                         keep_menu_open = true,
                         checked_func = function()
@@ -379,7 +395,7 @@ function Wallabag:getBearerToken()
         ["Content-type"] = "application/json",
         ["Accept"] = "application/json, */*",
         ["Content-Length"] = tostring(#bodyJSON),
-        }
+    }
     local result = self:callAPI("POST", login_url, headers, bodyJSON, "")
 
     if result then
@@ -539,29 +555,35 @@ end
 -- filepath: downloads the file if provided, returns JSON otherwise
 ---- @todo separate call to internal API from the download on external server
 function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
-    local request, sink = {}, {}
+    local sink = {}
+    local request = {}
 
     -- Is it an API call, or a regular file direct download?
     if apiurl:sub(1, 1) == "/" then
         -- API call to our server, has the form "/random/api/call"
         request.url = self.server_url .. apiurl
         if headers == nil then
-            headers = { ["Authorization"] = "Bearer " .. self.access_token, }
+            headers = {
+                ["Authorization"] = "Bearer " .. self.access_token,
+            }
         end
     else
         -- regular url link to a foreign server
         local file_url = apiurl
         request.url = file_url
         if headers == nil then
-            headers = {} -- no need for a token here
+            -- no need for a token here
+            headers = {}
         end
     end
 
     request.method = method
     if filepath ~= "" then
         request.sink = ltn12.sink.file(io.open(filepath, "w"))
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     else
         request.sink = ltn12.sink.table(sink)
+        socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     end
     request.headers = headers
     if body ~= "" then
@@ -570,9 +592,8 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
-    http.TIMEOUT = 30
-    local httpRequest = http.request
-    local code, resp_headers = socket.skip(1, httpRequest(request))
+    local code, resp_headers = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     -- raise error message when network is unavailable
     if resp_headers == nil then
         logger.dbg("Wallabag: Server error: ", code)
@@ -730,6 +751,11 @@ function Wallabag:processLocalFiles(mode)
                 if DocSettings:hasSidecarFile(entry_path) then
                     local docinfo = DocSettings:open(entry_path)
                     local status
+
+                    if self.send_review_as_tags then
+                        self:addTags(entry_path)
+                    end
+
                     if docinfo.data.summary and docinfo.data.summary.status then
                         status = docinfo.data.summary.status
                     end
@@ -773,6 +799,39 @@ function Wallabag:addArticle(article_url)
     }
 
     return self:callAPI("POST", "/api/entries.json", headers, body_JSON, "")
+end
+
+function Wallabag:addTags(path)
+    logger.dbg("Wallabag: managing tags for article ", path)
+    local id = self:getArticleID(path)
+    if id then
+        local docinfo = DocSettings:open(path)
+
+        local tags = docinfo.data.summary.note
+
+        if tags ~= "" and tags ~= nil then
+
+            logger.dbg("Wallabag: sending tags ", tags, " for ", path)
+
+            local body = {
+                tags = tags
+            }
+
+            local bodyJSON = JSON.encode(body)
+
+            local headers = {
+                ["Content-type"] = "application/json",
+                ["Accept"] = "application/json, */*",
+                ["Content-Length"] = tostring(#bodyJSON),
+                ["Authorization"] = "Bearer " .. self.access_token,
+            }
+
+            self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON, "")
+        else
+            logger.dbg("Wallabag: no tags to send for ", path)
+        end
+
+    end
 end
 
 function Wallabag:removeArticle(path)
@@ -967,8 +1026,6 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "string",
     }
     UIManager:show(self.settings_dialog)
@@ -1007,8 +1064,6 @@ function Wallabag:editClientSettings()
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "string",
     }
     UIManager:show(self.client_settings_dialog)
@@ -1042,6 +1097,7 @@ function Wallabag:saveSettings()
         is_auto_delete        = self.is_auto_delete,
         is_sync_remote_delete = self.is_sync_remote_delete,
         articles_per_sync     = self.articles_per_sync,
+        send_review_as_tags   = self.send_review_as_tags,
         remove_finished_from_history = self.remove_finished_from_history,
         remove_read_from_history = self.remove_read_from_history,
         download_queue        = self.download_queue,

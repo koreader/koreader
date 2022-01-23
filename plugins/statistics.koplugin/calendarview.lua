@@ -19,6 +19,7 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -443,14 +444,15 @@ function CalendarView:init()
         }
     end
 
-    local outer_padding = Size.padding.large
+    self.outer_padding = Size.padding.large
     self.inner_padding = Size.padding.small
 
     -- 7 days in a week
-    self.day_width = math.floor((self.dimen.w - 2*outer_padding - 6*self.inner_padding) / 7)
+    self.day_width = math.floor((self.dimen.w - 2*self.outer_padding - 6*self.inner_padding) / 7)
     -- Put back the possible 7px lost in rounding into outer_padding
-    outer_padding = math.floor((self.dimen.w - 7*self.day_width - 6*self.inner_padding) / 2)
-    self.content_width = self.dimen.w - 2*outer_padding
+    self.outer_padding = math.floor((self.dimen.w - 7*self.day_width - 6*self.inner_padding) / 2)
+
+    self.content_width = self.dimen.w - 2*self.outer_padding
 
     local now_ts = os.time()
     if not MIN_MONTH then
@@ -523,8 +525,8 @@ function CalendarView:init()
                 })
             end,
         },
+        call_hold_input_on_tap = true,
         bordersize = 0,
-        margin = Screen:scaleBySize(20),
         text_font_face = "pgfont",
         text_font_bold = false,
     }
@@ -532,29 +534,36 @@ function CalendarView:init()
         self.page_info_first_chev,
         self.page_info_spacer,
         self.page_info_left_chev,
+        self.page_info_spacer,
         self.page_info_text,
+        self.page_info_spacer,
         self.page_info_right_chev,
         self.page_info_spacer,
         self.page_info_last_chev,
     }
 
     local footer = BottomContainer:new{
+        -- (BottomContainer does horizontal centering)
         dimen = Geom:new{
-            w = self.content_width,
+            w = self.dimen.w,
             h = self.dimen.h,
         },
         self.page_info,
     }
 
-    self.title_bar = CalendarTitle:new{
+    self.title_bar = TitleBar:new{
+        fullscreen = self.covers_fullscreen,
+        width = self.dimen.w,
+        align = "left",
         title = self.title,
-        width = self.content_width,
-        height = Size.item.height_default,
-        calendar_view = self,
+        title_h_padding = self.outer_padding, -- have month name aligned with calendar left edge
+        close_callback = function() self:onClose() end,
+        show_parent = self,
     }
 
     -- week days names header
     self.day_names = HorizontalGroup:new{}
+    table.insert(self.day_names, HorizontalSpan:new{ width = self.outer_padding })
     for i = 0, 6 do
         local dayname = TextWidget:new{
             text = self.shortDayOfWeekTranslation[self.weekdays[(self.start_day_of_week-1+i)%7 + 1]],
@@ -575,9 +584,9 @@ function CalendarView:init()
     end
 
     -- At most 6 weeks in a month
-    local available_height = self.dimen.h - self.title_bar:getSize().h
+    local available_height = self.dimen.h - self.title_bar:getHeight()
                             - self.page_info:getSize().h - self.day_names:getSize().h
-    self.week_height = math.floor((available_height - 5*self.inner_padding) / 6)
+    self.week_height = math.floor((available_height - 7*self.inner_padding) / 6)
     self.day_border = Size.border.default
     if self.show_hourly_histogram then
         -- day num + nb_book_spans + histogram: ceil() as histogram rarely
@@ -611,7 +620,7 @@ function CalendarView:init()
 
     local content = OverlapGroup:new{
         dimen = Geom:new{
-            w = self.content_width,
+            w = self.dimen.w,
             h = self.dimen.h,
         },
         allow_mirroring = false,
@@ -619,7 +628,10 @@ function CalendarView:init()
             align = "left",
             self.title_bar,
             self.day_names,
-            self.main_content,
+            HorizontalGroup:new{
+                HorizontalSpan:new{ width = self.outer_padding },
+                self.main_content,
+            },
         },
         footer,
     }
@@ -627,7 +639,8 @@ function CalendarView:init()
     self[1] = FrameContainer:new{
         width = self.dimen.w,
         height = self.dimen.h,
-        padding = outer_padding,
+        padding = 0,
+        margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
         content

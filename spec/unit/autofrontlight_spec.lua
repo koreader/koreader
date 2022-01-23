@@ -41,7 +41,7 @@ describe("AutoFrontlight widget tests", function()
         Device.input.waitEvent = function() end
         require("luasettings"):
             open(require("datastorage"):getSettingsDir() .. "/autofrontlight.lua"):
-            saveSetting("enable", "true"):
+            saveSetting("enable", true):
             close()
 
         UIManager = require("ui/uimanager")

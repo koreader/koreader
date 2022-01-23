@@ -4,10 +4,13 @@ Generic device abstraction.
 This module defines stubs for common methods.
 --]]
 
+local DataStorage = require("datastorage")
+local Geom = require("ui/geometry")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 
 local function yes() return true end
 local function no() return false end
@@ -30,6 +33,7 @@ local Device = {
 
     -- hardware feature tests: (these are functions!)
     hasBattery = yes,
+    hasAuxBattery = no,
     hasKeyboard = no,
     hasKeys = no,
     hasDPad = no,
@@ -102,9 +106,15 @@ local Device = {
     -- set to yes on devices that support over-the-air incremental updates.
     hasOTAUpdates = no,
 
+    -- For devices that have non-blocking OTA updates, this function will return true if the download is currently running.
+    hasOTARunning = no,
+
     -- set to yes on devices that have a non-blocking isWifiOn implementation
     -- (c.f., https://github.com/koreader/koreader/pull/5211#issuecomment-521304139)
     hasFastWifiStatusQuery = no,
+
+    -- set to yes on devices with system fonts
+    hasSystemFonts = no,
 
     canOpenLink = no,
     openLink = no,
@@ -168,15 +178,14 @@ function Device:init()
 
     self.screen.isBGRFrameBuffer = self.hasBGRFrameBuffer
 
-    local low_pan_rate = G_reader_settings:readSetting("low_pan_rate")
-    if low_pan_rate ~= nil then
-        self.screen.low_pan_rate = low_pan_rate
+    if G_reader_settings:has("low_pan_rate") then
+        self.screen.low_pan_rate = G_reader_settings:readSetting("low_pan_rate")
     else
         self.screen.low_pan_rate = self.hasEinkScreen()
     end
 
     logger.info("initializing for device", self.model)
-    logger.info("framebuffer resolution:", self.screen:getSize())
+    logger.info("framebuffer resolution:", self.screen:getRawSize())
 
     if not self.input then
         self.input = require("device/input"):new{device = self}
@@ -206,6 +215,13 @@ function Device:init()
             self:lockGSensor(true)
         end
     end
+
+    -- Screen:getSize is used throughout the code, and that code usually expects getting a real Geom object...
+    -- But as implementations come from base, they just return a Geom-like table...
+    self.screen.getSize = function()
+        local rect = self.screen.getRawSize(self.screen)
+        return Geom:new{ x = rect.x, y = rect.y, w = rect.w, h = rect.h }
+    end
 end
 
 function Device:setScreenDPI(dpi_override)
@@ -226,6 +242,7 @@ end
 
 -- Only used on platforms where we handle suspend ourselves.
 function Device:onPowerEvent(ev)
+    local Screensaver = require("ui/screensaver")
     if self.screen_saver_mode then
         if ev == "Power" or ev == "Resume" then
             if self.is_cover_closed then
@@ -247,7 +264,7 @@ function Device:onPowerEvent(ev)
                 if self.orig_rotation_mode then
                     self.screen:setRotationMode(self.orig_rotation_mode)
                 end
-                require("ui/screensaver"):close()
+                Screensaver:close()
                 if self:needsScreenRefreshAfterResume() then
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
                 end
@@ -266,14 +283,16 @@ function Device:onPowerEvent(ev)
         self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
         logger.dbg("Suspending...")
+        -- Add the current state of the SleepCover flag...
+        logger.dbg("Sleep cover is", self.is_cover_closed and "closed" or "open")
+        -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
+        Screensaver:setup()
         -- Mostly always suspend in Portrait/Inverted Portrait mode...
         -- ... except when we just show an InfoMessage or when the screensaver
         -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
         -- We also exclude full-screen widgets that work fine in Landscape mode,
         -- like ReadingProgress and BookStatus (c.f., #5724)
-        local screensaver_type = G_reader_settings:readSetting("screensaver_type")
-        if screensaver_type ~= "message" and screensaver_type ~= "disable" and
-           screensaver_type ~= "readingprogress" and screensaver_type ~= "bookstatus" then
+        if Screensaver:modeExpectsPortrait() then
             self.orig_rotation_mode = self.screen:getRotationMode()
             -- Leave Portrait & Inverted Portrait alone, that works just fine.
             if bit.band(self.orig_rotation_mode, 1) == 1 then
@@ -285,19 +304,22 @@ function Device:onPowerEvent(ev)
 
             -- On eInk, if we're using a screensaver mode that shows an image,
             -- flash the screen to white first, to eliminate ghosting.
-            if self:hasEinkScreen() and
-               screensaver_type == "cover" or screensaver_type == "random_image" or
-               screensaver_type == "image_file" then
-                if not G_reader_settings:isTrue("screensaver_no_background") then
+            if self:hasEinkScreen() and Screensaver:modeIsImage() then
+                if Screensaver:withBackground() then
                     self.screen:clear()
                 end
                 self.screen:refreshFull()
+
+                -- On Kobo, on sunxi SoCs with a recent kernel, wait a tiny bit more to avoid weird refresh glitches...
+                if self:isKobo() and self:isSunxi() then
+                    ffiUtil.usleep(150 * 1000)
+                end
             end
         else
             -- nil it, in case user switched ScreenSaver modes during our lifetime.
             self.orig_rotation_mode = nil
         end
-        require("ui/screensaver"):show()
+        Screensaver:show()
         -- NOTE: show() will return well before the refresh ioctl is even *sent*:
         --       the only thing it's done is *enqueued* the refresh in UIManager's stack.
         --       Which is why the actual suspension needs to be delayed by suspend_wait_timeout,
@@ -323,7 +345,11 @@ function Device:onPowerEvent(ev)
                     network_manager:turnOffWifi()
                 end
             end
-            UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+            -- Only actually schedule suspension if we're still supposed to go to sleep,
+            -- because the Wi-Fi stuff above may have blocked for a significant amount of time...
+            if self.screen_saver_mode then
+                self:rescheduleSuspend()
+            end
         end)
     end
 end
@@ -337,6 +363,25 @@ end
 function Device:info()
     return self.model
 end
+
+function Device:install()
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    local ConfirmBox = require("ui/widget/confirmbox")
+    UIManager:show(ConfirmBox:new{
+        text = _("Update is ready. Install it now?"),
+        ok_text = _("Install"),
+        ok_callback = function()
+            local save_quit = function()
+                self:saveSettings()
+                UIManager:quit()
+                UIManager._exit_code = 85
+            end
+            UIManager:broadcastEvent(Event:new("Exit", save_quit))
+        end,
+    })
+end
+
 
 -- Hardware specific method to track opened/closed books (nil on book close)
 function Device:notifyBookState(title, document) end
@@ -422,6 +467,13 @@ end
 -- Device specific method for toggling the charging LED
 function Device:toggleChargingLED(toggle) end
 
+-- Device specific method for setting the charging LED to the right state
+function Device:setupChargingLED() end
+
+-- Device specific method for enabling a specific amount of CPU cores
+-- (Should only be implemented on embedded platforms where we can afford to control that without screwing with the system).
+function Device:enableCPUCores(amount) end
+
 --[[
 prepare for application shutdown
 --]]
@@ -500,6 +552,10 @@ end
 -- Device specific method to check if the startup script has been updated
 function Device:isStartupScriptUpToDate()
     return true
+end
+
+function Device:getDefaultCoverPath()
+    return DataStorage:getDataDir() .. "/cover.jpg"
 end
 
 --- Unpack an archive.
