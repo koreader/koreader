@@ -672,7 +672,7 @@ function VirtualKeyPopup:init()
         self.key_events.PressKey = { {"Press"}, doc = "select key" }
     end
     if Device:hasKeys() then
-        self.key_events.Close = { {"Back"}, doc = "close keyboard" }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close keyboard" }
     end
 
     local offset_x = 2*keyboard_frame.bordersize + keyboard_frame.padding + parent_key.keyboard.key_padding

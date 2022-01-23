@@ -538,7 +538,7 @@ function BookMapWidget:init()
 
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close page" },
+            Close = { {Input.group.Back}, doc = "close page" },
             ScrollRowUp = {{"Up"}, doc = "scroll up"},
             ScrollRowDown = {{"Down"}, doc = "scrol down"},
             ScrollPageUp = {{Input.group.PgBack}, doc = "prev page"},

@@ -82,7 +82,7 @@ function DateTimeWidget:init()
         (self.is_date and 0.8 or 0.6))
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close date widget" }
+            Close = { {Device.input.group.Back}, doc = "close date widget" }
         }
     end
     if Device:isTouchDevice() then

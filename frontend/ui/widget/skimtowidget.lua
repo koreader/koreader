@@ -27,7 +27,7 @@ function SkimToWidget:init()
     local screen_height = Screen:getHeight()
 
     if Device:hasKeys() then
-        self.key_events.Close = { { "Back" }, doc = "close skimto page" }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close skimto page" }
     end
     if Device:isTouchDevice() then
         self.ges_events = {

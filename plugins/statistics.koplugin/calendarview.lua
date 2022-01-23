@@ -430,7 +430,7 @@ function CalendarView:init()
 
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close page" },
+            Close = { {Input.group.Back}, doc = "close page" },
             NextMonth = {{Input.group.PgFwd}, doc = "next page"},
             PrevMonth = {{Input.group.PgBack}, doc = "prev page"},
         }

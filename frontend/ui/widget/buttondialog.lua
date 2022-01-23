@@ -20,7 +20,7 @@ local ButtonDialog = InputContainer:new{
 
 function ButtonDialog:init()
     if Device:hasKeys() then
-        local close_keys = Device:hasFewKeys() and { "Back", "Left" } or "Back"
+        local close_keys = Device:hasFewKeys() and { "Back", "Left" } or Device.input.group.Back
         self.key_events = {
             Close = { { close_keys }, doc = "close button dialog" }
         }

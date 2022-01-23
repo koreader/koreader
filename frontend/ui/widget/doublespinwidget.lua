@@ -66,7 +66,7 @@ function DoubleSpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close doublespin widget" }
+            Close = { {Device.input.group.Back}, doc = "close doublespin widget" }
         }
     end
     if Device:isTouchDevice() then

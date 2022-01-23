@@ -65,7 +65,7 @@ function SpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close spin widget" }
+            Close = { {Device.input.group.Back}, doc = "close spin widget" }
         }
     end
     if Device:isTouchDevice() then

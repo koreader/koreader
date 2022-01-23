@@ -50,7 +50,7 @@ function BBoxWidget:init()
         }
     end
     if Device:hasKeys() then
-        self.key_events.Close = { {"Back"}, doc = "close windows" }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close windows" }
         self.key_events.Select = { {"Press"}, doc = "confirm adjust" }
     end
 end

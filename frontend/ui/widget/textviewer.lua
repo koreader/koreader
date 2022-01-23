@@ -71,7 +71,7 @@ function TextViewer:init()
 
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close text viewer" }
+            Close = { {Device.input.group.Back}, doc = "close text viewer" }
         }
     end
 
