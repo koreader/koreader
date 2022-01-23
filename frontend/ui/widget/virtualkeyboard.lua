@@ -800,6 +800,20 @@ function VirtualKeyboard:init()
     if keyboard.wrapInputBox then
         self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func
     end
+    if Device:hasDPad() and Device:hasKeyboard() and Device:isTouchDevice() then
+        -- hadDPad() would have FocusManager handle arrow keys strokes to navigate
+        -- and activate this VirtualKeyboard's touch keys (needed on non-touch Kindle).
+        -- If we have a keyboard, we'd prefer arrow keys (and Enter, and Del) to be
+        -- handled by InputText to navigate the cursor inside the text box, and to
+        -- add newline and delete chars. And if we are a touch device, we don't
+        -- need focus manager to help us navigate keys and fields.
+        -- So, disable all key_event handled by FocusManager
+        self.key_events.FocusLeft = nil
+        self.key_events.FocusRight = nil
+        self.key_events.FocusUp = nil
+        self.key_events.FocusDown = nil
+        self.key_events.PressKey = nil -- added above
+    end
 end
 
 function VirtualKeyboard:getKeyboardLayout()
