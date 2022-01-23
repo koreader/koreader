@@ -137,6 +137,9 @@ function Terminal:spawnShell(cols, rows)
         C.setenv("ENV", "./plugins/koterm.koplugin/profile", 1)
         C.setenv("BASH_ENV", "./plugins/koterm.koplugin/profile", 1)
         C.setenv("KOTERM_DATA", self.koterm_data, 1)
+        if Device:isAndroid() then
+            C.setenv("ANDROID", "ANDROID", 1)
+        end
         if C.execlp(shell, shell) ~= 0 then
             -- the following two prints are shown in the KOTerm emulator.
             print("KOTerm: something has gone really wrong in spawning the shell\n\n:-(\n")
@@ -426,8 +429,6 @@ function Terminal:addToMainMenu(menu_items)
                 callback = function()
                     local about_text = _([[KOTerm is a terminal emulator, which starts a shell (command prompt).
 
-You can use 'shfm' as a file manager, '?' shows shfm´s help message.
-
 There are two environment variables KOTERM_HOME and KOTERM_DATA containing the path of the install and the data folders.
 
 Commands to be executed on start can be placed in:
@@ -435,6 +436,9 @@ Commands to be executed on start can be placed in:
 
 Aliases (shortcuts) to frequently used commands can be placed in:
 '$KOTERM_DATA/scripts/aliases'.]])
+                    if not Device:isAndroid() then
+                        about_text = about_text .. _("\n\nYou can use 'shfm' as a file manager, '?' shows shfm´s help message.")
+                    end
 
                     UIManager:show(InfoMessage:new{
                         text = about_text,

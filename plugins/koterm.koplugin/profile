@@ -10,6 +10,7 @@ KOTERM_HOME="$(pwd)"
 # shellcheck disable=SC2164
 cd "${KOTERM_DATA}"
 KOTERM_DATA="$(pwd)"
+HOME="${KOTERM_DATA}"
 
 PATH="${PATH}:${KOTERM_DATA}/scripts:${KOTERM_HOME}/plugins/koterm.koplugin/"
 TERM="vt52"
@@ -24,6 +25,7 @@ EDITOR="nano"
 SHFM_OPENER="${KOTERM_HOME}/plugins/koterm.koplugin/shfm_opener.sh"
 
 export EDITOR
+export HOME
 export KOTERM_HOME
 export KOTERM_DATA
 export PATH
@@ -47,4 +49,6 @@ if [ -f "${ALIASES}" ]; then
     . "${ALIASES}"
 fi
 
-echo "You can use shfm as a filemanager, ? shows help in shfm."
+if [ -z "${ANDROID}" ]; then
+    echo "You can use shfm as a filemanager, ? shows help in shfm."
+fi
