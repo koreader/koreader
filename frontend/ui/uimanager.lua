@@ -1792,6 +1792,10 @@ Executes all the operations of a resume (i.e., wakeup) request.
 This function usually wakes up the device.
 ]]
 function UIManager:resume()
+    -- MONOTONIC doesn't tick during suspend,
+    -- invalidate the last battery capacity pull time so that we get up to date data immediately.
+    Device:getPowerDevice():invalidateCapacityCache()
+
     if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
