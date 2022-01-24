@@ -1,3 +1,4 @@
+local UIManager -- will be updated when available
 local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local BasePowerD = {
@@ -25,6 +26,10 @@ function BasePowerD:new(o)
         o:_decideFrontlightState()
     end
     return o
+end
+
+function BasePowerD:readyUI()
+    UIManager = require("ui/uimanager")
 end
 
 function BasePowerD:init() end
@@ -153,8 +158,7 @@ function BasePowerD:getCapacity()
     -- BasePowerD is loaded before UIManager.
     -- Nothing *currently* calls this before UIManager is actually loaded, but future-proof this anyway.
     local now_ts
-    if package.loaded["ui/uimanager"] ~= nil then
-        local UIManager = require("ui/uimanager")
+    if UIManager then
         now_ts = UIManager:getTime()
     else
         now_ts = TimeVal:now()
@@ -173,8 +177,7 @@ end
 
 function BasePowerD:getAuxCapacity()
     local now_ts
-    if package.loaded["ui/uimanager"] ~= nil then
-        local UIManager = require("ui/uimanager")
+    if UIManager then
         now_ts = UIManager:getTime()
     else
         now_ts = TimeVal:now()
@@ -206,9 +209,8 @@ end
 
 function BasePowerD:stateChanged()
     -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has been loaded.
-    if package.loaded["ui/uimanager"] ~= nil then
+    if UIManager then
         local Event = require("ui/event")
-        local UIManager = require("ui/uimanager")
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
 end
