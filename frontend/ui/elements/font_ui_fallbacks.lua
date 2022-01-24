@@ -49,7 +49,7 @@ local genFallbackCandidates = function()
 end
 
 local more_info_text = [[
-If some book titles, dictionary entries and such are not displayed well but shown as ￾￾ or ��, it may be necessary to download the required fonts for those languages. They can then be enabld as additional UI fallback fonts.
+If some book titles, dictionary entries and such are not displayed well but shown as ￾￾ or ��, it may be necessary to download the required fonts for those languages. They can then be enabled as additional UI fallback fonts.
 Fonts for many languages can be downloaded at:
 
 https://fonts.google.com/noto
