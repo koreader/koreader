@@ -670,10 +670,15 @@ function ConfigOption:_itemGroupToLayoutLine(option_items_group)
     local j = self.config.panel_index
     for i, v in ipairs(option_items_group) do
         if v.name then
-            if type(v.layout) == "table" and type(v.disableFocusManagement) == "function" then
-                for _, widget in ipairs(v.layout[1]) do
-                    layout_line[j] = widget
-                    j = j + 1
+            if v.layout and v.disableFocusManagement then -- it is a FocusManager
+                -- merge child layout to one row layout
+                -- currently child widgets are all one row
+                -- need improved if two or more rows widget existed
+                for _, row in ipairs(v.layout) do
+                    for _, widget in ipairs(row) do
+                        layout_line[j] = widget
+                        j = j + 1
+                    end
                 end
                 v:disableFocusManagement()
             else
@@ -1460,13 +1465,6 @@ end
 
 function ConfigDialog:onSelect()
     return self:sendTapEventToFocusedWidget()
-    --[[
-    local item = self:getFocusItem()
-    if item then
-        item:handleEvent(Event:new("TapSelect"))
-    end
-    return item
-    ]]
 end
 
 return ConfigDialog

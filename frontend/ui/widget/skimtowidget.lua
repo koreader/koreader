@@ -380,7 +380,11 @@ end
 
 function SkimToWidget:onSelectByKeyPress()
     local item = self:getFocusItem()
-    item.callback()
+    if item then
+        item.callback()
+        return true
+    end
+    return false
 end
 
 function SkimToWidget:onFirstRowKeyPress(percent)

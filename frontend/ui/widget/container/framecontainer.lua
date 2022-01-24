@@ -47,6 +47,7 @@ local FrameContainer = WidgetContainer:new{
 }
 
 function FrameContainer:init()
+    WidgetContainer.init(self)
     self.origin_bordersize = nil
     self.origin_border_color = nil
 end
