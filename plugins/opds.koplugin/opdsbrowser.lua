@@ -782,6 +782,7 @@ function OPDSBrowser:showDownloads(item)
                 local TextViewer = require("ui/widget/textviewer")
                 UIManager:show(TextViewer:new{
                     title = item.text,
+                    title_multilines = true,
                     text = util.htmlToPlainTextIfHtml(item.content),
                     text_face = Font:getFace("x_smallinfofont", G_reader_settings:readSetting("items_font_size")),
                 })
