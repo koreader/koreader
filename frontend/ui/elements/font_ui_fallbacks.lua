@@ -49,12 +49,12 @@ local genFallbackCandidates = function()
 end
 
 local more_info_text = [[
-If some of your book titles, info, chapters…, or dictionary and wikipedia results, are not displayed well but shown as ￾￾ or ��, you may need to download the required fonts for their languages and enable them as additional UI fallback fonts.
-You can download fonts for many languages at:
+If some book titles, dictionary entries and such are not displayed well but shown as ￾￾ or ��, it may be necessary to download the required fonts for those languages. They can then be enabld as additional UI fallback fonts.
+Fonts for many languages can be downloaded at:
 
 https://fonts.google.com/noto
 
-Only fonts named "Noto Sans xyz" or "Noto Sans xyz UI" (regular, not bold nor italic, not Serif) will be shown in this menu.]]
+Only fonts named "Noto Sans xyz" or "Noto Sans xyz UI" (regular, not bold nor italic, not Serif) will be available in this menu.]]
 
 local getSubMenuItems = function()
     genFallbackCandidates()
