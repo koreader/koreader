@@ -141,12 +141,10 @@ local function genMenuItems(self)
                 local Screen = require("device").screen
                 local items = SpinWidget:new{
                     title_text = _("Keitai tap interval"),
-                    info_text = T(_([[
+                    info_text = _([[
 How long to wait (in seconds) for the next tap when in keitai input mode before committing to the current character. During this window, tapping a single key will loop through candidates for the current character being input. Any other input will cause you to leave keitai mode.
 
-If set to 0, keitai input is disabled entirely and only flick input can be used.
-
-Default value: %1]]), DEFAULT_KEITAI_TAP_INTERVAL),
+If set to 0, keitai input is disabled entirely and only flick input can be used.]]),
                     width = math.floor(Screen:getWidth() * 0.75),
                     value = getKeitaiTapInterval(),
                     value_min = 0,
