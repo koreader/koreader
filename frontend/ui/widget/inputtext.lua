@@ -237,11 +237,10 @@ if Device:isTouchDevice() or Device:hasDPad() then
                             },
                             {
                                 text = _("Paste"),
+                                enabled = not is_clipboard_empty,
                                 callback = function()
-                                    if not is_clipboard_empty then
-                                        UIManager:close(clipboard_dialog)
-                                        self:addChars(clipboard_value)
-                                    end
+                                    UIManager:close(clipboard_dialog)
+                                    self:addChars(clipboard_value)
                                 end,
                             },
                         },
