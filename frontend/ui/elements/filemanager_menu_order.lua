@@ -43,6 +43,8 @@ local order = {
     },
     device = {
         "keyboard_layout",
+        "font_ui_fallbacks",
+        "----------------------------",
         "time",
         "device_status_alarm",
         "charging_led", -- if Device:canToggleChargingLED()

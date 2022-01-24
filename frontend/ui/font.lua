@@ -113,10 +113,26 @@ local Font = {
         [6] = "freefont/FreeSans.ttf",
         [7] = "freefont/FreeSerif.ttf",
     },
+    -- Additional fallback fonts are managed by frontend/ui/elements/font_ui_fallbacks.lua
+    -- Add any after NotoSansCJKsc (because CJKsc has better symbols, and has 'locl' OTF
+    -- features to support all of SC, TC, JA and KO that other CJK fonts may not have.)
+    additional_fallback_insert_indice = 3,
+    -- Xtext supports up to 15 fallback fonts, but keep some slots free and available for
+    -- future additions to our hardcoded fallbacks list above, and to not slow down
+    -- rendering with too many fallback fonts.
+    additional_fallback_max_nb = 4,
 
     -- face table
     faces = {},
 }
+
+if G_reader_settings and G_reader_settings:has("font_ui_fallbacks") then
+    local additional_fallbacks = G_reader_settings:readSetting("font_ui_fallbacks")
+    for i=#additional_fallbacks, 1, -1 do
+        table.insert(Font.fallbacks, Font.additional_fallback_insert_indice, additional_fallbacks[i])
+    end
+    logger.dbg("updated Font.fallbacks:", Font.fallbacks)
+end
 
 -- Helper functions with explicite names around
 -- bold/regular_font_variant tables
