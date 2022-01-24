@@ -966,8 +966,9 @@ function TouchMenu:onPress()
     local item = self:getFocusItem()
     if item then
         item:handleEvent(Event:new("TapSelect"))
+        return true
     end
-    return item
+    return false
 end
 
 return TouchMenu

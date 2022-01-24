@@ -133,8 +133,9 @@ function ButtonTable:onSelectByKeyPress()
     local item = self:getFocusItem()
     if item and item.enabled then
         item.callback()
+        return true
     end
-    return item
+    return false
 end
 
 function ButtonTable:getButtonById(id)

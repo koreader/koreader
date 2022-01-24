@@ -169,7 +169,6 @@ function ButtonProgressWidget:update()
                     padding = 0,
                     bordersize = 0,
                     focusable = true,
-                    color = Blitbuffer.COLOR_BLACK,
                     focus_border_size = Size.border.thin,
                     button,
                 }

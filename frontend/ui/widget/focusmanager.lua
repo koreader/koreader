@@ -181,8 +181,9 @@ function FocusManager:sendTapEventToFocusedWidget()
             ges = "tap",
             pos = point,
         }))
+        return true
     end
-    return focused_widget
+    return false
 end
 
 function FocusManager:mergeLayoutInVertical(child)
@@ -213,7 +214,7 @@ function FocusManager:mergeLayoutInHorizontal(child)
 end
 
 function FocusManager:disableFocusManagement()
-    self.layout = nil -- turn off child focus feature
+    self.layout = nil -- turn off focus feature
 end
 
 --- Container call this method after init to let first widget render in focus style

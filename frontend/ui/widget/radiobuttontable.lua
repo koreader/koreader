@@ -150,8 +150,9 @@ function RadioButtonTable:onSelectByKeyPress()
     local item = self:getFocusItem()
     if item then
         item.callback()
+        return true
     end
-    return item
+    return false
 end
 
 function RadioButtonTable:_checkButton(button)
