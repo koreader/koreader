@@ -1722,6 +1722,10 @@ It is intended to manage input events and delegate them to dialogs.
 --]]
 function UIManager:run()
     self._running = true
+
+    -- Tell PowerD that we're ready
+    Device:getPowerDevice():readyUI()
+
     self:initLooper()
     -- currently there is no Turbo support for Windows
     -- use our own main loop
