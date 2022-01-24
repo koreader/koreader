@@ -6,17 +6,15 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FFIUtil = require("ffi/util")
-local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Language = require("ui/language")
-local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
 local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
 local Size = require("ui/size")
-local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -26,62 +24,46 @@ local Screen = require("device").screen
 
 local KeyboardLayoutDialog = InputContainer:new{
     is_always_active = true,
-    title = _("Keyboard layout"),
     modal = true,
     stop_events_propagation = true,
     keyboard_state = nil,
     width = nil,
-    face = Font:getFace("cfont", 22),
-    title_face = Font:getFace("x_smalltfont"),
-    title_padding = Size.padding.default,
-    title_margin = Size.margin.title,
-    button_padding = Size.padding.default,
-    border_size = Size.border.window,
 }
-
 
 function KeyboardLayoutDialog:init()
     self.width = self.width or math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8)
-    -- Title & description
-    self.title_widget = FrameContainer:new{
-        padding = self.title_padding,
-        margin = self.title_margin,
-        bordersize = 0,
-        TextWidget:new{
-            text = self.title,
-            face = self.title_face,
-            max_width = self.width,
-        }
-    }
-    self.title_bar = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
-        }
+    self.title_bar = TitleBar:new{
+        width = self.width,
+        with_bottom_line = true,
+        title = _("Keyboard layout"),
+        bottom_v_padding = 0,
+        show_parent = self,
     }
 
     local buttons = {}
     local radio_buttons = {}
 
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
+    local default_layout = G_reader_settings:readSetting("keyboard_layout_default")
     self.keyboard_state.force_current_layout = true
+    local current_layout = self.parent.keyboard:getKeyboardLayout()
+    self.keyboard_state.force_current_layout = false
     for k, _ in FFIUtil.orderedPairs(self.parent.keyboard.lang_to_keyboard_layout) do
         local text = Language:getLanguageName(k) .. "  (" .. string.sub(k, 1, 2) .. ")"
         if util.arrayContains(keyboard_layouts, k) then
             text = text .. "  ✓"
         end
-        if k == G_reader_settings:readSetting("keyboard_layout_default") then
+        if k == default_layout then
             text = text .. "  ★"
         end
         table.insert(radio_buttons, {
             {
-            text = text,
-            checked = self.parent.keyboard:getKeyboardLayout() == k,
-            provider = k,
+                text = text,
+                checked = k == current_layout,
+                provider = k,
             },
         })
     end
-    self.keyboard_state.force_current_layout = false
 
     table.insert(buttons, {
         {
@@ -103,28 +85,25 @@ function KeyboardLayoutDialog:init()
 
     -- (RadioButtonTable's width and padding setup is a bit fishy: we get
     -- this to look ok by using a CenterContainer to ensure some padding)
-    local scroll_container_inner_width = self.title_bar:getSize().w - ScrollableContainer:getScrollbarWidth()
+    local scroll_container_inner_width = self.width - ScrollableContainer:getScrollbarWidth()
     self.radio_button_table = RadioButtonTable:new{
         radio_buttons = radio_buttons,
         width = scroll_container_inner_width - 2*Size.padding.large,
         focused = true,
         parent = self,
         show_parent = self,
-        face = self.face,
     }
 
     -- Buttons Table
     self.button_table = ButtonTable:new{
-        width = self.width - 2*self.button_padding,
-        button_font_face = "cfont",
-        button_font_size = 20,
+        width = self.width - 2*Size.padding.default,
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
     }
 
     local max_radio_button_container_height = math.floor(Screen:getHeight()*0.9
-                    - self.title_widget:getSize().h - self.title_bar:getSize().h
+                    - self.title_bar:getHeight()
                     - Size.span.vertical_large*4 - self.button_table:getSize().h)
     local radio_button_container_height = math.min(self.radio_button_table:getSize().h, max_radio_button_container_height)
 
@@ -134,7 +113,7 @@ function KeyboardLayoutDialog:init()
     -- when flashing for UI feedback that we want to limit to the cropped area).
     self.cropping_widget = ScrollableContainer:new{
         dimen = Geom:new{
-            w = self.title_bar:getSize().w,
+            w = self.width,
             h = radio_button_container_height,
         },
         show_parent = self,
@@ -154,7 +133,6 @@ function KeyboardLayoutDialog:init()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "center",
-            self.title_widget,
             self.title_bar,
             VerticalSpan:new{
                 width = Size.span.vertical_large*2,
@@ -166,7 +144,7 @@ function KeyboardLayoutDialog:init()
             -- buttons
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = self.title_bar:getSize().w,
+                    w = self.width,
                     h = self.button_table:getSize().h,
                 },
                 self.button_table,
@@ -186,7 +164,6 @@ function KeyboardLayoutDialog:init()
         self.movable,
     }
 end
-
 
 function KeyboardLayoutDialog:onShow()
     UIManager:setDirty(self, function()
