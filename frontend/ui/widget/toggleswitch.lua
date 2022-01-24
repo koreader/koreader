@@ -186,8 +186,6 @@ function ToggleSwitch:calculatePosition(gev)
 end
 
 function ToggleSwitch:onTapSelect(arg, gev)
-    local logger = require("logger")
-    logger.dbg("ToggleSwitch:onTapSelect", arg, gev)
     if not self.enabled then
         if self.readonly ~= true then
             return true
