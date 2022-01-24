@@ -153,8 +153,8 @@ function Terminal:spawnShell(cols, rows)
     self.is_shell_open = true
     if Device:isAndroid() then
         -- feed the following commands to the running shell
-        self:transmit(" export TERM=vt52\n")
-        self:transmit(" stty cols " .. cols .. " rows " .. rows .."\n")
+        self:transmit("export TERM=vt52\n")
+        self:transmit("stty cols " .. cols .. " rows " .. rows .."\n")
     end
 
     self.input_widget:resize(rows, cols)

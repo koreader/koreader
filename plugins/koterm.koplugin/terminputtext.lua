@@ -314,7 +314,7 @@ function TermInputText:interpretAnsiSeq(text)
             elseif next_byte == "Y" then -- set cursor pos (row, col)
                 self.sequence_state = "escY"
             elseif next_byte == "Z" then -- ident(ify)
-                self:transmit("\027/K") -- identify as VT52 without printer
+                self.strike_callback("\027/K") -- identify as VT52 without printer
             elseif next_byte == "=" then -- alternate keypad
                 self:enterAlternateKeypad()
             elseif next_byte == ">" then -- exit alternate keypad
