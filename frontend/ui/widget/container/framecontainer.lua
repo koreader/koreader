@@ -46,12 +46,6 @@ local FrameContainer = WidgetContainer:new{
     focus_border_color = Blitbuffer.COLOR_BLACK,
 }
 
-function FrameContainer:init()
-    WidgetContainer.init(self)
-    self.origin_bordersize = nil
-    self.origin_border_color = nil
-end
-
 function FrameContainer:getSize()
     local content_size = self[1]:getSize()
     self._padding_top = self.padding_top or self.padding
