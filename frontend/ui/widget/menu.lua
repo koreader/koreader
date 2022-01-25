@@ -914,6 +914,12 @@ function Menu:init()
                     range = self.dimen,
                 }
             }
+            self.ges_events.MultiSwipe = {
+                GestureRange:new{
+                    ges = "multiswipe",
+                    range = self.dimen,
+                }
+            }
         end
         self.ges_events.Close = self.on_close_ges
     end
@@ -1348,7 +1354,7 @@ function Menu:onSwipe(arg, ges_ev)
     elseif direction == "south" then
         if self.has_close_button and not self.no_title then
             -- If there is a close button displayed (so, this Menu can be
-            -- closed), allow easier closing with swipe up/down
+            -- closed), allow easier closing with swipe south.
             self:onClose()
         end
         -- If there is no close button, it's a top level Menu and swipe
@@ -1360,6 +1366,18 @@ function Menu:onSwipe(arg, ges_ev)
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
     end
+end
+
+function Menu:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    if self.has_close_button and not self.no_title then
+        -- If there is a close button displayed (so, this Menu can be
+        -- closed), allow easier closing with swipe south.
+        self:onClose()
+    end
+    return true
 end
 
 function Menu:setTitleBarLeftIcon(icon)

@@ -442,6 +442,12 @@ function CalendarView:init()
                 range = self.dimen,
             }
         }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
+                range = self.dimen,
+            }
+        }
     end
 
     self.outer_padding = Size.padding.large
@@ -828,6 +834,14 @@ function CalendarView:onSwipe(arg, ges_ev)
         -- so let it propagate
         return false
     end
+end
+
+function CalendarView:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
+    return true
 end
 
 function CalendarView:onClose()

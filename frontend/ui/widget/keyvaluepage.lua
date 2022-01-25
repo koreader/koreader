@@ -295,6 +295,12 @@ function KeyValuePage:init()
                 range = self.dimen,
             }
         }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
+                range = self.dimen,
+            }
+        }
     end
 
     -- return button
@@ -632,6 +638,14 @@ function KeyValuePage:onSwipe(arg, ges_ev)
         -- so let it propagate
         return false
     end
+end
+
+function KeyValuePage:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
+    return true
 end
 
 function KeyValuePage:onClose()

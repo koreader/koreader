@@ -71,6 +71,12 @@ function ReaderProgress:init()
                 range = function() return self.dimen end,
             }
         }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
+                range = function() return self.dimen end,
+            }
+        }
     end
     self.covers_fullscreen = true -- hint for UIManager:_repaint()
     self[1] = FrameContainer:new{
@@ -517,6 +523,14 @@ function ReaderProgress:onSwipe(arg, ges_ev)
         -- so let it propagate
         return false
     end
+end
+
+function ReaderProgress:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
+    return true
 end
 
 function ReaderProgress:onClose()
