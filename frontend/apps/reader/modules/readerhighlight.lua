@@ -278,6 +278,7 @@ end
 local highlight_style = {
     {_("Lighten"), "lighten"},
     {_("Underline"), "underscore"},
+    {_("Strikeout"), "strikeout"},
     {_("Invert"), "invert"},
 }
 
@@ -1670,13 +1671,14 @@ end
 
 function ReaderHighlight:editHighlightStyle(page, i)
     local item = self.view.highlight.saved[page][i]
+    local save_document = self.ui.paging and G_reader_settings:readSetting("save_document") ~= "disable"
     local radio_buttons = {}
     for _, v in ipairs(highlight_style) do
         table.insert(radio_buttons, {
             {
-            text = v[1],
-            checked = item.drawer == v[2],
-            provider = v[2],
+                text = v[1],
+                checked = item.drawer == v[2],
+                provider = v[2],
             },
         })
     end
@@ -1688,7 +1690,13 @@ function ReaderHighlight:editHighlightStyle(page, i)
         default_provider = self.view.highlight.saved_drawer or
             G_reader_settings:readSetting("highlight_drawing_style", "lighten"),
         callback = function(radio)
+            if save_document then
+                self.ui.document:deleteHighlight(page, item)
+            end
             item.drawer = radio.provider
+            if save_document then
+                self.ui.document:saveHighlight(page, item)
+            end
             UIManager:setDirty(self.dialog, "ui")
             self.ui:handleEvent(Event:new("BookmarkUpdated",
                     self.ui.bookmark:getBookmarkForHighlight({
