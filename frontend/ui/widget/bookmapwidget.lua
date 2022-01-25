@@ -599,6 +599,9 @@ function BookMapWidget:init()
         title = self.title,
         left_icon = "info",
         left_icon_tap_callback = function() self:showHelp() end,
+        left_icon_hold_callback = function()
+            self:toggleDefaultSettings() -- toggle between user settings and default view
+        end,
         close_callback = function() self:onClose() end,
         close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
@@ -1022,7 +1025,8 @@ Swipe along the bottom screen edge to change the width of page slots.
 Swipe or pan vertically on content to scroll.
 Any multiswipe will close the book map.
 
-On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.]]),
+On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.
+Long-press on ⓘ to switch between current and initial views.]]),
     })
 end
 
@@ -1143,6 +1147,24 @@ function BookMapWidget:saveSettings(reset)
     self.ui.doc_settings:saveSetting("book_map_flat", self.flat_map)
     self.ui.doc_settings:saveSetting("book_map_toc_depth", self.toc_depth)
     self.ui.doc_settings:saveSetting("book_map_pages_per_row", self.pages_per_row)
+end
+
+function BookMapWidget:toggleDefaultSettings()
+    if not self.flat_map and self.toc_depth == self.max_toc_depth
+            and self.pages_per_row == self.fit_pages_per_row then
+        -- Still in default/initial view: restore previous settings (if any)
+        self.flat_map = self.ui.doc_settings:readSetting("book_map_previous_flat")
+        self.toc_depth = self.ui.doc_settings:readSetting("book_map_previous_toc_depth")
+        self.pages_per_row = self.ui.doc_settings:readSetting("book_map_previous_pages_per_row")
+        self:saveSettings()
+    else
+        -- Save previous settings and switch to defaults
+        self.ui.doc_settings:saveSetting("book_map_previous_flat", self.flat_map)
+        self.ui.doc_settings:saveSetting("book_map_previous_toc_depth", self.toc_depth)
+        self.ui.doc_settings:saveSetting("book_map_previous_pages_per_row", self.pages_per_row)
+        self:saveSettings(true)
+    end
+    self:update()
 end
 
 function BookMapWidget:updateTocDepth(depth, flat)
