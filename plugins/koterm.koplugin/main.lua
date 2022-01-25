@@ -419,7 +419,7 @@ function Terminal:onKOTermStart(touchmenu_instance)
 end
 
 function Terminal:addToMainMenu(menu_items)
-    menu_items.Terminal = {
+    menu_items.koterm = {
         text = "KOTerm",
         sorting_hint = "more_tools",
         keep_menu_open = true,

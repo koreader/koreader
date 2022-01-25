@@ -130,7 +130,8 @@ local order = {
         "synchronize_time",
         "keep_alive",
         "doc_setting_tweak",
-        "terminal",
+        "koterm",
+        "terminal", -- deprecated
         "----------------------------",
         "plugin_management",
         "advanced_settings",
