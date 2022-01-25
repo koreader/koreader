@@ -542,15 +542,20 @@ end
 
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
-
-    if drawer == "underscore" then
-        self.highlight.line_width = self.highlight.line_width or 2
-        self.highlight.line_color = self.highlight.line_color or Blitbuffer.COLOR_GRAY
-        bb:paintRect(x, y+h-1, w,
-            self.highlight.line_width,
-            self.highlight.line_color)
-    elseif drawer == "lighten" then
+    if drawer == "lighten" then
         bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
+    elseif drawer == "underscore" then
+        local line_y = y + h - 1
+        if self.ui.document.info.has_pages then
+            line_y = line_y - 2
+        end
+        bb:paintRect(x, line_y, w, 2, Blitbuffer.COLOR_GRAY)
+    elseif drawer == "strikeout" then
+        local line_y = y + h + 1 - math.ceil(h / 2)
+        if self.ui.document.info.has_pages then
+            line_y = line_y + 2
+        end
+        bb:paintRect(x, line_y, w, 2, Blitbuffer.COLOR_BLACK)
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end
