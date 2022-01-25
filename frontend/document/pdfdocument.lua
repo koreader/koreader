@@ -239,7 +239,7 @@ function PdfDocument:saveHighlight(pageno, item)
     elseif item.drawer == "underscore" then
         annot_type = C.PDF_ANNOT_UNDERLINE
     elseif item.drawer == "strikeout" then
-        annot_type = C.PDF_ANNOT_STRIKEOUT
+        annot_type = C.PDF_ANNOT_STRIKE_OUT
     end
     page:addMarkupAnnotation(quadpoints, n, annot_type) -- may update/adjust quadpoints
     -- Update pboxes with the possibly adjusted coordinates (this will have it updated
