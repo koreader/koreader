@@ -37,7 +37,7 @@ local ReaderView = OverlapGroup:extend{
         bbox = nil,
     },
     outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR / 15),
-    -- highlight with "lighten" or "underscore" or "invert"
+    -- highlight with "lighten" or "underscore" or "strikeout" or "invert"
     highlight = {
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
         temp_drawer = "invert",
@@ -547,7 +547,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer)
     elseif drawer == "underscore" then
         bb:paintRect(x, y + h - 1, w, 2, Blitbuffer.COLOR_GRAY)
     elseif drawer == "strikeout" then
-        local line_y = y + h + 1 - math.ceil(h / 2)
+        local line_y = y + math.floor(h / 2) + 1
         if self.ui.paging then
             line_y = line_y + 2
         end
