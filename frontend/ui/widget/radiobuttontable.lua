@@ -147,7 +147,12 @@ function RadioButtonTable:addHorizontalSep(vspan_before, add_line, vspan_after, 
 end
 
 function RadioButtonTable:onSelectByKeyPress()
-    self:getFocusItem().callback()
+    local item = self:getFocusItem()
+    if item then
+        item.callback()
+        return true
+    end
+    return false
 end
 
 function RadioButtonTable:_checkButton(button)

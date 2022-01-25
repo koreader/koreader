@@ -9,11 +9,11 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Notification = require("ui/widget/notification")
 local Size = require("ui/size")
@@ -29,7 +29,7 @@ local ToggleLabel = TextWidget:new{
     fgcolor = Blitbuffer.COLOR_BLACK,
 }
 
-local ToggleSwitch = InputContainer:new{
+local ToggleSwitch = FocusManager:new{
     width = Screen:scaleBySize(216),
     height = Size.item.height_default,
     bgcolor = Blitbuffer.COLOR_WHITE, -- unfocused item color
@@ -41,6 +41,7 @@ local ToggleSwitch = InputContainer:new{
 }
 
 function ToggleSwitch:init()
+    self.layout = {{}}
     -- Item count per row
     self.n_pos = math.ceil(#self.toggle / self.row_count)
     self.position = nil
@@ -100,31 +101,33 @@ function ToggleSwitch:init()
             radius = Size.radius.window,
             bordersize = item_border_size,
             padding = 0,
+            focusable = true,
+            focus_border_size = item_border_size,
+            focus_border_color = Blitbuffer.COLOR_BLACK,
             content,
         }
         table.insert(self.toggle_content[math.ceil(i / self.n_pos)], button)
+        table.insert(self.layout[1], button)
     end
     self.toggle_frame[1] = self.toggle_content
     self[1] = self.toggle_frame
     self.dimen = Geom:new(self.toggle_frame:getSize())
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapSelect = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                },
-                doc = "Toggle switch",
+    self.ges_events = {
+        TapSelect = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
             },
-            HoldSelect = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = self.dimen,
-                },
-                doc = "Hold switch",
+            doc = "Toggle switch",
+        },
+        HoldSelect = {
+            GestureRange:new{
+                ges = "hold",
+                range = self.dimen,
             },
-        }
-    end
+            doc = "Hold switch",
+        },
+    }
 end
 
 function ToggleSwitch:update()
@@ -247,16 +250,6 @@ function ToggleSwitch:onHoldSelect(arg, gev)
         self.config:onMakeDefault(self.name, self.name_text,
                         self.values or self.args, self.toggle, position)
     end
-    return true
-end
-
-function ToggleSwitch:onFocus()
-    self.toggle_frame.background = Blitbuffer.COLOR_BLACK
-    return true
-end
-
-function ToggleSwitch:onUnfocus()
-    self.toggle_frame.background = Blitbuffer.COLOR_WHITE
     return true
 end
 

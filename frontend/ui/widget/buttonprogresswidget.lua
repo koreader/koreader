@@ -1,17 +1,17 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local ButtonProgressWidget = InputContainer:new{
+local ButtonProgressWidget = FocusManager:new{
     width = Screen:scaleBySize(216),
     height = Size.item.height_default,
     padding = Size.padding.small,
@@ -27,6 +27,8 @@ local ButtonProgressWidget = InputContainer:new{
 }
 
 function ButtonProgressWidget:init()
+    self.current_button_index = self.position
+
     self.buttonprogress_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         color = Blitbuffer.COLOR_DARK_GRAY,
@@ -46,12 +48,17 @@ function ButtonProgressWidget:init()
         self.horizontal_span_width = self.horizontal_span.width
     end
     self:update()
+    if self.fine_tune then
+        self.current_button_index = self.current_button_index + 1
+    end
     self.buttonprogress_frame[1] = self.buttonprogress_content
     self[1] = self.buttonprogress_frame
     self.dimen = Geom:new(self.buttonprogress_frame:getSize())
 end
 
 function ButtonProgressWidget:update()
+    self.layout = {{}}
+
     self.buttonprogress_content:clear()
     local button_margin = Size.margin.tiny
     local button_padding = Size.padding.button
@@ -91,7 +98,6 @@ function ButtonProgressWidget:update()
                 self.callback("-")
                 self:update()
             end,
-            no_focus = true,
             hold_callback = function()
                 self.hold_callback("-")
             end,
@@ -100,6 +106,7 @@ function ButtonProgressWidget:update()
             button.frame.color = Blitbuffer.COLOR_DARK_GRAY
         end
         table.insert(self.buttonprogress_content, button)
+        table.insert(self.layout[1], button)
         table.insert(self.buttonprogress_content, self.horizontal_span)
     end
 
@@ -139,7 +146,7 @@ function ButtonProgressWidget:update()
                 self.position = i
                 self:update()
             end,
-            no_focus = true,
+            no_focus = highlighted,
             hold_callback = function()
                 self.hold_callback(i)
             end,
@@ -161,11 +168,14 @@ function ButtonProgressWidget:update()
                     margin = button_margin,
                     padding = 0,
                     bordersize = 0,
+                    focusable = true,
+                    focus_border_size = Size.border.thin,
                     button,
                 }
             end
         end
         table.insert(self.buttonprogress_content, button)
+        table.insert(self.layout[1], button)
     end
 
     -- Plus button on the right
@@ -194,16 +204,17 @@ function ButtonProgressWidget:update()
                 self.callback("+")
                 self:update()
             end,
-            no_focus = true,
             hold_callback = function()
                 self.hold_callback("+")
             end,
         }
+
         if self.thin_grey_style then
             button.frame.color = Blitbuffer.COLOR_DARK_GRAY
         end
         table.insert(self.buttonprogress_content, self.horizontal_span)
         table.insert(self.buttonprogress_content, button)
+        table.insert(self.layout[1], button)
     end
     -- More option button on the right
     if self.more_options then
@@ -230,7 +241,6 @@ function ButtonProgressWidget:update()
                 self.callback("⋮")
                 self:update()
             end,
-            no_focus = true,
             hold_callback = function()
                 self.hold_callback("⋮")
             end,
@@ -240,6 +250,7 @@ function ButtonProgressWidget:update()
         end
         table.insert(self.buttonprogress_content, self.horizontal_span)
         table.insert(self.buttonprogress_content, button)
+        table.insert(self.layout[1], button)
     end
 
     UIManager:setDirty(self.show_parrent, function()
@@ -251,16 +262,6 @@ function ButtonProgressWidget:setPosition(position, default_position)
     self.position = position
     self.default_position = default_position
     self:update()
-end
-
-function ButtonProgressWidget:onFocus()
-    self.buttonprogress_frame.background = Blitbuffer.COLOR_BLACK
-    return true
-end
-
-function ButtonProgressWidget:onUnfocus()
-    self.buttonprogress_frame.background = Blitbuffer.COLOR_WHITE
-    return true
 end
 
 function ButtonProgressWidget:onTapSelect(arg, gev)

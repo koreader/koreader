@@ -2,12 +2,12 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
@@ -20,7 +20,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local DoubleSpinWidget = InputContainer:new{
+local DoubleSpinWidget = FocusManager:new{
     title_text = "",
     title_face = Font:getFace("x_smalltfont"),
     info_text = nil,
@@ -65,9 +65,8 @@ function DoubleSpinWidget:init()
         self.width = math.floor(math.min(self.screen_width, self.screen_height) * self.width_factor)
     end
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {Device.input.group.Back}, doc = "close doublespin widget" }
-        }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close doublespin widget" }
+        self.key_events.Press = { {"Press"}, doc = "press button" }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -88,6 +87,7 @@ function DoubleSpinWidget:init()
 end
 
 function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_value)
+    self.layout = {}
     local left_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_left_value or self.left_value,
@@ -98,6 +98,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         precision = self.left_precision,
         wrap = self.left_wrap,
     }
+    self:mergeLayoutInHorizontal(left_widget)
     local right_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_right_value or self.right_value,
@@ -108,6 +109,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         precision = self.right_precision,
         wrap = self.right_wrap,
     }
+    self:mergeLayoutInHorizontal(right_widget)
     left_widget.picker_updated_callback = function(value)
         self:update(value, right_widget:getValue())
     end
@@ -227,7 +229,9 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
+        auto_focus_first_button = false,
     }
+    self:mergeLayoutInVertical(button_table)
 
     self.widget_frame = FrameContainer:new{
         radius = Size.radius.window,
@@ -265,6 +269,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         self.movable,
     }
+    self:focusTopLeftWidget()
     UIManager:setDirty(self, function()
         return "ui", self.widget_frame.dimen
     end)
@@ -306,6 +311,10 @@ function DoubleSpinWidget:onClose()
         self.close_callback()
     end
     return true
+end
+
+function DoubleSpinWidget:onPress()
+    return self:sendTapEventToFocusedWidget()
 end
 
 return DoubleSpinWidget

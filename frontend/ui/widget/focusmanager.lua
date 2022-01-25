@@ -27,7 +27,7 @@ it rather defines an abstract layout.
 local FocusManager = InputContainer:new{
     selected = nil, -- defaults to x=1, y=1
     layout = nil, -- mandatory
-    movement_allowed = { x = true, y = true }
+    movement_allowed = { x = true, y = true },
 }
 
 function FocusManager:init()
@@ -50,6 +50,9 @@ function FocusManager:init()
 end
 
 function FocusManager:onFocusMove(args)
+    if not self.layout then -- allow parent focus manger to handle the event
+        return false
+    end
     local dx, dy = unpack(args)
 
     if (dx ~= 0 and not self.movement_allowed.x)
@@ -57,7 +60,7 @@ function FocusManager:onFocusMove(args)
         return true
     end
 
-    if not self.layout or not self.layout[self.selected.y] or not self.layout[self.selected.y][self.selected.x] then
+    if not self.layout[self.selected.y] or not self.layout[self.selected.y][self.selected.x] then
         return true
     end
     local current_item = self.layout[self.selected.y][self.selected.x]
@@ -159,7 +162,64 @@ function FocusManager:_verticalStep(dy)
 end
 
 function FocusManager:getFocusItem()
+    if not self.layout then
+        return nil
+    end
     return self.layout[self.selected.y][self.selected.x]
+end
+
+function FocusManager:sendTapEventToFocusedWidget()
+    local focused_widget = self:getFocusItem()
+    if focused_widget then
+        -- center of widget position
+        local point = focused_widget.dimen:copy()
+        point.x = point.x + point.w / 2
+        point.y = point.y + point.h / 2
+        point.w = 0
+        point.h = 0
+        UIManager:sendEvent(Event:new("Gesture", {
+            ges = "tap",
+            pos = point,
+        }))
+        return true
+    end
+    return false
+end
+
+function FocusManager:mergeLayoutInVertical(child)
+    if not child.layout then
+        return
+    end
+    for _, row in ipairs(child.layout) do
+        table.insert(self.layout, row)
+    end
+    child:disableFocusManagement()
+end
+
+function FocusManager:mergeLayoutInHorizontal(child)
+    if not child.layout then
+        return
+    end
+    for i, row in ipairs(child.layout) do
+        local prow = self.layout[i]
+        if not prow then
+            prow = {}
+            self.layout[i] = prow
+        end
+        for _, widget in ipairs(row) do
+            table.insert(prow, widget)
+        end
+    end
+    child:disableFocusManagement()
+end
+
+function FocusManager:disableFocusManagement()
+    self.layout = nil -- turn off focus feature
+end
+
+--- Container call this method after init to let first widget render in focus style
+function FocusManager:focusTopLeftWidget()
+    self:onFocusMove({0, 0})
 end
 
 return FocusManager

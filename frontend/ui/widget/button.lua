@@ -165,31 +165,29 @@ function Button:init()
     end
     self.dimen = self.frame:getSize()
     self[1] = self.frame
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapSelectButton = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                },
-                doc = "Tap Button",
+    self.ges_events = {
+        TapSelectButton = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
             },
-            HoldSelectButton = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = self.dimen,
-                },
-                doc = "Hold Button",
+            doc = "Tap Button",
+        },
+        HoldSelectButton = {
+            GestureRange:new{
+                ges = "hold",
+                range = self.dimen,
             },
-            -- Safe-guard for when used inside a MovableContainer
-            HoldReleaseSelectButton = {
-                GestureRange:new{
-                    ges = "hold_release",
-                    range = self.dimen,
-                },
-            }
+            doc = "Hold Button",
+        },
+        -- Safe-guard for when used inside a MovableContainer
+        HoldReleaseSelectButton = {
+            GestureRange:new{
+                ges = "hold_release",
+                range = self.dimen,
+            },
         }
-    end
+    }
 end
 
 function Button:setText(text, width)
