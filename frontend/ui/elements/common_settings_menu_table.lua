@@ -580,6 +580,8 @@ common_settings.document_end_action = {
 
 common_settings.language = Language:getLangMenuTable()
 
+common_settings.font_ui_fallbacks = require("ui/elements/font_ui_fallbacks")
+
 common_settings.screenshot = {
     text = _("Screenshot folder"),
     callback = function()
