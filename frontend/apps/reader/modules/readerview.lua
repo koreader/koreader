@@ -545,14 +545,10 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer)
     if drawer == "lighten" then
         bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
     elseif drawer == "underscore" then
-        local line_y = y + h - 1
-        if self.ui.document.info.has_pages then
-            line_y = line_y - 2
-        end
-        bb:paintRect(x, line_y, w, 2, Blitbuffer.COLOR_GRAY)
+        bb:paintRect(x, y + h - 1, w, 2, Blitbuffer.COLOR_GRAY)
     elseif drawer == "strikeout" then
         local line_y = y + h + 1 - math.ceil(h / 2)
-        if self.ui.document.info.has_pages then
+        if self.ui.paging then
             line_y = line_y + 2
         end
         bb:paintRect(x, line_y, w, 2, Blitbuffer.COLOR_BLACK)
