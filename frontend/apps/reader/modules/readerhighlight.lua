@@ -1700,7 +1700,7 @@ function ReaderHighlight:editHighlightStyle(page, i)
             UIManager:setDirty(self.dialog, "ui")
             self.ui:handleEvent(Event:new("BookmarkUpdated",
                     self.ui.bookmark:getBookmarkForHighlight({
-                        page = self.ui.paging and item.pos0.page or item.pos0,
+                        page = self.ui.paging and page or item.pos0,
                         datetime = item.datetime,
                     })))
         end,
