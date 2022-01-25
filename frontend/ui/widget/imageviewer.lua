@@ -115,6 +115,8 @@ function ImageViewer:init()
                     scale = {diagonal - Screen:scaleBySize(200), diagonal}, rate = 1.0,
                 }
             },
+            -- Allow closing with any multiswipe
+            MultiSwipe = { GestureRange:new{ ges = "multiswipe", range = range } },
         }
     end
     if self.fullscreen then
@@ -546,6 +548,13 @@ function ImageViewer:onSwipe(_, ges)
     elseif direction == "southwest" then
         self:panBy(sq_distance, -sq_distance)
     end
+    return true
+end
+
+function ImageViewer:onMultiSwipe(_, ges)
+    -- As swipe south to close is only enabled when scaled to fit, but not
+    -- when we are zoomed in/out, allow any multiswipe to close.
+    self:onClose()
     return true
 end
 

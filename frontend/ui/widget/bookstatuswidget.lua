@@ -114,6 +114,12 @@ function BookStatusWidget:init()
                 range = function() return self.dimen end,
             }
         }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
+                range = function() return self.dimen end,
+            }
+        }
     end
 
     local screen_size = Screen:getSize()
@@ -600,6 +606,14 @@ function BookStatusWidget:onSwipe(arg, ges_ev)
         -- so let it propagate
         return false
     end
+end
+
+function BookStatusWidget:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
+    return true
 end
 
 function BookStatusWidget:onClose()
