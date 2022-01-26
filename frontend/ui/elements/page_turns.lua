@@ -128,6 +128,9 @@ local PageTurns = {
             checked_func = function()
                 return G_reader_settings:isTrue("invert_ui_layout_mirroring")
             end,
+            enabled_func = function()
+                return ReaderUI.instance.view.inverse_reading_order
+            end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("invert_ui_layout_mirroring")
             end,
