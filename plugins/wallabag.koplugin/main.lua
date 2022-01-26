@@ -807,30 +807,31 @@ function Wallabag:addTags(path)
     if id then
         local docinfo = DocSettings:open(path)
 
-        local tags = docinfo.data.summary.note
+        if docinfo.data and docinfo.data.summary and docinfo.data.summary.note then
+          local tags = docinfo.data.summary.note
 
-        if tags ~= "" and tags ~= nil then
+          if tags ~= "" and tags ~= nil then
 
-            logger.dbg("Wallabag: sending tags ", tags, " for ", path)
+              logger.dbg("Wallabag: sending tags ", tags, " for ", path)
 
-            local body = {
-                tags = tags
-            }
+              local body = {
+                  tags = tags,
+              }
 
-            local bodyJSON = JSON.encode(body)
+              local bodyJSON = JSON.encode(body)
 
-            local headers = {
-                ["Content-type"] = "application/json",
-                ["Accept"] = "application/json, */*",
-                ["Content-Length"] = tostring(#bodyJSON),
-                ["Authorization"] = "Bearer " .. self.access_token,
-            }
+              local headers = {
+                  ["Content-type"] = "application/json",
+                  ["Accept"] = "application/json, */*",
+                  ["Content-Length"] = tostring(#bodyJSON),
+                  ["Authorization"] = "Bearer " .. self.access_token,
+              }
 
-            self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON, "")
-        else
-            logger.dbg("Wallabag: no tags to send for ", path)
-        end
-
+              self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON, "")
+          else
+              logger.dbg("Wallabag: no tags to send for ", path)
+          end
+       end
     end
 end
 
