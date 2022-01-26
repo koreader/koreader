@@ -1,3 +1,17 @@
+
+local Device = require("device")
+
+-- only activate on Android < 5.0 (api<21)
+if not Device:isAndroid() then
+    return
+else
+    local A, android = pcall(require, "android")  -- luacheck: ignore
+    local api = android.app.activity.sdkVersion
+    if api >= 21 then
+        return
+    end
+end
+
 local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DataStorage = require("datastorage")

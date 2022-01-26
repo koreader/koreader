@@ -60,7 +60,7 @@ function Aliases:load()
     end
 
     table.insert(self.kv_pairs, 1,
-        { _("Tap here to create a new alias"), "", callback = function() self.editAlias(self, "", "") end})
+        { _("Create a new alias"), "", callback = function() self.editAlias(self, "", "") end})
     table.insert(self.kv_pairs, 2, "---")
 end
 
@@ -106,7 +106,7 @@ function Aliases:editAlias(alias_name, alias_command)
                     text = _("Delete"),
                     callback = function()
                         UIManager:close(alias_input)
-                        for i,v in pairs(self.kv_pairs) do
+                        for i, v in pairs(self.kv_pairs) do
                             if v[1] == alias_name then
                                 table.remove(self.kv_pairs, i)
                                 self.parent:transmit("unalias " .. alias_name .."\n")
@@ -124,7 +124,7 @@ function Aliases:editAlias(alias_name, alias_command)
                         local value = fields[2] and util.trim(fields[2])
                         if name ~= "" and value ~= "" then
                             UIManager:close(alias_input)
-                            for i,v in pairs(self.kv_pairs) do
+                            for i, v in pairs(self.kv_pairs) do
                                 if v[1] == alias_name then
                                     table.remove(self.kv_pairs, i)
                                     self.parent:transmit("unalias " .. alias_name .."\n")
@@ -139,7 +139,7 @@ function Aliases:editAlias(alias_name, alias_command)
                             table.remove(self.kv_pairs, 2)
                             table.remove(self.kv_pairs, 1)
                             table.sort(self.kv_pairs, function(a, b) return a[1] < b[1] end)
-                            table.insert(self.kv_pairs, 1, { _("Tap here to create a new alias"), "",
+                            table.insert(self.kv_pairs, 1, { _("Create a new alias"), "",
                                 callback = function() self:editAlias(self, "", "") end })
                             table.insert(self.kv_pairs, 2, "---")
                             self:save()

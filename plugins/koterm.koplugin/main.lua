@@ -68,7 +68,7 @@ function Terminal:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 
-    self.terminal_font_size = G_reader_settings:readSetting("terminal_font_size", 14)
+    self.terminal_font_size = G_reader_settings:readSetting("KOTerm_font_size", 14)
 
     self.chunk_size = CHUNK_SIZE
     self.chunk = ffi.new('uint8_t[?]', self.chunk_size)
@@ -256,7 +256,7 @@ end
 
 function Terminal:generateInputDialog()
     return InputDialog:new{
-        title =  _("KOTerm: Terminal Emulator"),
+        title =  _("Terminal Emulator"),
         input = self.history,
         input_face = self.input_face,
         para_direction_rtl = false,
@@ -279,19 +279,19 @@ function Terminal:generateInputDialog()
             end,
             },
             {
-            text = "Esc",
+            text = _("Esc"),
             callback = function()
                 self:transmit("\027")
             end,
             },
             {
-            text = "Ctrl",
+            text = _("Ctrl"),
             callback = function()
                 self.ctrl = true
             end,
             },
             {
-            text = "Ctrl-C",
+            text = _("Ctrl-C"),
             callback = function()
                 self:transmit("\003")
                 -- consume and drop everything
@@ -349,8 +349,8 @@ function Terminal:generateInputDialog()
                     choice1_callback = function()
                         self.history = self.input_dialog:getInputText()
                         -- trim trialing spaces and newlines
-                        while self.history:sub(#self.history,#self.history) == "\n"
-                            or self.history:sub(#self.history,#self.history) == " " do
+                        while self.history:sub(#self.history, #self.history) == "\n"
+                            or self.history:sub(#self.history, #self.history) == " " do
                             self.history = self.history:sub(1, #self.history - 1)
                         end
 
@@ -396,7 +396,7 @@ function Terminal:onKOTermStart(touchmenu_instance)
     self.touchmenu_instance = touchmenu_instance
 
     self.input_face = Font:getFace("smallinfont",
-        G_reader_settings:readSetting("KOTerm_font_size",14))
+        G_reader_settings:readSetting("KOTerm_font_size", 14))
     self.ctrl = false
     self.input_dialog = self:generateInputDialog()
     self.input_widget = self.input_dialog._input_widget
@@ -419,15 +419,15 @@ function Terminal:onKOTermStart(touchmenu_instance)
 end
 
 function Terminal:addToMainMenu(menu_items)
-    menu_items.koterm = {
-        text = "KOTerm",
-        sorting_hint = "more_tools",
+    menu_items.terminal = {
+        text = _("Terminal emulator"),
+--        sorting_hint = "more_tools",
         keep_menu_open = true,
         sub_item_table = {
             {
-                text = _("About KOTerm"),
+                text = _("About terminal emulator"),
                 callback = function()
-                    local about_text = _([[KOTerm is a terminal emulator, which starts a shell (command prompt).
+                    local about_text = _([[Terminal emulator can start a shell (command prompt).
 
 There are two environment variables KOTERM_HOME and KOTERM_DATA containing the path of the install and the data folders.
 
@@ -437,7 +437,7 @@ Commands to be executed on start can be placed in:
 Aliases (shortcuts) to frequently used commands can be placed in:
 '$KOTERM_DATA/scripts/aliases'.]])
                     if not Device:isAndroid() then
-                        about_text = about_text .. _("\n\nYou can use 'shfm' as a file manager, '?' shows shfm´s help message.")
+                        about_text = about_text .. _("\n\nYou can use 'shfm' as a file manager, '?' shows shfm’s help message.")
                     end
 
                     UIManager:show(InfoMessage:new{
