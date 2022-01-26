@@ -31,7 +31,6 @@ local RadioButtonTable = FocusManager:new{
 }
 
 function RadioButtonTable:init()
-    self.selected = { x = 1, y = 1 }
     self.radio_buttons_layout = {}
     self.container = VerticalGroup:new{ width = self.width }
     table.insert(self, self.container)
@@ -120,7 +119,7 @@ function RadioButtonTable:init()
 
     if Device:hasDPad() or Device:hasKeyboard() then
         self.layout = self.radio_buttons_layout
-        self.key_events.SelectByKeyPress = { {{"Press"}} }
+        self:refocusWidget()
     else
         self.key_events = {}  -- deregister all key press event listeners
     end
@@ -144,15 +143,6 @@ function RadioButtonTable:addHorizontalSep(vspan_before, add_line, vspan_after, 
         table.insert(self.container,
                      VerticalSpan:new{ width = Size.span.vertical_default })
     end
-end
-
-function RadioButtonTable:onSelectByKeyPress()
-    local item = self:getFocusItem()
-    if item then
-        item.callback()
-        return true
-    end
-    return false
 end
 
 function RadioButtonTable:_checkButton(button)

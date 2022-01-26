@@ -22,6 +22,7 @@ Example:
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(sample_input)
                     end,
@@ -99,12 +100,12 @@ local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
@@ -118,7 +119,7 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local InputDialog = InputContainer:new{
+local InputDialog = FocusManager:new{
     is_always_active = true,
     title = "",
     input = "",
@@ -197,6 +198,7 @@ local InputDialog = InputContainer:new{
 }
 
 function InputDialog:init()
+    self.layout = {{}}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     if self.fullscreen then
@@ -370,13 +372,12 @@ function InputDialog:init()
         top_line_num = self._top_line_num,
         charpos = self._charpos,
     }
+    table.insert(self.layout[1], self._input_widget)
     if self.allow_newline then -- remove any enter_callback
         self._input_widget.enter_callback = nil
     end
-    if Device:hasDPad() then
-        --little hack to piggyback on the layout of the button_table to handle the new InputText
-        table.insert(self.button_table.layout, 1, {self._input_widget})
-    end
+    self:mergeLayoutInVertical(self.button_table)
+    self:refocusWidget()
     -- Complementary setup for some of our added buttons
     if self.save_callback then
         local save_button = self.button_table:getButtonById("save")
@@ -440,6 +441,9 @@ function InputDialog:init()
             },
         }
     end
+    if Device:hasKeys() then
+        self.key_events.CloseDialog = { {Device.input.group.Back}, doc = "close dialog" }
+    end
     if self._added_widgets then
         for _, widget in ipairs(self._added_widgets) do
             self:addWidget(widget, true)
@@ -448,6 +452,7 @@ function InputDialog:init()
 end
 
 function InputDialog:addWidget(widget, re_init)
+    table.insert(self.layout, #self.layout, {widget})
     if not re_init then -- backup widget for re-init
         widget = CenterContainer:new{
             dimen = Geom:new{
@@ -552,6 +557,15 @@ function InputDialog:onKeyboardHeightChanged()
     end
     -- Our position on screen has probably changed, so have the full screen refreshed
     UIManager:setDirty("all", "flashui")
+end
+
+function InputDialog:onCloseDialog()
+    local close_button = self.button_table:getButtonById("close")
+    if close_button and close_button.enabled then
+        close_button.callback()
+        return true
+    end
+    return false
 end
 
 function InputDialog:onClose()
@@ -769,6 +783,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                             {
                                 {
                                     text = _("Cancel"),
+                                    id = "close",
                                     callback = function()
                                         UIManager:close(input_dialog)
                                         self.keyboard_hidden = keyboard_hidden_state
@@ -856,6 +871,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                             {
                                 {
                                     text = _("Cancel"),
+                                    id = "close",
                                     callback = function()
                                         UIManager:close(input_dialog)
                                         self.keyboard_hidden = keyboard_hidden_state

@@ -642,6 +642,7 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(text_dialog)
                     end,

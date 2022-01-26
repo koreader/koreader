@@ -35,7 +35,6 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -72,9 +71,7 @@ function ConfirmBox:init()
             }
         end
         if Device:hasKeys() then
-            self.key_events = {
-                Close = { {Device.input.group.Back}, doc = "cancel" }
-            }
+            self.key_events.Close = { {Device.input.group.Back}, doc = "cancel" }
         end
     end
     local text_widget = TextBoxWidget:new{
@@ -211,17 +208,6 @@ function ConfirmBox:onTapClose(arg, ges)
         self:onClose()
     end
     -- Don't let it propagate to underlying widgets
-    return true
-end
-
-function ConfirmBox:onSelect()
-    logger.dbg("selected:", self.selected.x)
-    if self.selected.x == 1 then
-        self:ok_callback()
-    else
-        self:cancel_callback()
-    end
-    UIManager:close(self)
     return true
 end
 

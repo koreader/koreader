@@ -7,7 +7,6 @@ local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
-local Event = require("ui/event")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -490,7 +489,6 @@ function TouchMenu:init()
     end
     self.key_events.NextPage = { {Input.group.PgFwd}, doc = "next page" }
     self.key_events.PrevPage = { {Input.group.PgBack}, doc = "previous page" }
-    self.key_events.Press = { {"Press"}, doc = "chose selected item" }
 
     local icons = {}
     for _, v in ipairs(self.tab_item_table) do
@@ -713,7 +711,7 @@ function TouchMenu:updateItems()
     -- recalculate dimen based on new layout
     self.dimen.w = self.width
     self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding -- (no padding at top)
-    self.selected = { x = self.cur_tab, y = 1 } -- reset the position of the focusmanager
+    self:moveFocusTo(self.cur_tab, 1) -- reset the position of the focusmanager
 
     -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
     --       in order to optionally flash on initial menu popup...
@@ -940,15 +938,6 @@ end
 
 function TouchMenu:onBack()
     self:backToUpperMenu()
-end
-
-function TouchMenu:onPress()
-    local item = self:getFocusItem()
-    if item then
-        item:handleEvent(Event:new("TapSelect"))
-        return true
-    end
-    return false
 end
 
 return TouchMenu

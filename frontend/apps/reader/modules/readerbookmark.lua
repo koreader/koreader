@@ -1055,6 +1055,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note, new_te
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(self.input)
                         if is_new_note then -- "Add note" cancelled, remove saved highlight
@@ -1121,6 +1122,7 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(input_dialog)
                     end,

@@ -812,15 +812,20 @@ function ReaderToc:onShowToc()
     end
 
     function toc_menu:onMenuHold(item)
-        -- Match the items' width
-        local infomessage = InfoMessage:new{
-            width = Screen:getWidth() - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
-            alignment = "center",
-            show_icon = false,
-            text = item.text,
-            face = Font:getFace("infofont", self.items_font_size),
-        }
-        UIManager:show(infomessage)
+        if not Device:isTouchDevice() and (item.state and item.state.callback) then
+            -- non touch to expand toc
+            item.state.callback()
+        else
+            -- Match the items' width
+            local infomessage = InfoMessage:new{
+                width = Screen:getWidth() - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
+                alignment = "center",
+                show_icon = false,
+                text = item.text,
+                face = Font:getFace("infofont", self.items_font_size),
+            }
+            UIManager:show(infomessage)
+        end
         return true
     end
 

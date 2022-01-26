@@ -34,7 +34,6 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local logger = require("logger")
 local _ = require("gettext")
 local Screen = require("device").screen
 
@@ -72,9 +71,7 @@ function MultiConfirmBox:init()
             }
         end
         if Device:hasKeys() then
-            self.key_events = {
-                Close = { {Device.input.group.Back}, doc = "cancel" }
-            }
+            self.key_events.Close = { {Device.input.group.Back}, doc = "cancel" }
         end
     end
     local content = HorizontalGroup:new{
@@ -171,19 +168,6 @@ function MultiConfirmBox:onTapClose(arg, ges)
         return true
     end
     return false
-end
-
-function MultiConfirmBox:onSelect()
-    logger.dbg("selected:", self.selected.x)
-    if self.selected.x == 1 then
-        self:choice1_callback()
-    elseif self.selected.x == 2 then
-        self:choice2_callback()
-    elseif self.selected.x == 0 then
-        self:cancle_callback()
-    end
-    UIManager:close(self)
-    return true
 end
 
 return MultiConfirmBox

@@ -2,13 +2,13 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local NaturalLight = require("ui/widget/naturallightwidget")
 local ProgressWidget = require("ui/widget/progresswidget")
@@ -23,7 +23,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local FrontLightWidget = InputContainer:new{
+local FrontLightWidget = FocusManager:new{
     width = nil,
     height = nil,
     -- This should stay active during natural light configuration
@@ -78,9 +78,7 @@ function FrontLightWidget:init()
         show_parent = self,
     }
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {Device.input.group.Back}, doc = "close frontlight" }
-        }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close frontlight" }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -221,6 +219,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         item_level,
         button_plus,
     }
+    self.layout[1] = {button_minus, button_plus}
     local button_table_down = HorizontalGroup:new{
         align = "center",
         button_min,
@@ -229,6 +228,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         empty_space,
         button_max,
     }
+    self.layout[2] = {button_min, button_toggle, button_max}
     if self.natural_light then
         -- Only insert 'brightness' caption if we also add 'warmth'
         -- widgets below.
@@ -259,12 +259,13 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
                 end,
             }
             table.insert(vertical_group, self.configure_button)
+            self.layout[5] = {self.configure_button}
         end
     end
     table.insert(self.fl_container, vertical_group)
     -- Reset container height to what it actually contains
     self.fl_container.dimen.h = vertical_group:getSize().h
-
+    self:refocusWidget()
     UIManager:setDirty(self, function()
         return "ui", self.light_frame.dimen
     end)
@@ -370,12 +371,14 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         item_level,
         button_plus,
     }
+    self.layout[3] = {button_minus, button_plus}
     local button_table_down = HorizontalGroup:new{
         align = "center",
         button_min,
         empty_space,
         button_max,
     }
+    self.layout[4] = {button_min, button_max}
 
     table.insert(vertical_group, text_warmth)
     table.insert(button_group_up, button_table_up)
@@ -388,7 +391,6 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     table.insert(vertical_group, padding_span)
     table.insert(vertical_group, button_group_down)
     table.insert(vertical_group, padding_span)
-
 end
 
 function FrontLightWidget:setFrontLightIntensity(num)
@@ -409,6 +411,7 @@ function FrontLightWidget:setFrontLightIntensity(num)
 end
 
 function FrontLightWidget:update()
+    self.layout = {}
     local title_bar = TitleBar:new{
         title = _("Frontlight"),
         width = self.width,

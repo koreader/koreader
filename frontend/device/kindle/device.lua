@@ -155,18 +155,23 @@ end
 
 function Kindle:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
-    local command
+    local commands = {}
     if year and month and day then
-        command = string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
+        table.insert(commands, string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec))
+        --Kindle DX
+        --BusyBox v1.7.2 (2011-01-13 18:01:58 PST) multi-call binary
+        --Usage: date [OPTION]... [MMDDhhmm[[CC]YY][.ss]] [+FORMAT]
+        table.insert(commands, string.format("date -s '%02d%02d%02d%02d%04d.%02d'", month, day, hour, min, year, sec))
     else
-        command = string.format("date -s '%d:%d'",hour, min)
+        table.insert(commands,string.format("date -s '%d:%d'",hour, min))
     end
-    if os.execute(command) == 0 then
-        os.execute('hwclock -u -w')
-        return true
-    else
-        return false
+    for _, command in ipairs(commands) do
+        if os.execute(command) == 0 then
+            os.execute('hwclock -u -w')
+            return true
+        end
     end
+    return false
 end
 
 function Kindle:usbPlugIn()

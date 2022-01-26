@@ -329,6 +329,7 @@ function Gestures:multiswipeRecorder(touchmenu_instance)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(multiswipe_recorder)
                     end,

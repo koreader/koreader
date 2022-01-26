@@ -3,13 +3,13 @@ local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local InputText = require("ui/widget/inputtext")
 local LeftContainer = require("ui/widget/container/leftcontainer")
@@ -39,7 +39,7 @@ local stats_book = {}
     ["status"] = "Reading"
     ["modified"] = "24.01.2016"
 },]]
-local BookStatusWidget = InputContainer:new{
+local BookStatusWidget = FocusManager:new{
     padding = Size.padding.fullscreen,
     settings = nil,
     thumbnail = nil,
@@ -54,6 +54,7 @@ local BookStatusWidget = InputContainer:new{
 }
 
 function BookStatusWidget:init()
+    self.layout = {}
     if self.settings then
         -- What a blank, full summary table should look like
         local new_summary = {
@@ -100,11 +101,7 @@ function BookStatusWidget:init()
     }
 
     if Device:hasKeys() then
-        self.key_events = {
-            --don't get locked in on non touch devices
-            AnyKeyPressed = { { Device.input.group.Any },
-                seqtext = "any key", doc = "close dialog" }
-        }
+        self.key_events.Close = { { Device.input.group.Back }, doc = "close dialog" }
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -252,28 +249,35 @@ function BookStatusWidget:setStar(num)
     self.stars_container:clear()
 
     local stars_group = HorizontalGroup:new{ align = "center" }
+    local row = {}
     if num then
         self.summary.rating = num
         self:saveSummary()
 
         for i = 1, num do
-            table.insert(stars_group, self.star:new{
+            local star = self.star:new{
                 icon = "star.full",
                 callback = function() self:setStar(i) end
-            })
+            }
+            table.insert(stars_group, star)
+            table.insert(row, star)
         end
     else
         num = 0
     end
 
     for i = num + 1, 5 do
-        table.insert(stars_group, self.star:new{ callback = function() self:setStar(i) end })
+        local star = self.star:new{ callback = function() self:setStar(i) end }
+        table.insert(stars_group, star)
+        table.insert(row, star)
     end
+    self.layout[1] = row
 
     table.insert(self.stars_container, stars_group)
 
     -- Individual stars are Button, w/ flash_ui, they'll have their own flash.
     -- And we need to redraw the full widget, because we don't know the coordinates of stars_container :/.
+    self:refocusWidget()
     UIManager:setDirty(self, "ui", nil, true)
     return true
 end
@@ -487,6 +491,7 @@ function BookStatusWidget:genSummaryGroup(width)
         readonly = self.readonly,
         hint = _("A few words about the book"),
     }
+    table.insert(self.layout, {self.input_note})
 
     return VerticalGroup:new{
         VerticalSpan:new{ width = Size.span.vertical_large },
@@ -562,6 +567,7 @@ function BookStatusWidget:generateSwitchGroup(width)
         readonly = self.readonly,
     }
     switch:setPosition(position)
+    self:mergeLayoutInVertical(switch)
 
     return VerticalGroup:new{
         VerticalSpan:new{ width = Screen:scaleBySize(10) },
@@ -580,11 +586,6 @@ function BookStatusWidget:onConfigChoose(values, name, event, args, position)
         end
         UIManager:setDirty(nil, "ui", nil, true)
     end)
-end
-
-
-function BookStatusWidget:onAnyKeyPressed()
-    return self:onClose()
 end
 
 function BookStatusWidget:onSwipe(arg, ges_ev)
@@ -631,6 +632,7 @@ function BookStatusWidget:onSwitchFocus(inputbox)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self:closeInputDialog()
                     end,
@@ -653,6 +655,7 @@ end
 
 function BookStatusWidget:closeInputDialog()
     UIManager:close(self.note_dialog)
+    self.input_note:onUnfocus();
 end
 
 return BookStatusWidget

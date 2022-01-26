@@ -902,6 +902,7 @@ function Wallabag:setFilterTag(touchmenu_instance)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(self.tag_dialog)
                     end,
@@ -933,6 +934,7 @@ function Wallabag:setIgnoreTags(touchmenu_instance)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(self.ignore_tags_dialog)
                     end,
@@ -1000,6 +1002,7 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
@@ -1048,6 +1051,7 @@ function Wallabag:editClientSettings()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self.client_settings_dialog:onClose()
                         UIManager:close(self.client_settings_dialog)

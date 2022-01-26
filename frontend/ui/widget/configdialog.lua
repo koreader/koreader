@@ -665,9 +665,7 @@ end
 function ConfigOption:_itemGroupToLayoutLine(option_items_group)
     local layout_line  = {}
     -- Insert items (skpping item_spacing without a .name attribute),
-    -- skipping indices at the beginning of the line in the layout
-    -- to align it with the current selected tab
-    local j = self.config.panel_index
+    local j = 1 -- no nil in row head
     for i, v in ipairs(option_items_group) do
         if v.name then
             if v.layout and v.disableFocusManagement then -- it is a FocusManager
@@ -680,7 +678,7 @@ function ConfigOption:_itemGroupToLayoutLine(option_items_group)
                         j = j + 1
                     end
                 end
-                v:disableFocusManagement()
+                v:disableFocusManagement(self.config)
             else
                 layout_line[j] = v
                 j = j + 1
@@ -883,9 +881,6 @@ function ConfigDialog:init()
         local close_keys = Device:hasFewKeys() and { "Back", "Left" } or Device.input.group.Back
         self.key_events.Close = { { close_keys }, doc = "close config menu" }
     end
-    if Device:hasDPad() then
-        self.key_events.Select = { {"Press"}, doc = "select current menu item" }
-    end
 end
 
 function ConfigDialog:updateConfigPanel(index)
@@ -893,6 +888,7 @@ function ConfigDialog:updateConfigPanel(index)
 end
 
 function ConfigDialog:update()
+    self:moveFocusTo(1, 1) -- reset selected for re-created layout
     self.layout = {}
 
     if self.config_menubar then
@@ -927,8 +923,7 @@ function ConfigDialog:update()
     self.dialog_frame.dimen = old_dimen
 
     -- Reset the focusmanager cursor
-    self.selected.y=#self.layout
-    self.selected.x=self.panel_index
+    self:moveFocusTo(self.panel_index, #self.layout)
 
     self[1] = BottomContainer:new{
         dimen = Screen:getSize(),
@@ -1461,10 +1456,6 @@ end
 function ConfigDialog:onClose()
     self:closeDialog()
     return true
-end
-
-function ConfigDialog:onSelect()
-    return self:sendTapEventToFocusedWidget()
 end
 
 return ConfigDialog

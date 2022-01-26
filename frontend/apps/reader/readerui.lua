@@ -661,6 +661,7 @@ function ReaderUI:unlockDocumentWithPassword(document, try_again)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     enabled = true,
                     callback = function()
                         self:closeDialog()

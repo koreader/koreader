@@ -62,7 +62,7 @@ end
 
 function FrameContainer:onFocus()
     if not self.focusable then
-        return
+        return false
     end
     self._origin_bordersize = self.bordersize
     self._origin_border_color = self.color
@@ -73,7 +73,7 @@ end
 
 function FrameContainer:onUnfocus()
     if not self.focusable then
-        return
+        return false
     end
     self.bordersize = self._origin_bordersize
     self.color = self._origin_border_color

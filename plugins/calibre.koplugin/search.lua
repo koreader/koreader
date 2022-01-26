@@ -207,6 +207,7 @@ function CalibreSearch:ShowSearch()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     enabled = true,
                     callback = function()
                         self.search_dialog:onClose()

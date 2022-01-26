@@ -294,6 +294,7 @@ function NetworkItem:onEditNetwork()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(password_input)
                     end,
@@ -336,6 +337,7 @@ function NetworkItem:onAddNetwork()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(password_input)
                     end,

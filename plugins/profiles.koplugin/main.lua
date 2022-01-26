@@ -64,6 +64,7 @@ function Profiles:getSubMenuItems()
                     buttons = {{
                         {
                             text = _("Cancel"),
+                            id = "close",
                             callback = function()
                                 UIManager:close(name_input)
                             end,

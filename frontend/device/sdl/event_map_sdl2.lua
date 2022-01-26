@@ -65,6 +65,7 @@ return {
     [1073742050] = "Alt", -- left alt
     [1073742054] = "AA", -- right alt key
     [1073741925] = "ContextMenu", -- Context menu key
+    [1073741942] = "ContextMenu", -- Context menu key
     [0x400000E0] = "Ctrl", -- Left Ctrl
     [0x400000E4] = "Ctrl", -- Right Ctrl
     [1073742051] = "Win", -- Left Win/Cmd

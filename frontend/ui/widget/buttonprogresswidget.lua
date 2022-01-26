@@ -253,6 +253,7 @@ function ButtonProgressWidget:update()
         table.insert(self.layout[1], button)
     end
 
+    self:refocusWidget()
     UIManager:setDirty(self.show_parrent, function()
         return "ui", self.dimen
     end)

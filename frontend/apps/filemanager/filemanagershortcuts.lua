@@ -82,6 +82,7 @@ function FileManagerShortcuts:addNewFolder()
                     {
                         {
                             text = _("Cancel"),
+                            id = "close",
                             callback = function()
                                 UIManager:close(add_folder_input)
                             end,
@@ -168,6 +169,7 @@ function FileManagerShortcuts:editFolderShortcut(item)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(edit_folder_input)
                     end,

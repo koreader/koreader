@@ -42,6 +42,7 @@ function OpenWithDialog:init()
             end
         end
     }
+    self:mergeLayoutInVertical(self.radio_button_table, #self.layout) -- before bottom buttons
     self._input_widget = self.radio_button_table
 
     local vertical_span = VerticalSpan:new{
@@ -85,11 +86,13 @@ function OpenWithDialog:init()
         text = _("Always use this engine for this file"),
         parent = self,
     }
+    table.insert(self.layout, #self.layout, {self._check_file_button}) -- before bottom buttons
     self:addWidget(self._check_file_button)
     self._check_global_button = self._check_global_button or CheckButton:new{
         text = _("Always use this engine for file type"),
         parent = self,
     }
+    table.insert(self.layout, #self.layout, {self._check_global_button}) -- before bottom buttons
     self:addWidget(self._check_global_button)
 
     self.dialog_frame = FrameContainer:new{
@@ -110,6 +113,7 @@ function OpenWithDialog:init()
         },
         self.movable,
     }
+    self:refocusWidget()
 end
 
 function OpenWithDialog:onCloseWidget()
