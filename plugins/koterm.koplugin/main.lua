@@ -501,7 +501,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                         value_max = 30,
                         value_hold_step = 2,
                         default_value = 16,
-                        title_text = _("Terminal emulator buffer size"),
+                        title_text = _("Terminal emulator buffer size (kB)"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("koterm_buffer_size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
