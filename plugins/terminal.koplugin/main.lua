@@ -5,9 +5,7 @@ local Device = require("device")
 if not Device:isAndroid() then
     return
 else
-    local A, android = pcall(require, "android")  -- luacheck: ignore
-    local api = android.app.activity.sdkVersion
-    if api >= 21 then
+    if Device.firmware_rev >= 21 then
         return
     end
 end

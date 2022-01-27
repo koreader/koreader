@@ -7,12 +7,8 @@ local Device = require("device")
 -- grantpt and friends are necessary (introduced on Android in API 21).
 -- So sorry for the Tolinos with (Android 4.4.x).
 -- Maybe https://f-droid.org/de/packages/jackpal.androidterm/ could be an alternative then.
-if Device:isAndroid() then
-    local A, android = pcall(require, "android")  -- luacheck: ignore
-    local api = android.app.activity.sdkVersion
-    if api < 21 then
-        return
-    end
+if Device:isAndroid() and Device.firmware_rev < 21 then
+    return
 end
 
 local Aliases = require("aliases")
