@@ -54,12 +54,10 @@ int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
 local Terminal = WidgetContainer:new{
-    name = "KOTerm",
+    name = "koterm",
     history = "",
     is_shell_open = false,
-    font_size = G_reader_settings:readSetting("KOTerm_font_size", 14),
-    buffer_size = 1024 * G_reader_settings:readSetting("KOTerm_buffer_size", 16), -- size in kB
-    buffer_used_approx = 0,
+    buffer_size = 1024 * G_reader_settings:readSetting("koterm_buffer_size", 16), -- size in kB
     refresh_time = 0.2,
     koterm_data = ".",
 }
@@ -67,8 +65,6 @@ local Terminal = WidgetContainer:new{
 function Terminal:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
-
-    self.terminal_font_size = G_reader_settings:readSetting("KOTerm_font_size", 14)
 
     self.chunk_size = CHUNK_SIZE
     self.chunk = ffi.new('uint8_t[?]', self.chunk_size)
@@ -85,7 +81,7 @@ function Terminal:spawnShell(cols, rows)
         return
     end
 
-    local shell = G_reader_settings:readSetting("KOTerm_shell", "sh")
+    local shell = G_reader_settings:readSetting("koterm_shell", "sh")
 
     local ptmx_name = "/dev/ptmx"
     self.ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
@@ -279,19 +275,19 @@ function Terminal:generateInputDialog()
             end,
             },
             {
-            text = _("Esc"),
+            text = _("Esc"), -- @translators This is the ESC-key on the keyboard.
             callback = function()
                 self:transmit("\027")
             end,
             },
             {
-            text = _("Ctrl"),
+            text = _("Ctrl"), -- @translators This is the CTRL-key on the keyboard.
             callback = function()
                 self.ctrl = true
             end,
             },
             {
-            text = _("Ctrl-C"),
+            text = _("Ctrl-C"), -- @translators This is the CTRL-C key combination.
             callback = function()
                 self:transmit("\003")
                 -- consume and drop everything
@@ -396,7 +392,7 @@ function Terminal:onKOTermStart(touchmenu_instance)
     self.touchmenu_instance = touchmenu_instance
 
     self.input_face = Font:getFace("smallinfont",
-        G_reader_settings:readSetting("KOTerm_font_size", 14))
+        G_reader_settings:readSetting("koterm_font_size", 14))
     self.ctrl = false
     self.input_dialog = self:generateInputDialog()
     self.input_widget = self.input_dialog._input_widget
@@ -472,19 +468,19 @@ Aliases (shortcuts) to frequently used commands can be placed in:
             {
                 text_func = function()
                     return T(_("Font size: %1"),
-                        G_reader_settings:readSetting("KOTerm_font_size", 14))
+                        G_reader_settings:readSetting("koterm_font_size", 14))
                 end,
                 callback = function(touchmenu_instance)
-                    local cur_size = G_reader_settings:readSetting("KOTerm_font_size")
+                    local cur_size = G_reader_settings:readSetting("koterm_font_size")
                     local size_spin = SpinWidget:new{
                         value = cur_size,
                         value_min = 10,
                         value_max = 30,
                         value_hold_step = 2,
                         default_value = 14,
-                        title_text = _("KOTerm font size "),
+                        title_text = _("Terminal emulator font size "),
                         callback = function(spin)
-                            G_reader_settings:saveSetting("KOTerm_font_size", spin.value)
+                            G_reader_settings:saveSetting("koterm_font_size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     }
@@ -495,19 +491,19 @@ Aliases (shortcuts) to frequently used commands can be placed in:
             {
                 text_func = function()
                     return T(_("Buffer size: %1 kB"),
-                        G_reader_settings:readSetting("KOTerm_buffer_size", 16))
+                        G_reader_settings:readSetting("koterm_buffer_size", 16))
                 end,
                 callback = function(touchmenu_instance)
-                    local cur_buffer = G_reader_settings:readSetting("KOTerm_buffer_size")
+                    local cur_buffer = G_reader_settings:readSetting("koterm_buffer_size")
                     local buffer_spin = SpinWidget:new{
                         value = cur_buffer,
                         value_min = 10,
                         value_max = 30,
                         value_hold_step = 2,
                         default_value = 16,
-                        title_text = _("KOTerm buffer size"),
+                        title_text = _("Terminal emulator buffer size"),
                         callback = function(spin)
-                            G_reader_settings:saveSetting("KOTerm_buffer_size", spin.value)
+                            G_reader_settings:saveSetting("koterm_buffer_size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     }
@@ -518,13 +514,13 @@ Aliases (shortcuts) to frequently used commands can be placed in:
             {
                 text_func = function()
                     return T(_("Shell executable: %1"),
-                        G_reader_settings:readSetting("KOTerm_shell", "sh"))
+                        G_reader_settings:readSetting("koterm_shell", "sh"))
                 end,
                 callback = function(touchmenu_instance)
                     self.shell_dialog = InputDialog:new{
                         title = _("Shell to use"),
                         description = _("Here you can select the startup shell.\nDefault: sh"),
-                        input = G_reader_settings:readSetting("KOTerm_shell", "sh"),
+                        input = G_reader_settings:readSetting("koterm_shell", "sh"),
                         buttons = {{
                             {
                                 text = _("Cancel"),
@@ -535,7 +531,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                             {
                                 text = _("Default"),
                                 callback = function()
-                                    G_reader_settings:saveSetting("KOTerm_shell", "sh")
+                                    G_reader_settings:saveSetting("koterm_shell", "sh")
                                     UIManager:close(self.shell_dialog)
                                     if touchmenu_instance then
                                         touchmenu_instance:updateItems()
@@ -550,7 +546,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                                     if new_shell == "" then
                                         new_shell = "sh"
                                     end
-                                    G_reader_settings:saveSetting("KOTerm_shell", new_shell)
+                                    G_reader_settings:saveSetting("koterm_shell", new_shell)
                                     UIManager:close(self.shell_dialog)
                                     if touchmenu_instance then
                                         touchmenu_instance:updateItems()
@@ -568,8 +564,8 @@ Aliases (shortcuts) to frequently used commands can be placed in:
 end
 
 function Terminal:onDispatcherRegisterActions()
-    Dispatcher:registerAction("KOTerm",
-        {category = "none", event = "KOTermStart", title = "KOTerm", device = true})
+    Dispatcher:registerAction("koterm",
+        {category = "none", event = "KOTermStart", title = _("Terminal Emulator"), device = true})
 end
 
 return Terminal
