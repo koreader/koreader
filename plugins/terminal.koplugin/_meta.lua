@@ -1,6 +1,6 @@
 local _ = require("gettext")
 return {
-    name = "koterm",
+    name = "terminal",
     fullname = _("Terminal emulator"),
     description = _([[KOReader's terminal emulator]]),
 }

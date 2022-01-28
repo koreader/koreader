@@ -256,7 +256,7 @@ function TermInputText:_helperVT52VT100(cmd, mode, param1, param2, param3)
             self.scroll_region_top = nil
             self.scroll_region_line = nil
         end
-        logger.dbg("KOTerm: set scroll region", param1, param2, self.scroll_region_top, self.scroll_region_bottom, self.scroll_region_line)
+        logger.dbg("Terminal: set scroll region", param1, param2, self.scroll_region_top, self.scroll_region_bottom, self.scroll_region_line)
         return true
     end
     return false
@@ -296,9 +296,9 @@ function TermInputText:interpretAnsiSeq(text)
             elseif next_byte == "D" then -- cursor left
                 self:leftChar(true)
             elseif next_byte == "F" then -- enter graphics mode
-                logger.dbg("KOTerm: enter graphics mode not supported")
+                logger.dbg("Terminal: enter graphics mode not supported")
             elseif next_byte == "G" then -- exit graphics mod
-                logger.dbg("KOTerm: leave graphics mode not supported")
+                logger.dbg("Terminal: leave graphics mode not supported")
             elseif next_byte == "H" then -- cursor home
                 self:moveCursorToRowCol(1, 1)
             elseif next_byte == "I" then -- reverse line feed (cursor up and insert line)
@@ -308,9 +308,9 @@ function TermInputText:interpretAnsiSeq(text)
             elseif next_byte == "K" then -- clear to end of line
                 self:delToEndOfLine()
             elseif next_byte == "L" then -- insert line
-                logger.dbg("KOTerm: insert not supported")
+                logger.dbg("Terminal: insert not supported")
             elseif next_byte == "M" then -- remove line
-                logger.dbg("KOTerm: remove line not supported")
+                logger.dbg("Terminal: remove line not supported")
             elseif next_byte == "Y" then -- set cursor pos (row, col)
                 self.sequence_state = "escY"
             elseif next_byte == "Z" then -- ident(ify)
@@ -378,14 +378,14 @@ function TermInputText:interpretAnsiSeq(text)
         elseif self.sequence_state == "escOtherCmd" then
             if not self:_helperVT52VT100(next_byte, self.sequence_mode, param1, param2, param3) then
                 -- drop other VT100 sequences
-                logger.info("KOTerm: ANSI-final: not supported", next_byte,
+                logger.info("Terminal: ANSI-final: not supported", next_byte,
                     next_byte:byte(), next_byte, param1, param2, param3)
             end
             param1, param2, param3 = 0, 0, 0
             self.sequence_state = ""
             self.sequence_mode = ""
         else
-            logger.dbg("KOTerm: detected error in esc sequence, not my fault.")
+            logger.dbg("Terminal: detected error in esc sequence, not my fault.")
             self.sequence_state = ""
         end -- self.sequence_state
 
