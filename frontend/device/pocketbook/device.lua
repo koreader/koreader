@@ -461,7 +461,7 @@ local PocketBook616 = PocketBook:new{
 }
 
 -- PocketBook Basic Lux 3 (617)
-local PocketBook616 = PocketBook:new{
+local PocketBook617 = PocketBook:new{
     model = "PBBLux3",
     display_dpi = 212,
     isTouchDevice = no,
