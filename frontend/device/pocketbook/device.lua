@@ -101,7 +101,7 @@ function PocketBook:init()
     local raw_input = self.raw_input
     local touch_rotation = raw_input and raw_input.touch_rotation or 0
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new {
+    self.screen = require("ffi/framebuffer_pocketbook"):new {
         device = self,
         debug = logger.dbg,
         wf_level = G_reader_settings:readSetting("wf_level") or 0,
@@ -595,6 +595,12 @@ local PocketBook741 = PocketBook:new{
     isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
 }
+
+
+function PocketBook741._fb_init(fb, finfo, vinfo)
+    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
+    vinfo.bits_per_pixel = 24
+end
 
 -- PocketBook Color Lux (801)
 local PocketBookColorLux = PocketBook:new{
