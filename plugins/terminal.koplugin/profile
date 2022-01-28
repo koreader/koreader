@@ -5,6 +5,8 @@
 # You may change the contents of 'aliases' and 'profile.user'
 #
 
+# shellcheck source=/dev/null
+
 TERMINAL_HOME="$(pwd)"
 # make TERMINAL_DATA an absolute path
 cd "${TERMINAL_DATA}" || exit
@@ -35,7 +37,6 @@ export TERM
 # Source a user profile if it exists.
 USER_PROFILE="${TERMINAL_DATA}/scripts/profile.user"
 if [ -f "${USER_PROFILE}" ]; then
-    # shellcheck source=/dev/null
     . "${USER_PROFILE}"
 fi
 
@@ -44,7 +45,6 @@ fi
 # to change it manually.
 ALIASES="${TERMINAL_DATA}/scripts/aliases"
 if [ -f "${ALIASES}" ]; then
-    # shellcheck disable=SC1090
     . "${ALIASES}"
 fi
 
