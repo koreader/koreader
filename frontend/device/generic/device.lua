@@ -520,6 +520,8 @@ function Device:retrieveNetworkInfo()
         end
 
         if gw then
+            result = result .. "Default gateway: " .. gw .. "\n"
+
             -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
             local pingok
             if self:isKindle() and self:hasKeyboard() then
