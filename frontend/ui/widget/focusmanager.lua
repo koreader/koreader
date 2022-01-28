@@ -219,7 +219,10 @@ end
 
 --- Container call this method after init to let first widget render in focus style
 function FocusManager:focusTopLeftWidget()
-    self:onFocusMove({0, 0})
+    if Device:hasDPad() then
+        -- trigger selected widget in focused style
+        self:onFocusMove({0, 0})
+    end
 end
 
 return FocusManager
