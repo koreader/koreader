@@ -1069,6 +1069,9 @@ function TextBoxWidget:getBaseline()
 end
 
 function TextBoxWidget:getVisibleHeightRatios()
+    if #self.vertical_string_list == 0 then
+        return 0, 1
+    end
     local low = (self.virtual_line_num - 1) / #self.vertical_string_list
     local high = (self.virtual_line_num - 1 + self.lines_per_page) / #self.vertical_string_list
     return low, high
