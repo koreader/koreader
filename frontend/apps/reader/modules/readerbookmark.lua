@@ -589,6 +589,16 @@ function ReaderBookmark:onShowBookmark(match_table)
                             UIManager:close(self.textviewer)
                         end,
                     },
+                    {
+                        text = _("Go to bookmark"),
+                        enabled = not self.select_mode,
+                        callback = function()
+                            UIManager:close(self.textviewer)
+                            UIManager:close(bookmark.bookmark_menu)
+                            bookmark.ui.link:addCurrentLocationToStack()
+                            bookmark:gotoBookmark(item.page, item.pos0)
+                        end,
+                    },
                 },
             }
         }
@@ -783,6 +793,27 @@ function ReaderBookmark:onShowBookmark(match_table)
             table.insert(buttons, {})
             table.insert(buttons, {
                 {
+                    text = _("Book current page"),
+                    enabled = curr_page_bm_idx ~= nil,
+                    callback = function()
+                        UIManager:close(bm_dialog)
+                        bm_menu:switchItemTable(nil, item_table, curr_page_bm_idx)
+                    end,
+                },
+                {
+                    text = _("Latest bookmark"),
+                    enabled = actions_enabled,
+                    callback = function()
+                        UIManager:close(bm_dialog)
+                        local _, idx = bookmark:getLatestBookmark()
+                        idx = is_reverse_sorting and idx or #item_table - idx + 1
+                        bm_menu:switchItemTable(nil, item_table, idx)
+                        bm_menu:onMenuHold(item_table[idx])
+                    end,
+                },
+            })
+            table.insert(buttons, {
+                {
                     text = _("Select bookmarks"),
                     enabled = actions_enabled,
                     callback = function()
@@ -796,16 +827,6 @@ function ReaderBookmark:onShowBookmark(match_table)
                     callback = function()
                         UIManager:close(bm_dialog)
                         bookmark:onSearchBookmark(bm_menu)
-                    end,
-                },
-            })
-            table.insert(buttons, {
-                {
-                    text = _("Show book current page bookmarks"),
-                    enabled = curr_page_bm_idx ~= nil,
-                    callback = function()
-                        UIManager:close(bm_dialog)
-                        bm_menu:switchItemTable(nil, item_table, curr_page_bm_idx)
                     end,
                 },
             })
@@ -880,11 +901,6 @@ function ReaderBookmark:addBookmark(item)
     local _start, _middle, _end, direction = 1, 1, #self.bookmarks, 0
     while _start <= _end do
         _middle = math.floor((_start + _end)/2)
-        -- won't add duplicated bookmarks
-        if self:isBookmarkSame(item, self.bookmarks[_middle]) then
-            logger.warn("skip adding duplicated bookmark")
-            return
-        end
         if self:isBookmarkInPositionOrder(item, self.bookmarks[_middle]) then
             _end, direction = _middle - 1, 0
         else
@@ -1020,12 +1036,12 @@ function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note, new_te
     else
         bookmark = item
     end
-    local input_text = bookmark.text_orig
+    local input_text = self:getBookmarkNote(bookmark) and bookmark.text_orig or nil
     if new_text then
-        if self:isBookmarkAutoText(bookmark) then
-            input_text = new_text
-        else
+        if input_text then
             input_text = input_text .. "\n\n" .. new_text
+        else
+            input_text = new_text
         end
     end
     self.input = InputDialog:new{
@@ -1049,6 +1065,12 @@ function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note, new_te
                                 end
                             end
                         end
+                    end,
+                },
+                {
+                    text = _("Paste"), -- insert highlighted text (auto-text)
+                    callback = function()
+                        self.input._input_widget:addChars(bookmark.text_orig)
                     end,
                 },
                 {
@@ -1298,15 +1320,16 @@ function ReaderBookmark:onGotoPreviousBookmarkFromPage(add_current_location_to_s
 end
 
 function ReaderBookmark:getLatestBookmark()
-    local latest_bookmark = nil
+    local latest_bookmark, latest_bookmark_idx
     local latest_bookmark_datetime = "0"
     for i = 1, #self.bookmarks do
         if self.bookmarks[i].datetime > latest_bookmark_datetime then
             latest_bookmark_datetime = self.bookmarks[i].datetime
             latest_bookmark = self.bookmarks[i]
+            latest_bookmark_idx = i
         end
     end
-    return latest_bookmark
+    return latest_bookmark, latest_bookmark_idx
 end
 
 function ReaderBookmark:hasBookmarks()
