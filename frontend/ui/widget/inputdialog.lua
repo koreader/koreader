@@ -128,6 +128,8 @@ local InputDialog = InputContainer:new{
     input_type = nil,
     deny_keyboard_hiding = false, -- don't hide keyboard on tap outside
     enter_callback = nil,
+    strike_callback = nil, -- call this on every keystroke (used by Terminal plugin's TermInputText)
+    inputtext_class = InputText, -- (Terminal plugin provides TermInputText)
     readonly = false, -- don't allow editing, will not show keyboard
     allow_newline = false, -- allow entering new lines (this disables any enter_callback)
     cursor_at_end = true, -- starts with cursor at end of text, ready for appending
@@ -279,7 +281,7 @@ function InputDialog:init()
     if not self.text_height or self.fullscreen then
         -- We need to find the best height to avoid screen overflow
         -- Create a dummy input widget to get some metrics
-        local input_widget = InputText:new{
+        local input_widget = self.inputtext_class:new{
             text = self.fullscreen and "-" or self.input,
             input_type = self.input_type,
             face = self.input_face,
@@ -330,7 +332,7 @@ function InputDialog:init()
         -- (will work in case of re-init as these are saved by onClose()
         self._top_line_num, self._charpos = self.view_pos_callback()
     end
-    self._input_widget = InputText:new{
+    self._input_widget = self.inputtext_class:new{
         text = self.input,
         hint = self.input_hint,
         face = self.input_face,
@@ -356,6 +358,7 @@ function InputDialog:init()
                 end
             end
         end,
+        strike_callback = self.strike_callback,
         edit_callback = self._buttons_edit_callback, -- nil if no Save/Close buttons
         scroll_callback = self._buttons_scroll_callback, -- nil if no Nav or Scroll buttons
         scroll = true,

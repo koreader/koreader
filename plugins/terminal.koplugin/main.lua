@@ -1,501 +1,567 @@
-local ButtonDialog = require("ui/widget/buttondialog")
-local CenterContainer = require("ui/widget/container/centercontainer")
-local DataStorage = require("datastorage")
+--[[
+This plugin provides a terminal emulator (VT52 (+some ANSI))
+]]
+
+local Device = require("device")
+
+-- grantpt and friends are necessary (introduced on Android in API 21).
+-- So sorry for the Tolinos with (Android 4.4.x).
+-- Maybe https://f-droid.org/de/packages/jackpal.androidterm/ could be an alternative then.
+if Device:isAndroid() and Device.firmware_rev < 21 then
+    return
+end
+
+local Aliases = require("aliases")
 local Dispatcher = require("dispatcher")
+local DataStorage = require("datastorage")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
-local LuaSettings = require("luasettings")
-local Menu = require("ui/widget/menu")
-local TextViewer = require("ui/widget/textviewer")
-local Trapper = require("ui/trapper")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local ScrollTextWidget = require("ui/widget/scrolltextwidget")
+local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local TermInputText = require("terminputtext")
+local TextWidget = require("ui/widget/textwidget")
+local bit = require("bit")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("ffi/util")
 local _ = require("gettext")
-local N_ = _.ngettext
-local Screen = require("device").screen
-local T = util.template
+local T = require("ffi/util").template
+
+local ffi = require("ffi")
+local C = ffi.C
+
+-- for terminal emulator
+ffi.cdef[[
+static const int SIGTERM = 15;
+
+int grantpt(int fd) __attribute__((nothrow, leaf));
+int unlockpt(int fd) __attribute__((nothrow, leaf));
+char *ptsname(int fd) __attribute__((nothrow, leaf));
+pid_t setsid(void) __attribute__((nothrow, leaf));
+
+static const int TCIFLUSH = 0;
+int tcdrain(int fd) __attribute__((nothrow, leaf));
+int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
+]]
+
+local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
 local Terminal = WidgetContainer:new{
     name = "terminal",
-    command = "",
-    dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
-    items_per_page = 16,
-    settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/terminal_shortcuts.lua"),
-    shortcuts_dialog = nil,
-    shortcuts_menu = nil,
-    --    shortcuts_file = DataStorage:getSettingsDir() .. "/terminal_shortcuts.lua",
-    shortcuts = {},
-    source = "terminal",
+    history = "",
+    is_shell_open = false,
+    buffer_size = 1024 * G_reader_settings:readSetting("terminal_buffer_size", 16), -- size in kB
+    refresh_time = 0.2,
+    terminal_data = ".",
 }
-
-function Terminal:onDispatcherRegisterActions()
-    Dispatcher:registerAction("show_terminal", { category = "none", event = "TerminalStart", title = _("Show terminal"), general=true, })
-end
 
 function Terminal:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
-    self.items_per_page = G_reader_settings:readSetting("items_per_page") or 16
-    self.shortcuts = self.settings:readSetting("shortcuts", {})
+
+    self.chunk_size = CHUNK_SIZE
+    self.chunk = ffi.new('uint8_t[?]', self.chunk_size)
+
+    self.terminal_data = DataStorage:getDataDir()
+    lfs.mkdir(self.terminal_data .. "/scripts")
+    os.remove("terminal.pid") -- clean leftover from last run
 end
 
-function Terminal:saveShortcuts()
-    self.settings:flush()
-    UIManager:show(InfoMessage:new{
-        text = _("Shortcuts saved"),
-        timeout = 2
-    })
-end
-
-function Terminal:manageShortcuts()
-    self.shortcuts_dialog = CenterContainer:new {
-        dimen = Screen:getSize(),
-    }
-    self.shortcuts_menu = Menu:new{
-        show_parent = self.ui,
-        width = Screen:getWidth(),
-        height = Screen:getHeight(),
-        covers_fullscreen = true, -- hint for UIManager:_repaint()
-        is_borderless = true,
-        is_popout = false,
-        perpage = self.items_per_page,
-        onMenuHold = self.onMenuHoldShortcuts,
-        _manager = self,
-    }
-    table.insert(self.shortcuts_dialog, self.shortcuts_menu)
-    self.shortcuts_menu.close_callback = function()
-        UIManager:close(self.shortcuts_dialog)
+function Terminal:spawnShell(cols, rows)
+    if self.is_shell_open then
+        self.input_widget:resize(rows, cols)
+        self.input_widget:interpretAnsiSeq(self:receive())
+        return
     end
 
-    -- sort the shortcuts:
-    if #self.shortcuts > 0 then
-        table.sort(self.shortcuts, function(v1, v2)
-            return v1.text < v2.text
-        end)
-    end
-    self:updateItemTable()
-end
+    local shell = G_reader_settings:readSetting("terminal_shell", "sh")
 
-function Terminal:updateItemTable()
-    local item_table = {}
-    if #self.shortcuts > 0 then
-        local actions_count = 3 -- separator + actions
-        for nr, f in ipairs(self.shortcuts) do
-            local item = {
-                nr = nr,
-                text = f.text,
-                commands = f.commands,
-                editable = true,
-                deletable = true,
-                callback = function()
-                    -- so we know which middle button to display in the results:
-                    self.source = "shortcut"
-                    -- execute immediately, skip terminal dialog:
-                    self.command = self:ensureWhitelineAfterCommands(f.commands)
-                    Trapper:wrap(function()
-                        self:execute()
-                    end)
-                end
-            }
-            table.insert(item_table, item)
-            -- add page actions at end of each page with shortcuts:
-            local factor = self.items_per_page - actions_count
-            if nr % factor == 0 or nr == #self.shortcuts then
-                -- insert "separator":
-                table.insert(item_table, {
-                    text = " ",
-                    deletable = false,
-                    editable = false,
-                    callback = function()
-                        self:manageShortcuts()
-                    end,
-                })
-                -- actions:
-                self:insertPageActions(item_table)
+    local ptmx_name = "/dev/ptmx"
+    self.ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
+
+    if C.grantpt(self.ptmx) ~= 0 then
+        logger.err("Terminal: can not grantpt")
+    end
+    if C.unlockpt(self.ptmx) ~= 0 then
+        logger.err("Terminal: can not unockpt")
+    end
+
+    self.slave_pty = ffi.string(C.ptsname(self.ptmx))
+
+    logger.info("Terminal: slave_pty", self.slave_pty)
+
+    local pid = C.fork()
+    if pid < 0 then
+        logger.err("Terminal: fork failed")
+        return
+    elseif pid == 0 then
+        C.close(self.ptmx)
+        C.setsid()
+
+        pid = C.getpid()
+        local pid_file = io.open("terminal.pid", "w")
+        if pid_file then
+            pid_file:write(pid)
+            pid_file:close()
+        end
+
+        local pts = C.open(self.slave_pty, C.O_RDWR)
+        if pts == -1 then
+            logger.err("Terminal: cannot open slave pty: ", pts)
+            return
+        end
+
+        C.dup2(pts, 0);
+        C.dup2(pts, 1);
+        C.dup2(pts, 2);
+        C.close(pts);
+
+        if cols and rows then
+            if not Device:isAndroid() then
+                os.execute("stty cols " .. cols .. " rows " .. rows)
             end
         end
-        -- no shortcuts defined yet:
+
+        C.setenv("TERM", "vt52", 1)
+        C.setenv("ENV", "./plugins/terminal.koplugin/profile", 1)
+        C.setenv("BASH_ENV", "./plugins/terminal.koplugin/profile", 1)
+        C.setenv("TERMINAL_DATA", self.terminal_data, 1)
+        if Device:isAndroid() then
+            C.setenv("ANDROID", "ANDROID", 1)
+        end
+        if C.execlp(shell, shell) ~= 0 then
+            -- the following two prints are shown in the terminal emulator.
+            print("Terminal: something has gone really wrong in spawning the shell\n\n:-(\n")
+            print("Maybe an incorrect shell: '" .. shell .. "'\n")
+            os.exit()
+        end
+        os.exit()
+        return
+    end
+
+    self.is_shell_open = true
+    if Device:isAndroid() then
+        -- feed the following commands to the running shell
+        self:transmit("export TERM=vt52\n")
+        self:transmit("stty cols " .. cols .. " rows " .. rows .."\n")
+    end
+
+    self.input_widget:resize(rows, cols)
+    self.input_widget:interpretAnsiSeq(self:receive())
+
+    logger.info("Terminal: spawn done")
+end
+
+function Terminal:receive()
+    local last_result = ""
+    repeat
+        C.tcdrain(self.ptmx)
+        local count = tonumber(C.read(self.ptmx, self.chunk, self.chunk_size))
+        if count > 0 then
+            last_result = last_result .. string.sub(ffi.string(self.chunk), 1, count)
+        end
+    until count <= 0 or #last_result >= self.chunk_size - 1
+    return last_result
+end
+
+function Terminal:refresh(reset)
+    if reset then
+        self.refresh_time = 1/32
+        UIManager:unschedule(Terminal.refresh)
+    end
+
+    local next_text = self:receive()
+    if next_text ~= "" then
+        self.input_widget:interpretAnsiSeq(next_text)
+        self.input_widget:trimBuffer(self.buffer_size)
+        if self.is_shell_open then
+            UIManager:tickAfterNext(function()
+                UIManager:scheduleIn(self.refresh_time, Terminal.refresh, self)
+            end)
+        end
     else
-        self:insertPageActions(item_table)
-    end
-    local title = N_("Terminal shortcut", "Terminal shortcuts", #self.shortcuts)
-    self.shortcuts_menu:switchItemTable(tostring(#self.shortcuts) .. " " .. title, item_table)
-    UIManager:show(self.shortcuts_dialog)
-end
-
-function Terminal:insertPageActions(item_table)
-    table.insert(item_table, {
-        text = "   " .. _("to terminal…"),
-        deletable = false,
-        editable = false,
-        callback = function()
-            self:terminal()
-        end,
-    })
-    table.insert(item_table, {
-        text = "   " .. _("close…"),
-        deletable = false,
-        editable = false,
-        callback = function()
-            return false
-        end,
-    })
-end
-
-function Terminal:onMenuHoldShortcuts(item)
-    if item.deletable or item.editable then
-        local shortcut_shortcuts_dialog
-        shortcut_shortcuts_dialog = ButtonDialog:new{
-            buttons = {{
-                {
-                    text = _("Edit name"),
-                    enabled = item.editable,
-                    callback = function()
-                        UIManager:close(shortcut_shortcuts_dialog)
-                        if self._manager.shortcuts_dialog ~= nil then
-                            UIManager:close(self._manager.shortcuts_dialog)
-                            self._manager.shortcuts_dialog = nil
-                        end
-                        self._manager:editName(item)
-                    end
-                },
-                {
-                    text = _("Edit commands"),
-                    enabled = item.editable,
-                    callback = function()
-                        UIManager:close(shortcut_shortcuts_dialog)
-                        if self._manager.shortcuts_dialog ~= nil then
-                            UIManager:close(self._manager.shortcuts_dialog)
-                            self._manager.shortcuts_dialog = nil
-                        end
-                        self._manager:editCommands(item)
-                    end
-                },
-            },
-            {
-                {
-                    text = _("Copy"),
-                    enabled = item.editable,
-                    callback = function()
-                        UIManager:close(shortcut_shortcuts_dialog)
-                        if self._manager.shortcuts_dialog ~= nil then
-                            UIManager:close(self._manager.shortcuts_dialog)
-                            self._manager.shortcuts_dialog = nil
-                        end
-                        self._manager:copyCommands(item)
-                    end
-                },
-                {
-                    text = _("Delete"),
-                    enabled = item.deletable,
-                    callback = function()
-                        UIManager:close(shortcut_shortcuts_dialog)
-                        if self._manager.shortcuts_dialog ~= nil then
-                            UIManager:close(self._manager.shortcuts_dialog)
-                            self._manager.shortcuts_dialog = nil
-                        end
-                        self._manager:deleteShortcut(item)
-                    end
-                }
-            }}
-        }
-        UIManager:show(shortcut_shortcuts_dialog)
-        return true
+        if self.is_shell_open then
+            if self.refresh_time > 5 then
+                self.refresh_time = self.refresh_time
+            elseif self.refresh_time > 1 then
+                self.refresh_time = self.refresh_time * 1.1
+            else
+                self.refresh_time = self.refresh_time * 2
+            end
+            UIManager:scheduleIn(self.refresh_time, Terminal.refresh, self)
+        end
     end
 end
 
-function Terminal:copyCommands(item)
-    local new_item = {
-        text = item.text .. " (copy)",
-        commands = item.commands
-    }
-    table.insert(self.shortcuts, new_item)
-    UIManager:show(InfoMessage:new{
-        text = _("Shortcut copied"),
-        timeout = 2
-    })
-    self:saveShortcuts()
-    self:manageShortcuts()
+function Terminal:transmit(chars)
+    C.write(self.ptmx, chars, #chars)
+    self:refresh(true)
 end
 
-function Terminal:editCommands(item)
-    local edit_dialog
-    edit_dialog = InputDialog:new{
-        title = T(_('Edit commands for "%1"'), item.text),
-        input = item.commands,
-        para_direction_rtl = false, -- force LTR
-        input_type = "string",
-        allow_newline = true,
-        cursor_at_end = true,
-        fullscreen = true,
-        buttons = {{{
-                  text = _("Cancel"),
-                  callback = function()
-                      UIManager:close(edit_dialog)
-                      edit_dialog = nil
-                      self:manageShortcuts()
-                  end,
-              }, {
-                  text = _("Save"),
-                  callback = function()
-                      local input = edit_dialog:getInputText()
-                      UIManager:close(edit_dialog)
-                      edit_dialog = nil
-                      if input:match("[A-Za-z]") then
-                          self.shortcuts[item.nr]["commands"] = input
-                          self:saveShortcuts()
-                          self:manageShortcuts()
-                      end
-                  end,
-              }}},
-    }
-    UIManager:show(edit_dialog)
-    edit_dialog:onShowKeyboard()
+--- kills a running shell
+-- @param ask if true ask if a shell is running, don't kill
+-- @return pid if shell is running, -1 otherwise
+function Terminal:killShell(ask)
+    UIManager:unschedule(Terminal.refresh)
+    local pid_file = io.open("terminal.pid", "r")
+    if not pid_file then
+        return -1
+    end
+
+    local pid = tonumber(pid_file:read("*a"))
+    pid_file:close()
+
+    if ask then
+        return pid
+    else
+        local terminate = "\03\n\nexit\n"
+        self:transmit(terminate)
+        -- do other things before killing first
+        self.is_shell_open = false
+        self.history = ""
+        os.remove("terminal.pid")
+        C.close(self.ptmx)
+
+        C.kill(pid, C.SIGTERM)
+
+        local status = ffi.new('int[1]')
+        -- status = tonumber(status[0])
+        -- If still running: ret = 0 , status = 0
+        -- If exited: ret = pid , status = 0 or 9 if killed
+        -- If no more running: ret = -1 , status = 0
+        C.waitpid(pid, status, 0) -- wait until shell is terminated
+
+        return -1
+    end
 end
 
-function Terminal:editName(item)
-    local edit_dialog
-    edit_dialog = InputDialog:new{
-        title = _("Edit name"),
-        input = item.text,
-        para_direction_rtl = false, -- force LTR
+function Terminal:getCharSize()
+    local tmp = TextWidget:new{
+        text = " ",
+        face = self.input_face,
+    }
+    return tmp:getSize().w
+end
+
+function Terminal:generateInputDialog()
+    return InputDialog:new{
+        title =  _("Terminal Emulator"),
+        input = self.history,
+        input_face = self.input_face,
+        para_direction_rtl = false,
         input_type = "string",
         allow_newline = false,
         cursor_at_end = true,
         fullscreen = true,
-        buttons = {{{
-              text = _("Cancel"),
-              callback = function()
-                  UIManager:close(edit_dialog)
-                  edit_dialog = nil
-                  self:manageShortcuts()
-              end,
-          }, {
-              text = _("Save"),
-              callback = function()
-                  local input = edit_dialog:getInputText()
-                  UIManager:close(edit_dialog)
-                  edit_dialog = nil
-                  if input:match("[A-Za-z]") then
-                      self.shortcuts[item.nr]["text"] = input
-                      self:saveShortcuts()
-                      self:manageShortcuts()
-                  end
-              end,
-          }}},
-    }
-    UIManager:show(edit_dialog)
-    edit_dialog:onShowKeyboard()
-end
+        inputtext_class = TermInputText,
+        buttons = {{
+            {
+            text = "↹",  -- tabulator "⇤" and "⇥"
+            callback = function()
+                self:transmit("\009")
+            end,
+            },
+            {
+            text = "/",  -- slash
+            callback = function()
+                self:transmit("/")
+            end,
+            },
+            {
+            text = _("Esc"), -- @translators This is the ESC-key on the keyboard.
+            callback = function()
+                self:transmit("\027")
+            end,
+            },
+            {
+            text = _("Ctrl"), -- @translators This is the CTRL-key on the keyboard.
+            callback = function()
+                self.ctrl = true
+            end,
+            },
+            {
+            text = _("Ctrl-C"), -- @translators This is the CTRL-C key combination.
+            callback = function()
+                self:transmit("\003")
+                -- consume and drop everything
+                C.tcflush(self.ptmx, C.TCIFLUSH)
+                while self:receive() ~= "" do
+                    C.tcflush(self.ptmx, C.TCIFLUSH)
+                end
+                self.input_widget:addChars("\003", true) -- as we flush the queue
+            end,
+            },
+            {
+            text = "⎚", --clear
+            callback = function()
+                self.history = ""
+                self.input = {}
+                self.input_dialog:setInputText("$ ")
+            end,
+            },
+            {
+            text = "⇧",
+            callback = function()
+                self.input_widget:upLine()
+            end,
+            hold_callback = function()
+                self.input_widget:scrollUp()
+            end,
+            },
+            {
+            text = "⇩",
+            callback = function()
+                self.input_widget:downLine()
+            end,
+            hold_callback = function()
+                self.input_widget:scrollDown()
+            end,
+            },
+            {
+            text = "☰", -- settings menu
+            callback = function ()
+                UIManager:close(self.input_widget.keyboard)
+                Aliases:show(self.terminal_data .. "/scripts/aliases",
+                    function()
+                        UIManager:show(self.input_widget.keyboard)
+                        UIManager:setDirty(self.input_dialog, "fast") -- is there a better solution
+                    end,
+                    self)
+            end,
+            },
+            {
+            text = "✕", --cancel
+            callback = function()
+                UIManager:show(MultiConfirmBox:new{
+                    text = _("You can close the terminal, but leave the shell open for further commands or quit it now."),
+                    choice1_text = _("Close"),
+                    choice1_callback = function()
+                        self.history = self.input_dialog:getInputText()
+                        -- trim trialing spaces and newlines
+                        while self.history:sub(#self.history, #self.history) == "\n"
+                            or self.history:sub(#self.history, #self.history) == " " do
+                            self.history = self.history:sub(1, #self.history - 1)
+                        end
 
-function Terminal:deleteShortcut(item)
-    for i = #self.shortcuts, 1, -1 do
-        local element = self.shortcuts[i]
-        if element.text == item.text and element.commands == item.commands then
-            table.remove(self.shortcuts, i)
-        end
-    end
-    self:saveShortcuts()
-    self:manageShortcuts()
-end
-
-function Terminal:onTerminalStart()
-    -- if shortcut commands are defined, go directly to the the shortcuts manager (so we can execute scripts more quickly):
-    if #self.shortcuts == 0 then
-        self:terminal()
-    else
-        self:manageShortcuts()
-    end
-end
-
-function Terminal:terminal()
-    self.input = InputDialog:new{
-        title = _("Enter a command and press \"Execute\""),
-        input = self.command:gsub("\n+$", ""),
-        para_direction_rtl = false, -- force LTR
-        input_type = "string",
-        allow_newline = true,
-        cursor_at_end = true,
-        fullscreen = true,
-        buttons = {{{
-              text = _("Cancel"),
-              callback = function()
-                  UIManager:close(self.input)
-              end,
-          }, {
-              text = _("Shortcuts"),
-              callback = function()
-                  UIManager:close(self.input)
-                  self:manageShortcuts()
-              end,
-          }, {
-              text = _("Save"),
-              callback = function()
-                  local input = self.input:getInputText()
-                  if input:match("[A-Za-z]") then
-
-                      local function callback(name)
-                          local new_shortcut = {
-                              text = name,
-                              commands = input,
-                          }
-                          table.insert(self.shortcuts, new_shortcut)
-                          self:saveShortcuts()
-                      end
-
-                      local prompt
-                      prompt = InputDialog:new{
-                          title = _("Name"),
-                          input = "",
-                          input_type = "text",
-                          fullscreen = true,
-                          condensed = true,
-                          allow_newline = false,
-                          cursor_at_end = true,
-                          buttons = {{{
-                                  text = _("Cancel"),
-                                  callback = function()
-                                      UIManager:close(prompt)
-                                  end,
-                              },
-                              {
-                                  text = _("Save"),
-                                  is_enter_default = true,
-                                  callback = function()
-                                      local newval = prompt:getInputText()
-                                      UIManager:close(prompt)
-                                      callback(newval)
-                                  end,
-                          }}}
-                      }
-                      UIManager:show(prompt)
-                      prompt:onShowKeyboard()
-                  end
-              end,
-          }, {
-              text = _("Execute"),
-              callback = function()
-                  UIManager:close(self.input)
-                  -- so we know which middle button to display in the results:
-                  self.source = "terminal"
-                  self.command = self:ensureWhitelineAfterCommands(self.input:getInputText())
-                  Trapper:wrap(function()
-                      self:execute()
-                  end)
-              end,
-          }}},
-    }
-    UIManager:show(self.input)
-    self.input:onShowKeyboard()
-end
-
--- for prettier formatting of output by separating commands and result thereof with a whiteline:
-function Terminal:ensureWhitelineAfterCommands(commands)
-    if string.sub(commands, -1) ~= "\n" then
-        commands = commands .. "\n"
-    end
-    return commands
-end
-
-function Terminal:execute()
-    local wait_msg = InfoMessage:new{
-        text = _("Executing…"),
-    }
-    UIManager:show(wait_msg)
-    local entries = { self.command }
-    local command = self.command .. " 2>&1 ; echo" -- ensure we get stderr and output something
-    local completed, result_str = Trapper:dismissablePopen(command, wait_msg)
-    if completed then
-        table.insert(entries, result_str)
-        self:dump(entries)
-        table.insert(entries, _("Output was also written to"))
-        table.insert(entries, self.dump_file)
-    else
-        table.insert(entries, _("Execution canceled."))
-    end
-    UIManager:close(wait_msg)
-    local viewer
-    local buttons_table
-    local back_button = {
-        text = _("Back"),
-        callback = function()
-            UIManager:close(viewer)
-            if self.source == "terminal" then
-                self:terminal()
-            else
-                self:manageShortcuts()
+                        UIManager:close(self.input_dialog)
+                        if self.touchmenu_instance then
+                            self.touchmenu_instance:updateItems()
+                        end
+                    end,
+                    choice2_text = _("Quit"),
+                    choice2_callback = function()
+                        self.history = ""
+                        self:killShell()
+                        UIManager:close(self.input_dialog)
+                        if self.touchmenu_instance then
+                            self.touchmenu_instance:updateItems()
+                        end
+                    end,
+                })
+            end,
+            },
+        }},
+        enter_callback = function()
+            self:transmit("\r")
+        end,
+        strike_callback = function(chars)
+            if self.ctrl and #chars == 1 then
+                chars = string.char(chars:upper():byte() - ("A"):byte()+1)
+                self.ctrl = false
             end
+            if chars == "\n" then
+                chars = "\r\n"
+            end
+            self:transmit(chars)
         end,
     }
-    local close_button = {
-        text = _("Close"),
-        callback = function()
-            UIManager:close(viewer)
-        end,
-    }
-    if self.source == "terminal" then
-        buttons_table = {
-            {
-                back_button,
-                {
-                    text = _("Shortcuts"),
-                    -- switch to shortcuts:
-                    callback = function()
-                        UIManager:close(viewer)
-                        self:manageShortcuts()
-                    end,
-                },
-                close_button,
-            },
-        }
-    else
-        buttons_table = {
-            {
-                back_button,
-                {
-                    text = _("Terminal"),
-                    -- switch to terminal:
-                    callback = function()
-                        UIManager:close(viewer)
-                        self:terminal()
-                    end,
-                },
-                close_button,
-            },
-        }
-    end
-    viewer = TextViewer:new{
-        title = _("Command output"),
-        text = table.concat(entries, "\n"),
-        justified = false,
-        text_face = Font:getFace("smallinfont"),
-        buttons_table = buttons_table,
-    }
-    UIManager:show(viewer)
 end
 
-function Terminal:dump(entries)
-    local content = table.concat(entries, "\n")
-    local file = io.open(self.dump_file, "w")
-    if file then
-        file:write(content)
-        file:close()
-    else
-        logger.warn("Failed to dump terminal output " .. content .. " to " .. self.dump_file)
-    end
+function Terminal:onClose()
+    self:killShell()
+end
+
+function Terminal:onTerminalStart(touchmenu_instance)
+    self.touchmenu_instance = touchmenu_instance
+
+    self.input_face = Font:getFace("smallinfont",
+        G_reader_settings:readSetting("terminal_font_size", 14))
+    self.ctrl = false
+    self.input_dialog = self:generateInputDialog()
+    self.input_widget = self.input_dialog._input_widget
+
+    local scroll_bar_width = ScrollTextWidget.scroll_bar_width
+        + ScrollTextWidget.text_scroll_span
+    self.maxc = math.floor((self.input_widget.width  - scroll_bar_width) / self:getCharSize())
+
+    self.maxr = math.floor(self.input_widget.height
+        / self.input_widget:getLineHeight())
+
+    self.store_position = 1
+
+    logger.dbg("Terminal: resolution= " .. self.maxc .. "x" .. self.maxr)
+
+    self:spawnShell(self.maxc, self.maxr)
+    UIManager:show(self.input_dialog)
+    UIManager:scheduleIn(0.25, Terminal.refresh, self, true)
+    self.input_dialog:onShowKeyboard(true)
 end
 
 function Terminal:addToMainMenu(menu_items)
     menu_items.terminal = {
         text = _("Terminal emulator"),
+--        sorting_hint = "more_tools",
         keep_menu_open = true,
-        callback = function()
-            self:onTerminalStart()
-        end,
+        sub_item_table = {
+            {
+                text = _("About terminal emulator"),
+                callback = function()
+                    local about_text = _([[Terminal emulator can start a shell (command prompt).
+
+There are two environment variables TERMINAL_HOME and TERMINAL_DATA containing the path of the install and the data folders.
+
+Commands to be executed on start can be placed in:
+'$TERMINAL_DATA/scripts/profile.user'.
+
+Aliases (shortcuts) to frequently used commands can be placed in:
+'$TERMINAL_DATA/scripts/aliases'.]])
+                    if not Device:isAndroid() then
+                        about_text = about_text .. _("\n\nYou can use 'shfm' as a file manager, '?' shows shfm’s help message.")
+                    end
+
+                    UIManager:show(InfoMessage:new{
+                        text = about_text,
+                    })
+                end,
+                keep_menu_open = true,
+                separator = true,
+            },
+            {
+                text_func = function()
+                    local state = self.is_shell_open and "running" or "not running"
+                    return T(_("Open terminal session (%1)"), state)
+                end,
+                callback = function(touchmenu_instance)
+                    self:onTerminalStart(touchmenu_instance)
+                end,
+                keep_menu_open = true,
+            },
+            {
+                text = _("End terminal session"),
+                enabled_func = function()
+                    return self:killShell(true) >= 0
+                end,
+                callback = function(touchmenu_instance)
+                    self:killShell()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+                keep_menu_open = true,
+                separator = true,
+            },
+            {
+                text_func = function()
+                    return T(_("Font size: %1"),
+                        G_reader_settings:readSetting("terminal_font_size", 14))
+                end,
+                callback = function(touchmenu_instance)
+                    local cur_size = G_reader_settings:readSetting("terminal_font_size")
+                    local size_spin = SpinWidget:new{
+                        value = cur_size,
+                        value_min = 10,
+                        value_max = 30,
+                        value_hold_step = 2,
+                        default_value = 14,
+                        title_text = _("Terminal emulator font size "),
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("terminal_font_size", spin.value)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    }
+                    UIManager:show(size_spin)
+                end,
+                keep_menu_open = true,
+            },
+            {
+                text_func = function()
+                    return T(_("Buffer size: %1 kB"),
+                        G_reader_settings:readSetting("terminal_buffer_size", 16))
+                end,
+                callback = function(touchmenu_instance)
+                    local cur_buffer = G_reader_settings:readSetting("terminal_buffer_size")
+                    local buffer_spin = SpinWidget:new{
+                        value = cur_buffer,
+                        value_min = 10,
+                        value_max = 30,
+                        value_hold_step = 2,
+                        default_value = 16,
+                        title_text = _("Terminal emulator buffer size (kB)"),
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("terminal_buffer_size", spin.value)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    }
+                    UIManager:show(buffer_spin)
+                end,
+                keep_menu_open = true,
+            },
+            {
+                text_func = function()
+                    return T(_("Shell executable: %1"),
+                        G_reader_settings:readSetting("terminal_shell", "sh"))
+                end,
+                callback = function(touchmenu_instance)
+                    self.shell_dialog = InputDialog:new{
+                        title = _("Shell to use"),
+                        description = _("Here you can select the startup shell.\nDefault: sh"),
+                        input = G_reader_settings:readSetting("terminal_shell", "sh"),
+                        buttons = {{
+                            {
+                                text = _("Cancel"),
+                                callback = function()
+                                    UIManager:close(self.shell_dialog)
+                                end,
+                            },
+                            {
+                                text = _("Default"),
+                                callback = function()
+                                    G_reader_settings:saveSetting("terminal_shell", "sh")
+                                    UIManager:close(self.shell_dialog)
+                                    if touchmenu_instance then
+                                        touchmenu_instance:updateItems()
+                                    end
+                                end,
+                            },
+                            {
+                                text = _("Save"),
+                                is_enter_default = true,
+                                callback = function()
+                                    local new_shell = self.shell_dialog:getInputText()
+                                    if new_shell == "" then
+                                        new_shell = "sh"
+                                    end
+                                    G_reader_settings:saveSetting("terminal_shell", new_shell)
+                                    UIManager:close(self.shell_dialog)
+                                    if touchmenu_instance then
+                                        touchmenu_instance:updateItems()
+                                    end
+                                end
+                            },
+                        }}}
+                    UIManager:show(self.shell_dialog)
+                    self.shell_dialog:onShowKeyboard()
+                end,
+                keep_menu_open = true,
+            },
+        }
     }
+end
+
+function Terminal:onDispatcherRegisterActions()
+    Dispatcher:registerAction("terminal",
+        {category = "none", event = "TerminalStart", title = _("Terminal Emulator"), device = true})
 end
 
 return Terminal
