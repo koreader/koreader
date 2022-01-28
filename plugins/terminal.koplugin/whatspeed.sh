@@ -1,0 +1,9 @@
+#!/bin/sh
+echo  "Frequency in Hz: "
+cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq | sort -r
+echo "Core-Temperature:"
+cat /sys/class/thermal/thermal_zone*/temp
+echo "Disk-Temperature:"
+hddtemp /dev/sd?
+echo "Fan:"
+cat /proc/acpi/ibm/fan
