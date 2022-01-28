@@ -503,8 +503,7 @@ function Device:retrieveNetworkInfo()
         -- first try ip route
         std_out = io.popen('2>/dev/null ip r')
         if std_out then
-            local routes = std_out:read("*all")
-            for line in routes:gmatch("(.-)\n") do
+            for line in std_out:lines() do
                 gw = gw or line:match("^default via (%d+.%d+.%d+.%d+)")
             end
             std_out:close()
@@ -512,14 +511,15 @@ function Device:retrieveNetworkInfo()
         -- some devices only ship net-tools, try and use that
         std_out = io.popen('2>/dev/null route -n')
         if std_out then
-            local routes = std_out:read("*all")
-            for line in routes:gmatch("(.-)\n") do
+            for line in std_out:lines() do
                 gw = gw or line:match("^0.0.0.0 +(%d+.%d+.%d+.%d+)")
             end
             std_out:close()
         end
 
         if gw then
+            result = result .. "Default gateway: " .. gw .. "\n"
+
             -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
             local pingok
             if self:isKindle() and self:hasKeyboard() then
