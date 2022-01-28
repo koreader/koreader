@@ -1,5 +1,7 @@
---[[
+--[[--
 This plugin provides a terminal emulator (VT52 (+some ANSI))
+
+@module koplugin.terminal
 ]]
 
 local Device = require("device")

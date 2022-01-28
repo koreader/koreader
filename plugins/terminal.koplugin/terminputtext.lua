@@ -1,5 +1,7 @@
---[[
+--[[--
 module used for terminal emulator to override InputText
+
+@module koplugin.terminal
 ]]
 
 local InputText = require("ui/widget/inputtext")
