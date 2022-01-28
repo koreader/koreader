@@ -50,14 +50,14 @@ function ReaderCoptListener:onReadSettings(config)
     local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line", 1)
     self.ui:handleEvent(Event:new("SetStatusLine", status_line))
 
-    self.old_battery_level = Device:getPowerDevice():getCapacity()
+    self.old_battery_level = self.ui.rolling:updateBatteryState()
 
     -- Have this ready in case auto-refresh is enabled, now or later
     self.headerRefresh = function()
         -- Only draw it if the header is shown...
         if self.document.configurable.status_line == 0 and self.view.view_mode == "page" then
             -- ...and something has changed
-            local new_battery_level = Device:getPowerDevice():getCapacity()
+            local new_battery_level = self.ui.rolling:updateBatteryState()
             if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
                 self.old_battery_level = new_battery_level
                 self:updateHeader()
@@ -92,7 +92,6 @@ end
 
 function ReaderCoptListener:updateHeader()
     -- Have crengine display accurate time and battery on its next drawing
-    self.ui.rolling:updateBatteryState()
     self.ui.document:resetBufferCache() -- be sure next repaint is a redrawing
     -- Force a refresh if we're not hidden behind another widget
     if UIManager:getTopWidget() == "ReaderUI" then
@@ -165,6 +164,7 @@ function ReaderCoptListener:setAndSave(setting, property, value)
     self.ui.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
     -- Have crengine redraw it (even if hidden by the menu at this time)
+    self.ui.rolling:updateBatteryState()
     self:updateHeader()
     -- And see if we should auto-refresh
     self:rescheduleHeaderRefreshIfNeeded()

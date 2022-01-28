@@ -1103,10 +1103,18 @@ function ReaderRolling:updateBatteryState()
         local powerd = Device:getPowerDevice()
         -- -1 is CR_BATTERY_STATE_CHARGING @ crengine/crengine/include/lvdocview.h
         local state = powerd:isCharging() and -1 or powerd:getCapacity()
+        if powerd.device:hasAuxBattery() and powerd:isAuxBatteryConnected() and
+            not powerd:isAuxCharging() then
+            -- If aux_battery not charging, but present -> don't show '[ + ]' in header
+            -- but show the average (as both battery have the same maximum capacity).
+            state = math.floor((powerd:getCapacity() + powerd:getAuxCapacity() + 1) / 2)
+        end
         if state then
             self.ui.document:setBatteryState(state)
         end
+        return state
     end
+    return 0
 end
 
 function ReaderRolling:handleEngineCallback(ev, ...)
