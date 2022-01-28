@@ -499,13 +499,33 @@ function Device:retrieveNetworkInfo()
             result = result .. "SSID: " .. util.trim(ssid) .. "\n"
             std_out:close()
         end
-        if os.execute("ip r | grep -q default") == 0 then
+        local gw = nil
+        -- first try ip route
+        std_out = io.popen('2>/dev/null ip r')
+        if std_out then
+            local routes = std_out:read("*all")
+            for line in util.gsplit(routes, "\n", false) do
+                gw = gw or line:match("^default via (%d+.%d+.%d+.%d+)")
+            end
+            std_out:close()
+        end
+        -- some devices only ship net-tools, try and use that
+        std_out = io.popen('2>/dev/null route -n')
+        if std_out then
+            local routes = std_out:read("*all")
+            for line in util.gsplit(routes, "\n", false) do
+                gw = gw or line:match("^0.0.0.0 +(%d+.%d+.%d+.%d+)")
+            end
+            std_out:close()
+        end
+
+        if gw then
             -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
             local pingok
             if self:isKindle() and self:hasKeyboard() then
-                pingok = os.execute("ping -q -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
+                pingok = os.execute("ping -q -c 2 " .. gw .. " > /dev/null")
             else
-                pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
+                pingok = os.execute("ping -q -w 3 -c 2 " .. gw .. " > /dev/null")
             end
             if pingok == 0 then
                 result = result .. "Gateway ping successful"
