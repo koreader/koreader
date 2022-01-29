@@ -359,8 +359,7 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:isWifiOn()
-        local state = inkview.QueryNetwork()
-        return band(state, C.NET_CONNECTED) ~= 0
+        return band(inkview.QueryNetwork(), C.NET_CONNECTED) ~= 0
     end
 end
 
