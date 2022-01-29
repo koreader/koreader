@@ -9,8 +9,9 @@ local OBSOLETE_PLUGINS = {
     calibrecompanion = true,
     evernote = true,
     goodreads = true,
-    storagestat = true,
     kobolight = true,
+    send2ebook = true,
+    storagestat = true,
     zsync = true,
 }
 -- Deprecated plugins are still available, but show a hint about deprecation.
