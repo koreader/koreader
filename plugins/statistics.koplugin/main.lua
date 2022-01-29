@@ -1056,10 +1056,11 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                 text = _("Current book"),
                 keep_menu_open = true,
                 callback = function()
-                    UIManager:show(KeyValuePage:new{
+                    self.kv = KeyValuePage:new{
                         title = _("Current statistics"),
                         kv_pairs = self:getCurrentStat()
-                    })
+                    }
+                    UIManager:show(self.kv)
                 end,
                 enabled_func = function() return not self:isDocless() and self.settings.is_enabled end,
             },
@@ -2448,6 +2449,7 @@ end
 
 function ReaderStatistics:onShowCalendarView()
     self:insertDB()
+    self.kv = nil -- clean left over stack link
     local CalendarView = require("calendarview")
     UIManager:show(CalendarView:new{
         reader_statistics = self,
@@ -2569,11 +2571,11 @@ end
 
 function ReaderStatistics:onShowBookStats()
     if self:isDocless() or not self.settings.is_enabled then return end
-    local stats = KeyValuePage:new{
+    self.kv = KeyValuePage:new{
         title = _("Current statistics"),
         kv_pairs = self:getCurrentStat()
     }
-    UIManager:show(stats)
+    UIManager:show(self.kv)
 end
 
 function ReaderStatistics:getCurrentBookReadPages()
