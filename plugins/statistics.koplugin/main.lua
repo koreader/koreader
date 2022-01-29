@@ -1122,7 +1122,8 @@ function ReaderStatistics:statMenu()
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end, -- clean stack
                     }
                     UIManager:show(self.kv)
                 end,
@@ -1138,7 +1139,8 @@ function ReaderStatistics:statMenu()
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end,
                     }
                     UIManager:show(self.kv)
                 end,
@@ -1154,7 +1156,8 @@ function ReaderStatistics:statMenu()
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end,
                     }
                     UIManager:show(self.kv)
                 end,
@@ -1171,7 +1174,8 @@ function ReaderStatistics:statMenu()
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end,
                     }
                     UIManager:show(self.kv)
                 end,
@@ -1187,7 +1191,8 @@ function ReaderStatistics:statMenu()
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end,
                     }
                     UIManager:show(self.kv)
                 end,
@@ -1203,7 +1208,8 @@ function ReaderStatistics:statMenu()
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end,
                     }
                     UIManager:show(self.kv)
                 end,
@@ -1219,7 +1225,8 @@ function ReaderStatistics:statMenu()
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end,
                     }
                     UIManager:show(self.kv)
                 end,
@@ -1235,7 +1242,8 @@ function ReaderStatistics:statMenu()
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end,
                     }
                     UIManager:show(self.kv)
                 end,
@@ -1395,7 +1403,8 @@ function ReaderStatistics:getCurrentStat()
                     callback_return = function()
                         UIManager:show(kv)
                         self.kv = kv
-                    end
+                    end,
+                    close_callback = function() self.kv = nil end,
                 }
                 UIManager:show(self.kv)
             end,
@@ -1496,7 +1505,8 @@ function ReaderStatistics:getBookStat(id_book)
                     callback_return = function()
                         UIManager:show(kv)
                         self.kv = kv
-                    end
+                    end,
+                    close_callback = function() self.kv = nil end,
                 }
                 UIManager:show(self.kv)
             end,
@@ -1575,7 +1585,8 @@ function ReaderStatistics:callbackMonthly(begin, finish, date_text, book_mode)
             callback_return = function()
                 UIManager:show(kv)
                 self.kv = kv
-            end
+            end,
+            close_callback = function() self.kv = nil end,
         }
     else
         self.kv = KeyValuePage:new{
@@ -1585,7 +1596,8 @@ function ReaderStatistics:callbackMonthly(begin, finish, date_text, book_mode)
             callback_return = function()
                 UIManager:show(kv)
                 self.kv = kv
-            end
+            end,
+            close_callback = function() self.kv = nil end,
         }
     end
     UIManager:show(self.kv)
@@ -1602,7 +1614,8 @@ function ReaderStatistics:callbackWeekly(begin, finish, date_text, book_mode)
             callback_return = function()
                 UIManager:show(kv)
                 self.kv = kv
-            end
+            end,
+            close_callback = function() self.kv = nil end,
         }
     else
         self.kv = KeyValuePage:new{
@@ -1612,7 +1625,8 @@ function ReaderStatistics:callbackWeekly(begin, finish, date_text, book_mode)
             callback_return = function()
                 UIManager:show(kv)
                 self.kv = kv
-            end
+            end,
+            close_callback = function() self.kv = nil end,
         }
     end
     UIManager:show(self.kv)
@@ -1628,7 +1642,8 @@ function ReaderStatistics:callbackDaily(begin, finish, date_text)
         callback_return = function()
             UIManager:show(kv)
             self.kv = kv
-        end
+        end,
+        close_callback = function() self.kv = nil end,
     }
     UIManager:show(self.kv)
 end
@@ -1775,7 +1790,8 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
                     callback_return = function()
                         UIManager:show(kv)
                         self.kv = kv
-                    end
+                    end,
+                    close_callback = function() self.kv = nil end,
                 }
                 UIManager:show(self.kv)
             end,
@@ -1819,7 +1835,8 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end,
                     }
                 else
                     self.kv = KeyValuePage:new{
@@ -1829,7 +1846,8 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
-                        end
+                        end,
+                        close_callback = function() self.kv = nil end,
                     }
                 end
                 UIManager:show(self.kv)
@@ -2022,7 +2040,8 @@ function ReaderStatistics:getTotalStats()
                     callback_return = function()
                         UIManager:show(kv)
                         self.kv = kv
-                    end
+                    end,
+                    close_callback = function() self.kv = nil end,
                 }
                 UIManager:show(self.kv)
             end,
