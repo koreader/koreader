@@ -1833,6 +1833,11 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
                 end
                 UIManager:show(self.kv)
             end,
+            hold_callback = function(kv_page, kv_item)
+                self:resetStatsForBookForPeriod(result_book[4][i], period_begin, period_end, false, function()
+                    kv_page:removeKeyValueItem(kv_item) -- Reset, refresh what's displayed
+                end)
+            end,
         })
     end
     return results
@@ -1887,7 +1892,9 @@ function ReaderStatistics:getDatesForBook(id_book)
     local sql_stmt = [[
         SELECT date(start_time, 'unixepoch', 'localtime') AS dates,
                count(DISTINCT page)                       AS pages,
-               sum(duration)                              AS durations
+               sum(duration)                              AS durations,
+               min(start_time)                            AS min_start_time,
+               max(start_time)                            AS max_start_time
         FROM   page_stat
         WHERE  id_book = %d
         GROUP  BY Date(start_time, 'unixepoch', 'localtime')
@@ -1903,10 +1910,59 @@ function ReaderStatistics:getDatesForBook(id_book)
     for i=1, #result_book.dates do
         table.insert(results, {
             result_book[1][i],
-            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false))
+            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
+            hold_callback = function(kv_page, kv_item)
+                self:resetStatsForBookForPeriod(id_book, result_book[4][i], result_book[5][i], result_book[1][i], function()
+                    kv_page:removeKeyValueItem(kv_item) -- Reset, refresh what's displayed
+                end)
+            end,
         })
     end
     return results
+end
+
+function ReaderStatistics:resetStatsForBookForPeriod(id_book, min_start_time, max_start_time, day_str, on_reset_confirmed_callback)
+    local confirm_text
+    if day_str then
+        -- From getDatesForBook(): we are showing a list of days, with book title at top title:
+        -- show the day string to confirm the long-press was on the right day
+        confirm_text = T(_("Do you want to reset statistics for day %1 for this book?"), day_str)
+    else
+        -- From getBooksFromPeriod(): we are showing a list of books, with the period as top title:
+        -- show the book title to confirm the long-press was on the right book
+        local conn = SQ3.open(db_location)
+        local sql_stmt = [[
+            SELECT title
+            FROM   book
+            WHERE  id = %d;
+        ]]
+        local book_title = conn:rowexec(string.format(sql_stmt, id_book))
+        conn:close()
+        confirm_text = T(_("Do you want to reset statistics for this period for book:\n%1"), book_title)
+    end
+    UIManager:show(ConfirmBox:new{
+        text = confirm_text,
+        cancel_text = _("Cancel"),
+        cancel_callback = function()
+            return
+        end,
+        ok_text = _("Reset"),
+        ok_callback = function()
+            local conn = SQ3.open(db_location)
+            local sql_stmt = [[
+                DELETE FROM page_stat_data
+                WHERE  id_book = ?
+                AND start_time between ? and ?
+            ]]
+            local stmt = conn:prepare(sql_stmt)
+            stmt:reset():bind(id_book, min_start_time, max_start_time):step()
+            stmt:close()
+            conn:close()
+            if on_reset_confirmed_callback then
+                on_reset_confirmed_callback()
+            end
+        end,
+    })
 end
 
 function ReaderStatistics:getTotalStats()
