@@ -2055,7 +2055,7 @@ function ReaderStatistics:resetPerBook()
                 book_title,
                 util.secondsToClockDuration(user_duration_format, total_time_book, false),
                 id_book,
-                callback = function()
+                callback = function(kv_page, kv_item)
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Do you want to reset statistics for book:\n%1"), book_title),
                         cancel_text = _("Cancel"),
@@ -2064,15 +2064,8 @@ function ReaderStatistics:resetPerBook()
                         end,
                         ok_text = _("Reset"),
                         ok_callback = function()
-                            for j=1, #total_stats do
-                                if total_stats[j][3] == id_book then
-                                    self:deleteBook(id_book)
-                                    table.remove(total_stats, j)
-                                    break
-                                end
-                            end
-                            -- refresh window after delete item
-                            kv_reset_book:_populateItems()
+                            self:deleteBook(id_book)
+                            kv_page:removeKeyValueItem(kv_item) -- Reset, refresh what's displayed
                         end,
                     })
                 end,
