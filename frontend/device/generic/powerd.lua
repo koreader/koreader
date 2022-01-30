@@ -215,4 +215,35 @@ function BasePowerD:stateChanged()
     end
 end
 
+-- Silly helper to avoid code duplication ;).
+function BasePowerD:getBatterySymbol(is_charging, capacity)
+    if is_charging then
+        return ""
+    else
+        if capacity >= 100 then
+            return ""
+        elseif capacity >= 90 then
+            return ""
+        elseif capacity >= 80 then
+            return ""
+        elseif capacity >= 70 then
+            return ""
+        elseif capacity >= 60 then
+            return ""
+        elseif capacity >= 50 then
+            return ""
+        elseif capacity >= 40 then
+            return ""
+        elseif capacity >= 30 then
+            return ""
+        elseif capacity >= 20 then
+            return ""
+        elseif capacity >= 10 then
+            return ""
+        else
+            return ""
+        end
+    end
+end
+
 return BasePowerD
