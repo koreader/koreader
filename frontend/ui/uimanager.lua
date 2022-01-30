@@ -1764,14 +1764,14 @@ end
 -- The common operations that should be performed when the device is plugged to a power source.
 function UIManager:_beforeCharging()
     -- Leave the kernel some time to figure it out ;o).
-    self:scheduleIn(0.5, function() Device:setupChargingLED() end)
+    self:scheduleIn(1, function() Device:setupChargingLED() end)
     self:broadcastEvent(Event:new("Charging"))
 end
 
 -- The common operations that should be performed when the device is unplugged from a power source.
 function UIManager:_afterNotCharging()
     -- Leave the kernel some time to figure it out ;o).
-    self:scheduleIn(0.5, function() Device:setupChargingLED() end)
+    self:scheduleIn(1, function() Device:setupChargingLED() end)
     self:broadcastEvent(Event:new("NotCharging"))
 end
 
