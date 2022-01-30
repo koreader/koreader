@@ -176,46 +176,43 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].battery
         local powerd = Device:getPowerDevice()
-        local batt_lvl = powerd:getCapacity()
+        local batt_lvl = 0
+        local is_charging = false
+
+        if Device:hasBattery() then
+            local main_batt_lvl = powerd:getCapacity()
+
+            if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+                local aux_batt_lvl = powerd:getAuxCapacity()
+                is_charging = powerd:isAuxCharging()
+                -- Sum both batteries for the actual text
+                batt_lvl = main_batt_lvl + aux_batt_lvl
+                -- But average 'em to compute the icon...
+                if symbol_type == "icons" or symbol_type == "compact_items" then
+                    prefix = powerd:getBatterySymbol(is_charging, batt_lvl / 2)
+                end
+            else
+                is_charging = powerd:isCharging()
+                batt_lvl = main_batt_lvl
+                if symbol_type == "icons" or symbol_type == "compact_items" then
+                   prefix = powerd:getBatterySymbol(is_charging, main_batt_lvl)
+                end
+            end
+        end
+
         if footer.settings.all_at_once and batt_lvl > footer.settings.battery_hide_threshold then
             return ""
         end
-        -- If we're using icons, use fancy variable icons
+
+        -- If we're using icons, use the fancy variable icon from powerd:getBatterySymbol
         if symbol_type == "icons" or symbol_type == "compact_items" then
-            if powerd:isCharging() then
-                prefix = ""
-            else
-                if batt_lvl >= 100 then
-                    prefix = ""
-                elseif batt_lvl >= 90 then
-                    prefix = ""
-                elseif batt_lvl >= 80 then
-                    prefix = ""
-                elseif batt_lvl >= 70 then
-                    prefix = ""
-                elseif batt_lvl >= 60 then
-                    prefix = ""
-                elseif batt_lvl >= 50 then
-                    prefix = ""
-                elseif batt_lvl >= 40 then
-                    prefix = ""
-                elseif batt_lvl >= 30 then
-                    prefix = ""
-                elseif batt_lvl >= 20 then
-                    prefix = ""
-                elseif batt_lvl >= 10 then
-                    prefix = ""
-                else
-                    prefix = ""
-                end
-            end
             if symbol_type == "compact_items" then
                 return BD.wrap(prefix)
             else
                 return BD.wrap(prefix) .. batt_lvl .. "%"
             end
         else
-            return BD.wrap(prefix) .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
+            return BD.wrap(prefix) .. " " .. (is_charging and "+" or "") .. batt_lvl .. "%"
         end
     end,
     bookmark_count = function(footer)
@@ -1582,7 +1579,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                 local battery_threshold = SpinWidget:new{
                     value = self.settings.battery_hide_threshold,
                     value_min = 0,
-                    value_max = 100,
+                    value_max = Device:hasAuxBattery() and 200 or 100,
                     default_value = 100,
                     value_hold_step = 10,
                     title_text =  _("Hide battery threshold"),

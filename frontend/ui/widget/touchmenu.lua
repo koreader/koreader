@@ -646,36 +646,6 @@ function TouchMenu:_recalculatePageLayout()
     self.page_num = math.ceil(#self.item_table / self.perpage)
 end
 
-local function getBatterySymbol(is_charging, capacity)
-    if is_charging then
-        return ""
-    else
-        if capacity >= 100 then
-            return ""
-        elseif capacity >= 90 then
-            return ""
-        elseif capacity >= 80 then
-            return ""
-        elseif capacity >= 70 then
-            return ""
-        elseif capacity >= 60 then
-            return ""
-        elseif capacity >= 50 then
-            return ""
-        elseif capacity >= 40 then
-            return ""
-        elseif capacity >= 30 then
-            return ""
-        elseif capacity >= 20 then
-            return ""
-        elseif capacity >= 10 then
-            return ""
-        else
-            return ""
-        end
-    end
-end
-
 function TouchMenu:updateItems()
     local old_dimen = self.dimen and self.dimen:copy()
     self:_recalculatePageLayout()
@@ -729,12 +699,12 @@ function TouchMenu:updateItems()
     local powerd = Device:getPowerDevice()
     if Device:hasBattery() then
         local batt_lvl = powerd:getCapacity()
-        local batt_symbol = getBatterySymbol(powerd:isCharging(), batt_lvl)
+        local batt_symbol = powerd:getBatterySymbol(powerd:isCharging(), batt_lvl)
         time_info_txt = BD.wrap(time_info_txt) .. " " .. BD.wrap("⌁") .. BD.wrap(batt_symbol) ..  BD.wrap(batt_lvl .. "%")
 
         if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
             local aux_batt_lvl = powerd:getAuxCapacity()
-            local aux_batt_symbol = getBatterySymbol(powerd:isAuxCharging(), aux_batt_lvl)
+            local aux_batt_symbol = powerd:getBatterySymbol(powerd:isAuxCharging(), aux_batt_lvl)
             time_info_txt = time_info_txt .. " " .. BD.wrap("+") .. BD.wrap(aux_batt_symbol) ..  BD.wrap(aux_batt_lvl .. "%")
         end
     end
