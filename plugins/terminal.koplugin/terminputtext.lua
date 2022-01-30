@@ -122,6 +122,7 @@ function TermInputText:saveBuffer(buffer)
         {
             self.charlist,
             self.charpos,
+            self.store_pos_dec,
             self.store_pos_sco,
             self.store_position,
             self.scroll_region_bottom,
@@ -145,6 +146,7 @@ function TermInputText:restoreBuffer(buffer)
     if type(former_buffer[1]) == "table" then
         self.charlist,
         self.charpos,
+        self.store_pos_dec,
         self.store_pos_sco,
         self.store_position,
         self.scroll_region_bottom,
@@ -544,7 +546,7 @@ function TermInputText:addChars(chars, skip_callback, skip_table_concat)
             if self.charlist[self.charpos] == "\n" then
                 self.charpos = self.charpos - 1
             end
-            while self.charpos >=1 and self.charlist[self.charpos] ~= "\n" do
+            while self.charpos >= 1 and self.charlist[self.charpos] ~= "\n" do
                 self.charpos = self.charpos - 1
             end
             self.charpos = self.charpos + 1
@@ -811,7 +813,7 @@ function TermInputText:goToStartOfLine(skip_callback)
             if self.charlist[self.charpos] == "\n" then
                 self.charpos = self.charpos - 1
             end
-            while self.charpos >=1 and self.charlist[self.charpos] ~= "\n" do
+            while self.charpos >= 1 and self.charlist[self.charpos] ~= "\n" do
                 self.charpos = self.charpos - 1
             end
             self.charpos = self.charpos + 1
