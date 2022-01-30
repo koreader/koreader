@@ -9,8 +9,8 @@ local BasePowerD = {
     aux_batt_capacity = 0,            -- auxiliary battery capacity
     device = nil,                     -- device object
 
-    last_capacity_pull_time = TimeVal:new{ sec = 0, usec = 0},      -- timestamp of last pull
-    last_aux_capacity_pull_time = TimeVal:new{ sec = 0, usec = 0},  -- timestamp of last pull
+    last_capacity_pull_time = TimeVal:new{ sec = -61, usec = 0},      -- timestamp of last pull
+    last_aux_capacity_pull_time = TimeVal:new{ sec = -61, usec = 0},  -- timestamp of last pull
 
     is_fl_on = false,                 -- whether the frontlight is on
 }
@@ -195,8 +195,8 @@ function BasePowerD:getAuxCapacity()
 end
 
 function BasePowerD:invalidateCapacityCache()
-    self.last_capacity_pull_time = TimeVal:new{ sec = 0, usec = 0}
-    self.last_aux_capacity_pull_time = TimeVal:new{ sec = 0, usec = 0}
+    self.last_capacity_pull_time = TimeVal:new{ sec = -61, usec = 0}
+    self.last_aux_capacity_pull_time = TimeVal:new{ sec = -61, usec = 0}
 end
 
 function BasePowerD:isAuxCharging()
