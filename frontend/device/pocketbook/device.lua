@@ -34,6 +34,7 @@ local PocketBook = Generic:new{
     canPowerOff = yes,
     needsScreenRefreshAfterResume = no,
     home_dir = "/mnt/ext1",
+    canAssociateFileExtensions = yes,
 
     -- all devices that have warmth lights use inkview api
     hasNaturalLightApi = yes,
@@ -284,18 +285,6 @@ function PocketBook:setDateTime(year, month, day, hour, min, sec)
     else
         return false
     end
-end
-
--- Predicate, so no self
-function PocketBook.canAssociateFileExtensions()
-    local f = io.open(ext_path, "r")
-    if not f then return true end
-    local l = f:read("*line")
-    f:close()
-    if l and not l:match("^#koreader") then
-        return false
-    end
-    return true
 end
 
 function PocketBook:associateFileExtensions(assoc)
