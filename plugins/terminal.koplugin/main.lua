@@ -443,7 +443,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
             },
             {
                 text_func = function()
-                    local state = self.is_shell_open and "running" or "not running"
+                    local state = self.is_shell_open and _("running") or _("not running")
                     return T(_("Open terminal session (%1)"), state)
                 end,
                 callback = function(touchmenu_instance)

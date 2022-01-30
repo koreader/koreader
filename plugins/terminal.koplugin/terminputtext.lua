@@ -252,7 +252,7 @@ function TermInputText:_helperVT52VT100(cmd, mode, param1, param2, param3)
             self.scroll_region_bottom = nil
         end
 
-        if self.scroll_region_bottom and param1 < self.maxr and param1 <= param2 then
+        if self.scroll_region_bottom and param1 < self.maxr and param1 <= param2 and param1 > 0 then
             self.scroll_region_top = param1
             self.scroll_region_line = 1
         else
