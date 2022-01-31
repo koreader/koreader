@@ -311,6 +311,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             checked_func = function()
                 return self.view.highlight.saved_drawer == v[2]
             end,
+            radio = true,
             callback = function()
                 self.view.highlight.saved_drawer = v[2]
             end,
@@ -388,6 +389,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             checked_func = function()
                 return G_reader_settings:readSetting("default_highlight_action", "ask") == v[2]
             end,
+            radio = true,
             callback = function()
                 G_reader_settings:saveSetting("default_highlight_action", v[2])
                 self.view.highlight.disabled = v[2] == "nothing"
