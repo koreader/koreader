@@ -171,7 +171,7 @@ function ReaderStatistics:init()
         end
     end
     Screensaver.getReaderProgress = function()
-        self:insertDB(self.id_curr_book)
+        self:insertDB()
         local current_duration, current_pages = self:getCurrentBookStats()
         local today_duration, today_pages = self:getTodayBookStats()
         local dates_stats = self:getReadingProgressStats(7)
@@ -245,7 +245,7 @@ function ReaderStatistics:onUpdateToc()
     if new_pagecount ~= self.data.pages then
         logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
         -- Flush volatile stats to DB for current book, and update pagecount and average time per page stats
-        self:insertDB(self.id_curr_book, new_pagecount)
+        self:insertDB(new_pagecount)
     end
 
     -- Update our copy of the page count
@@ -273,7 +273,7 @@ function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
         return {}
     end
 
-    self:insertDB(self.id_curr_book)
+    self:insertDB()
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
         SELECT count(*)
@@ -755,10 +755,11 @@ function ReaderStatistics:getIdBookDB()
     return tonumber(id_book)
 end
 
-function ReaderStatistics:insertDB(id_book, updated_pagecount)
-    if not id_book then
+function ReaderStatistics:insertDB(updated_pagecount)
+    if not self.id_curr_book then
         return
     end
+    local id_book = self.id_curr_book
     local now_ts = os.time()
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN;')
@@ -868,7 +869,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
         callback = function()
             -- if was enabled, have to save data to file
             if self.settings.is_enabled and not self:isDocless() then
-                self:insertDB(self.id_curr_book)
+                self:insertDB()
                 self.ui.doc_settings:saveSetting("stats", self.data)
             end
 
@@ -1021,7 +1022,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                 callback = function()
                     UIManager:show(KeyValuePage:new{
                         title = _("Current statistics"),
-                        kv_pairs = self:getCurrentStat(self.id_curr_book),
+                        kv_pairs = self:getCurrentStat()
                     })
                 end,
                 enabled_func = function() return not self:isDocless() and self.settings.is_enabled end,
@@ -1030,7 +1031,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                 text = _("Reading progress"),
                 keep_menu_open = true,
                 callback = function()
-                    self:insertDB(self.id_curr_book)
+                    self:insertDB()
                     local current_duration, current_pages = self:getCurrentBookStats()
                     local today_duration, today_pages = self:getTodayBookStats()
                     local dates_stats = self:getReadingProgressStats(7)
@@ -1060,7 +1061,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                 text = _("Calendar view"),
                 keep_menu_open = true,
                 callback = function()
-                    UIManager:show(self:getCalendarView())
+                    self:onShowCalendarView()
                 end,
             },
         },
@@ -1263,11 +1264,9 @@ function ReaderStatistics:getCurrentBookStats()
     return current_duration, current_pages
 end
 
-function ReaderStatistics:getCurrentStat(id_book)
-    if id_book == nil then
-        return
-    end
-    self:insertDB(id_book)
+function ReaderStatistics:getCurrentStat()
+    self:insertDB()
+    local id_book = self.id_curr_book
     local today_duration, today_pages = self:getTodayBookStats()
     local current_duration, current_pages = self:getCurrentBookStats()
 
@@ -1622,7 +1621,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
     elseif ptype == "monthly" then
         sql_stmt_res_book = sqlMonthly()
     end
-    self:insertDB(self.id_curr_book)
+    self:insertDB()
     local conn = SQ3.open(db_location)
     local result_book = conn:exec(string.format(sql_stmt_res_book, period_begin))
     conn:close()
@@ -1875,7 +1874,7 @@ function ReaderStatistics:getDatesForBook(id_book)
 end
 
 function ReaderStatistics:getTotalStats()
-    self:insertDB(self.id_curr_book)
+    self:insertDB()
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
         SELECT sum(duration)
@@ -1956,7 +1955,7 @@ function ReaderStatistics:genResetBookSubItemTable()
         text = _("Reset statistics per book"),
         keep_menu_open = true,
         callback = function()
-            self:resetBook()
+            self:resetPerBook()
         end,
         separator = true,
     })
@@ -1976,10 +1975,10 @@ function ReaderStatistics:genResetBookSubItemTable()
     return sub_item_table
 end
 
-function ReaderStatistics:resetBook()
+function ReaderStatistics:resetPerBook()
     local total_stats = {}
 
-    self:insertDB(self.id_curr_book)
+    self:insertDB()
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
         SELECT id
@@ -2056,7 +2055,7 @@ end
 
 function ReaderStatistics:resetCurrentBook()
     -- Flush to db first, so we get a resetVolatileStats
-    self:insertDB(self.id_curr_book)
+    self:insertDB()
 
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
@@ -2224,7 +2223,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         -- I/O, delay until after the pageturn, but reset the count now, to avoid potentially scheduling multiple inserts...
         self.pageturn_count = 0
         UIManager:tickAfterNext(function()
-            self:insertDB(self.id_curr_book)
+            self:insertDB()
             -- insertDB will call resetVolatileStats for us ;)
         end)
     end
@@ -2268,7 +2267,7 @@ end
 function ReaderStatistics:onCloseDocument()
     if not self:isDocless() and self.settings.is_enabled then
         self.ui.doc_settings:saveSetting("stats", self.data)
-        self:insertDB(self.id_curr_book)
+        self:insertDB()
     end
 end
 
@@ -2296,7 +2295,7 @@ end
 function ReaderStatistics:onSaveSettings()
     if not self:isDocless() then
         self.ui.doc_settings:saveSetting("stats", self.data)
-        self:insertDB(self.id_curr_book)
+        self:insertDB()
     end
 end
 
@@ -2304,7 +2303,7 @@ end
 function ReaderStatistics:onSuspend()
     if not self:isDocless() then
         self.ui.doc_settings:saveSetting("stats", self.data)
-        self:insertDB(self.id_curr_book)
+        self:insertDB()
     end
 end
 
@@ -2324,10 +2323,10 @@ function ReaderStatistics:onReaderReady()
     self.view.footer:onUpdateFooter()
 end
 
-function ReaderStatistics:getCalendarView()
-    self:insertDB(self.id_curr_book)
+function ReaderStatistics:onShowCalendarView()
+    self:insertDB()
     local CalendarView = require("calendarview")
-    return CalendarView:new{
+    UIManager:show(CalendarView:new{
         reader_statistics = self,
         monthTranslation = monthTranslation,
         shortDayOfWeekTranslation = shortDayOfWeekTranslation,
@@ -2336,7 +2335,7 @@ function ReaderStatistics:getCalendarView()
         nb_book_spans = self.settings.calendar_nb_book_spans,
         show_hourly_histogram = self.settings.calendar_show_histogram,
         browse_future_months = self.settings.calendar_browse_future_months,
-    }
+    })
 end
 
 -- Used by calendarview.lua CalendarView
@@ -2427,7 +2426,7 @@ function ReaderStatistics:getReadBookByDay(month)
 end
 
 function ReaderStatistics:onShowReaderProgress()
-    self:insertDB(self.id_curr_book)
+    self:insertDB()
     local current_duration, current_pages = self:getCurrentBookStats()
     local today_duration, today_pages = self:getTodayBookStats()
     local dates_stats = self:getReadingProgressStats(7)
@@ -2449,18 +2448,14 @@ function ReaderStatistics:onShowBookStats()
     if self:isDocless() or not self.settings.is_enabled then return end
     local stats = KeyValuePage:new{
         title = _("Current statistics"),
-        kv_pairs = self:getCurrentStat(self.id_curr_book),
+        kv_pairs = self:getCurrentStat()
     }
     UIManager:show(stats)
 end
 
-function ReaderStatistics:onShowCalendarView()
-     UIManager:show(self:getCalendarView())
-end
-
 function ReaderStatistics:getCurrentBookReadPages()
     if self:isDocless() or not self.settings.is_enabled then return end
-    self:insertDB(self.id_curr_book)
+    self:insertDB()
     local sql_stmt = [[
         SELECT
           page,
