@@ -20,6 +20,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local RadioMark = require("ui/widget/radiomark")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -74,11 +75,20 @@ function TouchMenuItem:init()
         item_checkable = true
         item_checked = self.item.checked_func()
     end
-    local checkmark_widget = CheckMark:new{
-        checkable = item_checkable,
-        checked = item_checked,
-        enabled = item_enabled,
-    }
+    local checkmark_widget
+    if self.item.radio then
+        checkmark_widget = RadioMark:new{
+            checkable = item_checkable,
+            checked = item_checked,
+            enabled = item_enabled,
+        }
+    else
+        checkmark_widget = CheckMark:new{
+            checkable = item_checkable,
+            checked = item_checked,
+            enabled = item_enabled,
+        }
+    end
 
     local checked_widget = CheckMark:new{ -- for layout, to :getSize()
         checked = true,
