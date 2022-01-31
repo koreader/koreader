@@ -125,22 +125,8 @@ function KeyValueItem:init()
                 -- so the left of text is aligned with other truncated texts
                 fit_right_align = false
             end
-            -- Allow for displaying the non-truncated text with Hold
-            if Device:isTouchDevice() then
-                self.ges_events.Hold = {
-                    GestureRange:new{
-                        ges = "hold",
-                        range = self.dimen,
-                    }
-                }
-                -- If no tap callback, allow for displaying the non-truncated
-                -- text with Tap too
-                if not self.callback then
-                    self.callback = function()
-                        self:onHold()
-                    end
-                end
-            end
+            -- Allow for displaying the non-truncated text with Tap or Hold if not already used
+            self.is_truncated = true
         else
             -- Both can fit: break the 1/2 widths
             if self.value_align == "right" or self.value_overflow_align == "right_always"
@@ -176,10 +162,16 @@ function KeyValueItem:init()
     -- For debugging positioning:
     -- value_widget = FrameContainer:new{ padding=0, margin=0, bordersize=1, value_widget }
 
-    if self.callback and Device:isTouchDevice() then
+    if Device:isTouchDevice() then
         self.ges_events.Tap = {
             GestureRange:new{
                 ges = "tap",
+                range = self.dimen,
+            }
+        }
+        self.ges_events.Hold = {
+            GestureRange:new{
+                ges = "hold",
                 range = self.dimen,
             }
         }
@@ -217,7 +209,7 @@ end
 function KeyValueItem:onTap()
     if self.callback then
         if G_reader_settings:isFalse("flash_ui") then
-            self.callback()
+            self.callback(self.kv_page, self)
         else
             -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
@@ -238,17 +230,35 @@ function KeyValueItem:onTap()
 
             -- Callback
             --
-            self.callback()
+            self.callback(self.kv_page, self)
 
             UIManager:forceRePaint()
+        end
+    else
+        -- If no tap callback, allow for displaying the non-truncated
+        -- text with Tap too
+        if self.is_truncated then
+            self:onShowKeyValue()
         end
     end
     return true
 end
 
 function KeyValueItem:onHold()
+    if self.hold_callback then
+        self.hold_callback(self.kv_page, self)
+    else
+        if self.is_truncated then
+            self:onShowKeyValue()
+        end
+    end
+    return true
+end
+
+function KeyValueItem:onShowKeyValue()
     local textviewer = TextViewer:new{
         title = self.key,
+        title_multilines = true, -- in case it's key/title that is too long
         text = self.value,
         text_face = Font:getFace("x_smallinfofont", self.font_size),
         lang = self.value_lang,
@@ -530,7 +540,8 @@ function KeyValuePage:_populateItems()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
     for idx = 1, self.items_per_page do
-        local entry = self.kv_pairs[idx_offset + idx]
+        local kv_pairs_idx = idx_offset + idx
+        local entry = self.kv_pairs[kv_pairs_idx]
         if entry == nil then break end
 
         if type(entry) == "table" then
@@ -542,11 +553,13 @@ function KeyValuePage:_populateItems()
                 value = entry[2],
                 value_lang = self.values_lang,
                 callback = entry.callback,
-                callback_back = entry.callback_back,
+                hold_callback = entry.hold_callback,
                 textviewer_width = self.textviewer_width,
                 textviewer_height = self.textviewer_height,
                 value_overflow_align = self.value_overflow_align,
                 value_align = self.value_align,
+                kv_pairs_idx = kv_pairs_idx,
+                kv_page = self,
                 show_parent = self,
             })
             if entry.separator then
@@ -606,6 +619,13 @@ function KeyValuePage:_populateItems()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
+end
+
+function KeyValuePage:removeKeyValueItem(kv_item)
+    if kv_item.kv_pairs_idx then
+        table.remove(self.kv_pairs, kv_item.kv_pairs_idx)
+        self:_populateItems()
+    end
 end
 
 function KeyValuePage:onNextPage()
