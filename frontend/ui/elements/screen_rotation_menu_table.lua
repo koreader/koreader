@@ -72,6 +72,7 @@ When unchecked, the default rotation of the file browser and the default/saved r
                 checked_func = function()
                     return Screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE_ROTATED
                 end,
+                radio = true,
                 callback = function(touchmenu_instance)
                     UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.ORIENTATION_LANDSCAPE_ROTATED))
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
@@ -92,6 +93,7 @@ When unchecked, the default rotation of the file browser and the default/saved r
                 checked_func = function()
                     return Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT
                 end,
+                radio = true,
                 callback = function(touchmenu_instance)
                     UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.ORIENTATION_PORTRAIT))
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
@@ -112,6 +114,7 @@ When unchecked, the default rotation of the file browser and the default/saved r
                 checked_func = function()
                     return Screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE
                 end,
+                radio = true,
                 callback = function(touchmenu_instance)
                     UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.ORIENTATION_LANDSCAPE))
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
@@ -132,6 +135,7 @@ When unchecked, the default rotation of the file browser and the default/saved r
                 checked_func = function()
                     return Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT_ROTATED
                 end,
+                radio = true,
                 callback = function(touchmenu_instance)
                     UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.ORIENTATION_PORTRAIT_ROTATED))
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
