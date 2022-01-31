@@ -755,7 +755,16 @@ function CalendarView:_populateItems()
                     title = day_text,
                     value_align = "right",
                     kv_pairs = self.reader_statistics:getBooksFromPeriod(day_ts, day_ts + 86400),
-                    callback_return = function() end -- to just have that return button shown
+                    close_callback = function()
+                        -- Refresh calendar in case some day stats were reset for some books
+                        -- (we don't know if some reset were done... so we refresh the current
+                        -- display always - at tickAfterNext so there is no noticable slowness
+                        -- when closing, and the re-painting happening after is not noticable;
+                        -- but if some stat reset were done, this will make a nice noticable
+                        -- repainting showing dynamically reset books disappearing :)
+                        UIManager:tickAfterNext(function() self:_populateItems() end)
+                    end,
+                    callback_return = function() end, -- to just have that return button shown
                 })
             end
         })
