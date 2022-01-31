@@ -240,6 +240,31 @@ end
 
 -- Reset the (volatile) stats on page count changes (e.g., after a font size update)
 function ReaderStatistics:onUpdateToc()
+    -- Note: this is called *after* onPageUpdate(new current page in new page count), which
+    -- has updated the duration for (previous current page in old page count) and created
+    -- a tuple for (new current page) with a 0-duration.
+    -- The insertDB() call below will save the previous page stat correctly with the old
+    -- page count, and will drop the new current page stat.
+    -- Only after this insertDB(), self.data.pages is updated with the new page count.
+    --
+    -- To make this clearer, here's what happens with an example:
+    -- - We were reading page 127/200 with latest self.page_stat[127]={..., {now-35s, 0}}
+    -- - Increasing font size, re-rendering... going to page 153/254
+    -- - OnPageUpdate(153) is called:
+    --   - it updates duration in self.page_stat[127]={..., {now-35s, 35}}
+    --   - it adds/creates self.page_stat[153]={..., {now, 0}}
+    --   - it sets self.curr_page=153
+    --   - (at this point, we don't know the new page count is 254)
+    -- - OnUpdateToc() is called:
+    --   - insertDB() is called, which will still use the previous self.data.pages=200 as the
+    --     page count, and will go at inserting or not in the DB:
+    --       - (127, now-35s, 35, 200) inserted
+    --       - (153, now, 0, 200) not inserted as 0-duration (and using 200 for its associated
+    --         page count would be erroneous)
+    --     and will restore self.page_stat[153]={{now, 0}}
+    --   - we only then update self.data.pages=254 as the new page count
+    -- - 5 minutes later, on the next insertDB(), (153, now-5mn, 42, 254) will be inserted in DB
+
     local new_pagecount = self.view.document:getPageCount()
 
     if new_pagecount ~= self.data.pages then
@@ -761,6 +786,17 @@ function ReaderStatistics:insertDB(updated_pagecount)
     end
     local id_book = self.id_curr_book
     local now_ts = os.time()
+
+    -- The current page stat, having yet no duration, will be ignored
+    -- in the insertion, and its start ts would be lost. We'll give it
+    -- to resetVolatileStats() so it can restore it
+    local cur_page_start_ts = now_ts
+    local cur_page_data = self.page_stat[self.curr_page]
+    local cur_page_data_tuple = cur_page_data and cur_page_data[#cur_page_data]
+    if cur_page_data_tuple and cur_page_data_tuple[2] == 0 then -- should always be true
+        cur_page_start_ts = cur_page_data_tuple[1]
+    end
+
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN;')
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat_data VALUES(?, ?, ?, ?, ?);")
@@ -828,7 +864,7 @@ function ReaderStatistics:insertDB(updated_pagecount)
     end
     self.avg_time = self.book_read_time / self.book_read_pages
 
-    self:resetVolatileStats(now_ts)
+    self:resetVolatileStats(cur_page_start_ts)
 end
 
 function ReaderStatistics:getPageTimeTotalStats(id_book)
@@ -2179,6 +2215,12 @@ function ReaderStatistics:onPageUpdate(pageno)
         return
     end
 
+    local closing = false
+    if pageno == false then -- from onCloseDocument()
+        closing = true
+        pageno = self.curr_page -- avoid issues in following code
+    end
+
     self.pageturn_count = self.pageturn_count + 1
     local now_ts = os.time()
 
@@ -2216,6 +2258,10 @@ function ReaderStatistics:onPageUpdate(pageno)
         end
         -- Update the tuple with the computed duration
         data_tuple[2] = curr_duration + self.settings.max_sec
+    end
+
+    if closing then
+        return -- current page data updated, nothing more needed
     end
 
     -- We want a flush to db every 50 page turns
@@ -2267,6 +2313,7 @@ end
 function ReaderStatistics:onCloseDocument()
     if not self:isDocless() and self.settings.is_enabled then
         self.ui.doc_settings:saveSetting("stats", self.data)
+        self:onPageUpdate(false) -- update current page duration
         self:insertDB()
     end
 end
@@ -2304,13 +2351,40 @@ function ReaderStatistics:onSuspend()
     if not self:isDocless() then
         self.ui.doc_settings:saveSetting("stats", self.data)
         self:insertDB()
+        self:onReadingPaused()
     end
 end
 
 -- screensaver off
 function ReaderStatistics:onResume()
     self.start_current_period = os.time()
-    self:resetVolatileStats(self.start_current_period)
+    self:onReadingResumed()
+end
+
+function ReaderStatistics:onReadingPaused()
+    if self:isDocless() or not self.settings.is_enabled then
+        return
+    end
+    if not self._reading_paused_ts then
+        self._reading_paused_ts = os.time()
+    end
+end
+
+function ReaderStatistics:onReadingResumed()
+    if self:isDocless() or not self.settings.is_enabled then
+        self._reading_paused_ts = nil
+        return
+    end
+    if self._reading_paused_ts then
+        -- Just add the pause duration to the current page start_time
+        local pause_duration = os.time() - self._reading_paused_ts
+        local page_data = self.page_stat[self.curr_page]
+        local data_tuple = page_data and page_data[#page_data]
+        if data_tuple then
+            data_tuple[1] = data_tuple[1] + pause_duration
+        end
+        self._reading_paused_ts = nil
+    end
 end
 
 function ReaderStatistics:onReadSettings(config)
