@@ -921,6 +921,11 @@ function ReaderRolling:onChangeViewMode()
     self.current_header_height = self.view.view_mode == "page" and self.ui.document:getHeaderHeight() or 0
     -- Restore current position when switching page/scroll mode
     if self.xpointer then
+        if self.visible_pages == 2 then
+            -- Switching from 2-pages page mode to scroll mode has crengine switch to 1-page,
+            -- and we need to notice this re-rendering and keep things sane
+            self.ui:handleEvent(Event:new("UpdatePos"))
+        end
         self:_gotoXPointer(self.xpointer)
         -- Ensure a whole screen refresh is always enqueued
         UIManager:setDirty(self.view.dialog, "partial")
