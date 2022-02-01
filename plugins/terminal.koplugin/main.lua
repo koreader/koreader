@@ -250,7 +250,7 @@ end
 
 function Terminal:generateInputDialog()
     return InputDialog:new{
-        title =  _("Terminal Emulator"),
+        title =  _("Terminal emulator"),
         input = self.history,
         input_face = self.input_face,
         para_direction_rtl = false,
@@ -563,7 +563,7 @@ end
 
 function Terminal:onDispatcherRegisterActions()
     Dispatcher:registerAction("terminal",
-        {category = "none", event = "TerminalStart", title = _("Terminal Emulator"), device = true})
+        {category = "none", event = "TerminalStart", title = _("Terminal emulator"), device = true})
 end
 
 return Terminal
