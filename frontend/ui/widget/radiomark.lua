@@ -13,15 +13,9 @@ local RadioMark = InputContainer:new{
     _mirroredUI = BD.mirroredUILayout(),
 }
 
-local BUTTON = {
-    "\u{25C9} ", -- FISHEYE (big dot)
-    "\u{29BF} ", -- CIRCLED BULLET (small dot)
-    "\u{25EF} ", -- LARGE CIRCLE (empty)
-}
-
 function RadioMark:init()
     local widget = TextWidget:new{
-        text = self.checkable and (self.checked and BUTTON[2] or BUTTON[3]) or "",
+        text = self.checkable and (self.checked and "◉ " or "◯ ") or "",
         face = self.face,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
         para_direction_rtl = self._mirroredUI,
