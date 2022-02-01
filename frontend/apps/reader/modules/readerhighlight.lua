@@ -299,7 +299,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Highlight style"),
         sub_item_table = {},
     }
-    for _, v in ipairs(highlight_style) do
+    for i, v in ipairs(highlight_style) do
         table.insert(menu_items.highlight_options.sub_item_table, {
             text_func = function()
                 local text = v[1]
@@ -319,6 +319,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 G_reader_settings:saveSetting("highlight_drawing_style", v[2])
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
+            separator = i == #highlight_style,
         })
     end
     table.insert(menu_items.highlight_options.sub_item_table, {
