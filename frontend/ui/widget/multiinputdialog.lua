@@ -204,7 +204,10 @@ function MultiInputDialog:init()
         ignore_if_over = "height",
         self.dialog_frame,
     }
-    UIManager:setDirty(self, "ui")
+    UIManager:setDirty(self, function()
+        return "ui", self.dialog_frame.dimen
+    end)
+
 end
 
 function MultiInputDialog:getFields()
