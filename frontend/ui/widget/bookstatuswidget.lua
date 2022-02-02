@@ -1,7 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -15,12 +14,12 @@ local InputDialog = require("ui/widget/inputdialog")
 local InputText = require("ui/widget/inputtext")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
 local RenderImage = require("ui/renderimage")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local ToggleSwitch = require("ui/widget/toggleswitch")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -166,25 +165,21 @@ function BookStatusWidget:getStatReadPages()
 end
 
 function BookStatusWidget:getStatusContent(width)
-    local close_button = nil
-    local status_header = self:genHeader(_("Book Status"))
-
-    if self.readonly ~= true then
-        close_button = CloseButton:new{ window = self }
-        status_header = self:genHeader(_("Update Status"))
-    end
+    local title_bar = TitleBar:new{
+        width = width,
+        bottom_v_padding = 0,
+        close_callback = not self.readonly and function() self:onClose() end,
+        show_parent = self,
+    }
     local content = VerticalGroup:new{
         align = "left",
-        OverlapGroup:new{
-            dimen = Geom:new{ w = width, h = Size.item.height_default },
-            close_button,
-        },
+        title_bar,
         self:genBookInfoGroup(),
         self:genHeader(_("Statistics")),
         self:genStatisticsGroup(width),
         self:genHeader(_("Review")),
         self:genSummaryGroup(width),
-        status_header,
+        self:genHeader(self.readonly and _("Book Status") or _("Update Status")),
         self:generateSwitchGroup(width),
     }
     return content
