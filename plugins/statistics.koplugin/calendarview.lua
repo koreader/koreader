@@ -28,39 +28,6 @@ local Input = Device.input
 local Screen = Device.screen
 local _ = require("gettext")
 
-local CalendarTitle = VerticalGroup:new{
-    calendar_view = nil,
-    title = "",
-    tface = Font:getFace("tfont"),
-    align = "left",
-}
-
-function CalendarTitle:init()
-    self.close_button = CloseButton:new{ window = self }
-    local btn_width = self.close_button:getSize().w
-    self.text_w = TextWidget:new{
-        text = self.title,
-        max_width = self.width - btn_width,
-        face = self.tface,
-    }
-    table.insert(self, OverlapGroup:new{
-        dimen = { w = self.width },
-        self.text_w,
-        self.close_button,
-    })
-    table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
-end
-
-function CalendarTitle:setTitle(title)
-    self.text_w:setText(title)
-end
-
-function CalendarTitle:onClose()
-    self.calendar_view:onClose()
-    return true
-end
-
-
 local HistogramWidget = Widget:new{
     width = nil,
     height = nil,
