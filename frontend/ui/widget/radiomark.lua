@@ -11,7 +11,7 @@ local RadioMark = InputContainer:new{
     face = Font:getFace("smallinfofont"),
     baseline = 0,
     _mirroredUI = BD.mirroredUILayout(),
-    -- round radio mark looks a little bit upper than the button/menu text
+    -- round radio mark looks a little bit higher than the button/menu text
     -- default vertical down shift ratio (to the text height) looks good in touchmenu
     v_shift_ratio = 0.03,
 }
