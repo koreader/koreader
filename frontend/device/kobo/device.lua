@@ -77,8 +77,6 @@ local Kobo = Generic:new{
     hasEclipseWfm = no,
 }
 
---- @todo hasKeys for some devices?
-
 -- Kobo Touch:
 local KoboTrilogy = Kobo:new{
     model = "Kobo_trilogy",
