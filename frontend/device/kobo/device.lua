@@ -385,6 +385,9 @@ local KoboIo = Kobo:new{
         nl_max = 10,
         nl_inverted = true,
     },
+    -- It would appear that the Libra 2 inherited its ancestor's quirks, and more...
+    -- c.f., https://github.com/koreader/koreader/issues/8414 & https://github.com/koreader/koreader/issues/8664
+    hasReliableMxcWaitFor = no,
 }
 
 function Kobo:setupChargingLED()
