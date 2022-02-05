@@ -22,6 +22,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local RadioMark = require("ui/widget/radiomark")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -30,8 +31,10 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local CheckButton = InputContainer:new{
     callback = nil,
     hold_callback = nil,
+    checkable = true, -- empty space when false
     checked = false,
     enabled = true,
+    radio = false, -- radio mark when true
     face = Font:getFace("smallinfofont"),
     background = Blitbuffer.COLOR_WHITE,
     text = nil,
@@ -46,13 +49,25 @@ end
 
 function CheckButton:initCheckButton(checked)
     self.checked = checked
-    self._checkmark = CheckMark:new{
-        checked = self.checked,
-        enabled = self.enabled,
-        face = self.face,
-        parent = self.parent or self,
-        show_parent = self.show_parent or self,
-    }
+    if self.radio then
+        self._checkmark = RadioMark:new{
+            checkable = self.checkable,
+            checked = self.checked,
+            enabled = self.enabled,
+            face = self.face,
+            parent = self.parent or self,
+            show_parent = self.show_parent or self,
+        }
+    else
+        self._checkmark = CheckMark:new{
+            checkable = self.checkable,
+            checked = self.checked,
+            enabled = self.enabled,
+            face = self.face,
+            parent = self.parent or self,
+            show_parent = self.show_parent or self,
+        }
+    end
     self._textwidget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
@@ -118,7 +133,9 @@ function CheckButton:onTapCheckButton()
         self:onInput(self.tap_input_func())
     else
         if G_reader_settings:isFalse("flash_ui") then
-            self:toggleCheck()
+            if not self.radio then
+                self:toggleCheck()
+            end
             if self.callback then
                 self.callback()
             end
@@ -144,7 +161,9 @@ function CheckButton:onTapCheckButton()
 
             -- Callback
             --
-            self:toggleCheck()
+            if not self.radio then
+                self:toggleCheck()
+            end
             if self.callback then
                 self.callback()
             end
