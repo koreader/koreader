@@ -1,11 +1,11 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local LineWidget = require("ui/widget/linewidget")
-local RadioButton = require("ui/widget/radiobutton")
 local Size = require("ui/size")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -52,17 +52,18 @@ function RadioButtonTable:init()
         local horizontal_group = HorizontalGroup:new{}
         local row = self.radio_buttons[i]
         local column_cnt = #row
-        local sizer_space = self.sep_width * (column_cnt - 1) + 2
+        local sizer_space = (self.sep_width + 2 * self.padding) * (column_cnt - 1)
         for j = 1, column_cnt do
             local btn_entry = row[j]
-            local button = RadioButton:new{
+            local button = CheckButton:new{
                 text = btn_entry.text,
-                enabled = btn_entry.enabled,
+                checkable = btn_entry.checkable,
                 checked = btn_entry.checked,
+                enabled = btn_entry.enabled,
+                radio = true,
                 provider = btn_entry.provider,
 
-                width = (self.width - sizer_space)/column_cnt,
-                max_width = (self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding,
+                width = (self.width - sizer_space) / column_cnt,
                 bordersize = 0,
                 margin = 0,
                 padding = 0,
@@ -113,7 +114,7 @@ function RadioButtonTable:init()
 
     -- check first entry unless otherwise specified
     if not self.checked_button then
-        self._first_button:check()
+        self._first_button:toggleCheck()
         self.checked_button = self._first_button
     end
 
@@ -159,8 +160,8 @@ function RadioButtonTable:_checkButton(button)
     -- nothing to do
     if button.checked then return end
 
-    self.checked_button:unCheck()
-    button:check()
+    self.checked_button:toggleCheck()
+    button:toggleCheck()
     self.checked_button = button
 end
 
