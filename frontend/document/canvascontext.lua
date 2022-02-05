@@ -51,6 +51,10 @@ function CanvasContext:init(device)
         self.is_bgr = true
         Mupdf.bgr = true
     end
+
+    self.hasEinkScreen = device.hasEinkScreen
+    self.canHWDither = device.canHWDither
+    self.fb_bpp = device.screen.fb_bpp
 end
 
 

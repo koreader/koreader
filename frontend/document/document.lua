@@ -495,11 +495,21 @@ Draw page content to blitbuffer.
 --]]
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
     local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
-    target:blitFrom(tile.bb,
-        x, y,
-        rect.x - tile.excerpt.x,
-        rect.y - tile.excerpt.y,
-        rect.w, rect.h)
+    -- Enable SW dithering if requested (only available in koptoptions)
+    -- Much Like ReaderView, also enforce SW dithering in PicDocument if the device can't do HW dithering...
+    if (self.is_pic and CanvasContext:hasEinkScreen() and not CanvasContext:canHWDither() and CanvasContext.fb_bpp == 8) or (self.configurable.sw_dithering and self.configurable.sw_dithering == 1) then
+        target:ditherblitFrom(tile.bb,
+            x, y,
+            rect.x - tile.excerpt.x,
+            rect.y - tile.excerpt.y,
+            rect.w, rect.h)
+    else
+        target:blitFrom(tile.bb,
+            x, y,
+            rect.x - tile.excerpt.x,
+            rect.y - tile.excerpt.y,
+            rect.w, rect.h)
+    end
 end
 
 function Document:getDrawnImagesStatistics()

@@ -190,6 +190,7 @@ local settingsList = {
     kopt_contrast = {category="absolutenumber", paging=true},
     kopt_page_opt = {category="configurable", paging=true},
     kopt_hw_dithering = {category="configurable", paging=true, condition=Device:hasEinkScreen() and Device:canHWDither()},
+    kopt_sw_dithering = {category="configurable", paging=true, condition=Device:hasEinkScreen() and Device.screen.fb_bpp == 8},
     kopt_quality = {category="configurable", paging=true},
     kopt_doc_language = {category="string", paging=true},
     kopt_forced_ocr = {category="configurable", paging=true},
@@ -355,6 +356,7 @@ local dispatcher_menu_order = {
     "kopt_contrast",
     "kopt_page_opt",
     "kopt_hw_dithering",
+    "kopt_sw_dithering",
     "kopt_quality",
 
     "kopt_doc_language",
