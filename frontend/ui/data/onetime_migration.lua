@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220116
+local CURRENT_MIGRATION_DATE = 20220205
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -352,6 +352,17 @@ if last_migration_date < 20220116 then
             end
             G_reader_settings:saveSetting("opds_servers", opds_servers)
         end
+    end
+end
+
+-- Disable the jump marker on the Libra 2, to avoid the worst of epdc race issues...
+-- c.f., https://github.com/koreader/koreader/issues/8414
+if last_migration_date < 20220205 then
+    logger.info("Performing one-time migration for 20220205")
+
+    local Device = require("device")
+    if Device:isKobo() and Device.model == "Kobo_io" then
+        G_reader_settings:makeFalse("followed_link_marker")
     end
 end
 
