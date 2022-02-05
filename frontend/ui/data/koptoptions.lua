@@ -497,7 +497,7 @@ This can also be used to remove some gray background or to convert a grayscale o
             },
             {
                 name = "hw_dithering",
-                name_text = _("HW Dithering"),
+                name_text = _("Dithering"),
                 toggle = {_("off"), _("on")},
                 values = {0, 1},
                 default_value = 0,
@@ -508,12 +508,12 @@ This can also be used to remove some gray background or to convert a grayscale o
             },
             {
                 name = "sw_dithering",
-                name_text = _("SW Dithering"),
+                name_text = _("Dithering"),
                 toggle = {_("off"), _("on")},
                 values = {0, 1},
                 default_value = 0,
                 advanced = true,
-                show = Device:hasEinkScreen() and Device.screen.fb_bpp == 8,
+                show = Device:hasEinkScreen() and not Device:canHWDither() and Device.screen.fb_bpp == 8,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Enable software dithering.]]),
             },
