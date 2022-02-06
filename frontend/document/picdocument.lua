@@ -26,6 +26,15 @@ function PicDocument:init()
     self.info.has_pages = true
     self.info.configurable = false
 
+    -- Enforce dithering in PicDocument
+    if CanvasContext:hasEinkScreen() then
+        if CanvasContext:canHWDither() then
+            self.hw_dithering = true
+        elseif CanvasContext.fb_bpp == 8 then
+            self.sw_dithering = true
+        end
+    end
+
     self:_readMetadata()
 end
 

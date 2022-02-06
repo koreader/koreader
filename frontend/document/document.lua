@@ -75,9 +75,14 @@ function Document:_init()
         date = ""
     }
 
-    -- Should be updated by a call to Document.updateColorRendering(self)
-    -- in subclasses
+    -- Should be updated by a call to Document.updateColorRendering(self) in subclasses
     self.render_color = false
+
+    -- Those may be updated via KOptOptions, or the DitheringUpdate event.
+    -- Whether HW dithering is enabled
+    self.hw_dithering = false
+    -- Whether SW dithering is enabled
+    self.sw_dithering = false
 end
 
 -- override this method to open a document
@@ -496,9 +501,7 @@ Draw page content to blitbuffer.
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
     local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     -- Enable SW dithering if requested (only available in koptoptions)
-    -- Much Like ReaderView, also enforce SW dithering in PicDocument if the device can't do HW dithering...
-    if (self.is_pic and CanvasContext:hasEinkScreen() and not CanvasContext:canHWDither() and CanvasContext.fb_bpp == 8)
-    or (self.configurable.sw_dithering and self.configurable.sw_dithering == 1) then
+    if self.sw_dithering then
         target:ditherblitFrom(tile.bb,
             x, y,
             rect.x - tile.excerpt.x,
