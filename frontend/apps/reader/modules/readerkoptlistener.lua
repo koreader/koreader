@@ -33,6 +33,7 @@ function ReaderKoptListener:onReadSettings(config)
     if self.document.configurable.word_spacing == -1 then
         self.document.configurable.word_spacing = -0.2
     end
+    self.ui:handleEvent(Event:new("DitheringUpdate"))
 end
 
 function ReaderKoptListener:onSaveSettings()
