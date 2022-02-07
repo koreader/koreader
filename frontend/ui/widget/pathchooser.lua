@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
+local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
@@ -45,6 +46,9 @@ function PathChooser:init()
     self.title_bar_left_icon = "home"
     self.onLeftButtonTap = function()
         self:goHome()
+    end
+    self.onLeftButtonHold = function()
+        UIManager:broadcastEvent(Event:new("ShowFolderShortcutsDialog", function(path) self:changeToPath(path) end))
     end
     FileChooser.init(self)
 end
