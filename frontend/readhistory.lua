@@ -126,7 +126,7 @@ function ReadHistory:_read(force_read)
     assert(self ~= nil)
     local history_file_modification_time = lfs.attributes(history_file, "modification")
     if history_file_modification_time == nil
-        or (not force_read and (history_file_modification_time <= self.last_read_time)) then
+            or (not force_read and (history_file_modification_time <= self.last_read_time)) then
         return false
     end
     self.last_read_time = history_file_modification_time
