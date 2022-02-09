@@ -1001,6 +1001,7 @@ function ReaderView:onCloseDocument()
 end
 
 function ReaderView:onReaderReady()
+    self.ui.doc_settings:delSetting("docsettings_reset_done")
     self.settings_last_save_tv = UIManager:getTime()
 end
 
