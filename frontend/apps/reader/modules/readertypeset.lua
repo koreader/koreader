@@ -72,7 +72,6 @@ function ReaderTypeset:onReadSettings(config)
         else
             self.block_rendering_mode = G_reader_settings:readSetting("copt_block_rendering_mode")
                                      or 3 -- default to 'web' mode
-            config:delSetting("docsettings_reset_done")
         end
         -- Let ConfigDialog know so it can update it on screen and have it saved on quit
         self.ui.document.configurable.block_rendering_mode = self.block_rendering_mode
