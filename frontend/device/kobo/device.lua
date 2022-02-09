@@ -298,13 +298,13 @@ local KoboStorm = Kobo:new{
 }
 
 -- Kobo Nia:
---- @fixme: Untested, assume it's Clara-ish for now.
+--- @fixme: Mostly untested, assume it's Clara-ish for now.
 local KoboLuna = Kobo:new{
     model = "Kobo_luna",
     isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
-    touch_snow_protocol = true,
+    touch_phoenix_protocol = true,
     display_dpi = 212,
 }
 
