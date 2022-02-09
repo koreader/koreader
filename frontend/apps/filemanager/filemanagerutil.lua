@@ -42,6 +42,7 @@ function filemanagerutil.resetDocumentSettings(file)
     local settings_to_keep = {
         bookmarks = true,
         bookmarks_sorted = true,
+        bookmarks_sorted_20220106 = true,
         bookmarks_version = true,
         cre_dom_version = true,
         highlight = true,
@@ -57,6 +58,7 @@ function filemanagerutil.resetDocumentSettings(file)
                 doc_settings:delSetting(k)
             end
         end
+        doc_settings:makeTrue("docsettings_reset_done") -- for readertypeset block_rendering_mode
         doc_settings:close()
     end
 end
