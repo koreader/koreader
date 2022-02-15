@@ -15,6 +15,7 @@ local BaseUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local FileSearcher = InputContainer:new{
     dirs = {},
@@ -23,6 +24,12 @@ local FileSearcher = InputContainer:new{
 
     case_sensitive = false,
     include_subfolders = true,
+}
+
+local sys_folders = { -- do not search in sys_folders
+    ["/dev"] = true,
+    ["/proc"] = true,
+    ["/sys"] = true,
 }
 
 function FileSearcher:readDir()
@@ -36,14 +43,17 @@ function FileSearcher:readDir()
         for __, d in pairs(self.dirs) do
             -- handle files in d
             for f in lfs.dir(d) do
-                local fullpath = d.."/"..f
+                local fullpath = "/" .. f
+                if d ~= "/" then
+                    fullpath = d .. fullpath
+                end
                 local attributes = lfs.attributes(fullpath) or {}
                 -- Don't traverse hidden folders if we're not showing them
                 if attributes.mode == "directory" and f ~= "." and f ~= ".."
                     and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
                     and FileChooser:show_dir(f)
                 then
-                    if self.include_subfolders then
+                    if self.include_subfolders and not sys_folders[fullpath] then
                         table.insert(new_dirs, fullpath)
                     end
                     table.insert(self.files, {
@@ -202,7 +212,7 @@ function FileSearcher:showSearchResults()
     local sorting = FileChooser:getSortingFunction(collate, reverse_collate)
 
     table.sort(self.results, sorting)
-    self.search_menu:switchItemTable(_("Search results"), self.results)
+    self.search_menu:switchItemTable(T(_("Search results (%1)"), #self.results), self.results)
     UIManager:show(menu_container)
 end
 
