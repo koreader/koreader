@@ -66,6 +66,7 @@ local Device = {
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
     canSuspend = yes,
+    canStandby = no,
     canReboot = no,
     canPowerOff = no,
     canAssociateFileExtensions = no,

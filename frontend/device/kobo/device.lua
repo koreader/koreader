@@ -75,6 +75,8 @@ local Kobo = Generic:new{
     isSMP = no,
     -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
     hasEclipseWfm = no,
+    -- Device is fast enough for standby
+    canStandby = no,
 }
 
 -- Kobo Touch:
@@ -357,6 +359,7 @@ local KoboCadmus = Kobo:new{
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
+    canStandby = yes,
 }
 
 -- Kobo Libra 2:
