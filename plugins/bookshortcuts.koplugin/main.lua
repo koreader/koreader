@@ -36,16 +36,27 @@ function BookShortcuts:onBookShortcut(path)
         local file
         if lfs.attributes(path, "mode") ~= "file" then
             if G_reader_settings:readSetting("BookShortcuts_directory_action") == "FM" then
-                local FileManager = require("apps/filemanager/filemanager")
-                FileManager:showFiles(path)
+                if self.ui.file_chooser then
+                    self.ui.file_chooser:changeToPath(path)
+                else -- called from Reader
+                    self.ui:onClose()
+                    local FileManager = require("apps/filemanager/filemanager")
+                    if FileManager.instance then
+                        FileManager.instance:reinit(path)
+                    else
+                        FileManager:showFiles(path)
+                    end
+                end
             else
                 file = ReadHistory:getFileByDirectory(path)
             end
         else
             file = path
         end
-        local ReaderUI = require("apps/reader/readerui")
-        ReaderUI:showReader(file)
+        if file then
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:showReader(file)
+        end
     end
 end
 
@@ -96,7 +107,7 @@ function BookShortcuts:getSubMenuItems()
             end,
         },
         {
-            text_func = function() return T(_("Directory action: %1"), G_reader_settings:readSetting("BookShortcuts_directory_action", "FM") == "FM" and FM_text or last_text) end,
+            text_func = function() return T(_("Folder action: %1"), G_reader_settings:readSetting("BookShortcuts_directory_action", "FM") == "FM" and FM_text or last_text) end,
             keep_menu_open = true,
             sub_item_table = {
                 {
