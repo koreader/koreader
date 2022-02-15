@@ -20,7 +20,7 @@ local FileSearcher = InputContainer:new{
     dirs = {},
     files = {},
     results = {},
-    
+
     case_sensitive = false,
     include_subfolders = true,
 }
