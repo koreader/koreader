@@ -20,10 +20,12 @@ local FileSearcher = InputContainer:new{
     dirs = {},
     files = {},
     results = {},
+    
+    case_sensitive = false,
+    include_subfolders = true,
 }
 
 function FileSearcher:readDir()
-    local FileManager = require("apps/filemanager/filemanager")
     local ReaderUI = require("apps/reader/readerui")
     local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     self.dirs = {self.path}
@@ -41,14 +43,16 @@ function FileSearcher:readDir()
                     and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
                     and FileChooser:show_dir(f)
                 then
-                    table.insert(new_dirs, fullpath)
+                    if self.include_subfolders then
+                        table.insert(new_dirs, fullpath)
+                    end
                     table.insert(self.files, {
                         dir = d,
                         name = f,
                         text = f.."/",
                         attr = attributes,
                         callback = function()
-                            FileManager:showFiles(fullpath)
+                            self:showFolder(fullpath)
                         end,
                     })
                 -- Always ignore macOS resource forks, too.
@@ -60,6 +64,7 @@ function FileSearcher:readDir()
                         dir = d,
                         name = f,
                         text = f,
+                        mandatory = util.getFriendlySize(attributes.size or 0),
                         attr = attributes,
                         callback = function()
                             ReaderUI:showReader(fullpath)
@@ -162,6 +167,15 @@ function FileSearcher:onShowFileSearch(search_string)
         end,
     }
     self.search_dialog:addWidget(self.check_button_case)
+    self.check_button_subfolders = CheckButton:new{
+        text = _("Include subfolders"),
+        checked = self.include_subfolders,
+        parent = self.search_dialog,
+        callback = function()
+            self.include_subfolders = self.check_button_subfolders.checked
+        end,
+    }
+    self.search_dialog:addWidget(self.check_button_subfolders)
 
     UIManager:show(self.search_dialog)
     self.search_dialog:onShowKeyboard()
@@ -193,7 +207,6 @@ function FileSearcher:showSearchResults()
 end
 
 function FileSearcher:onMenuHold(item)
-    local FileManager = require("apps/filemanager/filemanager")
     local ReaderUI = require("apps/reader/readerui")
     local fullpath = item.dir .. "/" .. item.name
     local is_file = item.attr.mode == "file"
@@ -212,11 +225,7 @@ function FileSearcher:onMenuHold(item)
                     self.close_callback()
                     local focused_path = is_file and item.dir or fullpath
                     local focused_file = is_file and fullpath or nil
-                    if FileManager.instance then
-                        FileManager.instance:reinit(focused_path, focused_file)
-                    else
-                        FileManager:showFiles(focused_path, focused_file)
-                    end
+                    self._manager:showFolder(focused_path, focused_file)
                 end,
             },
         },
@@ -238,6 +247,20 @@ function FileSearcher:onMenuHold(item)
     }
     UIManager:show(self.results_dialog)
     return true
+end
+
+function FileSearcher:showFolder(path, focused_file)
+    if self.ui.file_chooser then
+        self.ui.file_chooser:changeToPath(path, focused_file)
+    else -- called from Reader
+        self.ui:onClose()
+        local FileManager = require("apps/filemanager/filemanager")
+        if FileManager.instance then
+            FileManager.instance:reinit(path, focused_file)
+        else
+            FileManager:showFiles(path, focused_file)
+        end
+    end
 end
 
 return FileSearcher
