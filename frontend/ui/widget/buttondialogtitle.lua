@@ -89,6 +89,7 @@ end
 
 function ButtonDialogTitle:setTitle(title)
     self.title = title
+    self:free()
     self:init()
     UIManager:setDirty("all", "ui")
 end
