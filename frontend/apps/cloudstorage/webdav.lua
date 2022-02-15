@@ -17,7 +17,14 @@ function WebDav:run(address, user, pass, path)
 end
 
 function WebDav:downloadFile(item, address, username, password, local_path, callback_close)
-    local code_response = WebDavApi:downloadFile(address .. WebDavApi:urlEncode( item.url ), username, password, local_path)
+    local download_url = address
+    local encoded_item_url = WebDavApi:urlEncode( item.url )
+    if string.sub(download_url,-1) == "/" or string.sub(encoded_item_url,1,1) == "/" then
+        download_url = download_url .. encoded_item_url
+    else
+        download_url = download_url .. "/" .. encoded_item_url
+    end
+    local code_response = WebDavApi:downloadFile(download_url, username, password, local_path)
     if code_response == 200 then
         local __, filename = util.splitFilePathName(local_path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then

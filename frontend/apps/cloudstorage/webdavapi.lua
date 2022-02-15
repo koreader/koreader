@@ -56,25 +56,21 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     local webdav_list = {}
     local webdav_file = {}
 
-    local has_trailing_slash = false
-    local has_leading_slash = false
-    if string.sub( address, -1 ) == "/" then has_trailing_slash = true end
     if path == nil or path == "/" then
         path = ""
-    elseif string.sub( path, 1, 2 ) == "/" then
-        if has_trailing_slash then
-            -- too many slashes, remove one
-            path = string.sub( path, 1 )
-        end
-        has_leading_slash = true
     end
-    if not has_trailing_slash and not has_leading_slash then
-        address = address .. "/"
+    if path ~= "" then
+        -- if path is set, make sure address has slash, path does not
+        if string.sub( address, -1 ) ~= "/" then
+            address = address .. "/"
+        end
+        if string.sub( path, 1, 1 ) == "/" then
+            -- trim all leading slashes from path
+            path = string.gsub( path,"^/+(.*)", "%1" )
+        end
     end
     local webdav_url = address .. path
-    if not has_trailing_slash then
-        webdav_url = webdav_url .. "/"
-    end
+    logger.dbg("listFolder: webdav_url=",webdav_url)
 
     local sink = {}
     local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/></a:prop></a:propfind>]]
@@ -104,7 +100,6 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     end
 
     local res_data = table.concat(sink)
-
     if res_data ~= "" then
         -- iterate through the <d:response> tags, each containing an entry
         for item in res_data:gmatch("<[^:]*:response[^>]*>(.-)</[^:]*:response>") do
@@ -122,8 +117,8 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
             local is_not_collection = item:find("<[^:]*:resourcetype/>") or
                 item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
 
-            local item_path = path .. "/" .. item_name
-            if item:find("<[^:]*:collection/>") then
+            local item_path = path == "" and item_name or path .. "/" .. item_name
+            if item:find("<[^:]*:collection[%s/>]") then
                 item_name = item_name .. "/"
                 if not is_current_dir then
                     table.insert(webdav_list, {
