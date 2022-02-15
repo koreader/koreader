@@ -90,7 +90,7 @@ end
 -- This function is a callback fired from the new
 -- catalog dialog, 'addNewCatalog'.
 function OPDSBrowser:addServerFromInput(fields)
-    logger.info("New OPDS catalog input:", fields)
+    logger.dbg("New OPDS catalog input:", fields)
     local new_server = {
         title = fields[1],
         url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
@@ -291,7 +291,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         user     = username,
         password = password,
     }
-    logger.info("Request:", request)
+    logger.dbg("Request:", request)
     -- Fire off the request and wait to see what we get back.
     local code, headers = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
@@ -603,7 +603,7 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
     local download_dir = self.getCurrentDownloadDir()
 
     filename = util.getSafeFilename(filename, download_dir)
-    local local_path = download_dir .. "/" .. filename
+    local local_path = (download_dir ~= "/" and download_dir or "") .. '/' .. filename
     local_path = util.fixUtf8(local_path, "_")
 
     local function download()
@@ -670,19 +670,17 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
     end
 end
 
-function OPDSBrowser:createNewDownloadDialog(path, filename, buttons)
-    self.download_dialog = ButtonDialogTitle:new{
-        title = T(_("Download folder:\n%1\n\nDownload filename:\n%2\n\nDownload file type:"),
-            BD.dirpath(path), filename),
-        buttons = buttons
-    }
-end
-
 function OPDSBrowser:showDownloads(item)
     local acquisitions = item.acquisitions
     local filename = item.title
     if item.author then
         filename = item.author .. " - " .. filename
+    end
+    local filename_orig = filename
+
+    local function createTitle(path, filename) -- title for ButtonDialogTitle
+        return T(_("Download folder:\n%1\n\nDownload filename:\n%2\n\nDownload file type:"),
+            BD.dirpath(path), filename)
     end
 
     local buttons = {} -- buttons for ButtonDialogTitle
@@ -723,15 +721,11 @@ function OPDSBrowser:showDownloads(item)
             callback = function()
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
-                        logger.info("Download folder set to", path)
+                        logger.dbg("Download folder set to", path)
                         G_reader_settings:saveSetting("download_dir", path)
-                        UIManager:nextTick(function()
-                            UIManager:close(self.download_dialog)
-                            self:createNewDownloadDialog(path, filename, buttons)
-                            UIManager:show(self.download_dialog)
-                        end)
+                        self.download_dialog:setTitle(createTitle(path, filename))
                     end,
-                }:chooseDir()
+                }:chooseDir(self.getCurrentDownloadDir())
             end,
         },
         {
@@ -741,6 +735,7 @@ function OPDSBrowser:showDownloads(item)
                 input_dialog = InputDialog:new{
                     title = _("Enter filename"),
                     input = filename,
+                    input_hint = filename_orig,
                     buttons = {
                         {
                             {
@@ -754,10 +749,11 @@ function OPDSBrowser:showDownloads(item)
                                 is_enter_default = true,
                                 callback = function()
                                     filename = input_dialog:getInputValue()
+                                    if filename == "" then
+                                        filename = filename_orig
+                                    end
                                     UIManager:close(input_dialog)
-                                    UIManager:close(self.download_dialog)
-                                    self:createNewDownloadDialog(self.getCurrentDownloadDir(), filename, buttons)
-                                    UIManager:show(self.download_dialog)
+                                    self.download_dialog:setTitle(createTitle(self.getCurrentDownloadDir(), filename))
                                 end,
                             },
                         }
@@ -790,7 +786,10 @@ function OPDSBrowser:showDownloads(item)
         },
     })
 
-    self:createNewDownloadDialog(self.getCurrentDownloadDir(), filename, buttons)
+    self.download_dialog = ButtonDialogTitle:new{
+        title = createTitle(self.getCurrentDownloadDir(), filename),
+        buttons = buttons,
+    }
     UIManager:show(self.download_dialog)
 end
 
@@ -873,7 +872,7 @@ function OPDSBrowser:onMenuSelect(item)
 end
 
 function OPDSBrowser:editServerFromInput(item, fields)
-    logger.info("Edit OPDS catalog input:", fields)
+    logger.dbg("Edit OPDS catalog input:", fields)
     for _, server in ipairs(self.opds_servers) do
         if server.title == item.text or server.url == item.url then
             server.title = fields[1]
@@ -887,7 +886,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
 end
 
 function OPDSBrowser:editOPDSServer(item)
-    logger.info("Edit OPDS Server:", item)
+    logger.dbg("Edit OPDS Server:", item)
     self.edit_server_dialog = MultiInputDialog:new{
         title = _("Edit OPDS catalog"),
         fields = {
