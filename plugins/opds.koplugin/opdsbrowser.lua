@@ -678,9 +678,9 @@ function OPDSBrowser:showDownloads(item)
     end
     local filename_orig = filename
 
-    local function createTitle(path, filename) -- title for ButtonDialogTitle
+    local function createTitle(path, file) -- title for ButtonDialogTitle
         return T(_("Download folder:\n%1\n\nDownload filename:\n%2\n\nDownload file type:"),
-            BD.dirpath(path), filename)
+            BD.dirpath(path), file)
     end
 
     local buttons = {} -- buttons for ButtonDialogTitle
