@@ -122,7 +122,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
             local is_not_collection = item:find("<[^:]*:resourcetype/>") or
                 item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
 
-            local item_path = path .. "/" .. item_name
+            local item_path = path == "" and item_name or path .. "/" .. item_name
             if item:find("<[^:]*:collection/>") then
                 item_name = item_name .. "/"
                 if not is_current_dir then
