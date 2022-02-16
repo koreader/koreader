@@ -182,9 +182,8 @@ function AutoSuspend:allowStandby()
     end
 end
 
-function AutoSuspend:onSuspend(_self)
+function AutoSuspend:onSuspend()
     logger.dbg("AutoSuspend: onSuspend")
-    if self == _self then return end
     -- We do not want auto suspend procedure to waste battery during suspend. So let's unschedule it
     -- when suspending and restart it after resume.
     self:_unschedule()
@@ -193,9 +192,8 @@ function AutoSuspend:onSuspend(_self)
     end
 end
 
-function AutoSuspend:onResume(_self)
+function AutoSuspend:onResume()
     logger.dbg("AutoSuspend: onResume")
-    if self == _self then return end
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
@@ -427,11 +425,11 @@ function AutoSuspend:onAllowStandby()
         os.execute("echo 0 > /sys/class/rtc/rtc0/wakealarm")
         os.execute("echo +" .. wake_in .. " > /sys/class/rtc/rtc0/wakealarm")
         logger.dbg("xxx3", os.time(), TimeVal:now():tonumber())
-        UIManager:broadcastEvent(Event:new("Suspend", self))
+        UIManager:broadcastEvent(Event:new("Suspend"))
         os.execute("echo standby > /sys/power/state")
         logger.dbg("xxx3", os.time(), TimeVal:now():tonumber())
         logger.dbg("xxx end standby")
-        UIManager:broadcastEvent(Event:new("Resume", self))
+        UIManager:broadcastEvent(Event:new("Resume"))
         UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
         self:reschedule_standby(2) -- 2 seconds is enough for doing formerly sheduled stuff
     end
