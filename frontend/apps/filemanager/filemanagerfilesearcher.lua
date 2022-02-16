@@ -62,7 +62,7 @@ function FileSearcher:readDir()
                         text = f.."/",
                         attr = attributes,
                         callback = function()
-                            self:showFolder(fullpath)
+                            self:showFolder(fullpath .. "/")
                         end,
                     })
                 -- Always ignore macOS resource forks, too.
@@ -218,8 +218,8 @@ end
 
 function FileSearcher:onMenuHold(item)
     local ReaderUI = require("apps/reader/readerui")
-    local fullpath = item.dir .. "/" .. item.name
     local is_file = item.attr.mode == "file"
+    local fullpath = item.dir .. "/" .. item.name .. (is_file and "" or "/")
     local buttons = {
         {
             {
@@ -233,9 +233,7 @@ function FileSearcher:onMenuHold(item)
                 callback = function()
                     UIManager:close(self.results_dialog)
                     self.close_callback()
-                    local focused_path = is_file and item.dir or fullpath
-                    local focused_file = is_file and fullpath or nil
-                    self._manager:showFolder(focused_path, focused_file)
+                    self._manager:showFolder(fullpath)
                 end,
             },
         },
@@ -252,24 +250,20 @@ function FileSearcher:onMenuHold(item)
     end
 
     self.results_dialog = ButtonDialogTitle:new{
-        title = is_file and fullpath or fullpath .. "/",
+        title = fullpath,
         buttons = buttons,
     }
     UIManager:show(self.results_dialog)
     return true
 end
 
-function FileSearcher:showFolder(path, focused_file)
+function FileSearcher:showFolder(path)
     if self.ui.file_chooser then
-        self.ui.file_chooser:changeToPath(path, focused_file)
+        local pathname = util.splitFilePathName(path)
+        self.ui.file_chooser:changeToPath(pathname, path)
     else -- called from Reader
         self.ui:onClose()
-        local FileManager = require("apps/filemanager/filemanager")
-        if FileManager.instance then
-            FileManager.instance:reinit(path, focused_file)
-        else
-            FileManager:showFiles(path, focused_file)
-        end
+        self.ui:showFileManager(path)
     end
 end
 
