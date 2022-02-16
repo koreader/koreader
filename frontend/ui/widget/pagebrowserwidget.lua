@@ -39,6 +39,10 @@ local PageBrowserWidget = InputContainer:new{
 }
 
 function PageBrowserWidget:init()
+    if self.ui.view.inverse_reading_order then
+        BD.invert()
+    end
+
     -- Compute non-settings-dependant sizes and options
     self.dimen = Geom:new{
         w = Screen:getWidth(),
@@ -641,6 +645,7 @@ function PageBrowserWidget:onClose(close_all_parents)
             UIManager:setDirty(self.launcher, "ui")
         end
     else
+        BD.resetInvert()
         -- Remove all thumbnails generated for a different target size than
         -- the last one used (no need to keep old sizes if the user played
         -- with nb_cols/nb_rows, as on next opening, we just need the ones
