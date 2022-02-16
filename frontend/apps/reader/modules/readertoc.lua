@@ -644,6 +644,10 @@ function ReaderToc:expandParentNode(index)
 end
 
 function ReaderToc:onShowToc()
+    if self.view.inverse_reading_order then
+        BD.invert()
+    end
+
     self:fillToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
@@ -813,6 +817,7 @@ function ReaderToc:onShowToc()
 
     toc_menu.close_callback = function()
         UIManager:close(menu_container)
+        BD.resetInvert()
     end
 
     toc_menu.show_parent = menu_container
