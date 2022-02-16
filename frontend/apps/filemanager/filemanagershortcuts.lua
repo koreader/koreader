@@ -35,14 +35,8 @@ function FileManagerShortcuts:updateItemTable(select_callback)
                         if self.ui.file_chooser then
                             self.ui.file_chooser:changeToPath(folder)
                         else -- called from Reader
-                            local FileManager = require("apps/filemanager/filemanager")
-
                             self.ui:onClose()
-                            if FileManager.instance then
-                                FileManager.instance:reinit(folder)
-                            else
-                                FileManager:showFiles(folder)
-                            end
+                            self.ui:showFileManager(folder .. "/")
                         end
                     end
                 end
