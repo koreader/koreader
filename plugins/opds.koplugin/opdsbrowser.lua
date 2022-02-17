@@ -80,6 +80,10 @@ local OPDSBrowser = Menu:extend{
 function OPDSBrowser:init()
     self.item_table = self:genItemTableFromRoot()
     self.catalog_title = nil
+    self.title_bar_left_icon = "plus"
+    self.onLeftButtonTap = function()
+        self:addNewCatalog()
+    end
     Menu.init(self) -- call parent's init()
 end
 
@@ -265,14 +269,6 @@ function OPDSBrowser:genItemTableFromRoot()
             searchable = false,
         })
     end
-    -- Show the user a list item that would let them add more items
-    -- to their OPDS server list.
-    table.insert(item_table, {
-        text = _("Add new OPDS catalog"),
-        callback = function()
-            self:addNewCatalog()
-        end,
-    })
     return item_table
 end
 
@@ -574,6 +570,10 @@ function OPDSBrowser:updateCatalog(item_url, username, password)
     local menu_table = self:genItemTableFromURL(item_url, username, password)
     if #menu_table > 0 then
         self:switchItemTable(self.catalog_title, menu_table)
+        self:setTitleBarLeftIcon("home")
+        self.onLeftButtonTap = function()
+            self:init()
+        end
         if self.page_num <= 1 then
             self:onNext()
         end
@@ -782,6 +782,7 @@ function OPDSBrowser:showDownloads(item)
                 local TextViewer = require("ui/widget/textviewer")
                 UIManager:show(TextViewer:new{
                     title = item.text,
+                    title_multilines = true,
                     text = util.htmlToPlainTextIfHtml(item.content),
                     text_face = Font:getFace("x_smallinfofont", G_reader_settings:readSetting("items_font_size")),
                 })

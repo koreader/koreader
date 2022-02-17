@@ -6,7 +6,6 @@ local CacheItem = require("cacheitem")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
-local Device = require("device")
 local DocCache = require("document/doccache")
 local Document = require("document/document")
 local FFIUtil = require("ffi/util")
@@ -111,7 +110,7 @@ function KoptInterface:waitForContext(kc)
 
     if waited or self.bg_thread then
         -- Background thread is done, go back to a single CPU core.
-        Device:enableCPUCores(1)
+        CanvasContext:enableCPUCores(1)
         self.bg_thread = nil
     end
 
@@ -392,7 +391,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
     local cached = DocCache:check(hash, TileCacheItem)
     if not cached then
         if hinting then
-            Device:enableCPUCores(2)
+            CanvasContext:enableCPUCores(2)
         end
 
         local page_size = Document.getNativePageDimensions(doc, pageno)
@@ -425,7 +424,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         DocCache:insert(hash, tile)
 
         if hinting then
-            Device:enableCPUCores(1)
+            CanvasContext:enableCPUCores(1)
         end
 
         return tile
@@ -464,7 +463,7 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, rend
     local cached = DocCache:check(hash)
     if not cached then
         if hinting then
-            Device:enableCPUCores(2)
+            CanvasContext:enableCPUCores(2)
         end
 
         local kc = self:createContext(doc, pageno, bbox)
@@ -668,7 +667,9 @@ function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
         local page = doc._document:openPage(pageno)
         page:getPagePix(kc)
         local boxes, nr_word = kc:getNativeWordBoxes("src", 0, 0, page_size.w, page_size.h)
-        DocCache:insert(hash, CacheItem:new{ scratchnativepgboxes = boxes, size = 192 * nr_word }) -- estimation
+        if boxes then
+            DocCache:insert(hash, CacheItem:new{ scratchnativepgboxes = boxes, size = 192 * nr_word }) -- estimation
+        end
         page:close()
         kc:free()
         return boxes
@@ -1212,7 +1213,6 @@ function KoptInterface:getTextFromNativePositions(doc, native_boxes, pos0, pos1)
     return text_boxes
 end
 
-
 --[[--
 Get text boxes from page positions.
 --]]
@@ -1237,6 +1237,26 @@ function KoptInterface:getPageBoxesFromPositions(doc, pageno, ppos0, ppos1)
         local text_boxes = self:getTextFromBoxes(page_boxes, ppos0, ppos1)
         return text_boxes.boxes
     end
+end
+
+--[[--
+Compare positions within one page.
+Returns 1 if positions are ordered (if ppos2 is after ppos1), -1 if not, 0 if same.
+Positions of the word boxes containing ppos1 and ppos2 are compared.
+--]]
+function KoptInterface:comparePositions(doc, ppos1, ppos2)
+    local box1 = self:getWordFromPosition(doc, ppos1).pbox
+    local box2 = self:getWordFromPosition(doc, ppos2).pbox
+    if box1.y == box2.y then
+        if box1.x == box2.x then
+            return 0
+        elseif box1.x > box2.x then
+            return -1
+        end
+    elseif box1.y > box2.y then
+        return -1
+    end
+    return 1
 end
 
 --[[--

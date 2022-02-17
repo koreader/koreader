@@ -2,27 +2,25 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local DoubleSpinWidget = InputContainer:new{
+local DoubleSpinWidget = FocusManager:new{
     title_text = "",
     title_face = Font:getFace("x_smalltfont"),
     info_text = nil,
@@ -67,9 +65,8 @@ function DoubleSpinWidget:init()
         self.width = math.floor(math.min(self.screen_width, self.screen_height) * self.width_factor)
     end
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {"Back"}, doc = "close doublespin widget" }
-        }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close doublespin widget" }
+        self.key_events.Press = { {"Press"}, doc = "press button" }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -90,6 +87,7 @@ function DoubleSpinWidget:init()
 end
 
 function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_value)
+    self.layout = {}
     local left_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_left_value or self.left_value,
@@ -100,6 +98,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         precision = self.left_precision,
         wrap = self.left_wrap,
     }
+    self:mergeLayoutInHorizontal(left_widget)
     local right_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_right_value or self.right_value,
@@ -110,6 +109,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         precision = self.right_precision,
         wrap = self.right_wrap,
     }
+    self:mergeLayoutInHorizontal(right_widget)
     left_widget.picker_updated_callback = function(value)
         self:update(value, right_widget:getValue())
     end
@@ -153,37 +153,16 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
             right_vertical_group
         }
     }
-    local widget_title = FrameContainer:new{
-        padding = Size.padding.default,
-        margin = Size.margin.title,
-        bordersize = 0,
-        TextWidget:new{
-            text = self.title_text,
-            face = self.title_face,
-            max_width = self.width - 2 * (Size.padding.default + Size.margin.title),
-        },
+
+    local title_bar = TitleBar:new{
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        title = self.title_text,
+        title_shrink_font_to_fit = true,
+        info_text = self.info_text,
+        show_parent = self,
     }
-    local widget_line = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
-        }
-    }
-    local widget_info
-    if self.info_text then
-        widget_info = FrameContainer:new{
-            padding = Size.padding.default,
-            margin = Size.margin.small,
-            bordersize = 0,
-            TextBoxWidget:new{
-                text = self.info_text,
-                face = Font:getFace("x_smallinfofont"),
-                width = math.floor(self.width * 0.9),
-            }
-        }
-    else
-        widget_info = VerticalSpan:new{ width = 0 }
-    end
 
     local buttons = {}
     if self.default_values then
@@ -250,7 +229,9 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
+        auto_focus_first_button = false,
     }
+    self:mergeLayoutInVertical(button_table)
 
     self.widget_frame = FrameContainer:new{
         radius = Size.radius.window,
@@ -259,9 +240,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            widget_title,
-            widget_line,
-            widget_info,
+            title_bar,
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
@@ -290,6 +269,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         self.movable,
     }
+    self:focusTopLeftWidget()
     UIManager:setDirty(self, function()
         return "ui", self.widget_frame.dimen
     end)
@@ -331,6 +311,10 @@ function DoubleSpinWidget:onClose()
         self.close_callback()
     end
     return true
+end
+
+function DoubleSpinWidget:onPress()
+    return self:sendTapEventToFocusedWidget()
 end
 
 return DoubleSpinWidget

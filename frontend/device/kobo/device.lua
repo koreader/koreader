@@ -77,8 +77,6 @@ local Kobo = Generic:new{
     hasEclipseWfm = no,
 }
 
---- @todo hasKeys for some devices?
-
 -- Kobo Touch:
 local KoboTrilogy = Kobo:new{
     model = "Kobo_trilogy",
@@ -300,13 +298,13 @@ local KoboStorm = Kobo:new{
 }
 
 -- Kobo Nia:
---- @fixme: Untested, assume it's Clara-ish for now.
+--- @fixme: Mostly untested, assume it's Clara-ish for now.
 local KoboLuna = Kobo:new{
     model = "Kobo_luna",
     isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
-    touch_snow_protocol = true,
+    touch_phoenix_protocol = true,
     display_dpi = 212,
 }
 
@@ -354,6 +352,8 @@ local KoboCadmus = Kobo:new{
     },
     boot_rota = C.FB_ROTATE_CW,
     battery_sysfs = "/sys/class/power_supply/battery",
+    hasAuxBattery = yes,
+    aux_battery_sysfs = "/sys/class/misc/cilix",
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
@@ -383,7 +383,20 @@ local KoboIo = Kobo:new{
         nl_max = 10,
         nl_inverted = true,
     },
+    -- It would appear that the Libra 2 inherited its ancestor's quirks, and more...
+    -- c.f., https://github.com/koreader/koreader/issues/8414 & https://github.com/koreader/koreader/issues/8664
+    hasReliableMxcWaitFor = no,
 }
+
+function Kobo:setupChargingLED()
+    if G_reader_settings:nilOrTrue("enable_charging_led") then
+        if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
+            self:toggleChargingLED(self.powerd:isAuxCharging())
+        else
+            self:toggleChargingLED(self.powerd:isCharging())
+        end
+    end
+end
 
 function Kobo:init()
     -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
@@ -431,6 +444,7 @@ function Kobo:init()
     self.powerd = require("device/kobo/powerd"):new{
         device = self,
         battery_sysfs = self.battery_sysfs,
+        aux_battery_sysfs = self.aux_battery_sysfs,
     }
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
     self.input = require("device/input"):new{
@@ -496,11 +510,10 @@ function Kobo:init()
         end
     end
 
-    -- We have no way of querying the current state of the charging LED, so, our only sane choices are:
-    -- * Do nothing
-    -- * Turn it off on startup
-    -- I've chosen the latter, as I find it vaguely saner, more useful, and it matches Nickel's behavior (I think).
+    -- We have no way of querying the current state of the charging LED, so, start from scratch.
+    -- Much like Nickel, start by turning it off.
     self:toggleChargingLED(false)
+    self:setupChargingLED()
 
     -- Only enable a single core on startup
     self:enableCPUCores(1)
@@ -874,6 +887,9 @@ function Kobo:resume()
         f:write("a\n")
         f:close()
     end
+
+    -- A full suspend may have toggled the LED off.
+    self:setupChargingLED()
 end
 
 function Kobo:saveSettings()

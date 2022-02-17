@@ -50,7 +50,7 @@ function PageBrowserWidget:init()
 
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close page" },
+            Close = { {Device.input.group.Back}, doc = "close page" },
             ScrollRowUp = {{"Up"}, doc = "scroll up"},
             ScrollRowDown = {{"Down"}, doc = "scrol down"},
             ScrollPageUp = {{Input.group.PgBack}, doc = "prev page"},
@@ -102,10 +102,16 @@ function PageBrowserWidget:init()
     self.title_bar = TitleBar:new{
         fullscreen = true,
         title = self.title,
-        left_icon = "notice-info",
+        left_icon = "info",
         left_icon_tap_callback = function() self:showHelp() end,
+        left_icon_hold_callback = function()
+            -- Cycle nb of toc span levels shown in bottom row
+            if self:updateNbTocSpans(-1, true) then
+                self:updateLayout()
+            end
+        end,
         close_callback = function() self:onClose() end,
-        hold_close_callback = function() self:onClose(true) end,
+        close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
     }
     self.title_bar_h = self.title_bar:getHeight()
@@ -128,65 +134,9 @@ function PageBrowserWidget:init()
     self.min_nb_cols = 1
     self.max_nb_cols = 6
 
+    -- Get some info that shouldn't change across calls to update() and updateLayout()
     self.ui.toc:fillToc()
     self.max_toc_depth = self.ui.toc.toc_depth
-    -- We show the toc depth chosen in BookMapWidget, or all of it if not set
-    -- (nothing in this PageBrowserWidget to allow changing it)
-    self.nb_toc_spans = self.ui.doc_settings:readSetting("book_map_toc_depth", self.max_toc_depth)
-
-    -- Row will contain: nb_toc_spans + page slots + spacing (+ some borders)
-    self.statistics_enabled = self.ui.statistics and self.ui.statistics:isEnabled()
-    local page_slots_height_ratio = 1 -- default to 1 * span_height
-    if not self.statistics_enabled and self.nb_toc_spans > 0 then
-        -- Just enough to show page separators below toc spans
-        page_slots_height_ratio = 0.2
-    end
-    self.row_height = math.ceil((self.nb_toc_spans + page_slots_height_ratio + 1) * self.span_height + 2*BookMapRow.pages_frame_border)
-
-    self.grid_width = self.dimen.w
-    self.grid_height = self.dimen.h - self.title_bar_h - self.row_height
-
-    -- We'll draw some kind of static transparent glass over the BookMapRow,
-    -- which should span over the page slots that get their thumbnails shown.
-    self.view_finder_r = Size.radius.window
-    self.view_finder_bw = Size.border.default
-    -- Have its top border noticable above the BookMapRow top border
-    self.view_finder_y = self.dimen.h - self.row_height - 2*self.view_finder_bw
-    -- And put its bottom rounded corner outside of screen
-    self.view_finder_h = self.row_height + 2*self.view_finder_bw + Size.radius.window
-
-    self.grid = OverlapGroup:new{
-        dimen = Geom:new{
-            w = self.grid_width,
-            h = self.grid_height,
-        },
-        allow_mirroring = false,
-    }
-    self.row = CenterContainer:new{
-        dimen = Geom:new{
-            w = self.dimen.w,
-            h = self.row_height,
-        },
-        -- Will contain a BookMapRow wider, with l/r borders outside screen
-    }
-
-    self[1] = FrameContainer:new{
-        width = self.dimen.w,
-        height = self.dimen.h,
-        padding = 0,
-        margin = 0,
-        bordersize = 0,
-        background = Blitbuffer.COLOR_WHITE,
-        VerticalGroup:new{
-            align = "center",
-            self.title_bar,
-            self.grid,
-            self.row,
-        }
-    }
-
-
-    -- Get some info that shouldn't change across calls to update() and updateLayout()
     self.nb_pages = self.ui.document:getPageCount()
     self.cur_page = self.ui.toc.pageno
     -- Get bookmarks and highlights from ReaderBookmark
@@ -218,6 +168,67 @@ function PageBrowserWidget:init()
 end
 
 function PageBrowserWidget:updateLayout()
+    -- We start with showing all toc levels (we could use book_map_toc_depth,
+    -- but we might want to have it different here).
+    self.nb_toc_spans = self.ui.doc_settings:readSetting("page_browser_toc_depth") or self.max_toc_depth
+
+    -- Row will contain: nb_toc_spans + page slots + spacing (+ some borders)
+    local statistics_enabled = self.ui.statistics and self.ui.statistics:isEnabled()
+    local page_slots_height_ratio = 1 -- default to 1 * span_height
+    if not statistics_enabled and self.nb_toc_spans > 0 then
+        -- Just enough to show page separators below toc spans
+        page_slots_height_ratio = 0.2
+    end
+    self.row_height = math.ceil((self.nb_toc_spans + page_slots_height_ratio + 1) * self.span_height + 2*BookMapRow.pages_frame_border)
+
+    self.grid_width = self.dimen.w
+    self.grid_height = self.dimen.h - self.title_bar_h - self.row_height
+
+    -- We'll draw some kind of static transparent glass over the BookMapRow,
+    -- which should span over the page slots that get their thumbnails shown.
+    self.view_finder_r = Size.radius.window
+    self.view_finder_bw = Size.border.default
+    -- Have its top border noticable above the BookMapRow top border
+    self.view_finder_y = self.dimen.h - self.row_height - 2*self.view_finder_bw
+    -- And put its bottom rounded corner outside of screen
+    self.view_finder_h = self.row_height + 2*self.view_finder_bw + Size.radius.window
+
+    if self.grid then
+        self.grid:free()
+    end
+    self.grid = OverlapGroup:new{
+        dimen = Geom:new{
+            w = self.grid_width,
+            h = self.grid_height,
+        },
+        allow_mirroring = false,
+    }
+    if self.row then
+        self.row:free()
+    end
+    self.row = CenterContainer:new{
+        dimen = Geom:new{
+            w = self.dimen.w,
+            h = self.row_height,
+        },
+        -- Will contain a BookMapRow wider, with l/r borders outside screen
+    }
+
+    self[1] = FrameContainer:new{
+        width = self.dimen.w,
+        height = self.dimen.h,
+        padding = 0,
+        margin = 0,
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        VerticalGroup:new{
+            align = "center",
+            self.title_bar,
+            self.grid,
+            self.row,
+        }
+    }
+
     self.nb_rows = self.ui.doc_settings:readSetting("page_browser_nb_rows")
                    or G_reader_settings:readSetting("page_browser_nb_rows")
     self.nb_cols = self.ui.doc_settings:readSetting("page_browser_nb_cols")
@@ -600,17 +611,18 @@ end
 
 function PageBrowserWidget:showHelp()
     UIManager:show(InfoMessage:new{
-        text = [[
+        text = _([[
 Page browser shows thumbnails of pages.
 
-The bottom row displays an extract of the book map around the shown pages: see the book map help for details.
+The bottom ribbon displays an extract of the book map around the shown pages: see the book map help for details.
 
-Swipe along the top or left screen edge to change the number of columns or rows.
+Swipe along the top or left screen edge to change the number of columns or rows of thumbnails.
 Swipe vertically to move one row, horizontally to move one page.
-Swipe horizontally in the bottom row to move by the full stripe.
-Tap in the bottom row on a page to focus thumbnails on this page.
-Tap on a thumbnail to go read this page.
-Any multiswipe will close the page browser.]],
+Swipe horizontally in the bottom ribbon to move by the full stripe.
+Tap in the bottom ribbon on a page to focus thumbnails on this page.
+Tap on a thumbnail to read this page.
+Long-press on ⓘ to decrease or reset the number of chapter levels shown in the bottom ribbon.
+Any multiswipe will close the page browser.]]),
     })
 end
 
@@ -618,8 +630,8 @@ function PageBrowserWidget:onClose(close_all_parents)
     if self.requests_batch_id then
         self.ui.thumbnail:cancelPageThumbnailRequests(self.requests_batch_id)
     end
-    logger.dbg("closing PageBrowserWidget")
     -- Close this widget
+    logger.dbg("closing PageBrowserWidget")
     UIManager:close(self)
     if self.launcher then
         -- We were launched by a BookMapWidget, don't do any cleanup.
@@ -627,6 +639,8 @@ function PageBrowserWidget:onClose(close_all_parents)
             -- The last one of these (which has no launcher attribute)
             -- will do the cleanup below.
             self.launcher:onClose(true)
+        else
+            UIManager:setDirty(self.launcher, "ui")
         end
     else
         -- Remove all thumbnails generated for a different target size than
@@ -649,15 +663,39 @@ end
 
 function PageBrowserWidget:saveSettings(reset)
     if reset then
+        self.nb_toc_spans = nil
         self.nb_rows = nil
         self.nb_cols = nil
     end
+    self.ui.doc_settings:saveSetting("page_browser_toc_depth", self.nb_toc_spans)
     self.ui.doc_settings:saveSetting("page_browser_nb_rows", self.nb_rows)
     self.ui.doc_settings:saveSetting("page_browser_nb_cols", self.nb_cols)
-    -- We also save them as global settings, so they will apply on other books
+    -- We also save nb_rows/nb_cols as global settings, so they will apply on other books
     -- where they were not already set
     G_reader_settings:saveSetting("page_browser_nb_rows", self.nb_rows)
     G_reader_settings:saveSetting("page_browser_nb_cols", self.nb_cols)
+end
+
+function PageBrowserWidget:updateNbTocSpans(value, relative)
+    local new_nb_toc_spans
+    if relative then
+        new_nb_toc_spans = self.nb_toc_spans + value
+    else
+        new_nb_toc_spans = value
+    end
+    -- We don't cap, we cycle
+    if new_nb_toc_spans < 0 then
+        new_nb_toc_spans = self.max_toc_depth
+    end
+    if new_nb_toc_spans > self.max_toc_depth then
+        new_nb_toc_spans = 0
+    end
+    if new_nb_toc_spans == self.nb_toc_spans then
+        return false
+    end
+    self.nb_toc_spans = new_nb_toc_spans
+    self:saveSettings()
+    return true
 end
 
 function PageBrowserWidget:updateNbCols(value, relative)

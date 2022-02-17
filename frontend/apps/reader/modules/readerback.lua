@@ -21,7 +21,7 @@ local ReaderBack = EventListener:new{
 
 function ReaderBack:init()
     if Device:hasKeys() then
-        self.ui.key_events.Back = { {"Back"}, doc = "Reader back" }
+        self.ui.key_events.Back = { {Device.input.group.Back}, doc = "Reader back" }
     end
     -- Regular function wrapping our method, to avoid re-creating
     -- an anonymous function at each page turn

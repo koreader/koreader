@@ -1,8 +1,6 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
-local Button = require("ui/widget/button")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -18,10 +16,7 @@ local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearche
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
-local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local IconButton = require("ui/widget/iconbutton")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -33,10 +28,8 @@ local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
-local Size = require("ui/size")
-local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local VerticalSpan = require("ui/widget/verticalspan")
 local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
@@ -66,12 +59,6 @@ function FileManager:onSetRotationMode(rotation)
         Screen:setRotationMode(rotation)
         if FileManager.instance then
             self:reinit(self.path, self.focused_file)
-            if self.select_mode then
-                self.plus_button:setIcon("check")
-            end
-            UIManager:setDirty(self.banner, function()
-                return "ui", self.banner.dimen
-            end)
         end
     end
     return true
@@ -114,74 +101,26 @@ end
 
 function FileManager:setupLayout()
     self.show_parent = self.show_parent or self
-    local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE)
-    local home_button = IconButton:new{
-        icon = "home",
-        width = icon_size,
-        height = icon_size,
-        padding = Size.padding.default,
-        padding_right = Size.padding.large,
-        padding_bottom = 0,
-        callback = function()
-            self:goHome()
-        end,
-        hold_callback = function() self:setHome() end,
+    self.title_bar = TitleBar:new{
+        fullscreen = "true",
+        align = "center",
+        title = self.title,
+        title_top_padding = Screen:scaleBySize(6),
+        subtitle = BD.directory(filemanagerutil.abbreviate(self.root_path)),
+        subtitle_truncate_left = true,
+        subtitle_fullwidth = true,
+        button_padding = Screen:scaleBySize(5),
+        left_icon = "home",
+        left_icon_size_ratio = 1,
+        left_icon_tap_callback = function() self:goHome() end,
+        left_icon_hold_callback = function() self:setHome() end,
+        right_icon = "plus",
+        right_icon_size_ratio = 1,
+        right_icon_tap_callback = function() self:onShowPlusMenu() end,
+        right_icon_hold_callback = false, -- propagate long-press to dispatcher
     }
 
-    self.plus_button = IconButton:new{
-        icon = "plus",
-        width = icon_size,
-        height = icon_size,
-        padding = Size.padding.default,
-        padding_left = Size.padding.large,
-        padding_bottom = 0,
-        callback = function() self:onShowPlusMenu() end,
-    }
-
-    self.path_text = TextWidget:new{
-        face = Font:getFace("xx_smallinfofont"),
-        text = BD.directory(filemanagerutil.abbreviate(self.root_path)),
-        max_width = Screen:getWidth() - 2*Size.padding.large,
-        truncate_left = true,
-    }
-
-    self.banner = FrameContainer:new{
-        padding = 0,
-        bordersize = 0,
-        VerticalGroup:new {
-            CenterContainer:new {
-                dimen = { w = Screen:getWidth(), h = nil },
-                HorizontalGroup:new {
-                    home_button,
-                    VerticalGroup:new {
-                        Button:new {
-                            readonly = true,
-                            bordersize = 0,
-                            padding = 0,
-                            text_font_bold = false,
-                            text_font_face = "smalltfont",
-                            text_font_size = 24,
-                            text = self.title,
-                            width = Screen:getWidth() - 2 * icon_size - 4 * Size.padding.large,
-                        },
-                    },
-                    self.plus_button,
-                }
-            },
-            CenterContainer:new{
-                dimen = { w = Screen:getWidth(), h = nil },
-                self.path_text,
-            },
-            VerticalSpan:new{ width = Screen:scaleBySize(5) },
-        }
-    }
-
-    local show_hidden
-    if G_reader_settings:has("show_hidden") then
-        show_hidden = G_reader_settings:isTrue("show_hidden")
-    else
-        show_hidden = DSHOWHIDDENFILES
-    end
+    local show_hidden = G_reader_settings:isTrue("show_hidden") or DSHOWHIDDENFILES
     local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local file_chooser = FileChooser:new{
         -- remember to adjust the height when new item is added to the group
@@ -192,7 +131,7 @@ function FileManager:setupLayout()
         show_parent = self.show_parent,
         show_hidden = show_hidden,
         width = Screen:getWidth(),
-        height = Screen:getHeight() - self.banner:getSize().h,
+        height = Screen:getHeight() - self.title_bar:getHeight(),
         is_popout = false,
         is_borderless = true,
         has_close_button = true,
@@ -214,10 +153,7 @@ function FileManager:setupLayout()
     local file_manager = self
 
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        file_manager.path_text:setText(BD.directory(filemanagerutil.abbreviate(path)))
-        UIManager:setDirty(file_manager, function()
-            return "ui", file_manager.path_text.dimen, file_manager.dithered
-        end)
+        file_manager.title_bar:setSubTitle(BD.directory(filemanagerutil.abbreviate(path)))
         return true
     end
 
@@ -478,7 +414,7 @@ function FileManager:setupLayout()
     end
 
     self.layout = VerticalGroup:new{
-        self.banner,
+        self.title_bar,
         file_chooser,
     }
 
@@ -498,7 +434,7 @@ function FileManager:setupLayout()
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "go home" }
         -- Override the menu.lua way of handling the back key
-        self.file_chooser.key_events.Back = { {"Back"}, doc = "go back" }
+        self.file_chooser.key_events.Back = { {Device.input.group.Back}, doc = "go back" }
         if not Device:hasFewKeys() then
             -- Also remove the handler assigned to the "Back" key by menu.lua
             self.file_chooser.key_events.Close = nil
@@ -615,10 +551,7 @@ function FileManager:onToggleSelectMode()
     logger.dbg("toggle select mode")
     self.select_mode = not self.select_mode
     self.selected_files = self.select_mode and {} or nil
-    self.plus_button:setIcon(self.select_mode and "check" or "plus")
-    UIManager:setDirty(self, function()
-        return "ui", self.plus_button.dimen, self.dithered
-    end)
+    self.title_bar:setRightIcon(self.select_mode and "check" or "plus")
     self:onRefresh()
 end
 
@@ -874,6 +807,9 @@ function FileManager:reinit(path, focused_file)
     -- looks unnecessary (cheap with classic mode, less cheap with
     -- CoverBrowser plugin's cover image renderings)
     -- self:onRefresh()
+    if self.select_mode then
+        self.title_bar:setRightIcon("check")
+    end
 end
 
 function FileManager:getCurrentDir()
@@ -941,21 +877,7 @@ function FileManager:onRefresh()
 end
 
 function FileManager:goHome()
-    local home_dir = G_reader_settings:readSetting("home_dir")
-    if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory" then
-        -- Try some sane defaults, depending on platform
-        home_dir = Device.home_dir
-    end
-    if home_dir then
-        -- Jump to the first page if we're already home
-        if self.file_chooser.path and home_dir == self.file_chooser.path then
-            self.file_chooser:onGotoPage(1)
-            -- Also pick up new content, if any.
-            self.file_chooser:refreshPath()
-        else
-            self.file_chooser:changeToPath(home_dir)
-        end
-    else
+    if not self.file_chooser:goHome() then
         self:setHome()
     end
     return true

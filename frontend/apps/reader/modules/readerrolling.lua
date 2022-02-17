@@ -921,6 +921,11 @@ function ReaderRolling:onChangeViewMode()
     self.current_header_height = self.view.view_mode == "page" and self.ui.document:getHeaderHeight() or 0
     -- Restore current position when switching page/scroll mode
     if self.xpointer then
+        if self.visible_pages == 2 then
+            -- Switching from 2-pages page mode to scroll mode has crengine switch to 1-page,
+            -- and we need to notice this re-rendering and keep things sane
+            self.ui:handleEvent(Event:new("UpdatePos"))
+        end
         self:_gotoXPointer(self.xpointer)
         -- Ensure a whole screen refresh is always enqueued
         UIManager:setDirty(self.view.dialog, "partial")
@@ -1101,12 +1106,30 @@ function ReaderRolling:updateBatteryState()
     if self.view.view_mode == "page" and self.cre_top_bar_enabled then
         logger.dbg("update battery state")
         local powerd = Device:getPowerDevice()
+        local main_batt_lvl = powerd:getCapacity()
         -- -1 is CR_BATTERY_STATE_CHARGING @ crengine/crengine/include/lvdocview.h
-        local state = powerd:isCharging() and -1 or powerd:getCapacity()
+        local state = powerd:isCharging() and -1 or main_batt_lvl
+        if powerd.device:hasAuxBattery() and powerd:isAuxBatteryConnected() and
+            not powerd:isAuxCharging() then
+            -- The first few reads after connecting to the PowerCover may fail, so default to zero
+            local aux_batt_lvl = powerd:getAuxCapacity()
+            -- If aux_battery not charging, but present -> don't show '[ + ]' in header
+            -- but show the average (as both battery have the same maximum capacity).
+            if G_reader_settings:readSetting("cre_header_battery_percent") ~= 0 then
+                -- if percentage is wanted, show the total capacity of reader plus power-cover
+                state = main_batt_lvl + aux_batt_lvl
+            else
+                -- if icon is wanted, show the total average capacity of reader and power-cover
+                -- (as this is the shows graphically what capacity is left in total)
+                state = math.floor((main_batt_lvl + aux_batt_lvl) / 2)
+            end
+        end
         if state then
             self.ui.document:setBatteryState(state)
         end
+        return state
     end
+    return 0
 end
 
 function ReaderRolling:handleEngineCallback(ev, ...)

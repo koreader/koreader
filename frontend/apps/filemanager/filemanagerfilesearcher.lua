@@ -3,7 +3,6 @@ local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
-local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -177,7 +176,6 @@ function FileSearcher:showSearchResults()
         height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
-        cface = Font:getFace("smallinfofont"),
         _manager = self,
     }
     table.insert(menu_container, self.search_menu)

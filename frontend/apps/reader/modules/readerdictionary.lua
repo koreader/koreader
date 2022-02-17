@@ -947,7 +947,7 @@ end
 
 function ReaderDictionary:showDict(word, results, boxes, link)
     if results and results[1] then
-        logger.dbg("showing quick lookup window", word, results)
+        logger.dbg("showing quick lookup window", #self.dict_window_list+1, ":", word, results)
         self.dict_window = DictQuickLookup:new{
             window_list = self.dict_window_list,
             ui = self.ui,
@@ -962,7 +962,6 @@ function ReaderDictionary:showDict(word, results, boxes, link)
             preferred_dictionaries = self.preferred_dictionaries,
             -- differentiate between dict and wiki
             is_wiki = self.is_wiki,
-            wiki_languages = self.wiki_languages,
             refresh_callback = function()
                 if self.view then
                     -- update info in footer (time, battery, etc)

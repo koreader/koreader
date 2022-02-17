@@ -221,7 +221,6 @@ function ReaderPageMap:onShowPageList()
         is_popout = false,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        cface = Font:getFace("x_smallinfofont"),
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         line_color = require("ffi/blitbuffer").COLOR_WHITE,

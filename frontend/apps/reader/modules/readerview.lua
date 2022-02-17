@@ -37,7 +37,7 @@ local ReaderView = OverlapGroup:extend{
         bbox = nil,
     },
     outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR / 15),
-    -- highlight with "lighten" or "underscore" or "invert"
+    -- highlight with "lighten" or "underscore" or "strikeout" or "invert"
     highlight = {
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
         temp_drawer = "invert",
@@ -164,7 +164,7 @@ function ReaderView:paintTo(bb, x, y)
     end
 
     -- draw page content
-    if self.ui.document.info.has_pages then
+    if self.ui.paging then
         if self.page_scroll then
             self:drawScrollPages(bb, x, y)
         else
@@ -220,15 +220,14 @@ function ReaderView:paintTo(bb, x, y)
     -- Most pages should not require dithering
     self.dialog.dithered = nil
     -- For KOpt, let the user choose.
-    if self.ui.document.info.has_pages then
-        -- Also enforce dithering in PicDocument
-        if self.ui.document.is_pic or self.document.configurable.hw_dithering == 1 then
+    if self.ui.paging then
+        if self.document.hw_dithering then
             self.dialog.dithered = true
         end
     else
         -- Whereas for CRe,
         -- If we're attempting to show a large enough amount of image data, request dithering (without triggering another repaint ;)).
-        local img_count, img_coverage = self.ui.document:getDrawnImagesStatistics()
+        local img_count, img_coverage = self.document:getDrawnImagesStatistics()
         -- With some nil guards because this may not be implemented in every engine ;).
         if img_count and img_count > 0 and img_coverage and img_coverage >= 0.075 then
             self.dialog.dithered = true
@@ -245,15 +244,15 @@ end
 Given coordinates on the screen return position in original page
 ]]--
 function ReaderView:screenToPageTransform(pos)
-    if self.ui.document.info.has_pages then
+    if self.ui.paging then
         if self.page_scroll then
             return self:getScrollPagePosition(pos)
         else
             return self:getSinglePagePosition(pos)
         end
     else
-        pos.page = self.ui.document:getCurrentPage()
-        -- local last_y = self.ui.document:getCurrentPos()
+        pos.page = self.document:getCurrentPage()
+        -- local last_y = self.document:getCurrentPos()
         logger.dbg("document has no pages at", pos)
         return pos
     end
@@ -263,7 +262,7 @@ end
 Given rectangle in original page return rectangle on the screen
 ]]--
 function ReaderView:pageToScreenTransform(page, rect)
-    if self.ui.document.info.has_pages then
+    if self.ui.paging then
         if self.page_scroll then
             return self:getScrollPageRect(page, rect)
         else
@@ -278,7 +277,7 @@ end
 Get page area on screen for a given page number
 --]]
 function ReaderView:getScreenPageArea(page)
-    if self.ui.document.info.has_pages then
+    if self.ui.paging then
         local area = Geom:new{x = 0, y = 0}
         if self.page_scroll then
             for _, state in ipairs(self.page_states) do
@@ -313,7 +312,7 @@ function ReaderView:drawPageSurround(bb, x, y)
         bb:paintRect(x, y, self.dimen.w, self.state.offset.y, self.outer_page_color)
         local bottom_margin = y + self.visible_area.h + self.state.offset.y
         bb:paintRect(x, bottom_margin, self.dimen.w, self.state.offset.y +
-            self.ui.view.footer:getHeight(), self.outer_page_color)
+            self.footer:getHeight(), self.outer_page_color)
     end
     if self.dimen.w > self.visible_area.w then
         bb:paintRect(x, y, self.state.offset.x, self.dimen.h, self.outer_page_color)
@@ -325,7 +324,7 @@ end
 function ReaderView:drawScrollPages(bb, x, y)
     local pos = Geom:new{x = x , y = y}
     for page, state in ipairs(self.page_states) do
-        self.ui.document:drawPage(
+        self.document:drawPage(
             bb,
             pos.x + state.offset.x,
             pos.y + state.offset.y,
@@ -347,7 +346,7 @@ end
 
 function ReaderView:getCurrentPageList()
     local pages = {}
-    if self.ui.document.info.has_pages then
+    if self.ui.paging then
         if self.page_scroll then
             for _, state in ipairs(self.page_states) do
                 table.insert(pages, state.page)
@@ -400,7 +399,7 @@ function ReaderView:drawPageGap(bb, x, y)
 end
 
 function ReaderView:drawSinglePage(bb, x, y)
-    self.ui.document:drawPage(
+    self.document:drawPage(
         bb,
         x + self.state.offset.x,
         y + self.state.offset.y,
@@ -438,7 +437,7 @@ function ReaderView:getSinglePageRect(rect_p)
 end
 
 function ReaderView:drawPageView(bb, x, y)
-    self.ui.document:drawCurrentViewByPage(
+    self.document:drawCurrentViewByPage(
         bb,
         x + self.state.offset.x,
         y + self.state.offset.y,
@@ -447,7 +446,7 @@ function ReaderView:drawPageView(bb, x, y)
 end
 
 function ReaderView:drawScrollView(bb, x, y)
-    self.ui.document:drawCurrentViewByPos(
+    self.document:drawCurrentViewByPos(
         bb,
         x + self.state.offset.x,
         y + self.state.offset.y,
@@ -467,7 +466,7 @@ function ReaderView:drawTempHighlight(bb, x, y)
 end
 
 function ReaderView:drawSavedHighlight(bb, x, y)
-    if self.ui.document.info.has_pages then
+    if self.ui.paging then
         self:drawPageSavedHighlight(bb, x, y)
     else
         self:drawXPointerSavedHighlight(bb, x, y)
@@ -482,7 +481,7 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
             for i = 1, #items do
                 local item = items[i]
                 local pos0, pos1 = item.pos0, item.pos1
-                local boxes = self.ui.document:getPageBoxesFromPositions(page, pos0, pos1)
+                local boxes = self.document:getPageBoxesFromPositions(page, pos0, pos1)
                 if boxes then
                     for _, box in pairs(boxes) do
                         local rect = self:pageToScreenTransform(page, box)
@@ -513,19 +512,19 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                     -- Even in page mode, it's safer to use pos and ui.dimen.h
                     -- than pages' xpointers pos, even if ui.dimen.h is a bit
                     -- larger than pages' heights
-                    cur_view_top = self.ui.document:getCurrentPos()
-                    if self.view_mode == "page" and self.ui.document:getVisiblePageCount() > 1 then
+                    cur_view_top = self.document:getCurrentPos()
+                    if self.view_mode == "page" and self.document:getVisiblePageCount() > 1 then
                         cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
                     else
                         cur_view_bottom = cur_view_top + self.ui.dimen.h
                     end
                 end
-                local spos0 = self.ui.document:getPosFromXPointer(pos0)
-                local spos1 = self.ui.document:getPosFromXPointer(pos1)
+                local spos0 = self.document:getPosFromXPointer(pos0)
+                local spos1 = self.document:getPosFromXPointer(pos1)
                 local start_pos = math.min(spos0, spos1)
                 local end_pos = math.max(spos0, spos1)
                 if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
-                    local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
+                    local boxes = self.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
                     if boxes then
                         for _, box in pairs(boxes) do
                             local rect = self:pageToScreenTransform(page, box)
@@ -542,15 +541,16 @@ end
 
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
-
-    if drawer == "underscore" then
-        self.highlight.line_width = self.highlight.line_width or 2
-        self.highlight.line_color = self.highlight.line_color or Blitbuffer.COLOR_GRAY
-        bb:paintRect(x, y+h-1, w,
-            self.highlight.line_width,
-            self.highlight.line_color)
-    elseif drawer == "lighten" then
+    if drawer == "lighten" then
         bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
+    elseif drawer == "underscore" then
+        bb:paintRect(x, y + h - 1, w, 2, Blitbuffer.COLOR_GRAY)
+    elseif drawer == "strikeout" then
+        local line_y = y + math.floor(h / 2) + 1
+        if self.ui.paging then
+            line_y = line_y + 2
+        end
+        bb:paintRect(x, line_y, w, 2, Blitbuffer.COLOR_BLACK)
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end
@@ -558,9 +558,9 @@ end
 
 function ReaderView:getPageArea(page, zoom, rotation)
     if self.use_bbox then
-        return self.ui.document:getUsedBBoxDimensions(page, zoom, rotation)
+        return self.document:getUsedBBoxDimensions(page, zoom, rotation)
     else
-        return self.ui.document:getPageDimensions(page, zoom, rotation)
+        return self.document:getPageDimensions(page, zoom, rotation)
     end
 end
 
@@ -571,17 +571,17 @@ function ReaderView:recalculate()
     -- Start by resetting the dithering flag early, so it doesn't carry over from the previous page.
     self.dialog.dithered = nil
 
-    if self.ui.document.info.has_pages and self.state.page then
+    if self.ui.paging and self.state.page then
         self.page_area = self:getPageArea(
             self.state.page,
             self.state.zoom,
             self.state.rotation)
         -- reset our size
         self.visible_area:setSizeTo(self.dimen)
-        if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
-            self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
+        if self.footer_visible and not self.footer.settings.reclaim_height then
+            self.visible_area.h = self.visible_area.h - self.footer:getHeight()
         end
-        if self.ui.document.configurable.writing_direction == 0 then
+        if self.document.configurable.writing_direction == 0 then
             -- starts from left of page_area
             self.visible_area.x = self.page_area.x
         else
@@ -608,8 +608,8 @@ function ReaderView:recalculate()
     end
     self.state.offset = Geom:new{x = 0, y = 0}
     if self.dimen.h > self.visible_area.h then
-        if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
-            self.state.offset.y = (self.dimen.h - (self.visible_area.h + self.ui.view.footer:getHeight())) / 2
+        if self.footer_visible and not self.footer.settings.reclaim_height then
+            self.state.offset.y = (self.dimen.h - (self.visible_area.h + self.footer:getHeight())) / 2
         else
             self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
         end
@@ -739,9 +739,9 @@ function ReaderView:onSetFullScreen(full_screen)
 end
 
 function ReaderView:onSetScrollMode(page_scroll)
-    if self.ui.document.info.has_pages and page_scroll
+    if self.ui.paging and page_scroll
             and self.ui.zooming.paged_modes[self.zoom_mode]
-            and self.ui.document.configurable.text_wrap == 0 then
+            and self.document.configurable.text_wrap == 0 then
         UIManager:show(InfoMessage:new{
             text = _([[
 Continuous view (scroll mode) works best with zoom to page width, zoom to content width or zoom to rows.
@@ -753,7 +753,7 @@ In combination with zoom to fit page, page height, content height, content or co
 
     self.page_scroll = page_scroll
     if not page_scroll then
-        self.ui.document.configurable.page_scroll = 0
+        self.document.configurable.page_scroll = 0
     end
     self:recalculate()
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
@@ -771,7 +771,7 @@ function ReaderView:onReadSettings(config)
             rotation_mode = config:readSetting("rotation_mode") -- Doc's
         else
             -- No doc specific rotation, pickup global defaults for the doc type
-            if self.ui.document.info.has_pages then
+            if self.ui.paging then
                 rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or Screen.ORIENTATION_PORTRAIT
             else
                 rotation_mode = G_reader_settings:readSetting("copt_rotation_mode") or Screen.ORIENTATION_PORTRAIT
@@ -863,17 +863,17 @@ end
 
 function ReaderView:onReaderFooterVisibilityChange()
     -- Don't bother ReaderRolling with this nonsense, the footer's height is NOT handled via visible_area there ;)
-    if self.ui.document.info.has_pages and self.state.page then
+    if self.ui.paging and self.state.page then
         -- NOTE: Simply relying on recalculate would be a wee bit too much: it'd reset the in-page offsets,
         --       which would be wrong, and is also not necessary, since the footer is at the bottom of the screen ;).
         --       So, simply mangle visible_area's height ourselves...
-        if not self.ui.view.footer.settings.reclaim_height then
+        if not self.footer.settings.reclaim_height then
             -- NOTE: Yes, this means that toggling reclaim_height requires a page switch (for a proper recalculate).
             --       Thankfully, most of the time, the quirks are barely noticeable ;).
-            if self.ui.view.footer_visible then
-                self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
+            if self.footer_visible then
+                self.visible_area.h = self.visible_area.h - self.footer:getHeight()
             else
-                self.visible_area.h = self.visible_area.h + self.ui.view.footer:getHeight()
+                self.visible_area.h = self.visible_area.h + self.footer:getHeight()
             end
         end
         self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
@@ -886,6 +886,33 @@ function ReaderView:onGammaUpdate(gamma)
         self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
     end
     Notification:notify(T(_("Font gamma set to: %1."), gamma))
+end
+
+-- For ReaderKOptListener
+function ReaderView:onDitheringUpdate()
+    -- Do the device cap checks again, to avoid snafus when sharing configs between devices
+    if Device:hasEinkScreen() then
+        if Device:canHWDither() then
+            if self.document.configurable.hw_dithering then
+                self.document.hw_dithering = self.document.configurable.hw_dithering == 1
+            end
+        elseif Screen.fb_bpp == 8 then
+            if self.document.configurable.sw_dithering then
+                self.document.sw_dithering = self.document.configurable.sw_dithering == 1
+            end
+        end
+    end
+end
+
+-- For KOptOptions
+function ReaderView:onHWDitheringUpdate(toggle)
+    self.document.hw_dithering = toggle
+    Notification:notify(T(_("Hardware dithering set to: %1."), tostring(toggle)))
+end
+
+function ReaderView:onSWDitheringUpdate(toggle)
+    self.document.sw_dithering = toggle
+    Notification:notify(T(_("Software dithering set to: %1."), tostring(toggle)))
 end
 
 function ReaderView:onFontSizeUpdate(font_size)
@@ -908,7 +935,7 @@ end
 function ReaderView:onSetViewMode(new_mode)
     if new_mode ~= self.view_mode then
         self.view_mode = new_mode
-        self.ui.document:setViewMode(new_mode)
+        self.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
         Notification:notify(T( _("View mode set to: %1"), optionsutil:getOptionText("SetViewMode", new_mode)))
     end
@@ -974,6 +1001,7 @@ function ReaderView:onCloseDocument()
 end
 
 function ReaderView:onReaderReady()
+    self.ui.doc_settings:delSetting("docsettings_reset_done")
     self.settings_last_save_tv = UIManager:getTime()
 end
 
@@ -1005,7 +1033,7 @@ function ReaderView:checkAutoSaveSettings()
 end
 
 function ReaderView:isOverlapAllowed()
-    if self.ui.document.info.has_pages then
+    if self.ui.paging then
         return not self.page_scroll
             and (self.ui.paging.zoom_mode ~= "page"
                 or (self.ui.paging.zoom_mode == "page" and self.ui.paging.is_reflowed))

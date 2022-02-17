@@ -434,6 +434,21 @@ common_settings.back_in_reader = {
         genGenericMenuEntry(_("Go to previous read page"), "back_in_reader", "previous_read_page"),
     },
 }
+if Device:hasKeyboard() then
+    common_settings.backspace_as_back = {
+        text = _("Backspace works as back button"),
+        checked_func = function()
+            return G_reader_settings:isTrue("backspace_as_back")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("backspace_as_back")
+            UIManager:show(InfoMessage:new{
+                text = _("This will take effect on next restart."),
+            })
+        end,
+    }
+end
+
 common_settings.opening_page_location_stack = {
         text = _("Add opening page to location history"),
         checked_func = function()
@@ -564,6 +579,8 @@ common_settings.document_end_action = {
 }
 
 common_settings.language = Language:getLangMenuTable()
+
+common_settings.font_ui_fallbacks = require("ui/elements/font_ui_fallbacks")
 
 common_settings.screenshot = {
     text = _("Screenshot folder"),

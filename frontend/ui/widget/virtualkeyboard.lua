@@ -131,8 +131,16 @@ function VirtualKey:init()
         end
     elseif self.label == "↑" then
         self.callback = function() self.keyboard:upLine() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            self.keyboard:scrollUp()
+        end
     elseif self.label == "↓" then
         self.callback = function() self.keyboard:downLine() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            self.keyboard:scrollDown()
+        end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
         self.hold_callback = function()
@@ -472,8 +480,12 @@ function VirtualKeyPopup:onCloseWidget()
 end
 
 function VirtualKeyPopup:onPressKey()
-    self:getFocusItem():handleEvent(Event:new("TapSelect"))
-    return true
+    local item = self:getFocusItem()
+    if item then
+        item:handleEvent(Event:new("TapSelect"))
+        return true
+    end
+    return false
 end
 
 function VirtualKeyPopup:init()
@@ -672,7 +684,7 @@ function VirtualKeyPopup:init()
         self.key_events.PressKey = { {"Press"}, doc = "select key" }
     end
     if Device:hasKeys() then
-        self.key_events.Close = { {"Back"}, doc = "close keyboard" }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close keyboard" }
     end
 
     local offset_x = 2*keyboard_frame.bordersize + keyboard_frame.padding + parent_key.keyboard.key_padding
@@ -802,6 +814,20 @@ function VirtualKeyboard:init()
     if keyboard.wrapInputBox then
         self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func
     end
+    if Device:hasDPad() and Device:hasKeyboard() and Device:isTouchDevice() then
+        -- hadDPad() would have FocusManager handle arrow keys strokes to navigate
+        -- and activate this VirtualKeyboard's touch keys (needed on non-touch Kindle).
+        -- If we have a keyboard, we'd prefer arrow keys (and Enter, and Del) to be
+        -- handled by InputText to navigate the cursor inside the text box, and to
+        -- add newline and delete chars. And if we are a touch device, we don't
+        -- need focus manager to help us navigate keys and fields.
+        -- So, disable all key_event handled by FocusManager
+        self.key_events.FocusLeft = nil
+        self.key_events.FocusRight = nil
+        self.key_events.FocusUp = nil
+        self.key_events.FocusDown = nil
+        self.key_events.PressKey = nil -- added above
+    end
 end
 
 function VirtualKeyboard:getKeyboardLayout()
@@ -836,8 +862,12 @@ function VirtualKeyboard:onClose()
 end
 
 function VirtualKeyboard:onPressKey()
-    self:getFocusItem():handleEvent(Event:new("TapSelect"))
-    return true
+    local item = self:getFocusItem()
+    if item then
+        item:handleEvent(Event:new("TapSelect"))
+        return true
+    end
+    return false
 end
 
 function VirtualKeyboard:_refresh(want_flash, fullscreen)
@@ -1013,8 +1043,16 @@ function VirtualKeyboard:upLine()
     self.inputbox:upLine()
 end
 
+function VirtualKeyboard:scrollUp()
+    self.inputbox:scrollUp()
+end
+
 function VirtualKeyboard:downLine()
     self.inputbox:downLine()
+end
+
+function VirtualKeyboard:scrollDown()
+    self.inputbox:scrollDown()
 end
 
 function VirtualKeyboard:clear()

@@ -88,6 +88,7 @@ for k, v in pairs(page_overlap_styles) do
         checked_func = function()
             return ReaderUI.instance.view.page_overlap_style == k
         end,
+        radio = true,
         callback = function()
             ReaderUI.instance.view.page_overlap_style = k
         end,

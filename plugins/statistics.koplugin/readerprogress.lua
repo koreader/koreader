@@ -1,6 +1,5 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -11,10 +10,10 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -71,6 +70,12 @@ function ReaderProgress:init()
                 range = function() return self.dimen end,
             }
         }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
+                range = function() return self.dimen end,
+            }
+        }
     end
     self.covers_fullscreen = true -- hint for UIManager:_repaint()
     self[1] = FrameContainer:new{
@@ -94,16 +99,15 @@ function ReaderProgress:getTotalStats(stats_day)
 end
 
 function ReaderProgress:getStatusContent(width)
-    local close_button = nil
-    if self.readonly ~= true then
-        close_button = CloseButton:new{ window = self }
-    end
+    local title_bar = TitleBar:new{
+        width = width,
+        bottom_v_padding = 0,
+        close_callback = not self.readonly and function() self:onClose() end,
+        show_parent = self,
+    }
     return VerticalGroup:new{
         align = "left",
-        OverlapGroup:new{
-            dimen = Geom:new{ w = width, h = Size.item.height_default },
-            close_button,
-        },
+        title_bar,
         self:genSingleHeader(_("Last week")),
         self:genSummaryWeek(width),
         self:genSingleHeader(_("Week progress")),
@@ -517,6 +521,14 @@ function ReaderProgress:onSwipe(arg, ges_ev)
         -- so let it propagate
         return false
     end
+end
+
+function ReaderProgress:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
+    return true
 end
 
 function ReaderProgress:onClose()

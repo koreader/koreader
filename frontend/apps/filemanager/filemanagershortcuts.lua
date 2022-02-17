@@ -15,7 +15,7 @@ local FileManagerShortcuts = InputContainer:extend{
     folder_shortcuts = G_reader_settings:readSetting("folder_shortcuts", {}),
 }
 
-function FileManagerShortcuts:updateItemTable()
+function FileManagerShortcuts:updateItemTable(select_callback)
     local item_table = {}
     for _, item in ipairs(self.folder_shortcuts) do
         table.insert(item_table, {
@@ -29,16 +29,20 @@ function FileManagerShortcuts:updateItemTable()
 
                 local folder = item.folder
                 if folder ~= nil and lfs.attributes(folder, "mode") == "directory" then
-                    if self.ui.file_chooser then
-                        self.ui.file_chooser:changeToPath(folder)
-                    else -- called from Reader
-                        local FileManager = require("apps/filemanager/filemanager")
+                    if select_callback then
+                        select_callback(folder)
+                    else
+                        if self.ui.file_chooser then
+                            self.ui.file_chooser:changeToPath(folder)
+                        else -- called from Reader
+                            local FileManager = require("apps/filemanager/filemanager")
 
-                        self.ui:onClose()
-                        if FileManager.instance then
-                            FileManager.instance:reinit(folder)
-                        else
-                            FileManager:showFiles(folder)
+                            self.ui:onClose()
+                            if FileManager.instance then
+                                FileManager.instance:reinit(folder)
+                            else
+                                FileManager:showFiles(folder)
+                            end
                         end
                     end
                 end
@@ -49,12 +53,6 @@ function FileManagerShortcuts:updateItemTable()
     table.sort(item_table, function(l, r)
         return l.text < r.text
     end)
-    table.insert(item_table, 1, {
-        text = _("Add new folder shortcut"),
-        callback = function()
-            self:addNewFolder()
-        end,
-    })
 
     -- try to stay on current page
     local select_number
@@ -77,9 +75,8 @@ function FileManagerShortcuts:addNewFolder()
             local add_folder_input
             local friendly_name = util.basename(path) or _("my folder")
             add_folder_input = InputDialog:new{
-                title = self.title,
+                title = _("Enter friendly name"),
                 input = friendly_name,
-                input_type = "text",
                 description = T(_("Title for selected folder:\n%1"), BD.dirpath(path)),
                 buttons = {
                     {
@@ -166,7 +163,6 @@ function FileManagerShortcuts:editFolderShortcut(item)
     edit_folder_input = InputDialog:new {
         title = _("Edit friendly name"),
         input = item.friendly_name,
-        input_type = "text",
         description = T(_("Rename title for selected folder:\n%1"), BD.dirpath(item.folder)),
         buttons = {
             {
@@ -229,7 +225,7 @@ function FileManagerShortcuts:MenuSetRotationModeHandler(rotation)
     return true
 end
 
-function FileManagerShortcuts:onShowFolderShortcutsDialog()
+function FileManagerShortcuts:onShowFolderShortcutsDialog(select_callback)
     self.fm_bookmark = Menu:new{
         title = _("Folder shortcuts"),
         show_parent = self.ui,
@@ -241,12 +237,14 @@ function FileManagerShortcuts:onShowFolderShortcutsDialog()
         is_popout = false,
         is_borderless = true,
         curr_path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile(),
-        onMenuHold = self.onMenuHold,
+        onMenuHold = not select_callback and self.onMenuHold or nil,
         onSetRotationMode = self.MenuSetRotationModeHandler,
+        title_bar_left_icon = not select_callback and "plus" or nil,
+        onLeftButtonTap = function() self:addNewFolder() end,
         _manager = self,
     }
 
-    self:updateItemTable()
+    self:updateItemTable(select_callback)
     UIManager:show(self.fm_bookmark)
 end
 

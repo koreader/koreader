@@ -20,6 +20,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local RadioMark = require("ui/widget/radiomark")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -74,11 +75,20 @@ function TouchMenuItem:init()
         item_checkable = true
         item_checked = self.item.checked_func()
     end
-    local checkmark_widget = CheckMark:new{
-        checkable = item_checkable,
-        checked = item_checked,
-        enabled = item_enabled,
-    }
+    local checkmark_widget
+    if self.item.radio then
+        checkmark_widget = RadioMark:new{
+            checkable = item_checkable,
+            checked = item_checked,
+            enabled = item_enabled,
+        }
+    else
+        checkmark_widget = CheckMark:new{
+            checkable = item_checkable,
+            checked = item_checked,
+            enabled = item_enabled,
+        }
+    end
 
     local checked_widget = CheckMark:new{ -- for layout, to :getSize()
         checked = true,
@@ -474,7 +484,7 @@ function TouchMenu:init()
         }
     }
 
-    self.key_events.Back = { {"Back"}, doc = "back to upper menu or close touchmenu" }
+    self.key_events.Back = { {Input.group.Back}, doc = "back to upper menu or close touchmenu" }
     if Device:hasFewKeys() then
         self.key_events.Back = { {"Left"}, doc = "back to upper menu or close touchmenu" }
     end
@@ -687,37 +697,16 @@ function TouchMenu:updateItems()
 
     local time_info_txt = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
     local powerd = Device:getPowerDevice()
-    local batt_lvl = powerd:getCapacity()
-    local batt_symbol
-    if powerd:isCharging() then
-        batt_symbol = ""
-    else
-        if batt_lvl >= 100 then
-            batt_symbol = ""
-        elseif batt_lvl >= 90 then
-            batt_symbol = ""
-        elseif batt_lvl >= 80 then
-            batt_symbol = ""
-        elseif batt_lvl >= 70 then
-            batt_symbol = ""
-        elseif batt_lvl >= 60 then
-            batt_symbol = ""
-        elseif batt_lvl >= 50 then
-            batt_symbol = ""
-        elseif batt_lvl >= 40 then
-            batt_symbol = ""
-        elseif batt_lvl >= 30 then
-            batt_symbol = ""
-        elseif batt_lvl >= 20 then
-            batt_symbol = ""
-        elseif batt_lvl >= 10 then
-            batt_symbol = ""
-        else
-            batt_symbol = ""
-        end
-    end
     if Device:hasBattery() then
+        local batt_lvl = powerd:getCapacity()
+        local batt_symbol = powerd:getBatterySymbol(powerd:isCharging(), batt_lvl)
         time_info_txt = BD.wrap(time_info_txt) .. " " .. BD.wrap("⌁") .. BD.wrap(batt_symbol) ..  BD.wrap(batt_lvl .. "%")
+
+        if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+            local aux_batt_lvl = powerd:getAuxCapacity()
+            local aux_batt_symbol = powerd:getBatterySymbol(powerd:isAuxCharging(), aux_batt_lvl)
+            time_info_txt = time_info_txt .. " " .. BD.wrap("+") .. BD.wrap(aux_batt_symbol) ..  BD.wrap(aux_batt_lvl .. "%")
+        end
     end
     self.time_info:setText(time_info_txt)
 
@@ -954,7 +943,12 @@ function TouchMenu:onBack()
 end
 
 function TouchMenu:onPress()
-    self:getFocusItem():handleEvent(Event:new("TapSelect"))
+    local item = self:getFocusItem()
+    if item then
+        item:handleEvent(Event:new("TapSelect"))
+        return true
+    end
+    return false
 end
 
 return TouchMenu

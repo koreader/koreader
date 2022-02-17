@@ -1722,6 +1722,10 @@ It is intended to manage input events and delegate them to dialogs.
 --]]
 function UIManager:run()
     self._running = true
+
+    -- Tell PowerD that we're ready
+    Device:getPowerDevice():readyUI()
+
     self:initLooper()
     -- currently there is no Turbo support for Windows
     -- use our own main loop
@@ -1759,17 +1763,15 @@ end
 
 -- The common operations that should be performed when the device is plugged to a power source.
 function UIManager:_beforeCharging()
-    if G_reader_settings:nilOrTrue("enable_charging_led") then
-        Device:toggleChargingLED(true)
-    end
+    -- Leave the kernel some time to figure it out ;o).
+    self:scheduleIn(1, function() Device:setupChargingLED() end)
     self:broadcastEvent(Event:new("Charging"))
 end
 
 -- The common operations that should be performed when the device is unplugged from a power source.
 function UIManager:_afterNotCharging()
-    if G_reader_settings:nilOrTrue("enable_charging_led") then
-        Device:toggleChargingLED(false)
-    end
+    -- Leave the kernel some time to figure it out ;o).
+    self:scheduleIn(1, function() Device:setupChargingLED() end)
     self:broadcastEvent(Event:new("NotCharging"))
 end
 
@@ -1794,6 +1796,10 @@ Executes all the operations of a resume (i.e., wakeup) request.
 This function usually wakes up the device.
 ]]
 function UIManager:resume()
+    -- MONOTONIC doesn't tick during suspend,
+    -- invalidate the last battery capacity pull time so that we get up to date data immediately.
+    Device:getPowerDevice():invalidateCapacityCache()
+
     if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then

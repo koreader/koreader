@@ -3,7 +3,6 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -19,6 +18,7 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -26,39 +26,6 @@ local Widget = require("ui/widget/widget")
 local Input = Device.input
 local Screen = Device.screen
 local _ = require("gettext")
-
-local CalendarTitle = VerticalGroup:new{
-    calendar_view = nil,
-    title = "",
-    tface = Font:getFace("tfont"),
-    align = "left",
-}
-
-function CalendarTitle:init()
-    self.close_button = CloseButton:new{ window = self }
-    local btn_width = self.close_button:getSize().w
-    self.text_w = TextWidget:new{
-        text = self.title,
-        max_width = self.width - btn_width,
-        face = self.tface,
-    }
-    table.insert(self, OverlapGroup:new{
-        dimen = { w = self.width },
-        self.text_w,
-        self.close_button,
-    })
-    table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
-end
-
-function CalendarTitle:setTitle(title)
-    self.text_w:setText(title)
-end
-
-function CalendarTitle:onClose()
-    self.calendar_view:onClose()
-    return true
-end
-
 
 local HistogramWidget = Widget:new{
     width = nil,
@@ -429,7 +396,7 @@ function CalendarView:init()
 
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close page" },
+            Close = { {Input.group.Back}, doc = "close page" },
             NextMonth = {{Input.group.PgFwd}, doc = "next page"},
             PrevMonth = {{Input.group.PgBack}, doc = "prev page"},
         }
@@ -438,6 +405,12 @@ function CalendarView:init()
         self.ges_events.Swipe = {
             GestureRange:new{
                 ges = "swipe",
+                range = self.dimen,
+            }
+        }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
                 range = self.dimen,
             }
         }
@@ -451,11 +424,7 @@ function CalendarView:init()
     -- Put back the possible 7px lost in rounding into outer_padding
     self.outer_padding = math.floor((self.dimen.w - 7*self.day_width - 6*self.inner_padding) / 2)
 
-    self.inner_dimen = Geom:new{
-        w = self.dimen.w - 2*self.outer_padding,
-        h = self.dimen.h - self.outer_padding, -- no bottom padding
-    }
-    self.content_width = self.inner_dimen.w
+    self.content_width = self.dimen.w - 2*self.outer_padding
 
     local now_ts = os.time()
     if not MIN_MONTH then
@@ -546,22 +515,27 @@ function CalendarView:init()
     }
 
     local footer = BottomContainer:new{
+        -- (BottomContainer does horizontal centering)
         dimen = Geom:new{
-            w = self.inner_dimen.w,
-            h = self.inner_dimen.h,
+            w = self.dimen.w,
+            h = self.dimen.h,
         },
         self.page_info,
     }
 
-    self.title_bar = CalendarTitle:new{
+    self.title_bar = TitleBar:new{
+        fullscreen = self.covers_fullscreen,
+        width = self.dimen.w,
+        align = "left",
         title = self.title,
-        width = self.content_width,
-        height = Size.item.height_default,
-        calendar_view = self,
+        title_h_padding = self.outer_padding, -- have month name aligned with calendar left edge
+        close_callback = function() self:onClose() end,
+        show_parent = self,
     }
 
     -- week days names header
     self.day_names = HorizontalGroup:new{}
+    table.insert(self.day_names, HorizontalSpan:new{ width = self.outer_padding })
     for i = 0, 6 do
         local dayname = TextWidget:new{
             text = self.shortDayOfWeekTranslation[self.weekdays[(self.start_day_of_week-1+i)%7 + 1]],
@@ -582,7 +556,7 @@ function CalendarView:init()
     end
 
     -- At most 6 weeks in a month
-    local available_height = self.inner_dimen.h - self.title_bar:getSize().h
+    local available_height = self.dimen.h - self.title_bar:getHeight()
                             - self.page_info:getSize().h - self.day_names:getSize().h
     self.week_height = math.floor((available_height - 7*self.inner_padding) / 6)
     self.day_border = Size.border.default
@@ -618,15 +592,18 @@ function CalendarView:init()
 
     local content = OverlapGroup:new{
         dimen = Geom:new{
-            w = self.inner_dimen.w,
-            h = self.inner_dimen.h,
+            w = self.dimen.w,
+            h = self.dimen.h,
         },
         allow_mirroring = false,
         VerticalGroup:new{
             align = "left",
             self.title_bar,
             self.day_names,
-            self.main_content,
+            HorizontalGroup:new{
+                HorizontalSpan:new{ width = self.outer_padding },
+                self.main_content,
+            },
         },
         footer,
     }
@@ -634,8 +611,7 @@ function CalendarView:init()
     self[1] = FrameContainer:new{
         width = self.dimen.w,
         height = self.dimen.h,
-        padding = self.outer_padding,
-        padding_bottom = 0,
+        padding = 0,
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -745,7 +721,16 @@ function CalendarView:_populateItems()
                     title = day_text,
                     value_align = "right",
                     kv_pairs = self.reader_statistics:getBooksFromPeriod(day_ts, day_ts + 86400),
-                    callback_return = function() end -- to just have that return button shown
+                    close_callback = function()
+                        -- Refresh calendar in case some day stats were reset for some books
+                        -- (we don't know if some reset were done... so we refresh the current
+                        -- display always - at tickAfterNext so there is no noticable slowness
+                        -- when closing, and the re-painting happening after is not noticable;
+                        -- but if some stat reset were done, this will make a nice noticable
+                        -- repainting showing dynamically reset books disappearing :)
+                        UIManager:tickAfterNext(function() self:_populateItems() end)
+                    end,
+                    callback_return = function() end, -- to just have that return button shown
                 })
             end
         })
@@ -824,6 +809,14 @@ function CalendarView:onSwipe(arg, ges_ev)
         -- so let it propagate
         return false
     end
+end
+
+function CalendarView:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
+    return true
 end
 
 function CalendarView:onClose()

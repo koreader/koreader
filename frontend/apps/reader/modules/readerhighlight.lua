@@ -118,11 +118,11 @@ function ReaderHighlight:init()
                 end,
             }
         end,
-        ["07_translate"] = function(_self)
+        ["07_translate"] = function(_self, page, index)
             return {
                 text = _("Translate"),
                 callback = function()
-                    _self:translate(_self.selected_text)
+                    _self:translate(_self.selected_text, page, index)
                     -- We don't call _self:onClose(), so one can still see
                     -- the highlighted text when moving the translated
                     -- text window, and also if NetworkMgr:promptWifiOn()
@@ -278,6 +278,7 @@ end
 local highlight_style = {
     {_("Lighten"), "lighten"},
     {_("Underline"), "underscore"},
+    {_("Strikeout"), "strikeout"},
     {_("Invert"), "invert"},
 }
 
@@ -298,7 +299,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Highlight style"),
         sub_item_table = {},
     }
-    for _, v in ipairs(highlight_style) do
+    for i, v in ipairs(highlight_style) do
         table.insert(menu_items.highlight_options.sub_item_table, {
             text_func = function()
                 local text = v[1]
@@ -310,6 +311,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             checked_func = function()
                 return self.view.highlight.saved_drawer == v[2]
             end,
+            radio = true,
             callback = function()
                 self.view.highlight.saved_drawer = v[2]
             end,
@@ -317,6 +319,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 G_reader_settings:saveSetting("highlight_drawing_style", v[2])
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
+            separator = i == #highlight_style,
         })
     end
     table.insert(menu_items.highlight_options.sub_item_table, {
@@ -387,6 +390,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             checked_func = function()
                 return G_reader_settings:readSetting("default_highlight_action", "ask") == v[2]
             end,
+            radio = true,
             callback = function()
                 G_reader_settings:saveSetting("default_highlight_action", v[2])
                 self.view.highlight.disabled = v[2] == "nothing"
@@ -723,7 +727,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
                 text = _("…"),
                 callback = function()
                     self.selected_text = self.view.highlight.saved[page][index]
-                    self:onShowHighlightMenu()
+                    self:onShowHighlightMenu(page, index)
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
                 end,
@@ -801,7 +805,7 @@ function ReaderHighlight:removeFromHighlightDialog(idx)
     return button
 end
 
-function ReaderHighlight:onShowHighlightMenu()
+function ReaderHighlight:onShowHighlightMenu(page, index)
     if not self.selected_text then
         return
     end
@@ -810,7 +814,7 @@ function ReaderHighlight:onShowHighlightMenu()
 
     local columns = 2
     for idx, fn_button in ffiUtil.orderedPairs(self._highlight_buttons) do
-        local button = fn_button(self)
+        local button = fn_button(self, page, index)
         if not button.show_in_highlight_dialog_func or button.show_in_highlight_dialog_func() then
             if #highlight_buttons[#highlight_buttons] >= columns then
                 table.insert(highlight_buttons, {})
@@ -1300,9 +1304,9 @@ function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
     end
 end
 
-function ReaderHighlight:translate(selected_text)
+function ReaderHighlight:translate(selected_text, page, index)
     if selected_text.text ~= "" then
-        self:onTranslateText(selected_text.text)
+        self:onTranslateText(selected_text.text, page, index)
     -- or we will do OCR
     elseif self.hold_pos then
         local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text)
@@ -1322,11 +1326,19 @@ dbg:guard(ReaderHighlight, "translate",
             "translate must not be called with nil selected_text!")
     end)
 
-function ReaderHighlight:onTranslateText(text)
-    Translator:showTranslation(text)
+function ReaderHighlight:onTranslateText(text, page, index)
+    Translator:showTranslation(text, false, false, true, page, index)
 end
 
 function ReaderHighlight:onHoldRelease()
+    if self.clear_id then
+        -- Something has requested a clear id and is about to clear
+        -- the highlight: it may be a onHoldClose() that handled
+        -- "hold" and was closed, and can't handle "hold_release":
+        -- ignore this "hold_release" event.
+        return true
+    end
+
     local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
 
     if self.select_mode then -- extended highlighting, ending fragment
@@ -1528,18 +1540,12 @@ function ReaderHighlight:getHighlightBookmarkItem()
         self:highlightFromHoldPos()
     end
     if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
-        local datetime = os.date("%Y-%m-%d %H:%M:%S")
-        local page = self.ui.document.info.has_pages and
-                self.hold_pos.page or self.selected_text.pos0
-        local chapter_name = self.ui.toc:getTocTitleByPage(page)
         return {
-            page = page,
+            page = self.ui.paging and self.hold_pos.page or self.selected_text.pos0,
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
-            datetime = datetime,
             notes = cleanupSelectedText(self.selected_text.text),
             highlighted = true,
-            chapter = chapter_name,
         }
     end
 end
@@ -1553,8 +1559,7 @@ function ReaderHighlight:saveHighlight()
             self.view.highlight.saved[page] = {}
         end
         local datetime = os.date("%Y-%m-%d %H:%M:%S")
-        local pg_or_xp = self.ui.document.info.has_pages and
-                self.hold_pos.page or self.selected_text.pos0
+        local pg_or_xp = self.ui.paging and page or self.selected_text.pos0
         local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
         local hl_item = {
             datetime = datetime,
@@ -1563,46 +1568,21 @@ function ReaderHighlight:saveHighlight()
             pos1 = self.selected_text.pos1,
             pboxes = self.selected_text.pboxes,
             drawer = self.view.highlight.saved_drawer,
-            chapter = chapter_name
+            chapter = chapter_name,
         }
         table.insert(self.view.highlight.saved[page], hl_item)
         local bookmark_item = self:getHighlightBookmarkItem()
         if bookmark_item then
+            bookmark_item.datetime = datetime
+            bookmark_item.chapter = chapter_name
             self.ui.bookmark:addBookmark(bookmark_item)
         end
-        --[[
-        -- disable exporting highlights to My Clippings
-        -- since it's not portable and there is a better Evernote plugin
-        -- to do the same thing
-        if self.selected_text.text ~= "" then
-            self:exportToClippings(page, hl_item)
-        end
-        --]]
         if self.selected_text.pboxes then
             self:exportToDocument(page, hl_item)
         end
         return page, #self.view.highlight.saved[page]
     end
 end
-
---[[
-function ReaderHighlight:exportToClippings(page, item)
-    logger.dbg("export highlight to clippings", item)
-    local clippings = io.open("/mnt/us/documents/My Clippings.txt", "a+")
-    if clippings and item.text then
-        local current_locale = os.setlocale()
-        os.setlocale("C")
-        clippings:write(self.document.file:gsub("(.*/)(.*)", "%2").."\n")
-        clippings:write("- KOReader Highlight Page "..page.." ")
-        clippings:write("| Added on "..os.date("%A, %b %d, %Y %I:%M:%S %p\n\n"))
-        -- My Clippings only holds one line of highlight
-        clippings:write(item["text"]:gsub("\n", " ").."\n")
-        clippings:write("==========\n")
-        clippings:close()
-        os.setlocale(current_locale)
-    end
-end
---]]
 
 function ReaderHighlight:exportToDocument(page, item)
     local setting = G_reader_settings:readSetting("save_document")
@@ -1621,9 +1601,10 @@ If you wish your highlights to be saved in the document, just move it to a writa
     end
 end
 
-function ReaderHighlight:addNote()
+function ReaderHighlight:addNote(text)
     local page, index = self:saveHighlight()
-    self:editHighlight(page, index, true)
+    if text then self:clear() end
+    self:editHighlight(page, index, true, text)
     UIManager:close(self.edit_highlight_dialog)
     self.edit_highlight_dialog = nil
     self.ui:handleEvent(Event:new("AddNote"))
@@ -1679,26 +1660,28 @@ function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
         logger.dbg("delete highlight from document", removed)
         self.ui.document:deleteHighlight(page, removed)
     end
+    UIManager:setDirty(self.dialog, "ui")
 end
 
-function ReaderHighlight:editHighlight(page, i, is_new_note)
+function ReaderHighlight:editHighlight(page, i, is_new_note, text)
     local item = self.view.highlight.saved[page][i]
     self.ui.bookmark:renameBookmark({
         page = self.ui.document.info.has_pages and page or item.pos0,
         datetime = item.datetime,
         pboxes = item.pboxes
-    }, true, is_new_note)
+    }, true, is_new_note, text)
 end
 
 function ReaderHighlight:editHighlightStyle(page, i)
     local item = self.view.highlight.saved[page][i]
+    local save_document = self.ui.paging and G_reader_settings:readSetting("save_document") ~= "disable"
     local radio_buttons = {}
     for _, v in ipairs(highlight_style) do
         table.insert(radio_buttons, {
             {
-            text = v[1],
-            checked = item.drawer == v[2],
-            provider = v[2],
+                text = v[1],
+                checked = item.drawer == v[2],
+                provider = v[2],
             },
         })
     end
@@ -1710,11 +1693,17 @@ function ReaderHighlight:editHighlightStyle(page, i)
         default_provider = self.view.highlight.saved_drawer or
             G_reader_settings:readSetting("highlight_drawing_style", "lighten"),
         callback = function(radio)
+            if save_document then
+                self.ui.document:deleteHighlight(page, item)
+            end
             item.drawer = radio.provider
+            if save_document then
+                self.ui.document:saveHighlight(page, item)
+            end
             UIManager:setDirty(self.dialog, "ui")
             self.ui:handleEvent(Event:new("BookmarkUpdated",
                     self.ui.bookmark:getBookmarkForHighlight({
-                        page = self.ui.paging and item.pos0.page or item.pos0,
+                        page = self.ui.paging and page or item.pos0,
                         datetime = item.datetime,
                     })))
         end,
@@ -1737,24 +1726,16 @@ function ReaderHighlight:extendSelection()
     -- getting starting and ending positions, text and pboxes of extended highlight
     local new_pos0, new_pos1, new_text, new_pboxes
     if self.ui.document.info.has_pages then
-        local is_reflow = self.ui.document.configurable.text_wrap == 1
+        local is_reflow = self.ui.document.configurable.text_wrap
         local new_page = self.hold_pos.page
         -- reflow mode doesn't set page in positions
-        if is_reflow then
-            item1.pos0.page = new_page
-            item1.pos1.page = new_page
-            item2_pos0.page = new_page
-            item2_pos1.page = new_page
-        end
+        item1.pos0.page = new_page
+        item1.pos1.page = new_page
+        item2_pos0.page = new_page
+        item2_pos1.page = new_page
         -- pos0 and pos1 are not in order within highlights, hence sorting all
         local function comparePositions (pos1, pos2)
-            local box1 = self.ui.document:getWordFromPosition(pos1).pbox
-            local box2 = self.ui.document:getWordFromPosition(pos2).pbox
-            if box1.y == box2.y then
-                return box1.x < box2.x
-            else
-                return box1.y < box2.y
-            end
+            return self.ui.document:comparePositions(pos1, pos2) == 1
         end
         local positions = {item1.pos0, item1.pos1, item2_pos0, item2_pos1}
         self.ui.document.configurable.text_wrap = 0 -- native positions
@@ -1764,7 +1745,7 @@ function ReaderHighlight:extendSelection()
         local text_boxes = self.ui.document:getTextFromPositions(new_pos0, new_pos1)
         new_text = text_boxes.text
         new_pboxes = text_boxes.pboxes
-        self.ui.document.configurable.text_wrap = is_reflow and 1 or 0 -- restore reflow
+        self.ui.document.configurable.text_wrap = is_reflow -- restore reflow
         -- draw
         self.view.highlight.temp[new_page] = self.ui.document:getPageBoxesFromPositions(new_page, new_pos0, new_pos1)
     else

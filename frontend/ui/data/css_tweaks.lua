@@ -305,6 +305,14 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
                 ]],
             },
             {
+                id = "line_break_cre_loose";
+                title = _("Ignore publisher line-break restrictions"),
+                description = _([[
+A publisher might use non-breaking spaces and hyphens to avoid line breaking between some words, which is not always necessary and may have been added to make reading easier. This can cause large word spacing on some lines.
+Ignoring them will only use KOReader's own typography rules for line breaking.]]),
+                css = [[* { line-break: -cr-loose; }]],
+            },
+            {
                 id = "ligature_all_no_common_ligature";
                 title = _("Disable common ligatures"),
                 description = _("Disable common ligatures, which are enabled by default in 'best' kerning mode."),
@@ -826,6 +834,7 @@ This only works with footnotes that have specific attributes set by the publishe
                 css = [[
 ol.references > li {
     -cr-hint: footnote-inpage;
+    list-style-position: -cr-outside;
     margin: 0 !important;
 }
 /* hide backlinks */
@@ -840,6 +849,7 @@ ol.references > li > .mw-cite-backlink { display: none; }
                 css = [[
 ol.references > li {
     -cr-hint: footnote-inpage;
+    list-style-position: -cr-outside;
     margin: 0 !important;
     font-size: 0.8rem !important;
 }

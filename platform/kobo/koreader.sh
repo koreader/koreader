@@ -17,31 +17,37 @@ if [ "${SCRIPT_DIR}" != "/tmp" ]; then
 fi
 
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
-IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+# Swap every CPU at once if available
+if [ -d "/sys/devices/system/cpu/cpufreq/policy0" ]; then
+    CPUFREQ_SYSFS_PATH="/sys/devices/system/cpu/cpufreq/policy0"
+else
+    CPUFREQ_SYSFS_PATH="/sys/devices/system/cpu/cpu0/cpufreq"
+fi
+IFS= read -r current_cpufreq_gov <"${CPUFREQ_SYSFS_PATH}/scaling_governor"
 # NOTE: What's available depends on the HW, so, we'll have to take it step by step...
 #       Roughly follow Nickel's behavior (which prefers interactive), and prefer interactive, then ondemand, and finally conservative/dvfs.
 if [ "${current_cpufreq_gov}" != "interactive" ]; then
-    if grep -q "interactive" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+    if grep -q "interactive" "${CPUFREQ_SYSFS_PATH}/scaling_available_governors"; then
         ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
-        echo "interactive" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+        echo "interactive" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
     elif [ "${current_cpufreq_gov}" != "ondemand" ]; then
-        if grep -q "ondemand" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+        if grep -q "ondemand" "${CPUFREQ_SYSFS_PATH}/scaling_available_governors"; then
             # NOTE: This should never really happen: every kernel that supports ondemand already supports interactive ;).
             #       They were both introduced on Mk. 6
             ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
-            echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+            echo "ondemand" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
         elif [ -e "/sys/devices/platform/mxc_dvfs_core.0/enable" ]; then
             # The rest of this block assumes userspace is available...
-            if grep -q "userspace" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+            if grep -q "userspace" "${CPUFREQ_SYSFS_PATH}/scaling_available_governors"; then
                 ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
                 export CPUFREQ_DVFS="true"
 
                 # If we can use conservative, do so, but we'll tweak it a bit to make it somewhat useful given our load patterns...
                 # We unfortunately don't have any better choices on those kernels,
                 # the only other governors available are powersave & performance (c.f., #4114)...
-                if grep -q "conservative" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+                if grep -q "conservative" "${CPUFREQ_SYSFS_PATH}/scaling_available_governors"; then
                     export CPUFREQ_CONSERVATIVE="true"
-                    echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    echo "conservative" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
                     # NOTE: The knobs survive a governor switch, which is why we do this now ;).
                     echo "2" >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
                     echo "50" >"/sys/devices/system/cpu/cpufreq/conservative/freq_step"
@@ -60,7 +66,7 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
                 #       (There's also a bug(?) where that behavior is inverted for the *first* Wi-Fi session after a cold boot...)
                 if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
                     # Wi-Fi is enabled, make sure DVFS is on
-                    echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    echo "userspace" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
                     echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
                 else
                     # Wi-Fi is disabled, make sure DVFS is off
@@ -68,12 +74,12 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
 
                     # Switch to conservative to avoid being stuck at max clock if we can...
                     if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
-                        echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                        echo "conservative" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
                     else
                         # Otherwise, we'll be pegged at max clock...
-                        echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                        echo "userspace" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
                         # The kernel should already be taking care of that...
-                        cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+                        cat "${CPUFREQ_SYSFS_PATH}/scaling_max_freq" >"${CPUFREQ_SYSFS_PATH}/scaling_setspeed"
                     fi
                 fi
             fi
@@ -90,7 +96,15 @@ ko_update_check() {
         # Setup the FBInk daemon
         export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
         rm -f "${FBINK_NAMED_PIPE}"
-        FBINK_PID="$(./fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
+        # We'll want to use REAGL on sunxi, because AUTO is slow, and fast merges are extremely broken outside of REAGL...
+        eval "$(fbink -e | tr ';' '\n' | grep -e isSunxi | tr '\n' ';')"
+        # shellcheck disable=SC2154
+        if [ "${isSunxi}" = "1" ]; then
+            PBAR_WFM="REAGL"
+        else
+            PBAR_WFM="AUTO"
+        fi
+        FBINK_PID="$(./fbink --daemon 1 %KOREADER% -q -y -6 -P 0 -W ${PBAR_WFM})"
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
         FILESIZE="$(stat -c %b "${NEWUPDATE}")"
@@ -245,10 +259,9 @@ fi
 # will also enforce UR... (Only actually meaningful on sunxi).
 if [ "${PLATFORM}" = "b300-ntx" ]; then
     export FBINK_FORCE_ROTA=0
-    # Screen is too fast for GL16 not to look like utter crap.
-    FBINK_WFM="GC16"
-    FBINK_FLASH="-f"
-    # And we also cannot use batched updates for the crash screens, as buffers are private,
+    # On sunxi, non-REAGL waveform modes suffer from weird merging quirks...
+    FBINK_WFM="REAGL"
+    # And we also cannot use batched updates for the crash screen, as buffers are private,
     # so each invocation essentially draws in a different buffer...
     FBINK_BATCH_FLAG=""
     # Same idea for backgroundless...
@@ -260,7 +273,6 @@ if [ "${PLATFORM}" = "b300-ntx" ]; then
     KOBO_TS_INPUT="/dev/input/by-path/platform-0-0010-event"
 else
     FBINK_WFM="GL16"
-    FBINK_FLASH=""
     FBINK_BATCH_FLAG="-b"
     FBINK_BGLESS_FLAG="-O"
     FBINK_OT_PADDING=""
@@ -404,20 +416,20 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         # Start with a big gray screen of death, and our friendly old school crash icon ;)
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039,SC3003,SC2086
-        ./fbink -q ${FBINK_BATCH_FLAG} -c -B GRAY9 -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -W ${FBINK_WFM} ${FBINK_FLASH} -- $'\xf0\x9f\x92\xa3'
+        ./fbink -q ${FBINK_BATCH_FLAG} -c -B GRAY9 -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -W ${FBINK_WFM} -- $'\xf0\x9f\x92\xa3'
         # With a little notice at the top of the screen, on a big gray screen of death ;).
         # shellcheck disable=SC2086
-        ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -y 1 -W ${FBINK_WFM} ${FBINK_FLASH} -- "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -y 1 -W ${FBINK_WFM} -- "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         if [ ${CRASH_COUNT} -eq 1 ]; then
             # Warn that we're waiting on a tap to continue...
             # shellcheck disable=SC2086
-            ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -y 2 -W ${FBINK_WFM} ${FBINK_FLASH} -- "Tap the screen to continue."
+            ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -y 2 -W ${FBINK_WFM} -- "Tap the screen to continue."
         fi
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
         # shellcheck disable=SC2086
-        ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64))${FBINK_OT_PADDING} -W ${FBINK_WFM} ${FBINK_FLASH} -- "${crashLog}"
+        ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64))${FBINK_OT_PADDING} -W ${FBINK_WFM} -- "${crashLog}"
         if [ "${PLATFORM}" != "b300-ntx" ]; then
             # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
             ./fbink -q -f -s
@@ -558,7 +570,7 @@ fi
 
 # Restore original CPUFreq governor if need be...
 if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
-    echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    echo "${ORIG_CPUFREQ_GOV}" >"${CPUFREQ_SYSFS_PATH}/scaling_governor"
 
     # NOTE: Leave DVFS alone, it'll be handled by Nickel if necessary.
 fi

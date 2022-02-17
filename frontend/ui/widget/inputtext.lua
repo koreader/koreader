@@ -237,11 +237,10 @@ if Device:isTouchDevice() or Device:hasDPad() then
                             },
                             {
                                 text = _("Paste"),
+                                enabled = not is_clipboard_empty,
                                 callback = function()
-                                    if not is_clipboard_empty then
-                                        UIManager:close(clipboard_dialog)
-                                        self:addChars(clipboard_value)
-                                    end
+                                    UIManager:close(clipboard_dialog)
+                                    self:addChars(clipboard_value)
                                 end,
                             },
                         },
@@ -402,6 +401,8 @@ function InputText:initTextBox(text, char_added)
         self._password_toggle = FrameContainer:new{
             bordersize = 0,
             padding = self.padding,
+            padding_top = 0,
+            padding_bottom = 0,
             margin = self.margin,
             self._check_button,
         }
@@ -541,30 +542,47 @@ end
 -- is shown. Mostly likely to be in the emulator, but could be Android + BT
 -- keyboard, or a "coder's keyboard" Android input method.
 function InputText:onKeyPress(key)
-    if key["Backspace"] then
-        self:delChar()
-    elseif key["Del"] then
-        self:rightChar()
-        self:delChar()
-    elseif key["Left"] then
-        self:leftChar()
-    elseif key["Right"] then
-        self:rightChar()
-    elseif key["End"] then
-        self:goToEnd()
-    elseif key["Home"] then
-        self:goToHome()
+
+    local handled = true
+
+    if not key["Ctrl"] and not key["Shift"] and not key["Alt"] then
+        if key["Backspace"] then
+            self:delChar()
+        elseif key["Del"] then
+            self:rightChar()
+            self:delChar()
+        elseif key["Left"] then
+            self:leftChar()
+        elseif key["Right"] then
+            self:rightChar()
+        elseif key["Up"] then
+            self:upLine()
+        elseif key["Down"] then
+            self:downLine()
+        elseif key["End"] then
+            self:goToEnd()
+        elseif key["Home"] then
+            self:goToHome()
+        elseif key["Press"] then
+            self:addChars("\n")
+        elseif key["Tab"] then
+            self:addChars("    ")
+        else
+            handled = false
+        end
     elseif key["Ctrl"] and not key["Shift"] and not key["Alt"] then
         if key["U"] then
             self:delToStartOfLine()
         elseif key["H"] then
             self:delChar()
+        else
+            handled = false
         end
     else
-        return false
+        handled = false
     end
 
-    return true
+    return handled
 end
 
 -- Handle text coming directly as text from the Device layer (eg. soft keyboard

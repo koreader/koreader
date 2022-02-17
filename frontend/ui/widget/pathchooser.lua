@@ -1,7 +1,8 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local Device = require("device")
+local Event = require("ui/event")
 local FileChooser = require("ui/widget/filechooser")
-local Font = require("ui/font")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
@@ -17,9 +18,6 @@ local PathChooser = FileChooser:extend{
     is_popout = false,
     covers_fullscreen = true, -- set it to false if you set is_popout = true
     is_borderless = true,
-    -- smaller font to allow displaying our long titles
-    tface = Font:getFace("smalltfont"),
-
     select_directory = true, -- allow selecting directories
     select_file = true,      -- allow selecting files
     show_files = true, -- show files, even if select_files=false
@@ -45,12 +43,22 @@ function PathChooser:init()
         -- Let FileChooser display "Long-press to choose current folder"
         self.show_current_dir_for_hold = true
     end
+    self.title_bar_left_icon = "home"
+    self.onLeftButtonTap = function()
+        self:goHome()
+    end
+    self.onLeftButtonHold = function()
+        UIManager:broadcastEvent(Event:new("ShowFolderShortcutsDialog", function(path) self:changeToPath(path) end))
+    end
     FileChooser.init(self)
 end
 
 function PathChooser:onMenuSelect(item)
     local path = item.path
     if path:sub(-2, -1) == "/." then -- with show_current_dir_for_hold
+        if not Device:isTouchDevice() and self.select_directory then -- let non-touch device can select the folder
+            return self:onMenuHold(item)
+        end
         -- Don't navigate to same directory
         return true
     end
@@ -68,6 +76,9 @@ function PathChooser:onMenuSelect(item)
         return true
     end
     if attr.mode ~= "directory" then
+        if not Device:isTouchDevice() and self.select_file then -- let non-touch device can select the file
+            return self:onMenuHold(item)
+        end
         -- Do nothing if Tap on other than directories
         return true
     end

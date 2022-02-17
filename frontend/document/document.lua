@@ -1,7 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local CacheItem = require("cacheitem")
 local Configurable = require("configurable")
-local Device = require("device")
 local DocCache = require("document/doccache")
 local DrawContext = require("ffi/drawcontext")
 local CanvasContext = require("document/canvascontext")
@@ -76,9 +75,14 @@ function Document:_init()
         date = ""
     }
 
-    -- Should be updated by a call to Document.updateColorRendering(self)
-    -- in subclasses
+    -- Should be updated by a call to Document.updateColorRendering(self) in subclasses
     self.render_color = false
+
+    -- Those may be updated via KOptOptions, or the DitheringUpdate event.
+    -- Whether HW dithering is enabled
+    self.hw_dithering = false
+    -- Whether SW dithering is enabled
+    self.sw_dithering = false
 end
 
 -- override this method to open a document
@@ -413,7 +417,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
     end
 
     if hinting then
-        Device:enableCPUCores(2)
+        CanvasContext:enableCPUCores(2)
     end
     self:preRenderPage()
 
@@ -428,6 +432,9 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
         if not rect then
             logger.warn("aborting, since we do not have a specification for that part")
             -- required part not given, so abort
+            if hinting then
+                CanvasContext:enableCPUCores(1)
+            end
             return
         end
         -- only render required part
@@ -471,7 +478,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
 
     self:postRenderPage()
     if hinting then
-        Device:enableCPUCores(1)
+        CanvasContext:enableCPUCores(1)
     end
     return tile
 end
@@ -493,11 +500,20 @@ Draw page content to blitbuffer.
 --]]
 function Document:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
     local tile = self:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
-    target:blitFrom(tile.bb,
-        x, y,
-        rect.x - tile.excerpt.x,
-        rect.y - tile.excerpt.y,
-        rect.w, rect.h)
+    -- Enable SW dithering if requested (only available in koptoptions)
+    if self.sw_dithering then
+        target:ditherblitFrom(tile.bb,
+            x, y,
+            rect.x - tile.excerpt.x,
+            rect.y - tile.excerpt.y,
+            rect.w, rect.h)
+    else
+        target:blitFrom(tile.bb,
+            x, y,
+            rect.x - tile.excerpt.x,
+            rect.y - tile.excerpt.y,
+            rect.w, rect.h)
+    end
 end
 
 function Document:getDrawnImagesStatistics()

@@ -229,7 +229,7 @@ function ListMenuItem:update()
         self.is_directory = true
         -- nb items on the right, directory name on the left
         local wright = TextWidget:new{
-            text = self.mandatory_func and self.mandatory_func() or self.mandatory,
+            text = self.mandatory_func and self.mandatory_func() or (self.mandatory and self.mandatory or ""),
             face = Font:getFace("infont", _fontSize(14, 18)),
         }
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
@@ -576,7 +576,7 @@ function ListMenuItem:update()
             end
             if bookinfo.unsupported then
                 -- Let's show this fact in place of the anyway empty authors slot
-                authors = T(_("(no book information: %1)"), bookinfo.unsupported)
+                authors = T(_("(no book information: %1)"), _(bookinfo.unsupported))
             end
             -- Build title and authors texts with decreasing font size
             -- till it fits in the space available

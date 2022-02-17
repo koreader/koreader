@@ -41,6 +41,9 @@ local FrameContainer = WidgetContainer:new{
     invert = false,
     allow_mirroring = true,
     _mirroredUI = BD.mirroredUILayout(),
+    focusable = false,
+    focus_border_size = Size.border.window * 2,
+    focus_border_color = Blitbuffer.COLOR_BLACK,
 }
 
 function FrameContainer:getSize()
@@ -57,6 +60,27 @@ function FrameContainer:getSize()
         h = content_size.h + ( self.margin + self.bordersize ) * 2 + self._padding_top + self._padding_bottom
     }
 end
+
+function FrameContainer:onFocus()
+    if not self.focusable then
+        return
+    end
+    self._origin_bordersize = self.bordersize
+    self._origin_border_color = self.color
+    self.bordersize = self.focus_border_size
+    self.color = self.focus_border_color
+    return true
+end
+
+function FrameContainer:onUnfocus()
+    if not self.focusable then
+        return
+    end
+    self.bordersize = self._origin_bordersize
+    self.color = self._origin_border_color
+    return true
+end
+
 
 function FrameContainer:paintTo(bb, x, y)
     local my_size = self:getSize()

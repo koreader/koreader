@@ -49,7 +49,7 @@ local external = require("device/thirdparty"):new{
     dicts = {
         { "Aard2", "Aard2", false, "itkach.aard2", "aard2" },
         { "Alpus", "Alpus", false, "com.ngcomputing.fora.android", "search" },
-        { "ColorDict", "ColorDict", false, "com.socialnmobile.colordict", "colordict" },
+        { "ColorDict", "ColorDict", false, "com.socialnmobile.colordict", "send" },
         { "Eudic", "Eudic", false, "com.eusoft.eudic", "send" },
         { "EudicPlay", "Eudic (Google Play)", false, "com.qianyan.eudic", "send" },
         { "Fora", "Fora Dict", false, "com.ngc.fora", "search" },
@@ -74,7 +74,7 @@ local Device = Generic:new{
     hasDPad = no,
     hasExitOptions = no,
     hasEinkScreen = function() return android.isEink() end,
-    hasColorScreen = function() return not android.isEink() end,
+    hasColorScreen = android.isColorScreen,
     hasFrontlight = android.hasLights,
     hasNaturalLight = android.isWarmthDevice,
     canRestart = no,
@@ -160,9 +160,6 @@ function Device:init()
                     if FileManager.instance then
                         FileManager.instance:reinit(FileManager.instance.path,
                             FileManager.instance.focused_file)
-                        UIManager:setDirty(FileManager.instance.banner, function()
-                            return "ui", FileManager.instance.banner.dimen
-                        end)
                     end
                 end
                 -- to-do: keyboard connected, disconnected

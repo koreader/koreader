@@ -1,7 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -10,15 +9,14 @@ local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local Math = require("optmath")
+local MovableContainer = require("ui/widget/container/movablecontainer")
 local NaturalLight = require("ui/widget/naturallightwidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
-local TextWidget = require("ui/widget/textwidget")
 local TimeVal = require("ui/timeval")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -27,7 +25,6 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local FrontLightWidget = InputContainer:new{
-    title_face = Font:getFace("x_smalltfont"),
     width = nil,
     height = nil,
     -- This should stay active during natural light configuration
@@ -38,7 +35,6 @@ local FrontLightWidget = InputContainer:new{
 
 function FrontLightWidget:init()
     self.medium_font_face = Font:getFace("ffont")
-    self.light_bar = {}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     self.span = math.ceil(self.screen_height * 0.01)
@@ -84,7 +80,7 @@ function FrontLightWidget:init()
     }
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close frontlight" }
+            Close = { {Device.input.group.Back}, doc = "close frontlight" }
         }
     end
     if Device:isTouchDevice() then
@@ -258,7 +254,6 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
                 margin = Size.margin.small,
                 radius = 0,
                 width = math.floor(self.screen_width * 0.2),
-                enabled = not self.nl_configure_open,
                 show_parent = self,
                 callback = function()
                     UIManager:show(NaturalLight:new{fl_widget = self})
@@ -415,38 +410,21 @@ function FrontLightWidget:setFrontLightIntensity(num)
 end
 
 function FrontLightWidget:update()
-    -- header
-    self.light_title = FrameContainer:new{
-        padding = Size.padding.default,
-        margin = Size.margin.title,
-        bordersize = 0,
-        TextWidget:new{
-            text = _("Frontlight"),
-            face = self.title_face,
-            bold = true,
-            width = math.floor(self.screen_width * 0.95),
-        },
+    local title_bar = TitleBar:new{
+        title = _("Frontlight"),
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        bottom_v_padding = 0,
+        close_callback = function() self:onClose() end,
+        show_parent = self,
     }
     local light_level = FrameContainer:new{
         padding = Size.padding.button,
         margin = Size.margin.small,
         bordersize = 0,
-        self:generateProgressGroup(math.floor(self.screen_width * 0.95), math.floor(self.screen_height * 0.2),
+        self:generateProgressGroup(self.width, math.floor(self.screen_height * 0.2),
             self.fl_cur, self.one_step)
-    }
-    local light_line = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
-        }
-    }
-    self.light_bar = OverlapGroup:new{
-        dimen = {
-            w = self.width,
-            h = self.light_title:getSize().h
-        },
-        self.light_title,
-        CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
     self.light_frame = FrameContainer:new{
         radius = Size.radius.window,
@@ -456,16 +434,18 @@ function FrontLightWidget:update()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            self.light_bar,
-            light_line,
+            title_bar,
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = light_line:getSize().w,
+                    w = self.width,
                     h = light_level:getSize().h,
                 },
                 light_level,
             },
         }
+    }
+    self.movable = MovableContainer:new{
+        self.light_frame,
     }
     self[1] = WidgetContainer:new{
         align = "center",
@@ -474,10 +454,7 @@ function FrontLightWidget:update()
             w = self.screen_width,
             h = self.screen_height,
         },
-        FrameContainer:new{
-            bordersize = 0,
-            self.light_frame,
-        }
+        self.movable,
     }
 end
 
@@ -503,28 +480,6 @@ end
 function FrontLightWidget:onClose()
     UIManager:close(self)
     return true
-end
-
--- This is called when natural light configuration is shown
-function FrontLightWidget:naturalLightConfigOpen()
-    -- Remove the close button
-    table.remove(self.light_bar)
-    -- Disable the 'configure' button
-    self.configure_button:disable()
-    self.nl_configure_open = true
-    -- Move to the bottom to make place for the new widget
-    self[1].align="bottom"
-    UIManager:setDirty(self, "ui")
-end
-
-function FrontLightWidget:naturalLightConfigClose()
-    table.insert(self.light_bar,
-                 CloseButton:new{window = self,
-                                 padding_top = Size.margin.title})
-    self.configure_button:enable()
-    self.nl_configure_open = false
-    self[1].align="center"
-    UIManager:setDirty(self, "ui")
 end
 
 function FrontLightWidget:onTapProgress(arg, ges_ev)

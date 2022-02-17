@@ -23,7 +23,6 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -38,81 +37,14 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
-
-local KeyValueTitle = VerticalGroup:new{
-    kv_page = nil,
-    title = "",
-    tface = Font:getFace("tfont"),
-    align = "left",
-    use_top_page_count = false,
-}
-
-function KeyValueTitle:init()
-    self.close_button = CloseButton:new{ window = self }
-    local btn_width = self.close_button:getSize().w
-    -- title and close button
-    table.insert(self, OverlapGroup:new{
-        dimen = { w = self.width },
-        TextWidget:new{
-            text = self.title,
-            max_width = self.width - btn_width,
-            face = self.tface,
-        },
-        self.close_button,
-    })
-    -- page count and separation line
-    self.title_bottom = OverlapGroup:new{
-        dimen = { w = self.width, h = Size.line.thick },
-        LineWidget:new{
-            dimen = Geom:new{ w = self.width, h = Size.line.thick },
-            background = Blitbuffer.COLOR_DARK_GRAY,
-            style = "solid",
-        },
-    }
-    if self.use_top_page_count then
-        self.page_cnt = FrameContainer:new{
-            padding = Size.padding.default,
-            margin = 0,
-            bordersize = 0,
-            background = Blitbuffer.COLOR_WHITE,
-            -- overlap offset x will be updated in setPageCount method
-            overlap_offset = {0, -15},
-            TextWidget:new{
-                text = "",  -- page count
-                fgcolor = Blitbuffer.COLOR_DARK_GRAY,
-                face = Font:getFace("smallffont"),
-            },
-        }
-        table.insert(self.title_bottom, self.page_cnt)
-    end
-    table.insert(self, self.title_bottom)
-    table.insert(self, VerticalSpan:new{ width = Size.span.vertical_large })
-end
-
-function KeyValueTitle:setPageCount(curr, total)
-    if total == 1 then
-        -- remove page count if there is only one page
-        table.remove(self.title_bottom, 2)
-        return
-    end
-    self.page_cnt[1]:setText(curr .. "/" .. total)
-    self.page_cnt.overlap_offset[1] = (self.width - self.page_cnt:getSize().w - 10)
-    self.title_bottom[2] = self.page_cnt
-end
-
-function KeyValueTitle:onClose()
-    self.kv_page:onClose()
-    return true
-end
-
 
 local KeyValueItem = InputContainer:new{
     key = nil,
@@ -129,6 +61,7 @@ local KeyValueItem = InputContainer:new{
         -- "right": only align right if value overflow 1/2 width
         -- "right_always": align value right even when small and
         --                 only key overflows 1/2 width
+    close_callback = nil,
 }
 
 function KeyValueItem:init()
@@ -192,22 +125,8 @@ function KeyValueItem:init()
                 -- so the left of text is aligned with other truncated texts
                 fit_right_align = false
             end
-            -- Allow for displaying the non-truncated text with Hold
-            if Device:isTouchDevice() then
-                self.ges_events.Hold = {
-                    GestureRange:new{
-                        ges = "hold",
-                        range = self.dimen,
-                    }
-                }
-                -- If no tap callback, allow for displaying the non-truncated
-                -- text with Tap too
-                if not self.callback then
-                    self.callback = function()
-                        self:onHold()
-                    end
-                end
-            end
+            -- Allow for displaying the non-truncated text with Tap or Hold if not already used
+            self.is_truncated = true
         else
             -- Both can fit: break the 1/2 widths
             if self.value_align == "right" or self.value_overflow_align == "right_always"
@@ -234,18 +153,25 @@ function KeyValueItem:init()
     if fit_right_align and value_align_right and value_widget:getWidth() < value_w then
         -- Because of truncation at glyph boundaries, value_widget
         -- may be a tad smaller than the specified value_w:
-        -- add some padding to key_w so value is pushed to the screen right border
-        key_w = key_w + ( value_w - value_widget:getWidth() )
+        -- adjust key_w so value is pushed to the screen right border
+        value_w = value_widget:getWidth()
+        key_w = available_width - value_w
     end
     key_widget:setMaxWidth(key_w)
 
     -- For debugging positioning:
     -- value_widget = FrameContainer:new{ padding=0, margin=0, bordersize=1, value_widget }
 
-    if self.callback and Device:isTouchDevice() then
+    if Device:isTouchDevice() then
         self.ges_events.Tap = {
             GestureRange:new{
                 ges = "tap",
+                range = self.dimen,
+            }
+        }
+        self.ges_events.Hold = {
+            GestureRange:new{
+                ges = "hold",
                 range = self.dimen,
             }
         }
@@ -283,7 +209,7 @@ end
 function KeyValueItem:onTap()
     if self.callback then
         if G_reader_settings:isFalse("flash_ui") then
-            self.callback()
+            self.callback(self.kv_page, self)
         else
             -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
@@ -304,17 +230,35 @@ function KeyValueItem:onTap()
 
             -- Callback
             --
-            self.callback()
+            self.callback(self.kv_page, self)
 
             UIManager:forceRePaint()
+        end
+    else
+        -- If no tap callback, allow for displaying the non-truncated
+        -- text with Tap too
+        if self.is_truncated then
+            self:onShowKeyValue()
         end
     end
     return true
 end
 
 function KeyValueItem:onHold()
+    if self.hold_callback then
+        self.hold_callback(self.kv_page, self)
+    else
+        if self.is_truncated then
+            self:onShowKeyValue()
+        end
+    end
+    return true
+end
+
+function KeyValueItem:onShowKeyValue()
     local textviewer = TextViewer:new{
         title = self.key,
+        title_multilines = true, -- in case it's key/title that is too long
         text = self.value,
         text_face = Font:getFace("x_smallinfofont", self.font_size),
         lang = self.value_lang,
@@ -333,7 +277,6 @@ local KeyValuePage = InputContainer:new{
     values_lang = nil,
     -- index for the first item to show
     show_page = 1,
-    use_top_page_count = false,
     -- aligment of value when key or value overflows its reserved width (for
     -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
     value_overflow_align = "left",
@@ -351,7 +294,7 @@ function KeyValuePage:init()
 
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close page" },
+            Close = { {Input.group.Back}, doc = "close page" },
             NextPage = {{Input.group.PgFwd}, doc = "next page"},
             PrevPage = {{Input.group.PgBack}, doc = "prev page"},
         }
@@ -363,12 +306,18 @@ function KeyValuePage:init()
                 range = self.dimen,
             }
         }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
+                range = self.dimen,
+            }
+        }
     end
 
     -- return button
     --- @todo: alternative icon if BD.mirroredUILayout()
     self.page_return_arrow = self.page_return_arrow or Button:new{
-        icon = "back.top",
+        icon = BD.mirroredUILayout() and "back.top.rtl" or "back.top",
         callback = function() self:onReturn() end,
         bordersize = 0,
         show_parent = self,
@@ -420,6 +369,9 @@ function KeyValuePage:init()
             width = Size.span.horizontal_small,
         },
         self.page_return_arrow,
+        HorizontalSpan:new{
+            width = self.dimen.w - self.page_return_arrow:getSize().w - Size.span.horizontal_small,
+        },
     }
 
     self.page_info_left_chev:hide()
@@ -462,14 +414,10 @@ function KeyValuePage:init()
     }
 
     local padding = Size.padding.large
-    self.inner_dimen = Geom:new{
-        w = self.dimen.w - 2 * padding,
-        h = self.dimen.h - padding, -- no bottom padding
-    }
-    self.item_width = self.inner_dimen.w
+    self.item_width = self.dimen.w - 2 * padding
 
     local footer = BottomContainer:new{
-        dimen = self.inner_dimen:copy(),
+        dimen = self.dimen:copy(),
         self.page_info,
     }
     if self.single_page then
@@ -477,28 +425,24 @@ function KeyValuePage:init()
     end
 
     local page_return = BottomContainer:new{
-        dimen = self.inner_dimen:copy(),
-        WidgetContainer:new{
-            dimen = Geom:new{
-                w = self.inner_dimen.w,
-                h = self.return_button:getSize().h,
-            },
-            self.return_button,
-        }
+        dimen = self.dimen:copy(),
+        self.return_button,
     }
 
-    -- setup title bar
-    self.title_bar = KeyValueTitle:new{
+    self.title_bar = TitleBar:new{
         title = self.title,
-        width = self.item_width,
-        height = Size.item.height_default,
-        use_top_page_count = self.use_top_page_count,
-        kv_page = self,
+        fullscreen = self.covers_fullscreen,
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        bottom_line_color = Blitbuffer.COLOR_DARK_GRAY,
+        bottom_line_h_padding = padding,
+        close_callback = function() self:onClose() end,
     }
 
     -- setup main content
-    local available_height = self.inner_dimen.h
-                         - self.title_bar:getSize().h
+    local available_height = self.dimen.h
+                         - self.title_bar:getHeight()
                          - Size.span.vertical_large -- for above page_info (as title_bar adds one itself)
                          - (self.single_page and 0 or self.page_info:getSize().h)
                          - 2*Size.line.thick
@@ -514,7 +458,8 @@ function KeyValuePage:init()
         G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
     self.item_height = math.floor(available_height / self.items_per_page)
     -- Put half of the pixels lost by floor'ing between title and content
-    local span_height = math.floor((available_height - (self.items_per_page * (self.item_height))) / 2)
+    local content_height = self.items_per_page * self.item_height
+    local span_height = math.floor((available_height - content_height) / 2)
 
     -- Font size is not configurable: we can get a good one from the following
     local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -525,29 +470,32 @@ function KeyValuePage:init()
     self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
     self.main_content = VerticalGroup:new{}
 
-    -- set textviewer height to let our title fully visible
+    -- set textviewer height to let our title fully visible (but hide the bottom line)
     self.textviewer_width = self.item_width
-    self.textviewer_height = self.dimen.h - 2*self.title_bar:getSize().h
+    self.textviewer_height = self.dimen.h - 2 * (self.title_bar:getHeight() - Size.padding.default - Size.line.thick)
 
     self:_populateItems()
 
     local content = OverlapGroup:new{
         allow_mirroring = false,
-        dimen = self.inner_dimen:copy(),
+        dimen = self.dimen:copy(),
         VerticalGroup:new{
             align = "left",
             self.title_bar,
             VerticalSpan:new{ width = span_height },
-            self.main_content,
+            HorizontalGroup:new{
+                HorizontalSpan:new{ width = padding },
+                self.main_content,
+            }
         },
         page_return,
         footer,
     }
     -- assemble page
     self[1] = FrameContainer:new{
+        width = self.dimen.w,
         height = self.dimen.h,
-        padding = padding,
-        padding_bottom = 0,
+        padding = 0,
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
@@ -592,7 +540,8 @@ function KeyValuePage:_populateItems()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
     for idx = 1, self.items_per_page do
-        local entry = self.kv_pairs[idx_offset + idx]
+        local kv_pairs_idx = idx_offset + idx
+        local entry = self.kv_pairs[kv_pairs_idx]
         if entry == nil then break end
 
         if type(entry) == "table" then
@@ -604,11 +553,13 @@ function KeyValuePage:_populateItems()
                 value = entry[2],
                 value_lang = self.values_lang,
                 callback = entry.callback,
-                callback_back = entry.callback_back,
+                hold_callback = entry.hold_callback,
                 textviewer_width = self.textviewer_width,
                 textviewer_height = self.textviewer_height,
                 value_overflow_align = self.value_overflow_align,
                 value_align = self.value_align,
+                kv_pairs_idx = kv_pairs_idx,
+                kv_page = self,
                 show_parent = self,
             })
             if entry.separator then
@@ -670,6 +621,13 @@ function KeyValuePage:_populateItems()
     end)
 end
 
+function KeyValuePage:removeKeyValueItem(kv_item)
+    if kv_item.kv_pairs_idx then
+        table.remove(self.kv_pairs, kv_item.kv_pairs_idx)
+        self:_populateItems()
+    end
+end
+
 function KeyValuePage:onNextPage()
     self:nextPage()
     return true
@@ -703,8 +661,19 @@ function KeyValuePage:onSwipe(arg, ges_ev)
     end
 end
 
+function KeyValuePage:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
+    return true
+end
+
 function KeyValuePage:onClose()
     UIManager:close(self)
+    if self.close_callback then
+        self.close_callback()
+    end
     return true
 end
 

@@ -6,22 +6,17 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
-local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local LineWidget = require("ui/widget/linewidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager = require("ui/uimanager")
@@ -56,7 +51,6 @@ local ImageViewer = InputContainer:new{
     -- A caption can be toggled with tap on title_text (so, it needs with_title_bar=true):
     caption = nil,
     caption_visible = true, -- caption visible by default
-    caption_tap_area = nil,
     -- Start with buttons hidden (tap on screen will toggle their visibility)
     buttons_visible = false,
 
@@ -65,11 +59,6 @@ local ImageViewer = InputContainer:new{
     scale_factor = 0, -- start with image scaled for best fit
     rotated = false,
 
-    title_face = Font:getFace("x_smalltfont"),
-    title_padding = Size.padding.default,
-    title_margin = Size.margin.title,
-    caption_face = Font:getFace("xx_smallinfofont"),
-    caption_padding = Size.padding.large,
     image_padding = Size.margin.small,
     button_padding = Size.padding.default,
 
@@ -92,7 +81,7 @@ local ImageViewer = InputContainer:new{
 function ImageViewer:init()
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close viewer" },
+            Close = { {Device.input.group.Back}, doc = "close viewer" },
             ZoomIn = { {Device.input.group.PgBack}, doc = "Zoom In" },
             ZoomOut = { {Device.input.group.PgFwd}, doc = "Zoom out" },
         }
@@ -126,6 +115,8 @@ function ImageViewer:init()
                     scale = {diagonal - Screen:scaleBySize(200), diagonal}, rate = 1.0,
                 }
             },
+            -- Allow closing with any multiswipe
+            MultiSwipe = { GestureRange:new{ ges = "multiswipe", range = range } },
         }
     end
     if self.fullscreen then
@@ -151,7 +142,6 @@ function ImageViewer:init()
     if self._scale_to_fit == nil then -- initialize our toggle
         self._scale_to_fit = self.scale_factor == 0
     end
-    local orig_dimen = Geom:new{}
     self.align = "center"
     self.region = Geom:new{
         x = 0, y = 0,
@@ -166,7 +156,7 @@ function ImageViewer:init()
         self.width = Screen:getWidth() - Screen:scaleBySize(40)
     end
 
-    -- Init the buttons no matter what
+    -- Build all the widgets we may have to show
     local buttons = {
         {
             {
@@ -214,170 +204,156 @@ function ImageViewer:init()
         self.button_table,
     }
 
-    if self.buttons_visible then
-        self.button_table_size = self.button_table:getSize().h
-    else
-        self.button_table_size = 0
+    if self.with_title_bar then
+        -- (We don't provide fullscreen=true so to use the non-fullscreen smaller font size)
+        if self.caption then
+            -- Toggling caption will have us swap these two title bars
+            self.title_bar = TitleBar:new{ -- when caption hidden
+                width = self.width,
+                align = "left",
+                title = self.title_text,
+                title_multilines = true,
+                with_bottom_line = true,
+                left_icon = "triangle",
+                left_icon_rotation_angle = BD.mirroredUILayout() and 90 or 270,
+                left_icon_tap_callback = function()
+                    self.caption_visible = not self.caption_visible
+                    self:update()
+                end,
+                close_callback = function() self:onClose() end,
+                show_parent = self,
+            }
+            self.captioned_title_bar = TitleBar:new{ -- when caption shown
+                width = self.width,
+                align = "left",
+                title = self.title_text,
+                title_multilines = true,
+                subtitle = self.caption,
+                subtitle_multilines = true,
+                subtitle_fullwidth = true,
+                with_bottom_line = true,
+                left_icon = "triangle",
+                left_icon_rotation_angle = 180,
+                left_icon_tap_callback = function()
+                    self.caption_visible = not self.caption_visible
+                    self:update()
+                end,
+                close_callback = function() self:onClose() end,
+                show_parent = self,
+            }
+        else
+            self.title_bar = TitleBar:new{
+                width = self.width,
+                align = "left",
+                title = self.title_text,
+                title_multilines = true,
+                with_bottom_line = true,
+                close_callback = function() self:onClose() end,
+                show_parent = self,
+            }
+        end
     end
 
-    -- height available to our image
-    self.img_container_h = self.height - self.button_table_size
-
-    -- Init the title bar and its components no matter what
-    -- Toggler (white arrow) for caption, on the left of title
-    local ctoggler_text
-    if self.caption_visible then
-        ctoggler_text = "▽ " -- white arrow (nicer than smaller black arrow ▼)
-    else
-        ctoggler_text = "▷ " -- white arrow (nicer than smaller black arrow ►)
-    end
-    self.ctoggler_tw = TextWidget:new{
-        text = ctoggler_text,
-        face = self.title_face,
-    }
-    -- paddings chosen to align nicely with titlew
-    self.ctoggler = FrameContainer:new{
-        bordersize = 0,
-        padding = self.title_padding,
-        padding_top = self.title_padding + Size.padding.small,
-        padding_right = 0,
-        self.ctoggler_tw,
-    }
-    if self.caption then
-        self.ctoggler_width = self.ctoggler:getSize().w
-    else
-        self.ctoggler_width = 0
-    end
-    self.closeb = CloseButton:new{ window = self, padding_top = Size.padding.tiny, }
-    self.title_tbw = TextBoxWidget:new{
-        text = self.title_text,
-        face = self.title_face,
-        -- bold = true, -- we're already using a bold font
-        width = self.width - 2*self.title_padding - 2*self.title_margin - self.closeb:getSize().w - self.ctoggler_width,
-    }
-    local title_tbw_padding_bottom = self.title_padding + Size.padding.small
-    if self.caption and self.caption_visible then
-        title_tbw_padding_bottom = 0 -- save room between title and caption
-    end
-    self.titlew = FrameContainer:new{
-        padding = self.title_padding,
-        padding_top = self.title_padding + Size.padding.small,
-        padding_bottom = title_tbw_padding_bottom,
-        padding_left = self.caption and self.ctoggler_width or self.title_padding,
-        margin = self.title_margin,
-        bordersize = 0,
-        self.title_tbw,
-    }
-    if self.caption then
-        self.caption_tap_area = self.titlew
-    end
-    self.title_bar = OverlapGroup:new{
-        dimen = {
-            w = self.width,
-            h = self.titlew:getSize().h
-        },
-        self.titlew,
-        self.closeb
-    }
-    if self.caption then
-        table.insert(self.title_bar, 1, self.ctoggler)
-    end
-    -- Init the caption no matter what
-    self.caption_tbw = TextBoxWidget:new{
-        text = self.caption or _("N/A"),
-        face = self.caption_face,
-        width = self.width - 2*self.title_padding - 2*self.title_margin - 2*self.caption_padding,
-    }
-    local captionw = FrameContainer:new{
-        padding = self.caption_padding,
-        padding_top = 0, -- don't waste vertical room for bigger image
-        padding_bottom = 0,
-        margin = self.title_margin,
-        bordersize = 0,
-        self.caption_tbw,
-    }
-    self.captioned_title_bar = VerticalGroup:new{
-        align = "left",
-        self.title_bar,
-        captionw
-    }
-
-    if self.caption and self.caption_visible then
-        self.full_title_bar = self.captioned_title_bar
-    else
-        self.full_title_bar = self.title_bar
-    end
-    self.title_sep = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
+    if self._images_list then
+        -- progress bar
+        local percent = 1
+        if self._images_list and self._images_list_nb > 1 then
+            percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
+        end
+        self.progress_bar = ProgressWidget:new{
+            width = self.width - 2*self.button_padding,
+            height = Screen:scaleBySize(5),
+            percentage = percent,
+            margin_h = 0,
+            margin_v = 0,
+            radius = 0,
+            ticks = nil,
+            last = nil,
         }
-    }
-    -- adjust height available to our image
-    if self.with_title_bar then
-        self.img_container_h = self.img_container_h - self.full_title_bar:getSize().h - self.title_sep:getSize().h
+        self.progress_container = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = self.progress_bar:getSize().h + Size.padding.small,
+            },
+            self.progress_bar
+        }
     end
 
-    -- Init the progress bar no matter what
-    -- progress bar
-    local percent = 1
-    if self._images_list and self._images_list_nb > 1 then
-        percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
-    end
-    self.progress_bar = ProgressWidget:new{
-        width = self.width - 2*self.button_padding,
-        height = Screen:scaleBySize(5),
-        percentage = percent,
-        margin_h = 0,
-        margin_v = 0,
-        radius = 0,
-        ticks = nil,
-        last = nil,
-    }
-    self.progress_container = CenterContainer:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = self.progress_bar:getSize().h + Size.padding.small,
-        },
-        self.progress_bar
-    }
-
-    if self._images_list then
-        self.img_container_h = self.img_container_h - self.progress_container:getSize().h
-    end
-
-    -- Instantiate self._image_wg & self.image_container
-    self:_new_image_wg()
-
-    local frame_elements = VerticalGroup:new{ align = "left" }
-    if self.with_title_bar then
-        table.insert(frame_elements, self.full_title_bar)
-        table.insert(frame_elements, self.title_sep)
-    end
-    table.insert(frame_elements, self.image_container)
-    if self._images_list then
-        table.insert(frame_elements, self.progress_container)
-    end
-    if self.buttons_visible then
-        table.insert(frame_elements, self.button_container)
-    end
+    -- Container for the above elements, that we will reset and refill
+    self.frame_elements = VerticalGroup:new{ align = "left" }
 
     self.main_frame = FrameContainer:new{
         radius = not self.fullscreen and 8 or nil,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
-        frame_elements,
+        self.frame_elements,
     }
     self[1] = WidgetContainer:new{
         align = self.align,
         dimen = self.region,
-        FrameContainer:new{
-            bordersize = 0,
-            padding = Size.padding.default,
-            self.main_frame,
-        }
+        self.main_frame,
     }
+    self:update()
+end
+
+function ImageViewer:update()
+    -- Free our ImageWidget, which is the only thing we'll replace (we reuse
+    -- all the other text widgets and containers)
+    self:_clean_image_wg()
+
+    -- Update window geometry (fullscreen can be toggled, but without any title
+    -- and buttons, which allow us to not have to update their width)
+    local orig_dimen = self.main_frame.dimen
+    if self.fullscreen then
+        self.height = Screen:getHeight()
+        self.width = Screen:getWidth()
+    else
+        self.height = Screen:getHeight() - Screen:scaleBySize(40)
+        self.width = Screen:getWidth() - Screen:scaleBySize(40)
+    end
+
+    -- Remove elements (not freeing them) from frame_elements
+    while table.remove(self.frame_elements) do end
+    self.frame_elements:resetLayout()
+
+    -- And put back those that we should show
+    -- Title bar
+    if self.with_title_bar then
+        if self.caption and self.caption_visible then
+            table.insert(self.frame_elements, self.captioned_title_bar)
+        else
+            table.insert(self.frame_elements, self.title_bar)
+        end
+    end
+    -- Image container (we'll insert it once all others are added and we know the height remaining)
+    local image_container_idx = #self.frame_elements + 1
+    -- Progress bar
+    if self._images_list then
+        local percent = 1
+        if self._images_list_nb > 1 then
+            percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
+        end
+        self.progress_bar:setPercentage(percent)
+        table.insert(self.frame_elements, self.progress_container)
+    end
+    -- Bottom buttons
+    if self.buttons_visible then
+        local scale_btn = self.button_table:getButtonById("scale")
+        scale_btn:setText(self._scale_to_fit and _("Original size") or _("Scale"), scale_btn.width)
+        local rotate_btn = self.button_table:getButtonById("rotate")
+        rotate_btn:setText(self.rotated and _("No rotation") or _("Rotate"), rotate_btn.width)
+        table.insert(self.frame_elements, self.button_container)
+    end
+    -- Get the available height and update the image widget itself
+    self.img_container_h = self.height - self.frame_elements:getSize().h
+    self:_new_image_wg()
+    -- Insert image widget in our vertical group
+    table.insert(self.frame_elements, image_container_idx, self.image_container)
+    self.frame_elements:resetLayout()
+
+    self.main_frame.radius = not self.fullscreen and 8 or nil
+
     -- NOTE: We use UI instead of partial, because we do NOT want to end up using a REAGL waveform...
     -- NOTE: Disabling dithering here makes for a perfect test-case of how well it works:
     --       page turns will show color quantization artefacts (i.e., banding) like crazy,
@@ -446,95 +422,6 @@ function ImageViewer:_new_image_wg()
     }
 end
 
-function ImageViewer:update()
-    -- Free our ImageWidget, which is the only thing we'll replace (e.g., leave the TextBoxWidgets alone).
-    self:_clean_image_wg()
-
-    -- Update window geometry
-    local orig_dimen = self.main_frame.dimen
-    if self.fullscreen then
-        self.height = Screen:getHeight()
-        self.width = Screen:getWidth()
-    else
-        self.height = Screen:getHeight() - Screen:scaleBySize(40)
-        self.width = Screen:getWidth() - Screen:scaleBySize(40)
-    end
-
-    -- Update Buttons
-    if self.buttons_visible then
-        local scale_btn = self.button_table:getButtonById("scale")
-        scale_btn:setText(self._scale_to_fit and _("Original size") or _("Scale"), scale_btn.width)
-        local rotate_btn = self.button_table:getButtonById("rotate")
-        rotate_btn:setText(self.rotated and _("No rotation") or _("Rotate"), rotate_btn.width)
-
-        self.button_table_size = self.button_table:getSize().h
-    else
-        self.button_table_size = 0
-    end
-
-    -- height available to our image
-    self.img_container_h = self.height - self.button_table_size
-
-    -- Update the title bar
-    if self.with_title_bar then
-        self.ctoggler_tw:setText(self.caption_visible and "▽ " or "▷ ")
-
-        -- Padding is dynamic...
-        local title_tbw_padding_bottom = self.title_padding + Size.padding.small
-        if self.caption and self.caption_visible then
-            title_tbw_padding_bottom = 0
-        end
-        self.titlew.padding_bottom = title_tbw_padding_bottom
-        self.title_bar.dimen.h = self.titlew:getSize().h
-
-        if self.caption and self.caption_visible then
-            self.full_title_bar = self.captioned_title_bar
-        else
-            self.full_title_bar = self.title_bar
-        end
-
-        self.img_container_h = self.img_container_h - self.full_title_bar:getSize().h - self.title_sep:getSize().h
-    end
-
-    -- Update the progress bar
-    if self._images_list then
-        local percent = 1
-        if self._images_list_nb > 1 then
-            percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
-        end
-
-        self.progress_bar:setPercentage(percent)
-
-        self.img_container_h = self.img_container_h - self.progress_container:getSize().h
-    end
-
-    -- Update the image widget itself
-    self:_new_image_wg()
-
-    -- Update the final layout
-    local frame_elements = VerticalGroup:new{ align = "left" }
-    if self.with_title_bar then
-        table.insert(frame_elements, self.full_title_bar)
-        table.insert(frame_elements, self.title_sep)
-    end
-    table.insert(frame_elements, self.image_container)
-    if self._images_list then
-        table.insert(frame_elements, self.progress_container)
-    end
-    if self.buttons_visible then
-        table.insert(frame_elements, self.button_container)
-    end
-
-    self.main_frame.radius = not self.fullscreen and 8 or nil
-    self.main_frame[1] = frame_elements
-
-    self.dithered = true
-    UIManager:setDirty(self, function()
-        local update_region = self.main_frame.dimen:combine(orig_dimen)
-        return "ui", update_region, true
-    end)
-end
-
 function ImageViewer:onShow()
     self.dithered = true
     UIManager:setDirty(self, function()
@@ -573,10 +460,13 @@ function ImageViewer:onTap(_, ges)
             return self:onSaveImageView()
         end
     end
-    if self.with_title_bar and self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
-        self.caption_visible = not self.caption_visible
-        self:update()
-        return true
+    if self.with_title_bar then
+        -- Ignore tap in title/caption (button and caption toggler are managed by TitleBar itself),
+        -- the user is most probably trying to toggle caption, but failed hitting the toggle: don't
+        -- have this toggle bottom buttons.
+        if ges.pos.y < self.frame_elements[1]:getSize().h then
+            return true
+        end
     end
     if self._images_list then
         -- If it's a list of image (e.g. animated gifs), tap left/right 1/3 of screen to navigate
@@ -658,6 +548,13 @@ function ImageViewer:onSwipe(_, ges)
     elseif direction == "southwest" then
         self:panBy(sq_distance, -sq_distance)
     end
+    return true
+end
+
+function ImageViewer:onMultiSwipe(_, ges)
+    -- As swipe south to close is only enabled when scaled to fit, but not
+    -- when we are zoomed in/out, allow any multiswipe to close.
+    self:onClose()
     return true
 end
 
@@ -809,18 +706,16 @@ function ImageViewer:onCloseWidget()
     -- Those, on the other hand, are always initialized, but may not actually be in our widget tree right now,
     -- depending on what we needed to show, so they might not get sent a CloseWidget event.
     -- They (and their FFI/C resources) would eventually get released by the GC, but let's be pedantic ;).
-    if not self.with_title_bar then
-        self.captioned_title_bar:free()
+    if self.with_title_bar then
+        self.title_bar:free()
+        if self.caption then
+            self.captioned_title_bar:free()
+        end
     end
-    if not self.caption then
-        self.ctoggler:free()
-    end
-    if not self._images_list then
+    if self._images_list then
         self.progress_container:free()
     end
-    if not self.buttons_visible then
-        self.button_container:free()
-    end
+    self.button_container:free()
 
     -- NOTE: Assume there's no image beneath us, so, no dithering request
     UIManager:setDirty(nil, function()

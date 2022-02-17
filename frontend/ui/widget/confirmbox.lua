@@ -73,7 +73,7 @@ function ConfirmBox:init()
         end
         if Device:hasKeys() then
             self.key_events = {
-                Close = { {"Back"}, doc = "cancel" }
+                Close = { {Device.input.group.Back}, doc = "cancel" }
             }
         end
     end

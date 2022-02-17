@@ -2,18 +2,15 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
-local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local TextWidget = require("ui/widget/textwidget")
+local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -21,9 +18,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local SpinWidget = InputContainer:new{
+local SpinWidget = FocusManager:new{
     title_text = "",
-    title_face = Font:getFace("x_smalltfont"),
     info_text = nil,
     width = nil,
     width_factor = nil, -- number between 0 and 1, factor to the smallest of screen width and height
@@ -68,9 +64,8 @@ function SpinWidget:init()
         self.width = math.floor(math.min(self.screen_width, self.screen_height) * self.width_factor)
     end
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {"Back"}, doc = "close spin widget" }
-        }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close spin widget" }
+        self.key_events.Press = { {"Press"}, doc = "press button" }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -91,6 +86,7 @@ function SpinWidget:init()
 end
 
 function SpinWidget:update(numberpicker_value, numberpicker_value_index)
+    self.layout = {}
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
         value = numberpicker_value or self.value,
@@ -106,26 +102,20 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
             self:update(value, value_index)
         end,
     }
+    self:mergeLayoutInVertical(value_widget)
     local value_group = HorizontalGroup:new{
         align = "center",
         value_widget,
     }
 
-    local value_title = FrameContainer:new{
-        padding = Size.padding.default,
-        margin = Size.margin.title,
-        bordersize = 0,
-        TextWidget:new{
-            text = self.title_text,
-            max_width = self.width - 2 * (Size.padding.default + Size.margin.title),
-            face = self.title_face,
-        },
-    }
-    local value_line = LineWidget:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = Size.line.thick,
-        }
+    local title_bar = TitleBar:new{
+        width = self.width,
+        align = "left",
+        with_bottom_line = true,
+        title = self.title_text,
+        title_shrink_font_to_fit = true,
+        info_text = self.info_text,
+        show_parent = self,
     }
 
     local buttons = {}
@@ -202,29 +192,17 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
     })
 
     local ok_cancel_buttons = ButtonTable:new{
-        width = self.width - 2*Size.padding.default,
+        width = self.width - 2 * Size.padding.default,
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
+        auto_focus_first_button = false,
     }
-
+    self:mergeLayoutInVertical(ok_cancel_buttons)
     local vgroup = VerticalGroup:new{
         align = "left",
-        value_title,
-        value_line,
+        title_bar,
     }
-    if self.info_text then
-        table.insert(vgroup, FrameContainer:new{
-            padding = Size.padding.default,
-            margin = Size.margin.small,
-            bordersize = 0,
-            TextBoxWidget:new{
-                text = self.info_text,
-                face = Font:getFace("x_smallinfofont"),
-                width = math.floor(self.width * 0.9),
-            }
-        })
-    end
     table.insert(vgroup, CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
@@ -258,6 +236,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         },
         self.movable,
     }
+    self:focusTopLeftWidget()
     UIManager:setDirty(self, function()
         return "ui", self.spin_frame.dimen
     end)
@@ -299,6 +278,10 @@ function SpinWidget:onClose()
         self.close_callback()
     end
     return true
+end
+
+function SpinWidget:onPress()
+    return self:sendTapEventToFocusedWidget()
 end
 
 return SpinWidget

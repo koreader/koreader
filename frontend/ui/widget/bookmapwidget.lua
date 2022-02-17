@@ -538,7 +538,7 @@ function BookMapWidget:init()
 
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "close page" },
+            Close = { {Input.group.Back}, doc = "close page" },
             ScrollRowUp = {{"Up"}, doc = "scroll up"},
             ScrollRowDown = {{"Down"}, doc = "scrol down"},
             ScrollPageUp = {{Input.group.PgBack}, doc = "prev page"},
@@ -597,10 +597,13 @@ function BookMapWidget:init()
     self.title_bar = TitleBar:new{
         fullscreen = true,
         title = self.title,
-        left_icon = "notice-info",
+        left_icon = "info",
         left_icon_tap_callback = function() self:showHelp() end,
+        left_icon_hold_callback = function()
+            self:toggleDefaultSettings() -- toggle between user settings and default view
+        end,
         close_callback = function() self:onClose() end,
-        hold_close_callback = function() self:onClose(true) end,
+        close_hold_callback = function() self:onClose(true) end,
         show_parent = self,
     }
     self.title_bar_h = self.title_bar:getHeight()
@@ -1003,7 +1006,7 @@ end
 
 function BookMapWidget:showHelp()
     UIManager:show(InfoMessage:new{
-        text = [[
+        text = _([[
 Book map displays an overview of the book content.
 
 If statistics are enabled, black bars are shown for already read pages (gray for pages read in the current reading session). Their heights vary with the time spent reading the page.
@@ -1022,7 +1025,8 @@ Swipe along the bottom screen edge to change the width of page slots.
 Swipe or pan vertically on content to scroll.
 Any multiswipe will close the book map.
 
-On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.]],
+On a newly opened book, the book map will start in grid mode showing all chapter levels, fitting on a single screen, to give the best initial overview of the book's content.
+Long-press on ⓘ to switch between current and initial views.]]),
     })
 end
 
@@ -1036,6 +1040,8 @@ function BookMapWidget:onClose(close_all_parents)
             -- The last one of these (which has no launcher attribute)
             -- will do the cleanup below.
             self.launcher:onClose(true)
+        else
+            UIManager:setDirty(self.launcher, "ui")
         end
     else
         -- Remove all thumbnails generated for a different target size than
@@ -1141,6 +1147,24 @@ function BookMapWidget:saveSettings(reset)
     self.ui.doc_settings:saveSetting("book_map_flat", self.flat_map)
     self.ui.doc_settings:saveSetting("book_map_toc_depth", self.toc_depth)
     self.ui.doc_settings:saveSetting("book_map_pages_per_row", self.pages_per_row)
+end
+
+function BookMapWidget:toggleDefaultSettings()
+    if not self.flat_map and self.toc_depth == self.max_toc_depth
+            and self.pages_per_row == self.fit_pages_per_row then
+        -- Still in default/initial view: restore previous settings (if any)
+        self.flat_map = self.ui.doc_settings:readSetting("book_map_previous_flat")
+        self.toc_depth = self.ui.doc_settings:readSetting("book_map_previous_toc_depth")
+        self.pages_per_row = self.ui.doc_settings:readSetting("book_map_previous_pages_per_row")
+        self:saveSettings()
+    else
+        -- Save previous settings and switch to defaults
+        self.ui.doc_settings:saveSetting("book_map_previous_flat", self.flat_map)
+        self.ui.doc_settings:saveSetting("book_map_previous_toc_depth", self.toc_depth)
+        self.ui.doc_settings:saveSetting("book_map_previous_pages_per_row", self.pages_per_row)
+        self:saveSettings(true)
+    end
+    self:update()
 end
 
 function BookMapWidget:updateTocDepth(depth, flat)

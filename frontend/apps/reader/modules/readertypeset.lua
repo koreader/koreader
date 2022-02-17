@@ -66,7 +66,7 @@ function ReaderTypeset:onReadSettings(config)
     if config:has("copt_block_rendering_mode") then
         self.block_rendering_mode = config:readSetting("copt_block_rendering_mode")
     else
-        if config:has("last_xpointer") then
+        if config:has("last_xpointer") and not config:has("docsettings_reset_done") then
             -- We have a last_xpointer: this book was previously opened
             self.block_rendering_mode = 0
         else

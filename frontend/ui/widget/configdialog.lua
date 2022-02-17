@@ -52,24 +52,22 @@ function OptionTextItem:init()
     }
     self.dimen = self[1]:getSize()
     -- we need this table per-instance, so we declare it here
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapSelect = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                },
-                doc = "Select Option Item",
+    self.ges_events = {
+        TapSelect = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
             },
-            HoldSelect = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = self.dimen,
-                },
-                doc = "Hold Option Item",
+            doc = "Select Option Item",
+        },
+        HoldSelect = {
+            GestureRange:new{
+                ges = "hold",
+                range = self.dimen,
             },
-        }
-    end
+            doc = "Hold Option Item",
+        },
+    }
 end
 
 function OptionTextItem:onFocus()
@@ -128,25 +126,23 @@ function OptionIconItem:init()
     }
     self.dimen = self[1]:getSize()
     -- we need this table per-instance, so we declare it here
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapSelect = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                },
-                doc = "Select Option Item",
+    self.ges_events = {
+        TapSelect = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
             },
-            HoldSelect = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = self.dimen,
-                },
-                doc = "Hold Option Item",
+            doc = "Select Option Item",
+        },
+        HoldSelect = {
+            GestureRange:new{
+                ges = "hold",
+                range = self.dimen,
             },
+            doc = "Hold Option Item",
+        },
 
-        }
-    end
+    }
 end
 
 function OptionIconItem:onFocus()
@@ -674,8 +670,21 @@ function ConfigOption:_itemGroupToLayoutLine(option_items_group)
     local j = self.config.panel_index
     for i, v in ipairs(option_items_group) do
         if v.name then
-            layout_line[j] = v
-            j = j + 1
+            if v.layout and v.disableFocusManagement then -- it is a FocusManager
+                -- merge child layout to one row layout
+                -- currently child widgets are all one row
+                -- need improved if two or more rows widget existed
+                for _, row in ipairs(v.layout) do
+                    for _, widget in ipairs(row) do
+                        layout_line[j] = widget
+                        j = j + 1
+                    end
+                end
+                v:disableFocusManagement()
+            else
+                layout_line[j] = v
+                j = j + 1
+            end
         end
     end
     return layout_line
@@ -849,31 +858,29 @@ function ConfigDialog:init()
     ------------------------------------------
     -- start to set up input event callback --
     ------------------------------------------
-    if Device:isTouchDevice() then
-        self.ges_events.TapCloseMenu = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                }
+    self.ges_events.TapCloseMenu = {
+        GestureRange:new{
+            ges = "tap",
+            range = Geom:new{
+                x = 0, y = 0,
+                w = Screen:getWidth(),
+                h = Screen:getHeight(),
             }
         }
-        self.ges_events.SwipeCloseMenu = {
-            GestureRange:new{
-                ges = "swipe",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
-                }
+    }
+    self.ges_events.SwipeCloseMenu = {
+        GestureRange:new{
+            ges = "swipe",
+            range = Geom:new{
+                x = 0, y = 0,
+                w = Screen:getWidth(),
+                h = Screen:getHeight(),
             }
         }
-    end
+    }
     if Device:hasKeys() then
         -- set up keyboard events
-        local close_keys = Device:hasFewKeys() and { "Back", "Left" } or "Back"
+        local close_keys = Device:hasFewKeys() and { "Back", "Left" } or Device.input.group.Back
         self.key_events.Close = { { close_keys }, doc = "close config menu" }
     end
     if Device:hasDPad() then
@@ -1457,8 +1464,7 @@ function ConfigDialog:onClose()
 end
 
 function ConfigDialog:onSelect()
-    self:getFocusItem():handleEvent(Event:new("TapSelect"))
-    return true
+    return self:sendTapEventToFocusedWidget()
 end
 
 return ConfigDialog

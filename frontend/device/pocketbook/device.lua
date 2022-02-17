@@ -34,6 +34,7 @@ local PocketBook = Generic:new{
     canPowerOff = yes,
     needsScreenRefreshAfterResume = no,
     home_dir = "/mnt/ext1",
+    canAssociateFileExtensions = yes,
 
     -- all devices that have warmth lights use inkview api
     hasNaturalLightApi = yes,
@@ -101,7 +102,7 @@ function PocketBook:init()
     local raw_input = self.raw_input
     local touch_rotation = raw_input and raw_input.touch_rotation or 0
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new {
+    self.screen = require("ffi/framebuffer_pocketbook"):new {
         device = self,
         debug = logger.dbg,
         wf_level = G_reader_settings:readSetting("wf_level") or 0,
@@ -286,18 +287,6 @@ function PocketBook:setDateTime(year, month, day, hour, min, sec)
     end
 end
 
--- Predicate, so no self
-function PocketBook.canAssociateFileExtensions()
-    local f = io.open(ext_path, "r")
-    if not f then return true end
-    local l = f:read("*line")
-    f:close()
-    if l and not l:match("^#koreader") then
-        return false
-    end
-    return true
-end
-
 function PocketBook:associateFileExtensions(assoc)
     -- First load the system-wide table, from which we'll snoop file types and icons
     local info = {}
@@ -342,6 +331,7 @@ end
 
 function PocketBook:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
+        inkview.WiFiPower(1)
         if inkview.NetConnect(nil) ~= C.NET_OK then
             logger.info('NetConnect failed')
         end
@@ -358,7 +348,7 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:isWifiOn()
-        return band(inkview.QueryNetwork(), C.CONNECTED) ~= 0
+        return band(inkview.QueryNetwork(), C.NET_CONNECTED) ~= 0
     end
 end
 
@@ -392,7 +382,7 @@ local PocketBook515 = PocketBook:new{
     hasFewKeys = yes,
 }
 
--- PocketBook 606 (606)
+-- PocketBook Basic 4 (606)
 local PocketBook606 = PocketBook:new{
     model = "PB606",
     display_dpi = 212,
@@ -449,6 +439,16 @@ local PocketBook616 = PocketBook:new{
     isTouchDevice = no,
     hasDPad = yes,
     hasFewKeys = yes,
+}
+
+-- PocketBook Basic Lux 3 (617)
+local PocketBook617 = PocketBook:new{
+    model = "PBBLux3",
+    display_dpi = 212,
+    isTouchDevice = no,
+    hasDPad = yes,
+    hasFewKeys = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Touch (622)
@@ -587,6 +587,12 @@ local PocketBook741 = PocketBook:new{
     usingForcedRotation = landscape_ccw,
 }
 
+
+function PocketBook741._fb_init(fb, finfo, vinfo)
+    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
+    vinfo.bits_per_pixel = 24
+end
+
 -- PocketBook Color Lux (801)
 local PocketBookColorLux = PocketBook:new{
     model = "PBColorLux",
@@ -648,6 +654,8 @@ elseif codename == "PB615" or codename == "PB615W" or
 elseif codename == "PB616" or codename == "PB616W" or
     codename == "PocketBook 616" or codename == "PocketBook 616W" then
     return PocketBook616
+elseif codename == "PB617" or codename == "PocketBook 617" then
+    return PocketBook617
 elseif codename == "PocketBook 622" then
     return PocketBook622
 elseif codename == "PocketBook 623" then

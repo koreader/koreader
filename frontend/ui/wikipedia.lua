@@ -956,6 +956,8 @@ body {
 }
 ol.references {
     list-style-type: inherit;
+    /* Allow hiding these pages as their content is available as footnotes */
+    -cr-hint: non-linear;
 }
 
 /* Show a box around image thumbnails */

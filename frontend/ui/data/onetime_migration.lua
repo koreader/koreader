@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210925
+local CURRENT_MIGRATION_DATE = 20220205
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -317,6 +317,53 @@ if last_migration_date < 20210925 then
     logger.info("Performing one-time migration for 20210925")
     G_reader_settings:delSetting("frontlight_auto_warmth")
     G_reader_settings:delSetting("frontlight_max_warmth_hour")
+end
+
+-- OPDS, add new server, https://github.com/koreader/koreader/pull/8606
+if last_migration_date < 20220116 then
+    logger.info("Performing one-time migration for 20220116")
+
+    local opds_servers = G_reader_settings:readSetting("opds_servers")
+    if opds_servers then
+        -- Check if the user hadn't already added it
+        local found = false
+        local gutenberg_id
+        for i = #opds_servers, 1, -1 do
+            local server = opds_servers[i]
+
+            if server.url == "https://standardebooks.org/opds" then
+                found = true
+            elseif server.url == "https://m.gutenberg.org/ebooks.opds/?format=opds" then
+                gutenberg_id = i
+            end
+        end
+
+        if not found then
+            local std_ebooks = {
+                title = "Standard Ebooks",
+                url = "https://standardebooks.org/opds",
+            }
+
+            -- Append it at the same position as on stock installs, if possible
+            if gutenberg_id then
+                table.insert(opds_servers, gutenberg_id + 1, std_ebooks)
+            else
+                table.insert(opds_servers, std_ebooks)
+            end
+            G_reader_settings:saveSetting("opds_servers", opds_servers)
+        end
+    end
+end
+
+-- Disable the jump marker on the Libra 2, to avoid the worst of epdc race issues...
+-- c.f., https://github.com/koreader/koreader/issues/8414
+if last_migration_date < 20220205 then
+    logger.info("Performing one-time migration for 20220205")
+
+    local Device = require("device")
+    if Device:isKobo() and Device.model == "Kobo_io" then
+        G_reader_settings:makeFalse("followed_link_marker")
+    end
 end
 
 -- We're done, store the current migration date

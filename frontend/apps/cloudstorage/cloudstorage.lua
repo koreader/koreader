@@ -16,9 +16,10 @@ local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local T = require("ffi/util").template
 local _ = require("gettext")
+local N_ = _.ngettext
 local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local CloudStorage = Menu:extend{
     cloud_servers = {
@@ -34,7 +35,6 @@ local CloudStorage = Menu:extend{
     is_popout = false,
     is_borderless = true,
     title = _("Cloud storage"),
-    has_extra_button = true,
 }
 
 local server_types = {
@@ -55,8 +55,8 @@ function CloudStorage:init()
     end
     self.width = Screen:getWidth()
     self.height = Screen:getHeight()
-    self.extra_button_icon = "plus"
-    self.onExtraButtonTap = function() -- add new cloud storage
+    self.title_bar_left_icon = "plus"
+    self.onLeftButtonTap = function() -- add new cloud storage
         self:selectCloudType()
     end
     Menu.init(self)
@@ -161,12 +161,12 @@ function CloudStorage:openCloudServer(url)
     if tbl then
         self:switchItemTable(url, tbl)
         if self.type == "dropbox" then
-            self.onExtraButtonTap = function()
+            self.onLeftButtonTap = function()
                 self:showPlusMenu(url)
             end
         else
-            self:setTitleBarIconAndText("home")
-            self.onExtraButtonTap = function()
+            self:setTitleBarLeftIcon("home")
+            self.onLeftButtonTap = function()
                 self:init()
             end
         end
@@ -436,11 +436,11 @@ function CloudStorage:synchronizeCloud(item)
             local text
             if downloaded_files == 0 and failed_files == 0 then
                 text = _("No files to download from Dropbox.")
-            elseif downloaded_files > 0 and failed_files == 0 then
-                text = T(_("Successfully downloaded %1 files from Dropbox to local storage."), downloaded_files)
             else
-                text = T(_("Successfully downloaded %1 files from Dropbox to local storage.\nFailed to download %2 files."),
-                    downloaded_files, failed_files)
+                text = T(N_("Successfully downloaded 1 file from Dropbox to local storage.", "Successfully downloaded %1 files from Dropbox to local storage.", downloaded_files), downloaded_files)
+                if failed_files > 0 then
+                    text = text .. "\n" .. T(N_("Failed to download 1 file.", "Failed to download %1 files.", failed_files), failed_files)
+                end
             end
             UIManager:show(InfoMessage:new{
                 text = text,

@@ -206,7 +206,7 @@ function FootnoteWidget:init()
     end
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "cancel" },
+            Close = { {Device.input.group.Back}, doc = "cancel" },
             Follow = { {"Press"}, doc = "follow link" },
         }
     end
