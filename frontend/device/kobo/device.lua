@@ -327,6 +327,7 @@ local KoboEuropa = Kobo:new{
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
+    canStandby = yes,
 }
 
 -- Kobo Sage
@@ -725,6 +726,37 @@ end
 
 function Kobo:getUnexpectedWakeup() return unexpected_wakeup_count end
 
+local function writeToSys(val, file)
+    local f = io.open(file, "we")
+    if not f then
+        logger.info("Cannot open " .. file)
+        return
+    end
+    local re, err_msg, err_code = f:write(val .. "\n")
+    if not re then
+        logger.err("Error writing to value to file: ", val, file, err_msg, err_code)
+    end
+    f:close()
+    return re
+end
+
+-- put device into standby, touchscreen is enabled
+function Kobo:standby(time)
+    -- just for wakup, dummy function
+    local function dummy() end
+
+    if time then
+        self.wakeup_mgr:addTask(time, dummy)
+    end
+
+    local re = writeToSys("standby", "/sys/power/state")
+    logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", re)
+
+    if time then
+        self.wakeup_mgr:removeTask(nil, nil, dummy)
+    end
+end
+
 function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
     local UIManager = require("ui/uimanager")
@@ -765,6 +797,9 @@ function Kobo:suspend()
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
+    re = writeToSys("1", "/sys/power/state-extended")
+    logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", re)
+--[[
     f = io.open("/sys/power/state-extended", "we")
     if not f then
         logger.err("Cannot open /sys/power/state-extended for writing!")
@@ -776,7 +811,7 @@ function Kobo:suspend()
     if not re then
         logger.err('write error: ', err_msg, err_code)
     end
-
+]]
     util.sleep(2)
     logger.info("Kobo suspend: waited for 2s because of reasons...")
 
@@ -804,6 +839,9 @@ function Kobo:suspend()
     --]]
 
     logger.info("Kobo suspend: asking for a suspend to RAM . . .")
+    re = writeToSys("0", "/sys/power/state")
+    logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
+--[[
     f = io.open("/sys/power/state", "we")
     if not f then
         -- reset state-extend back to 0 since we are giving up
@@ -825,6 +863,7 @@ function Kobo:suspend()
         logger.err('write error: ', err_msg, err_code)
     end
     f:close()
+]]
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
     -- gloriously failed at this point...
     -- We can safely assume that just from a non-zero return code, without
@@ -869,6 +908,10 @@ function Kobo:resume()
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
+
+    local re = writeToSys("0", "/sys/power/state-extended")
+    logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", re)
+--[[
     local f = io.open("/sys/power/state-extended", "we")
     if not f then
         logger.err("cannot open /sys/power/state-extended for writing!")
@@ -880,12 +923,13 @@ function Kobo:resume()
     if not re then
         logger.err('write error: ', err_msg, err_code)
     end
+]]
 
     -- HACK: wait a bit (0.1 sec) for the kernel to catch up
     util.usleep(100000)
     -- cf. #1862, I can reliably break IR touch input on resume...
     -- cf. also #1943 for the rationale behind applying this workaorund in every case...
-    f = io.open("/sys/devices/virtual/input/input1/neocmd", "we")
+    local f = io.open("/sys/devices/virtual/input/input1/neocmd", "we")
     if f ~= nil then
         f:write("a\n")
         f:close()
