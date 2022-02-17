@@ -38,7 +38,7 @@ local AutoSuspend = WidgetContainer:new{
 }
 
 function AutoSuspend:_enabledStandby()
-    return (Device:canStandby() or Device:isEmulator()) and self.auto_standby_timeout_seconds > 0
+    return Device:canStandby() and self.auto_standby_timeout_seconds > 0
 end
 
 function AutoSuspend:_enabled()
@@ -150,33 +150,37 @@ function AutoSuspend:onInputEvent()
     self:reschedule_standby()
 end
 
+function AutoSuspend:unschedule_standby()
+    UIManager:unschedule(AutoSuspend.allowStandby)
+end
+
 function AutoSuspend:reschedule_standby(standby_timeout)
     if not Device:canStandby() then return end
     standby_timeout = standby_timeout or self.auto_standby_timeout_seconds
-    UIManager:unschedule(AutoSuspend.allowStandby)
+    self:unschedule_standby()
     if standby_timeout < 0 then
         return
     end
 
     self:preventStandby()
-    print("xxx schedule autoStandby", standby_timeout)
+    logger.dbg("Autosuspend: schedule autoStandby", standby_timeout) -- xxx
     UIManager:scheduleIn(standby_timeout, self.allowStandby, self)
 end
 
 function AutoSuspend:preventStandby()
-    logger.dbg("xxxxxx preventStandby", tostring(self.is_standby_scheduled))
+--    logger.dbg("AutoSuspend: xxx preventStandby", tostring(self.is_standby_scheduled))
     if self.is_standby_scheduled ~= false then
         self.is_standby_scheduled = false
-        logger.dbg("xxxxxx preventStandby")
+--        logger.dbg("xxxxxx preventStandby")
         UIManager:preventStandby()
     end
 end
 
 function AutoSuspend:allowStandby()
-    logger.dbg("xxxxxx allowStandby", tostring(self.is_standby_scheduled), TimeVal:now():tonumber())
+--    logger.dbg("AutoSuspend: xxx allowStandby", tostring(self.is_standby_scheduled), TimeVal:now():tonumber())
     if not self.is_standby_scheduled then
         self.is_standby_scheduled = true
-        logger.dbg("xxxxxx allowStandby")
+--        logger.dbg("xxxxxx allowStandby")
         UIManager:allowStandby()
         -- This is necessary for wakeup from standby, as the deadline for receiving input events
         -- is calculated from the time to the next scheduled function.
@@ -185,18 +189,21 @@ function AutoSuspend:allowStandby()
     end
 end
 
-function AutoSuspend:onSuspend()
+function AutoSuspend:onSuspend(caller)
     logger.dbg("AutoSuspend: onSuspend")
+    if self == caller then return end -- nop when called before standby
     -- We do not want auto suspend procedure to waste battery during suspend. So let's unschedule it
     -- when suspending and restart it after resume.
     self:_unschedule()
+    self:unschedule_standby()
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:addTask(self.autoshutdown_timeout_seconds, UIManager.poweroff_action)
     end
 end
 
-function AutoSuspend:onResume()
+function AutoSuspend:onResume(caller)
     logger.dbg("AutoSuspend: onResume")
+    if self == caller then return end -- nop when called after standby
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
@@ -222,11 +229,8 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
     local InfoMessage = require("ui/widget/infomessage")
     local DateTimeWidget = require("ui/widget/datetimewidget")
 
-    print("xxx", setting)
-
     local setting_val = self[setting] > 0 and self[setting] or default_value
 
-    print("xxxxx", setting_val)
     local left_val
     if time_scale == 2 then
         left_val = math.floor(setting_val / (24*3600))
@@ -371,7 +375,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             end,
         }
     end
-    if Device:canStandby() or Device:isEmulator() then
+    if Device:canStandby() then
         menu_items.autostandby = {
             sorting_hint = "device",
             checked_func = function()
@@ -395,10 +399,22 @@ function AutoSuspend:addToMainMenu(menu_items)
                 self:setSuspendShutdownTimes(touchmenu_instance,
                     _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
-                    {5, 15*60}, 0)
+                    {3, 15*60}, 0)
             end,
         }
     end
+end
+
+local function writeToSys(val, file)
+    local f = io.open(file, "w")
+    if not f then
+        return
+    end
+    local re, err_msg, err_code = f:write(val .. "\n")
+    if not re then
+        logger.err("AutoSuspend: write error: ", file, val, err_msg, err_code)
+    end
+    f:close()
 end
 
 -- koreader is merely waiting for user input right now.
@@ -414,29 +430,31 @@ function AutoSuspend:onAllowStandby()
         return
     end
 
-    if Device:isKobo() and Device:canStandby() or Device:isEmulator() then
+    if Device:isKobo() and Device:canStandby() then
         local wake_in = math.huge
-        if #UIManager._task_queue > 1 then
-            -- The next scheduled function should be the deadline_guard (ca. 1sec)
-            -- Wake before the second next scheduled function executes (e.g. footer update, suspend ...)
-            wake_in = math.floor(math.min(wake_in,
-                UIManager._task_queue[2].time:tonumber() - TimeVal:now():tonumber()))
+        -- The next scheduled function should be the deadline_guard (ca. 1sec)
+        -- Wake before the second next scheduled function executes (e.g. footer update, suspend ...)
+        local scheduler_times = UIManager:getNextTaskTimes(2)
+        if #scheduler_times == 2 then
+            wake_in = math.floor(scheduler_times[2]:tonumber())
         end
 
-        print("xxx2", wake_in)
+        print("Autosuspend: wake in", wake_in) -- xxx
 
-        os.execute("echo 0 > /sys/class/rtc/rtc0/wakealarm")
-        os.execute("echo +" .. wake_in .. " > /sys/class/rtc/rtc0/wakealarm")
+        writeToSys("0", "/sys/class/rtc/rtc0/wakealarm")
+        writeToSys("+" .. wake_in, "/sys/class/rtc/rtc0/wakealarm")
         logger.dbg("xxx3", os.time(), TimeVal:now():tonumber())
-        UIManager:broadcastEvent(Event:new("Suspend"))
+        UIManager:broadcastEvent(Event:new("Suspend", self))
         logger.dbg("AutoSuspend: going to standby zZzzZzZzzzzZZZzZZZz")
-        os.execute("echo standby > /sys/power/state")
+        writeToSys("standby", "/sys/power/state")
         logger.dbg("AutoSuspend: leaving standby")
         logger.dbg("xxx3", os.time(), TimeVal:now():tonumber())
         logger.dbg("xxx end standby")
-        UIManager:broadcastEvent(Event:new("Resume"))
+        UIManager:broadcastEvent(Event:new("Resume", self))
         UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
-        self:reschedule_standby(2) -- 2 seconds is enough for doing formerly sheduled stuff
+        self:_unschedule() -- unschedule suspend and shutdown as the clock has ticked
+        self:_schedule()   -- reschedule suspend and shutdown with the new clock
+        self:reschedule_standby()
     end
 end
 
