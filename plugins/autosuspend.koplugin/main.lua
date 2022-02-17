@@ -128,6 +128,8 @@ function AutoSuspend:init()
         self:_schedule(shutdown_only)
     end
     self:_start()
+    self:reschedule_standby()
+
     -- self.ui is nil in the testsuite
     if not self.ui or not self.ui.menu then return end
     self.ui.menu:registerToMainMenu(self)
@@ -149,6 +151,7 @@ function AutoSuspend:onInputEvent()
 end
 
 function AutoSuspend:reschedule_standby(standby_timeout)
+    if not Device:canStandby() then return end
     standby_timeout = standby_timeout or self.auto_standby_timeout_seconds
     UIManager:unschedule(AutoSuspend.allowStandby)
     if standby_timeout < 0 then
@@ -257,7 +260,7 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
         info_text = info,
         callback = function(time)
             if time_scale == 2 then
-                self[setting] = time.hour * 24 * 3600 + time.min * 3600
+                self[setting] = (time.hour * 24 + time.min) * 3600
             elseif time_scale == 1 then
                 self[setting] = time.hour * 3600 + time.min * 60
             else
@@ -426,7 +429,9 @@ function AutoSuspend:onAllowStandby()
         os.execute("echo +" .. wake_in .. " > /sys/class/rtc/rtc0/wakealarm")
         logger.dbg("xxx3", os.time(), TimeVal:now():tonumber())
         UIManager:broadcastEvent(Event:new("Suspend"))
+        logger.dbg("AutoSuspend: going to standby zZzzZzZzzzzZZZzZZZz")
         os.execute("echo standby > /sys/power/state")
+        logger.dbg("AutoSuspend: leaving standby")
         logger.dbg("xxx3", os.time(), TimeVal:now():tonumber())
         logger.dbg("xxx end standby")
         UIManager:broadcastEvent(Event:new("Resume"))
