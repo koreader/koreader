@@ -87,6 +87,13 @@ function ButtonDialogTitle:init()
     }
 end
 
+function ButtonDialogTitle:setTitle(title)
+    self.title = title
+    self:free()
+    self:init()
+    UIManager:setDirty("all", "ui")
+end
+
 function ButtonDialogTitle:onShow()
     UIManager:setDirty(self, function()
         return "ui", self[1][1].dimen
