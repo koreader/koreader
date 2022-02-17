@@ -23,7 +23,7 @@ local T = require("ffi/util").template
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
-local default_auto_standby_timeout_seconds = 5 -- 5 seconds
+local default_auto_standby_timeout_seconds = 4 -- 4 seconds
 
 local AutoSuspend = WidgetContainer:new{
     name = "autosuspend",
@@ -117,8 +117,9 @@ function AutoSuspend:init()
         default_autoshutdown_timeout_seconds)
     self.auto_suspend_timeout_seconds = G_reader_settings:readSetting("auto_suspend_timeout_seconds",
         default_auto_suspend_timeout_seconds)
-    self.auto_standby_timeout_seconds = G_reader_settings:readSetting("auto_standby_timeout_seconds",
-        default_auto_standby_timeout_seconds)
+
+    -- Disabled, until the user opts in.
+    self.auto_standby_timeout_seconds = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1)
 
     UIManager.event_hook:registerWidget("InputEvent", self)
     -- We need an instance-specific function reference to schedule, because in some rare cases,
