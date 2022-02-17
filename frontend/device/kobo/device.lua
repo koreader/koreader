@@ -75,8 +75,9 @@ local Kobo = Generic:new{
     isSMP = no,
     -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
     hasEclipseWfm = no,
-    -- Device is fast enough for standby
-    canStandby = no,
+    -- Device can go on standby for energy saving; this may slow down page turns on slow devices.
+    -- On fast devices (as Sage/Cadmus), there is no noticable slowdown.
+    canStandby = yes,
 }
 
 -- Kobo Touch:
@@ -327,7 +328,6 @@ local KoboEuropa = Kobo:new{
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
-    canStandby = yes,
 }
 
 -- Kobo Sage
@@ -360,7 +360,6 @@ local KoboCadmus = Kobo:new{
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
-    canStandby = yes,
 }
 
 -- Kobo Libra 2:
