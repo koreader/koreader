@@ -838,9 +838,6 @@ function Kobo:suspend()
     --]]
 
     logger.info("Kobo suspend: asking for a suspend to RAM . . .")
-    re = writeToSys("0", "/sys/power/state")
-    logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
---[[
     f = io.open("/sys/power/state", "we")
     if not f then
         -- reset state-extend back to 0 since we are giving up
@@ -862,7 +859,7 @@ function Kobo:suspend()
         logger.err('write error: ', err_msg, err_code)
     end
     f:close()
-]]
+
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
     -- gloriously failed at this point...
     -- We can safely assume that just from a non-zero return code, without
