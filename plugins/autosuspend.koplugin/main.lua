@@ -13,7 +13,6 @@ end
 local Event = require("ui/event")
 local NetworkMgr = require("ui/network/manager")
 local PluginShare = require("pluginshare")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -168,19 +167,15 @@ function AutoSuspend:reschedule_standby(standby_timeout)
 end
 
 function AutoSuspend:preventStandby()
---    logger.dbg("AutoSuspend: xxx preventStandby", tostring(self.is_standby_scheduled))
     if self.is_standby_scheduled ~= false then
         self.is_standby_scheduled = false
---        logger.dbg("xxxxxx preventStandby")
         UIManager:preventStandby()
     end
 end
 
 function AutoSuspend:allowStandby()
---    logger.dbg("AutoSuspend: xxx allowStandby", tostring(self.is_standby_scheduled), TimeVal:now():tonumber())
     if not self.is_standby_scheduled then
         self.is_standby_scheduled = true
---        logger.dbg("xxxxxx allowStandby")
         UIManager:allowStandby()
         -- This is necessary for wakeup from standby, as the deadline for receiving input events
         -- is calculated from the time to the next scheduled function.
@@ -405,17 +400,6 @@ function AutoSuspend:addToMainMenu(menu_items)
     end
 end
 
-local function writeToSys(val, file)
-    local f = io.open(file, "w")
-    if not f then
-        return
-    end
-    local re, err_msg, err_code = f:write(val .. "\n")
-    if not re then
-        logger.err("AutoSuspend: write error: ", file, val, err_msg, err_code)
-    end
-    f:close()
-end
 
 -- koreader is merely waiting for user input right now.
 -- UI signals us that standby is allowed at this very moment because nothing else goes on in the background.
@@ -430,7 +414,7 @@ function AutoSuspend:onAllowStandby()
         return
     end
 
-    if Device:isKobo() and Device:canStandby() then
+    if Device:canStandby() then
         local wake_in = math.huge
         -- The next scheduled function should be the deadline_guard (ca. 1sec)
         -- Wake before the second next scheduled function executes (e.g. footer update, suspend ...)
@@ -441,19 +425,18 @@ function AutoSuspend:onAllowStandby()
 
         print("Autosuspend: wake in", wake_in) -- xxx
 
-        writeToSys("0", "/sys/class/rtc/rtc0/wakealarm")
-        writeToSys("+" .. wake_in, "/sys/class/rtc/rtc0/wakealarm")
-        logger.dbg("xxx3", os.time(), TimeVal:now():tonumber())
         UIManager:broadcastEvent(Event:new("Suspend", self))
         logger.dbg("AutoSuspend: going to standby zZzzZzZzzzzZZZzZZZz")
-        writeToSys("standby", "/sys/power/state")
+
+        -- This is for the Kobo Sage/Elipsa for now, as these are the only with useStandby.
+        -- Other devices may be added
+        Device:standby(wake_in)
+
         logger.dbg("AutoSuspend: leaving standby")
-        logger.dbg("xxx3", os.time(), TimeVal:now():tonumber())
-        logger.dbg("xxx end standby")
         UIManager:broadcastEvent(Event:new("Resume", self))
         UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
-        self:_unschedule() -- unschedule suspend and shutdown as the clock has ticked
-        self:_schedule()   -- reschedule suspend and shutdown with the new clock
+        self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked
+        self:_schedule()   -- reschedule suspend and shutdown with the new time
         self:reschedule_standby()
     end
 end
