@@ -43,9 +43,8 @@ local PocketBook = Generic:new{
     -- For which we now probe in fbinfoOverride() and tweak the flag to "no".
     -- NTX chipsets *should* work (PB631), but in case it doesn't on your device, set this to "no" in here.
     --
-    -- The above comment applied to rendering without inkview. With the inkview library inverting the screen
-    -- seems possible but needs some discussion with the developers of Pocketbook. For now disable HWInvert
-    -- so this feature is not broken while we figure out how to change the invert with inkview.
+    -- The above comment applied to rendering without inkview. With the inkview library HW inverting the
+    -- screen is not possible. For now disable HWInvert for all devices.
     canHWInvert = no,
 
     -- If we can access the necessary devices, input events can be handled directly.
