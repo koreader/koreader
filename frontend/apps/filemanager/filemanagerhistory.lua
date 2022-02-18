@@ -2,18 +2,28 @@ local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
+local FFIUtil = require("ffi/util")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local util = require("ffi/util")
 local _ = require("gettext")
-local T = util.template
+local N_ = _.ngettext
+local T = FFIUtil.template
 
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
+}
+
+local status_text = {
+    all = _("All"),
+    reading = _("Reading"),
+    abandoned = _("On hold"),
+    complete = _("Finished"),
+    deleted = _("Deleted"),
+    new = _("New"),
 }
 
 function FileManagerHistory:init()
@@ -33,11 +43,23 @@ end
 function FileManagerHistory:updateItemTable()
     -- try to stay on current page
     local select_number = nil
-    if self.hist_menu.page and self.hist_menu.perpage then
+    if self.hist_menu.page and self.hist_menu.perpage and self.hist_menu.page > 0 then
         select_number = (self.hist_menu.page - 1) * self.hist_menu.perpage + 1
     end
-    self.hist_menu:switchItemTable(self.hist_menu_title,
-                                  require("readhistory").hist, select_number)
+    self.count = { all = 0, reading = 0, abandoned = 0, complete = 0, deleted = 0, new = 0, }
+    local item_table = {}
+    for _, v in ipairs(require("readhistory").hist) do
+        if not self.filter or v.status == self.filter then
+            table.insert(item_table, v)
+        end
+        self.count[v.status] = self.count[v.status] + 1
+    end
+    self.count.all = #require("readhistory").hist
+    local title = self.hist_menu_title
+    if self.filter then
+        title = title .. " (" .. status_text[self.filter] .. ")"
+    end
+    self.hist_menu:switchItemTable(title, item_table, select_number)
 end
 
 function FileManagerHistory:onSetDimensions(dimen)
@@ -52,10 +74,11 @@ function FileManagerHistory:onMenuHold(item)
         {
             {
                 text = _("Reset settings"),
-                enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(item.file)),
+                enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(FFIUtil.realpath(item.file)),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(item.file)),
+                        text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."),
+                            BD.filepath(item.file)),
                         ok_text = _("Reset"),
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)
@@ -81,7 +104,8 @@ function FileManagerHistory:onMenuHold(item)
                 enabled = (item.file ~= currently_opened_file and lfs.attributes(item.file, "mode")) and true or false,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = T(_("Are you sure that you want to delete this document?\n\n%1\n\nIf you delete a file, it is permanently lost."), BD.filepath(item.file)),
+                        text = T(_("Are you sure that you want to delete this document?\n\n%1\n\nIf you delete a file, it is permanently lost."),
+                            BD.filepath(item.file)),
                         ok_text = _("Delete"),
                         ok_callback = function()
                             local FileManager = require("apps/filemanager/filemanager")
@@ -99,23 +123,6 @@ function FileManagerHistory:onMenuHold(item)
                 callback = function()
                     FileManagerBookInfo:show(item.file)
                     UIManager:close(self.histfile_dialog)
-                end,
-             },
-        },
-        {},
-        {
-            {
-                text = _("Clear history of deleted files"),
-                callback = function()
-                    UIManager:show(ConfirmBox:new{
-                        text = _("Clear history of deleted files?"),
-                        ok_text = _("Clear"),
-                        ok_callback = function()
-                            require("readhistory"):clearMissing()
-                            self._manager:updateItemTable()
-                            UIManager:close(self.histfile_dialog)
-                        end,
-                    })
                 end,
              },
         },
@@ -154,6 +161,8 @@ function FileManagerHistory:onShowHist()
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         is_borderless = true,
         is_popout = false,
+        title_bar_left_icon = "appbar.menu",
+        onLeftButtonTap = function() self:showHistDialog() end,
         onMenuHold = self.onMenuHold,
         onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
@@ -161,10 +170,63 @@ function FileManagerHistory:onShowHist()
 
     self:updateItemTable()
     self.hist_menu.close_callback = function()
+        self.filter = nil
         UIManager:close(self.hist_menu)
     end
     UIManager:show(self.hist_menu)
     return true
+end
+
+function FileManagerHistory:showHistDialog()
+    local hist_dialog
+    local buttons = {}
+    local function genFilterButton(status)
+        return {
+            text = T(_("%1 (%2)"), status_text[status], self.count[status]),
+            callback = function()
+                UIManager:close(hist_dialog)
+                self.filter = status ~= "all" and status
+                self:updateItemTable()
+            end,
+        }
+    end
+    table.insert(buttons, {
+        genFilterButton("reading"),
+        genFilterButton("abandoned"),
+    })
+    table.insert(buttons, {
+        genFilterButton("complete"),
+        genFilterButton("deleted"),
+    })
+    table.insert(buttons, {
+        genFilterButton("all"),
+        genFilterButton("new"),
+    })
+    if self.count.deleted > 0 then
+        table.insert(buttons, {})
+        table.insert(buttons, {
+            {
+                text = _("Clear history of deleted files"),
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Clear history of deleted files?"),
+                        ok_text = _("Clear"),
+                        ok_callback = function()
+                            UIManager:close(hist_dialog)
+                            require("readhistory"):clearMissing()
+                            self:updateItemTable()
+                        end,
+                    })
+                end,
+             },
+        })
+    end
+    hist_dialog = ButtonDialogTitle:new{
+        title = _("Filter by book status"),
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(hist_dialog)
 end
 
 return FileManagerHistory
