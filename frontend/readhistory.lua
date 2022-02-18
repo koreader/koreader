@@ -22,10 +22,28 @@ end
 local function buildEntry(input_time, input_file)
     local file_path = realpath(input_file) or input_file -- keep orig file path of deleted files
     local file_exists = lfs.attributes(file_path, "mode") == "file"
+    local status
+    if file_exists then
+        if DocSettings:hasSidecarFile(input_file) then
+            local docinfo = DocSettings:open(input_file)
+            if docinfo.data.summary and docinfo.data.summary.status
+                    and docinfo.data.summary.status ~= "" then
+                status = docinfo.data.summary.status
+            else
+                status = "reading"
+            end
+            docinfo:close()
+        else
+            status = "new"
+        end
+    else
+        status = "deleted"
+    end
     return {
         time = input_time,
         text = input_file:gsub(".*/", ""),
         file = file_path,
+        status = status,
         dim = not file_exists, -- "dim", as expected by Menu
         -- mandatory = file_exists and util.getFriendlySize(lfs.attributes(input_file, "size") or 0),
         mandatory_func = function() -- Show the last read time (rather than file size)
