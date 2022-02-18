@@ -760,6 +760,7 @@ function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(check_unexpected_wakeup)
+    local f, re, err_msg, err_code
     -- NOTE: Sleep as little as possible here, sleeping has a tendency to make
     -- everything mysteriously hang...
 
@@ -772,7 +773,7 @@ function Kobo:suspend()
     -- So, unless that changes, unconditionally disable it.
 
     --[[
-    local f, re, err_msg, err_code
+
     local has_wakeup_count = false
     f = io.open("/sys/power/wakeup_count", "re")
     if f ~= nil then
@@ -795,7 +796,7 @@ function Kobo:suspend()
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
-    local re = writeToSys("1", "/sys/power/state-extended")
+    re = writeToSys("1", "/sys/power/state-extended")
     logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", re)
 --[[
     f = io.open("/sys/power/state-extended", "we")
@@ -837,9 +838,6 @@ function Kobo:suspend()
     --]]
 
     logger.info("Kobo suspend: asking for a suspend to RAM . . .")
-    re = writeToSys("0", "/sys/power/state")
-    logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
---[[
     f = io.open("/sys/power/state", "we")
     if not f then
         -- reset state-extend back to 0 since we are giving up
@@ -861,7 +859,7 @@ function Kobo:suspend()
         logger.err('write error: ', err_msg, err_code)
     end
     f:close()
-]]
+
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
     -- gloriously failed at this point...
     -- We can safely assume that just from a non-zero return code, without
