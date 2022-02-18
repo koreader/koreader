@@ -42,44 +42,47 @@ function FileSearcher:readDir()
         -- handle each dir
         for __, d in pairs(self.dirs) do
             -- handle files in d
-            for f in lfs.dir(d) do
-                local fullpath = "/" .. f
-                if d ~= "/" then
-                    fullpath = d .. fullpath
-                end
-                local attributes = lfs.attributes(fullpath) or {}
-                -- Don't traverse hidden folders if we're not showing them
-                if attributes.mode == "directory" and f ~= "." and f ~= ".."
-                    and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
-                    and FileChooser:show_dir(f)
-                then
-                    if self.include_subfolders and not sys_folders[fullpath] then
-                        table.insert(new_dirs, fullpath)
+            local ok, iter, dir_obj = pcall(lfs.dir, d)
+            if ok then
+                for f in iter, dir_obj do
+                    local fullpath = "/" .. f
+                    if d ~= "/" then
+                        fullpath = d .. fullpath
                     end
-                    table.insert(self.files, {
-                        dir = d,
-                        name = f,
-                        text = f.."/",
-                        attr = attributes,
-                        callback = function()
-                            self:showFolder(fullpath .. "/")
-                        end,
-                    })
-                -- Always ignore macOS resource forks, too.
-                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
-                    and (show_unsupported or DocumentRegistry:hasProvider(fullpath))
-                    and FileChooser:show_file(f)
-                then
-                    table.insert(self.files, {
-                        dir = d,
-                        name = f,
-                        text = f,
-                        mandatory = util.getFriendlySize(attributes.size or 0),
-                        attr = attributes,
-                        callback = function()
-                            ReaderUI:showReader(fullpath)
-                        end,
-                    })
+                    local attributes = lfs.attributes(fullpath) or {}
+                    -- Don't traverse hidden folders if we're not showing them
+                    if attributes.mode == "directory" and f ~= "." and f ~= ".."
+                        and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
+                        and FileChooser:show_dir(f)
+                    then
+                        if self.include_subfolders and not sys_folders[fullpath] then
+                            table.insert(new_dirs, fullpath)
+                        end
+                        table.insert(self.files, {
+                            dir = d,
+                            name = f,
+                            text = f.."/",
+                            attr = attributes,
+                            callback = function()
+                                self:showFolder(fullpath .. "/")
+                            end,
+                        })
+                    -- Always ignore macOS resource forks, too.
+                    elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
+                        and (show_unsupported or DocumentRegistry:hasProvider(fullpath))
+                        and FileChooser:show_file(f)
+                    then
+                        table.insert(self.files, {
+                            dir = d,
+                            name = f,
+                            text = f,
+                            mandatory = util.getFriendlySize(attributes.size or 0),
+                            attr = attributes,
+                            callback = function()
+                                ReaderUI:showReader(fullpath)
+                            end,
+                        })
+                    end
                 end
             end
         end
