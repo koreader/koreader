@@ -10,7 +10,6 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local _ = require("gettext")
-local N_ = _.ngettext
 local T = FFIUtil.template
 
 local FileManagerHistory = InputContainer:extend{
