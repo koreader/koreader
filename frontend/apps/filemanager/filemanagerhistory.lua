@@ -45,15 +45,17 @@ function FileManagerHistory:updateItemTable()
     if self.hist_menu.page and self.hist_menu.perpage and self.hist_menu.page > 0 then
         select_number = (self.hist_menu.page - 1) * self.hist_menu.perpage + 1
     end
-    self.count = { all = 0, reading = 0, abandoned = 0, complete = 0, deleted = 0, new = 0, }
+    self.count = { all = #require("readhistory").hist,
+        reading = 0, abandoned = 0, complete = 0, deleted = 0, new = 0, }
     local item_table = {}
     for _, v in ipairs(require("readhistory").hist) do
         if not self.filter or v.status == self.filter then
             table.insert(item_table, v)
         end
-        self.count[v.status] = self.count[v.status] + 1
+        if self.status then
+            self.count[v.status] = self.count[v.status] + 1
+        end
     end
-    self.count.all = #require("readhistory").hist
     local title = self.hist_menu_title
     if self.filter then
         title = title .. " (" .. status_text[self.filter] .. ")"
@@ -169,6 +171,7 @@ function FileManagerHistory:onShowHist()
 
     self:updateItemTable()
     self.hist_menu.close_callback = function()
+        self.status = nil
         self.filter = nil
         UIManager:close(self.hist_menu)
     end
@@ -177,6 +180,31 @@ function FileManagerHistory:onShowHist()
 end
 
 function FileManagerHistory:showHistDialog()
+    if not self.status then
+        local _status
+        for _, v in ipairs(require("readhistory").hist) do
+            if v.dim then
+                _status = "deleted"
+            else
+                if DocSettings:hasSidecarFile(v.file) then
+                    local docinfo = DocSettings:open(v.file)
+                    if docinfo.data.summary and docinfo.data.summary.status
+                            and docinfo.data.summary.status ~= "" then
+                        _status = docinfo.data.summary.status
+                    else
+                        _status = "reading"
+                    end
+                    docinfo:close()
+                else
+                    _status = "new"
+                end
+            end
+            v.status = _status
+            self.count[_status] = self.count[_status] + 1
+        end
+        self.status = true
+    end
+
     local hist_dialog
     local buttons = {}
     local function genFilterButton(status)
