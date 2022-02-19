@@ -42,7 +42,10 @@ local PocketBook = Generic:new{
     -- NOTE: Apparently, HW inversion is a pipedream on PB (#6669), ... well, on sunxi chipsets anyway.
     -- For which we now probe in fbinfoOverride() and tweak the flag to "no".
     -- NTX chipsets *should* work (PB631), but in case it doesn't on your device, set this to "no" in here.
-    canHWInvert = yes,
+    --
+    -- The above comment applied to rendering without inkview. With the inkview library HW inverting the
+    -- screen is not possible. For now disable HWInvert for all devices.
+    canHWInvert = no,
 
     -- If we can access the necessary devices, input events can be handled directly.
     -- This improves latency (~40ms), as well as power usage - we can spend more time asleep,
