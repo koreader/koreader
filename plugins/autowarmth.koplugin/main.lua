@@ -116,6 +116,8 @@ function AutoWarmth:onAutoWarmthMode()
     self:scheduleMidnightUpdate()
 end
 
+AutoWarmth.onLeaveStandby = AutoWarmth.onResume
+
 function AutoWarmth:onResume()
     if self.activate == 0 then return end
 
