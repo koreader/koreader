@@ -728,30 +728,38 @@ function Kobo:getUnexpectedWakeup() return unexpected_wakeup_count end
 local function writeToSys(val, file)
     local f = io.open(file, "we")
     if not f then
-        logger.info("Cannot open " .. file)
+        logger.info("Cannot open:", file)
         return
     end
-    local re, err_msg, err_code = f:write(val .. "\n")
+    local re, err_msg, err_code = f:write(val, "\n")
     if not re then
-        logger.err("Error writing to value to file: ", val, file, err_msg, err_code)
+        logger.err("Error writing to value to file:", val, file, err_msg, err_code)
     end
     f:close()
     return re
 end
 
--- put device into standby, touchscreen is enabled
-function Kobo:standby(time)
+--- put device into standby, touchscreen is enabled
+-- deadline ... deadline for standby
+function Kobo:standby(deadline)
     -- just for wakup, dummy function
     local function dummy() end
 
-    if time then
-        self.wakeup_mgr:addTask(time, dummy)
+    if deadline then
+        self.wakeup_mgr:addTask(deadline, dummy)
     end
 
+    local TimeVal = require("ui/timeval")
+    local suspend_time_btv = TimeVal:boottime()
+
     local re = writeToSys("standby", "/sys/power/state")
+
+    self.lastStandbyTime = (TimeVal:boottime() - suspend_time_btv):tonumber()
+    self.totalStandbyTime = self.totalStandbyTime + self.lastStandbyTime
+
     logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", re)
 
-    if time then
+    if deadline then
         self.wakeup_mgr:removeTask(nil, nil, dummy)
     end
 end
@@ -856,7 +864,7 @@ function Kobo:suspend()
 
     logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
     if not re then
-        logger.err('write error: ', err_msg, err_code)
+        logger.err("write error: ", err_msg, err_code)
     end
     f:close()
 
@@ -925,11 +933,14 @@ function Kobo:resume()
     util.usleep(100000)
     -- cf. #1862, I can reliably break IR touch input on resume...
     -- cf. also #1943 for the rationale behind applying this workaorund in every case...
+    writeToSys("a", "/sys/devices/virtual/input/input1/neocmd")
+--[[
     local f = io.open("/sys/devices/virtual/input/input1/neocmd", "we")
     if f ~= nil then
         f:write("a\n")
         f:close()
     end
+]]
 
     -- A full suspend may have toggled the LED off.
     self:setupChargingLED()
