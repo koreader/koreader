@@ -752,12 +752,12 @@ function Kobo:standby(deadline)
     local TimeVal = require("ui/timeval")
     local suspend_time_btv = TimeVal:boottime()
 
-    local re = writeToSys("standby", "/sys/power/state")
+    local return_value = writeToSys("standby", "/sys/power/state")
 
     self.lastStandbyTime = (TimeVal:boottime() - suspend_time_btv):tonumber()
     self.totalStandbyTime = self.totalStandbyTime + self.lastStandbyTime
 
-    logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", re)
+    logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", return_value)
 
     if deadline then
         self.wakeup_mgr:removeTask(nil, nil, dummy)
@@ -804,8 +804,8 @@ function Kobo:suspend()
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
-    re = writeToSys("1", "/sys/power/state-extended")
-    logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", re)
+    local return_value = writeToSys("1", "/sys/power/state-extended")
+    logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", return_value)
 --[[
     f = io.open("/sys/power/state-extended", "we")
     if not f then
@@ -867,7 +867,6 @@ function Kobo:suspend()
         logger.err("write error: ", err_msg, err_code)
     end
     f:close()
-
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
     -- gloriously failed at this point...
     -- We can safely assume that just from a non-zero return code, without
@@ -913,8 +912,8 @@ function Kobo:resume()
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
 
-    local re = writeToSys("0", "/sys/power/state-extended")
-    logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", re)
+    local return_value = writeToSys("0", "/sys/power/state-extended")
+    logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", return_value)
 --[[
     local f = io.open("/sys/power/state-extended", "we")
     if not f then
