@@ -2421,6 +2421,11 @@ function ReaderFooter:onResume()
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
+function ReaderFooter:onLeaveStandby()
+    self:onResume()
+    self:onOutOfScreenSaver()
+end
+
 function ReaderFooter:onOutOfScreenSaver()
     if not self._delayed_screensaver then
         return
@@ -2435,6 +2440,8 @@ end
 function ReaderFooter:onSuspend()
     self:unscheduleFooterAutoRefresh()
 end
+
+ReaderFooter.onEnterStandby = ReaderFooter.onSuspend
 
 function ReaderFooter:onCloseDocument()
     self:unscheduleFooterAutoRefresh()
