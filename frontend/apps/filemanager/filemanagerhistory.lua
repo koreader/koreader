@@ -194,7 +194,6 @@ function FileManagerHistory:showHistDialog()
                     else
                         _status = "reading"
                     end
-                    docinfo:close()
                 else
                     _status = "new"
                 end
