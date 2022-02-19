@@ -1286,16 +1286,33 @@ function FileManager:showFiles(path, focused_file)
 end
 
 function FileManager:openTextViewer(file_path)
-    local file = io.open(file_path, "rb")
-    if not file then return end
-    local file_content = file:read("*all")
-    file:close()
-    UIManager:show(require("ui/widget/textviewer"):new{
-        title = file_path,
-        title_multilines = true,
-        justified = false,
-        text = file_content,
-    })
+    local function _openTextViewer(filepath)
+        local file = io.open(filepath, "rb")
+        if not file then return end
+        local file_content = file:read("*all")
+        file:close()
+        UIManager:show(require("ui/widget/textviewer"):new{
+            title = filepath,
+            title_multilines = true,
+            justified = false,
+            text = file_content,
+        })
+    end
+    local attr = lfs.attributes(file_path)
+    if attr then
+        if attr.size > 400000 then
+            UIManager:show(ConfirmBox:new{
+                text = T(_("This file is %2:\n\n%1\n\nAre you sure you want to open it?\n\nOpening big files may take some time."),
+                    BD.filepath(file_path), util.getFriendlySize(attr.size)),
+                ok_text = _("Open"),
+                ok_callback = function()
+                    _openTextViewer(file_path)
+                end,
+            })
+        else
+            _openTextViewer(file_path)
+        end
+    end
 end
 
 --- A shortcut to execute mv.
