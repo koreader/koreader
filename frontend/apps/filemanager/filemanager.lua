@@ -113,7 +113,7 @@ function FileManager:setupLayout()
         left_icon = "home",
         left_icon_size_ratio = 1,
         left_icon_tap_callback = function() self:goHome() end,
-        left_icon_hold_callback = function() self:setHome() end,
+        left_icon_hold_callback = false, -- propagate long-press to dispatcher
         right_icon = "plus",
         right_icon_size_ratio = 1,
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
@@ -331,6 +331,12 @@ function FileManager:setupLayout()
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local one_time_providers = {}
+                        table.insert(one_time_providers, {
+                            provider_name = _("Text viewer"),
+                            callback = function()
+                                file_manager:openTextViewer(file)
+                            end,
+                        })
                         if file_manager.texteditor then
                             table.insert(one_time_providers, {
                                 provider_name = _("Text editor"),
@@ -1277,6 +1283,18 @@ function FileManager:showFiles(path, focused_file)
         focused_file = focused_file,
     }
     UIManager:show(file_manager)
+end
+
+function FileManager:openTextViewer(file_path)
+    local file = io.open(file_path, "rb")
+    if not file then return end
+    local file_content = file:read("*all")
+    file:close()
+    UIManager:show(require("ui/widget/textviewer"):new{
+        title = file_path,
+        title_multilines = true,
+        text = file_content,
+    })
 end
 
 --- A shortcut to execute mv.
