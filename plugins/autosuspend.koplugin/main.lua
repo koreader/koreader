@@ -185,9 +185,9 @@ function AutoSuspend:allowStandby()
     end
 end
 
-function AutoSuspend:onSuspend(caller)
+function AutoSuspend:onSuspend(suspend_to)
     logger.dbg("AutoSuspend: onSuspend")
-    if self == caller then return end -- nop when called before standby
+    if suspend_to == "standby" then return end -- nop when called before standby
     -- We do not want auto suspend procedure to waste battery during suspend. So let's unschedule it
     -- when suspending and restart it after resume.
     self:_unschedule()
@@ -197,9 +197,9 @@ function AutoSuspend:onSuspend(caller)
     end
 end
 
-function AutoSuspend:onResume(caller)
+function AutoSuspend:onResume(resume_from)
     logger.dbg("AutoSuspend: onResume")
-    if self == caller then return end -- nop when called after standby
+    if resume_from == "standby" then return end -- nop when called after standby
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
@@ -421,23 +421,25 @@ function AutoSuspend:onAllowStandby()
         -- Wake before the second next scheduled function executes (e.g. footer update, suspend ...)
         local scheduler_times = UIManager:getNextTaskTimes(2)
         if #scheduler_times == 2 then
-            wake_in = math.floor(scheduler_times[2]:tonumber())
+            wake_in = math.floor(scheduler_times[2]:tonumber()) - 1
         end
 
-        print("Autosuspend: wake in", wake_in) -- xxx
+        if wake_in > 3 then -- don't to into standby, if scheduled wake up is lower than this
+            UIManager:broadcastEvent(Event:new("Suspend", "standby"))
+            logger.dbg("AutoSuspend: going to standby and wake in " .. wake_in .. "s zZzzZzZzzzzZZZzZZZz")
 
-        UIManager:broadcastEvent(Event:new("Suspend", self))
-        logger.dbg("AutoSuspend: going to standby zZzzZzZzzzzZZZzZZZz")
+            -- This is for the Kobo Sage/Elipsa for now, as these are the only with useStandby.
+            -- Other devices may be added
+            Device:standby(wake_in, 3)
 
-        -- This is for the Kobo Sage/Elipsa for now, as these are the only with useStandby.
-        -- Other devices may be added
-        Device:standby(wake_in)
+            logger.dbg("AutoSuspend: leaving standby after " .. Device.lastStandbyTime .. " s")
 
-        logger.dbg("AutoSuspend: leaving standby")
-        UIManager:broadcastEvent(Event:new("Resume", self))
-        UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
-        self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked
-        self:_schedule()   -- reschedule suspend and shutdown with the new time
+            UIManager:broadcastEvent(Event:new("Resume", "standby"))
+            UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
+            self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked
+            self:_schedule()   -- reschedule suspend and shutdown with the new time
+        end
+
         self:reschedule_standby()
     end
 end
