@@ -52,7 +52,7 @@ function FileManagerHistory:updateItemTable()
         if not self.filter or v.status == self.filter then
             table.insert(item_table, v)
         end
-        if self.status then
+        if self.statuses_fetched then
             self.count[v.status] = self.count[v.status] + 1
         end
     end
@@ -171,7 +171,7 @@ function FileManagerHistory:onShowHist()
 
     self:updateItemTable()
     self.hist_menu.close_callback = function()
-        self.status = nil
+        self.statuses_fetched = nil
         self.filter = nil
         UIManager:close(self.hist_menu)
     end
@@ -180,7 +180,7 @@ function FileManagerHistory:onShowHist()
 end
 
 function FileManagerHistory:showHistDialog()
-    if not self.status then
+    if not self.statuses_fetched then
         local _status
         for _, v in ipairs(require("readhistory").hist) do
             if v.dim then
@@ -202,7 +202,7 @@ function FileManagerHistory:showHistDialog()
             v.status = _status
             self.count[_status] = self.count[_status] + 1
         end
-        self.status = true
+        self.statuses_fetched = true
     end
 
     local hist_dialog
