@@ -67,6 +67,8 @@ local Device = {
     canRestart = yes,
     canSuspend = yes,
     canStandby = no,
+    totalStandbyTime = 0, -- total time spent in standby
+    lastStandbyTime = 0, -- last time spent in standby
     canReboot = no,
     canPowerOff = no,
     canAssociateFileExtensions = no,
@@ -429,6 +431,9 @@ function Device:saveSettings() end
 -- Simulates suspend/resume
 function Device:simulateSuspend() end
 function Device:simulateResume() end
+
+-- put device into standby, touchscreen is enabled
+function Device:standby(time) end
 
 --[[--
 Device specific method for performing haptic feedback.
