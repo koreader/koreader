@@ -1,3 +1,4 @@
+local Device = require("device")
 local Event = require("ui/event")
 local PluginShare = require("pluginshare")
 local TimeVal = require("ui/timeval")
@@ -34,6 +35,7 @@ function AutoTurn:_schedule()
         if UIManager:getTopWidget() == "ReaderUI" then
             logger.dbg("AutoTurn: go to next page")
             self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
+            self.last_action_tv = UIManager:getTime()
         end
         logger.dbg("AutoTurn: schedule in", self.autoturn_sec)
         UIManager:scheduleIn(self.autoturn_sec, self.task)
@@ -79,8 +81,8 @@ end
 
 function AutoTurn:init()
     UIManager.event_hook:registerWidget("InputEvent", self)
-    self.autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds") or 0
-    self.autoturn_distance = G_reader_settings:readSetting("autoturn_distance") or 1
+    self.autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds", 0)
+    self.autoturn_distance = G_reader_settings:readSetting("autoturn_distance", 1)
     self.enabled = G_reader_settings:isTrue("autoturn_enabled")
     self.ui.menu:registerToMainMenu(self)
     self.task = function()
@@ -107,14 +109,24 @@ end
 
 -- We do not want autoturn to turn pages during the suspend process.
 -- Unschedule it and restart after resume.
-function AutoTurn:onSuspend()
-    logger.dbg("AutoTurn: onSuspend")
-    self:_unschedule()
+function AutoTurn:onSuspend(suspend_to)
+    logger.dbg("AutoTurn: onSuspend to", suspend_to)
+    if suspend_to ~= "standby" then
+        self:_unschedule()
+    end
 end
 
-function AutoTurn:onResume()
-    logger.dbg("AutoTurn: onResume")
-    self:_start()
+function AutoTurn:onResume(resume_from, resume_source)
+    logger.dbg("AutoTurn: onResume from", resume_from)
+    if resume_from == "standby" then
+        self.last_action_tv = self.last_action_tv - TimeVal:new{usec = Device.lastStandbyTime * 1e6}
+
+        -- we messed with last_action_tv, so a complete reschedule has to be done
+        self:_unschedule()
+        self:_schedule()
+    else -- resume from suspend
+        self:_start()
+    end
 end
 
 function AutoTurn:addToMainMenu(menu_items)
