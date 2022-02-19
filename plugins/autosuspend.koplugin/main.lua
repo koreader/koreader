@@ -163,7 +163,7 @@ function AutoSuspend:reschedule_standby(standby_timeout)
     end
 
     self:preventStandby()
-    logger.dbg("Autosuspend: schedule autoStandby", standby_timeout) -- xxx
+    logger.dbg("AutoSuspend: schedule autoStandby in", standby_timeout) -- xxx may be deleted later
     UIManager:scheduleIn(standby_timeout, self.allowStandby, self)
 end
 
@@ -185,9 +185,8 @@ function AutoSuspend:allowStandby()
     end
 end
 
-function AutoSuspend:onSuspend(suspend_to)
+function AutoSuspend:onSuspend()
     logger.dbg("AutoSuspend: onSuspend")
-    if suspend_to == "standby" then return end -- nop when called before standby
     -- We do not want auto suspend procedure to waste battery during suspend. So let's unschedule it
     -- when suspending and restart it after resume.
     self:_unschedule()
@@ -197,9 +196,8 @@ function AutoSuspend:onSuspend(suspend_to)
     end
 end
 
-function AutoSuspend:onResume(resume_from)
+function AutoSuspend:onResume()
     logger.dbg("AutoSuspend: onResume")
-    if resume_from == "standby" then return end -- nop when called after standby
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
@@ -395,7 +393,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                 self:setSuspendShutdownTimes(touchmenu_instance,
                     _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
-                    {3, 15*60}, 0)
+                    {4, 15*60}, 0)
             end,
         }
     end
@@ -421,21 +419,22 @@ function AutoSuspend:onAllowStandby()
         -- Wake before the second next scheduled function executes (e.g. footer update, suspend ...)
         local scheduler_times = UIManager:getNextTaskTimes(2)
         if #scheduler_times == 2 then
-            wake_in = math.floor(scheduler_times[2]:tonumber()) - 1
+            -- Wake up slightly after the formerly scheduled event, to avoid resheduling the same function
+            -- after a fraction of a second again (e.g. don't draw footer twice)
+            wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
         end
 
-        if wake_in > 3 then -- don't to into standby, if scheduled wake up is lower than this
-            UIManager:broadcastEvent(Event:new("Suspend", "standby"))
+        if wake_in > 3 then -- don't go into standby, if scheduled wake is in less than 3 secs
+            UIManager:broadcastEvent(Event:new("EnterStandby"))
             logger.dbg("AutoSuspend: going to standby and wake in " .. wake_in .. "s zZzzZzZzzzzZZZzZZZz")
 
             -- This is for the Kobo Sage/Elipsa for now, as these are the only with useStandby.
             -- Other devices may be added
-            Device:standby(wake_in, 3)
+            Device:standby(wake_in)
 
             logger.dbg("AutoSuspend: leaving standby after " .. Device.lastStandbyTime .. " s")
 
-            UIManager:broadcastEvent(Event:new("Resume", "standby"))
-            UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
+            UIManager:broadcastEvent(Event:new("LeaveStandby"))
             self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked
             self:_schedule()   -- reschedule suspend and shutdown with the new time
         end

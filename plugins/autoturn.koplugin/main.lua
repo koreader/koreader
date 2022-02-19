@@ -1,3 +1,4 @@
+local Device = require("device")
 local Event = require("ui/event")
 local PluginShare = require("pluginshare")
 local TimeVal = require("ui/timeval")
@@ -34,20 +35,24 @@ function AutoTurn:_schedule()
         if UIManager:getTopWidget() == "ReaderUI" then
             logger.dbg("AutoTurn: go to next page")
             self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
+            self.last_action_tv = UIManager:getTime()
         end
         logger.dbg("AutoTurn: schedule in", self.autoturn_sec)
         UIManager:scheduleIn(self.autoturn_sec, self.task)
+        self.scheduled = true
     else
         logger.dbg("AutoTurn: schedule in", delay)
         UIManager:scheduleIn(delay, self.task)
+        self.scheduled = true
     end
 end
 
 function AutoTurn:_unschedule()
     PluginShare.pause_auto_suspend = false
-    if self.task then
+    if self.scheduled then
         logger.dbg("AutoTurn: unschedule")
         UIManager:unschedule(self.task)
+        self.scheduled = false
     end
 end
 
@@ -79,8 +84,8 @@ end
 
 function AutoTurn:init()
     UIManager.event_hook:registerWidget("InputEvent", self)
-    self.autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds") or 0
-    self.autoturn_distance = G_reader_settings:readSetting("autoturn_distance") or 1
+    self.autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds", 0)
+    self.autoturn_distance = G_reader_settings:readSetting("autoturn_distance", 1)
     self.enabled = G_reader_settings:isTrue("autoturn_enabled")
     self.ui.menu:registerToMainMenu(self)
     self.task = function()
@@ -105,11 +110,25 @@ function AutoTurn:onInputEvent()
     self.last_action_tv = UIManager:getTime()
 end
 
+function AutoTurn:onEnterStandby()
+    self:onSuspend()
+end
+
 -- We do not want autoturn to turn pages during the suspend process.
 -- Unschedule it and restart after resume.
 function AutoTurn:onSuspend()
     logger.dbg("AutoTurn: onSuspend")
     self:_unschedule()
+end
+
+function AutoTurn:onLeaveStandby()
+    self.last_action_tv = self.last_action_tv - TimeVal:new{usec = Device.lastStandbyTime * 1e6}
+
+    -- we messed with last_action_tv, so a complete reschedule has to be done
+    if self:_enabled() then
+        self:_unschedule()
+        self:_schedule()
+    end
 end
 
 function AutoTurn:onResume()
