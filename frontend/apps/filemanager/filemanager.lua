@@ -1293,6 +1293,7 @@ function FileManager:openTextViewer(file_path)
     UIManager:show(require("ui/widget/textviewer"):new{
         title = file_path,
         title_multilines = true,
+        justified = false,
         text = file_content,
     })
 end
