@@ -111,12 +111,12 @@ end
 -- Unschedule it and restart after resume.
 function AutoTurn:onSuspend(suspend_to)
     logger.dbg("AutoTurn: onSuspend to", suspend_to)
-    if suspend_to ~= "standby" then
-        self:_unschedule()
-    end
+    if suspend_to == "standby" then return end
+
+    self:_unschedule()
 end
 
-function AutoTurn:onResume(resume_from, resume_source)
+function AutoTurn:onResume(resume_from)
     logger.dbg("AutoTurn: onResume from", resume_from)
     if resume_from == "standby" then
         self.last_action_tv = self.last_action_tv - TimeVal:new{usec = Device.lastStandbyTime * 1e6}

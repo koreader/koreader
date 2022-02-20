@@ -2427,7 +2427,7 @@ end
 
 -- screensaver off
 function ReaderStatistics:onResume(resume_from)
-    if resume_from == "standby" then return
+    if resume_from == "standby" then return end
     self.start_current_period = os.time()
     self:onReadingResumed()
 end
