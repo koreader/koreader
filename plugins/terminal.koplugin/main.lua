@@ -273,28 +273,31 @@ function Terminal:generateInputDialog()
             end,
             },
             {
-            text = _("Esc"), -- @translators This is the ESC-key on the keyboard.
-            callback = function()
-                self:transmit("\027")
-            end,
+                -- @translators This is the ESC-key on the keyboard.
+                text = _("Esc"),
+                callback = function()
+                    self:transmit("\027")
+                end,
             },
             {
-            text = _("Ctrl"), -- @translators This is the CTRL-key on the keyboard.
-            callback = function()
-                self.ctrl = true
-            end,
+                -- @translators This is the CTRL-key on the keyboard.
+                text = _("Ctrl"),
+                callback = function()
+                    self.ctrl = true
+                end,
             },
             {
-            text = _("Ctrl-C"), -- @translators This is the CTRL-C key combination.
-            callback = function()
-                self:transmit("\003")
-                -- consume and drop everything
-                C.tcflush(self.ptmx, C.TCIFLUSH)
-                while self:receive() ~= "" do
+                -- @translators This is the CTRL-C key combination.
+                text = _("Ctrl-C"),
+                callback = function()
+                    self:transmit("\003")
+                    -- consume and drop everything
                     C.tcflush(self.ptmx, C.TCIFLUSH)
-                end
-                self.input_widget:addChars("\003", true) -- as we flush the queue
-            end,
+                    while self:receive() ~= "" do
+                        C.tcflush(self.ptmx, C.TCIFLUSH)
+                    end
+                    self.input_widget:addChars("\003", true) -- as we flush the queue
+                end,
             },
             {
             text = "⎚", --clear
