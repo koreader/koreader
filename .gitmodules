@@ -1,20 +1,20 @@
 [submodule "koreader-base"]
 	path = base
-	url = https://github.com/koreader/koreader-base.git
+	url = https://github.com/nchungdev/koreader-base.git
 [submodule "platform/android/luajit-launcher"]
 	path = platform/android/luajit-launcher
-	url = https://github.com/koreader/android-luajit-launcher.git
+	url = https://github.com/nchungdev/android-luajit-launcher.git
 [submodule "platform/ubuntu-touch/ubuntu-touch-sdl"]
 	path = platform/ubuntu-touch/ubuntu-touch-sdl
-	url = https://github.com/koreader/ubuntu-touch-sdl-template
+	url = https://github.com/nchungdev/ubuntu-touch-sdl-template
 [submodule "test"]
 	path = test
-	url = https://github.com/koreader/test-data.git
+	url = https://github.com/nchungdev/test-data.git
 	shallow = true
 [submodule "resources/fonts"]
 	path = resources/fonts
-	url = https://github.com/koreader/koreader-fonts.git
+	url = https://github.com/nchungdev/koreader-fonts.git
 	shallow = true
 [submodule "l10n"]
 	path = l10n
-	url = https://github.com/koreader/koreader-translations.git
+	url = https://github.com/nchungdev/koreader-translations.git
