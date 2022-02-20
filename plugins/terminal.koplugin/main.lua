@@ -431,7 +431,7 @@ Commands to be executed on start can be placed in:
 Aliases (shortcuts) to frequently used commands can be placed in:
 '$TERMINAL_DATA/scripts/aliases'.]])
                     if not Device:isAndroid() then
-                        about_text = about_text .. _("\n\nYou can use 'shfm' as a file manager, '?' shows shfm’s help message.")
+                        about_text = about_text .. "\n\n" .. _("You can use 'shfm' as a file manager, '?' shows shfm’s help message.")
                     end
 
                     UIManager:show(InfoMessage:new{
