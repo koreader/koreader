@@ -2416,7 +2416,8 @@ function ReaderStatistics:onSaveSettings()
 end
 
 -- in case when screensaver starts
-function ReaderStatistics:onSuspend()
+function ReaderStatistics:onSuspend(suspend_to)
+    if suspend_to == "standby" then return end
     if not self:isDocless() then
         self.ui.doc_settings:saveSetting("stats", self.data)
         self:insertDB()
@@ -2425,7 +2426,8 @@ function ReaderStatistics:onSuspend()
 end
 
 -- screensaver off
-function ReaderStatistics:onResume()
+function ReaderStatistics:onResume(resume_from)
+    if resume_from == "standby" then return
     self.start_current_period = os.time()
     self:onReadingResumed()
 end

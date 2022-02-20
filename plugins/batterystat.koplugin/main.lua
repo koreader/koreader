@@ -158,14 +158,16 @@ function BatteryStat:accumulate()
     self.charging_state = State:new()
 end
 
-function BatteryStat:onSuspend()
+function BatteryStat:onSuspend(suspend_to)
+    if suspend_to == "standby" then return end
     if not self.was_suspending then
         self:accumulate()
     end
     self.was_suspending = true
 end
 
-function BatteryStat:onResume()
+function BatteryStat:onResume(resume_from)
+    if resume_from == "standby" then return end
     if self.was_suspending then
         self:accumulate()
     end
@@ -295,11 +297,15 @@ function BatteryStatWidget:onFlushSettings()
     BatteryStat:onFlushSettings()
 end
 
-function BatteryStatWidget:onSuspend()
+function BatteryStatWidget:onSuspend(suspend_to)
+    if suspend_to == "standby" then return end
+
     BatteryStat:onSuspend()
 end
 
-function BatteryStatWidget:onResume()
+function BatteryStatWidget:onResume(resume_from)
+    if resume_from == "standby" then return end
+
     BatteryStat:onResume()
 end
 
