@@ -129,10 +129,10 @@ function FeedSource:initializeDocument(document)
                     total_items = #document.feed.entry
                 end,
                 function()
-                   -- RDF callback
-                   feed_title = util.htmlEntitiesToUtf8(document["rdf:RDF"].channel.title)
-                   feed_items = document["rdf:RDF"].item
-                   total_items = #document["rdf:RDF"].item
+                    -- RDF callback
+                    feed_title = util.htmlEntitiesToUtf8(document["rdf:RDF"].channel.title)
+                    feed_items = document["rdf:RDF"].item
+                    total_items = #document["rdf:RDF"].item
                 end
             )
     end)
@@ -240,14 +240,14 @@ function FeedSource:getFeedType(document, rss_cb, atom_cb, rdf_cb)
         document.feed.entry[1].link
     -- Setup the feed values based on feed type
     local is_rdf = document["rdf:RDF"] and
-       document["rdf:RDF"].channel and
-       document["rdf:RDF"].channel.title
+        document["rdf:RDF"].channel and
+        document["rdf:RDF"].channel.title
     if is_atom then
         return atom_cb()
     elseif is_rss then
-       return rss_cb()
+        return rss_cb()
     elseif is_rdf then
-       return rdf_cb()
+        return rdf_cb()
     end
     -- Return the values through our callback, or call an
     -- error message if the feed wasn't RSS or Atom
