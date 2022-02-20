@@ -181,25 +181,25 @@ end
 
 function FileManagerHistory:showHistDialog()
     if not self.statuses_fetched then
-        local _status
+        local status
         for _, v in ipairs(require("readhistory").hist) do
             if v.dim then
-                _status = "deleted"
+                status = "deleted"
             else
                 if DocSettings:hasSidecarFile(v.file) then
-                    local docinfo = DocSettings:open(v.file)
+                    local docinfo = DocSettings:open(v.file) -- no io handles created, do not close
                     if docinfo.data.summary and docinfo.data.summary.status
                             and docinfo.data.summary.status ~= "" then
-                        _status = docinfo.data.summary.status
+                        status = docinfo.data.summary.status
                     else
-                        _status = "reading"
+                        status = "reading"
                     end
                 else
-                    _status = "new"
+                    status = "new"
                 end
             end
-            v.status = _status
-            self.count[_status] = self.count[_status] + 1
+            v.status = status
+            self.count[status] = self.count[status] + 1
         end
         self.statuses_fetched = true
     end
