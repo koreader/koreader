@@ -479,7 +479,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                         value_max = 30,
                         value_hold_step = 2,
                         default_value = 14,
-                        title_text = _("Terminal emulator font size "),
+                        title_text = _("Terminal emulator font size"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("terminal_font_size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
