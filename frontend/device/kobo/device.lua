@@ -739,9 +739,33 @@ local function writeToSys(val, file)
     return re
 end
 
---- put device into standby, touchscreen is enabled
+--- Check if device can really go to standby.
+-- Here we do a dance. At start Kobo.standby is set to Kobo._testStandby
+-- On the first call `/sys/power/state` is checked if `standby` is available:
+--    If so set Kobo.standby to Kobo._realStandby, which is used on further calls.
+--    If `standby` is not available disable `self.canStandby`.
+function Kobo:_testStandby()
+    logger.dbg("Kobo: checking if standby is possible ...")
+    self.canStandby = no
+    local f = io.open("/sys/power/state")
+    if not f then
+        return
+    end
+    local mode = f:read()
+    logger.dbg("Kobo: available power states", mode)
+    if mode:find("standby") then
+        self.standby = self._realStandby
+        self.canStandby = yes
+        logger.dbg("Kobo: standby state allowed")
+    end
+    f:close()
+    -- and call the real standby function
+    return self:standby()
+end
+
+--- the real function to put the device into standby, touchscreen is enabled
 -- deadline ... deadline for standby
-function Kobo:standby(deadline)
+function Kobo:_realStandby(deadline)
     -- just for wakup, dummy function
     local function dummy() end
 
@@ -763,6 +787,10 @@ function Kobo:standby(deadline)
         self.wakeup_mgr:removeTask(nil, nil, dummy)
     end
 end
+
+--- Check if device really can go to standby on the first call.
+-- Kobo.standby will be modified by Kobo.testStandby
+Kobo.standby = Kobo._testStandby
 
 function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
