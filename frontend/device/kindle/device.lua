@@ -29,32 +29,52 @@ local function kindleEnableWifi(toggle)
     end
 end
 
--- FIXME: procfs variant for footer status
+-- Check if wifid thinks that the WiFi is enabled
+--[[
 local function isWifiUp()
-    local status
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle = nil
     if haslipc and lipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
-        status = lipc_handle:get_int_property("com.lab126.wifid", "enable") or 0
+        local status = lipc_handle:get_int_property("com.lab126.wifid", "enable") or 0
         lipc_handle:close()
+
+        return status == 1
     else
         local std_out = io.popen("lipc-get-prop -i com.lab126.wifid enable", "r")
         if std_out then
-            local result = std_out:read("*all")
+            local result = std_out:read("*number")
             std_out:close()
-            if result then
-                return tonumber(result)
-            else
-                return 0
+
+            if not result then
+                return false
             end
+
+            return result == 1
         else
-            return 0
+            return false
         end
     end
-    return status
+end
+--]]
+
+-- Faster lipc-less variant ;).
+local function isConnected()
+    -- Read carrier state from sysfs (so far, all Kindles appear to use wlan0)
+    local file = io.open("/sys/class/net/wlan0/carrier", "re")
+
+    -- File only exists while Wi-Fi module is loaded.
+    if not file then
+        return false
+    end
+
+    -- 0 means not connected, 1 connected
+    local out = file:read("*number")
+    file:close()
+
+    return out == 1
 end
 
 --[[
@@ -105,6 +125,7 @@ local Kindle = Generic:new{
     -- NOTE: We can cheat by adding a platform-specific entry here, because the only code that will check for this is here.
     isSpecialOffers = isSpecialOffers(),
     hasOTAUpdates = yes,
+    hasFastWifiStatusQuery = yes,
     -- NOTE: HW inversion is generally safe on mxcfb Kindles
     canHWInvert = yes,
     -- NOTE: Newer devices will turn the frontlight off at 0
@@ -143,9 +164,7 @@ function Kindle:initNetworkManager(NetworkMgr)
         end
     end
 
-    NetworkMgr.isWifiOn = function()
-        return 1 == isWifiUp()
-    end
+    NetworkMgr.isWifiOn = isConnected
 end
 
 function Kindle:supportsScreensaver()
