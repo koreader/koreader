@@ -25,6 +25,11 @@ local C = ffi.C
 local PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC
 -- Ditto for REALTIME (for :realtime_coarse only, :realtime uses gettimeofday ;)).
 local PREFERRED_REALTIME_CLOCKID = C.CLOCK_REALTIME
+
+-- The clock, that does not stop on power-saving states (e.g. standby, suspend)
+-- We prefer CLOCK_BOOTTIME because it is monotonic
+local PREFERRED_BOOTTIME_CLOCKID = PREFERRED_REALTIME_CLOCKID
+
 if ffi.os == "Linux" then
     -- Unfortunately, it was only implemented in Linux 2.6.32, and we may run on older kernels than that...
     -- So, just probe it to see if we can rely on it.
@@ -43,6 +48,13 @@ if ffi.os == "Linux" then
         end
     end
     logger.dbg("TimeVal: Preferred REALTIME clock source is", PREFERRED_REALTIME_CLOCKID == C.CLOCK_REALTIME_COARSE and "CLOCK_REALTIME_COARSE" or "CLOCK_REALTIME")
+    -- Unfortunately, BOOTTIME was implemented in Linux 2.6.39, and we may run on older kernels than that...
+    -- BOOTTIME is monotonic, whereas REALTIME_CLOCKID is not (think on daylight saving times).
+    if C.clock_getres(C.CLOCK_BOOTTIME, probe_ts) == 0 then
+        PREFERRED_BOOTTIME_CLOCKID = C.CLOCK_BOOTTIME
+    end
+    logger.dbg("TimeVal: Preferred BOOTTIME clock source is", PREFERRED_BOOTTIME_CLOCKID == C.CLOCK_BOOTTIME and "CLOCK_BOOTTIME" or "the same as the REALTIME clock source.")
+
     probe_ts = nil --luacheck: ignore
 end
 
@@ -199,7 +211,7 @@ end
 --- Ditto, but w/ CLOCK_BOOTTIME (will return a TimeVal set to 0, 0 if the clock source is unsupported, as it's 2.6.39+)
 function TimeVal:boottime()
     local timespec = ffi.new("struct timespec")
-    C.clock_gettime(C.CLOCK_BOOTTIME, timespec)
+    C.clock_gettime(PREFERRED_BOOTTIME_CLOCKID, timespec)
 
     -- TIMESPEC_TO_TIMEVAL
     return TimeVal:new{ sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000)) }
