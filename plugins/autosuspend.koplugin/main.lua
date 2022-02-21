@@ -13,6 +13,7 @@ end
 local Event = require("ui/event")
 local NetworkMgr = require("ui/network/manager")
 local PluginShare = require("pluginshare")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -31,7 +32,7 @@ local AutoSuspend = WidgetContainer:new{
     autoshutdown_timeout_seconds = default_autoshutdown_timeout_seconds,
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
-    last_action = 0,
+    last_action_btv = TimeVal.zero,
     is_standby_scheduled = nil,
     task = nil,
 }
@@ -60,9 +61,9 @@ function AutoSuspend:_schedule(shutdown_only)
         delay_suspend = self.auto_suspend_timeout_seconds
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
-        local now = os.time()
-        delay_suspend = self.last_action + self.auto_suspend_timeout_seconds - now
-        delay_shutdown = self.last_action + self.autoshutdown_timeout_seconds - now
+        local now_btv = TimeVal:boottime()
+        delay_suspend = (self.last_action_btv - now_btv):tonumber() + self.auto_suspend_timeout_seconds
+        delay_shutdown = (self.last_action_btv - now_btv):tonumber() + self.autoshutdown_timeout_seconds
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -93,9 +94,8 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        local now = os.time()
-        logger.dbg("AutoSuspend: start at", now)
-        self.last_action = now
+        self.last_action_btv = TimeVal:boottime()
+        logger.dbg("AutoSuspend: start at", self.last_action_btv:tonumber())
         self:_schedule()
     end
 end
@@ -103,9 +103,8 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        local now = os.time()
-        logger.dbg("AutoSuspend: restart at", now)
-        self.last_action = now
+        self.last_action_btv = TimeVal:boottime()
+        logger.dbg("AutoSuspend: restart at", self.last_action_btv:tonumber())
         self:_schedule(true)
     end
 end
@@ -145,7 +144,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action = os.time()
+    self.last_action_btv = TimeVal:boottime()
 
     self:reschedule_standby()
 end
@@ -158,7 +157,7 @@ function AutoSuspend:reschedule_standby(standby_timeout)
     if not Device:canStandby() then return end
     standby_timeout = standby_timeout or self.auto_standby_timeout_seconds
     self:unschedule_standby()
-    if standby_timeout < 0 then
+    if standby_timeout < 1 then
         return
     end
 
