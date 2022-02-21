@@ -20,6 +20,8 @@ function KindlePowerD:init()
     end
 end
 
+-- FIXME: Implement warmth support
+
 -- If we start with the light off (fl_intensity is fl_min), ensure a toggle will set it to the lowest "on" step,
 -- and that we update fl_intensity (by using setIntensity and not setIntensityHW).
 function KindlePowerD:turnOnFrontlightHW()
