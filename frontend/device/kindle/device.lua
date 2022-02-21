@@ -115,6 +115,8 @@ local Kindle = Generic:new{
     -- Rex & Zelda devices sport an updated driver.
     isZelda = no,
     isRex = no,
+    -- So do devices running on a MediaTek SoC
+    isMTK = no,
     -- But of course, some devices don't actually support all the features the kernel exposes...
     isNightModeChallenged = no,
     -- NOTE: While this ought to behave on Zelda/Rex, turns out, nope, it really doesn't work on *any* of 'em :/ (c.f., ko#5884).
@@ -443,6 +445,16 @@ local KindleBasic3 = Kindle:new{
     isNightModeChallenged = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
+    touch_dev = "/dev/input/event2",
+}
+
+local KindlePaperWhite5 = Kindle:new{
+    model = "KindlePaperWhite5",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    -- FIXME!
     touch_dev = "/dev/input/event2",
 }
 
@@ -935,9 +947,10 @@ local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
                   "16Q", "16R", "16S", "16T", "16U", "16V" }
 local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
 local koa3_set = Set { "11L", "0WQ", "0WP", "0WN", "0WM", "0WL" }
+local pw5_set = Set { "1LG", "1Q0", "1PX", "1VD", "219", "21A", "2BH", "2BJ" }
 
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
-    local kindle_devcode = string.sub(kindle_sn,3,4)
+    local kindle_devcode = string.sub(kindle_sn, 3, 4)
 
     if k2_set[kindle_devcode] then
         return Kindle2
@@ -961,7 +974,7 @@ if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
         return KindleVoyage
     end
 else
-    local kindle_devcode_v2 = string.sub(kindle_sn,4,6)
+    local kindle_devcode_v2 = string.sub(kindle_sn, 4, 6)
 
     if pw3_set[kindle_devcode_v2] then
         return KindlePaperWhite3
@@ -977,6 +990,8 @@ else
         return KindleBasic3
     elseif koa3_set[kindle_devcode_v2] then
         return KindleOasis3
+    elseif pw5_set[kindle_devcode_v2] then
+        return KindlePaperWhite5
     end
 end
 
