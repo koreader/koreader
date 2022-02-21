@@ -29,6 +29,7 @@ local function kindleEnableWifi(toggle)
     end
 end
 
+-- FIXME: procfs variant for footer status
 local function isWifiUp()
     local status
     local haslipc, lipc = pcall(require, "liblipclua")
@@ -153,25 +154,21 @@ function Kindle:supportsScreensaver()
     end
 end
 
+-- FIXME: Use setdate (or settime, or whatever it's called) script instead
 function Kindle:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
-    local commands = {}
+    local command
     if year and month and day then
-        table.insert(commands, string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec))
-        --Kindle DX
-        --BusyBox v1.7.2 (2011-01-13 18:01:58 PST) multi-call binary
-        --Usage: date [OPTION]... [MMDDhhmm[[CC]YY][.ss]] [+FORMAT]
-        table.insert(commands, string.format("date -s '%02d%02d%02d%02d%04d.%02d'", month, day, hour, min, year, sec))
+        command = string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
     else
-        table.insert(commands,string.format("date -s '%d:%d'",hour, min))
+        command = string.format("date -s '%d:%d'",hour, min)
     end
-    for _, command in ipairs(commands) do
-        if os.execute(command) == 0 then
-            os.execute("hwclock -u -w")
-            return true
-        end
+    if os.execute(command) == 0 then
+        os.execute("hwclock -u -w")
+        return true
+    else
+        return false
     end
-    return false
 end
 
 function Kindle:usbPlugIn()
@@ -266,8 +263,6 @@ end
 
 function Kindle:usbPlugOut()
     -- NOTE: See usbPlugIn(), we don't have anything fancy to do here either.
-
-    --- @todo signal filemanager for file changes  13.06 2012 (houqp)
     self.charging_mode = false
 end
 
