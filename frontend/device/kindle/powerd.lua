@@ -28,7 +28,7 @@ function KindlePowerD:init()
             self.fl_warmth = self.lipc_handle:get_int_property("com.lab126.powerd", "currentAmberLevel")
             if self.fl_warmth then
                 -- [0...24] -> [0...100]
-                self.fl_warmth = math.floor(self.fl_warmth * self.warmth_scale)
+                self.fl_warmth = math.floor(self.fl_warmth * self.warmth_scale + 0.5)
             end
         end
     end
@@ -125,7 +125,7 @@ function KindlePowerD:setWarmth(warmth)
 
     if self.lipc_handle ~= nil then
         -- [0...100] -> [0...24]
-        local warmth_level = math.floor(self.fl_warmth / self.warmth_scale)
+        local warmth_level = math.floor(self.fl_warmth / self.warmth_scale + 0.5)
 
         self.lipc_handle:set_int_property("com.lab126.powerd", "currentAmberLevel", warmth_level)
     end
