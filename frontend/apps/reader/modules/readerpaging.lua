@@ -861,7 +861,11 @@ end
 
 function ReaderPaging:onScrollPageRel(page_diff)
     if page_diff == 0 then return true end
-    if page_diff > 0 then
+    if page_diff > 1 then
+        -- More than 1 page, don't bother with how far we're scrolled.
+        self:onGotoRelativePage(Math.round(page_diff))
+        return true
+    elseif page_diff > 0 then
         -- page down, last page should be moved to top
         local last_page_state = table.remove(self.view.page_states)
         local last_visible_area = last_page_state.visible_area
