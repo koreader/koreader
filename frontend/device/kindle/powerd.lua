@@ -22,8 +22,14 @@ function KindlePowerD:init()
 
     -- The FL widget expects this to be set if available...
     if self.device:hasNaturalLight() then
+        -- The PowerD API always expects warmth to be in the [0...100] range...
+        self.warmth_scale = 100 / self.fl_warmth_max
         if self.lipc_handle ~= nil then
             self.fl_warmth = self.lipc_handle:get_int_property("com.lab126.powerd", "currentAmberLevel")
+            if self.fl_warmth then
+                -- [0...24] -> [0...100]
+                self.fl_warmth = math.floor(self.fl_warmth * self.warmth_scale)
+            end
         end
     end
 end
@@ -118,8 +124,10 @@ function KindlePowerD:setWarmth(warmth)
     self.fl_warmth = warmth or self.fl_warmth
 
     if self.lipc_handle ~= nil then
-        self.lipc_handle:set_int_property(
-            "com.lab126.powerd", "currentAmberLevel", warmth)
+        -- [0...100] -> [0...24]
+        local warmth_level = math.floor(self.fl_warmth / self.warmth_scale)
+
+        self.lipc_handle:set_int_property("com.lab126.powerd", "currentAmberLevel", warmth_level)
     end
 
     self:stateChanged()

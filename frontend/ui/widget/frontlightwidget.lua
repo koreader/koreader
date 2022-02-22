@@ -57,6 +57,10 @@ function FrontLightWidget:init()
         self.nl_min = self.powerd.fl_warmth_min
         self.nl_max = self.powerd.fl_warmth_max
 
+        -- NOTE: fl_warmth is always [0...100] even when internal scale is [0...10],
+        --       but we want the UI to reflect the *internal* scale.
+        self.nl_scale = (100 / self.nl_max)
+
         local steps_nl = self.nl_max - self.nl_min + 1
         self.one_step_nl = math.ceil(steps_nl / 25)
         self.steps_nl = math.ceil(steps_nl / self.one_step_nl)
@@ -130,7 +134,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     local enable_button_plus = true
     local enable_button_minus = true
     if self.natural_light then
-        num_warmth = num_warmth or self.powerd.fl_warmth
+        num_warmth = num_warmth or math.floor(self.powerd.fl_warmth / self.nl_scale)
     end
     if num then
         --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
@@ -194,7 +198,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         enabled = true,
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
-        callback = function() self:setProgress(self.fl_min+1, step) end, -- min is 1 (use toggle for 0)
+        callback = function() self:setProgress(self.fl_min + 1, step) end, -- min is 1 (use toggle for 0)
     }
     local button_max = Button:new{
         text = _("Max"),
@@ -289,8 +293,8 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
 
     if self[1] then
         --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
-        if num_warmth ~= self.powerd.fl_warmth then
-            self.powerd:setWarmth(num_warmth)
+        if num_warmth ~= math.floor(self.powerd.fl_warmth / self.nl_scale) then
+            self.powerd:setWarmth(math.floor(num_warmth * self.nl_scale))
         end
     end
 
