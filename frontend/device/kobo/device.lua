@@ -75,9 +75,8 @@ local Kobo = Generic:new{
     isSMP = no,
     -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
     hasEclipseWfm = no,
-    -- Device can go on standby for energy saving; this may slow down page turns on slow devices.
+    -- Device can go into standby for energy saving; this may slow down page turns on slow devices.
     -- On fast devices (as Sage/Cadmus), there is no noticable slowdown.
-    canStandby = yes,
 }
 
 -- Kobo Touch:
@@ -739,12 +738,10 @@ local function writeToSys(val, file)
     return re
 end
 
---- Check if device can really go to standby.
--- Here we do a dance. At start Kobo.standby is set to Kobo._testStandby
--- On the first call `/sys/power/state` is checked if `standby` is available:
---    If so set Kobo.standby to Kobo._realStandby, which is used on further calls.
---    If `standby` is not available disable `self.canStandby`.
-function Kobo:_testStandby()
+--- Check if device supports standby
+-- On the first call detect if standby exists
+-- change Kobo:canStandby() to yes or no during first call
+function Kobo:canStandby()
     logger.dbg("Kobo: checking if standby is possible ...")
     self.canStandby = no
     local f = io.open("/sys/power/state")
@@ -754,19 +751,16 @@ function Kobo:_testStandby()
     local mode = f:read()
     logger.dbg("Kobo: available power states", mode)
     if mode:find("standby") then
-        self.standby = self._realStandby
         self.canStandby = yes
         logger.dbg("Kobo: standby state allowed")
     end
-    f:close()
-    -- and call the real standby function
-    return self:standby()
+    return self:canStandby()
 end
 
---- the real function to put the device into standby, touchscreen is enabled
+--- The function to put the device into standby, with enabled touchscreen.
 -- deadline ... deadline for standby
-function Kobo:_realStandby(deadline)
-    -- just for wakup, dummy function
+function Kobo:standby(deadline)
+    -- just for wake up, dummy function
     local function dummy() end
 
     if deadline then
@@ -774,11 +768,11 @@ function Kobo:_realStandby(deadline)
     end
 
     local TimeVal = require("ui/timeval")
-    local suspend_time_btv = TimeVal:boottime()
+    local standby_time_btv = TimeVal:boottime_or_realtime_coarse()
 
     local return_value = writeToSys("standby", "/sys/power/state")
 
-    self.lastStandbyTime = (TimeVal:boottime() - suspend_time_btv):tonumber()
+    self.lastStandbyTime = (TimeVal:boottime_or_realtime_coarse() - standby_time_btv):tonumber()
     self.totalStandbyTime = self.totalStandbyTime + self.lastStandbyTime
 
     logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", return_value)
@@ -787,10 +781,6 @@ function Kobo:_realStandby(deadline)
         self.wakeup_mgr:removeTask(nil, nil, dummy)
     end
 end
-
---- Check if device really can go to standby on the first call.
--- Kobo.standby will be modified by Kobo.testStandby
-Kobo.standby = Kobo._testStandby
 
 function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
@@ -847,6 +837,7 @@ function Kobo:suspend()
         logger.err('write error: ', err_msg, err_code)
     end
 ]]
+
     util.sleep(2)
     logger.info("Kobo suspend: waited for 2s because of reasons...")
 
@@ -886,6 +877,7 @@ function Kobo:suspend()
         end
         return false
     end
+
     re, err_msg, err_code = f:write("mem\n")
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
     -- execution should only resume on wakeup...
@@ -895,6 +887,7 @@ function Kobo:suspend()
         logger.err("write error: ", err_msg, err_code)
     end
     f:close()
+
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
     -- gloriously failed at this point...
     -- We can safely assume that just from a non-zero return code, without

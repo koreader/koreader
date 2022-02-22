@@ -5,7 +5,6 @@ Plugin for setting screen warmth based on the sun position and/or a time schedul
 --]]--
 
 local Device = require("device")
-
 local ConfirmBox = require("ui/widget/confirmbox")
 local DateTimeWidget = require("ui/widget/datetimewidget")
 local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
@@ -21,6 +20,7 @@ local SunTime = require("suntime")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
 local _ = require("gettext")
 local T = FFIUtil.template
 local Screen = require("device").screen
@@ -116,11 +116,10 @@ function AutoWarmth:onAutoWarmthMode()
     self:scheduleMidnightUpdate()
 end
 
-AutoWarmth.onLeaveStandby = AutoWarmth.onResume
-
 function AutoWarmth:onResume()
     if self.activate == 0 then return end
 
+    logger.dbg("AutoWarmth: onResume/onLeaveStandby")
     local resume_date = os.date("*t")
 
     -- check if resume and suspend are done on the same day
@@ -132,6 +131,8 @@ function AutoWarmth:onResume()
         self:scheduleMidnightUpdate() -- resume is on the other day, do all calcs again
     end
 end
+
+AutoWarmth.onLeaveStandby = AutoWarmth.onResume
 
 -- wrapper for unscheduling, so that only our setWarmth gets unscheduled
 function AutoWarmth.setWarmth(val)
@@ -149,6 +150,7 @@ function AutoWarmth.setWarmth(val)
 end
 
 function AutoWarmth:scheduleMidnightUpdate()
+    logger.dbg("AutoWarmth: scheduleMidnightUpdate")
     -- first unschedule all old functions
     UIManager:unschedule(self.scheduleMidnightUpdate) -- when called from menu or resume
 
@@ -251,7 +253,11 @@ function AutoWarmth:scheduleMidnightUpdate()
     self:scheduleWarmthChanges(now)
 end
 
+--- @todo: As we have standby now, don't do the scheduling of the whole schedule,
+-- but only the next warmth value plus an additional scheduleWarmthChanges
+-- This would safe a bit of energy, but not really much.
 function AutoWarmth:scheduleWarmthChanges(time)
+    logger.dbg("AutoWarmth: scheduleWarmthChanges")
     for i = 1, #self.sched_funcs do -- loop not essential, as unschedule unschedules all functions at once
         if not UIManager:unschedule(self.sched_funcs[i][1]) then
             break
