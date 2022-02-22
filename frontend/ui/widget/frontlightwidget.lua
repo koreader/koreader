@@ -134,7 +134,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     local enable_button_plus = true
     local enable_button_minus = true
     if self.natural_light then
-        num_warmth = num_warmth or math.floor(self.powerd.fl_warmth / self.nl_scale)
+        num_warmth = num_warmth or math.floor(self.powerd.fl_warmth / self.nl_scale + 0.5)
     end
     if num then
         --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
@@ -293,8 +293,8 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
 
     if self[1] then
         --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
-        if num_warmth ~= math.floor(self.powerd.fl_warmth / self.nl_scale) then
-            self.powerd:setWarmth(math.floor(num_warmth * self.nl_scale))
+        if num_warmth ~= math.floor(self.powerd.fl_warmth / self.nl_scale + 0.5) then
+            self.powerd:setWarmth(math.floor(num_warmth * self.nl_scale + 0.5))
         end
     end
 
