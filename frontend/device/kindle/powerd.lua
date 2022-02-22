@@ -3,6 +3,7 @@ local BasePowerD = require("device/generic/powerd")
 
 local KindlePowerD = BasePowerD:new{
     fl_min = 0, fl_max = 24,
+    fl_warmth_min = 0, fl_warmth_max = 24,
 
     lipc_handle = nil,
 }
@@ -19,8 +20,6 @@ function KindlePowerD:init()
         self.fl_max = self.fl_max + 1
     end
 end
-
--- FIXME: Implement warmth support
 
 -- If we start with the light off (fl_intensity is fl_min), ensure a toggle will set it to the lowest "on" step,
 -- and that we update fl_intensity (by using setIntensity and not setIntensityHW).
@@ -97,7 +96,35 @@ function KindlePowerD:setIntensityHW(intensity)
         -- (asking lipc to set it to 0 would in fact set it to > 0 on ! canTurnFrontlightOff Kindles).
         -- We do *both* to make the fl restore on resume less jarring on devices where lipc 0 != off.
         os.execute("printf '%s' ".. intensity .." > " .. self.fl_intensity_file)
+
+        -- And in case there are two LEDs...
+        if self.warmth_intensity_file then
+            os.execute("printf '%s' ".. intensity .." > " .. self.warmth_intensity_file)
+        end
     end
+end
+
+function KindlePowerD:setWarmth(warmth)
+    if not self.device:hasNaturalLight() then
+        return
+    end
+
+    self.fl_warmth = warmth or self.fl_warmth
+
+    if self.lipc_handle ~= nil then
+        self.lipc_handle:set_int_property(
+            "com.lab126.powerd", "currentAmberLevel", warmth)
+    end
+
+    self:stateChanged()
+end
+
+function KindlePowerD:getWarmth()
+    if not self.device:hasNaturalLight() then
+        return
+    end
+
+    return self.fl_warmth
 end
 
 function KindlePowerD:getCapacityHW()
