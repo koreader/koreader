@@ -10,7 +10,6 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
-local MovableContainer = require("ui/widget/container/movablecontainer")
 local NaturalLight = require("ui/widget/naturallightwidget")
 local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
@@ -444,9 +443,6 @@ function FrontLightWidget:update()
             },
         }
     }
-    self.movable = MovableContainer:new{
-        self.light_frame,
-    }
     self[1] = WidgetContainer:new{
         align = "center",
         dimen =Geom:new{
@@ -454,7 +450,10 @@ function FrontLightWidget:update()
             w = self.screen_width,
             h = self.screen_height,
         },
-        self.movable,
+        FrameContainer:new{
+            bordersize = 0,
+            self.light_frame,
+        },
     }
 end
 
