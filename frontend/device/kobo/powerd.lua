@@ -41,7 +41,7 @@ function KoboPowerD:_syncKoboLightOnStart()
                 if new_color ~= nil then
                     -- ColorSetting is stored as a color temperature scale in Kelvin,
                     -- from 1500 to 6400
-                    -- so normalize this to [0,100] on our end.
+                    -- so normalize this to [0, 100] on our end.
                     new_warmth = (100 - math.floor((new_color - 1500) / 49))
                 end
             end
