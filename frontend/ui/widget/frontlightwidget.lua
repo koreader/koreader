@@ -56,8 +56,14 @@ function FrontLightWidget:init()
     if self.natural_light then
         self.nl_min = self.powerd.fl_warmth_min
         self.nl_max = self.powerd.fl_warmth_max
-        -- NOTE: fl_warmth is always [0...100] even when internal scale is [0...10]
-        self.nl_scale = (100 / self.nl_max)
+
+        local steps_nl = self.nl_max - self.nl_min + 1
+        self.one_step_nl = math.ceil(steps_nl / 25)
+        self.steps_nl = math.ceil(steps_nl / self.one_step_nl)
+        if (self.steps_nl - 1) * self.one_step_nl < self.nl_max - self.nl_min then
+            self.steps_nl = self.steps_nl + 1
+        end
+        self.steps_nl = math.min(self.steps_nl, steps_nl)
     end
 
     -- button width to fit screen size
@@ -138,8 +144,8 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     end
 
     local ticks = {}
-    for i = 1, self.steps-2 do
-        table.insert(ticks, i*self.one_step)
+    for i = 1, self.steps - 2 do
+        table.insert(ticks, i * self.one_step)
     end
 
     self.fl_group = ProgressWidget:new{
@@ -300,7 +306,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
             })
         end
 
-        for i = curr_warmth_step + 1, self.steps - 1 do
+        for i = curr_warmth_step + 1, self.steps_nl - 1 do
             table.insert(warmth_group, self.fl_prog_button:new{
                              text = "",
                              callback = function()
@@ -310,8 +316,8 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         end
     end
 
-    if math.floor(num_warmth / self.nl_scale) <= self.nl_min then enable_button_minus = false end
-    if math.ceil(num_warmth / self.nl_scale) >= self.nl_max then enable_button_plus = false end
+    if num_warmth == self.nl_max then enable_button_plus = false end
+    if num_warmth == self.nl_min then enable_button_minus = false end
 
     local text_warmth = TextBoxWidget:new{
         text = "\n" .. _("Warmth"),
@@ -321,22 +327,22 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         width = math.floor(self.screen_width * 0.95),
     }
     local button_minus = Button:new{
-        text = "-" .. (1 * self.nl_scale),
+        text = "-1",
         margin = Size.margin.small,
         radius = 0,
         enabled = enable_button_minus,
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
-        callback = function()  self:setProgress(self.fl_cur, step, (num_warmth - (1 * self.nl_scale))) end,
+        callback = function()  self:setProgress(self.fl_cur, step, num_warmth - 1) end,
     }
     local button_plus = Button:new{
-        text = "+" .. (1 * self.nl_scale),
+        text = "+1",
         margin = Size.margin.small,
         radius = 0,
         enabled = enable_button_plus,
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
-        callback = function() self:setProgress(self.fl_cur, step, (num_warmth + (1 * self.nl_scale))) end,
+        callback = function() self:setProgress(self.fl_cur, step, num_warmth + 1) end,
     }
     local item_level = TextBoxWidget:new{
         text = num_warmth,
@@ -360,7 +366,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         enabled = true,
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
-        callback = function() self:setProgress(self.fl_cur, step, (self.nl_max * self.nl_scale)) end,
+        callback = function() self:setProgress(self.fl_cur, step, self.nl_max) end,
     }
     local empty_space = HorizontalSpan:new{
         width = math.floor((self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width) / 2),
