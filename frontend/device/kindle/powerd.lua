@@ -19,6 +19,13 @@ function KindlePowerD:init()
     if not self.device:canTurnFrontlightOff() then
         self.fl_max = self.fl_max + 1
     end
+
+    -- The FL widget expects this to be set if available...
+    if self.device:hasNaturalLight() then
+        if self.lipc_handle ~= nil then
+            self.fl_warmth = self.lipc_handle:get_int_property("com.lab126.powerd", "currentAmberLevel")
+        end
+    end
 end
 
 -- If we start with the light off (fl_intensity is fl_min), ensure a toggle will set it to the lowest "on" step,
@@ -88,8 +95,7 @@ function KindlePowerD:setIntensityHW(intensity)
     --       it knows what the UI values should map to for the specific hardware much better than us.
     if self.lipc_handle ~= nil then
         -- NOTE: We want to bypass setIntensity's shenanigans and simply restore the light as-is
-        self.lipc_handle:set_int_property(
-            "com.lab126.powerd", "flIntensity", intensity)
+        self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", intensity)
     end
     if turn_it_off then
         -- NOTE: when intensity is 0, we want to *really* kill the light, so do it manually
