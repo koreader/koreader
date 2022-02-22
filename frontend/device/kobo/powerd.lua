@@ -132,7 +132,7 @@ function KoboPowerD:init()
         if self.device:hasNaturalLight() then
             local nl_config = G_reader_settings:readSetting("natural_light_config")
             if nl_config then
-                for key,val in pairs(nl_config) do
+                for key, val in pairs(nl_config) do
                     self.device.frontlight_settings[key] = val
                 end
             end
