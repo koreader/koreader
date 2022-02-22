@@ -24,7 +24,7 @@ local T = require("ffi/util").template
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
-local default_auto_standby_timeout_seconds = 4 -- 4 seconds
+local default_auto_standby_timeout_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage
 
 local AutoSuspend = WidgetContainer:new{
     name = "autosuspend",
@@ -127,7 +127,7 @@ function AutoSuspend:init()
         self:_schedule(shutdown_only)
     end
     self:_start()
-    self:reschedule_standby()
+    self:_reschedule_standby()
 
     -- self.ui is nil in the testsuite
     if not self.ui or not self.ui.menu then return end
@@ -140,23 +140,27 @@ function AutoSuspend:onCloseWidget()
     if Device:isPocketBook() and not Device:canSuspend() then return end
     self:_unschedule()
     self.task = nil
+
+    self:_unschedule_standby()
+    -- allowStandby is necessary, as we do a preventStandby on plugin start
+    UIManager:allowStandby()
 end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
     self.last_action_btv = TimeVal.boottime_or_realtime_coarse()
 
-    self:reschedule_standby()
+    self:_reschedule_standby()
 end
 
-function AutoSuspend:unschedule_standby()
+function AutoSuspend:_unschedule_standby()
     UIManager:unschedule(AutoSuspend.allowStandby)
 end
 
-function AutoSuspend:reschedule_standby(standby_timeout)
+function AutoSuspend:_reschedule_standby(standby_timeout)
     if not Device:canStandby() then return end
     standby_timeout = standby_timeout or self.auto_standby_timeout_seconds
-    self:unschedule_standby()
+    self:_unschedule_standby()
     if standby_timeout < 1 then
         return
     end
@@ -189,7 +193,7 @@ function AutoSuspend:onSuspend()
     -- We do not want auto suspend procedure to waste battery during suspend. So let's unschedule it
     -- when suspending and restart it after resume.
     self:_unschedule()
-    self:unschedule_standby()
+    self:_unschedule_standby()
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:addTask(self.autoshutdown_timeout_seconds, UIManager.poweroff_action)
     end
@@ -203,6 +207,7 @@ function AutoSuspend:onResume()
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
     self:_unschedule()
     self:_start()
+    self:_reschedule_standby()
 end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
@@ -438,7 +443,7 @@ function AutoSuspend:onAllowStandby()
             self:_schedule()   -- reschedule suspend and shutdown with the new time
         end
 
-        self:reschedule_standby()
+        self:_reschedule_standby()
     end
 end
 
