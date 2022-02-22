@@ -488,6 +488,7 @@ local KindlePaperWhite5 = Kindle:new{
     isMTK = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
+    hasNaturalLight = yes,
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
@@ -902,6 +903,22 @@ function KindleBasic3:init()
     self.input.open("fake_events")
 end
 
+function KindlePaperWhite5:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+    }
+
+    Kindle.init(self)
+
+    self.input.open(self.touch_dev)
+    self.input.open("fake_events")
+end
+
 function KindleTouch:exit()
     Generic.exit(self)
     if self.isSpecialOffers then
@@ -930,6 +947,7 @@ KindleBasic2.exit = KindleTouch.exit
 KindlePaperWhite4.exit = KindleTouch.exit
 KindleBasic3.exit = KindleTouch.exit
 KindleOasis3.exit = KindleTouch.exit
+KindlePaperWhite5.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
