@@ -61,7 +61,7 @@ function AutoSuspend:_schedule(shutdown_only)
         delay_suspend = self.auto_suspend_timeout_seconds
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
-        local now_btv = TimeVal:boottime()
+        local now_btv = TimeVal.boottime_or_realtime_coarse()
         delay_suspend = (self.last_action_btv - now_btv):tonumber() + self.auto_suspend_timeout_seconds
         delay_shutdown = (self.last_action_btv - now_btv):tonumber() + self.autoshutdown_timeout_seconds
     end
@@ -94,7 +94,7 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        self.last_action_btv = TimeVal:boottime()
+        self.last_action_btv = TimeVal.boottime_or_realtime_coarse()
         logger.dbg("AutoSuspend: start at", self.last_action_btv:tonumber())
         self:_schedule()
     end
@@ -103,7 +103,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        self.last_action_btv = TimeVal:boottime()
+        self.last_action_btv = TimeVal.boottime_or_realtime_coarse()
         logger.dbg("AutoSuspend: restart at", self.last_action_btv:tonumber())
         self:_schedule(true)
     end
@@ -144,7 +144,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action_btv = TimeVal:boottime()
+    self.last_action_btv = TimeVal.boottime_or_realtime_coarse()
 
     self:reschedule_standby()
 end
@@ -180,7 +180,7 @@ function AutoSuspend:allowStandby()
         -- This is necessary for wakeup from standby, as the deadline for receiving input events
         -- is calculated from the time to the next scheduled function.
         -- Let's call it deadline_guard.
-        UIManager:scheduleIn(0.9, function() end)
+        UIManager:scheduleIn(0.001, function() end)
     end
 end
 
@@ -392,7 +392,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                 self:setSuspendShutdownTimes(touchmenu_instance,
                     _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
-                    {4, 15*60}, 0)
+                    {3, 15*60}, 0)
             end,
         }
     end
@@ -414,7 +414,7 @@ function AutoSuspend:onAllowStandby()
 
     if Device:canStandby() then
         local wake_in = math.huge
-        -- The next scheduled function should be the deadline_guard (ca. 1sec)
+        -- The next scheduled function should be the deadline_guard
         -- Wake before the second next scheduled function executes (e.g. footer update, suspend ...)
         local scheduler_times = UIManager:getNextTaskTimes(2)
         if #scheduler_times == 2 then

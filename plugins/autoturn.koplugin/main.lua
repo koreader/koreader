@@ -111,7 +111,7 @@ function AutoTurn:onInputEvent()
 end
 
 function AutoTurn:onEnterStandby()
-    self:onSuspend()
+    self:_unschedule()
 end
 
 -- We do not want autoturn to turn pages during the suspend process.
@@ -124,7 +124,7 @@ end
 function AutoTurn:onLeaveStandby()
     self.last_action_tv = self.last_action_tv - TimeVal:new{usec = Device.lastStandbyTime * 1e6}
 
-    -- we messed with last_action_tv, so a complete reschedule has to be done
+    -- We messed with last_action_tv, so a complete reschedule has to be done.
     if self:_enabled() then
         self:_unschedule()
         self:_schedule()
