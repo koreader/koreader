@@ -9,7 +9,6 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
-local MovableContainer = require("ui/widget/container/movablecontainer")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TitleBar = require("ui/widget/titlebar")
@@ -175,9 +174,6 @@ function NaturalLightWidget:update()
             },
         }
     }
-    self.movable = MovableContainer:new{
-        self.nl_frame,
-    }
     self[1] = WidgetContainer:new{
         align = "top",
         dimen =Geom:new{
@@ -185,7 +181,10 @@ function NaturalLightWidget:update()
             w = self.screen_width,
             h = self.screen_height,
         },
-        self.movable,
+        FrameContainer:new{
+            bordersize = 0,
+            self.nl_frame,
+        },
     }
 end
 
