@@ -121,7 +121,7 @@ function AutoTurn:onSuspend()
     self:_unschedule()
 end
 
-function AutoTurn:onLeaveStandby()
+function AutoTurn:_onLeaveStandby()
     self.last_action_tv = self.last_action_tv - TimeVal:new{usec = Device.lastStandbyTime * 1e6}
 
     -- We messed with last_action_tv, so a complete reschedule has to be done.
@@ -131,7 +131,7 @@ function AutoTurn:onLeaveStandby()
     end
 end
 
-function AutoTurn:onResume()
+function AutoTurn:_onResume()
     logger.dbg("AutoTurn: onResume")
     self:_start()
 end
@@ -158,7 +158,10 @@ function AutoTurn:addToMainMenu(menu_items)
                     G_reader_settings:makeFalse("autoturn_enabled")
                     self:_unschedule()
                     menu:updateItems()
+                    self.onResume = nil
+                    self.onLeaveStandby = nil
                 end,
+                ok_always_enabled = true,
                 callback = function(autoturn_spin)
                     self.autoturn_sec = autoturn_spin.value
                     G_reader_settings:saveSetting("autoturn_timeout_seconds", autoturn_spin.value)
@@ -167,6 +170,8 @@ function AutoTurn:addToMainMenu(menu_items)
                     self:_unschedule()
                     self:_start()
                     menu:updateItems()
+                    self.onResume = self._onResume
+                    self.onLeaveStandby = self._onLeaveStandby
                 end,
             }
             UIManager:show(autoturn_spin)

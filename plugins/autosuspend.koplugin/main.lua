@@ -181,10 +181,12 @@ function AutoSuspend:allowStandby()
     if not self.is_standby_scheduled then
         self.is_standby_scheduled = true
         UIManager:allowStandby()
+
         -- This is necessary for wakeup from standby, as the deadline for receiving input events
-        -- is calculated from the time to the next scheduled function.
+        -- is calculated from the time to the next scheduled function. Make sure this function comes soon.
         -- Let's call it deadline_guard.
         UIManager:scheduleIn(0.001, function() end)
+--        UIManager:tickAfterNext(function() end)
     end
 end
 
