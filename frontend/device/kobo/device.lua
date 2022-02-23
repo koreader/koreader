@@ -75,8 +75,6 @@ local Kobo = Generic:new{
     isSMP = no,
     -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
     hasEclipseWfm = no,
-    -- Device can go into standby for energy saving; this may slow down page turns on slow devices.
-    -- On fast devices (as Sage/Cadmus), there is no noticable slowdown.
 }
 
 -- Kobo Touch:
@@ -727,7 +725,7 @@ function Kobo:getUnexpectedWakeup() return unexpected_wakeup_count end
 local function writeToSys(val, file)
     local f = io.open(file, "we")
     if not f then
-        logger.info("Cannot open:", file)
+        logger.err("Cannot open:", file)
         return
     end
     local re, err_msg, err_code = f:write(val, "\n")
