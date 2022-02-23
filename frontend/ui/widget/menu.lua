@@ -994,7 +994,7 @@ function Menu:onCloseWidget()
 end
 
 function Menu:updatePageInfo(select_number)
-    if self.item_group[1] then
+    if #self.item_table > 0 then
         if Device:hasDPad() then
             -- reset focus manager accordingly
             self.selected = { x = 1, y = select_number }
