@@ -52,12 +52,14 @@ function BasePowerD:setWarmthHW(warmth) end
 function BasePowerD:getCapacityHW() return 0 end
 function BasePowerD:getAuxCapacityHW() return 0 end
 function BasePowerD:isAuxBatteryConnectedHW() return false end
+function BasePowerD:isChargerPresentHW() return false end
 function BasePowerD:getDismissBatteryStatus() return self.battery_warning end
 function BasePowerD:setDismissBatteryStatus(status) self.battery_warning = status end
 --- @note: Should ideally return true as long as the device is plugged in, even once the battery is full...
 function BasePowerD:isChargingHW() return false end
 --- @note: ...at which point this should start returning true (i.e., plugged in & fully charged).
 function BasePowerD:isChargedHW() return false end
+function BasePowerD:chargeHW(batt, aux_batt) return "" end
 function BasePowerD:isAuxChargingHW() return false end
 function BasePowerD:isAuxChargedHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
@@ -239,6 +241,13 @@ function BasePowerD:isCharged()
     return self:isChargedHW()
 end
 
+--- Enables or disables charging of batteries
+-- @param bool batt enables charging of the main battery
+-- @param bool aux_batt enables charging of an auxilliary battery
+function BasePowerD:charge(batt, aux_batt)
+    return self:chargeHW(batt, aux_batt)
+end
+
 function BasePowerD:getAuxCapacity()
     local now
 
@@ -275,6 +284,10 @@ end
 
 function BasePowerD:isAuxBatteryConnected()
     return self:isAuxBatteryConnectedHW()
+end
+
+function BasePowerD:isChargerPresent()
+    return self:isChargerPresentHW()
 end
 
 function BasePowerD:stateChanged()
