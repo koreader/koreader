@@ -77,6 +77,7 @@ local Device = {
     last_suspend_time = 0,
     canReboot = no,
     canPowerOff = no,
+    canControlCharge = no,
     canAssociateFileExtensions = no,
 
     -- Start and stop text input mode (e.g. open soft keyboard, etc)

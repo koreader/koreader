@@ -401,6 +401,7 @@ local KoboCadmus = Kobo:new{
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
+    canControlCharge = yes,
 }
 
 -- Kobo Libra 2:
