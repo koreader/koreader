@@ -5,11 +5,43 @@ This plugin provides a terminal emulator (VT52 (+some ANSI))
 ]]
 
 local Device = require("device")
+local ffi = require("ffi")
+local C = ffi.C
+
+-- for terminal emulator
+ffi.cdef[[
+static const int SIGTERM = 15;
+
+int grantpt(int fd) __attribute__((nothrow, leaf));
+int unlockpt(int fd) __attribute__((nothrow, leaf));
+char *ptsname(int fd) __attribute__((nothrow, leaf));
+pid_t setsid(void) __attribute__((nothrow, leaf));
+
+static const int TCIFLUSH = 0;
+int tcdrain(int fd) __attribute__((nothrow, leaf));
+int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
+]]
+
+local function check_prerequisites()
+    local ptmx_name = "/dev/ptmx"
+    local ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
+
+    if C.grantpt(ptmx) ~= 0 then
+        C.close(ptmx)
+        return false
+    end
+    if C.unlockpt(ptmx) ~= 0 then
+        C.close(ptmx)
+        return false
+    end
+    C.close(ptmx)
+    return true
+end
 
 -- grantpt and friends are necessary (introduced on Android in API 21).
 -- So sorry for the Tolinos with (Android 4.4.x).
 -- Maybe https://f-droid.org/de/packages/jackpal.androidterm/ could be an alternative then.
-if Device:isAndroid() and Device.firmware_rev < 21 then
+if (Device:isAndroid() and Device.firmware_rev < 21) or not check_prerequisites() then
     return
 end
 
@@ -31,23 +63,6 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
-
-local ffi = require("ffi")
-local C = ffi.C
-
--- for terminal emulator
-ffi.cdef[[
-static const int SIGTERM = 15;
-
-int grantpt(int fd) __attribute__((nothrow, leaf));
-int unlockpt(int fd) __attribute__((nothrow, leaf));
-char *ptsname(int fd) __attribute__((nothrow, leaf));
-pid_t setsid(void) __attribute__((nothrow, leaf));
-
-static const int TCIFLUSH = 0;
-int tcdrain(int fd) __attribute__((nothrow, leaf));
-int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
-]]
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
@@ -86,9 +101,13 @@ function Terminal:spawnShell(cols, rows)
 
     if C.grantpt(self.ptmx) ~= 0 then
         logger.err("Terminal: can not grantpt")
+        C.close(self.ptmx)
+        return false
     end
     if C.unlockpt(self.ptmx) ~= 0 then
         logger.err("Terminal: can not unockpt")
+        C.close(self.ptmx)
+        return false
     end
 
     self.slave_pty = ffi.string(C.ptsname(self.ptmx))
@@ -155,6 +174,7 @@ function Terminal:spawnShell(cols, rows)
     self.input_widget:interpretAnsiSeq(self:receive())
 
     logger.info("Terminal: spawn done")
+    return true
 end
 
 function Terminal:receive()
@@ -409,10 +429,11 @@ function Terminal:onTerminalStart(touchmenu_instance)
 
     logger.dbg("Terminal: resolution= " .. self.maxc .. "x" .. self.maxr)
 
-    self:spawnShell(self.maxc, self.maxr)
-    UIManager:show(self.input_dialog)
-    UIManager:scheduleIn(0.25, Terminal.refresh, self, true)
-    self.input_dialog:onShowKeyboard(true)
+    if self:spawnShell(self.maxc, self.maxr) then
+        UIManager:show(self.input_dialog)
+        UIManager:scheduleIn(0.25, Terminal.refresh, self, true)
+        self.input_dialog:onShowKeyboard(true)
+    end
 end
 
 function Terminal:addToMainMenu(menu_items)
