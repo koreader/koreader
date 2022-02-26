@@ -102,17 +102,11 @@ function Terminal:spawnShell(cols, rows)
     if C.grantpt(self.ptmx) ~= 0 then
         logger.err("Terminal: can not grantpt")
         C.close(self.ptmx)
-        UIManager:show(InfoMessage:new{
-            text = _("Your firmware doesn't support the 'grantpt' system call.\nTerminal can not be used."),
-        })
         return false
     end
     if C.unlockpt(self.ptmx) ~= 0 then
         logger.err("Terminal: can not unockpt")
         C.close(self.ptmx)
-        UIManager:show(InfoMessage:new{
-            text = _("An arror occured with 'unlockpt'.\nTerminal can not be used."),
-        })
         return false
     end
 
