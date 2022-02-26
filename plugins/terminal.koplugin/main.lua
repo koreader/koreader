@@ -86,9 +86,19 @@ function Terminal:spawnShell(cols, rows)
 
     if C.grantpt(self.ptmx) ~= 0 then
         logger.err("Terminal: can not grantpt")
+        C.close(self.ptmx)
+        UIManager:show(InfoMessage:new{
+            text = _("Your firmware doesn't support the 'grantpt' system call.\nTerminal can not be used."),
+        })
+        return false
     end
     if C.unlockpt(self.ptmx) ~= 0 then
         logger.err("Terminal: can not unockpt")
+        C.close(self.ptmx)
+        UIManager:show(InfoMessage:new{
+            text = _("An arror occured with 'unlockpt'.\nTerminal can not be used."),
+        })
+        return false
     end
 
     self.slave_pty = ffi.string(C.ptsname(self.ptmx))
@@ -155,6 +165,7 @@ function Terminal:spawnShell(cols, rows)
     self.input_widget:interpretAnsiSeq(self:receive())
 
     logger.info("Terminal: spawn done")
+    return true
 end
 
 function Terminal:receive()
@@ -409,10 +420,11 @@ function Terminal:onTerminalStart(touchmenu_instance)
 
     logger.dbg("Terminal: resolution= " .. self.maxc .. "x" .. self.maxr)
 
-    self:spawnShell(self.maxc, self.maxr)
-    UIManager:show(self.input_dialog)
-    UIManager:scheduleIn(0.25, Terminal.refresh, self, true)
-    self.input_dialog:onShowKeyboard(true)
+    if self:spawnShell(self.maxc, self.maxr) then
+        UIManager:show(self.input_dialog)
+        UIManager:scheduleIn(0.25, Terminal.refresh, self, true)
+        self.input_dialog:onShowKeyboard(true)
+    end
 end
 
 function Terminal:addToMainMenu(menu_items)
