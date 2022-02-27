@@ -175,7 +175,7 @@ function FrontLightWidget:setProgress(num, step, step_nl, num_warmth)
         enabled = enable_button_minus,
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
-        callback = function()  self:setProgress(self.fl_cur - 1, step, step_nl) end,
+        callback = function() self:setProgress(self.fl_cur - 1, step, step_nl) end,
     }
     local button_plus = Button:new{
         text = "+1",
