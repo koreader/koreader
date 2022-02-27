@@ -91,7 +91,7 @@ function Terminal:spawnShell(cols, rows)
     if self.is_shell_open then
         self.input_widget:resize(rows, cols)
         self.input_widget:interpretAnsiSeq(self:receive())
-        return
+        return true
     end
 
     local shell = G_reader_settings:readSetting("terminal_shell", "sh")
@@ -99,25 +99,37 @@ function Terminal:spawnShell(cols, rows)
     local ptmx_name = "/dev/ptmx"
     self.ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
 
+    if self.ptmx == -1 then
+        logger.err("Terminal: can not open", ptmx_name, ffi.string(C.strerror(ffi.errno())))
+        return false
+    end
+
     if C.grantpt(self.ptmx) ~= 0 then
-        logger.err("Terminal: can not grantpt")
+        logger.err("Terminal: can not grantpt", ffi.string(C.strerror(ffi.errno())))
         C.close(self.ptmx)
         return false
     end
     if C.unlockpt(self.ptmx) ~= 0 then
-        logger.err("Terminal: can not unockpt")
+        logger.err("Terminal: can not unockpt", ffi.string(C.strerror(ffi.errno())))
         C.close(self.ptmx)
         return false
     end
 
-    self.slave_pty = ffi.string(C.ptsname(self.ptmx))
+    local ptsname = C.ptsname(self.ptmx)
+    if ptsname then
+        self.slave_pty = ffi.string(ptsname)
+    else
+        logger.err("Terminal: ptsname failed")
+        C.close(self.ptmx)
+        return false
+    end
 
-    logger.info("Terminal: slave_pty", self.slave_pty)
+    logger.dbg("Terminal: slave_pty", self.slave_pty)
 
     local pid = C.fork()
     if pid < 0 then
-        logger.err("Terminal: fork failed")
-        return
+        logger.err("Terminal: fork failed", ffi.string(C.strerror(ffi.errno())))
+        return false
     elseif pid == 0 then
         C.close(self.ptmx)
         C.setsid()
@@ -132,7 +144,7 @@ function Terminal:spawnShell(cols, rows)
         local pts = C.open(self.slave_pty, C.O_RDWR)
         if pts == -1 then
             logger.err("Terminal: cannot open slave pty: ", pts)
-            return
+            return false
         end
 
         C.dup2(pts, 0);
