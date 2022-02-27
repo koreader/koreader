@@ -690,7 +690,7 @@ elseif codename == "PB650" or codename == "PocketBook 650" then
     return PocketBook650
 elseif codename == "PB740" then
     return PocketBook740
-elseif codename == "PB740-2" then
+elseif codename == "PB740-2" or codename == "PB740-3" then
     return PocketBook740_2
 elseif codename == "PB741" then
     return PocketBook741
