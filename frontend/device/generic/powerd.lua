@@ -60,11 +60,11 @@ function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min en
 function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
 function BasePowerD:turnOnFrontlightHW() self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
 function BasePowerD:frontlightWarmthHW() return 0 end
--- Anything needs to be done before do a real hardware suspend. Such as turn off
--- front light.
+-- Anything that needs to be done before do a real hardware suspend.
+-- (Such as turning the front light off).
 function BasePowerD:beforeSuspend() end
--- Anything needs to be done after do a real hardware resume. Such as resume
--- front light state.
+-- Anything that needs to be done after do a real hardware resume.
+-- (Such as restoring front light state).
 function BasePowerD:afterResume() end
 
 function BasePowerD:isFrontlightOn()
