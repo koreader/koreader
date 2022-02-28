@@ -20,15 +20,7 @@ function SDLPowerD:setIntensityHW(intensity)
     self.hw_intensity = intensity or self.hw_intensity
 end
 
-
-function SDLPowerD:setWarmth(level)
-    require("logger").info("set warmth to", level)
-    self.fl_warmth = level or self.fl_warmth
-    self:stateChanged()
-end
-
-function SDLPowerD:getWarmth()
-    if self.hw_intensity == 0 then return end
+function SDLPowerD:frontlightWarmthHW()
     return self.fl_warmth
 end
 
