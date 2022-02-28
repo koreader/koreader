@@ -25,6 +25,8 @@ local C = ffi.C
 local PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC
 -- Ditto for REALTIME (for :realtime_coarse only, :realtime uses gettimeofday ;)).
 local PREFERRED_REALTIME_CLOCKID = C.CLOCK_REALTIME
+-- CLOCK_BOOTTIME is only available on Linux 2.6.39+...
+local HAVE_BOOTTIME = false
 if ffi.os == "Linux" then
     -- Unfortunately, it was only implemented in Linux 2.6.32, and we may run on older kernels than that...
     -- So, just probe it to see if we can rely on it.
@@ -43,6 +45,12 @@ if ffi.os == "Linux" then
         end
     end
     logger.dbg("TimeVal: Preferred REALTIME clock source is", PREFERRED_REALTIME_CLOCKID == C.CLOCK_REALTIME_COARSE and "CLOCK_REALTIME_COARSE" or "CLOCK_REALTIME")
+
+    if C.clock_getres(C.CLOCK_BOOTTIME, probe_ts) == 0 then
+        HAVE_BOOTTIME = true
+    end
+    logger.dbg("TimeVal: BOOTTIME clock source is", HAVE_BOOTTIME and "supported" or "NOT supported")
+
     probe_ts = nil --luacheck: ignore
 end
 
@@ -196,13 +204,33 @@ function TimeVal:realtime_coarse()
     return TimeVal:new{ sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000)) }
 end
 
---- Ditto, but w/ CLOCK_BOOTTIME (will return a TimeVal set to 0, 0 if the clock source is unsupported, as it's 2.6.39+)
-function TimeVal:boottime()
-    local timespec = ffi.new("struct timespec")
-    C.clock_gettime(C.CLOCK_BOOTTIME, timespec)
+--- Since CLOCK_BOOTIME may not be supported, we offer a few aliases with automatic fallbacks to MONOTONIC or REALTIME
+if HAVE_BOOTTIME then
+    --- Ditto, but w/ CLOCK_BOOTTIME (will return a TimeVal set to 0, 0 if the clock source is unsupported, as it's 2.6.39+)
+    --- Only use it if you *know* it's going to be supported, otherwise, prefer the four following aliases.
+    function TimeVal:boottime()
+        local timespec = ffi.new("struct timespec")
+        C.clock_gettime(C.CLOCK_BOOTTIME, timespec)
 
-    -- TIMESPEC_TO_TIMEVAL
-    return TimeVal:new{ sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000)) }
+        -- TIMESPEC_TO_TIMEVAL
+        return TimeVal:new{ sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000)) }
+    end
+
+    TimeVal.boottime_or_monotonic = TimeVal.boottime
+    TimeVal.boottime_or_monotonic_coarse = TimeVal.boottime
+    TimeVal.boottime_or_realtime = TimeVal.boottime
+    TimeVal.boottime_or_realtime_coarse = TimeVal.boottime
+else
+    function TimeVal:boottime()
+        logger.warn("TimeVal: Attemped to call boottime on a platform where it's unsupported!")
+
+        return TimeVal:new{ sec = 0, usec = 0 }
+    end
+
+    TimeVal.boottime_or_monotonic = TimeVal.monotonic
+    TimeVal.boottime_or_monotonic_coarse = TimeVal.monotonic_coarse
+    TimeVal.boottime_or_realtime = TimeVal.realtime
+    TimeVal.boottime_or_realtime_coarse = TimeVal.realtime_coarse
 end
 
 --[[-- Alias for `monotonic_coarse`.
