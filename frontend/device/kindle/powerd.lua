@@ -19,19 +19,6 @@ function KindlePowerD:init()
     if not self.device:canTurnFrontlightOff() then
         self.fl_max = self.fl_max + 1
     end
-
-    -- The FL widget expects this to be set if available...
-    if self.device:hasNaturalLight() then
-        -- The PowerD API always expects warmth to be in the [0...100] range...
-        self.warmth_scale = 100 / self.fl_warmth_max
-        if self.lipc_handle ~= nil then
-            self.fl_warmth = self.lipc_handle:get_int_property("com.lab126.powerd", "currentAmberLevel")
-            if self.fl_warmth then
-                -- [0...24] -> [0...100]
-                self.fl_warmth = math.floor(self.fl_warmth * self.warmth_scale + 0.5)
-            end
-        end
-    end
 end
 
 -- If we start with the light off (fl_intensity is fl_min), ensure a toggle will set it to the lowest "on" step,
@@ -116,29 +103,30 @@ function KindlePowerD:setIntensityHW(intensity)
     end
 end
 
-function KindlePowerD:setWarmth(warmth)
+function KindlePowerD:frontlightWarmthHW()
     if not self.device:hasNaturalLight() then
-        return
+        return 0
     end
-
-    self.fl_warmth = warmth or self.fl_warmth
 
     if self.lipc_handle ~= nil then
-        -- [0...100] -> [0...24]
-        local warmth_level = math.floor(self.fl_warmth / self.warmth_scale + 0.5)
-
-        self.lipc_handle:set_int_property("com.lab126.powerd", "currentAmberLevel", warmth_level)
+        local nat_warmth = self.lipc_handle:get_int_property("com.lab126.powerd", "currentAmberLevel")
+        if nat_warmth then
+            -- [0...24] -> [0...100]
+            return self:fromNativeWarmth(nat_warmth)
+        else
+            return 0
+        end
     end
-
-    self:stateChanged()
 end
 
-function KindlePowerD:getWarmth()
+function KindlePowerD:setWarmthHW(warmth)
     if not self.device:hasNaturalLight() then
         return
     end
 
-    return self.fl_warmth
+    if self.lipc_handle ~= nil then
+        self.lipc_handle:set_int_property("com.lab126.powerd", "currentAmberLevel", warmth)
+    end
 end
 
 function KindlePowerD:getCapacityHW()
