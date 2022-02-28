@@ -33,61 +33,49 @@ local FrontLightWidget = FocusManager:new{
 }
 
 function FrontLightWidget:init()
+    -- Layout constants
     self.medium_font_face = Font:getFace("ffont")
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     self.span = math.ceil(self.screen_height * 0.01)
     self.width = math.floor(self.screen_width * 0.95)
+
+    -- State constants
     self.powerd = Device:getPowerDevice()
-    self.fl_min = self.powerd.fl_min
-    self.fl_max = self.powerd.fl_max
-    self.fl_cur = self.powerd:frontlightIntensity()
-    local steps_fl = self.fl_max - self.fl_min + 1
-    self.one_step = math.ceil(steps_fl / 25)
-    self.steps = math.ceil(steps_fl / self.one_step)
-    if (self.steps - 1) * self.one_step < self.fl_max - self.fl_min then
-        self.steps = self.steps + 1
+
+    -- Frontlight
+    self.fl = {}
+    self.fl.min = self.powerd.fl_min
+    self.fl.max = self.powerd.fl_max
+    self.fl.cur = self.powerd:frontlightIntensity()
+    local fl_steps = self.fl.max - self.fl.min + 1
+    slef.fl.stride = math.ceil(fl_steps / 25)
+    self.fl.steps = math.ceil(fl_steps / self.fl.stride)
+    if (self.fl.steps - 1) * self.fl.stride < self.fl.max - self.fl.min then
+        self.fl.steps = self.fl.steps + 1
     end
-    self.steps = math.min(self.steps, steps_fl)
-    self.natural_light = Device:hasNaturalLight()
+    self.fl.steps = math.min(self.fl.steps, fl_steps)
+
+    -- Warmth
+    self.has_nl = Device:hasNaturalLight()
     self.has_nl_mixer = Device:hasNaturalLightMixer()
     self.has_nl_api = Device:hasNaturalLightApi()
-    -- Handle Warmth separately, because it may use a different scale
-    if self.natural_light then
-        self.nl_min = self.powerd.fl_warmth_min
-        self.nl_max = self.powerd.fl_warmth_max
+    if self.has_nl then
+        self.nl = {}
+        self.nl.min = self.powerd.fl_warmth_min
+        self.nl.max = self.powerd.fl_warmth_max
+        self.nl.cur = self.powerd:frontlightWarmth()
 
-        -- NOTE: fl_warmth is always [0...100] even when internal scale is [0...10],
-        --       but we want the UI to reflect the *internal* scale.
-        self.nl_scale = (100 / self.nl_max)
-
-        local steps_nl = self.nl_max - self.nl_min + 1
-        self.one_step_nl = math.ceil(steps_nl / 25)
-        self.steps_nl = math.ceil(steps_nl / self.one_step_nl)
-        if (self.steps_nl - 1) * self.one_step_nl < self.nl_max - self.nl_min then
-            self.steps_nl = self.steps_nl + 1
+        local nl_steps = self.nl.max - self.nl.min + 1
+        self.nl.stride = math.ceil(nl_steps / 25)
+        self.nl.steps = math.ceil(nl_steps / self.nl.stride)
+        if (self.nl.steps - 1) * self.nl.stride < self.nl.max - self.nl.min then
+            self.nl.steps = self.nl.steps + 1
         end
-        self.steps_nl = math.min(self.steps_nl, steps_nl)
+        self.nl.steps = math.min(self.nl.steps, nl_steps)
     end
 
-    -- button width to fit screen size
-    local button_margin = Size.margin.tiny
-    local button_padding = Size.padding.button
-    local button_bordersize = Size.border.button
-    -- Step 0 doesn't take a button
-    self.button_width = math.floor(self.screen_width * 0.9 / (self.steps_nl - 1)) -
-            2 * (button_margin + button_padding + button_bordersize)
-
-    self.nl_prog_button = Button:new{
-        text = "",
-        radius = 0,
-        margin = button_margin,
-        padding = button_padding,
-        bordersize = button_bordersize,
-        enabled = true,
-        width = self.button_width,
-        show_parent = self,
-    }
+    -- Input
     if Device:hasKeys() then
         self.key_events.Close = { {Device.input.group.Back}, doc = "close frontlight" }
     end
@@ -115,7 +103,9 @@ function FrontLightWidget:init()
             },
          }
     end
-    self:update()
+
+    -- Widget layout
+    self:layout()
 end
 
 function FrontLightWidget:generateProgressGroup(width, height, fl_level, step, step_nl)
@@ -124,6 +114,32 @@ function FrontLightWidget:generateProgressGroup(width, height, fl_level, step, s
     }
     self:setProgress(fl_level, step, step_nl)
     return self.fl_container
+end
+
+function FrontLightWidget:layout()
+    -- While the brightness bar uses a ProgressWidget, the warmth bar uses a ButtonProgressWidget
+    -- FIXME: Actually move to ButtonProgressWidget ;D
+    if self.has_nl then
+        -- Button width adapted to screen size
+        local button_margin = Size.margin.tiny
+        local button_padding = Size.padding.button
+        local button_bordersize = Size.border.button
+
+        -- Step 0 doesn't take a button, hence the minus
+        local button_width = math.floor(self.screen_width * 0.9 / (self.nl.steps - 1)) -
+                             2 * (button_margin + button_padding + button_bordersize)
+
+        self.nl.prog_button = Button:new{
+            text = "",
+            radius = 0,
+            margin = button_margin,
+            padding = button_padding,
+            bordersize = button_bordersize,
+            enabled = true,
+            width = button_width,
+            show_parent = self,
+        }
+    end
 end
 
 function FrontLightWidget:setProgress(num, step, step_nl, num_warmth)
