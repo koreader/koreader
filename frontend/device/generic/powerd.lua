@@ -24,14 +24,15 @@ function BasePowerD:new(o)
     setmetatable(o, self)
     self.__index = self
     assert(o.fl_min < o.fl_max)
-    assert(o.fl_warmth_min < o.fl_warmth_max)
-    -- For historical reasons, the PowerD API always expects warmth to be in the [0...100] range...
-    self.warmth_scale = 100 / self.fl_warmth_max
     if o.init then o:init() end
     if o.device and o.device:hasFrontlight() then
         o.fl_intensity = o:frontlightIntensityHW()
         o:_decideFrontlightState()
     end
+    -- NOTE: Post-init, as the min/max values may be computed at runtime on some platforms
+    assert(o.fl_warmth_min < o.fl_warmth_max)
+    -- For historical reasons, the PowerD API always expects warmth to be in the [0...100] range...
+    self.warmth_scale = 100 / self.fl_warmth_max
     -- FIXME: Might be better left to imp inits... (e.g., it's a gigantic mess on kobo)
     if o.device and o.device:hasNaturalLight() then
         o.fl_warmth = o:frontlightWarmthHW()

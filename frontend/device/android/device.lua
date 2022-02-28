@@ -438,7 +438,7 @@ function Device:_showLightDialog()
         self.powerd.fl_intensity = self.powerd:frontlightIntensityHW()
         logger.dbg("Dialog OK, brightness: " .. self.powerd.fl_intensity)
         if android.isWarmthDevice() then
-            self.powerd.fl_warmth = self.powerd:getWarmth()
+            self.powerd.fl_warmth = self.powerd:frontlightWarmthHW()
             logger.dbg("Dialog OK, warmth: " .. self.powerd.fl_warmth)
         end
         local Event = require("ui/event")
