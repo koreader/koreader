@@ -104,10 +104,6 @@ function KindlePowerD:setIntensityHW(intensity)
 end
 
 function KindlePowerD:frontlightWarmthHW()
-    if not self.device:hasNaturalLight() then
-        return 0
-    end
-
     if self.lipc_handle ~= nil then
         local nat_warmth = self.lipc_handle:get_int_property("com.lab126.powerd", "currentAmberLevel")
         if nat_warmth then
@@ -120,10 +116,6 @@ function KindlePowerD:frontlightWarmthHW()
 end
 
 function KindlePowerD:setWarmthHW(warmth)
-    if not self.device:hasNaturalLight() then
-        return
-    end
-
     if self.lipc_handle ~= nil then
         self.lipc_handle:set_int_property("com.lab126.powerd", "currentAmberLevel", warmth)
     end

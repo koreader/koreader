@@ -4,21 +4,12 @@ local inkview = ffi.load("inkview")
 
 local PocketBookPowerD = BasePowerD:new{
     is_charging = nil,
-    fl_warmth = nil,
 
     fl_min = 0,
     fl_max = 100,
     fl_warmth_min = 0,
     fl_warmth_max = 100,
 }
-
-function PocketBookPowerD:init()
-    -- needed for SetFrontlightState / GetFrontlightState
-    if self.device:hasNaturalLight() then
-        local color = inkview.GetFrontlightColor()
-        self.fl_warmth = color >= 0 and color or 0
-    end
-end
 
 function PocketBookPowerD:frontlightIntensityHW()
     -- Always update fl_intensity (and perhaps fl_warmth) from the OS value whenever queried (its fast).
@@ -60,18 +51,12 @@ function PocketBookPowerD:isFrontlightOn()
     return enabled
 end
 
-function PocketBookPowerD:setWarmth(level)
-    if self.fl_warmth then
-        self.fl_warmth = level or self.fl_warmth
-        inkview.SetFrontlightColor(self.fl_warmth)
-        self:stateChanged()
-    end
+function PocketBookPowerD:setWarmthHW(level)
+    return inkview.SetFrontlightColor(self.fl_warmth)
 end
 
-function PocketBookPowerD:getWarmth()
-    if self.fl_warmth then
-        return self.fl_warmth
-    end
+function PocketBookPowerD:frontlightWarmthHW()
+    return inkview.GetFrontlightColor()
 end
 
 function PocketBookPowerD:getCapacityHW()
