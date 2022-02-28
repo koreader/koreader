@@ -16,7 +16,6 @@ local KoboPowerD = BasePowerD:new{
     battery_sysfs = nil,
     aux_battery_sysfs = nil,
     fl_warmth_min = 0, fl_warmth_max = 100,
-    fl_warmth = nil,
     fl_was_on = nil,
 }
 
@@ -250,22 +249,19 @@ function KoboPowerD:setIntensityHW(intensity)
     self:_decideFrontlightState()
 end
 
-function KoboPowerD:setWarmth(warmth)
+-- NOTE: We *can* actually read this from the system (as well as frontlight level, since Mk. 7),
+--       but this is already a huge mess, so, keep ignoring it...
+function KoboPowerD:frontlightWarmthHW()
+    return self.fl_warmth
+end
+
+function KoboPowerD:setWarmthHW(warmth)
     if self.fl == nil then return end
-    self.fl_warmth = warmth or self.fl_warmth
     -- Don't turn the light back on on legacy NaturalLight devices just for the sake of setting the warmth!
     -- That's because we can only set warmth independently of brightness on devices with a mixer.
     -- On older ones, calling setWarmth *will* actually set the brightness, too!
     if self.device:hasNaturalLightMixer() or self:isFrontlightOnHW() then
-        self.fl:setWarmth(self.fl_warmth)
-        self:stateChanged()
-    end
-end
-
-function KoboPowerD:getWarmth()
-    if self.fl == nil then return end
-    if self.device:hasNaturalLight() then
-        return self.fl_warmth
+        self.fl:setWarmth(warmth)
     end
 end
 
