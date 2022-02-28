@@ -835,7 +835,6 @@ function Kobo:suspend()
         logger.err('write error: ', err_msg, err_code)
     end
 ]]
-
     util.sleep(2)
     logger.info("Kobo suspend: waited for 2s because of reasons...")
 
@@ -875,7 +874,6 @@ function Kobo:suspend()
         end
         return false
     end
-
     re, err_msg, err_code = f:write("mem\n")
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
     -- execution should only resume on wakeup...
@@ -885,7 +883,6 @@ function Kobo:suspend()
         logger.err("write error: ", err_msg, err_code)
     end
     f:close()
-
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
     -- gloriously failed at this point...
     -- We can safely assume that just from a non-zero return code, without
