@@ -3,6 +3,7 @@ local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local logger = require("logger")
 local UIManager = require("ui/uimanager")
+local util = require("util")
 --[[
 Wrapper Widget that manages focus for a whole dialog
 
@@ -30,17 +31,6 @@ local FocusManager = InputContainer:new{
     movement_allowed = { x = true, y = true },
 }
 
-local function tableClone(t)
-    local c = {}
-    for i, v in ipairs(t) do
-        c[i] = v
-    end
-    for k, v in pairs(t) do
-        c[k] = v
-    end
-    return c
-end
-
 function FocusManager:init()
     if not self.selected then
         self.selected = { x = 1, y = 1 }
@@ -60,7 +50,7 @@ function FocusManager:init()
         local NORMAL_KEYS_END_INDEX = #event_keys
 
         -- Advanced Feature: following event handlers can be enabled via settings.reader.lua
-        -- Key combinations (Sym, Alt+Up, Tab, Shift+Tab and so on) are not used but showed as examples here
+        -- Key combinations (Sym, Alt+Up, Tab, Shift+Tab and so on) are not used but shown as examples here
         table.insert(event_keys, {"Hold",           { {"Sym", "AA"}, doc = "tap and hold the widget", event="Hold" } })
         -- half rows/columns move, it is helpful for slow device like Kindle DX to move quickly
         table.insert(event_keys, {"HalfFocusUp",    { {"Alt", "Up"},    doc = "move focus half columns up",    event = "FocusHalfMove", args = {"up"} } })
@@ -94,7 +84,7 @@ function FocusManager:init()
                     local key_name = event_keys[i][1]
                     local alternative_keymap = alternative_keymaps[key_name]
                     if alternative_keymap then
-                        local handler_defition = tableClone(event_keys[i][2])
+                        local handler_defition = util.tableDeepCopy(event_keys[i][2])
                         handler_defition[1] = alternative_keymap -- replace sample key combinations
                         local new_event_key = "Alternative" .. key_name
                         self.key_events[new_event_key] = handler_defition
@@ -179,7 +169,7 @@ function FocusManager:onFocusNext()
     return self:onFocusMove({dx, dy})
 end
 
--- for shift tab key
+-- for backtab key
 function FocusManager:onFocusPrevious()
     if not self.layout then
         return false
@@ -413,11 +403,11 @@ function FocusManager:disableFocusManagement(parent)
     self.layout = nil -- turn off focus feature
 end
 
--- constant for refocusWidget method to easy code reading
+-- constant for refocusWidget method to ease code reading
 FocusManager.RENDER_IN_NEXT_TICK = true
 
---- Container call this method to re-set focus widget style
---- Some container regenrate layout on update and lost focus style
+--- Container calls this method to re-set focus widget style
+--- Some container regenerate layout on update and lose focus style
 function FocusManager:refocusWidget(nextTick)
     if not self._parent then
         if not nextTick then

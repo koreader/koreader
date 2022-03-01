@@ -167,7 +167,7 @@ function Kindle:setDateTime(year, month, day, hour, min, sec)
     end
     for _, command in ipairs(commands) do
         if os.execute(command) == 0 then
-            os.execute('hwclock -u -w')
+            os.execute("hwclock -u -w")
             return true
         end
     end

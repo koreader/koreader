@@ -803,7 +803,7 @@ function VirtualKeyboard:init()
         -- need focus manager to help us navigate keys and fields.
         -- So, disable all key_event handled by FocusManager
         if Device:isTouchDevice() then
-            -- remove all key event handler of FocusManager
+            -- Remove all FocusManager key event handlers.
             for k, _ in pairs(self.builtin_key_events) do
                 self.key_events[k] = nil
             end
@@ -811,11 +811,11 @@ function VirtualKeyboard:init()
                 self.key_events[k] = nil
             end
         elseif Device:hasKeyboard() then
-            -- Use physical keyboard for most of characters
+            -- Use physical keyboard for most characters
             -- For special characters not available in physical keyboard
             -- Use arrow and Press keys to select in VirtualKeyboard
             for k, seq in pairs(self.extra_key_events) do
-                if self:_isTextKeyWithoutMofidier(seq) then
+                if self:_isTextKeyWithoutModifier(seq) then
                     self.key_events[k] = nil
                 end
             end
@@ -823,7 +823,7 @@ function VirtualKeyboard:init()
     end
 end
 
-function VirtualKeyboard:_isTextKeyWithoutMofidier(seq)
+function VirtualKeyboard:_isTextKeyWithoutModifier(seq)
     for _, oneseq in ipairs(seq) do
         if #oneseq ~= 1 then -- has modifier key combination
             return false
