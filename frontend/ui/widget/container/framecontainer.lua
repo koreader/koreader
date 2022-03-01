@@ -80,8 +80,9 @@ function FrameContainer:onUnfocus()
         self.bordersize = self._origin_bordersize
         self.color = self._origin_border_color
         self._focused = nil
+        return true
     end
-    return true
+    return false
 end
 
 
