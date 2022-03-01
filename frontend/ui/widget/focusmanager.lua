@@ -1,3 +1,4 @@
+local bit = require("bit")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -235,10 +236,15 @@ function FocusManager:onFocusMove(args)
     return true
 end
 
--- constant, no need to send Unfocus event, used to reset focus widget after layout recreation
-FocusManager.NOT_UNFOCUS = true
+-- constant, used to reset focus widget after layout recreation
+-- not send Unfocus event
+FocusManager.NOT_UNFOCUS = 1
+-- not need to send Focus event
+FocusManager.NOT_FOCUS = 2
+
 --- Move focus to specified widget
-function FocusManager:moveFocusTo(x, y, no_unfocus)
+function FocusManager:moveFocusTo(x, y, focus_flags)
+    focus_flags = focus_flags or 0
     if not self.layout then
         return false
     end
@@ -256,11 +262,13 @@ function FocusManager:moveFocusTo(x, y, no_unfocus)
         self.selected.y = y
         -- widget create new layout on update, previous may be removed from new layout.
         if Device:hasDPad() then
-            if not no_unfocus and current_item and current_item ~= target_item then
+            if not bit.band(focus_flags, FocusManager.NOT_UNFOCUS) and current_item and current_item ~= target_item then
                 current_item:handleEvent(Event:new("Unfocus"))
             end
-            target_item:handleEvent(Event:new("Focus"))
-            UIManager:setDirty(self.show_parent or self, "fast")
+            if not bit.band(focus_flags, FocusManager.NOT_FOCUS) then
+                target_item:handleEvent(Event:new("Focus"))
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
         end
         return true
     end

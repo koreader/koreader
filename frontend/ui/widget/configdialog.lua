@@ -923,7 +923,7 @@ function ConfigDialog:update()
     self.dialog_frame.dimen = old_dimen
 
     -- Reset the focusmanager cursor
-    self:moveFocusTo(self.panel_index, #self.layout)
+    self:moveFocusTo(self.panel_index, #self.layout, FocusManager.NOT_FOCUS)
 
     self[1] = BottomContainer:new{
         dimen = Screen:getSize(),
