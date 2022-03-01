@@ -49,7 +49,7 @@ function FrontLightWidget:init()
     self.fl.max = self.powerd.fl_max
     self.fl.cur = self.powerd:frontlightIntensity()
     local fl_steps = self.fl.max - self.fl.min + 1
-    slef.fl.stride = math.ceil(fl_steps / 25)
+    self.fl.stride = math.ceil(fl_steps / 25)
     self.fl.steps = math.ceil(fl_steps / self.fl.stride)
     if (self.fl.steps - 1) * self.fl.stride < self.fl.max - self.fl.min then
         self.fl.steps = self.fl.steps + 1
@@ -136,7 +136,10 @@ function FrontLightWidget:layout()
     end
 
     self.main_container = CenterContainer:new{
-        dimen = Geom:new{ w = width, h = height },
+        dimen = Geom:new{
+            w = self.width,
+            h = math.floor(self.screen_height * 0.2),
+        },
     }
 
     -- Frontlight
@@ -239,7 +242,7 @@ function FrontLightWidget:layout()
         align = "center",
         fl_min,
         fl_spacer,
-        button_toggle,
+        fl_toggle,
         fl_spacer,
         fl_max,
     }
@@ -448,7 +451,7 @@ function FrontLightWidget:rebuildWarmthProgress()
         table.insert(self.nl_group, self.nl_prog_button:new{
                         text = "",
                         callback = function()
-                            self:setWarmth(i * sself.nl.stride)
+                            self:setWarmth(i * self.nl.stride)
                         end
         })
     end
@@ -511,7 +514,7 @@ function FrontLightWidget:setFrontLightIntensity(intensity)
     self.fl.cur = intensity
 
     -- min (which is always 0) means toggle
-    if set.fl == self.fl.min then
+    if self.fl.cur == self.fl.min then
         self.powerd:toggleFrontlight()
     else
         self.powerd:setIntensity(self.fl.cur)
