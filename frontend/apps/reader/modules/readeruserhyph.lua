@@ -28,18 +28,24 @@ end
 -- Load the user dictionary suitable for the actual language
 -- if reload==true, force a reload
 -- Unload is done automatically when a new dictionary is loaded.
-function ReaderUserHyph:loadDictionary(name, reload)
+-- _second_try is reserved internally if the user dictionary gets scrubbed/sorted
+function ReaderUserHyph:loadDictionary(name, reload, _second_try)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
-        logger.dbg("set user hyphenation dict", name, reload)
+        logger.dbg("set user hyphenation dict", name, reload, _second_try)
         local ret = cre.setUserHyphenationDict(name, reload)
         -- this should only happen, if a user edits a dictionary by hand or the user messed
         -- with the dictionary file by hand. -> Warning and disable.
         if ret == self.USER_DICT_ERROR_NOT_SORTED then
-            UIManager:show(InfoMessage:new{
-                text = T(_("The user dictionary\n%1\nis not alphabetically sorted.\n\nIt has been disabled."), name),
-            })
-            logger.warn("UserHyph: Dictionary " .. name .. " is not sorted alphabetically.")
-            G_reader_settings:makeFalse("hyph_user_dict")
+            if _second_try == true then
+                UIManager:show(InfoMessage:new{
+                    text = T(_("The user dictionary\n%1\nis not alphabetically sorted.\n\nIt will be disabled now."), name),
+                })
+                logger.warn("UserHyph: Dictionary " .. name .. " is not sorted alphabetically.")
+                G_reader_settings:makeFalse("hyph_user_dict")
+            else
+                self:scrubDictionary()
+                self:loadDictionary(name, reload, true)
+            end
         elseif ret == self.USER_DICT_MALFORMED then
             UIManager:show(InfoMessage:new{
                 text = T(_("The user dictionary\n%1\nhas corrupted entries.\n\nOnly valid entries will be used."), name),
@@ -47,7 +53,7 @@ function ReaderUserHyph:loadDictionary(name, reload)
             logger.warn("UserHyph: Dictionary " .. name .. " has corrupted entries.")
         end
     else
-        logger.dbg("reset user hyphenation dict")
+        logger.dbg("UserHyph: reset user hyphenation dict")
         cre.setUserHyphenationDict("", true) -- clear crengine user hyph dict
     end
 end
@@ -120,16 +126,26 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
         return
     end
 
+    if word then
+        word = Utf8Proc.normalize_NFC(word)
+    end
+
     local word_lower = Utf8Proc.lowercase(word)
     local line
 
     local dict = io.open(dict_file, "r")
     if dict then
         line = dict:read()
+        if line then
+            line = Utf8Proc.normalize_NFC(line)
+        end
         --search entry
         while line and Utf8Proc.lowercase(line:sub(1, line:find(";") - 1)) < word_lower do
             new_dict:write(line .. "\n")
             line = dict:read()
+            if line then
+                line = Utf8Proc.normalize_NFC(line)
+            end
         end
 
         -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
@@ -157,6 +173,7 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
         repeat
             line = dict:read()
             if line then
+                line = Utf8Proc.normalize_NFC(line)
                 new_dict:write(line .. "\n")
             end
         until (not line)
@@ -169,6 +186,54 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
 
     self:loadUserDictionary(true) -- dictionary has changed, force a reload here
 end
+
+-- This function should only be called, if a user edits the hyphenation file per hand
+-- and messes the order
+-- The dictionary file will not get reloaded here!
+function ReaderUserHyph:scrubDictionary()
+    logger.dbg("UserHyph: scrubbing and sorting user hyphenation dict")
+
+    local dict_file = self:getDictionaryPath()
+    local dict = io.open(dict_file, "r")
+    if not dict then
+        return
+    end
+
+    local dict_entries = {}
+
+    local line = dict:read()
+    if line then
+        line = Utf8Proc.normalize_NFC(line)
+    end
+    --search entry
+    while line do
+        table.insert(dict_entries, line)
+        line = dict:read()
+        if line then
+            line = Utf8Proc.normalize_NFC(line)
+        end
+    end
+    dict:close()
+
+    table.sort(dict_entries, function(a,b) return Utf8Proc.lowercase(a) < Utf8Proc.lowercase(b) end)
+
+    local new_dict_file = dict_file .. ".new"
+
+    local new_dict = io.open(new_dict_file, "w")
+    if not new_dict then
+        logger.err("UserHyph: could not open " .. new_dict_file)
+        return
+    end
+
+    for i = 1, #dict_entries do
+        new_dict:write(dict_entries[i], "\n")
+    end
+    new_dict:close()
+
+    os.remove(dict_file)
+    os.rename(new_dict_file, dict_file)
+end
+
 
 function ReaderUserHyph:modifyUserEntry(word)
     if word:find("[ ,;-%.]") then return end -- no button if more than one word
