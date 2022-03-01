@@ -2,13 +2,13 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local NaturalLight = require("ui/widget/naturallightwidget")
 local ProgressWidget = require("ui/widget/progresswidget")
@@ -23,7 +23,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local FrontLightWidget = FocusManager:new{
+local FrontLightWidget = InputContainer:new{
     width = nil,
     height = nil,
     -- This should stay active during natural light configuration
@@ -77,7 +77,9 @@ function FrontLightWidget:init()
 
     -- Input
     if Device:hasKeys() then
-        self.key_events.Close = { {Device.input.group.Back}, doc = "close frontlight" }
+        self.key_events = {
+            Close = { {Device.input.group.Back}, doc = "close frontlight" }
+        }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -108,14 +110,6 @@ function FrontLightWidget:init()
     self:layout()
 end
 
-function FrontLightWidget:generateProgressGroup(width, height, fl_level, step, step_nl)
-    self.fl_container = CenterContainer:new{
-        dimen = Geom:new{ w = width, h = height },
-    }
-    self:setProgress(fl_level, step, step_nl)
-    return self.fl_container
-end
-
 function FrontLightWidget:layout()
     -- While the brightness bar uses a ProgressWidget, the warmth bar uses a ButtonProgressWidget
     -- FIXME: Actually move to ButtonProgressWidget ;D
@@ -129,7 +123,7 @@ function FrontLightWidget:layout()
         local button_width = math.floor(self.screen_width * 0.9 / (self.nl.steps - 1)) -
                              2 * (button_margin + button_padding + button_bordersize)
 
-        self.nl.prog_button = Button:new{
+        self.nl_prog_button = Button:new{
             text = "",
             radius = 0,
             margin = button_margin,
@@ -140,93 +134,88 @@ function FrontLightWidget:layout()
             show_parent = self,
         }
     end
-end
 
-function FrontLightWidget:setProgress(num, step, step_nl, num_warmth)
-    self.fl_container:clear()
+    self.main_container = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = height },
+    }
+
+    -- Frontlight
     local padding_span = VerticalSpan:new{ width = self.span }
-    local button_group_down = HorizontalGroup:new{ align = "center" }
-    local button_group_up = HorizontalGroup:new{ align = "center" }
+    local fl_group_above = HorizontalGroup:new{ align = "center" }
+    local fl_group_below = HorizontalGroup:new{ align = "center" }
     local vertical_group = VerticalGroup:new{ align = "center" }
-    local enable_button_plus = true
-    local enable_button_minus = true
-    if self.natural_light then
-        num_warmth = num_warmth or math.floor(self.powerd.fl_warmth / self.nl_scale + 0.5)
-    end
-    if num then
-        --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
-        --        Except for fl_min, as that's how setFrontLightIntensity detects a toggle...
-        if num == self.fl_min or num ~= self.fl_cur then
-            self:setFrontLightIntensity(num)
-        end
-
-        if self.fl_cur == self.fl_max then enable_button_plus = false end
-        if self.fl_cur == self.fl_min then enable_button_minus = false end
-    end
 
     local ticks = {}
-    for i = 1, self.steps - 2 do
-        table.insert(ticks, i * self.one_step)
+    for i = 1, self.fl.steps - 2 do
+        table.insert(ticks, i * self.fl.stride)
     end
 
-    self.fl_group = ProgressWidget:new{
+    self.fl_progress = ProgressWidget:new{
         width = math.floor(self.screen_width * 0.9),
         height = Size.item.height_big,
-        percentage = self.fl_cur / self.fl_max,
+        percentage = self.fl.cur / self.fl.max,
         ticks = ticks,
         tick_width = Screen:scaleBySize(0.5),
-        last = self.fl_max,
+        last = self.fl.max,
     }
-    local text_br = TextBoxWidget:new{
+    local fl_header = TextBoxWidget:new{
         text = _("Brightness"),
         face = self.medium_font_face,
         bold = true,
         alignment = "center",
         width = math.floor(self.screen_width * 0.95),
     }
-    local button_minus = Button:new{
+    self.fl_minus = Button:new{
         text = "-1",
         margin = Size.margin.small,
         radius = 0,
-        enabled = enable_button_minus,
+        enabled = self.fl.cur ~= self.fl.min,
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
-        callback = function() self:setProgress(self.fl_cur - 1, step, step_nl) end,
+        callback = function()
+            self:setBrightness(self.fl.cur - 1)
+        end,
     }
-    local button_plus = Button:new{
+    self.fl_plus = Button:new{
         text = "+1",
         margin = Size.margin.small,
         radius = 0,
-        enabled = enable_button_plus,
+        enabled = self.fl.cur ~= self.fl.max,
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
-        callback = function() self:setProgress(self.fl_cur + 1, step, step_nl) end,
+        callback = function()
+            self:setBrightness(self.fl.cur + 1)
+        end,
     }
-    local item_level = TextBoxWidget:new{
-        text = self.fl_cur,
+    self.fl_level = TextBoxWidget:new{
+        text = self.fl.cur,
         face = self.medium_font_face,
         alignment = "center",
-        width = math.floor(self.screen_width * 0.95 - 1.275 * button_minus.width - 1.275 * button_plus.width),
+        width = math.floor(self.screen_width * 0.95 - 1.275 * self.fl_minus.width - 1.275 * self.fl_plus.width),
     }
-    local button_min = Button:new{
+    local fl_min = Button:new{
         text = _("Min"),
         margin = Size.margin.small,
         radius = 0,
         enabled = true,
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
-        callback = function() self:setProgress(self.fl_min + 1, step, step_nl) end, -- min is 1 (use toggle for 0)
+        callback = function()
+            self:setBrightness(self.fl.min + 1)
+        end, -- min is 1 (use toggle for 0)
     }
-    local button_max = Button:new{
+    local fl_max = Button:new{
         text = _("Max"),
         margin = Size.margin.small,
         radius = 0,
         enabled = true,
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
-        callback = function() self:setProgress(self.fl_max, step, step_nl) end,
+        callback = function()
+            self:setBrightness(self.fl.max)
+        end,
     }
-    local button_toggle = Button:new{
+    local fl_toggle = Button:new{
         text = _("Toggle"),
         margin = Size.margin.small,
         radius = 0,
@@ -234,48 +223,135 @@ function FrontLightWidget:setProgress(num, step, step_nl, num_warmth)
         width = math.floor(self.screen_width * 0.2),
         show_parent = self,
         callback = function()
-            self:setProgress(self.fl_min, step, step_nl)
+            self:setBrightness(self.fl.min)
         end,
     }
-    local empty_space = HorizontalSpan:new{
-        width = math.floor((self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width - 1.2 * button_toggle.width) / 2),
+    local fl_spacer = HorizontalSpan:new{
+        width = math.floor((self.screen_width * 0.95 - 1.2 * self.fl_minus.width - 1.2 * self.fl_plus.width - 1.2 * fl_toggle.width) / 2),
     }
-    local button_table_up = HorizontalGroup:new{
+    local fl_buttons_above = HorizontalGroup:new{
         align = "center",
-        button_minus,
-        item_level,
-        button_plus,
+        self.fl_minus,
+        self.fl_level,
+        self.fl_plus,
     }
-    self.layout[1] = {button_minus, button_plus}
-    local button_table_down = HorizontalGroup:new{
+    local fl_buttons_below = HorizontalGroup:new{
         align = "center",
-        button_min,
-        empty_space,
+        fl_min,
+        fl_spacer,
         button_toggle,
-        empty_space,
-        button_max,
+        fl_spacer,
+        fl_max,
     }
-    self.layout[2] = {button_min, button_toggle, button_max}
-    if self.natural_light then
-        -- Only insert 'brightness' caption if we also add 'warmth'
-        -- widgets below.
-        table.insert(vertical_group, text_br)
+
+    if self.has_nl then
+        -- Only insert 'Brightness' caption if we also add 'warmth' widgets below.
+        table.insert(vertical_group, fl_header)
     end
-    table.insert(button_group_up, button_table_up)
-    table.insert(button_group_down, button_table_down)
+    table.insert(fl_group_above, fl_buttons_above)
+    table.insert(fl_group_below, fl_buttons_below)
     table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, button_group_up)
+    table.insert(vertical_group, fl_group_above)
     table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, self.fl_group)
+    table.insert(vertical_group, self.fl_progress)
     table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, button_group_down)
+    table.insert(vertical_group, fl_group_below)
     table.insert(vertical_group, padding_span)
-    if self.natural_light then
-        -- If the device supports natural light, add the widgets for 'warmth',
-        -- as well as a 'Configure' button for devices *without* a mixer
-        self:addWarmthWidgets(num_warmth, step, step_nl, vertical_group)
+
+    -- Warmth
+    if self.has_nl then
+        local nl_group_above = HorizontalGroup:new{ align = "center" }
+        local nl_group_below = HorizontalGroup:new{ align = "center" }
+        self.nl_group = HorizontalGroup:new{ align = "center" }
+
+        self:rebuildWarmthProgress()
+
+        local nl_header = TextBoxWidget:new{
+            text = "\n" .. _("Warmth"),
+            face = self.medium_font_face,
+            bold = true,
+            alignment = "center",
+            width = math.floor(self.screen_width * 0.95),
+        }
+        self.nl_minus = Button:new{
+            text = "-1",
+            margin = Size.margin.small,
+            radius = 0,
+            enabled = self.nl.cur ~= self.nl.min,
+            width = math.floor(self.screen_width * 0.2),
+            show_parent = self,
+            callback = function()
+                self:setWarmth(self.nl.cur - 1) end,
+        }
+        self.nl_plus = Button:new{
+            text = "+1",
+            margin = Size.margin.small,
+            radius = 0,
+            enabled = self.nl.cur ~= self.nl.max,
+            width = math.floor(self.screen_width * 0.2),
+            show_parent = self,
+            callback = function()
+                self:setWarmth(self.nl.cur + 1) end,
+        }
+        self.nl_level = TextBoxWidget:new{
+            text = self.nl.cur,
+            face = self.medium_font_face,
+            alignment = "center",
+            width = math.floor(self.screen_width * 0.95 - 1.275 * self.nl_minus - 1.275 * self.nl_plus.width),
+        }
+        local nl_min = Button:new{
+            text = _("Min"),
+            margin = Size.margin.small,
+            radius = 0,
+            enabled = true,
+            width = math.floor(self.screen_width * 0.2),
+            show_parent = self,
+            callback = function()
+                self:setWarmth(self.nl.min)
+            end,
+        }
+        local nl_max = Button:new{
+            text = _("Max"),
+            margin = Size.margin.small,
+            radius = 0,
+            enabled = true,
+            width = math.floor(self.screen_width * 0.2),
+            show_parent = self,
+            callback = function()
+                self:setWarmth(self.nl.max)
+            end,
+        }
+        local nl_spacer = HorizontalSpan:new{
+            width = math.floor((self.screen_width * 0.95 - 1.2 * self.nl_minus.width - 1.2 * self.nl_plus.width) / 2),
+        }
+        local nl_buttons_above = HorizontalGroup:new{
+            align = "center",
+            self.nl_minus,
+            self.nl_level,
+            self.nl_plus,
+        }
+        local nl_buttons_below = HorizontalGroup:new{
+            align = "center",
+            nl_min,
+            nl_spacer,
+            nl_max,
+        }
+
+        table.insert(vertical_group, nl_header)
+        table.insert(nl_group_above, nl_buttons_above)
+        table.insert(nl_group_below, nl_buttons_below)
+
+        table.insert(vertical_group, padding_span)
+        table.insert(vertical_group, nl_group_above)
+        table.insert(vertical_group, padding_span)
+        table.insert(vertical_group, self.nl_group)
+        table.insert(vertical_group, padding_span)
+        table.insert(vertical_group, nl_group_below)
+        table.insert(vertical_group, padding_span)
+
+        -- Aura One R/G/B widget
         if not self.has_nl_mixer and not self.has_nl_api then
-            self.configure_button =  Button:new{
+            local nl_setup =  Button:new{
                 text = _("Configure"),
                 margin = Size.margin.small,
                 radius = 0,
@@ -285,178 +361,31 @@ function FrontLightWidget:setProgress(num, step, step_nl, num_warmth)
                     UIManager:show(NaturalLight:new{fl_widget = self})
                 end,
             }
-            table.insert(vertical_group, self.configure_button)
-            self.layout[5] = {self.configure_button}
-        end
-    end
-    table.insert(self.fl_container, vertical_group)
-    -- Reset container height to what it actually contains
-    self.fl_container.dimen.h = vertical_group:getSize().h
-    self:refocusWidget()
-    UIManager:setDirty(self, function()
-        return "ui", self.light_frame.dimen
-    end)
-    return true
-end
-
--- Currently, we are assuming the 'warmth' has the same min/max limits as 'brightness'.
-function FrontLightWidget:addWarmthWidgets(num_warmth, step, step_nl, vertical_group)
-    local button_group_down = HorizontalGroup:new{ align = "center" }
-    local button_group_up = HorizontalGroup:new{ align = "center" }
-    local warmth_group = HorizontalGroup:new{ align = "center" }
-    local padding_span = VerticalSpan:new{ width = self.span }
-    local enable_button_plus = true
-    local enable_button_minus = true
-
-    if self[1] then
-        --- @note Don't set the same value twice, to play nice with the update() sent by the swipe handler on the FL bar
-        if num_warmth ~= math.floor(self.powerd.fl_warmth / self.nl_scale + 0.5) then
-            self.powerd:setWarmth(math.floor(num_warmth * self.nl_scale + 0.5))
+            table.insert(vertical_group, nl_setup)
         end
     end
 
-    if self.natural_light and num_warmth then
-        local curr_warmth_step = math.floor(num_warmth / step_nl)
-        if curr_warmth_step > 0 then
-            for i = 1, curr_warmth_step do
-                table.insert(warmth_group, self.nl_prog_button:new{
-                                text = "",
-                                preselect = curr_warmth_step > 0 and true or false,
-                                callback = function()
-                                    self:setProgress(self.fl_cur, step, step_nl, i * step_nl)
-                                end
-                })
-            end
-        end
+    table.insert(self.main_container, vertical_group)
 
-        for i = curr_warmth_step + 1, self.steps_nl - 1 do
-            table.insert(warmth_group, self.nl_prog_button:new{
-                             text = "",
-                             callback = function()
-                                 self:setProgress(self.fl_cur, step, step_nl, i * step_nl)
-                             end
-            })
-        end
-    end
-
-    if num_warmth == self.nl_max then enable_button_plus = false end
-    if num_warmth == self.nl_min then enable_button_minus = false end
-
-    local text_warmth = TextBoxWidget:new{
-        text = "\n" .. _("Warmth"),
-        face = self.medium_font_face,
-        bold = true,
-        alignment = "center",
-        width = math.floor(self.screen_width * 0.95),
-    }
-    local button_minus = Button:new{
-        text = "-1",
-        margin = Size.margin.small,
-        radius = 0,
-        enabled = enable_button_minus,
-        width = math.floor(self.screen_width * 0.2),
-        show_parent = self,
-        callback = function()  self:setProgress(self.fl_cur, step, step_nl, num_warmth - 1) end,
-    }
-    local button_plus = Button:new{
-        text = "+1",
-        margin = Size.margin.small,
-        radius = 0,
-        enabled = enable_button_plus,
-        width = math.floor(self.screen_width * 0.2),
-        show_parent = self,
-        callback = function() self:setProgress(self.fl_cur, step, step_nl, num_warmth + 1) end,
-    }
-    local item_level = TextBoxWidget:new{
-        text = num_warmth,
-        face = self.medium_font_face,
-        alignment = "center",
-        width = math.floor(self.screen_width * 0.95 - 1.275 * button_minus.width - 1.275 * button_plus.width),
-    }
-    local button_min = Button:new{
-        text = _("Min"),
-        margin = Size.margin.small,
-        radius = 0,
-        enabled = true,
-        width = math.floor(self.screen_width * 0.2),
-        show_parent = self,
-        callback = function() self:setProgress(self.fl_cur, step, step_nl, self.nl_min) end,
-    }
-    local button_max = Button:new{
-        text = _("Max"),
-        margin = Size.margin.small,
-        radius = 0,
-        enabled = true,
-        width = math.floor(self.screen_width * 0.2),
-        show_parent = self,
-        callback = function() self:setProgress(self.fl_cur, step, step_nl, self.nl_max) end,
-    }
-    local empty_space = HorizontalSpan:new{
-        width = math.floor((self.screen_width * 0.95 - 1.2 * button_minus.width - 1.2 * button_plus.width) / 2),
-    }
-    local button_table_up = HorizontalGroup:new{
-        align = "center",
-        button_minus,
-        item_level,
-        button_plus,
-    }
-    self.layout[3] = {button_minus, button_plus}
-    local button_table_down = HorizontalGroup:new{
-        align = "center",
-        button_min,
-        empty_space,
-        button_max,
-    }
-    self.layout[4] = {button_min, button_max}
-
-    table.insert(vertical_group, text_warmth)
-    table.insert(button_group_up, button_table_up)
-    table.insert(button_group_down, button_table_down)
-
-    table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, button_group_up)
-    table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, warmth_group)
-    table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, button_group_down)
-    table.insert(vertical_group, padding_span)
-end
-
-function FrontLightWidget:setFrontLightIntensity(num)
-    self.fl_cur = num
-    local set_fl = math.min(self.fl_cur, self.fl_max)
-    -- Don't touch frontlight on first call (no self[1] means not yet out of update()),
-    -- so that we don't untoggle light.
-    if self[1] then
-        if set_fl == self.fl_min then -- fl_min (which is always 0) means toggle
-            self.powerd:toggleFrontlight()
-        else
-            self.powerd:setIntensity(set_fl)
-        end
-
-        -- get back the real level (different from set_fl if untoggle)
-        self.fl_cur = self.powerd:frontlightIntensity()
-    end
-end
-
-function FrontLightWidget:update()
-    self.layout = {}
+    -- Common
     local title_bar = TitleBar:new{
         title = _("Frontlight"),
         width = self.width,
         align = "left",
         with_bottom_line = true,
         bottom_v_padding = 0,
-        close_callback = function() self:onClose() end,
+        close_callback = function()
+            self:onClose()
+        end,
         show_parent = self,
     }
-    local light_level = FrameContainer:new{
+    local inner_frame = FrameContainer:new{
         padding = Size.padding.button,
         margin = Size.margin.small,
         bordersize = 0,
-        self:generateProgressGroup(self.width, math.floor(self.screen_height * 0.2), self.fl_cur, self.one_step, self.one_step_nl)
+        self.main_container,
     }
-    self.light_frame = FrameContainer:new{
+    self.frame = FrameContainer:new{
         radius = Size.radius.window,
         bordersize = Size.border.window,
         padding = 0,
@@ -468,36 +397,140 @@ function FrontLightWidget:update()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = light_level:getSize().h,
+                    h = inner_frame:getSize().h,
                 },
-                light_level,
+                inner_frame,
             },
         }
     }
     self[1] = WidgetContainer:new{
         align = "center",
-        dimen =Geom:new{
+        dimen = Geom:new{
             x = 0, y = 0,
             w = self.screen_width,
             h = self.screen_height,
         },
         FrameContainer:new{
             bordersize = 0,
-            self.light_frame,
+            self.frame,
         },
     }
 end
 
+function FrontLightWidget:update()
+    -- Reset container height to what it actually contains
+    -- FIXME: Was a getSize on vertical_group only...
+    self.main_container.dimen.h = self.main_container:getSize().h
+
+    UIManager:setDirty(self, function()
+        return "ui", self.frame.dimen
+    end)
+    return true
+end
+
+function FrontLightWidget:rebuildWarmthProgress()
+    self.nl_group:clear()
+
+    local curr_warmth_step = math.floor(self.nl.cur / self.nl.stride)
+    if curr_warmth_step > 0 then
+        for i = 1, curr_warmth_step do
+            table.insert(self.nl_group, self.nl_prog_button:new{
+                            text = "",
+                            preselect = curr_warmth_step > 0 and true or false,
+                            callback = function()
+                                self:setWarmth(i * self.nl.stride)
+                            end
+            })
+        end
+    end
+
+    for i = curr_warmth_step + 1, self.nl.steps - 1 do
+        table.insert(self.nl_group, self.nl_prog_button:new{
+                        text = "",
+                        callback = function()
+                            self:setWarmth(i * sself.nl.stride)
+                        end
+        })
+    end
+end
+
+function FrontLightWidget:setBrightness(intensity)
+    if intensity == self.fl.cur then
+        return
+    end
+
+    -- Set brightness
+    self:setFrontLightIntensity(intensity)
+
+    -- Update the progress bar
+    self.fl_progress:setPercentage(self.fl.cur / self.fl.max)
+    self.fl_level:setText(self.fl.cur)
+    if self.fl.cur == self.fl.min then
+        self.fl_minus:disable()
+    else
+        self.fl_minus:enable()
+    end
+    if self.fl.cur == self.fl.max then
+        self.fl_plus:disable()
+    else
+        self.fl_plus:enable()
+    end
+
+    -- Refresh widget
+    self:update()
+end
+
+function FrontLightWidget:setWarmth(warmth)
+    if warmth == self.nl.cur then
+        return
+    end
+
+    -- Set warmth
+    self.nl.cur = warmth
+    self.powerd:setWarmth(self.powerd:fromNativeWarmth(self.nl.cur))
+
+    -- Update the progress bar
+    self:rebuildWarmthProgress()
+    self.nl_level:setText(self.nl.cur)
+    if self.nl.cur == self.nl.min then
+        self.nl_minus:disable()
+    else
+        self.nl_minus:enable()
+    end
+    if self.nl.cur == self.nl.max then
+        self.nl_plus:disable()
+    else
+        self.nl_plus:enable()
+    end
+
+    -- Refresh widget
+    self:update()
+end
+
+function FrontLightWidget:setFrontLightIntensity(intensity)
+    self.fl.cur = intensity
+
+    -- min (which is always 0) means toggle
+    if set.fl == self.fl.min then
+        self.powerd:toggleFrontlight()
+    else
+        self.powerd:setIntensity(self.fl.cur)
+    end
+
+    -- Retrieve the real level (different from set_fl on toggle)
+    self.fl.cur = self.powerd:frontlightIntensity()
+end
+
 function FrontLightWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "flashui", self.light_frame.dimen
+        return "flashui", self.frame.dimen
     end)
 end
 
 function FrontLightWidget:onShow()
     -- NOTE: Keep this one as UI, it'll get coalesced...
     UIManager:setDirty(self, function()
-        return "ui", self.light_frame.dimen
+        return "ui", self.frame.dimen
     end)
     return true
 end
@@ -515,19 +548,19 @@ end
 function FrontLightWidget:onTapProgress(arg, ges_ev)
     -- The throttling has a tendency to wreak a bit of a havoc,
     -- so, if the widget hasn't been repainted yet, go away.
-    if not self.fl_group.dimen or not self.light_frame.dimen then
+    if not self.fl_progress.dimen or not self.frame.dimen then
         return true
     end
 
-    if ges_ev.pos:intersectWith(self.fl_group.dimen) then
+    if ges_ev.pos:intersectWith(self.fl_progress.dimen) then
         -- Unschedule any pending updates.
         UIManager:unschedule(self.update)
 
-        local perc = self.fl_group:getPercentageFromPosition(ges_ev.pos)
+        local perc = self.fl_progress:getPercentageFromPosition(ges_ev.pos)
         if not perc then
             return true
         end
-        local num = Math.round(perc * self.fl_max)
+        local num = Math.round(perc * self.fl.max)
 
         -- Always set the frontlight intensity.
         self:setFrontLightIntensity(num)
@@ -546,7 +579,7 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
         end
 
         self:update()
-    elseif not ges_ev.pos:intersectWith(self.light_frame.dimen) and ges_ev.ges == "tap" then
+    elseif not ges_ev.pos:intersectWith(self.frame.dimen) and ges_ev.ges == "tap" then
         -- close if tap outside
         self:onClose()
     end

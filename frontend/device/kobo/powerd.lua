@@ -1,4 +1,5 @@
 local BasePowerD = require("device/generic/powerd")
+local Math = require("optmath")
 local NickelConf = require("device/kobo/nickel_conf")
 local SysfsLight = require ("device/sysfs_light")
 local ffiUtil = require("ffi/util")
@@ -41,7 +42,7 @@ function KoboPowerD:_syncKoboLightOnStart()
                     -- ColorSetting is stored as a color temperature scale in Kelvin,
                     -- from 1500 to 6400
                     -- so normalize this to [0, 100] on our end.
-                    new_warmth = (100 - math.floor((new_color - 1500) / 49 + 0.5))
+                    new_warmth = (100 - Math.round((new_color - 1500) / 49))
                 end
             end
             if is_frontlight_on == nil then
