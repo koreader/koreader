@@ -2421,11 +2421,6 @@ function ReaderFooter:onResume()
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
-function ReaderFooter:onLeaveStandby()
-    self:onResume()
-    self:onOutOfScreenSaver()
-end
-
 function ReaderFooter:onOutOfScreenSaver()
     if not self._delayed_screensaver then
         return
@@ -2435,6 +2430,11 @@ function ReaderFooter:onOutOfScreenSaver()
     -- Maybe perform a footer repaint on resume if it was visible.
     self:maybeUpdateFooter()
     self:rescheduleFooterAutoRefreshIfNeeded()
+end
+
+function ReaderFooter:onLeaveStandby()
+    self:onResume()
+    self:onOutOfScreenSaver()
 end
 
 function ReaderFooter:onSuspend()
