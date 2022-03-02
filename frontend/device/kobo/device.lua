@@ -756,26 +756,26 @@ function Kobo:canStandby()
 end
 
 --- The function to put the device into standby, with enabled touchscreen.
--- deadline ... deadline for standby
-function Kobo:standby(deadline)
+-- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
+function Kobo:standby(max_duration)
     -- just for wake up, dummy function
     local function dummy() end
 
-    if deadline then
-        self.wakeup_mgr:addTask(deadline, dummy)
+    if max_duration then
+        self.wakeup_mgr:addTask(max_duration, dummy)
     end
 
     local TimeVal = require("ui/timeval")
     local standby_time_btv = TimeVal:boottime_or_realtime_coarse()
 
-    local return_value = writeToSys("standby", "/sys/power/state")
+    local ret = writeToSys("standby", "/sys/power/state")
 
-    self.lastStandbyTime = (TimeVal:boottime_or_realtime_coarse() - standby_time_btv):tonumber()
-    self.totalStandbyTime = self.totalStandbyTime + self.lastStandbyTime
+    self.last_standby_sec = (TimeVal:boottime_or_realtime_coarse() - standby_time_btv):tonumber()
+    self.total_standby_sec = self.total_standby_sec + self.last_standby_sec
 
-    logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", return_value)
+    logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", ret)
 
-    if deadline then
+    if max_duration then
         self.wakeup_mgr:removeTask(nil, nil, dummy)
     end
 end
@@ -820,8 +820,8 @@ function Kobo:suspend()
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
-    local return_value = writeToSys("1", "/sys/power/state-extended")
-    logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", return_value)
+    local ret = writeToSys("1", "/sys/power/state-extended")
+    logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", ret)
 --[[
     f = io.open("/sys/power/state-extended", "we")
     if not f then
@@ -928,8 +928,8 @@ function Kobo:resume()
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
 
-    local return_value = writeToSys("0", "/sys/power/state-extended")
-    logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", return_value)
+    local ret = writeToSys("0", "/sys/power/state-extended")
+    logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", ret)
 --[[
     local f = io.open("/sys/power/state-extended", "we")
     if not f then
