@@ -28,15 +28,14 @@ end
 -- Load the user dictionary suitable for the actual language
 -- if reload==true, force a reload
 -- Unload is done automatically when a new dictionary is loaded.
--- _second_try is reserved internally if the user dictionary gets scrubbed/sorted
-function ReaderUserHyph:loadDictionary(name, reload, _second_try)
+function ReaderUserHyph:loadDictionary(name, reload, no_scrubbing)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
-        logger.dbg("set user hyphenation dict", name, reload, _second_try)
+        logger.dbg("set user hyphenation dict", name, reload, no_scrubbing)
         local ret = cre.setUserHyphenationDict(name, reload)
         -- this should only happen, if a user edits a dictionary by hand or the user messed
         -- with the dictionary file by hand. -> Warning and disable.
         if ret == self.USER_DICT_ERROR_NOT_SORTED then
-            if _second_try == true then
+            if no_scrubbing then
                 UIManager:show(InfoMessage:new{
                     text = T(_("The user dictionary\n%1\nis not alphabetically sorted.\n\nIt will be disabled now."), name),
                 })
@@ -136,16 +135,12 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
     local dict = io.open(dict_file, "r")
     if dict then
         line = dict:read()
-        if line then
-            line = Utf8Proc.normalize_NFC(line)
-        end
+        line = line and Utf8Proc.normalize_NFC(line)
         --search entry
         while line and Utf8Proc.lowercase(line:sub(1, line:find(";") - 1)) < word_lower do
             new_dict:write(line .. "\n")
             line = dict:read()
-            if line then
-                line = Utf8Proc.normalize_NFC(line)
-            end
+            line = line and Utf8Proc.normalize_NFC(line)
         end
 
         -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
@@ -187,9 +182,8 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
     self:loadUserDictionary(true) -- dictionary has changed, force a reload here
 end
 
--- This function should only be called, if a user edits the hyphenation file per hand
--- and messes the order
--- The dictionary file will not get reloaded here!
+-- This is called when the file is badly sorted (which should only happen if a user has edited
+-- the hyphenation file by hand and messed the order) or if (some) entries are not utf8_normalized.
 function ReaderUserHyph:scrubDictionary()
     logger.dbg("UserHyph: scrubbing and sorting user hyphenation dict")
 
@@ -202,10 +196,7 @@ function ReaderUserHyph:scrubDictionary()
     local dict_entries = {}
 
     local line = dict:read()
-    if line then
-        line = Utf8Proc.normalize_NFC(line)
-    end
-    --search entry
+    line = line and Utf8Proc.normalize_NFC(line)
     while line do
         table.insert(dict_entries, line)
         line = dict:read()
@@ -233,7 +224,6 @@ function ReaderUserHyph:scrubDictionary()
     os.remove(dict_file)
     os.rename(new_dict_file, dict_file)
 end
-
 
 function ReaderUserHyph:modifyUserEntry(word)
     if word:find("[ ,;-%.]") then return end -- no button if more than one word
