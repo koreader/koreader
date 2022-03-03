@@ -383,21 +383,21 @@ end
 
 -- browse tags or series
 function CalibreSearch:browse(option, run, chosen)
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
-    self.search_menu = Menu:new{
-        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
-        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
-        show_parent = menu_container,
-        onMenuHold = self.onMenuHold,
-        _manager = self,
-    }
-    table.insert(menu_container, self.search_menu)
-    self.search_menu.close_callback = function()
-        UIManager:close(menu_container)
-    end
     if run == 1 then
+        self.search_menu = self.search_menu or Menu:new{
+            width = Screen:getWidth(),
+            height = Screen:getHeight(),
+            paths = {},
+            parent = nil,
+            is_borderless = true,
+            onMenuHold = self.onMenuHold,
+        }
+
+        self.search_menu.onReturn = function ()
+            table.remove(self.search_menu.paths)
+            self:browse(option, run, chosen)
+        end
+
         local menu_entries = {}
         local search_value
         if self.search_value ~= "" then
@@ -421,9 +421,12 @@ function CalibreSearch:browse(option, run, chosen)
         end
         table.sort(menu_entries, function(v1,v2) return v1.text < v2.text end)
         self.search_menu:switchItemTable(name, menu_entries)
-        UIManager:show(menu_container)
+
+        UIManager:show(self.search_menu)
     else
         local results
+
+        table.insert(self.search_menu.paths, 1)
         if option == "tags" then
             results = getBooksByTag(self.books, chosen)
         elseif option == "series" then
@@ -431,7 +434,10 @@ function CalibreSearch:browse(option, run, chosen)
         end
         if results then
             local catalog = self:bookCatalog(results, option)
-            self:showresults(catalog, chosen)
+            table.sort(catalog, function(v1,v2) return v1.text < v2.text end)
+            self.search_menu:switchItemTable(chosen, catalog)
+
+            UIManager:show(self.search_menu)
         end
     end
 
