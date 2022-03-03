@@ -153,6 +153,13 @@ function AutoSuspend:onInputEvent()
     self:_reschedule_standby()
 end
 
+function AutoSuspend:onGesture()
+    logger.dbg("AutoSuspend: onGesture")
+    self.last_action_btv = TimeVal.boottime_or_realtime_coarse()
+
+    self:_reschedule_standby()
+end
+
 function AutoSuspend:_unschedule_standby()
     UIManager:unschedule(AutoSuspend.allowStandby)
 end
@@ -438,7 +445,7 @@ function AutoSuspend:onAllowStandby()
             -- Other devices may be added
             Device:standby(wake_in)
 
-            logger.dbg("AutoSuspend: leaving standby after " .. Device.lastStandbyTime .. " s")
+            logger.dbg("AutoSuspend: leaving standby after " .. Device.last_standby_sec .. " s")
 
             UIManager:broadcastEvent(Event:new("LeaveStandby"))
             self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked
