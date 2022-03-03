@@ -412,7 +412,6 @@ function AutoSuspend:addToMainMenu(menu_items)
     end
 end
 
-
 -- koreader is merely waiting for user input right now.
 -- UI signals us that standby is allowed at this very moment because nothing else goes on in the background.
 function AutoSuspend:onAllowStandby()
