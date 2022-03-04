@@ -112,6 +112,7 @@ function SetDefaults:init()
 
     local cancel_button = {
         text = _("Cancel"),
+        id = "close",
         enabled = true,
         callback = function()
             self:close()

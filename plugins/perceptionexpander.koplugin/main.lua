@@ -136,6 +136,7 @@ function PerceptionExpander:showSettingsDialog()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)

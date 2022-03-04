@@ -641,6 +641,7 @@ function CloudStorage:createFolder(url)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(input_dialog)
                     end,

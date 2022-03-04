@@ -66,7 +66,6 @@ function DoubleSpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { {Device.input.group.Back}, doc = "close doublespin widget" }
-        self.key_events.Press = { {"Press"}, doc = "press button" }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -229,7 +228,6 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
-        auto_focus_first_button = false,
     }
     self:mergeLayoutInVertical(button_table)
 
@@ -269,7 +267,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         self.movable,
     }
-    self:focusTopLeftWidget()
+    self:refocusWidget()
     UIManager:setDirty(self, function()
         return "ui", self.widget_frame.dimen
     end)
@@ -311,10 +309,6 @@ function DoubleSpinWidget:onClose()
         self.close_callback()
     end
     return true
-end
-
-function DoubleSpinWidget:onPress()
-    return self:sendTapEventToFocusedWidget()
 end
 
 return DoubleSpinWidget

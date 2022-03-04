@@ -65,7 +65,6 @@ function SpinWidget:init()
     end
     if Device:hasKeys() then
         self.key_events.Close = { {Device.input.group.Back}, doc = "close spin widget" }
-        self.key_events.Press = { {"Press"}, doc = "press button" }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -196,7 +195,6 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
-        auto_focus_first_button = false,
     }
     self:mergeLayoutInVertical(ok_cancel_buttons)
     local vgroup = VerticalGroup:new{
@@ -236,7 +234,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         },
         self.movable,
     }
-    self:focusTopLeftWidget()
+    self:refocusWidget()
     UIManager:setDirty(self, function()
         return "ui", self.spin_frame.dimen
     end)
@@ -278,10 +276,6 @@ function SpinWidget:onClose()
         self.close_callback()
     end
     return true
-end
-
-function SpinWidget:onPress()
-    return self:sendTapEventToFocusedWidget()
 end
 
 return SpinWidget

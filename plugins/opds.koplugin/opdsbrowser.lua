@@ -154,6 +154,7 @@ function OPDSBrowser:addNewCatalog()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
@@ -204,6 +205,7 @@ function OPDSBrowser:editCalibreServer()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
@@ -740,6 +742,7 @@ function OPDSBrowser:showDownloads(item)
                         {
                             {
                                 text = _("Cancel"),
+                                id = "close",
                                 callback = function()
                                     UIManager:close(input_dialog)
                                 end,
@@ -818,6 +821,7 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(self.search_server_dialog)
                     end,
@@ -912,6 +916,7 @@ function OPDSBrowser:editOPDSServer(item)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self.edit_server_dialog:onClose()
                         UIManager:close(self.edit_server_dialog)

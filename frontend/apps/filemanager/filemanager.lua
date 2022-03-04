@@ -255,6 +255,7 @@ function FileManager:setupLayout()
                             buttons = {{
                                 {
                                     text = _("Cancel"),
+                                    id = "close",
                                     enabled = true,
                                     callback = function()
                                         UIManager:close(file_manager.rename_dialog)
@@ -1015,6 +1016,7 @@ function FileManager:createFolder()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(input_dialog)
                     end,

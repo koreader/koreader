@@ -689,6 +689,7 @@ function ReaderDictionary:onShowDictionaryLookup()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(self.dictionary_lookup_dialog)
                     end,

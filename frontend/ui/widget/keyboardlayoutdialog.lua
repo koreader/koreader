@@ -6,9 +6,9 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FFIUtil = require("ffi/util")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Language = require("ui/language")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
@@ -20,9 +20,10 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Device = require("device")
+local Screen = Device.screen
 
-local KeyboardLayoutDialog = InputContainer:new{
+local KeyboardLayoutDialog = FocusManager:new{
     is_always_active = true,
     modal = true,
     stop_events_propagation = true,
@@ -31,6 +32,7 @@ local KeyboardLayoutDialog = InputContainer:new{
 }
 
 function KeyboardLayoutDialog:init()
+    self.layout = {}
     self.width = self.width or math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8)
     self.title_bar = TitleBar:new{
         width = self.width,
@@ -68,6 +70,7 @@ function KeyboardLayoutDialog:init()
     table.insert(buttons, {
         {
             text = _("Cancel"),
+            id = "close",
             callback = function()
                 UIManager:close(self.parent.keyboard_layout_dialog)
             end,
@@ -93,6 +96,7 @@ function KeyboardLayoutDialog:init()
         parent = self,
         show_parent = self,
     }
+    self:mergeLayoutInVertical(self.radio_button_table)
 
     -- Buttons Table
     self.button_table = ButtonTable:new{
@@ -101,6 +105,7 @@ function KeyboardLayoutDialog:init()
         zero_sep = true,
         show_parent = self,
     }
+    self:mergeLayoutInVertical(self.button_table)
 
     local max_radio_button_container_height = math.floor(Screen:getHeight()*0.9
                     - self.title_bar:getHeight()
@@ -163,6 +168,9 @@ function KeyboardLayoutDialog:init()
         ignore_if_over = "height",
         self.movable,
     }
+    if Device:hasKeys() then
+        self.key_events.CloseDialog = { {Device.input.group.Back}, doc = "close dialog" }
+    end
 end
 
 function KeyboardLayoutDialog:onShow()
@@ -175,6 +183,15 @@ function KeyboardLayoutDialog:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
+end
+
+function KeyboardLayoutDialog:onCloseDialog()
+    local close_button = self.button_table:getButtonById("close")
+    if close_button and close_button.enabled then
+        close_button.callback()
+        return true
+    end
+    return false
 end
 
 return KeyboardLayoutDialog

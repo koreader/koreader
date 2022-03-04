@@ -307,6 +307,7 @@ function Calibre:getWirelessMenuTable()
                                 {
                                     {
                                         text = _("Cancel"),
+                                        id = "close",
                                         callback = function()
                                             UIManager:close(url_dialog)
                                         end,

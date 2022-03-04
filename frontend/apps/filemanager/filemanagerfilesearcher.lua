@@ -125,6 +125,7 @@ function FileSearcher:onShowFileSearch(search_string)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(self.search_dialog)
                     end,

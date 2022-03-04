@@ -45,7 +45,6 @@ function SkimToWidget:init()
     end
 
     self.buttons_layout = {}
-    self.selected = { x = 1, y = 2 }
 
     local frame_width = math.floor(math.min(screen_width, screen_height) * 0.95)
     local frame_border_size = Size.border.window
@@ -296,8 +295,7 @@ function SkimToWidget:init()
             { button_minus_ten, button_minus, self.current_page_text, button_plus, button_plus_ten },
         }
         self.layout = self.buttons_layout
-        self.layout[2][1]:onFocus()
-        self.key_events.SelectByKeyPress = { { "Press" }, doc = "select focused item" }
+        self:moveFocusTo(1, 2)
     end
     if Device:hasKeyboard() then
         self.key_events.QKey = { { "Q" }, event = "FirstRowKeyPress", args =    0 }
@@ -323,6 +321,7 @@ function SkimToWidget:update()
     self.progress_bar.percentage = self.curr_page / self.page_count
     self.current_page_text:setText(self.current_page_text:text_func(), self.current_page_text.width)
     self.button_bookmark_toggle:setText(self.button_bookmark_toggle:text_func(), self.button_bookmark_toggle.width)
+    self:refocusWidget(FocusManager.RENDER_IN_NEXT_TICK)
 end
 
 function SkimToWidget:addOriginToLocationStack(add_current)
@@ -376,15 +375,6 @@ end
 function SkimToWidget:onAnyKeyPressed()
     UIManager:close(self)
     return true
-end
-
-function SkimToWidget:onSelectByKeyPress()
-    local item = self:getFocusItem()
-    if item then
-        item.callback()
-        return true
-    end
-    return false
 end
 
 function SkimToWidget:onFirstRowKeyPress(percent)

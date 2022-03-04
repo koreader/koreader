@@ -81,6 +81,7 @@ x for an absolute page number
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self:close()
                     end,

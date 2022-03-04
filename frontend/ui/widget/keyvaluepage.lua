@@ -25,6 +25,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local Device = require("device")
 local Font = require("ui/font")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
@@ -65,7 +66,7 @@ local KeyValueItem = InputContainer:new{
 }
 
 function KeyValueItem:init()
-    self.dimen = Geom:new{w = self.width, h = self.height}
+    self.dimen = Geom:new{ w = self.width, h = self.height }
 
     -- self.value may contain some control characters (\n \t...) that would
     -- be rendered as a square. Replace them with a shorter and nicer '|'.
@@ -162,33 +163,35 @@ function KeyValueItem:init()
     -- For debugging positioning:
     -- value_widget = FrameContainer:new{ padding=0, margin=0, bordersize=1, value_widget }
 
-    if Device:isTouchDevice() then
-        self.ges_events.Tap = {
-            GestureRange:new{
-                ges = "tap",
-                range = self.dimen,
-            }
+    self.ges_events.Tap = {
+        GestureRange:new{
+            ges = "tap",
+            range = self.dimen,
         }
-        self.ges_events.Hold = {
-            GestureRange:new{
-                ges = "hold",
-                range = self.dimen,
-            }
+    }
+    self.ges_events.Hold = {
+        GestureRange:new{
+            ges = "hold",
+            range = self.dimen,
         }
-    end
-
+    }
+    local content_dimen = self.dimen:copy()
+    content_dimen.h = content_dimen.h - Size.border.thin * 2 -- reduced by 2 border sizes
+    content_dimen.w = content_dimen.w - Size.border.thin * 2 -- reduced by 2 border sizes
     self[1] = FrameContainer:new{
         padding = frame_padding,
         padding_top = 0,
         padding_bottom = 0,
         bordersize = 0,
+        focusable = true,
+        focus_border_size = Size.border.thin,
         background = Blitbuffer.COLOR_WHITE,
         HorizontalGroup:new{
-            dimen = self.dimen:copy(),
+            dimen = content_dimen,
             LeftContainer:new{
                 dimen = {
                     w = key_w,
-                    h = self.height
+                    h = content_dimen.h
                 },
                 key_widget,
             },
@@ -198,7 +201,7 @@ function KeyValueItem:init()
             LeftContainer:new{
                 dimen = {
                     w = value_w,
-                    h = self.height
+                    h = content_dimen.h
                 },
                 value_widget,
             }
@@ -270,7 +273,7 @@ function KeyValueItem:onShowKeyValue()
 end
 
 
-local KeyValuePage = InputContainer:new{
+local KeyValuePage = FocusManager:new{
     title = "",
     width = nil,
     height = nil,
@@ -293,11 +296,9 @@ function KeyValuePage:init()
     end
 
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {Input.group.Back}, doc = "close page" },
-            NextPage = {{Input.group.PgFwd}, doc = "next page"},
-            PrevPage = {{Input.group.PgBack}, doc = "prev page"},
-        }
+        self.key_events.Close = {{Input.group.Back}, doc = "close page" }
+        self.key_events.NextPage = {{Input.group.PgFwd}, doc = "next page"}
+        self.key_events.PrevPage = {{Input.group.PgBack}, doc = "prev page"}
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -535,6 +536,7 @@ end
 
 -- make sure self.item_margin and self.item_height are set before calling this
 function KeyValuePage:_populateItems()
+    self.layout = {}
     self.page_info:resetLayout()
     self.return_button:resetLayout()
     self.main_content:clear()
@@ -545,7 +547,7 @@ function KeyValuePage:_populateItems()
         if entry == nil then break end
 
         if type(entry) == "table" then
-            table.insert(self.main_content, KeyValueItem:new{
+            local kv_item = KeyValueItem:new{
                 height = self.item_height,
                 width = self.item_width,
                 font_size = self.items_font_size,
@@ -561,7 +563,9 @@ function KeyValuePage:_populateItems()
                 kv_pairs_idx = kv_pairs_idx,
                 kv_page = self,
                 show_parent = self,
-            })
+            }
+            table.insert(self.main_content, kv_item)
+            table.insert(self.layout, { kv_item })
             if entry.separator then
                 table.insert(self.main_content, LineWidget:new{
                     background = Blitbuffer.COLOR_LIGHT_GRAY,
@@ -615,7 +619,7 @@ function KeyValuePage:_populateItems()
         self.page_info_first_chev:hide()
         self.page_info_last_chev:hide()
     end
-
+    self:moveFocusTo(1, 1, FocusManager.NOT_UNFOCUS)
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)

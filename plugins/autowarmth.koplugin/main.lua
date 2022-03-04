@@ -451,6 +451,7 @@ function AutoWarmth:getLocationMenu()
                     {
                         {
                             text = _("Cancel"),
+                            id = "close",
                             callback = function()
                                 UIManager:close(location_name_dialog)
                             end,
