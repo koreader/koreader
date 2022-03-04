@@ -394,7 +394,6 @@ function CalibreSearch:browse(option, run, chosen)
         }
 
         self.search_menu.onReturn = function ()
-            table.remove(self.search_menu.paths)
             self:browse(option, run, chosen)
         end
 
@@ -420,13 +419,16 @@ function CalibreSearch:browse(option, run, chosen)
             table.insert(menu_entries, entry)
         end
         table.sort(menu_entries, function(v1,v2) return v1.text < v2.text end)
-        self.search_menu:switchItemTable(name, menu_entries)
+
+        -- If browsing after using return button there will be page number in paths table
+        local previous_page = (table.remove(self.search_menu.paths) or 1) * self.search_menu.perpage
+        self.search_menu:switchItemTable(name, menu_entries, previous_page)
 
         UIManager:show(self.search_menu)
     else
         local results
 
-        table.insert(self.search_menu.paths, 1)
+
         if option == "tags" then
             results = getBooksByTag(self.books, chosen)
         elseif option == "series" then
@@ -435,6 +437,9 @@ function CalibreSearch:browse(option, run, chosen)
         if results then
             local catalog = self:bookCatalog(results, option)
             table.sort(catalog, function(v1,v2) return v1.text < v2.text end)
+
+            -- Inserting current page number into paths in case we use return button
+            table.insert(self.search_menu.paths, self.search_menu.page)
             self.search_menu:switchItemTable(chosen, catalog)
 
             UIManager:show(self.search_menu)
