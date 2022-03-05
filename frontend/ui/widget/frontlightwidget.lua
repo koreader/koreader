@@ -2,13 +2,13 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local NaturalLight = require("ui/widget/naturallightwidget")
 local ProgressWidget = require("ui/widget/progresswidget")
@@ -23,7 +23,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local FrontLightWidget = InputContainer:new{
+local FrontLightWidget = FocusManager:new{
     width = nil,
     height = nil,
     -- This should stay active during natural light configuration
@@ -77,9 +77,7 @@ function FrontLightWidget:init()
 
     -- Input
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {Device.input.group.Back}, doc = "close frontlight" }
-        }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close frontlight" }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -111,6 +109,7 @@ function FrontLightWidget:init()
 end
 
 function FrontLightWidget:layout()
+    self.layout = {}
     -- While the brightness bar uses a ProgressWidget, the warmth bar uses a ButtonProgressWidget
     -- FIXME: Actually move to ButtonProgressWidget ;D
     if self.has_nl then
@@ -238,6 +237,7 @@ function FrontLightWidget:layout()
         self.fl_level,
         self.fl_plus,
     }
+    self.layout[1] = {self.fl_minus, self.fl_plus}
     local fl_buttons_below = HorizontalGroup:new{
         align = "center",
         fl_min,
@@ -246,6 +246,7 @@ function FrontLightWidget:layout()
         fl_spacer,
         fl_max,
     }
+    self.layout[2] = {fl_min, fl_toggle, fl_max}
 
     if self.has_nl then
         -- Only insert 'Brightness' caption if we also add 'warmth' widgets below.
@@ -333,12 +334,14 @@ function FrontLightWidget:layout()
             self.nl_level,
             self.nl_plus,
         }
+        self.layout[3] = {self.nl_minus, self.nl_plus}
         local nl_buttons_below = HorizontalGroup:new{
             align = "center",
             nl_min,
             nl_spacer,
             nl_max,
         }
+        self.layout[4] = {nl_min, nl_max}
 
         table.insert(vertical_group, nl_header)
         table.insert(nl_group_above, nl_buttons_above)
@@ -365,6 +368,7 @@ function FrontLightWidget:layout()
                 end,
             }
             table.insert(vertical_group, nl_setup)
+            self.layout[5] = {nl_setup}
         end
     end
 
@@ -424,6 +428,7 @@ function FrontLightWidget:update()
     -- Reset container height to what it actually contains
     -- FIXME: Was a getSize on vertical_group only...
     self.main_container.dimen.h = self.main_container:getSize().h
+    self:refocusWidget()
 
     UIManager:setDirty(self, function()
         return "ui", self.frame.dimen
