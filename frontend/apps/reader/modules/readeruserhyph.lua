@@ -116,6 +116,9 @@ function ReaderUserHyph:checkHyphenation(suggestion, word)
 end
 
 function ReaderUserHyph:updateDictionary(word, hyphenation)
+    if not word then
+        logger.err("UserHyph: called without arguments")
+    end
     local dict_file = self:getDictionaryPath()
     local new_dict_file = dict_file .. ".new"
 
@@ -125,9 +128,7 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
         return
     end
 
-    if word then
-        word = Utf8Proc.normalize_NFC(word)
-    end
+    word = Utf8Proc.normalize_NFC(word)
 
     local word_lower = Utf8Proc.lowercase(word)
     local line
