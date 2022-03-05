@@ -21,6 +21,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
+local logger = require("logger")
 local Screen = Device.screen
 
 local FrontLightWidget = FocusManager:new{
@@ -424,13 +425,13 @@ function FrontLightWidget:layout()
         },
     }
 
-    logger.dbg("FrontLightWidget:layout self.main_container.dimen", self.main_container.dimen)
-    logger.dbg("FrontLightWidget:layout self.main_group.dimen", self.main_group.dimen)
+    logger.dbg("FrontLightWidget:layout self.main_container.dimen", self.main_container.dimen, self.main_container:getSize())
+    logger.dbg("FrontLightWidget:layout self.main_group.dimen", self.main_group.dimen, self.main_group:getSize())
 end
 
 function FrontLightWidget:update()
-    logger.dbg("FrontLightWidget:update self.main_container.dimen", self.main_container.dimen)
-    logger.dbg("FrontLightWidget:update self.main_group.dimen", self.main_group.dimen)
+    logger.dbg("FrontLightWidget:update self.main_container.dimen", self.main_container.dimen, self.main_container:getSize())
+    logger.dbg("FrontLightWidget:update self.main_group.dimen", self.main_group.dimen, self.main_group:getSize())
 
     -- Reset container height to what it actually contains
     self.main_container.dimen.h = self.main_group:getSize().h
@@ -478,8 +479,7 @@ function FrontLightWidget:setBrightness(intensity)
 
     -- Update the progress bar
     self.fl_progress:setPercentage(self.fl.cur / self.fl.max)
-    self.fl_level.text = self.fl.cur
-    self.fl_level:update()
+    self.fl_level:setText(tostring(self.fl.cur))
     if self.fl.cur == self.fl.min then
         self.fl_minus:disable()
     else
@@ -506,8 +506,7 @@ function FrontLightWidget:setWarmth(warmth)
 
     -- Update the progress bar
     self:rebuildWarmthProgress()
-    self.nl_level.text = self.nl.cur
-    self.nl_level:update()
+    self.nl_level:setText(tostring(self.nl.cur))
     if self.nl.cur == self.nl.min then
         self.nl_minus:disable()
     else
