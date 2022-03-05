@@ -32,6 +32,7 @@ local Kobo = Generic:new{
     hasOTAUpdates = yes,
     hasFastWifiStatusQuery = yes,
     hasWifiManager = yes,
+    canStandby = no, -- will get updated by checkStandby()
     canReboot = yes,
     canPowerOff = yes,
 
@@ -517,6 +518,8 @@ function Kobo:init()
 
     -- Only enable a single core on startup
     self:enableCPUCores(1)
+
+    self.canStandby = self:checkStandby()
 end
 
 function Kobo:setDateTime(year, month, day, hour, min, sec)
@@ -730,29 +733,27 @@ local function writeToSys(val, file)
     end
     local re, err_msg, err_code = f:write(val, "\n")
     if not re then
-        logger.err("Error writing to value to file:", val, file, err_msg, err_code)
+        logger.err("Error writing value to file:", val, file, err_msg, err_code)
     end
     f:close()
     return re
 end
 
 --- Check if device supports standby
--- On the first call detect if standby exists
--- change Kobo:canStandby() to yes or no during first call
-function Kobo:canStandby()
+function Kobo:checkStandby()
     logger.dbg("Kobo: checking if standby is possible ...")
-    self.canStandby = no
     local f = io.open("/sys/power/state")
     if not f then
-        return
+        return no
     end
     local mode = f:read()
     logger.dbg("Kobo: available power states", mode)
     if mode:find("standby") then
-        self.canStandby = yes
         logger.dbg("Kobo: standby state allowed")
+        return yes
     end
-    return self:canStandby()
+    logger.dbg("Kobo: standby state not allowed")
+    return no
 end
 
 --- The function to put the device into standby, with enabled touchscreen.
@@ -822,19 +823,7 @@ function Kobo:suspend()
     -- cf. kernel/power/main.c @ L#207
     local ret = writeToSys("1", "/sys/power/state-extended")
     logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", ret)
---[[
-    f = io.open("/sys/power/state-extended", "we")
-    if not f then
-        logger.err("Cannot open /sys/power/state-extended for writing!")
-        return false
-    end
-    re, err_msg, err_code = f:write("1\n")
-    f:close()
-    logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", re)
-    if not re then
-        logger.err('write error: ', err_msg, err_code)
-    end
-]]
+
     util.sleep(2)
     logger.info("Kobo suspend: waited for 2s because of reasons...")
 
@@ -930,32 +919,12 @@ function Kobo:resume()
 
     local ret = writeToSys("0", "/sys/power/state-extended")
     logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", ret)
---[[
-    local f = io.open("/sys/power/state-extended", "we")
-    if not f then
-        logger.err("cannot open /sys/power/state-extended for writing!")
-        return false
-    end
-    local re, err_msg, err_code = f:write("0\n")
-    f:close()
-    logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", re)
-    if not re then
-        logger.err('write error: ', err_msg, err_code)
-    end
-]]
 
     -- HACK: wait a bit (0.1 sec) for the kernel to catch up
     util.usleep(100000)
     -- cf. #1862, I can reliably break IR touch input on resume...
     -- cf. also #1943 for the rationale behind applying this workaorund in every case...
     writeToSys("a", "/sys/devices/virtual/input/input1/neocmd")
---[[
-    local f = io.open("/sys/devices/virtual/input/input1/neocmd", "we")
-    if f ~= nil then
-        f:write("a\n")
-        f:close()
-    end
-]]
 
     -- A full suspend may have toggled the LED off.
     self:setupChargingLED()
