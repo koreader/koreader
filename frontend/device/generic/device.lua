@@ -6,6 +6,7 @@ This module defines stubs for common methods.
 
 local DataStorage = require("datastorage")
 local Geom = require("ui/geometry")
+local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -67,8 +68,8 @@ local Device = {
     canRestart = yes,
     canSuspend = yes,
     canStandby = no,
-    total_standby_sec = 0, -- total time spent in standby
-    last_standby_sec = 0, -- last time spent in standby
+    total_standby_tv = TimeVal.zero, -- total time spent in standby
+    last_standby_tv = TimeVal.zero, -- last time spent in standby
     canReboot = no,
     canPowerOff = no,
     canAssociateFileExtensions = no,

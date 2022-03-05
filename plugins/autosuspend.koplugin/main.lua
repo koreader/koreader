@@ -32,7 +32,7 @@ local AutoSuspend = WidgetContainer:new{
     autoshutdown_timeout_seconds = default_autoshutdown_timeout_seconds,
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
-    last_action_btv = TimeVal.zero,
+    last_action_tv = TimeVal.zero,
     is_standby_scheduled = nil,
     task = nil,
 }
@@ -61,9 +61,9 @@ function AutoSuspend:_schedule(shutdown_only)
         delay_suspend = self.auto_suspend_timeout_seconds
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
-        local now_btv = UIManager:getTime() + TimeVal:new{ sec = 0, usec = Device.total_standby_sec * 1e6 }
-        delay_suspend = (self.last_action_btv - now_btv):tonumber() + self.auto_suspend_timeout_seconds
-        delay_shutdown = (self.last_action_btv - now_btv):tonumber() + self.autoshutdown_timeout_seconds
+        local now_tv = UIManager:getTime() + Device.total_standby_tv
+        delay_suspend = (self.last_action_tv - now_tv):tonumber() + self.auto_suspend_timeout_seconds
+        delay_shutdown = (self.last_action_tv - now_tv):tonumber() + self.autoshutdown_timeout_seconds
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -94,8 +94,8 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        self.last_action_btv = UIManager:getTime() + TimeVal:new{ sec = 0, usec = Device.total_standby_sec * 1e6 }
-        logger.dbg("AutoSuspend: start at", self.last_action_btv:tonumber())
+        self.last_action_tv = UIManager:getTime() + Device.total_standby_tv
+        logger.dbg("AutoSuspend: start at", self.last_action_tv:tonumber())
         self:_schedule()
     end
 end
@@ -103,8 +103,8 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        self.last_action_btv = UIManager:getTime() + TimeVal:new{ sec = 0, usec = Device.total_standby_sec * 1e6 }
-        logger.dbg("AutoSuspend: restart at", self.last_action_btv:tonumber())
+        self.last_action_tv = UIManager:getTime() + Device.total_standby_tv
+        logger.dbg("AutoSuspend: restart at", self.last_action_tv:tonumber())
         self:_schedule(true)
     end
 end
@@ -148,7 +148,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action_btv = UIManager:getTime() + TimeVal:new{ sec = 0, usec = Device.total_standby_sec * 1e6 }
+    self.last_action_tv = UIManager:getTime() + Device.total_standby_tv
 
     self:_reschedule_standby()
 end
@@ -438,7 +438,7 @@ function AutoSuspend:onAllowStandby()
             -- Other devices may be added
             Device:standby(wake_in)
 
-            logger.dbg("AutoSuspend: leaving standby after " .. Device.last_standby_sec .. " s")
+            logger.dbg("AutoSuspend: leaving standby after " .. Device.last_standby_tv:tonumber() .. " s")
 
             UIManager:broadcastEvent(Event:new("LeaveStandby"))
             self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked

@@ -122,7 +122,7 @@ function AutoTurn:onSuspend()
 end
 
 function AutoTurn:_onLeaveStandby()
-    self.last_action_tv = self.last_action_tv - TimeVal:new{ sec=0, usec = Device.last_standby_sec * 1e6 }
+    self.last_action_tv = self.last_action_tv - Device.last_standby_tv
 
     -- We messed with last_action_tv, so a complete reschedule has to be done.
     if self:_enabled() then
