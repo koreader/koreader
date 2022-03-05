@@ -28,6 +28,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local logger = require("logger")
+local dbg = require("dbg")
 local util = require("util")
 local Screen = require("device").screen
 
@@ -1167,6 +1168,28 @@ function TextBoxWidget:update(scheduled_update)
     self:_updateLayout()
     self.scheduled_update = nil
 end
+
+function TextBoxWidget:setText(text)
+    if text == self.text then
+        return
+    end
+
+    self.text = text
+
+    if self.use_xtext then
+        self:_measureWithXText()
+    else
+        self:_evalCharWidthList()
+    end
+    self:_splitToLines()
+
+    self:update()
+end
+dbg:guard(TextBoxWidget, "setText",
+    function(self, text)
+        assert(type(text) == "string",
+            "Wrong text type (expected string)")
+    end)
 
 function TextBoxWidget:onTapImage(arg, ges)
     if self.line_num_to_image and self.line_num_to_image[self.virtual_line_num] then

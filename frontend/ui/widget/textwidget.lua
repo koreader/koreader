@@ -312,10 +312,12 @@ function TextWidget:getBaseline()
 end
 
 function TextWidget:setText(text)
-    if text ~= self.text then
-        self.text = text
-        self:free()
+    if text == self.text then
+        return
     end
+
+    self.text = text
+    self:free()
 end
 dbg:guard(TextWidget, "setText",
     function(self, text)
