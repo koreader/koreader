@@ -183,10 +183,11 @@ function AutoSuspend:allowStandby()
         UIManager:allowStandby()
 
         -- This is necessary for wakeup from standby, as the deadline for receiving input events
-        -- is calculated from the time to the next scheduled function. Make sure this function comes soon.
+        -- is calculated from the time to the next scheduled function.
+        -- Make sure this function comes soon, as the time for going to standby after a scheduled wakeup
+        -- is prolonged by the given time. Any time between 0.500 and 0.001 seconds would go.
         -- Let's call it deadline_guard.
-        UIManager:scheduleIn(0.001, function() end)
----        UIManager:tickAfterNext(function() end)
+        UIManager:scheduleIn(0.100, function() end)
     end
 end
 
