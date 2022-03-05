@@ -145,7 +145,7 @@ function FrontLightWidget:layout()
     local padding_span = VerticalSpan:new{ width = self.span }
     local fl_group_above = HorizontalGroup:new{ align = "center" }
     local fl_group_below = HorizontalGroup:new{ align = "center" }
-    local vertical_group = VerticalGroup:new{ align = "center" }
+    self.main_group = VerticalGroup:new{ align = "center" }
 
     local ticks = {}
     for i = 1, self.fl.steps - 2 do
@@ -160,6 +160,7 @@ function FrontLightWidget:layout()
         tick_width = Screen:scaleBySize(0.5),
         last = self.fl.max,
     }
+    -- FIXME: Switch to TextWidget and leave the alignment to an HorizontalSpan?
     local fl_header = TextBoxWidget:new{
         text = _("Brightness"),
         face = self.medium_font_face,
@@ -250,17 +251,17 @@ function FrontLightWidget:layout()
 
     if self.has_nl then
         -- Only insert 'Brightness' caption if we also add 'warmth' widgets below.
-        table.insert(vertical_group, fl_header)
+        table.insert(self.main_group, fl_header)
     end
     table.insert(fl_group_above, fl_buttons_above)
     table.insert(fl_group_below, fl_buttons_below)
-    table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, fl_group_above)
-    table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, self.fl_progress)
-    table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, fl_group_below)
-    table.insert(vertical_group, padding_span)
+    table.insert(self.main_group, padding_span)
+    table.insert(self.main_group, fl_group_above)
+    table.insert(self.main_group, padding_span)
+    table.insert(self.main_group, self.fl_progress)
+    table.insert(self.main_group, padding_span)
+    table.insert(self.main_group, fl_group_below)
+    table.insert(self.main_group, padding_span)
 
     -- Warmth
     if self.has_nl then
@@ -301,7 +302,7 @@ function FrontLightWidget:layout()
             text = self.nl.cur,
             face = self.medium_font_face,
             alignment = "center",
-            width = math.floor(self.screen_width * 0.95 - 1.275 * self.nl_minus - 1.275 * self.nl_plus.width),
+            width = math.floor(self.screen_width * 0.95 - 1.275 * self.nl_minus.width - 1.275 * self.nl_plus.width),
         }
         local nl_min = Button:new{
             text = _("Min"),
@@ -343,17 +344,17 @@ function FrontLightWidget:layout()
         }
         self.layout[4] = {nl_min, nl_max}
 
-        table.insert(vertical_group, nl_header)
+        table.insert(self.main_group, nl_header)
         table.insert(nl_group_above, nl_buttons_above)
         table.insert(nl_group_below, nl_buttons_below)
 
-        table.insert(vertical_group, padding_span)
-        table.insert(vertical_group, nl_group_above)
-        table.insert(vertical_group, padding_span)
-        table.insert(vertical_group, self.nl_group)
-        table.insert(vertical_group, padding_span)
-        table.insert(vertical_group, nl_group_below)
-        table.insert(vertical_group, padding_span)
+        table.insert(self.main_group, padding_span)
+        table.insert(self.main_group, nl_group_above)
+        table.insert(self.main_group, padding_span)
+        table.insert(self.main_group, self.nl_group)
+        table.insert(self.main_group, padding_span)
+        table.insert(self.main_group, nl_group_below)
+        table.insert(self.main_group, padding_span)
 
         -- Aura One R/G/B widget
         if not self.has_nl_mixer and not self.has_nl_api then
@@ -367,12 +368,12 @@ function FrontLightWidget:layout()
                     UIManager:show(NaturalLight:new{fl_widget = self})
                 end,
             }
-            table.insert(vertical_group, nl_setup)
+            table.insert(self.main_group, nl_setup)
             self.layout[5] = {nl_setup}
         end
     end
 
-    table.insert(self.main_container, vertical_group)
+    table.insert(self.main_container, self.main_group)
 
     -- Common
     local title_bar = TitleBar:new{
@@ -422,12 +423,17 @@ function FrontLightWidget:layout()
             self.frame,
         },
     }
+
+    logger.dbg("FrontLightWidget:layout self.main_container.dimen", self.main_container.dimen)
+    logger.dbg("FrontLightWidget:layout self.main_group.dimen", self.main_group.dimen)
 end
 
 function FrontLightWidget:update()
+    logger.dbg("FrontLightWidget:update self.main_container.dimen", self.main_container.dimen)
+    logger.dbg("FrontLightWidget:update self.main_group.dimen", self.main_group.dimen)
+
     -- Reset container height to what it actually contains
-    -- FIXME: Was a getSize on vertical_group only...
-    self.main_container.dimen.h = self.main_container:getSize().h
+    self.main_container.dimen.h = self.main_group:getSize().h
     self:refocusWidget()
 
     UIManager:setDirty(self, function()
@@ -472,7 +478,8 @@ function FrontLightWidget:setBrightness(intensity)
 
     -- Update the progress bar
     self.fl_progress:setPercentage(self.fl.cur / self.fl.max)
-    self.fl_level:setText(self.fl.cur)
+    self.fl_level.text = self.fl.cur
+    self.fl_level:update()
     if self.fl.cur == self.fl.min then
         self.fl_minus:disable()
     else
@@ -499,7 +506,8 @@ function FrontLightWidget:setWarmth(warmth)
 
     -- Update the progress bar
     self:rebuildWarmthProgress()
-    self.nl_level:setText(self.nl.cur)
+    self.nl_level.text = self.nl.cur
+    self.nl_level:update()
     if self.nl.cur == self.nl.min then
         self.nl_minus:disable()
     else
