@@ -61,7 +61,7 @@ function AutoSuspend:_schedule(shutdown_only)
         delay_suspend = self.auto_suspend_timeout_seconds
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
-        local now_btv = TimeVal.boottime_or_realtime_coarse()
+        local now_btv = UIManager:getTime() + TimeVal:new{ sec = 0, usec = Device.total_standby_sec * 1e6 }
         delay_suspend = (self.last_action_btv - now_btv):tonumber() + self.auto_suspend_timeout_seconds
         delay_shutdown = (self.last_action_btv - now_btv):tonumber() + self.autoshutdown_timeout_seconds
     end
@@ -94,7 +94,7 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        self.last_action_btv = TimeVal.boottime_or_realtime_coarse()
+        self.last_action_btv = UIManager:getTime() + TimeVal:new{ sec = 0, usec = Device.total_standby_sec * 1e6 }
         logger.dbg("AutoSuspend: start at", self.last_action_btv:tonumber())
         self:_schedule()
     end
@@ -103,7 +103,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        self.last_action_btv = TimeVal.boottime_or_realtime_coarse()
+        self.last_action_btv = UIManager:getTime() + TimeVal:new{ sec = 0, usec = Device.total_standby_sec * 1e6 }
         logger.dbg("AutoSuspend: restart at", self.last_action_btv:tonumber())
         self:_schedule(true)
     end
@@ -148,14 +148,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action_btv = TimeVal.boottime_or_realtime_coarse()
-
-    self:_reschedule_standby()
-end
-
-function AutoSuspend:onGesture()
-    logger.dbg("AutoSuspend: onGesture")
-    self.last_action_btv = TimeVal.boottime_or_realtime_coarse()
+    self.last_action_btv = UIManager:getTime() + TimeVal:new{ sec = 0, usec = Device.total_standby_sec * 1e6 }
 
     self:_reschedule_standby()
 end
@@ -193,7 +186,7 @@ function AutoSuspend:allowStandby()
         -- is calculated from the time to the next scheduled function. Make sure this function comes soon.
         -- Let's call it deadline_guard.
         UIManager:scheduleIn(0.001, function() end)
---        UIManager:tickAfterNext(function() end)
+---        UIManager:tickAfterNext(function() end)
     end
 end
 
