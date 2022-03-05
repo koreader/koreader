@@ -24,6 +24,36 @@ local function koboEnableWifi(toggle)
     end
 end
 
+-- checks if standby is available on the device
+local function checkStandby()
+    logger.dbg("Kobo: checking if standby is possible ...")
+    local f = io.open("/sys/power/state")
+    if not f then
+        return no
+    end
+    local mode = f:read()
+    logger.dbg("Kobo: available power states", mode)
+    if mode:find("standby") then
+        logger.dbg("Kobo: standby state allowed")
+        return yes
+    end
+    logger.dbg("Kobo: standby state not allowed")
+    return no
+end
+
+local function writeToSys(val, file)
+    local f = io.open(file, "we")
+    if not f then
+        logger.err("Cannot open:", file)
+        return
+    end
+    local re, err_msg, err_code = f:write(val, "\n")
+    if not re then
+        logger.err("Error writing value to file:", val, file, err_msg, err_code)
+    end
+    f:close()
+    return re
+end
 
 local Kobo = Generic:new{
     model = "Kobo",
@@ -519,7 +549,7 @@ function Kobo:init()
     -- Only enable a single core on startup
     self:enableCPUCores(1)
 
-    self.canStandby = self:checkStandby()
+    self.canStandby = checkStandby()
 end
 
 function Kobo:setDateTime(year, month, day, hour, min, sec)
@@ -725,37 +755,6 @@ end
 
 function Kobo:getUnexpectedWakeup() return unexpected_wakeup_count end
 
-local function writeToSys(val, file)
-    local f = io.open(file, "we")
-    if not f then
-        logger.err("Cannot open:", file)
-        return
-    end
-    local re, err_msg, err_code = f:write(val, "\n")
-    if not re then
-        logger.err("Error writing value to file:", val, file, err_msg, err_code)
-    end
-    f:close()
-    return re
-end
-
---- Check if device supports standby
-function Kobo:checkStandby()
-    logger.dbg("Kobo: checking if standby is possible ...")
-    local f = io.open("/sys/power/state")
-    if not f then
-        return no
-    end
-    local mode = f:read()
-    logger.dbg("Kobo: available power states", mode)
-    if mode:find("standby") then
-        logger.dbg("Kobo: standby state allowed")
-        return yes
-    end
-    logger.dbg("Kobo: standby state not allowed")
-    return no
-end
-
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
@@ -767,12 +766,12 @@ function Kobo:standby(max_duration)
     end
 
     local TimeVal = require("ui/timeval")
-    local standby_time_btv = TimeVal:boottime_or_realtime_coarse()
+    local standby_time_tv = TimeVal:boottime_or_realtime_coarse()
 
     local ret = writeToSys("standby", "/sys/power/state")
 
-    self.last_standby_sec = (TimeVal:boottime_or_realtime_coarse() - standby_time_btv):tonumber()
-    self.total_standby_sec = self.total_standby_sec + self.last_standby_sec
+    self.last_standby_tv = TimeVal:boottime_or_realtime_coarse() - standby_time_tv
+    self.total_standby_tv = self.total_standby_tv + self.last_standby_tv
 
     logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", ret)
 
