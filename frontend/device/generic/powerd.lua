@@ -60,10 +60,10 @@ function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min en
 function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
 function BasePowerD:turnOnFrontlightHW() self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
 function BasePowerD:frontlightWarmthHW() return 0 end
--- Anything that needs to be done before do a real hardware suspend.
+-- Anything that needs to be done before doing a real hardware suspend.
 -- (Such as turning the front light off).
 function BasePowerD:beforeSuspend() end
--- Anything that needs to be done after do a real hardware resume.
+-- Anything that needs to be done after doing a real hardware resume.
 -- (Such as restoring front light state).
 function BasePowerD:afterResume() end
 
@@ -166,7 +166,7 @@ function BasePowerD:normalizeIntensity(intensity)
     return intensity > self.fl_max and self.fl_max or intensity
 end
 
--- NOTE: Takes an intensity in the native scale (i.e., [self.fl_min, self.fl_max])
+--- @note: Takes an intensity in the native scale (i.e., [self.fl_min, self.fl_max])
 function BasePowerD:setIntensity(intensity)
     if not self.device:hasFrontlight() then return false end
     if intensity == self:frontlightIntensity() then return false end
@@ -191,7 +191,7 @@ function BasePowerD:fromNativeWarmth(nat_warmth)
     return Math.round(nat_warmth * self.warmth_scale)
 end
 
--- NOTE: Takes a warmth in the *KOReader* scale (i.e., [0, 100], *sic*)
+--- @note: Takes a warmth in the *KOReader* scale (i.e., [0, 100], *sic*)
 function BasePowerD:setWarmth(warmth)
     if not self.device:hasNaturalLight() then return false end
     if warmth == self:frontlightWarmth() then return false end

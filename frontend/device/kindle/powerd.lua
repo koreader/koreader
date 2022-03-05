@@ -96,7 +96,7 @@ function KindlePowerD:setIntensityHW(intensity)
         -- We do *both* to make the fl restore on resume less jarring on devices where lipc 0 != off.
         os.execute("printf '%s' ".. intensity .." > " .. self.fl_intensity_file)
 
-        -- And in case there are two LEDs...
+        -- And in case there are two LED groups...
         if self.warmth_intensity_file then
             os.execute("printf '%s' ".. intensity .." > " .. self.warmth_intensity_file)
         end
