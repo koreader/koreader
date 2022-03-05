@@ -377,6 +377,8 @@ function FrontLightWidget:layout()
     end
 
     table.insert(self.main_container, self.main_group)
+    -- Reset container height to what it actually contains
+    self.main_container.dimen.h = self.main_group:getSize().h
 
     -- Common
     local title_bar = TitleBar:new{
@@ -390,11 +392,18 @@ function FrontLightWidget:layout()
         end,
         show_parent = self,
     }
-    local inner_frame = FrameContainer:new{
+    self.inner_frame = FrameContainer:new{
         padding = Size.padding.button,
         margin = Size.margin.small,
         bordersize = 0,
         self.main_container,
+    }
+    self.center_container = CenterContainer:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = self.inner_frame:getSize().h,
+        },
+        self.inner_frame,
     }
     self.frame = FrameContainer:new{
         radius = Size.radius.window,
@@ -405,13 +414,7 @@ function FrontLightWidget:layout()
         VerticalGroup:new{
             align = "left",
             title_bar,
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.width,
-                    h = inner_frame:getSize().h,
-                },
-                inner_frame,
-            },
+            self.center_container,
         }
     }
     self[1] = WidgetContainer:new{
@@ -427,17 +430,27 @@ function FrontLightWidget:layout()
         },
     }
 
+    logger.dbg("FrontLightWidget:layout self.center_container:getSize", self.center_container:getSize())
+    logger.dbg("FrontLightWidget:layout self.inner_frame:getSize", self.inner_frame:getSize())
+    logger.dbg("FrontLightWidget:layout self.frame:getSize", self.frame:getSize())
     logger.dbg("FrontLightWidget:layout self.main_container.dimen", self.main_container.dimen, self.main_container:getSize())
-    logger.dbg("FrontLightWidget:layout self.main_group.dimen", self.main_group.dimen, self.main_group:getSize())
+    logger.dbg("FrontLightWidget:layout self.main_group.dimen", self.main_group:getSize())
 end
 
 function FrontLightWidget:update()
+    --self.main_group:resetLayout() -- invalidate getSize's cache
+    --self.center_container.dimen.h = self.inner_frame:getSize().h
     logger.dbg("FrontLightWidget:update self.main_container.dimen", self.main_container.dimen, self.main_container:getSize())
-    logger.dbg("FrontLightWidget:update self.main_group.dimen", self.main_group.dimen, self.main_group:getSize())
+    logger.dbg("FrontLightWidget:update self.main_group.dimen", self.main_group:getSize())
 
     -- Reset container height to what it actually contains
-    self.main_container.dimen.h = self.main_group:getSize().h
+    --self.main_container.dimen.h = self.main_group:getSize().h
     self:refocusWidget()
+
+    -- Ditto for the frames
+    logger.dbg("FrontLightWidget:layout self.center_container:getSize", self.center_container:getSize())
+    logger.dbg("FrontLightWidget:layout self.inner_frame:getSize", self.inner_frame:getSize())
+    logger.dbg("FrontLightWidget:update self.frame.dimen", self.frame.dimen, self.frame:getSize())
 
     UIManager:setDirty(self, function()
         return "ui", self.frame.dimen
@@ -470,6 +483,8 @@ function FrontLightWidget:rebuildWarmthProgress()
                         end
         })
     end
+
+    logger.dbg("FrontLightWidget:rebuildWarmthProgress self.nl_group.dimen", self.nl_group.dimen, self.nl_group:getSize())
 end
 
 function FrontLightWidget:setBrightness(intensity)
