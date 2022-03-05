@@ -231,6 +231,8 @@ function ReaderUserHyph:modifyUserEntry(word)
 
     if not self.ui.document then return end
 
+    word = Utf8Proc.normalize_NFC(word)
+
     local suggested_hyphenation = cre.getHyphenationForWord(word)
 
     local input_dialog
