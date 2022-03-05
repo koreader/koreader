@@ -55,8 +55,10 @@ local order = {
         "speed_reading_module_perception_expander",
         "----------------------------",
         "highlight_options",
+        "selection_text", -- if Device:hasDPad()
         "panel_zoom_options",
         "djvu_render_mode",
+        "start_content_selection", -- if Device:hasDPad(), put this the last one to easy to select by press up key
     },
     setting = {
         -- common settings
