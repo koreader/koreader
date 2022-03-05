@@ -65,7 +65,7 @@ function FrontLightWidget:init()
         self.nl = {}
         self.nl.min = self.powerd.fl_warmth_min
         self.nl.max = self.powerd.fl_warmth_max
-        self.nl.cur = self.powerd:frontlightWarmth()
+        self.nl.cur = self.powerd:toNativeWarmth(self.powerd:frontlightWarmth())
 
         local nl_steps = self.nl.max - self.nl.min + 1
         self.nl.stride = math.ceil(nl_steps / 25)
@@ -74,6 +74,8 @@ function FrontLightWidget:init()
             self.nl.steps = self.nl.steps + 1
         end
         self.nl.steps = math.min(self.nl.steps, nl_steps)
+
+        logger.dbg("self.nl:", self.nl)
     end
 
     -- Input
@@ -447,6 +449,7 @@ function FrontLightWidget:rebuildWarmthProgress()
     self.nl_group:clear()
 
     local curr_warmth_step = math.floor(self.nl.cur / self.nl.stride)
+    logger.dbg("curr_warmth_step:", curr_warmth_step)
     if curr_warmth_step > 0 then
         for i = 1, curr_warmth_step do
             table.insert(self.nl_group, self.nl_prog_button:new{
