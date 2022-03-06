@@ -39,7 +39,7 @@ function FrontLightWidget:init()
     self.medium_font_face = Font:getFace("ffont")
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.span = math.ceil(self.screen_height * 0.01)
+    self.span = Math.round(self.screen_height * 0.01)
     self.width = math.floor(self.screen_width * 0.95)
 
     -- State constants
@@ -123,7 +123,8 @@ function FrontLightWidget:layout()
     }
 
     -- Frontlight
-    local padding_span = VerticalSpan:new{ width = self.span }
+    -- Bigger spans, as ProgressWidget appears to be ever so slightly smaller than ButtonProgressWidget ;).
+    local fl_padding_span = VerticalSpan:new{ width = Math.round(self.span * 1.5) }
     local fl_group_above = HorizontalGroup:new{ align = "center" }
     local fl_group_below = HorizontalGroup:new{ align = "center" }
     local main_group = VerticalGroup:new{ align = "center" }
@@ -240,16 +241,18 @@ function FrontLightWidget:layout()
     end
     table.insert(fl_group_above, fl_buttons_above)
     table.insert(fl_group_below, fl_buttons_below)
-    table.insert(main_group, padding_span)
+    table.insert(main_group, fl_padding_span)
     table.insert(main_group, fl_group_above)
-    table.insert(main_group, padding_span)
+    table.insert(main_group, fl_padding_span)
     table.insert(main_group, self.fl_progress)
-    table.insert(main_group, padding_span)
+    table.insert(main_group, fl_padding_span)
     table.insert(main_group, fl_group_below)
-    table.insert(main_group, padding_span)
+    table.insert(main_group, fl_padding_span)
 
     -- Warmth
     if self.has_nl then
+        -- Smaller spans, as ButtonProgressWidget appears to be ever so slightly taller than ProgressWidget ;).
+        local nl_padding_span = VerticalSpan:new{ width = self.span }
         local nl_group_above = HorizontalGroup:new{ align = "center" }
         local nl_group_below = HorizontalGroup:new{ align = "center" }
 
@@ -350,13 +353,13 @@ function FrontLightWidget:layout()
         table.insert(nl_group_above, nl_buttons_above)
         table.insert(nl_group_below, nl_buttons_below)
 
-        table.insert(main_group, padding_span)
+        table.insert(main_group, nl_padding_span)
         table.insert(main_group, nl_group_above)
-        table.insert(main_group, padding_span)
+        table.insert(main_group, nl_padding_span)
         table.insert(main_group, self.nl_progress)
-        table.insert(main_group, padding_span)
+        table.insert(main_group, nl_padding_span)
         table.insert(main_group, nl_group_below)
-        table.insert(main_group, padding_span)
+        table.insert(main_group, nl_padding_span)
 
         -- Aura One R/G/B widget
         if not self.has_nl_mixer and not self.has_nl_api then
