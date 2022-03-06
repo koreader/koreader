@@ -360,7 +360,7 @@ end
 -- lines than before
 function InputText:initTextBox(text, char_added)
     if self.text_widget then
-        self.text_widget:free()
+        self.text_widget:free(true)
     end
     self.text = text
     local fgcolor
@@ -438,7 +438,7 @@ function InputText:initTextBox(text, char_added)
         }
         self.height = text_widget:getTextHeight()
         self.scroll = true
-        text_widget:free()
+        text_widget:free(true)
     end
     if self.scroll then
         self.text_widget = ScrollTextWidget:new{
