@@ -114,30 +114,6 @@ end
 
 function FrontLightWidget:layout()
     self.layout = {}
-    -- While the brightness bar uses a ProgressWidget, the warmth bar uses a ButtonProgressWidget...
-    if self.has_nl then
-        -- Button width adapted to screen size
-        local button_margin = Size.margin.tiny
-        local button_padding = Size.padding.button
-        local button_bordersize = Size.border.thin
-
-        -- Step 0 doesn't take a button, hence the minus
-        local button_width = math.floor(self.screen_width * 0.9 / (self.nl.steps - 1)) -
-                             2 * (button_margin + button_padding + button_bordersize)
-
-        self.nl_progress = ButtonProgressWidget:new{
-            width = math.floor(self.screen_width * 0.9),
-            padding = 0,
-            thin_grey_style = false,
-            num_buttons = self.nl.steps - 1, -- no button for step 0
-            position = math.floor(self.nl.cur / self.nl.stride),
-            callback = function(i)
-                self:setWarmth(i)
-            end,
-            show_parent = self,
-            enabled = true,
-        }
-    end
 
     local main_container = CenterContainer:new{
         dimen = Geom:new{
@@ -276,12 +252,19 @@ function FrontLightWidget:layout()
     if self.has_nl then
         local nl_group_above = HorizontalGroup:new{ align = "center" }
         local nl_group_below = HorizontalGroup:new{ align = "center" }
-        --[[
-        self.nl_group = HorizontalGroup:new{ align = "center" }
 
-        self:rebuildWarmthProgress()
-        --]]
-
+        self.nl_progress = ButtonProgressWidget:new{
+            width = math.floor(self.screen_width * 0.9),
+            padding = 0,
+            thin_grey_style = false,
+            num_buttons = self.nl.steps - 1, -- no button for step 0
+            position = math.floor(self.nl.cur / self.nl.stride),
+            callback = function(i)
+                self:setWarmth(i, false)
+            end,
+            show_parent = self,
+            enabled = true,
+        }
         local nl_span = VerticalSpan:new{ width = Size.span.vertical_large * 4 }
         local nl_header = TextWidget:new{
             text = _("Warmth"),
@@ -455,35 +438,6 @@ function FrontLightWidget:update()
     return true
 end
 
-function FrontLightWidget:rebuildWarmthProgress()
-    self.nl_group:clear()
-
-    local curr_warmth_step = math.floor(self.nl.cur / self.nl.stride)
-    logger.dbg("curr_warmth_step:", curr_warmth_step)
-    if curr_warmth_step > 0 then
-        for i = 1, curr_warmth_step do
-            table.insert(self.nl_group, self.nl_prog_button:new{
-                            text = "",
-                            preselect = curr_warmth_step > 0 and true or false,
-                            callback = function()
-                                self:setWarmth(i * self.nl.stride)
-                            end
-            })
-        end
-    end
-
-    for i = curr_warmth_step + 1, self.nl.steps - 1 do
-        table.insert(self.nl_group, self.nl_prog_button:new{
-                        text = "",
-                        callback = function()
-                            self:setWarmth(i * self.nl.stride)
-                        end
-        })
-    end
-
-    logger.dbg("FrontLightWidget:rebuildWarmthProgress self.nl_group.dimen", self.nl_group.dimen, self.nl_group:getSize())
-end
-
 function FrontLightWidget:updateBrightnessWidgets()
     self.fl_progress:setPercentage(self.fl.cur / self.fl.max)
     self.fl_level:setText(tostring(self.fl.cur))
@@ -529,8 +483,7 @@ function FrontLightWidget:setWarmth(warmth, update_position)
     self.powerd:setWarmth(self.powerd:fromNativeWarmth(self.nl.cur))
 
     -- Update the progress bar, if we were called from outside ButtonProgressWidget
-    logger.dbg("warmth", warmth)
-    logger.dbg("self.nl_progress.position", self.nl_progress.position)
+    -- (as it already handles that internally ;)).
     if update_position then
         self.nl_progress:setPosition(warmth)
     end
@@ -624,10 +577,10 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
 
         self:refreshBrightnessWidgets()
     elseif not ges_ev.pos:intersectWith(self.frame.dimen) and ges_ev.ges == "tap" then
-        -- close if tap outside
+        -- Close when tapping outside.
         self:onClose()
     end
-    -- otherwise, do nothing (it's easy missing taping a button)
+    -- Otherwise, do nothing (it's easy to miss a button).
     return true
 end
 
