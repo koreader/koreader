@@ -578,7 +578,7 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
 
     if ges_ev.pos:intersectWith(self.fl_progress.dimen) then
         -- Unschedule any pending updates.
-        UIManager:unschedule(self.update)
+        UIManager:unschedule(self.refreshBrightnessWidgets)
 
         local perc = self.fl_progress:getPercentageFromPosition(ges_ev.pos)
         if not perc then
