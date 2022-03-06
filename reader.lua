@@ -146,6 +146,7 @@ if dpi_override ~= nil then
     Device:setScreenDPI(dpi_override)
 end
 -- Night mode
+local hw_nightmode = Device.screen:getHWNightmode()
 if G_reader_settings:isTrue("night_mode") then
     Device.screen:toggleNightMode()
 end
@@ -346,6 +347,9 @@ local function exitReader()
 
     -- Close lipc handles
     ReaderActivityIndicator:coda()
+
+    -- Restore initial inversion state
+    Device.screen:setHWNightmode(hw_nightmode)
 
     -- shutdown hardware abstraction
     Device:exit()
