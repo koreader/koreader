@@ -470,7 +470,7 @@ function FrontLightWidget:rebuildWarmthProgress()
 end
 
 function FrontLightWidget:setBrightness(intensity)
-    if intensity == self.fl.cur then
+    if intensity ~= self.fl.min and intensity == self.fl.cur then
         return
     end
 
