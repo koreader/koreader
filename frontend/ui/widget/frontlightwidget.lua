@@ -137,7 +137,7 @@ function FrontLightWidget:layout()
         }
     end
 
-    self.main_container = CenterContainer:new{
+    local main_container = CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
             h = math.floor(self.screen_height * 0.2),
@@ -148,7 +148,7 @@ function FrontLightWidget:layout()
     local padding_span = VerticalSpan:new{ width = self.span }
     local fl_group_above = HorizontalGroup:new{ align = "center" }
     local fl_group_below = HorizontalGroup:new{ align = "center" }
-    self.main_group = VerticalGroup:new{ align = "center" }
+    local main_group = VerticalGroup:new{ align = "center" }
 
     local ticks = {}
     for i = 1, self.fl.steps - 2 do
@@ -254,17 +254,17 @@ function FrontLightWidget:layout()
 
     if self.has_nl then
         -- Only insert 'Brightness' caption if we also add 'warmth' widgets below.
-        table.insert(self.main_group, fl_header)
+        table.insert(main_group, fl_header)
     end
     table.insert(fl_group_above, fl_buttons_above)
     table.insert(fl_group_below, fl_buttons_below)
-    table.insert(self.main_group, padding_span)
-    table.insert(self.main_group, fl_group_above)
-    table.insert(self.main_group, padding_span)
-    table.insert(self.main_group, self.fl_progress)
-    table.insert(self.main_group, padding_span)
-    table.insert(self.main_group, fl_group_below)
-    table.insert(self.main_group, padding_span)
+    table.insert(main_group, padding_span)
+    table.insert(main_group, fl_group_above)
+    table.insert(main_group, padding_span)
+    table.insert(main_group, self.fl_progress)
+    table.insert(main_group, padding_span)
+    table.insert(main_group, fl_group_below)
+    table.insert(main_group, padding_span)
 
     -- Warmth
     if self.has_nl then
@@ -347,17 +347,17 @@ function FrontLightWidget:layout()
         }
         self.layout[4] = {nl_min, nl_max}
 
-        table.insert(self.main_group, nl_header)
+        table.insert(main_group, nl_header)
         table.insert(nl_group_above, nl_buttons_above)
         table.insert(nl_group_below, nl_buttons_below)
 
-        table.insert(self.main_group, padding_span)
-        table.insert(self.main_group, nl_group_above)
-        table.insert(self.main_group, padding_span)
-        table.insert(self.main_group, self.nl_group)
-        table.insert(self.main_group, padding_span)
-        table.insert(self.main_group, nl_group_below)
-        table.insert(self.main_group, padding_span)
+        table.insert(main_group, padding_span)
+        table.insert(main_group, nl_group_above)
+        table.insert(main_group, padding_span)
+        table.insert(main_group, self.nl_group)
+        table.insert(main_group, padding_span)
+        table.insert(main_group, nl_group_below)
+        table.insert(main_group, padding_span)
 
         -- Aura One R/G/B widget
         if not self.has_nl_mixer and not self.has_nl_api then
@@ -371,14 +371,14 @@ function FrontLightWidget:layout()
                     UIManager:show(NaturalLight:new{fl_widget = self})
                 end,
             }
-            table.insert(self.main_group, nl_setup)
+            table.insert(main_group, nl_setup)
             self.layout[5] = {nl_setup}
         end
     end
 
-    table.insert(self.main_container, self.main_group)
+    table.insert(main_container, main_group)
     -- Reset container height to what it actually contains
-    self.main_container.dimen.h = self.main_group:getSize().h
+    main_container.dimen.h = main_group:getSize().h
 
     -- Common
     local title_bar = TitleBar:new{
@@ -392,18 +392,18 @@ function FrontLightWidget:layout()
         end,
         show_parent = self,
     }
-    self.inner_frame = FrameContainer:new{
+    local inner_frame = FrameContainer:new{
         padding = Size.padding.button,
         margin = Size.margin.small,
         bordersize = 0,
-        self.main_container,
+        main_container,
     }
-    self.center_container = CenterContainer:new{
+    local center_container = CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
-            h = self.inner_frame:getSize().h,
+            h = inner_frame:getSize().h,
         },
-        self.inner_frame,
+        inner_frame,
     }
     self.frame = FrameContainer:new{
         radius = Size.radius.window,
@@ -414,7 +414,7 @@ function FrontLightWidget:layout()
         VerticalGroup:new{
             align = "left",
             title_bar,
-            self.center_container,
+            center_container,
         }
     }
     self[1] = WidgetContainer:new{
@@ -429,28 +429,10 @@ function FrontLightWidget:layout()
             self.frame,
         },
     }
-
-    logger.dbg("FrontLightWidget:layout self.center_container:getSize", self.center_container:getSize())
-    logger.dbg("FrontLightWidget:layout self.inner_frame:getSize", self.inner_frame:getSize())
-    logger.dbg("FrontLightWidget:layout self.frame:getSize", self.frame:getSize())
-    logger.dbg("FrontLightWidget:layout self.main_container.dimen", self.main_container.dimen, self.main_container:getSize())
-    logger.dbg("FrontLightWidget:layout self.main_group.dimen", self.main_group:getSize())
 end
 
 function FrontLightWidget:update()
-    --self.main_group:resetLayout() -- invalidate getSize's cache
-    --self.center_container.dimen.h = self.inner_frame:getSize().h
-    logger.dbg("FrontLightWidget:update self.main_container.dimen", self.main_container.dimen, self.main_container:getSize())
-    logger.dbg("FrontLightWidget:update self.main_group.dimen", self.main_group:getSize())
-
-    -- Reset container height to what it actually contains
-    --self.main_container.dimen.h = self.main_group:getSize().h
     self:refocusWidget()
-
-    -- Ditto for the frames
-    logger.dbg("FrontLightWidget:layout self.center_container:getSize", self.center_container:getSize())
-    logger.dbg("FrontLightWidget:layout self.inner_frame:getSize", self.inner_frame:getSize())
-    logger.dbg("FrontLightWidget:update self.frame.dimen", self.frame.dimen, self.frame:getSize())
 
     UIManager:setDirty(self, function()
         return "ui", self.frame.dimen
