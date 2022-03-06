@@ -469,15 +469,7 @@ function FrontLightWidget:rebuildWarmthProgress()
     logger.dbg("FrontLightWidget:rebuildWarmthProgress self.nl_group.dimen", self.nl_group.dimen, self.nl_group:getSize())
 end
 
-function FrontLightWidget:setBrightness(intensity)
-    if intensity ~= self.fl.min and intensity == self.fl.cur then
-        return
-    end
-
-    -- Set brightness
-    self:setFrontLightIntensity(intensity)
-
-    -- Update the progress bar
+function FrontLightWidget:updateBrightnessWidgets()
     self.fl_progress:setPercentage(self.fl.cur / self.fl.max)
     self.fl_level:setText(tostring(self.fl.cur))
     if self.fl.cur == self.fl.min then
@@ -490,6 +482,23 @@ function FrontLightWidget:setBrightness(intensity)
     else
         self.fl_plus:enable()
     end
+end
+
+function FrontLightWidget:refreshBrightnessWidgets()
+    self:updateBrightnessWidgets()
+    self:update()
+end
+
+function FrontLightWidget:setBrightness(intensity)
+    if intensity ~= self.fl.min and intensity == self.fl.cur then
+        return
+    end
+
+    -- Set brightness
+    self:setFrontLightIntensity(intensity)
+
+    -- Update the progress bar
+    self:updateBrightnessWidgets()
 
     -- Refresh widget
     self:update()
@@ -588,12 +597,12 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
                 self.last_time = current_time
             else
                 -- Schedule a final update after we stop panning.
-                UIManager:scheduleIn(0.075, self.update, self)
+                UIManager:scheduleIn(0.075, self.refreshBrightnessWidgets, self)
                 return true
             end
         end
 
-        self:update()
+        self:refreshBrightnessWidgets()
     elseif not ges_ev.pos:intersectWith(self.frame.dimen) and ges_ev.ges == "tap" then
         -- close if tap outside
         self:onClose()
