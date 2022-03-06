@@ -1185,7 +1185,10 @@ function TextBoxWidget:setText(text)
 
     self:update()
 
-    self.dimen = Geom:new(self:getSize())
+    -- Don't break the reference
+    local new_size = self:getSize()
+    self.dimen.w = new_size.w
+    self.dimen.h = new_size.h
 end
 dbg:guard(TextBoxWidget, "setText",
     function(self, text)
