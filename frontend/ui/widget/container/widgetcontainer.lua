@@ -118,11 +118,12 @@ function WidgetContainer:handleEvent(event)
     end
 end
 
-function WidgetContainer:free()
+-- Honor full for TextBoxWidget's benefit...
+function WidgetContainer:free(full)
     for _, widget in ipairs(self) do
         if widget.free then
             --print("WidgetContainer: Calling free for widget", debug.getinfo(widget.free, "S").short_src, widget, "from", debug.getinfo(self.free, "S").short_src, self)
-            widget:free()
+            widget:free(full)
         end
     end
 end

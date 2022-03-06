@@ -559,7 +559,7 @@ function DictQuickLookup:init()
             for_measurement_only = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
         }
         self.definition_line_height = test_widget:getLineHeight()
-        test_widget:free()
+        test_widget:free(true)
     end
 
     if is_large_window then
