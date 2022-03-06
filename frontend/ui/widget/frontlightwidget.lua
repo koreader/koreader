@@ -463,6 +463,7 @@ function FrontLightWidget:refreshBrightnessWidgets()
 end
 
 function FrontLightWidget:setBrightness(intensity)
+    -- Let fl.min through, as that's what we use for the Toggle button ;).
     if intensity ~= self.fl.min and intensity == self.fl.cur then
         return
     end
