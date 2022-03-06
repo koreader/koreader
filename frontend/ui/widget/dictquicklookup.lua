@@ -1227,6 +1227,7 @@ function DictQuickLookup:lookupInputWord(hint)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self:closeInputDialog()
                     end,

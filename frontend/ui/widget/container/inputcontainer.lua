@@ -282,6 +282,7 @@ function InputContainer:onInput(input, ignore_first_hold_release)
             {
                 {
                     text = input.cancel_text or _("Cancel"),
+                    id = "close",
                     callback = function()
                         self:closeInputDialog()
                     end,

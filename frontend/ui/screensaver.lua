@@ -365,6 +365,7 @@ function Screensaver:setMessage()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(self.input_dialog)
                     end,

@@ -113,7 +113,7 @@ function FileManager:setupLayout()
         left_icon = "home",
         left_icon_size_ratio = 1,
         left_icon_tap_callback = function() self:goHome() end,
-        left_icon_hold_callback = function() self:setHome() end,
+        left_icon_hold_callback = false, -- propagate long-press to dispatcher
         right_icon = "plus",
         right_icon_size_ratio = 1,
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
@@ -255,6 +255,7 @@ function FileManager:setupLayout()
                             buttons = {{
                                 {
                                     text = _("Cancel"),
+                                    id = "close",
                                     enabled = true,
                                     callback = function()
                                         UIManager:close(file_manager.rename_dialog)
@@ -331,6 +332,12 @@ function FileManager:setupLayout()
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local one_time_providers = {}
+                        table.insert(one_time_providers, {
+                            provider_name = _("Text viewer"),
+                            callback = function()
+                                file_manager:openTextViewer(file)
+                            end,
+                        })
                         if file_manager.texteditor then
                             table.insert(one_time_providers, {
                                 provider_name = _("Text editor"),
@@ -1009,6 +1016,7 @@ function FileManager:createFolder()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(input_dialog)
                     end,
@@ -1277,6 +1285,36 @@ function FileManager:showFiles(path, focused_file)
         focused_file = focused_file,
     }
     UIManager:show(file_manager)
+end
+
+function FileManager:openTextViewer(file_path)
+    local function _openTextViewer(filepath)
+        local file = io.open(filepath, "rb")
+        if not file then return end
+        local file_content = file:read("*all")
+        file:close()
+        UIManager:show(require("ui/widget/textviewer"):new{
+            title = filepath,
+            title_multilines = true,
+            justified = false,
+            text = file_content,
+        })
+    end
+    local attr = lfs.attributes(file_path)
+    if attr then
+        if attr.size > 400000 then
+            UIManager:show(ConfirmBox:new{
+                text = T(_("This file is %2:\n\n%1\n\nAre you sure you want to open it?\n\nOpening big files may take some time."),
+                    BD.filepath(file_path), util.getFriendlySize(attr.size)),
+                ok_text = _("Open"),
+                ok_callback = function()
+                    _openTextViewer(file_path)
+                end,
+            })
+        else
+            _openTextViewer(file_path)
+        end
+    end
 end
 
 --- A shortcut to execute mv.

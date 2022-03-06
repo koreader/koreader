@@ -40,17 +40,16 @@ local BookMapRow = InputContainer:new{
     toc_items = nil, -- Arrays[levels] of arrays[items at this level to show as spans]
     -- Many other options not described here, see BookMapWidget:update()
     -- for the complete list.
-
-    _mirroredUI = BD.mirroredUILayout(),
 }
 
 function BookMapRow:getPageX(page, right_edge)
+    local _mirroredUI = BD.mirroredUILayout()
     if right_edge then
-        if (not self._mirroredUI and page == self.end_page) or
-               (self._mirroredUI and page == self.start_page) then
+        if (not _mirroredUI and page == self.end_page) or
+               (_mirroredUI and page == self.start_page) then
             return self.pages_frame_inner_width
         else
-            if self._mirroredUI then
+            if _mirroredUI then
                 return self:getPageX(page-1)
             else
                 return self:getPageX(page+1)
@@ -58,7 +57,7 @@ function BookMapRow:getPageX(page, right_edge)
         end
     end
     local slot_idx
-    if self._mirroredUI then
+    if _mirroredUI then
         slot_idx = self.end_page - page
     else
         slot_idx = page - self.start_page
@@ -75,7 +74,7 @@ function BookMapRow:getPageAtX(x)
     end
     -- Reverse of the computation in :getPageX():
     local slot_idx = math.floor(x / (self.page_slot_width + self.page_slot_extra / self.nb_page_slots))
-    if self._mirroredUI then
+    if BD.mirroredUILayout() then
         return self.end_page - slot_idx
     else
         return self.start_page + slot_idx
@@ -97,6 +96,7 @@ function BookMapRow:getLeftSpacingForNumberOfPageSlots(nb_pages, pages_per_row, 
 end
 
 function BookMapRow:init()
+    local _mirroredUI = BD.mirroredUILayout()
     self.dimen = Geom:new{ w = self.width, h = self.height }
 
     -- Keep one span_height under baseline (frame bottom border) for indicators (current page, bookmarks)
@@ -116,7 +116,7 @@ function BookMapRow:init()
         self.pages_frame_width = self.pages_frame_inner_width + 2*self.pages_frame_border
     end
 
-    if self._mirroredUI then
+    if _mirroredUI then
         self.pages_frame_offset_x = self.width - self.pages_frame_width - self.left_spacing + self.pages_frame_border
     end
 
@@ -132,7 +132,7 @@ function BookMapRow:init()
         },
         allow_mirroring = false, -- we handle mirroring ourselves below
         FrameContainer:new{
-            overlap_align = self._mirroredUI and "right" or "left",
+            overlap_align = _mirroredUI and "right" or "left",
             margin = 0,
             padding = 0,
             bordersize = self.pages_frame_border,
@@ -160,7 +160,7 @@ function BookMapRow:init()
                 local text = item.title
                 local p_start, p_end = item.p_start, item.p_end
                 local started_before, continues_after = item.started_before, item.continues_after
-                if self._mirroredUI then
+                if _mirroredUI then
                     -- Just flip these (beware below, we need to use item.p_start to get
                     -- the real start page to account in prev_p_start)
                     p_start, p_end = p_end, p_start
@@ -175,7 +175,7 @@ function BookMapRow:init()
                     -- the previous overwritten span and we can know this
                     -- page slot contains multiple chapters
                     if width > same_p_start_offset_dx then
-                        if not self._mirroredUI then
+                        if not _mirroredUI then
                             offset_x = offset_x + same_p_start_offset_dx
                         end
                         width = width - same_p_start_offset_dx
@@ -252,7 +252,7 @@ function BookMapRow:init()
             width = self.left_spacing - spacing,
             face = self.smaller_font_face,
             line_height = 0, -- no additional line height
-            alignment = self._mirroredUI and "left" or "right",
+            alignment = _mirroredUI and "left" or "right",
             alignment_strict = true,
         })
         table.insert(self.hgroup, HorizontalSpan:new{ width = spacing })
@@ -268,7 +268,7 @@ function BookMapRow:init()
                 local r_start = math.max(f_start, self.start_page)
                 local r_end = math.min(f_end, self.end_page)
                 local x, w
-                if self._mirroredUI then
+                if _mirroredUI then
                     x = self:getPageX(r_end)
                     w = self:getPageX(r_start, true) - x
                 else
@@ -316,10 +316,10 @@ function BookMapRow:init()
                 x = x + 1
                 w = w - 1
                 if w > 2 then
-                    if page == self.end_page and not self._mirroredUI then
+                    if page == self.end_page and not _mirroredUI then
                         w = w - 1 -- some spacing before right border (like we had at start)
                     end
-                    if page == self.start_page and self._mirroredUI then
+                    if page == self.start_page and _mirroredUI then
                         w = w - 1
                     end
                 end
@@ -338,7 +338,7 @@ function BookMapRow:init()
             if self.with_page_sep and not prev_page_was_read then
                 local w = Size.line.thin
                 local x
-                if self._mirroredUI then
+                if _mirroredUI then
                     x = self:getPageX(page, true) - w
                 else
                     x = self:getPageX(page)
@@ -522,13 +522,15 @@ local BookMapWidget = InputContainer:new{
     -- Extra symbols to show below pages
     extra_symbols_pages = nil,
 
-    _mirroredUI = BD.mirroredUILayout(),
-
     -- Make this local subwidget available for reuse by PageBrowser
     BookMapRow = BookMapRow,
 }
 
 function BookMapWidget:init()
+    if self.ui.view.inverse_reading_order then
+        BD.invert()
+    end
+
     -- Compute non-settings-dependant sizes and options
     self.dimen = Geom:new{
         w = Screen:getWidth(),
@@ -1044,6 +1046,7 @@ function BookMapWidget:onClose(close_all_parents)
             UIManager:setDirty(self.launcher, "ui")
         end
     else
+        BD.resetInvert()
         -- Remove all thumbnails generated for a different target size than
         -- the last one used (no need to keep old sizes if the user played
         -- with nb_cols/nb_rows, as on next opening, we just need the ones
@@ -1224,9 +1227,10 @@ function BookMapWidget:updatePagesPerRow(value, relative)
 end
 
 function BookMapWidget:onSwipe(arg, ges)
+    local _mirroredUI = BD.mirroredUILayout()
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
-    if (not self._mirroredUI and ges.pos.x < Screen:getWidth() * 1/8) or
-           (self._mirroredUI and ges.pos.x > Screen:getWidth() * 7/8) then
+    if (not _mirroredUI and ges.pos.x < Screen:getWidth() * 1/8) or
+           (_mirroredUI and ges.pos.x > Screen:getWidth() * 7/8) then
         -- Swipe along the left screen edge: increase/decrease toc levels shown
         if direction == "north" or direction == "south" then
             local rel = direction == "south" and 1 or -1
@@ -1348,7 +1352,7 @@ function BookMapWidget:onTap(arg, ges)
         -- not a BookMapRow, probably a TOC title
         return true
     end
-    if self._mirroredUI then
+    if BD.mirroredUILayout() then
         x = x - self.scrollbar_width
     end
     local page = row:getPageAtX(x)
@@ -1380,7 +1384,7 @@ function BookMapWidget:paintLeftVerticalSwipeHint(bb, x, y)
         -- Compute and remember sizes, positions and info
         v = {}
         v.width = self.swipe_hint_bar_width
-        if self._mirroredUI then
+        if BD.mirroredUILayout() then
             v.left = Screen:getWidth() - v.width
         else
             v.left = 0
@@ -1432,7 +1436,7 @@ function BookMapWidget:paintBottomHorizontalSwipeHint(bb, x, y)
     local cur = self.pages_per_row - self.min_pages_per_row
     local max = self.max_pages_per_row - self.min_pages_per_row
     local dx = math.floor(h.max_dx*(1-math.log(1+cur)/math.log(1+max)))
-    if self._mirroredUI then
+    if BD.mirroredUILayout() then
         dx = h.max_dx - dx
     end
     bb:paintRect(h.left + dx, h.top, h.hint_w, h.height, Blitbuffer.COLOR_DARK_GRAY)

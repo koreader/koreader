@@ -350,6 +350,7 @@ function CoverImage:choosePathFile(touchmenu_instance, key, folder_only, new_fil
                     buttons = {{
                         {
                             text = _("Cancel"),
+                            id = "close",
                             callback = function()
                                 UIManager:close(file_input)
                             end,

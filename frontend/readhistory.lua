@@ -122,11 +122,11 @@ end
 
 --- Reads history table from file.
 -- @treturn boolean true if the history_file has been updated and reloaded.
-function ReadHistory:_read()
+function ReadHistory:_read(force_read)
     assert(self ~= nil)
     local history_file_modification_time = lfs.attributes(history_file, "modification")
     if history_file_modification_time == nil
-    or history_file_modification_time <= self.last_read_time then
+            or (not force_read and (history_file_modification_time <= self.last_read_time)) then
         return false
     end
     self.last_read_time = history_file_modification_time
@@ -258,7 +258,7 @@ function ReadHistory:updateItemByPath(old_path, new_path)
             self.hist[i].file = new_path
             self.hist[i].text = new_path:gsub(".*/", "")
             self:_flush()
-            self:reload()
+            self:reload(true)
             self.hist[i].callback = function()
                 selectCallback(new_path)
             end
@@ -301,9 +301,9 @@ end
 
 --- Reloads history from history_file.
 -- @treturn boolean true if history_file has been updated and reload happened.
-function ReadHistory:reload()
+function ReadHistory:reload(force_read)
     assert(self ~= nil)
-    if self:_read() then
+    if self:_read(force_read) then
         self:_readLegacyHistory()
         self:_sort()
         self:_reduce()

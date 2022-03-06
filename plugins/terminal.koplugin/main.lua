@@ -5,11 +5,43 @@ This plugin provides a terminal emulator (VT52 (+some ANSI))
 ]]
 
 local Device = require("device")
+local ffi = require("ffi")
+local C = ffi.C
+
+-- for terminal emulator
+ffi.cdef[[
+static const int SIGTERM = 15;
+
+int grantpt(int fd) __attribute__((nothrow, leaf));
+int unlockpt(int fd) __attribute__((nothrow, leaf));
+char *ptsname(int fd) __attribute__((nothrow, leaf));
+pid_t setsid(void) __attribute__((nothrow, leaf));
+
+static const int TCIFLUSH = 0;
+int tcdrain(int fd) __attribute__((nothrow, leaf));
+int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
+]]
+
+local function check_prerequisites()
+    local ptmx_name = "/dev/ptmx"
+    local ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
+
+    if C.grantpt(ptmx) ~= 0 then
+        C.close(ptmx)
+        return false
+    end
+    if C.unlockpt(ptmx) ~= 0 then
+        C.close(ptmx)
+        return false
+    end
+    C.close(ptmx)
+    return true
+end
 
 -- grantpt and friends are necessary (introduced on Android in API 21).
 -- So sorry for the Tolinos with (Android 4.4.x).
 -- Maybe https://f-droid.org/de/packages/jackpal.androidterm/ could be an alternative then.
-if Device:isAndroid() and Device.firmware_rev < 21 then
+if (Device:isAndroid() and Device.firmware_rev < 21) or not check_prerequisites() then
     return
 end
 
@@ -31,23 +63,6 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
-
-local ffi = require("ffi")
-local C = ffi.C
-
--- for terminal emulator
-ffi.cdef[[
-static const int SIGTERM = 15;
-
-int grantpt(int fd) __attribute__((nothrow, leaf));
-int unlockpt(int fd) __attribute__((nothrow, leaf));
-char *ptsname(int fd) __attribute__((nothrow, leaf));
-pid_t setsid(void) __attribute__((nothrow, leaf));
-
-static const int TCIFLUSH = 0;
-int tcdrain(int fd) __attribute__((nothrow, leaf));
-int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
-]]
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
@@ -76,7 +91,7 @@ function Terminal:spawnShell(cols, rows)
     if self.is_shell_open then
         self.input_widget:resize(rows, cols)
         self.input_widget:interpretAnsiSeq(self:receive())
-        return
+        return true
     end
 
     local shell = G_reader_settings:readSetting("terminal_shell", "sh")
@@ -84,21 +99,37 @@ function Terminal:spawnShell(cols, rows)
     local ptmx_name = "/dev/ptmx"
     self.ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
 
+    if self.ptmx == -1 then
+        logger.err("Terminal: can not open", ptmx_name, ffi.string(C.strerror(ffi.errno())))
+        return false
+    end
+
     if C.grantpt(self.ptmx) ~= 0 then
-        logger.err("Terminal: can not grantpt")
+        logger.err("Terminal: can not grantpt", ffi.string(C.strerror(ffi.errno())))
+        C.close(self.ptmx)
+        return false
     end
     if C.unlockpt(self.ptmx) ~= 0 then
-        logger.err("Terminal: can not unockpt")
+        logger.err("Terminal: can not unockpt", ffi.string(C.strerror(ffi.errno())))
+        C.close(self.ptmx)
+        return false
     end
 
-    self.slave_pty = ffi.string(C.ptsname(self.ptmx))
+    local ptsname = C.ptsname(self.ptmx)
+    if ptsname then
+        self.slave_pty = ffi.string(ptsname)
+    else
+        logger.err("Terminal: ptsname failed")
+        C.close(self.ptmx)
+        return false
+    end
 
-    logger.info("Terminal: slave_pty", self.slave_pty)
+    logger.dbg("Terminal: slave_pty", self.slave_pty)
 
     local pid = C.fork()
     if pid < 0 then
-        logger.err("Terminal: fork failed")
-        return
+        logger.err("Terminal: fork failed", ffi.string(C.strerror(ffi.errno())))
+        return false
     elseif pid == 0 then
         C.close(self.ptmx)
         C.setsid()
@@ -113,7 +144,7 @@ function Terminal:spawnShell(cols, rows)
         local pts = C.open(self.slave_pty, C.O_RDWR)
         if pts == -1 then
             logger.err("Terminal: cannot open slave pty: ", pts)
-            return
+            return false
         end
 
         C.dup2(pts, 0);
@@ -155,6 +186,7 @@ function Terminal:spawnShell(cols, rows)
     self.input_widget:interpretAnsiSeq(self:receive())
 
     logger.info("Terminal: spawn done")
+    return true
 end
 
 function Terminal:receive()
@@ -273,28 +305,31 @@ function Terminal:generateInputDialog()
             end,
             },
             {
-            text = _("Esc"), -- @translators This is the ESC-key on the keyboard.
-            callback = function()
-                self:transmit("\027")
-            end,
+                -- @translators This is the ESC-key on the keyboard.
+                text = _("Esc"),
+                callback = function()
+                    self:transmit("\027")
+                end,
             },
             {
-            text = _("Ctrl"), -- @translators This is the CTRL-key on the keyboard.
-            callback = function()
-                self.ctrl = true
-            end,
+                -- @translators This is the CTRL-key on the keyboard.
+                text = _("Ctrl"),
+                callback = function()
+                    self.ctrl = true
+                end,
             },
             {
-            text = _("Ctrl-C"), -- @translators This is the CTRL-C key combination.
-            callback = function()
-                self:transmit("\003")
-                -- consume and drop everything
-                C.tcflush(self.ptmx, C.TCIFLUSH)
-                while self:receive() ~= "" do
+                -- @translators This is the CTRL-C key combination.
+                text = _("Ctrl-C"),
+                callback = function()
+                    self:transmit("\003")
+                    -- consume and drop everything
                     C.tcflush(self.ptmx, C.TCIFLUSH)
-                end
-                self.input_widget:addChars("\003", true) -- as we flush the queue
-            end,
+                    while self:receive() ~= "" do
+                        C.tcflush(self.ptmx, C.TCIFLUSH)
+                    end
+                    self.input_widget:addChars("\003", true) -- as we flush the queue
+                end,
             },
             {
             text = "⎚", --clear
@@ -406,10 +441,11 @@ function Terminal:onTerminalStart(touchmenu_instance)
 
     logger.dbg("Terminal: resolution= " .. self.maxc .. "x" .. self.maxr)
 
-    self:spawnShell(self.maxc, self.maxr)
-    UIManager:show(self.input_dialog)
-    UIManager:scheduleIn(0.25, Terminal.refresh, self, true)
-    self.input_dialog:onShowKeyboard(true)
+    if self:spawnShell(self.maxc, self.maxr) then
+        UIManager:show(self.input_dialog)
+        UIManager:scheduleIn(0.25, Terminal.refresh, self, true)
+        self.input_dialog:onShowKeyboard(true)
+    end
 end
 
 function Terminal:addToMainMenu(menu_items)
@@ -431,7 +467,7 @@ Commands to be executed on start can be placed in:
 Aliases (shortcuts) to frequently used commands can be placed in:
 '$TERMINAL_DATA/scripts/aliases'.]])
                     if not Device:isAndroid() then
-                        about_text = about_text .. _("\n\nYou can use 'shfm' as a file manager, '?' shows shfm’s help message.")
+                        about_text = about_text .. "\n\n" .. _("You can use 'shfm' as a file manager, '?' shows shfm’s help message.")
                     end
 
                     UIManager:show(InfoMessage:new{
@@ -476,7 +512,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                         value_max = 30,
                         value_hold_step = 2,
                         default_value = 14,
-                        title_text = _("Terminal emulator font size "),
+                        title_text = _("Terminal emulator font size"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("terminal_font_size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end

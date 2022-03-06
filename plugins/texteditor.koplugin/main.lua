@@ -350,6 +350,7 @@ Do you want to proceed?]]),
                         buttons = {{
                             {
                                 text = _("Cancel"),
+                                id = "close",
                                 callback = function()
                                     UIManager:close(file_input)
                                 end,

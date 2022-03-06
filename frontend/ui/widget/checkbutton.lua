@@ -16,7 +16,6 @@ Example:
 
 local Blitbuffer = require("ffi/blitbuffer")
 local CheckMark = require("ui/widget/checkmark")
-local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
@@ -97,32 +96,30 @@ function CheckButton:initCheckButton(checked)
     self.dimen = self._frame:getSize()
     self[1] = self._frame
 
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapCheckButton = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                },
-                doc = "Tap Button",
+    self.ges_events = {
+        TapCheckButton = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
             },
-            HoldCheckButton = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = self.dimen,
-                },
-                doc = "Hold Button",
+            doc = "Tap Button",
+        },
+        HoldCheckButton = {
+            GestureRange:new{
+                ges = "hold",
+                range = self.dimen,
             },
-            -- Safe-guard for when used inside a MovableContainer
-            HoldReleaseCheckButton = {
-                GestureRange:new{
-                    ges = "hold_release",
-                    range = self.dimen,
-                },
-                doc = "Hold Release Button",
-            }
+            doc = "Hold Button",
+        },
+        -- Safe-guard for when used inside a MovableContainer
+        HoldReleaseCheckButton = {
+            GestureRange:new{
+                ges = "hold_release",
+                range = self.dimen,
+            },
+            doc = "Hold Release Button",
         }
-    end
+    }
 end
 
 function CheckButton:onTapCheckButton()
@@ -223,6 +220,22 @@ function CheckButton:disable()
     UIManager:setDirty(self.parent, function()
         return "ui", self.dimen
     end)
+end
+
+function CheckButton:onFocus()
+    if not self.enabled then
+        return false
+    end
+    self._frame.invert = true
+    return true
+end
+
+function CheckButton:onUnfocus()
+    if not self.enabled then
+        return false
+    end
+    self._frame.invert = false
+    return true
 end
 
 return CheckButton

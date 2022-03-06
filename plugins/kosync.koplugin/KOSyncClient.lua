@@ -114,7 +114,7 @@ function KOSyncClient:update_progress(
         local ok, res = pcall(function()
             return self.client:update_progress({
                 document = document,
-                progress = progress,
+                progress = tostring(progress),
                 percentage = percentage,
                 device = device,
                 device_id = device_id,

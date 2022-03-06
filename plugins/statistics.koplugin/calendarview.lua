@@ -4,6 +4,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -94,20 +95,18 @@ function CalendarDay:init()
     if self.filler then
         return
     end
-    if self.callback and Device:isTouchDevice() then
-        self.ges_events.Tap = {
-            GestureRange:new{
-                ges = "tap",
-                range = self.dimen,
-            }
+    self.ges_events.Tap = {
+        GestureRange:new{
+            ges = "tap",
+            range = self.dimen,
         }
-        self.ges_events.Hold = {
-            GestureRange:new{
-                ges = "hold",
-                range = self.dimen,
-            }
+    }
+    self.ges_events.Hold = {
+        GestureRange:new{
+            ges = "hold",
+            range = self.dimen,
         }
-    end
+    }
 
     self.daynum_w = TextWidget:new{
         text = " " .. tostring(self.daynum),
@@ -144,6 +143,8 @@ function CalendarDay:init()
         bordersize = self.border,
         width = self.width,
         height = self.height,
+        focusable = true,
+        focus_border_color = Blitbuffer.COLOR_GRAY,
         OverlapGroup:new{
             dimen = { w = inner_w },
             self.daynum_w,
@@ -366,7 +367,7 @@ end
 -- Fetched from db, cached as local as it might be expensive
 local MIN_MONTH = nil
 
-local CalendarView = InputContainer:new{
+local CalendarView = FocusManager:new{
     reader_statistics = nil,
     monthTranslation = nil,
     shortDayOfWeekTranslation = nil,
@@ -395,11 +396,9 @@ function CalendarView:init()
     end
 
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {Input.group.Back}, doc = "close page" },
-            NextMonth = {{Input.group.PgFwd}, doc = "next page"},
-            PrevMonth = {{Input.group.PgBack}, doc = "prev page"},
-        }
+        self.key_events.Close = {{Input.group.Back}, doc = "close page" }
+        self.key_events.NextMonth = {{Input.group.PgFwd}, doc = "next page"}
+        self.key_events.PrevMonth = {{Input.group.PgBack}, doc = "prev page"}
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -620,6 +619,7 @@ function CalendarView:init()
 end
 
 function CalendarView:_populateItems()
+    self.layout = {}
     self.page_info:resetLayout()
     self.main_content:clear()
 
@@ -650,6 +650,7 @@ function CalendarView:_populateItems()
     local cur_date = os.date("*t", cur_ts)
     local this_month = cur_date.month
     local cur_week
+    local layout_row
     while true do
         cur_date = os.date("*t", cur_ts)
         if cur_date.month ~= this_month then
@@ -672,6 +673,8 @@ function CalendarView:_populateItems()
                 font_size = self.span_font_size,
                 show_parent = self,
             }
+            layout_row = {}
+            table.insert(self.layout, layout_row)
             table.insert(self.weeks, cur_week)
             table.insert(self.main_content, cur_week)
             if cur_date.wday ~= self.start_day_of_week then
@@ -702,7 +705,7 @@ function CalendarView:_populateItems()
             hour = 0,
         })
         local is_future = day_s > today_s
-        cur_week:addDay(CalendarDay:new{
+        local calendar_day = CalendarDay:new{
             show_histo = self.show_hourly_histogram,
             histo_height = self.span_height,
             font_face = self.font_face,
@@ -733,13 +736,15 @@ function CalendarView:_populateItems()
                     callback_return = function() end, -- to just have that return button shown
                 })
             end
-        })
+        }
+        cur_week:addDay(calendar_day)
+        table.insert(layout_row, calendar_day)
         cur_ts = cur_ts + 86400 -- add one day
     end
     for _, week in ipairs(self.weeks) do
         week:update()
     end
-
+    self:moveFocusTo(1, 1, FocusManager.NOT_UNFOCUS)
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)

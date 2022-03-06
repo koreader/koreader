@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Font = require("ui/font")
 local Geom = require("ui/geometry")
@@ -19,6 +20,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local Keyboard
+local FocusManagerInstance = FocusManager:new{}
 
 local InputText = InputContainer:new{
     text = "",
@@ -274,7 +276,6 @@ if Device:isTouchDevice() or Device:hasDPad() then
             -- used for taking a screenshot)
             return false
         end
-
     end
     if Device:hasDPad() then
         if not InputText.initEventListener then
@@ -283,14 +284,17 @@ if Device:isTouchDevice() or Device:hasDPad() then
 
         function InputText:onFocus()
             -- Event called by the focusmanager
-            self.key_events.ShowKeyboard = { {"Press"}, doc = "show keyboard" }
+            if self.parent.onSwitchFocus then
+                self.parent:onSwitchFocus(self)
+            else
+                self:onShowKeyboard()
+            end
             self:focus()
             return true
         end
 
         function InputText:onUnfocus()
             -- Event called by the focusmanager
-            self.key_events = {}
             self:unfocus()
             return true
         end
@@ -542,7 +546,11 @@ end
 -- is shown. Mostly likely to be in the emulator, but could be Android + BT
 -- keyboard, or a "coder's keyboard" Android input method.
 function InputText:onKeyPress(key)
-
+    -- only handle key on focused status, otherwise there are more than one InputText
+    -- the first one always handle key pressed
+    if not self.focused then
+        return false
+    end
     local handled = true
 
     if not key["Ctrl"] and not key["Shift"] and not key["Alt"] then
@@ -567,6 +575,10 @@ function InputText:onKeyPress(key)
             self:addChars("\n")
         elseif key["Tab"] then
             self:addChars("    ")
+        elseif key["Back"] then
+            if self.focused then
+                self:unfocus()
+            end
         else
             handled = false
         end
@@ -581,15 +593,46 @@ function InputText:onKeyPress(key)
     else
         handled = false
     end
-
+    if not handled and Device:hasDPad() then
+        -- FocusManager may turn on alternative key maps.
+        -- These key map maybe single text keys.
+        -- It will cause unexpected focus move instead of enter text to InputText
+        local is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
+        if not is_alternative_key and Device:isSDL() then
+            -- SDL already insert char via TextInput event
+            -- Stop event propagate to FocusManager
+            return true
+        end
+        -- if it is single text char, insert it
+        local key_code = key.key -- is in upper case
+        if not Device.isSDL() and #key_code == 1 then
+            if not key["Shift"] then
+                key_code = string.lower(key_code)
+            end
+            for modifier, flag in pairs(key.modifiers) do
+                if modifier ~= "Shift" and flag then -- Other modifier: not a single char insert
+                    return true
+                end
+            end
+            self:addChars(key_code)
+            return true
+        end
+        if is_alternative_key then
+            return true -- Stop event propagate to FocusManager to void focus move
+        end
+    end
     return handled
 end
 
 -- Handle text coming directly as text from the Device layer (eg. soft keyboard
 -- or via SDL's keyboard mapping).
 function InputText:onTextInput(text)
-    self:addChars(text)
-    return true
+    -- for more than one InputText, let the focused one add chars
+    if self.focused then
+        self:addChars(text)
+        return true
+    end
+    return false
 end
 
 function InputText:onShowKeyboard(ignore_first_hold_release)

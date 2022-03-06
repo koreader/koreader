@@ -597,6 +597,7 @@ function NewsDownloader:editFeedAttribute(id, key, value)
                 {
                     {
                         text = _("Cancel"),
+                        id = "close",
                         callback = function()
                             UIManager:close(input_dialog)
                             UIManager:show(kv)

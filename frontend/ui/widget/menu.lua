@@ -122,24 +122,22 @@ function MenuItem:init()
     self.detail = self.text
 
     -- we need this table per-instance, so we declare it here
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapSelect = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                },
-                doc = "Select Menu Item",
+    self.ges_events = {
+        TapSelect = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
             },
-            HoldSelect = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = self.dimen,
-                },
-                doc = "Hold Menu Item",
+            doc = "Select Menu Item",
+        },
+        HoldSelect = {
+            GestureRange:new{
+                ges = "hold",
+                range = self.dimen,
             },
-        }
-    end
+            doc = "Hold Menu Item",
+        },
+    }
 
     local max_item_height = self.dimen.h - 2 * self.linesize
 
@@ -167,17 +165,14 @@ function MenuItem:init()
     end
 
     -- State button and indentation for tree expand/collapse (for TOC)
-    local state_button_width = self.state_size.w or 0
-    local state_button = self.state or HorizontalSpan:new{
-        width = state_button_width,
-    }
-    local state_indent = self.state and self.state.indent or ""
+    local state_button = self.state or HorizontalSpan:new{}
+    local state_indent = self.table.indent or 0
+    local state_width = state_indent + self.state_w
     local state_container = LeftContainer:new{
         dimen = Geom:new{w = math.floor(self.content_width / 2), h = self.dimen.h},
         HorizontalGroup:new{
-            TextWidget:new{
-                text = state_indent,
-                face = Font:getFace(self.font, self.font_size),
+            HorizontalSpan:new{
+                width = state_indent,
             },
             state_button,
         }
@@ -207,7 +202,7 @@ function MenuItem:init()
     }
     local mandatory_w = mandatory_widget:getWidth()
 
-    local available_width = self.content_width - state_button_width - text_mandatory_padding - mandatory_w
+    local available_width = self.content_width - state_width - text_mandatory_padding - mandatory_w
     local item_name
 
     -- Whether we show text on a single or multiple lines, we don't want it shortened
@@ -370,7 +365,7 @@ function MenuItem:init()
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
         HorizontalGroup:new{
             HorizontalSpan:new{
-                width = self.state_size.w,
+                width = state_width,
             },
             item_name,
         }
@@ -892,37 +887,35 @@ function Menu:init()
     ------------------------------------------
     -- start to set up input event callback --
     ------------------------------------------
-    if Device:isTouchDevice() then
-        -- watch for outer region if it's a self contained widget
-        if self.is_popout then
-            self.ges_events.TapCloseAllMenus = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = Screen:getWidth(),
-                        h = Screen:getHeight(),
-                    }
+    -- watch for outer region if it's a self contained widget
+    if self.is_popout then
+        self.ges_events.TapCloseAllMenus = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(),
+                    h = Screen:getHeight(),
                 }
             }
-        end
-        -- delegate swipe gesture to GestureManager in filemanager
-        if not self.filemanager then
-            self.ges_events.Swipe = {
-                GestureRange:new{
-                    ges = "swipe",
-                    range = self.dimen,
-                }
-            }
-            self.ges_events.MultiSwipe = {
-                GestureRange:new{
-                    ges = "multiswipe",
-                    range = self.dimen,
-                }
-            }
-        end
-        self.ges_events.Close = self.on_close_ges
+        }
     end
+    -- delegate swipe gesture to GestureManager in filemanager
+    if not self.filemanager then
+        self.ges_events.Swipe = {
+            GestureRange:new{
+                ges = "swipe",
+                range = self.dimen,
+            }
+        }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
+                range = self.dimen,
+            }
+        }
+    end
+    self.ges_events.Close = self.on_close_ges
 
     if not Device:hasKeyboard() then
         -- remove menu item shortcut for K4
@@ -950,9 +943,6 @@ function Menu:init()
         if self.is_enable_shortcut then
             self.key_events.SelectByShortCut = { {self.item_shortcuts} }
         end
-        self.key_events.Select = {
-            {"Press"}, doc = "select current menu item"
-        }
         self.key_events.Right = {
             {"Right"}, doc = "hold  menu item"
         }
@@ -1000,7 +990,7 @@ function Menu:updatePageInfo(select_number)
     if self.item_group[1] then
         if Device:hasDPad() then
             -- reset focus manager accordingly
-            self.selected = { x = 1, y = select_number }
+            self:moveFocusTo(1, select_number)
         end
         -- update page information
         self.page_info_text:setText(FFIUtil.template(_("Page %1 of %2"), self.page, self.page_num))
@@ -1074,7 +1064,7 @@ function Menu:updateItems(select_number)
             local item_tmp = MenuItem:new{
                 show_parent = self.show_parent,
                 state = self.item_table[i].state,
-                state_size = self.state_size or {},
+                state_w = self.state_w or 0,
                 text = Menu.getMenuText(self.item_table[i]),
                 bidi_wrap_func = self.item_table[i].bidi_wrap_func,
                 mandatory = self.item_table[i].mandatory,
@@ -1302,20 +1292,8 @@ function Menu:onGotoPage(page)
     return true
 end
 
-function Menu:onSelect()
-    local item = self.item_table[(self.page-1)*self.perpage+self.selected.y]
-    if item then
-        self:onMenuSelect(item)
-    end
-    return true
-end
-
 function Menu:onRight()
-    local item = self.item_table[(self.page-1)*self.perpage+self.selected.y]
-    if item then
-        self:onMenuHold(item)
-    end
-    return true
+    return self:sendHoldEventToFocusedWidget()
 end
 
 function Menu:onClose()

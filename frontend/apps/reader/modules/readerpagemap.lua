@@ -24,7 +24,6 @@ local ReaderPageMap = InputContainer:new{
     label_color = Blitbuffer.COLOR_BLACK,
     show_page_labels = nil,
     use_page_labels = nil,
-    _mirroredUI = BD.mirroredUILayout(),
 }
 
 function ReaderPageMap:init()
@@ -139,7 +138,7 @@ function ReaderPageMap:updateVisibleLabels()
     local max_y = Screen:getHeight() - footer_height
     local last_label_bottom_y = 0
     for _, page in ipairs(page_labels) do
-        local in_left_margin = self._mirroredUI
+        local in_left_margin = BD.mirroredUILayout()
         if self.ui.document:getVisiblePageCount() > 1 then
             -- Pages in 2-page mode are not mirrored, so we'll
             -- have to handle any mirroring tweak ourselves

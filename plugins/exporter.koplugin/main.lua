@@ -137,6 +137,7 @@ function Exporter:addToMainMenu(menu_items)
                                     {
                                         {
                                             text = _("Cancel"),
+                                            id = "close",
                                             callback = function()
                                                 UIManager:close(url_dialog)
                                             end
@@ -176,6 +177,7 @@ function Exporter:addToMainMenu(menu_items)
                                     {
                                         {
                                             text = _("Cancel"),
+                                            id = "close",
                                             callback = function()
                                                 UIManager:close(auth_dialog)
                                             end
@@ -246,6 +248,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
                                     {
                                         {
                                             text = _("Cancel"),
+                                            id = "close",
                                             callback = function()
                                                 UIManager:close(auth_dialog)
                                             end

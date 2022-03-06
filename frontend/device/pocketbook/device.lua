@@ -5,6 +5,7 @@ local C = ffi.C
 local inkview = ffi.load("inkview")
 local band = require("bit").band
 local util = require("util")
+local _ = require("gettext")
 
 require("ffi/posix_h")
 require("ffi/linux_input_h")
@@ -42,7 +43,10 @@ local PocketBook = Generic:new{
     -- NOTE: Apparently, HW inversion is a pipedream on PB (#6669), ... well, on sunxi chipsets anyway.
     -- For which we now probe in fbinfoOverride() and tweak the flag to "no".
     -- NTX chipsets *should* work (PB631), but in case it doesn't on your device, set this to "no" in here.
-    canHWInvert = yes,
+    --
+    -- The above comment applied to rendering without inkview. With the inkview library HW inverting the
+    -- screen is not possible. For now disable HWInvert for all devices.
+    canHWInvert = no,
 
     -- If we can access the necessary devices, input events can be handled directly.
     -- This improves latency (~40ms), as well as power usage - we can spend more time asleep,
@@ -265,7 +269,7 @@ function PocketBook:notifyBookState(title, document)
         fo:write(fn)
         fo:close()
     end
-    inkview.SetSubtaskInfo(inkview.GetCurrentTask(), 0, title and (title .. " - koreader") or "koreader", fn)
+    inkview.SetSubtaskInfo(inkview.GetCurrentTask(), 0, title and (title .. " - koreader") or "koreader", fn or _("N/A"))
 end
 
 function PocketBook:setDateTime(year, month, day, hour, min, sec)
@@ -687,7 +691,7 @@ elseif codename == "PB650" or codename == "PocketBook 650" then
     return PocketBook650
 elseif codename == "PB740" then
     return PocketBook740
-elseif codename == "PB740-2" then
+elseif codename == "PB740-2" or codename == "PB740-3" then
     return PocketBook740_2
 elseif codename == "PB741" then
     return PocketBook741

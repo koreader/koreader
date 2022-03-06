@@ -136,6 +136,7 @@ function NumberPickerWidget:init()
                     {
                         {
                             text = _("Cancel"),
+                            id = "close",
                             callback = function()
                                 UIManager:close(input_dialog)
                             end,
@@ -186,6 +187,9 @@ function NumberPickerWidget:init()
         show_parent = self.show_parent,
         callback = callback_input,
     }
+    if callback_input then
+        table.insert(self.layout, 2, {self.text_value})
+    end
 
     local widget_spinner = VerticalGroup:new{
         align = "center",
@@ -210,9 +214,7 @@ function NumberPickerWidget:init()
     }
     self.dimen = self.frame:getSize()
     self[1] = self.frame
-    if Device:hasDPad() then
-        self.key_events.Press = { {"Press"}, doc = "press button" }
-    end
+    self:refocusWidget()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self.dimen
     end)
@@ -229,6 +231,7 @@ function NumberPickerWidget:update()
 
     self.text_value:setText(tostring(self.formatted_value), self.width)
 
+    self:refocusWidget()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self.dimen
     end)
@@ -287,10 +290,6 @@ Get value.
 --]]
 function NumberPickerWidget:getValue()
     return self.value, self.value_index
-end
-
-function NumberPickerWidget:onPress()
-    return self:sendTapEventToFocusedWidget()
 end
 
 return NumberPickerWidget

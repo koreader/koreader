@@ -40,7 +40,6 @@ local FrameContainer = WidgetContainer:new{
     height = nil,
     invert = false,
     allow_mirroring = true,
-    _mirroredUI = BD.mirroredUILayout(),
     focusable = false,
     focus_border_size = Size.border.window * 2,
     focus_border_color = Blitbuffer.COLOR_BLACK,
@@ -52,7 +51,7 @@ function FrameContainer:getSize()
     self._padding_right = self.padding_right or self.padding
     self._padding_bottom = self.padding_bottom or self.padding
     self._padding_left = self.padding_left or self.padding
-    if self._mirroredUI and self.allow_mirroring then
+    if BD.mirroredUILayout() and self.allow_mirroring then
         self._padding_left, self._padding_right = self._padding_right, self._padding_left
     end
     return Geom:new{
@@ -63,22 +62,27 @@ end
 
 function FrameContainer:onFocus()
     if not self.focusable then
-        return
+        return false
     end
     self._origin_bordersize = self.bordersize
     self._origin_border_color = self.color
     self.bordersize = self.focus_border_size
     self.color = self.focus_border_color
+    self._focused = true
     return true
 end
 
 function FrameContainer:onUnfocus()
     if not self.focusable then
-        return
+        return false
     end
-    self.bordersize = self._origin_bordersize
-    self.color = self._origin_border_color
-    return true
+    if self._focused then
+        self.bordersize = self._origin_bordersize
+        self.color = self._origin_border_color
+        self._focused = nil
+        return true
+    end
+    return false
 end
 
 
@@ -93,7 +97,7 @@ function FrameContainer:paintTo(bb, x, y)
     local container_height = self.height or my_size.h
 
     local shift_x = 0
-    if self._mirroredUI and self.allow_mirroring then
+    if BD.mirroredUILayout() and self.allow_mirroring then
         shift_x = container_width - my_size.w
     end
 

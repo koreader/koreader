@@ -1,8 +1,10 @@
+local bit = require("bit")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local logger = require("logger")
 local UIManager = require("ui/uimanager")
+local util = require("util")
 --[[
 Wrapper Widget that manages focus for a whole dialog
 
@@ -33,20 +35,153 @@ local FocusManager = InputContainer:new{
 function FocusManager:init()
     if not self.selected then
         self.selected = { x = 1, y = 1 }
+    else
+        self.selected = self.selected -- make sure current FocusManager has its own selected field
     end
-
     if Device:hasDPad() then
-        self.key_events = {
-            -- these will all generate the same event, just with different arguments
-            FocusUp =    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} },
-            FocusDown =  { {"Down"},  doc = "move focus down",  event = "FocusMove", args = {0,  1} },
-            FocusLeft =  { {"Left"},  doc = "move focus left",  event = "FocusMove", args = {-1, 0} },
-            FocusRight = { {"Right"}, doc = "move focus right", event = "FocusMove", args = {1,  0} },
-        }
-        if Device:hasFewKeys() then
-            self.key_events.FocusLeft = nil
+        local event_keys = {}
+        -- these will all generate the same event, just with different arguments
+        table.insert(event_keys, {"FocusUp",    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} } })
+        table.insert(event_keys, {"FocusRight", { {"Right"}, doc = "move focus right", event = "FocusMove", args = {1,  0} } })
+        table.insert(event_keys, {"FocusDown",  { {"Down"},  doc = "move focus down",  event = "FocusMove", args = {0,  1} } })
+        table.insert(event_keys, {"Press",      { {"Press"}, doc = "tap the widget",   event="Press" }})
+        local FEW_KEYS_END_INDEX = #event_keys -- Few keys device: only setup up, down, right and press
+
+        table.insert(event_keys, {"FocusLeft",  { {"Left"},  doc = "move focus left",         event = "FocusMove", args = {-1, 0} } })
+        local NORMAL_KEYS_END_INDEX = #event_keys
+
+        -- Advanced Feature: following event handlers can be enabled via settings.reader.lua
+        -- Key combinations (Sym, Alt+Up, Tab, Shift+Tab and so on) are not used but shown as examples here
+        table.insert(event_keys, {"Hold",           { {"Sym", "AA"}, doc = "tap and hold the widget", event="Hold" } })
+        -- half rows/columns move, it is helpful for slow device like Kindle DX to move quickly
+        table.insert(event_keys, {"HalfFocusUp",    { {"Alt", "Up"},    doc = "move focus half columns up",    event = "FocusHalfMove", args = {"up"} } })
+        table.insert(event_keys, {"HalfFocusRight", { {"Alt", "Right"}, doc = "move focus half rows right",    event = "FocusHalfMove", args = {"right"} } })
+        table.insert(event_keys, {"HalfFocusDown",  { {"Alt", "Down"},  doc = "move focus half columns down",  event = "FocusHalfMove", args = {"down"} } })
+        table.insert(event_keys, {"HalfFocusLeft",  { {"Alt", "Left"},  doc = "move focus half rows left",     event = "FocusHalfMove", args = {"left"} } })
+        -- for PC navigation behavior support
+        table.insert(event_keys, {"FocusNext",      { {"Tab"},            doc = "move focus to next widget",     event="FocusNext"} })
+        table.insert(event_keys, {"FocusPrevious",  { {"Shift", "Tab"},   doc = "move focus to previous widget", event="FocusPrevious"} })
+
+        self.key_events = {}
+        self.builtin_key_events = {}
+        self.extra_key_events = {}
+        for i = 1, FEW_KEYS_END_INDEX do
+            local key_name = event_keys[i][1]
+            self.key_events[key_name] = event_keys[i][2]
+            self.builtin_key_events[key_name] = event_keys[i][2]
+        end
+        if not Device:hasFewKeys() then
+            for i = FEW_KEYS_END_INDEX+1, NORMAL_KEYS_END_INDEX do
+                local key_name = event_keys[i][1]
+                self.key_events[key_name] = event_keys[i][2]
+                self.builtin_key_events[key_name] = event_keys[i][2]
+            end
+            local focus_manager_setting = G_reader_settings:child("focus_manager")
+            -- Enable advanced feature, like Hold, FocusNext, FocusPrevious
+            -- Can also add extra arrow keys like using A, W, D, S for Left, Up, Right, Down
+            local alternative_keymaps = focus_manager_setting:readSetting("alternative_keymaps")
+            if type(alternative_keymaps) == "table" then
+                for i = 1, #event_keys do
+                    local key_name = event_keys[i][1]
+                    local alternative_keymap = alternative_keymaps[key_name]
+                    if alternative_keymap then
+                        local handler_defition = util.tableDeepCopy(event_keys[i][2])
+                        handler_defition[1] = alternative_keymap -- replace sample key combinations
+                        local new_event_key = "Alternative" .. key_name
+                        self.key_events[new_event_key] = handler_defition
+                        self.extra_key_events[new_event_key] = handler_defition
+                    end
+                end
+            end
         end
     end
+end
+
+function FocusManager:isAlternativeKey(key)
+    for _, seq in pairs(self.extra_key_events) do
+        for _, oneseq in ipairs(seq) do
+            if key:match(oneseq) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function FocusManager:onFocusHalfMove(args)
+    if not self.layout then
+        return false
+    end
+    local direction = unpack(args)
+    local x, y = self.selected.x, self.selected.y
+    local row = self.layout[self.selected.y]
+    local dx, dy = 0, 0
+    if direction == "up" then
+        dy = - math.floor(#self.layout / 2)
+        if dy == 0 then
+            dy = -1
+        elseif dy + y <= 0 then
+            dy = -y + 1 -- first row
+        end
+    elseif direction == "down" then
+        dy = math.floor(#self.layout / 2)
+        if dy == 0 then
+            dy = 1
+        elseif dy + y > #self.layout then
+            dy = #self.layout - y -- last row
+        end
+    elseif direction == "left" then
+        dx = - math.floor(#row / 2)
+        if dx == 0 then
+            dx = -1
+        elseif dx + x <= 0 then
+            dx = -x + 1 -- first column
+        end
+    elseif direction == "right" then
+        dx = math.floor(#row / 2)
+        if dx == 0 then
+            dx = 1
+        elseif dx + x > #row then
+            dx = #row - y -- last column
+        end
+    end
+    return self:onFocusMove({dx, dy})
+end
+
+function FocusManager:onPress()
+    return self:sendTapEventToFocusedWidget()
+end
+
+function FocusManager:onHold()
+    return self:sendHoldEventToFocusedWidget()
+end
+
+-- for tab key
+function FocusManager:onFocusNext()
+    if not self.layout then
+        return false
+    end
+    local x, y = self.selected.x, self.selected.y
+    local row = self.layout[y]
+    local dx, dy = 1, 0
+    if not row[x + dx] then -- beyond end of column, go to next row
+        dx, dy = 0, 1
+    end
+    return self:onFocusMove({dx, dy})
+end
+
+-- for backtab key
+function FocusManager:onFocusPrevious()
+    if not self.layout then
+        return false
+    end
+    local x, y = self.selected.x, self.selected.y
+    local row = self.layout[y]
+    local dx, dy = -1, 0
+    if not row[x + dx] then -- beyond start of column, go to previous row
+        dx, dy = 0, -1
+    end
+    return self:onFocusMove({dx, dy})
 end
 
 function FocusManager:onFocusMove(args)
@@ -101,11 +236,50 @@ function FocusManager:onFocusMove(args)
     return true
 end
 
+-- constant, used to reset focus widget after layout recreation
+-- not send Unfocus event
+FocusManager.NOT_UNFOCUS = 1
+-- not need to send Focus event
+FocusManager.NOT_FOCUS = 2
+
+--- Move focus to specified widget
+function FocusManager:moveFocusTo(x, y, focus_flags)
+    focus_flags = focus_flags or 0
+    if not self.layout then
+        return false
+    end
+    local current_item = nil
+    if self.layout[self.selected.y] then
+        current_item = self.layout[self.selected.y][self.selected.x]
+    end
+    local target_item = nil
+    if self.layout[y] then
+        target_item = self.layout[y][x]
+    end
+    if target_item then
+        logger.dbg("Move focus position to: " .. y .. ", " .. x)
+        self.selected.x = x
+        self.selected.y = y
+        -- widget create new layout on update, previous may be removed from new layout.
+        if Device:hasDPad() then
+            if not bit.band(focus_flags, FocusManager.NOT_UNFOCUS) and current_item and current_item ~= target_item then
+                current_item:handleEvent(Event:new("Unfocus"))
+            end
+            if not bit.band(focus_flags, FocusManager.NOT_FOCUS) then
+                target_item:handleEvent(Event:new("Focus"))
+                UIManager:setDirty(self.show_parent or self, "fast")
+            end
+        end
+        return true
+    end
+    return false
+end
+
 --- Go to the last valid item directly left or right of the current item.
 -- @return false if none could be found
 function FocusManager:_wrapAroundX(dx)
     local x = self.selected.x
-    while self.layout[x - dx] do
+    while self.layout[self.selected.y][x - dx] do
         x = x - dx
     end
     if x ~= self.selected.x then
@@ -168,7 +342,7 @@ function FocusManager:getFocusItem()
     return self.layout[self.selected.y][self.selected.x]
 end
 
-function FocusManager:sendTapEventToFocusedWidget()
+function FocusManager:_sendGestureEventToFocusedWidget(gesture)
     local focused_widget = self:getFocusItem()
     if focused_widget then
         -- center of widget position
@@ -177,8 +351,9 @@ function FocusManager:sendTapEventToFocusedWidget()
         point.y = point.y + point.h / 2
         point.w = 0
         point.h = 0
+        logger.dbg("FocusManager: Send " .. gesture .. " to " .. point.x .. ", " .. point.y)
         UIManager:sendEvent(Event:new("Gesture", {
-            ges = "tap",
+            ges = gesture,
             pos = point,
         }))
         return true
@@ -186,14 +361,26 @@ function FocusManager:sendTapEventToFocusedWidget()
     return false
 end
 
-function FocusManager:mergeLayoutInVertical(child)
+function FocusManager:sendTapEventToFocusedWidget()
+    return self:_sendGestureEventToFocusedWidget("tap")
+end
+
+function FocusManager:sendHoldEventToFocusedWidget()
+    return self:_sendGestureEventToFocusedWidget("hold")
+end
+
+function FocusManager:mergeLayoutInVertical(child, pos)
     if not child.layout then
         return
     end
-    for _, row in ipairs(child.layout) do
-        table.insert(self.layout, row)
+    if not pos then
+        pos = #self.layout + 1 -- end of row
     end
-    child:disableFocusManagement()
+    for _, row in ipairs(child.layout) do
+        table.insert(self.layout, pos, row)
+        pos = pos + 1
+    end
+    child:disableFocusManagement(self)
 end
 
 function FocusManager:mergeLayoutInHorizontal(child)
@@ -210,18 +397,39 @@ function FocusManager:mergeLayoutInHorizontal(child)
             table.insert(prow, widget)
         end
     end
-    child:disableFocusManagement()
+    child:disableFocusManagement(self)
 end
 
-function FocusManager:disableFocusManagement()
+function FocusManager:disableFocusManagement(parent)
+    self._parent = parent
+    -- unfocus current widget in current child container
+    -- parent container will call refocusWidget to focus another one
+    local row = self.layout[self.selected.y]
+    if row and row[self.selected.x] then
+        row[self.selected.x]:handleEvent(Event:new("Unfocus"))
+    end
     self.layout = nil -- turn off focus feature
 end
 
---- Container call this method after init to let first widget render in focus style
-function FocusManager:focusTopLeftWidget()
-    if Device:hasDPad() then
-        -- trigger selected widget in focused style
-        self:onFocusMove({0, 0})
+-- constant for refocusWidget method to ease code reading
+FocusManager.RENDER_IN_NEXT_TICK = true
+
+--- Container calls this method to re-set focus widget style
+--- Some container regenerate layout on update and lose focus style
+function FocusManager:refocusWidget(nextTick)
+    if not self._parent then
+        if not nextTick then
+            self:moveFocusTo(self.selected.x, self.selected.y)
+        else
+            -- sometimes refocusWidget called in widget's action callback
+            -- widget may force repaint after callback, like Button with vsync = true
+            -- then focus style will be lost, set focus style to next tick to make sure focus style painted
+            UIManager:nextTick(function()
+                self:moveFocusTo(self.selected.x, self.selected.y)
+            end)
+        end
+    else
+        self._parent:refocusWidget(nextTick)
     end
 end
 

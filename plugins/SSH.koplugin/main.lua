@@ -124,6 +124,7 @@ function SSH:show_port_dialog(touchmenu_instance)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(self.port_dialog)
                     end,

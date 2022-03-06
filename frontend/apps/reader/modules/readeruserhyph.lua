@@ -188,6 +188,7 @@ function ReaderUserHyph:modifyUserEntry(word)
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(input_dialog)
                     end,

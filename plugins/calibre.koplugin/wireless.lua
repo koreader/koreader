@@ -422,6 +422,7 @@ function CalibreWireless:setPassword()
         buttons = {{
             {
                 text = _("Cancel"),
+                id = "close",
                 callback = function()
                     UIManager:close(password_dialog)
                 end,

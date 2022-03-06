@@ -127,6 +127,12 @@ function FeedSource:initializeDocument(document)
                     feed_title = FeedSource:getFeedTitle(document.feed.title)
                     feed_items = document.feed.entry
                     total_items = #document.feed.entry
+                end,
+                function()
+                    -- RDF callback
+                    feed_title = util.htmlEntitiesToUtf8(document["rdf:RDF"].channel.title)
+                    feed_items = document["rdf:RDF"].item
+                    total_items = #document["rdf:RDF"].item
                 end
             )
     end)
@@ -217,7 +223,7 @@ function FeedSource:initializeItemHtml(feed, html)
     }
 end
 
-function FeedSource:getFeedType(document, rss_cb, atom_cb)
+function FeedSource:getFeedType(document, rss_cb, atom_cb, rdf_cb)
     -- Check to see if the feed uses RSS.
     local is_rss = document.rss and
         document.rss.channel and
@@ -233,16 +239,21 @@ function FeedSource:getFeedType(document, rss_cb, atom_cb)
         document.feed.entry[1].title and
         document.feed.entry[1].link
     -- Setup the feed values based on feed type
+    local is_rdf = document["rdf:RDF"] and
+        document["rdf:RDF"].channel and
+        document["rdf:RDF"].channel.title
     if is_atom then
         return atom_cb()
     elseif is_rss then
         return rss_cb()
+    elseif is_rdf then
+        return rdf_cb()
     end
     -- Return the values through our callback, or call an
     -- error message if the feed wasn't RSS or Atom
-    if not is_rss or not is_atom then
+    if not is_rss or not is_atom or not is_rdf then
         local error_message
-        if not is_rss then
+        if not is_rss or not is_rdf then
             error_message = _("(Reason: Couldn't process RSS)")
         elseif not is_atom then
             error_message = _("(Reason: Couldn't process Atom)")

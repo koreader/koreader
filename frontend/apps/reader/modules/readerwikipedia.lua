@@ -44,6 +44,7 @@ function ReaderWikipedia:lookupInput()
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         UIManager:close(self.input_dialog)
                     end,
@@ -153,6 +154,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                             {
                                 {
                                     text = _("Cancel"),
+                                    id = "close",
                                     callback = function()
                                         UIManager:close(wikilang_input)
                                     end,
