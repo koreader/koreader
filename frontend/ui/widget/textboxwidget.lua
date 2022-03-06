@@ -152,6 +152,26 @@ function TextBoxWidget:init()
         self.text_height = self.lines_per_page * self.line_height_px
     end
 
+    self:_computeDimensions()
+    self:_updateLayout()
+    if self.editable then
+        self:moveCursorToCharPos(self.charpos or 1)
+    end
+    self.dimen = Geom:new(self:getSize())
+
+    if Device:isTouchDevice() then
+        self.ges_events = {
+            TapImage = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function() return self.dimen end,
+                },
+            },
+        }
+    end
+end
+
+function TextBoxWidget:_computeDimensions()
     if self.use_xtext then
         self:_measureWithXText()
     else
@@ -185,21 +205,6 @@ function TextBoxWidget:init()
         if self.editable and self.charpos then
             self:scrollViewToCharPos()
         end
-    end
-    self:_updateLayout()
-    if self.editable then
-        self:moveCursorToCharPos(self.charpos or 1)
-    end
-    self.dimen = Geom:new(self:getSize())
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapImage = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = function() return self.dimen end,
-                },
-            },
-        }
     end
 end
 
@@ -1176,12 +1181,7 @@ function TextBoxWidget:setText(text)
 
     self.text = text
 
-    if self.use_xtext then
-        self:_measureWithXText()
-    else
-        self:_evalCharWidthList()
-    end
-    self:_splitToLines()
+    self:_computeDimensions()
 
     self:update()
 end
