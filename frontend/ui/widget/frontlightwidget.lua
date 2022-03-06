@@ -163,7 +163,7 @@ function FrontLightWidget:layout()
         tick_width = Screen:scaleBySize(0.5),
         last = self.fl.max,
     }
-    -- FIXME: Switch to TextWidget and leave the alignment to an HorizontalSpan?
+    -- FIXME: Switch to TextWidget and leave the alignment to a CenterContainer?
     local fl_header = TextBoxWidget:new{
         text = _("Brightness"),
         face = self.medium_font_face,
@@ -172,7 +172,7 @@ function FrontLightWidget:layout()
         width = math.floor(self.screen_width * 0.95),
     }
     self.fl_minus = Button:new{
-        text = "-1",
+        text = "−",
         margin = Size.margin.small,
         radius = 0,
         enabled = self.fl.cur ~= self.fl.min,
@@ -183,7 +183,7 @@ function FrontLightWidget:layout()
         end,
     }
     self.fl_plus = Button:new{
-        text = "+1",
+        text = "＋",
         margin = Size.margin.small,
         radius = 0,
         enabled = self.fl.cur ~= self.fl.max,
@@ -282,7 +282,7 @@ function FrontLightWidget:layout()
             width = math.floor(self.screen_width * 0.95),
         }
         self.nl_minus = Button:new{
-            text = "-1",
+            text = "−",
             margin = Size.margin.small,
             radius = 0,
             enabled = self.nl.cur ~= self.nl.min,
@@ -292,7 +292,7 @@ function FrontLightWidget:layout()
                 self:setWarmth(self.nl.cur - 1) end,
         }
         self.nl_plus = Button:new{
-            text = "+1",
+            text = "＋",
             margin = Size.margin.small,
             radius = 0,
             enabled = self.nl.cur ~= self.nl.max,
