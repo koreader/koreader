@@ -13,7 +13,7 @@ local Math = require("optmath")
 local NaturalLight = require("ui/widget/naturallightwidget")
 local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
+local TextWidget = require("ui/widget/textwidget")
 local TimeVal = require("ui/timeval")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
@@ -163,13 +163,11 @@ function FrontLightWidget:layout()
         tick_width = Screen:scaleBySize(0.5),
         last = self.fl.max,
     }
-    -- FIXME: Switch to TextWidget and leave the alignment to a CenterContainer?
-    local fl_header = TextBoxWidget:new{
+    local fl_header = TextWidget:new{
         text = _("Brightness"),
         face = self.medium_font_face,
         bold = true,
-        alignment = "center",
-        width = math.floor(self.screen_width * 0.95),
+        max_width = math.floor(self.screen_width * 0.95),
     }
     self.fl_minus = Button:new{
         text = "−",
@@ -193,11 +191,17 @@ function FrontLightWidget:layout()
             self:setBrightness(self.fl.cur + 1)
         end,
     }
-    self.fl_level = TextBoxWidget:new{
-        text = self.fl.cur,
+    self.fl_level = TextWidget:new{
+        text = tostring(self.fl.cur),
         face = self.medium_font_face,
-        alignment = "center",
-        width = math.floor(self.screen_width * 0.95 - 1.275 * self.fl_minus.width - 1.275 * self.fl_plus.width),
+        max_width = math.floor(self.screen_width * 0.95 - 1.275 * self.fl_minus.width - 1.275 * self.fl_plus.width),
+    }
+    local fl_level_container = CenterContainer:new{
+        dimen = Geom:new{
+            w = self.fl_level.max_width,
+            h = self.fl_level:getSize().h
+        },
+        self.fl_level,
     }
     local fl_min = Button:new{
         text = _("Min"),
@@ -238,7 +242,7 @@ function FrontLightWidget:layout()
     local fl_buttons_above = HorizontalGroup:new{
         align = "center",
         self.fl_minus,
-        self.fl_level,
+        fl_level_container,
         self.fl_plus,
     }
     self.layout[1] = {self.fl_minus, self.fl_plus}
@@ -274,12 +278,12 @@ function FrontLightWidget:layout()
 
         self:rebuildWarmthProgress()
 
-        local nl_header = TextBoxWidget:new{
-            text = "\n" .. _("Warmth"),
+        local nl_span = VerticalSpan:new{ width = Size.span.vertical_large * 4 }
+        local nl_header = TextWidget:new{
+            text = _("Warmth"),
             face = self.medium_font_face,
             bold = true,
-            alignment = "center",
-            width = math.floor(self.screen_width * 0.95),
+            max_width = math.floor(self.screen_width * 0.95),
         }
         self.nl_minus = Button:new{
             text = "−",
@@ -301,11 +305,17 @@ function FrontLightWidget:layout()
             callback = function()
                 self:setWarmth(self.nl.cur + 1) end,
         }
-        self.nl_level = TextBoxWidget:new{
-            text = self.nl.cur,
+        self.nl_level = TextWidget:new{
+            text = tostring(self.nl.cur),
             face = self.medium_font_face,
-            alignment = "center",
-            width = math.floor(self.screen_width * 0.95 - 1.275 * self.nl_minus.width - 1.275 * self.nl_plus.width),
+            max_width = math.floor(self.screen_width * 0.95 - 1.275 * self.nl_minus.width - 1.275 * self.nl_plus.width),
+        }
+        local nl_level_container = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.nl_level.max_width,
+                h = self.nl_level:getSize().h
+            },
+            self.nl_level,
         }
         local nl_min = Button:new{
             text = _("Min"),
@@ -335,7 +345,7 @@ function FrontLightWidget:layout()
         local nl_buttons_above = HorizontalGroup:new{
             align = "center",
             self.nl_minus,
-            self.nl_level,
+            nl_level_container,
             self.nl_plus,
         }
         self.layout[3] = {self.nl_minus, self.nl_plus}
@@ -347,6 +357,7 @@ function FrontLightWidget:layout()
         }
         self.layout[4] = {nl_min, nl_max}
 
+        table.insert(main_group, nl_span)
         table.insert(main_group, nl_header)
         table.insert(nl_group_above, nl_buttons_above)
         table.insert(nl_group_below, nl_buttons_below)
