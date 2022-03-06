@@ -211,15 +211,15 @@ function FakeCover:init()
     while true do
         -- Free previously made widgets to avoid memory leaks
         if authors_wg then
-            authors_wg:free()
+            authors_wg:free(true)
             authors_wg = nil
         end
         if title_wg then
-            title_wg:free()
+            title_wg:free(true)
             title_wg = nil
         end
         if filename_wg then
-            filename_wg:free()
+            filename_wg:free(true)
             filename_wg = nil
         end
         -- Build new widgets
@@ -485,7 +485,7 @@ function MosaicMenuItem:update()
         local directory
         while true do
             if directory then
-                directory:free()
+                directory:free(true)
             end
             directory = TextBoxWidget:new{
                 text = text,
