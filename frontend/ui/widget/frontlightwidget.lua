@@ -259,6 +259,7 @@ function FrontLightWidget:layout()
             thin_grey_style = false,
             num_buttons = self.nl.steps - 1, -- no button for step 0
             position = math.floor(self.nl.cur / self.nl.stride),
+            default_position = math.floor(self.nl.cur / self.nl.stride),
             callback = function(i)
                 self:setWarmth(i, false)
             end,
@@ -474,6 +475,7 @@ function FrontLightWidget:setBrightness(intensity)
 end
 
 function FrontLightWidget:setWarmth(warmth, update_position)
+    logger.dbg("FrontLightWidget:setWarmth", warmth, update_position)
     if warmth == self.nl.cur then
         return
     end
@@ -485,7 +487,7 @@ function FrontLightWidget:setWarmth(warmth, update_position)
     -- Update the progress bar, if we were called from outside ButtonProgressWidget
     -- (as it already handles that internally ;)).
     if update_position then
-        self.nl_progress:setPosition(warmth)
+        self.nl_progress:setPosition(warmth, self.nl_progress.default_position)
     end
 
     self.nl_level:setText(tostring(self.nl.cur))
