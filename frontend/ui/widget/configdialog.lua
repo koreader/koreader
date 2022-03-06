@@ -637,7 +637,7 @@ function ConfigOption:init()
                                 self.options[c].labels or self.options[c].args, arg)
                         end
                     end,
-                    show_parrent = self.config,
+                    show_parent = self.config,
                     enabled = enabled,
                     fine_tune = self.options[c].fine_tune,
                     fine_tune_param = self.options[c].fine_tune_param,

@@ -1,5 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
+local ButtonProgressWidget = require("ui/widget/buttonprogresswidget")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local FocusManager = require("ui/widget/focusmanager")
@@ -113,27 +114,28 @@ end
 
 function FrontLightWidget:layout()
     self.layout = {}
-    -- While the brightness bar uses a ProgressWidget, the warmth bar uses a ButtonProgressWidget
-    -- FIXME: Actually move to ButtonProgressWidget ;D
+    -- While the brightness bar uses a ProgressWidget, the warmth bar uses a ButtonProgressWidget...
     if self.has_nl then
         -- Button width adapted to screen size
         local button_margin = Size.margin.tiny
         local button_padding = Size.padding.button
-        local button_bordersize = Size.border.button
+        local button_bordersize = Size.border.thin
 
         -- Step 0 doesn't take a button, hence the minus
         local button_width = math.floor(self.screen_width * 0.9 / (self.nl.steps - 1)) -
                              2 * (button_margin + button_padding + button_bordersize)
 
-        self.nl_prog_button = Button:new{
-            text = "",
-            radius = 0,
-            margin = button_margin,
-            padding = button_padding,
-            bordersize = button_bordersize,
-            enabled = true,
-            width = button_width,
+        self.nl_progress = ButtonProgressWidget:new{
+            width = math.floor(self.screen_width * 0.9),
+            padding = 0,
+            thin_grey_style = false,
+            num_buttons = self.nl.steps - 1, -- no button for step 0
+            position = math.floor(self.nl.cur / self.nl.stride),
+            callback = function(i)
+                self:setWarmth(i)
+            end,
             show_parent = self,
+            enabled = true,
         }
     end
 
@@ -274,9 +276,11 @@ function FrontLightWidget:layout()
     if self.has_nl then
         local nl_group_above = HorizontalGroup:new{ align = "center" }
         local nl_group_below = HorizontalGroup:new{ align = "center" }
+        --[[
         self.nl_group = HorizontalGroup:new{ align = "center" }
 
         self:rebuildWarmthProgress()
+        --]]
 
         local nl_span = VerticalSpan:new{ width = Size.span.vertical_large * 4 }
         local nl_header = TextWidget:new{
@@ -293,7 +297,7 @@ function FrontLightWidget:layout()
             width = math.floor(self.screen_width * 0.2),
             show_parent = self,
             callback = function()
-                self:setWarmth(self.nl.cur - 1) end,
+                self:setWarmth(self.nl.cur - 1, true) end,
         }
         self.nl_plus = Button:new{
             text = "＋",
@@ -303,7 +307,7 @@ function FrontLightWidget:layout()
             width = math.floor(self.screen_width * 0.2),
             show_parent = self,
             callback = function()
-                self:setWarmth(self.nl.cur + 1) end,
+                self:setWarmth(self.nl.cur + 1, true) end,
         }
         self.nl_level = TextWidget:new{
             text = tostring(self.nl.cur),
@@ -325,7 +329,7 @@ function FrontLightWidget:layout()
             width = math.floor(self.screen_width * 0.2),
             show_parent = self,
             callback = function()
-                self:setWarmth(self.nl.min)
+                self:setWarmth(self.nl.min, true)
             end,
         }
         local nl_max = Button:new{
@@ -336,7 +340,7 @@ function FrontLightWidget:layout()
             width = math.floor(self.screen_width * 0.2),
             show_parent = self,
             callback = function()
-                self:setWarmth(self.nl.max)
+                self:setWarmth(self.nl.max, true)
             end,
         }
         local nl_spacer = HorizontalSpan:new{
@@ -365,7 +369,7 @@ function FrontLightWidget:layout()
         table.insert(main_group, padding_span)
         table.insert(main_group, nl_group_above)
         table.insert(main_group, padding_span)
-        table.insert(main_group, self.nl_group)
+        table.insert(main_group, self.nl_progress)
         table.insert(main_group, padding_span)
         table.insert(main_group, nl_group_below)
         table.insert(main_group, padding_span)
@@ -515,7 +519,7 @@ function FrontLightWidget:setBrightness(intensity)
     self:update()
 end
 
-function FrontLightWidget:setWarmth(warmth)
+function FrontLightWidget:setWarmth(warmth, update_position)
     if warmth == self.nl.cur then
         return
     end
@@ -524,8 +528,13 @@ function FrontLightWidget:setWarmth(warmth)
     self.nl.cur = warmth
     self.powerd:setWarmth(self.powerd:fromNativeWarmth(self.nl.cur))
 
-    -- Update the progress bar
-    self:rebuildWarmthProgress()
+    -- Update the progress bar, if we were called from outside ButtonProgressWidget
+    logger.dbg("warmth", warmth)
+    logger.dbg("self.nl_progress.position", self.nl_progress.position)
+    if update_position then
+        self.nl_progress:setPosition(warmth)
+    end
+
     self.nl_level:setText(tostring(self.nl.cur))
     if self.nl.cur == self.nl.min then
         self.nl_minus:disable()
