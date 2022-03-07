@@ -1180,9 +1180,7 @@ function TextBoxWidget:setText(text)
     end
 
     self.text = text
-
     self:_computeTextDimensions()
-
     self:update()
 
     -- Don't break the reference
