@@ -39,7 +39,7 @@ local PageBrowserWidget = InputContainer:new{
 }
 
 function PageBrowserWidget:init()
-    if self.ui.view.inverse_reading_order then
+    if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
 

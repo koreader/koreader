@@ -643,7 +643,7 @@ function ReaderToc:expandParentNode(index)
 end
 
 function ReaderToc:onShowToc()
-    if self.view.inverse_reading_order then
+    if self.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
 
