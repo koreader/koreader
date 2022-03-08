@@ -162,7 +162,7 @@ function TitleBar:init()
                 -- gathered, we'll re :init() ourselves with the original title,
                 -- using the metrics we're computing now (self._initial*).
                 self._initial_re_init_needed = true
-                self.title_widget:free(full)
+                self.title_widget:free(true)
                 self.title_widget = TextWidget:new{
                     text = "",
                     face = title_face,
@@ -171,7 +171,7 @@ function TitleBar:init()
                 break
             end
             -- otherwise, loop and do the same with a smaller font size
-            self.title_widget:free(full)
+            self.title_widget:free(true)
             title_face = Font:getFace(title_face.orig_font, title_face.orig_size - 1)
         end
     end
