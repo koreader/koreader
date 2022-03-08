@@ -188,7 +188,7 @@ function FrontLightWidget:layout()
         show_parent = self,
         callback = function()
             self:setBrightness(self.fl.min + 1)
-        end, -- min is 1 (use toggle for 0)
+        end, -- min is 1 (We use 0 to mean "toggle")
     }
     local fl_max = Button:new{
         text = _("Max"),
@@ -233,7 +233,8 @@ function FrontLightWidget:layout()
     self.layout[2] = {fl_min, fl_toggle, fl_max}
 
     if self.has_nl then
-        -- Only insert 'Brightness' caption if we also add 'warmth' widgets below.
+        -- Only insert a "Brightness" caption if we also add the full set of warmth widgets below,
+        -- otherwise, it's implied by the title bar ;).
         table.insert(main_group, fl_header)
     end
     table.insert(fl_group_above, fl_buttons_above)
@@ -267,6 +268,7 @@ function FrontLightWidget:layout()
             show_parent = self,
             enabled = true,
         }
+        -- We want a wider gap between the two sets of widgets
         local nl_span = VerticalSpan:new{ width = Size.span.vertical_large * 4 }
         local nl_header = TextWidget:new{
             text = _("Warmth"),
@@ -517,7 +519,7 @@ function FrontLightWidget:setFrontLightIntensity(intensity)
         self.powerd:setIntensity(self.fl.cur)
     end
 
-    -- Retrieve the real level (different from set_fl on toggle)
+    -- Retrieve the real level (different from intensity on toggle)
     self.fl.cur = self.powerd:frontlightIntensity()
 end
 
