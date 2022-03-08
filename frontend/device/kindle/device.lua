@@ -449,6 +449,11 @@ local KindleOasis3 = Kindle:new{
     isZelda = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
+    --- @fixme: Requires a proper KindleOasis3.init, notably with the right warmth_intensity_file entry.
+    --[[
+    hasNaturalLight = yes,
+    hasNaturalLightMixer = yes,
+    --]]
     hasKeys = yes,
     hasGSensor = yes,
     display_dpi = 300,
