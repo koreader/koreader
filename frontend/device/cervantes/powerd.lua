@@ -14,8 +14,8 @@ local CervantesPowerD = BasePowerD:new{
     status_file = battery_sysfs .. 'status'
 }
 
--- We can't read value from the OS or hardware.
--- Use last values stored in koreader settings.
+-- We can't read back the current state from the OS or hardware.
+-- Use the last value stored in KOReader settings instead.
 function CervantesPowerD:frontlightWarmthHW()
     return G_reader_settings:readSetting("frontlight_warmth") or 0
 end
