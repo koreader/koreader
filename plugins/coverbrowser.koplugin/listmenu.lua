@@ -582,7 +582,6 @@ function ListMenuItem:update()
                 -- Free previously made widgets to avoid memory leaks
                 if wtitle then
                     wtitle:free(true)
-                    wtitle = nil
                 end
                 if wauthors then
                     wauthors:free(true)
