@@ -258,6 +258,7 @@ function FrontLightWidget:layout()
 
         self.nl_progress = ButtonProgressWidget:new{
             width = math.floor(self.screen_width * 0.9),
+            font_size = 20, -- match Button's default
             padding = 0,
             thin_grey_style = false,
             num_buttons = self.nl.steps - 1, -- no button for step 0
