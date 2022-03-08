@@ -396,12 +396,12 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Long-press on text"),
         sub_item_table = {
             {
-                text = _("Highlight Long-press interval"),
+                text = _("Highlight long-press interval"),
                 keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local items = SpinWidget:new{
-                        title_text = _("Highlight Long-press interval"),
+                        title_text = _("Highlight long-press interval"),
                         info_text = _([[
 If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will not be triggered.
 
