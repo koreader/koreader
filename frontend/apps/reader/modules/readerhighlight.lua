@@ -46,9 +46,6 @@ local function cleanupSelectedText(text)
     return text
 end
 
-local CLEAR_HIGHLIGHT_SELECTION = true
-local NOT_CLEAR_HIGHLIGHT_SELECTION = false
-
 function ReaderHighlight:init()
     self.select_mode = false -- extended highlighting
     self._start_indicator_highlight = false
@@ -58,7 +55,7 @@ function ReaderHighlight:init()
     if Device:hasDPad() then
         -- Used for text selection with dpad/keys
         local QUICK_INDICTOR_MOVE = true
-        self.key_events.StopHighlightIndicator = { {Device.input.group.Back}, doc = "Stop non-touch highlight", args = CLEAR_HIGHLIGHT_SELECTION }
+        self.key_events.StopHighlightIndicator = { {Device.input.group.Back}, doc = "Stop non-touch highlight", args = true } -- true: clear highlight selection
         self.key_events.UpHighlightIndicator = { {"Up"}, doc = "move indicator up", event = "MoveHighlightIndicator", args = {0, -1} }
         self.key_events.DownHighlightIndicator = { {"Down"}, doc = "move indicator down", event = "MoveHighlightIndicator", args = {0, 1} }
         -- let FewKeys device can move indicator left
@@ -398,6 +395,32 @@ function ReaderHighlight:addToMainMenu(menu_items)
     menu_items.long_press = {
         text = _("Long-press on text"),
         sub_item_table = {
+            {
+                text = _("Highlight Long-press interval"),
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local items = SpinWidget:new{
+                        title_text = _("Highlight Long-press interval"),
+                        info_text = _([[
+If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will not be triggered.
+
+The interval value is in seconds and can range from 3 seconds to 20 seconds.]]),
+                        width = math.floor(Screen:getWidth() * 0.75),
+                        value = G_reader_settings:readSetting("highlight_long_hold_threshold", 3),
+                        value_min = 3,
+                        value_max = 20,
+                        value_step = 1,
+                        value_hold_step = 5,
+                        ok_text = _("Set interval"),
+                        default_value = 3,
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("highlight_long_hold_threshold", spin.value)
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+            },
             {
                 text = _("Dictionary on single word selection"),
                 checked_func = function()
@@ -942,7 +965,7 @@ function ReaderHighlight:onHold(arg, ges)
             fullscreen = true,
         }
         UIManager:show(imgviewer)
-        self:onStopHighlightIndicator(NOT_CLEAR_HIGHLIGHT_SELECTION)
+        self:onStopHighlightIndicator()
         return true
     end
 
@@ -1865,11 +1888,11 @@ function ReaderHighlight:onHighlightPress()
                     UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
                 end
             else
-                self:onStopHighlightIndicator(CLEAR_HIGHLIGHT_SELECTION)
+                self:onStopHighlightIndicator(true) -- need_clear_selection=true
             end
         else
             self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
-            self:onStopHighlightIndicator(NOT_CLEAR_HIGHLIGHT_SELECTION)
+            self:onStopHighlightIndicator()
         end
         return true
     end
