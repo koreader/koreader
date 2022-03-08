@@ -32,7 +32,7 @@ function BasePowerD:new(o)
     --- @note: Post-init, as the min/max values may be computed at runtime on some platforms
     assert(o.fl_warmth_min < o.fl_warmth_max)
     -- For historical reasons, the PowerD API always expects warmth to be in the [0...100] range...
-    self.warmth_scale = 100 / self.fl_warmth_max
+    self.warmth_scale = 100 / o.fl_warmth_max
     --- @note: Some platforms cannot actually read fl/warmth level from the HW,
     --         in which case the implementation should just return self.fl_warmth (c.f., kobo).
     if o.device and o.device:hasNaturalLight() then
