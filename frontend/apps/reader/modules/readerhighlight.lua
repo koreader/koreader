@@ -46,8 +46,8 @@ local function cleanupSelectedText(text)
     return text
 end
 
-local CLEAR_HIGHLIGHT_SELECTION = { true }
-local NOT_CLEAR_HIGHLIGHT_SELECTION = { false }
+local CLEAR_HIGHLIGHT_SELECTION = true
+local NOT_CLEAR_HIGHLIGHT_SELECTION = false
 
 function ReaderHighlight:init()
     self.select_mode = false -- extended highlighting
@@ -55,19 +55,24 @@ function ReaderHighlight:init()
     self._current_indicator_pos = nil
     self._previous_indicator_pos = nil
 
-    local QUICK_INDICTOR_MOVE = true
-    self.key_events.StartHighlightIndicator = { {"H"}, doc = "start non-touch highlight" }
-    self.key_events.StopHighlightIndicator = { {Device.input.group.Back}, doc = "Stop non-touch highlight", args = CLEAR_HIGHLIGHT_SELECTION }
-    self.key_events.UpHighlightIndicator = { {"Up"}, doc = "move indicator up", event = "MoveHighlightIndicator", args = {0, -1} }
-    self.key_events.DownHighlightIndicator = { {"Down"}, doc = "move indicator down", event = "MoveHighlightIndicator", args = {0, 1} }
-    -- let FewKeys device can move indicator left
-    self.key_events.LeftHighlightIndicator = { {"Left"}, doc = "move indicator left", event = "MoveHighlightIndicator", args = {-1, 0} }
-    self.key_events.RightHighlightIndicator = { {"Right"}, doc = "move indicator right", event = "MoveHighlightIndicator", args = {1, 0} }
-    self.key_events.QuicklyUpHighlightIndicator = { {"Shift", "Up"}, doc = "quick move indicator up", event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICTOR_MOVE} }
-    self.key_events.QuicklyDownHighlightIndicator = { {"Shift", "Down"}, doc = "quick move indicator down", event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICTOR_MOVE} }
-    self.key_events.QuicklyLeftHighlightIndicator = { {"Shift", "Left"}, doc = "quick move indicator left", event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICTOR_MOVE} }
-    self.key_events.QuicklyRightHighlightIndicator = { {"Shift", "Right"}, doc = "quick move indicator right", event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICTOR_MOVE} }
-    self.key_events.HighlightPress = { {"Press"}, doc = "highlight start or end" }
+    if Device:hasDPad() then
+        -- Used for text selection with dpad/keys
+        local QUICK_INDICTOR_MOVE = true
+        self.key_events.StopHighlightIndicator = { {Device.input.group.Back}, doc = "Stop non-touch highlight", args = CLEAR_HIGHLIGHT_SELECTION }
+        self.key_events.UpHighlightIndicator = { {"Up"}, doc = "move indicator up", event = "MoveHighlightIndicator", args = {0, -1} }
+        self.key_events.DownHighlightIndicator = { {"Down"}, doc = "move indicator down", event = "MoveHighlightIndicator", args = {0, 1} }
+        -- let FewKeys device can move indicator left
+        self.key_events.LeftHighlightIndicator = { {"Left"}, doc = "move indicator left", event = "MoveHighlightIndicator", args = {-1, 0} }
+        self.key_events.RightHighlightIndicator = { {"Right"}, doc = "move indicator right", event = "MoveHighlightIndicator", args = {1, 0} }
+        self.key_events.HighlightPress = { {"Press"}, doc = "highlight start or end" }
+        if Device:hasKeys() then
+            self.key_events.QuicklyUpHighlightIndicator = { {"Shift", "Up"}, doc = "quick move indicator up", event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuicklyDownHighlightIndicator = { {"Shift", "Down"}, doc = "quick move indicator down", event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuicklyLeftHighlightIndicator = { {"Shift", "Left"}, doc = "quick move indicator left", event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuicklyRightHighlightIndicator = { {"Shift", "Right"}, doc = "quick move indicator right", event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.StartHighlightIndicator = { {"H"}, doc = "start non-touch highlight" }
+        end
+    end
 
     self._highlight_buttons = {
         -- highlight and add_note are for the document itself,
@@ -1395,13 +1400,11 @@ function ReaderHighlight:onHoldRelease()
 
     local long_final_hold = false
     if self.hold_last_tv then
-        -- do not turn on long hold timeout detection for non-touch device
-        if Device:isTouchDevice() then
-            local hold_duration = TimeVal:now() - self.hold_last_tv
-            if hold_duration > TimeVal:new{ sec = 3, usec = 0 } then
-                -- We stayed 3 seconds before release without updating selection
-                long_final_hold = true
-            end
+        local hold_duration = TimeVal:now() - self.hold_last_tv
+        local long_hold_threshold = G_reader_settings:readSetting("highlight_long_hold_threshold", 3)
+        if hold_duration > TimeVal:new{ sec = long_hold_threshold, usec = 0 } then
+            -- We stayed 3 seconds before release without updating selection
+            long_final_hold = true
         end
         self.hold_last_tv = nil
     end
@@ -1843,21 +1846,21 @@ end
 function ReaderHighlight:onHighlightPress()
     if self._current_indicator_pos then
         if not self._start_indicator_highlight then
-            -- try tap on current indicator postion to open existed highlight
+            -- try a tap at current indicator position to open any existing highlight
             if not self:onTap(nil, self:_createHighlightGesture("tap")) then
-                -- start hold if no existed highlight at current indicator position
+                -- no existing highlight at current indicator position: start hold
                 self._start_indicator_highlight = true
                 self:onHold(nil, self:_createHighlightGesture("hold"))
                 if self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes then
                     local pos = self.selected_text.sboxes[1]
-                    -- set hold_pos to start of selected_test to make center selection more stable, not jitted at edge
+                    -- set hold_pos to center of selected_test to make center selection more stable, not jitted at edge
                     self.hold_pos = self.view:screenToPageTransform({
                         x = pos.x + pos.w / 2,
                         y = pos.y + pos.h / 2
                     })
-                    -- move indicator to selected text making succeed same row selection much accurate.
+                    -- move indicator to center selected text making succeed same row selection much accurate.
                     UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
-                    self._current_indicator_pos.x = pos.x + pos.w - self._current_indicator_pos.w
+                    self._current_indicator_pos.x = pos.x + pos.w / 2 - self._current_indicator_pos.w / 2
                     self._current_indicator_pos.y = pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
                     UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
                 end
@@ -1892,8 +1895,7 @@ function ReaderHighlight:onStartHighlightIndicator()
     return false
 end
 
-function ReaderHighlight:onStopHighlightIndicator(args)
-    local need_clear = unpack(args)
+function ReaderHighlight:onStopHighlightIndicator(need_clear_selection)
     if self._current_indicator_pos then
         local rect = self._current_indicator_pos
         self._previous_indicator_pos = rect
@@ -1901,7 +1903,7 @@ function ReaderHighlight:onStopHighlightIndicator(args)
         self._current_indicator_pos = nil
         self.view.highlight.indicator = nil
         UIManager:setDirty(self.dialog, "ui", rect)
-        if need_clear then
+        if need_clear_selection then
             self:clear()
         end
         return true

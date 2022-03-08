@@ -58,7 +58,7 @@ local order = {
         "selection_text", -- if Device:hasDPad()
         "panel_zoom_options",
         "djvu_render_mode",
-        "start_content_selection", -- if Device:hasDPad(), put this the last one to easy to select by press up key
+        "start_content_selection", -- if Device:hasDPad(), put this as last one so it is easy to select with "press" and "up" keys
     },
     setting = {
         -- common settings
