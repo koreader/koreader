@@ -46,7 +46,7 @@ function AndroidPowerD:init()
 end
 
 function AndroidPowerD:setWarmthHW(warmth)
-    android.setScreenWarmth(self:toNativeWarmth(warmth))
+    android.setScreenWarmth(warmth)
 end
 
 function AndroidPowerD:frontlightWarmthHW()
