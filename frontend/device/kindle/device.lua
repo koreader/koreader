@@ -928,12 +928,12 @@ function KindlePaperWhite5:init()
 end
 
 function KindleTouch:exit()
-    Generic.exit(self)
-
     if self:isMTK() then
         -- Disable the so-called "fast" mode
         self.screen:_MTK_ToggleFastMode(false)
     end
+
+    Generic.exit(self)
 
     if self.isSpecialOffers then
         -- Wakey wakey...
