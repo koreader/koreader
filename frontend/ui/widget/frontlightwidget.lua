@@ -22,7 +22,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
-local logger = require("logger")
 local Screen = Device.screen
 
 local FrontLightWidget = FocusManager:new{
@@ -75,8 +74,6 @@ function FrontLightWidget:init()
             self.nl.steps = self.nl.steps + 1
         end
         self.nl.steps = math.min(self.nl.steps, nl_steps)
-
-        logger.dbg("self.nl:", self.nl)
     end
 
     -- Input
@@ -480,7 +477,6 @@ function FrontLightWidget:setBrightness(intensity)
 end
 
 function FrontLightWidget:setWarmth(warmth, update_position)
-    logger.dbg("FrontLightWidget:setWarmth", warmth, update_position)
     if warmth == self.nl.cur then
         return
     end
