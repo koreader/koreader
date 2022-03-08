@@ -667,6 +667,7 @@ function ReaderToc:onShowToc()
             v.index = k
             v.indent = toc_indent * (v.depth-1)
             v.text = self:cleanUpTocTitle(v.title, true)
+            v.bidi_wrap_func = BD.auto
             v.mandatory = v.page
             if has_hidden_flows then
                 local flow = self.ui.document:getPageFlow(v.page)
