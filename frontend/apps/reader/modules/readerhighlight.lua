@@ -405,7 +405,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                         info_text = _([[
 If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will not be triggered.
 
-The interval value is in seconds and can range from 3 seconds to 20 seconds.]]),
+The interval value is in seconds and can range from 3 to 20 seconds.]]),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = G_reader_settings:readSetting("highlight_long_hold_threshold", 3),
                         value_min = 3,
