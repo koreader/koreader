@@ -47,6 +47,7 @@ end
 
 function BasePowerD:init() end
 function BasePowerD:setIntensityHW(intensity) end
+--- @note: Unlike the "public" setWarmth, this one takes a value in the *native* scale!
 function BasePowerD:setWarmthHW(warmth) end
 function BasePowerD:getCapacityHW() return 0 end
 function BasePowerD:getAuxCapacityHW() return 0 end
