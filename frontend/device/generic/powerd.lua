@@ -87,6 +87,9 @@ function BasePowerD:frontlightIntensity()
     assert(self ~= nil)
     if not self.device:hasFrontlight() then return 0 end
     if self:isFrontlightOff() then return 0 end
+    --- @note: We assume that nothing other than us will set the frontlight level,
+    ---        so we only actually query the HW during initialization.
+    ---        (Also, some platforms do not actually have any way of querying the HW).
     return self.fl_intensity
 end
 
@@ -126,6 +129,7 @@ function BasePowerD:frontlightWarmth()
     if not self.device:hasNaturalLight() then
         return 0
     end
+    --- @note: No live query, much like frontlightIntensity
     return self.fl_warmth
 end
 
