@@ -918,6 +918,9 @@ function KindlePaperWhite5:init()
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
     }
 
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
     Kindle.init(self)
 
     self.input.open(self.touch_dev)
@@ -926,6 +929,12 @@ end
 
 function KindleTouch:exit()
     Generic.exit(self)
+
+    if self:isMTK() then
+        -- Disable the so-called "fast" mode
+        self.screen:_MTK_ToggleFastMode(false)
+    end
+
     if self.isSpecialOffers then
         -- Wakey wakey...
         if os.getenv("AWESOME_STOPPED") == "yes" then
