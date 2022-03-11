@@ -327,13 +327,7 @@ function CalibreSearch:find(option)
 
     -- measure time elapsed searching
     local start = TimeVal:now()
-    if option == "find" then
-        local books = self:findBooks(self.search_value)
-        local result = self:bookCatalog(books)
-        self:showresults(result)
-    else
-        self:browse(option, 1)
-    end
+        self:browse(option)
     logger.info(string.format("search done in %.3f milliseconds (%s, %s, %s, %s, %s)",
         TimeVal:getDurationMs(start),
         option == "find" and "books" or option,
@@ -382,27 +376,20 @@ function CalibreSearch:findBooks(query)
 end
 
 -- browse tags or series
-function CalibreSearch:browse(option, run, chosen)
-    if run == 1 then
-        self.search_menu = self.search_menu or Menu:new{
-            width = Screen:getWidth(),
-            height = Screen:getHeight(),
-            paths = {},
-            parent = nil,
-            is_borderless = true,
-            onMenuHold = self.onMenuHold,
-        }
+function CalibreSearch:browse(option)
+    local search_value
+    if self.search_value ~= "" then
+        search_value = self.search_value
+    end
+        
+    local name
+    local menu_entries = {}
 
-        self.search_menu.onReturn = function ()
-            self:browse(option, run, chosen)
-        end
-
-        local menu_entries = {}
-        local search_value
-        if self.search_value ~= "" then
-            search_value = self.search_value
-        end
-        local name, source
+    if option == "find" then
+        name = _("Books")
+        menu_entries = self:bookCatalog(self:findBooks(self.search_value))
+    else
+        local source
         if option == "tags" then
             name = _("Browse by tags")
             source = searchByTag(self.books, search_value, self.case_insensitive)
@@ -414,63 +401,63 @@ function CalibreSearch:browse(option, run, chosen)
             local entry = {}
             entry.text = string.format("%s (%d)", k, v)
             entry.callback = function()
-                self:browse(option, 2, k)
+                self:expandTagOrSeries(option,k)
             end
             table.insert(menu_entries, entry)
         end
-        table.sort(menu_entries, function(v1,v2) return v1.text < v2.text end)
+    end
 
-        -- If browsing after using return button there will be page number in paths table
-        local previous_page = (table.remove(self.search_menu.paths) or 1) * self.search_menu.perpage
-        self.search_menu:switchItemTable(name, menu_entries, previous_page)
-
-        UIManager:show(self.search_menu)
-    else
-        local results
-
-
-        if option == "tags" then
-            results = getBooksByTag(self.books, chosen)
-        elseif option == "series" then
-            results = getBooksBySeries(self.books, chosen)
-        end
-        if results then
-            local catalog = self:bookCatalog(results, option)
-            table.sort(catalog, function(v1,v2) return v1.text < v2.text end)
-
-            -- Inserting current page number into paths in case we use return button
-            table.insert(self.search_menu.paths, self.search_menu.page)
-            self.search_menu:switchItemTable(chosen, catalog)
-
-            UIManager:show(self.search_menu)
+    self.search_menu = self.search_menu or Menu:new{
+        width = Screen:getWidth(),
+        height = Screen:getHeight(),
+        parent = nil,
+        is_borderless = true,
+        onMenuHold = self.onMenuHold,
+    }
+    self.search_menu.paths = {}
+    self.search_menu.onReturn = function ()
+        local path_entry = table.remove(self.search_menu.paths)
+        local page = path_entry.page or 1
+        if #self.search_menu.paths < 1 then
+            -- If nothing is left in paths we switch to original items and title
+            self.search_menu.paths = {}
+            self:switchResults(menu_entries, name, false, page)
         end
     end
 
+    self:switchResults(menu_entries, name)
+    UIManager:show(self.search_menu)
 end
 
--- show search results
-function CalibreSearch:showresults(t, title)
+function CalibreSearch:expandTagOrSeries(option, chosen_item)
+    local results
+
+    if option == "tags" then
+        results = getBooksByTag(self.books, chosen_item)
+    elseif option == "series" then
+        results = getBooksBySeries(self.books, chosen_item)
+    end
+    if results then
+        local catalog = self:bookCatalog(results, option)
+        self:switchResults(catalog, chosen_item, true)
+    end
+end
+
+-- update search results
+function CalibreSearch:switchResults(t, title, is_child, page)
     if not title then
         title = _("Search results")
     end
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-    }
-    self.search_menu = Menu:new{
-        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
-        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
-        show_parent = menu_container,
-        onMenuHold = self.onMenuHold,
-        _manager = self,
-    }
-    table.insert(menu_container, self.search_menu)
-    self.search_menu.close_callback = function()
-        UIManager:close(menu_container)
-    end
 
     table.sort(t, function(v1,v2) return v1.text < v2.text end)
-    self.search_menu:switchItemTable(title, t)
-    UIManager:show(menu_container)
+
+    if is_child then
+        local path_entry = {}
+        path_entry.page = (self.search_menu.perpage or 1) * (self.search_menu.page or 1)
+        table.insert(self.search_menu.paths, path_entry)
+    end
+    
+    self.search_menu:switchItemTable(title, t, page or 1)
 end
 
 -- prompt the user for a library scan
