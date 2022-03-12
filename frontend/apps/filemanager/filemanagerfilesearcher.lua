@@ -15,15 +15,24 @@ local BaseUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local FileSearcher = InputContainer:new{
     dirs = {},
     files = {},
     results = {},
+
+    case_sensitive = false,
+    include_subfolders = true,
+}
+
+local sys_folders = { -- do not search in sys_folders
+    ["/dev"] = true,
+    ["/proc"] = true,
+    ["/sys"] = true,
 }
 
 function FileSearcher:readDir()
-    local FileManager = require("apps/filemanager/filemanager")
     local ReaderUI = require("apps/reader/readerui")
     local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     self.dirs = {self.path}
@@ -33,38 +42,47 @@ function FileSearcher:readDir()
         -- handle each dir
         for __, d in pairs(self.dirs) do
             -- handle files in d
-            for f in lfs.dir(d) do
-                local fullpath = d.."/"..f
-                local attributes = lfs.attributes(fullpath) or {}
-                -- Don't traverse hidden folders if we're not showing them
-                if attributes.mode == "directory" and f ~= "." and f ~= ".."
-                    and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
-                    and FileChooser:show_dir(f)
-                then
-                    table.insert(new_dirs, fullpath)
-                    table.insert(self.files, {
-                        dir = d,
-                        name = f,
-                        text = f.."/",
-                        attr = attributes,
-                        callback = function()
-                            FileManager:showFiles(fullpath)
-                        end,
-                    })
-                -- Always ignore macOS resource forks, too.
-                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
-                    and (show_unsupported or DocumentRegistry:hasProvider(fullpath))
-                    and FileChooser:show_file(f)
-                then
-                    table.insert(self.files, {
-                        dir = d,
-                        name = f,
-                        text = f,
-                        attr = attributes,
-                        callback = function()
-                            ReaderUI:showReader(fullpath)
-                        end,
-                    })
+            local ok, iter, dir_obj = pcall(lfs.dir, d)
+            if ok then
+                for f in iter, dir_obj do
+                    local fullpath = "/" .. f
+                    if d ~= "/" then
+                        fullpath = d .. fullpath
+                    end
+                    local attributes = lfs.attributes(fullpath) or {}
+                    -- Don't traverse hidden folders if we're not showing them
+                    if attributes.mode == "directory" and f ~= "." and f ~= ".."
+                        and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
+                        and FileChooser:show_dir(f)
+                    then
+                        if self.include_subfolders and not sys_folders[fullpath] then
+                            table.insert(new_dirs, fullpath)
+                        end
+                        table.insert(self.files, {
+                            dir = d,
+                            name = f,
+                            text = f.."/",
+                            attr = attributes,
+                            callback = function()
+                                self:showFolder(fullpath .. "/")
+                            end,
+                        })
+                    -- Always ignore macOS resource forks, too.
+                    elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
+                        and (show_unsupported or DocumentRegistry:hasProvider(fullpath))
+                        and FileChooser:show_file(f)
+                    then
+                        table.insert(self.files, {
+                            dir = d,
+                            name = f,
+                            text = f,
+                            mandatory = util.getFriendlySize(attributes.size or 0),
+                            attr = attributes,
+                            callback = function()
+                                ReaderUI:showReader(fullpath)
+                            end,
+                        })
+                    end
                 end
             end
         end
@@ -163,6 +181,15 @@ function FileSearcher:onShowFileSearch(search_string)
         end,
     }
     self.search_dialog:addWidget(self.check_button_case)
+    self.check_button_subfolders = CheckButton:new{
+        text = _("Include subfolders"),
+        checked = self.include_subfolders,
+        parent = self.search_dialog,
+        callback = function()
+            self.include_subfolders = self.check_button_subfolders.checked
+        end,
+    }
+    self.search_dialog:addWidget(self.check_button_subfolders)
 
     UIManager:show(self.search_dialog)
     self.search_dialog:onShowKeyboard()
@@ -189,15 +216,14 @@ function FileSearcher:showSearchResults()
     local sorting = FileChooser:getSortingFunction(collate, reverse_collate)
 
     table.sort(self.results, sorting)
-    self.search_menu:switchItemTable(_("Search results"), self.results)
+    self.search_menu:switchItemTable(T(_("Search results (%1)"), #self.results), self.results)
     UIManager:show(menu_container)
 end
 
 function FileSearcher:onMenuHold(item)
-    local FileManager = require("apps/filemanager/filemanager")
     local ReaderUI = require("apps/reader/readerui")
-    local fullpath = item.dir .. "/" .. item.name
     local is_file = item.attr.mode == "file"
+    local fullpath = item.dir .. "/" .. item.name .. (is_file and "" or "/")
     local buttons = {
         {
             {
@@ -211,13 +237,7 @@ function FileSearcher:onMenuHold(item)
                 callback = function()
                     UIManager:close(self.results_dialog)
                     self.close_callback()
-                    local focused_path = is_file and item.dir or fullpath
-                    local focused_file = is_file and fullpath or nil
-                    if FileManager.instance then
-                        FileManager.instance:reinit(focused_path, focused_file)
-                    else
-                        FileManager:showFiles(focused_path, focused_file)
-                    end
+                    self._manager:showFolder(fullpath)
                 end,
             },
         },
@@ -234,11 +254,21 @@ function FileSearcher:onMenuHold(item)
     end
 
     self.results_dialog = ButtonDialogTitle:new{
-        title = is_file and fullpath or fullpath .. "/",
+        title = fullpath,
         buttons = buttons,
     }
     UIManager:show(self.results_dialog)
     return true
+end
+
+function FileSearcher:showFolder(path)
+    if self.ui.file_chooser then
+        local pathname = util.splitFilePathName(path)
+        self.ui.file_chooser:changeToPath(pathname, path)
+    else -- called from Reader
+        self.ui:onClose()
+        self.ui:showFileManager(path)
+    end
 end
 
 return FileSearcher
