@@ -23,7 +23,6 @@ local OpenWithDialog = InputDialog:extend{}
 function OpenWithDialog:init()
     -- init title and buttons in base class
     InputDialog.init(self)
-
     self.element_width = math.floor(self.width * 0.9)
 
     self.radio_button_table = RadioButtonTable:new{
@@ -42,6 +41,7 @@ function OpenWithDialog:init()
             end
         end
     }
+    self.layout = {self.layout[#self.layout]} -- keep bottom buttons
     self:mergeLayoutInVertical(self.radio_button_table, #self.layout) -- before bottom buttons
     self._input_widget = self.radio_button_table
 
@@ -86,13 +86,11 @@ function OpenWithDialog:init()
         text = _("Always use this engine for this file"),
         parent = self,
     }
-    table.insert(self.layout, #self.layout, {self._check_file_button}) -- before bottom buttons
     self:addWidget(self._check_file_button)
     self._check_global_button = self._check_global_button or CheckButton:new{
         text = _("Always use this engine for file type"),
         parent = self,
     }
-    table.insert(self.layout, #self.layout, {self._check_global_button}) -- before bottom buttons
     self:addWidget(self._check_global_button)
 
     self.dialog_frame = FrameContainer:new{
