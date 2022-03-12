@@ -815,7 +815,7 @@ function ReaderToc:onShowToc()
     function toc_menu:onMenuHold(item)
         if not Device:isTouchDevice() and (item.state and item.state.callback) then
             -- non touch to expand toc
-            item.state.callback()
+            item.state.callback(item.index)
         else
             -- Match the items' width
             local infomessage = InfoMessage:new{
