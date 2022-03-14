@@ -22,6 +22,7 @@ normally be found in the KOReader directory:
 * `koreader/` directory for Kindle
 * `.adds/koreader/` directory for Kobo
 * `applications/koreader/` directory for Pocketbook
+* `/opt/koreader/` directory for reMarkable
 
 
 Android logs are kept in memory. Please go to Help → Bug Report to save these logs to a file.
