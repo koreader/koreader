@@ -1,5 +1,6 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local TimeVal = require("ui/timeval")
+local PluginShare = require("pluginshare")
 local logger = require("logger")
 local ffi = require("ffi")
 local C = ffi.C
@@ -139,6 +140,9 @@ function Remarkable:init()
     local rotation_mode = self.screen.ORIENTATION_PORTRAIT
     self.screen.native_rotation_mode = rotation_mode
     self.screen.cur_rotation_mode = rotation_mode
+    
+    -- Disable autosuspend on this device
+    PluginShare.pause_auto_suspend = true
 
     Generic.init(self)
 end
