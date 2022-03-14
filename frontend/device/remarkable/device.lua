@@ -113,12 +113,30 @@ end
 
 
 function Remarkable:init()
+    -- Check if we were launched from Oxide launcher
+    -- FIXME this could be changed to check parent process of KOReader instead
+    local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
+    logger.info(string.format("Oxide running?: %s", oxide_running))
+
+    -- experiment
+    -- logger.info("PPID:")
+    -- local parent_process = os.execute("echo $PPID")
+    -- os.execute("ps | grep $PPID")
+    -- logger.info(string.format("parent proccess is oxide?: %s", parent_process_is_oxide))
+
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/remarkable/powerd"):new{
         device = self,
         capacity_file = self.battery_path,
         status_file = self.status_path,
     }
+
+    event_map = require("device/remarkable/event_map")
+    -- If we were launched from Oxide, remove Power from the event map
+    if oxide_running then
+        event_map[116] = "noop"
+    end
+
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/remarkable/event_map"),
@@ -140,9 +158,11 @@ function Remarkable:init()
     local rotation_mode = self.screen.ORIENTATION_PORTRAIT
     self.screen.native_rotation_mode = rotation_mode
     self.screen.cur_rotation_mode = rotation_mode
-    
-    -- Disable autosuspend on this device
-    PluginShare.pause_auto_suspend = true
+
+    if oxide_running then
+        -- Disable autosuspend on this device
+        PluginShare.pause_auto_suspend = true
+    end
 
     Generic.init(self)
 end
@@ -216,3 +236,4 @@ if isRm2 then
 else
     return Remarkable1
 end
+
