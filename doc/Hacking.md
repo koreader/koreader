@@ -13,7 +13,7 @@ logger.dbg("table a: ", a)
 
 Anything printed by `logger.dbg` starts with `DEBUG`.
 
-Logs outputs are saved in to `crash.log` in the `koreader` directory.
+On most target platforms, log output is saved to `crash.log` in the `koreader` directory.
 
 ```
 04/06/17-21:44:53 DEBUG foo
