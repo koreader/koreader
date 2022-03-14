@@ -267,6 +267,10 @@ function ReaderUserHyph:modifyUserEntry(word)
 
     local suggested_hyphenation = cre.getHyphenationForWord(word)
 
+    -- word may have some strange punctuation marks (as the upper dot),
+    -- so we use crengine to trimm that.
+    word = suggested_hyphenation:gsub("-","")
+
     local input_dialog
     input_dialog = InputDialog:new{
         title = T(_("Hyphenate: %1"), word),
