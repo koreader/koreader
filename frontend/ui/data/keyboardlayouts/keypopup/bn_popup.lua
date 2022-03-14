@@ -36,21 +36,26 @@ return {
     },
     pco = { -- period + colon
         ".",
-        north = ":",
-        alt_label = ":",
+        north = {
+            key = "‍",
+            label = "ZWJ",
+        },
+        alt_label = "ZWJ",
         northeast = "'",
         northwest = "=",
         east = "!",
         west = "?",
         south = "|",
-        southeast = "\\",
+        southeast = ":",
         southwest = "/",
+        "\\",
         '^',
         "&",
         "$",
     },
     cop = { -- colon + period
-        ":",
+        "‍",
+        label = "ZWJ",
         north = ".",
         alt_label = ".",
         northeast = "'",
@@ -58,8 +63,9 @@ return {
         east = "!",
         west = "?",
         south = "|",
-        southeast = "\\",
+        southeast = ":",
         southwest = "/",
+        "\\",
         '^',
         "&",
         "$",
@@ -432,16 +438,14 @@ return {
         "্",
         north = "?",
         alt_label = "?",
-        south = "‍"
+
     },
     question2 = {
         "?",
         north = "্",
         alt_label = "্",
-        south = "‍"
+
     },
-
-
   -- _1_ and _1p: numeric key 1 and its popup sibling (they have north swipe ups of each other, the rest is the same)
   -- _1n and _1s: numpad key 1 (layer 2), -- superscript key 1 (layer 2, shifted)
   _1_ = { "১", north = "!", alt_label = "!", northeast = "¡", south = "'", southeast = "¿", east = "?", },

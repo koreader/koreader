@@ -135,7 +135,7 @@ local bar = bn_popup.bar
 local prm = bn_popup.prm
 local hsh = bn_popup.hsh
 local hs2 = bn_popup.hs2
-
+local zwj = bn_popup.zwj
 
 
 return {
@@ -198,9 +198,9 @@ return {
             { _bha_, _ba_, _0s, _0n, width = 0.81},
             { _Na_, _na_, "↑", "↑", width = 0.81},
             { _uma_, _ma_, "↓", "↓", width = 0.81},
-            { _rwi_kaar_, com2, "", "", width = 0.81},
-            { _chandrabindu_, daari, "", "", width = 0.81},
-            { question2, hashanto, "", "", width = 0.81},
+            { _rwi_kaar_, com2, "়", "ৄ", width = 0.81},
+            { _chandrabindu_, daari, "ৠ", "ৡ", width = 0.81},
+            { question2, hashanto, "ৰ", "ৱ", width = 0.81},
             { label = "", width = 0.81 }, -- Backspace
         },
         -- Fifth row
