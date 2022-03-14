@@ -377,6 +377,12 @@ function AutoSuspend:addToMainMenu(menu_items)
         }
     end
     if Device:canStandby() then
+        local standby_help = _([[Standby puts the device into a power-saving state in which the screen is on and user input can be performed.
+
+Standby can not be entered if Wi-Fi is on.
+
+Upon user input, the device needs a certain amount of time to wake up. With some devices this period of time is not noticeable, with other devices it can be annoying.]])
+
         menu_items.autostandby = {
             sorting_hint = "device",
             checked_func = function()
@@ -391,6 +397,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                     return _("Autostandby timeout")
                 end
             end,
+            help_text = standby_help,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 -- 5 sec is the minimum and 60*60 sec (15min) is the maximum standby time.
@@ -416,6 +423,13 @@ function AutoSuspend:onAllowStandby()
 
     -- Don't enter standby if wifi is on, as this my break reconnecting (at least on Kobo-Sage)
     if NetworkMgr:isWifiOn() then
+        logger.dbg("AutoSuspend: WiFi is on, no standby")
+        return
+    end
+
+    -- Don't enter standby if device is charging and it is a non sunxi kobo
+    if Device:isKobo() and not Device:isSunxi() and Device.powerd:isCharging() then
+        logger.dbg("AutoSuspend: charging, no standby")
         return
     end
 
@@ -444,7 +458,6 @@ function AutoSuspend:onAllowStandby()
             self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked
             self:_schedule()   -- reschedule suspend and shutdown with the new time
         end
-
         self:_reschedule_standby()
     end
 end

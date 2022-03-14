@@ -433,7 +433,7 @@ function Device:saveSettings() end
 function Device:simulateSuspend() end
 function Device:simulateResume() end
 
--- put device into standby, touchscreen is enabled
+-- Put device into standby, input devices (buttons, touchscreen ...) stay enabled
 function Device:standby(max_duration) end
 
 --[[--
