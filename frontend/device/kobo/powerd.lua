@@ -106,7 +106,11 @@ function KoboPowerD:init()
         end
 
         self.isAuxBatteryConnectedHW = function(this)
-            return this:read_int_file(this.aux_batt_connected_file) == 1
+            -- aux_batt_connected_file shows us:
+            -- 0 if power cover is not connected
+            -- 1 if the power cover is connected
+            -- 1 or sometimes -1 if the power cover is connected without a charger
+            return this:read_int_file(this.aux_batt_connected_file) ~= 0
         end
 
         self.isAuxChargingHW = function(this)
