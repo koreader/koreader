@@ -111,31 +111,38 @@ return {
     _da_ = {
         "দ",
         north = "ধ",
+        alt_label = "ধ",
     },
     _dha_ = {
         "ধ",
-        north = "দ"
+        north = "দ",
+        alt_label = "দ",
     },
     _U_kaar_ = {
         "ূ",
         north = "ঊ",
+        alt_label = "ঊ",
     },
     _U_ = {
         "ঊ",
         north = "ূ",
+        alt_label = "ূ",
     },
     _I_kaar_ = {
         "ী",
         north = "ঈ",
+        alt_label = "ঈ",
     },
     _I_ = {
         "ঈ",
         north = "ী",
+        alt_label = "ী",
 
     },
     _ra_ = {
         "র",
         north = "ড়",
+        alt_label = "ড়",
         northeast = "Ð",
         northwest = "Ď",
         east = "$", -- Dollar currency
@@ -146,236 +153,291 @@ return {
     _rda_ = {
         "ড়",
         north = "র",
+        alt_label = "র",
     },
     _Ta_ = {
         "ট",
         north = "ঠ",
+        alt_label = "ঠ",
     },
     _Tha_ = {
         "ঠ",
         north = "ট",
+        alt_label = "ট",
     },
     _e_ = {
         "এ",
         north = "ঐ",
+        alt_label = "ঐ",
     },
     _oi_ = {
         "ঐ",
         north = "এ",
+        alt_label = "এ",
     },
     _u_kaar_ = {
         "ু",
         north = "উ",
+        alt_label = "উ",
     },
     _u_ = {
         "উ",
         north = "ু",
+        alt_label = "ু",
     },
     _i_kaar_ = {
         "ি",
         north = "ই",
+        alt_label = "ই",
     },
     _i_ = {
         "ই",
         north = "ি",
+        alt_label = "ি",
     },
     _o_ = {
         "ও",
         north = "ঔ",
+        alt_label = "ঔ",
 
     },
     _ou_ = {
         "ঔ",
         north = "ও",
+        alt_label = "ও",
 
     },
     _pa_ = {
         "প",
         north = "ফ",
+        alt_label = "ফ",
     },
     _pha_ = {
         "ফ",
         north = "প",
+        alt_label = "প",
     },
     _e_kaar_ = {
         "ে",
         north = "ৈ",
+        alt_label = "ৈ",
     },
     _oi_kaar_ = {
         "ৈ",
         north = "ে",
+        alt_label = "ে",
     },
     _o_kaar_ = {
         "ো",
         north = "ৌ",
+        alt_label = "ৌ",
     },
-    _ou__kar_ = {
+    _ou_kaar_ = {
         "ৌ",
         north = "ো",
+        alt_label = "ো",
     },
-    _aa__kaar_ = {
+    _aa_kaar_ = {
         "া",
         north = "অ",
+        alt_label = "অ",
     },
     _a_ = {
         "অ",
         north = "া",
+        alt_label = "া",
     },
     _sa_ = {
         "স",
         north = "ষ",
+        alt_label = "ষ",
 
     },
     _sHa_ = {
         "ষ",
         north = "স",
+        alt_label = "স",
 
     },
     _Da_ = {
         "ড",
         north = "ঢ",
+        alt_label = "ঢ",
     },
     _Dha_ = {
         "ঢ",
         north = "ড",
+        alt_label = "ড",
     },
     _ta_ = {
         "ত",
         north = "থ",
+        alt_label = "থ",
     },
     _tha_ = {
         "থ",
         north = "ত",
+        alt_label = "ত",
     },
     _ga_ = {
         "গ",
         north = "ঘ",
+        alt_label = "ঘ",
     },
     _gha_ = {
         "ঘ",
         north = "গ",
+        alt_label = "গ",
     },
     _ha_ = {
         "হ",
         north = "ঃ",
+        alt_label = "ঃ",
     },
     _bisarga_ = {
         "ঃ",
         north = "হ",
+        alt_label = "হ",
     },
     _ja_ = {
         "জ",
         north = "ঝ",
+        alt_label = "ঝ",
     },
     _jha_ = {
         "ঝ",
         north = "জ",
+        alt_label = "জ",
     },
     _ka_ = {
         "ক",
         north = "খ",
+        alt_label = "খ",
 
     },
     _kha_ = {
         "খ",
         north = "ক",
+        alt_label = "ক",
     },
     _la_ = {
         "ল",
         north = "ং",
+        alt_label = "ং",
     },
     _anuswara_ = {
         "ং",
         north = "ল",
+        alt_label = "ল",
 
     },
     _jya_ = {
         "য",
         north = "য়",
+        alt_label = "য়",
 
     },
     _ya_ = {
         "য়",
         north = "য",
+        alt_label = "য",
 
     },
     _sha_ = {
         "শ",
         north = "ঢ়",
+        alt_label = "ঢ়",
 
     },
     _Rha_ = {
         "ঢ়",
         north = "শ",
+        alt_label = "শ",
     },
     _cha_ = {
         "চ",
         north = "ছ",
+        alt_label = "ছ",
     },
     _Cha_ = {
         "ছ",
         north = "চ",
+        alt_label = "চ",
     },
     _aa_ = {
         "আ",
         north = "ঋ",
+        alt_label = "ঋ",
     },
     _rwi_ = {
         "ঋ",
         north = "আ",
+        alt_label = "আ",
     },
     _ba_ = {
         "ব",
         north = "ভ",
+        alt_label = "ভ",
     },
     _bha_ = {
         "ভ",
         north = "ব",
+        alt_label = "ব",
     },
     _na_ = {
         "ন",
         north = "ণ",
+        alt_label = "ণ",
 
     },
     _Na_ = {
         "ণ",
         north = "ন",
+        alt_label = "ন",
     },
     _ma_ = {
         "ম",
         north = "ঙ",
+        alt_label = "ঙ",
 
     },
     _uma_ = {
         "ঙ",
         north = "ম",
+        alt_label = "ম",
 
     },
-    _rwi_kar_ = {
+    _rwi_kaar_ = {
         "ৃ",
-        north = ","
+        north = ",",
+        alt_label = ","
     },
     _chandrabindu_ = {
         "ঁ",
         north = "।",
+        alt_label = "।",
     },
     --  Bengali Pancuations
     com2 = {
         ",",
         north = "ৃ",
+        alt_label = "ৃ",
     },
     daari = {
         "।",
         north = "ঁ",
+        alt_label = "ঁ",
     },
     hashanto = {
         "্",
         north = "?",
+        alt_label = "?",
         south = "‍"
     },
     question2 = {
         "?",
         north = "্",
+        alt_label = "্",
         south = "‍"
     },
 

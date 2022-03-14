@@ -4,7 +4,7 @@ local cop = bn_popup.cop
 local cse = bn_popup.cse
 local sec = bn_popup.sec
 local quo = bn_popup.quo
--- English letters
+-- Bengali letters
 local _da_ = bn_popup._da_
 local _dha_ = bn_popup._dha_
 local _U_kaar_ = bn_popup._U_kaar_
@@ -161,53 +161,54 @@ return {
         },
         -- Second row
         { --   R    r    S    s
-            { _da_, _dha_, dif, "?", },
-            { _U_kaar_, _U_, int, "¿", },
-            { _I_kaar_, _I_, mth, "~", },
-            { _ra_, _rda_, mt2, "\\", },
-            { _Ta_, _Tha_, df2, bar, },
-            { _e_, _oi_, sl2, sla, },
-            { _u_kaar_, _u_, _4s, _4n, },
-            { _i_kaar_, _i_, _5s, _5n, },
-            { _o_, _ou_, _6s, _6n, },
-            { _pa_, _pha_, pl2, pls, },
-            {_e_kaar_, _oi_kaar_, "[", "{"},
-            {_o_kaar_, _ou_kaar_, "]", "}"},
+            { _dha_, _da_, dif, "?",  width = 0.83},
+            { _U_, _U_kaar_, int, "¿", width = 0.83},
+            { _I_, _I_kaar_, mth, "~", width = 0.83},
+            { _rda_, _ra_, mt2, "\\", width = 0.83},
+            { _Tha_, _Ta_, df2, bar, width = 0.83},
+            { _oi_, _e_, sl2, sla, width = 0.83},
+            { _u_, _u_kaar_, _4s, _4n, width = 0.83},
+            { _i_, _i_kaar_, _5s, _5n, width = 0.83},
+            { _ou_, _o_, _6s, _6n, width = 0.83},
+            { _pha_, _pa_, pl2, pls, width = 0.83},
+            { _oi_kaar_, _e_kaar_, "[", "{", width = 0.83},
+            { _ou_kaar_, _o_kaar_, "]", "}", width = 0.83},
         },
+
         -- Third row
         { --   R    r    S    s
-            { _aa_kaar_, _a_, ls2, ls1, },
-            { _sa_, _sHa_, mr2, mr1, },
-            { _Da_, _Dha_, dgr, "(", },
-            { _ta_, _tha_, tpg, ")", },
-            { _ga_, _gha_, hs2, hsh, },
-            { _ha_, _bisarga_, pd2, pdc, },
-            { _ja_, _jha_, _1s, _1n, },
-            { _ka_, _kha_, _2s, _2n, },
-            { _l_, _anuswara_, _3s, _3n, },
+            { _a_, _aa_kaar_, ls2, ls1, },
+            { _sHa_, _sa_, mr2, mr1, },
+            { _Dha_, _Da_, dgr, "(", },
+            { _tha_, _ta_, tpg, ")", },
+            { _gha_, _ga_, hs2, hsh, },
+            { _bisarga_, _ha_, pd2, pdc, },
+            { _jha_, _ja_, _1s, _1n, },
+            { _kha_, _ka_, _2s, _2n, },
+            { _anuswara_, _la_, _3s, _3n, },
             { sec, cse, sec, cse, }, -- comma/semicolon with CSS popup block
         },
         -- Fourth row
         { --   R    r    S    s
-            { label = "", width = 1.5, }, -- Shift
-            { _jya_, _ya_, prm, "{", },
-            { _sha_, _Rha_, "°", "}", },
-            { _cha_, _Cha_, "«", "[", },
-            { _aa_, _rwi_, "»", "]", },
-            { _ba_, _bha_, _0s, _0n, },
-            { _na_, _Na_, "↑", "↑", },
-            { _ma_, _uma_, "↓", "↓", },
-            { com2, _rwi_kaar_, "", ""},
-            { daari, _chandrabindu_, "", ""},
-            { hashanto, question2, "", ""},
-            { label = "", width = 1.5, }, -- Backspace
+            { label = "", width = 0.81 }, -- Shift
+            { _ya_, _jya_, prm, "{", width = 0.81},
+            { _Rha_, _sha_, "°", "}", width = 0.81},
+            { _Cha_, _cha_, "«", "[", width = 0.81},
+            { _rwi_, _aa_, "»", "]", width = 0.81},
+            { _bha_, _ba_, _0s, _0n, width = 0.81},
+            { _Na_, _na_, "↑", "↑", width = 0.81},
+            { _uma_, _ma_, "↓", "↓", width = 0.81},
+            { _rwi_kaar_, com2, "", "", width = 0.81},
+            { _chandrabindu_, daari, "", "", width = 0.81},
+            { question2, hashanto, "", "", width = 0.81},
+            { label = "", width = 0.81 }, -- Backspace
         },
         -- Fifth row
         { --   R    r    S    s
             { label = "⌥", width = 1.5, bold = true, alt_label = "SYM"}, -- SYM key
             { label = "🌐", }, -- Globe key
             { cop, pco, cop, pco, }, -- period/colon with RegEx popup block
-            { label = "Bengali", " ", " ", " ", " ", width = 3.0, }, -- Spacebar
+            { label = "বাংলা", " ", " ", " ", " ", width = 3.0, }, -- Spacebar
             { label = "←", }, -- Arrow left
             { label = "→", }, -- Arrow right
             { label = "⮠", "\n","\n","\n","\n", width = 1.5, }, -- Enter
