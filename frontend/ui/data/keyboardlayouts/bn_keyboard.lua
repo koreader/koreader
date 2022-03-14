@@ -161,18 +161,18 @@ return {
         },
         -- Second row
         { --   R    r    S    s
-            { _dha_, _da_, dif, "?",  width = 0.83},
-            { _U_, _U_kaar_, int, "¿", width = 0.83},
-            { _I_, _I_kaar_, mth, "~", width = 0.83},
-            { _rda_, _ra_, mt2, "\\", width = 0.83},
-            { _Tha_, _Ta_, df2, bar, width = 0.83},
-            { _oi_, _e_, sl2, sla, width = 0.83},
-            { _u_, _u_kaar_, _4s, _4n, width = 0.83},
-            { _i_, _i_kaar_, _5s, _5n, width = 0.83},
-            { _ou_, _o_, _6s, _6n, width = 0.83},
-            { _pha_, _pa_, pl2, pls, width = 0.83},
-            { _oi_kaar_, _e_kaar_, "[", "{", width = 0.83},
-            { _ou_kaar_, _o_kaar_, "]", "}", width = 0.83},
+            { _dha_, _da_, dif, "?",  width = 0.833},
+            { _U_, _U_kaar_, int, "¿", width = 0.833},
+            { _I_, _I_kaar_, mth, "~", width = 0.833},
+            { _rda_, _ra_, mt2, "\\", width = 0.833},
+            { _Tha_, _Ta_, df2, bar, width = 0.833},
+            { _oi_, _e_, sl2, sla, width = 0.833},
+            { _u_, _u_kaar_, _4s, _4n, width = 0.833},
+            { _i_, _i_kaar_, _5s, _5n, width = 0.833},
+            { _ou_, _o_, _6s, _6n, width = 0.833},
+            { _pha_, _pa_, pl2, pls, width = 0.833},
+            { _oi_kaar_, _e_kaar_, "[", "{", width = 0.833},
+            { _ou_kaar_, _o_kaar_, "]", "}", width = 0.833},
         },
 
         -- Third row
@@ -190,18 +190,18 @@ return {
         },
         -- Fourth row
         { --   R    r    S    s
-            { label = "", width = 0.81 }, -- Shift
-            { _ya_, _jya_, prm, "{", width = 0.81},
-            { _Rha_, _sha_, "°", "}", width = 0.81},
-            { _Cha_, _cha_, "«", "[", width = 0.81},
-            { _rwi_, _aa_, "»", "]", width = 0.81},
-            { _bha_, _ba_, _0s, _0n, width = 0.81},
-            { _Na_, _na_, "↑", "↑", width = 0.81},
-            { _uma_, _ma_, "↓", "↓", width = 0.81},
-            { _rwi_kaar_, com2, "়", "ৄ", width = 0.81},
-            { _chandrabindu_, daari, "ৠ", "ৡ", width = 0.81},
-            { question2, hashanto, "ৰ", "ৱ", width = 0.81},
-            { label = "", width = 0.81 }, -- Backspace
+            { label = "", width = 0.9 }, -- Shift
+            { _ya_, _jya_, prm, "{", width = 0.82},
+            { _Rha_, _sha_, "°", "}", width = 0.82},
+            { _Cha_, _cha_, "«", "[", width = 0.82},
+            { _rwi_, _aa_, "»", "]", width = 0.82},
+            { _bha_, _ba_, _0s, _0n, width = 0.82},
+            { _Na_, _na_, "↑", "↑", width = 0.82},
+            { _uma_, _ma_, "↓", "↓", width = 0.82},
+            { _rwi_kaar_, com2, "়", "ৄ", width = 0.82},
+            { _chandrabindu_, daari, "ৠ", "ৡ", width = 0.82},
+            { question2, hashanto, "ৰ", "ৱ", width = 0.82},
+            { label = "", width = 0.9 }, -- Backspace
         },
         -- Fifth row
         { --   R    r    S    s
