@@ -196,8 +196,8 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
     self:loadUserDictionary(true) -- dictionary has changed, force a reload here
 end
 
--- This is called when the file is badly sorted (which should only happen if a user has edited
--- the hyphenation file by hand and messed the order).
+-- This is called when the file is badly sorted or has double entries (which should only happen
+-- if a user has edited the hyphenation file by hand).
 function ReaderUserHyph:scrubDictionary()
     logger.dbg("UserHyph: scrubbing and sorting user hyphenation dict")
 
@@ -222,7 +222,22 @@ function ReaderUserHyph:scrubDictionary()
     end
     dict:close()
 
+    if #dict_entries == 1 then
+        return
+    end
+
     table.sort(dict_entries, function(a,b) return Utf8Proc.lowercase(a, NORM) < Utf8Proc.lowercase(b, NORM) end)
+
+    -- remove double entries
+    local later_key = Utf8Proc.lowercase(dict_entries[#dict_entries]:gsub(";.*$",""), NORM)
+    for i = #dict_entries-1, 1, -1 do
+        local former_key = Utf8Proc.lowercase(dict_entries[i]:gsub(";.*$",""), NORM)
+        if later_key == former_key then
+            logger.dbg("UserHyph: remove double entry", dict_entries[i])
+            table.remove(dict_entries, i)
+        end
+        later_key = former_key
+    end
 
     local new_dict_file = dict_file .. ".new"
 
@@ -291,7 +306,7 @@ function ReaderUserHyph:modifyUserEntry(word)
                             UIManager:close(input_dialog)
                         else
                             UIManager:show(InfoMessage:new{
-                                text = T(_("Invalid hyphenation!"), self.dict_file),
+                                text = _("Invalid hyphenation!"),
                             })
                         end
                     end,
