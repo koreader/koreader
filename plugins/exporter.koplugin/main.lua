@@ -619,12 +619,11 @@ function Exporter:exportBooknotesToJSON(title, booknotes)
             exported = booknotes.exported,
             file = booknotes.file
         }
-        logger.dbg(booknotes)
         local i = 1
         while (i ~= nil) do
             local entry = booknotes[i]
             if entry then
-                table.insert(exportable.entries, entry[i])
+                table.insert(exportable.entries, entry[1])
                 i = i + 1
             else
                 i = nil
