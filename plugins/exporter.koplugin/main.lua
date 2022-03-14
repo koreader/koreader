@@ -619,15 +619,8 @@ function Exporter:exportBooknotesToJSON(title, booknotes)
             exported = booknotes.exported,
             file = booknotes.file
         }
-        local i = 1
-        while (i ~= nil) do
-            local entry = booknotes[i]
-            if entry then
-                table.insert(exportable.entries, entry[1])
-                i = i + 1
-            else
-                i = nil
-            end
+        for _, entry in ipairs(booknotes) do
+            table.insert(exportable.entries, entry[1])
         end
         file:write(json.encode(exportable))
         file:write("\n")
