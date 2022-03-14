@@ -619,6 +619,7 @@ function Exporter:exportBooknotesToJSON(title, booknotes)
             exported = booknotes.exported,
             file = booknotes.file
         }
+        logger.dbg(booknotes)
         local i = 1
         while (i ~= nil) do
             local entry = booknotes[i]
