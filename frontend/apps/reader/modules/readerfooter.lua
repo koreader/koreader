@@ -160,7 +160,7 @@ local footerTextGeneratorMap = {
         local prefix = symbol_prefix[symbol_type].frontlight_warmth
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
-            local warmth = powerd:getWarmth()
+            local warmth = powerd:frontlightWarmth()
             if warmth then
                 return (prefix .. " %d%%"):format(warmth)
             end

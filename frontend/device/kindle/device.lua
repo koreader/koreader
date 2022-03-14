@@ -29,31 +29,53 @@ local function kindleEnableWifi(toggle)
     end
 end
 
+-- Check if wifid thinks that the WiFi is enabled
+--[[
 local function isWifiUp()
-    local status
     local haslipc, lipc = pcall(require, "liblipclua")
     local lipc_handle = nil
     if haslipc and lipc then
         lipc_handle = lipc.init("com.github.koreader.networkmgr")
     end
     if lipc_handle then
-        status = lipc_handle:get_int_property("com.lab126.wifid", "enable") or 0
+        local status = lipc_handle:get_int_property("com.lab126.wifid", "enable") or 0
         lipc_handle:close()
+
+        return status == 1
     else
         local std_out = io.popen("lipc-get-prop -i com.lab126.wifid enable", "r")
         if std_out then
-            local result = std_out:read("*all")
+            local result = std_out:read("*number")
             std_out:close()
-            if result then
-                return tonumber(result)
-            else
-                return 0
+
+            if not result then
+                return false
             end
+
+            return result == 1
         else
-            return 0
+            return false
         end
     end
-    return status
+end
+--]]
+
+-- Faster lipc-less variant ;).
+local function isWifiUp()
+    -- Read carrier state from sysfs (so far, all Kindles appear to use wlan0)
+    -- NOTE: We can afford to use CLOEXEC, as devices too old for it don't support Wi-Fi anyway ;).
+    local file = io.open("/sys/class/net/wlan0/carrier", "re")
+
+    -- File only exists while Wi-Fi module is loaded.
+    if not file then
+        return false
+    end
+
+    -- 0 means not connected, 1 connected
+    local out = file:read("*number")
+    file:close()
+
+    return out == 1
 end
 
 --[[
@@ -104,6 +126,7 @@ local Kindle = Generic:new{
     -- NOTE: We can cheat by adding a platform-specific entry here, because the only code that will check for this is here.
     isSpecialOffers = isSpecialOffers(),
     hasOTAUpdates = yes,
+    hasFastWifiStatusQuery = yes,
     -- NOTE: HW inversion is generally safe on mxcfb Kindles
     canHWInvert = yes,
     -- NOTE: Newer devices will turn the frontlight off at 0
@@ -114,6 +137,8 @@ local Kindle = Generic:new{
     -- Rex & Zelda devices sport an updated driver.
     isZelda = no,
     isRex = no,
+    -- So do devices running on a MediaTek SoC
+    isMTK = no,
     -- But of course, some devices don't actually support all the features the kernel exposes...
     isNightModeChallenged = no,
     -- NOTE: While this ought to behave on Zelda/Rex, turns out, nope, it really doesn't work on *any* of 'em :/ (c.f., ko#5884).
@@ -140,9 +165,7 @@ function Kindle:initNetworkManager(NetworkMgr)
         end
     end
 
-    NetworkMgr.isWifiOn = function()
-        return 1 == isWifiUp()
-    end
+    NetworkMgr.isWifiOn = isWifiUp
 end
 
 function Kindle:supportsScreensaver()
@@ -155,23 +178,35 @@ end
 
 function Kindle:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
-    local commands = {}
-    if year and month and day then
-        table.insert(commands, string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec))
-        --Kindle DX
-        --BusyBox v1.7.2 (2011-01-13 18:01:58 PST) multi-call binary
-        --Usage: date [OPTION]... [MMDDhhmm[[CC]YY][.ss]] [+FORMAT]
-        table.insert(commands, string.format("date -s '%02d%02d%02d%02d%04d.%02d'", month, day, hour, min, year, sec))
+
+    local lfs = require("libs/libkoreader-lfs")
+    -- Prefer using the setdate wrapper if possible, as it will poke the native UI, too.
+    if lfs.attributes("/usr/sbin/setdate", "mode") == "file" then
+        local t = os.date("*t") -- Start with now to make sure we have a full table
+        t.year = year or t.year
+        t.month = month or t.month
+        t.day = day or t.day
+        t.hour = hour
+        t.min = min
+        t.sec = sec or t.sec
+        local epoch = os.time(t)
+
+        local command = string.format("/usr/sbin/setdate '%d'", epoch)
+        return os.execute(command) == 0
     else
-        table.insert(commands,string.format("date -s '%d:%d'",hour, min))
-    end
-    for _, command in ipairs(commands) do
+        local command
+        if year and month and day then
+            command = string.format("date -s '%d-%d-%d %d:%d:%d' '+%Y-%m-%d %H:%M:%S'", year, month, day, hour, min, sec)
+        else
+            command = string.format("date -s '%d:%d' '+%H:%M'", hour, min)
+        end
         if os.execute(command) == 0 then
             os.execute("hwclock -u -w")
             return true
+        else
+            return false
         end
     end
-    return false
 end
 
 function Kindle:usbPlugIn()
@@ -266,8 +301,6 @@ end
 
 function Kindle:usbPlugOut()
     -- NOTE: See usbPlugIn(), we don't have anything fancy to do here either.
-
-    --- @todo signal filemanager for file changes  13.06 2012 (houqp)
     self.charging_mode = false
 end
 
@@ -416,6 +449,11 @@ local KindleOasis3 = Kindle:new{
     isZelda = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
+    --- @fixme: Requires a proper KindleOasis3.init, notably with the right warmth_intensity_file entry.
+    --[[
+    hasNaturalLight = yes,
+    hasNaturalLightMixer = yes,
+    --]]
     hasKeys = yes,
     hasGSensor = yes,
     display_dpi = 300,
@@ -449,6 +487,22 @@ local KindleBasic3 = Kindle:new{
     isTouchDevice = yes,
     hasFrontlight = yes,
     touch_dev = "/dev/input/event2",
+}
+
+local KindlePaperWhite5 = Kindle:new{
+    model = "KindlePaperWhite5",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    -- NOTE: We *can* technically control both LEDs independently,
+    --       but the mix is device-specific, we don't have access to the LUT for the mix powerd is using,
+    --       and the widget is designed for the Kobo Aura One anyway, so, hahaha, nope.
+    hasNaturalLightMixer = yes,
+    display_dpi = 300,
+    touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
+    -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
+    canHWDither = no,
 }
 
 function Kindle2:init()
@@ -859,8 +913,33 @@ function KindleBasic3:init()
     self.input.open("fake_events")
 end
 
+function KindlePaperWhite5:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+
+    self.input.open(self.touch_dev)
+    self.input.open("fake_events")
+end
+
 function KindleTouch:exit()
+    if self:isMTK() then
+        -- Disable the so-called "fast" mode
+        self.screen:_MTK_ToggleFastMode(false)
+    end
+
     Generic.exit(self)
+
     if self.isSpecialOffers then
         -- Wakey wakey...
         if os.getenv("AWESOME_STOPPED") == "yes" then
@@ -887,6 +966,7 @@ KindleBasic2.exit = KindleTouch.exit
 KindlePaperWhite4.exit = KindleTouch.exit
 KindleBasic3.exit = KindleTouch.exit
 KindleOasis3.exit = KindleTouch.exit
+KindlePaperWhite5.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -940,9 +1020,10 @@ local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
                   "16Q", "16R", "16S", "16T", "16U", "16V" }
 local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
 local koa3_set = Set { "11L", "0WQ", "0WP", "0WN", "0WM", "0WL" }
+local pw5_set = Set { "1LG", "1Q0", "1PX", "1VD", "219", "21A", "2BH", "2BJ" }
 
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
-    local kindle_devcode = string.sub(kindle_sn,3,4)
+    local kindle_devcode = string.sub(kindle_sn, 3, 4)
 
     if k2_set[kindle_devcode] then
         return Kindle2
@@ -966,7 +1047,7 @@ if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
         return KindleVoyage
     end
 else
-    local kindle_devcode_v2 = string.sub(kindle_sn,4,6)
+    local kindle_devcode_v2 = string.sub(kindle_sn, 4, 6)
 
     if pw3_set[kindle_devcode_v2] then
         return KindlePaperWhite3
@@ -982,6 +1063,8 @@ else
         return KindleBasic3
     elseif koa3_set[kindle_devcode_v2] then
         return KindleOasis3
+    elseif pw5_set[kindle_devcode_v2] then
+        return KindlePaperWhite5
     end
 end
 
