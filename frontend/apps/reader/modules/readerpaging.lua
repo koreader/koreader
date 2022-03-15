@@ -1063,8 +1063,8 @@ function ReaderPaging:_gotoPage(number, orig_mode)
 end
 
 function ReaderPaging:onGotoPage(number, pos)
-    self:_gotoPage(number)
     self:setPagePosition(number, 0)
+    self:_gotoPage(number)
     if pos then
         local rect_p = Geom:new{ x = pos.x or 0, y = pos.y or 0 }
         local rect_s = Geom:new(rect_p):copy()
@@ -1074,7 +1074,8 @@ function ReaderPaging:onGotoPage(number, pos)
         else
             self.view:PanningUpdate(rect_s.x - self.view.visible_area.x, rect_s.y - self.view.visible_area.y)
         end
-    else
+    elseif number == self.current_page then
+        -- gotoPage emits this event only if the page changes
         self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     end
     return true
