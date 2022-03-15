@@ -50,8 +50,8 @@ local CreDocument = Document:new{
     fallback_fonts = {
         "Noto Sans CJK SC",
         "Noto Naskh Arabic",
-        "Noto Sans Devanagari UI",
         "Noto Sans Bengali UI",
+        "Noto Sans Devanagari UI",
         "FreeSans",
         "FreeSerif",
         "Noto Serif",

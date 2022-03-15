@@ -15,8 +15,8 @@ local T = FFIUtil.template
 local hardcoded_fallbacks = {
     "Noto Sans CJK SC",
     "Noto Sans Arabic UI",
-    "Noto Sans Devanagari UI",
     "Noto Sans Bengali UI",
+    "Noto Sans Devanagari UI",
 }
 -- Add any user font after Noto Sans CJK SC in the menu
 local additional_fallback_insert_indice = 2 -- (indice in the above list)
