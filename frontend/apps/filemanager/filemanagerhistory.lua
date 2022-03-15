@@ -10,6 +10,7 @@ local UIManager = require("ui/uimanager")
 local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = FFIUtil.template
 
 local FileManagerHistory = InputContainer:extend{
@@ -17,12 +18,12 @@ local FileManagerHistory = InputContainer:extend{
 }
 
 local status_text = {
-    all = _("All"),
-    reading = _("Reading"),
-    abandoned = _("On hold"),
-    complete = _("Finished"),
-    deleted = _("Deleted"),
-    new = _("New"),
+    all = C_("Book status filter", "All"),
+    reading = C_("Book status filter", "Reading"),
+    abandoned = C_("Book status filter", "On hold"),
+    complete = C_("Book status filter", "Finished"),
+    deleted = C_("Book status filter", "Deleted"),
+    new = C_("Book status filter", "New"),
 }
 
 function FileManagerHistory:init()
