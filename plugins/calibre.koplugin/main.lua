@@ -268,7 +268,7 @@ function Calibre:getWirelessMenuTable()
             enabled_func = isEnabled,
             sub_item_table = {
                 {
-                    text = _("Configuration type", "Automatic"),
+                    text = C_("Configuration type", "Automatic"),
                     checked_func = function()
                         return G_reader_settings:hasNot("calibre_wireless_url")
                     end,
