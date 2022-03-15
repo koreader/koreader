@@ -109,9 +109,10 @@ local Font = {
         [2] = "NotoSansCJKsc-Regular.otf",
         [3] = "NotoSansArabicUI-Regular.ttf",
         [4] = "NotoSansDevanagariUI-Regular.ttf",
-        [5] = "nerdfonts/symbols.ttf",
-        [6] = "freefont/FreeSans.ttf",
-        [7] = "freefont/FreeSerif.ttf",
+        [5] = "NotoSansBengaliUI-Regular.ttf",
+        [6] = "nerdfonts/symbols.ttf",
+        [7] = "freefont/FreeSans.ttf",
+        [8] = "freefont/FreeSerif.ttf",
     },
     -- Additional fallback fonts are managed by frontend/ui/elements/font_ui_fallbacks.lua
     -- Add any after NotoSansCJKsc (because CJKsc has better symbols, and has 'locl' OTF
