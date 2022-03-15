@@ -1063,12 +1063,21 @@ function ReaderPaging:_gotoPage(number, orig_mode)
 end
 
 function ReaderPaging:onGotoPage(number, pos)
+    --- @todo Do we need to check if the page number is valid? Should this be
+    -- done after gotoPage()?
+    if self.view.page_scroll then
+        self:setPagePosition(number, 0)
+    end
     self:_gotoPage(number)
-    if pos and not self.view.page_scroll then
+    if pos then
         local rect_p = Geom:new{ x = pos.x or 0, y = pos.y or 0 }
         local rect_s = Geom:new(rect_p):copy()
         rect_s:transformByScale(self.view.state.zoom)
-        self.view:PanningUpdate(rect_s.x - self.view.visible_area.x, rect_s.y - self.view.visible_area.y)
+        if self.view.page_scroll then
+            self:onScrollPanRel(rect_s.y - self.view.page_area.y)
+        else
+            self.view:PanningUpdate(rect_s.x - self.view.visible_area.x, rect_s.y - self.view.visible_area.y)
+        end
     end
     return true
 end
