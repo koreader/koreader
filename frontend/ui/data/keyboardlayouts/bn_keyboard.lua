@@ -135,8 +135,6 @@ local bar = bn_popup.bar
 local prm = bn_popup.prm
 local hsh = bn_popup.hsh
 local hs2 = bn_popup.hs2
-local zwj = bn_popup.zwj
-
 
 return {
     min_layer = 1,
