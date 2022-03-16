@@ -213,6 +213,10 @@ function AutoSuspend:onResume()
     self:_reschedule_standby()
 end
 
+function AutoSuspend:onLeaveStandby()
+    self:_reschedule_standby()
+end
+
 function AutoSuspend:onUnexpectedWakeupLimit()
     logger.dbg("AutoSuspend: onUnexpectedWakeupLimit")
     -- Only re-engage the *shutdown* schedule to avoid doing the same dance indefinitely.
@@ -413,7 +417,7 @@ Upon user input, the device needs a certain amount of time to wake up. With some
     end
 end
 
--- koreader is merely waiting for user input right now.
+-- KOReader is merely waiting for user input right now.
 -- UI signals us that standby is allowed at this very moment because nothing else goes on in the background.
 function AutoSuspend:onAllowStandby()
     logger.dbg("AutoSuspend: onAllowStandby")
@@ -458,7 +462,8 @@ function AutoSuspend:onAllowStandby()
             self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked
             self:_schedule()   -- reschedule suspend and shutdown with the new time
         end
-        self:_reschedule_standby()
+        -- Don't do a `self:_reschedule_standby()` here, as this will interfere with suspend.
+        -- Better to to it in onLeaveStandby.
     end
 end
 
