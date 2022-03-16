@@ -1875,7 +1875,7 @@ function ReaderHighlight:onHighlightPress()
                 self._start_indicator_highlight = true
                 self:onHold(nil, self:_createHighlightGesture("hold"))
                 -- With crengine, selected_text.sboxes does return good coordinates.
-                if not self.ui.document.info.has_pages and self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes > 0 then
+                if self.ui.rolling and self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes > 0 then
                     local pos = self.selected_text.sboxes[1]
                     -- set hold_pos to center of selected_test to make center selection more stable, not jitted at edge
                     self.hold_pos = self.view:screenToPageTransform({
