@@ -11,6 +11,11 @@ local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+-- if sometime in the future crengine is updated to use normalized utf8 for hypenation
+-- this variable can be set to `true`. (see discussion in : https://github.com/koreader/crengine/pull/466),
+-- and some `if NORM then` branches can be simplified.
+local NORM = false
+
 local ReaderUserHyph = WidgetContainer:new{
     -- return values from setUserHyphenationDict (crengine's UserHyphDict::init())
     USER_DICT_RELOAD = 0,
@@ -28,18 +33,23 @@ end
 -- Load the user dictionary suitable for the actual language
 -- if reload==true, force a reload
 -- Unload is done automatically when a new dictionary is loaded.
-function ReaderUserHyph:loadDictionary(name, reload)
+function ReaderUserHyph:loadDictionary(name, reload, no_scrubbing)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
-        logger.dbg("set user hyphenation dict", name, reload)
+        logger.dbg("set user hyphenation dict", name, reload, no_scrubbing)
         local ret = cre.setUserHyphenationDict(name, reload)
         -- this should only happen, if a user edits a dictionary by hand or the user messed
         -- with the dictionary file by hand. -> Warning and disable.
         if ret == self.USER_DICT_ERROR_NOT_SORTED then
-            UIManager:show(InfoMessage:new{
-                text = T(_("The user dictionary\n%1\nis not alphabetically sorted.\n\nIt has been disabled."), name),
-            })
-            logger.warn("UserHyph: Dictionary " .. name .. " is not sorted alphabetically.")
-            G_reader_settings:makeFalse("hyph_user_dict")
+            if no_scrubbing then
+                UIManager:show(InfoMessage:new{
+                    text = T(_("The user dictionary\n%1\nis not alphabetically sorted.\n\nIt will be disabled now."), name),
+                })
+                logger.warn("UserHyph: Dictionary " .. name .. " is not sorted alphabetically.")
+                G_reader_settings:makeFalse("hyph_user_dict")
+            else
+                self:scrubDictionary()
+                self:loadDictionary(name, reload, true)
+            end
         elseif ret == self.USER_DICT_MALFORMED then
             UIManager:show(InfoMessage:new{
                 text = T(_("The user dictionary\n%1\nhas corrupted entries.\n\nOnly valid entries will be used."), name),
@@ -47,7 +57,7 @@ function ReaderUserHyph:loadDictionary(name, reload)
             logger.warn("UserHyph: Dictionary " .. name .. " has corrupted entries.")
         end
     else
-        logger.dbg("reset user hyphenation dict")
+        logger.dbg("UserHyph: reset user hyphenation dict")
         cre.setUserHyphenationDict("", true) -- clear crengine user hyph dict
     end
 end
@@ -104,13 +114,16 @@ function ReaderUserHyph:checkHyphenation(suggestion, word)
     end
 
     suggestion = suggestion:gsub("-","")
-    if Utf8Proc.lowercase(suggestion) == Utf8Proc.lowercase(word) then
+    if Utf8Proc.lowercase(suggestion, NORM) == Utf8Proc.lowercase(word, NORM) then
         return true -- characters match (case insensitive)
     end
     return false
 end
 
 function ReaderUserHyph:updateDictionary(word, hyphenation)
+    if not word then
+        logger.err("UserHyph: called without arguments")
+    end
     local dict_file = self:getDictionaryPath()
     local new_dict_file = dict_file .. ".new"
 
@@ -120,22 +133,32 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
         return
     end
 
-    local word_lower = Utf8Proc.lowercase(word)
+    if NORM then
+        word = Utf8Proc.normalize_NFC(word)
+    end
+
+    local word_lower = Utf8Proc.lowercase(word, NORM)
     local line
 
     local dict = io.open(dict_file, "r")
     if dict then
         line = dict:read()
+        if NORM then
+            line = line and Utf8Proc.normalize_NFC(line)
+        end
         --search entry
-        while line and Utf8Proc.lowercase(line:sub(1, line:find(";") - 1)) < word_lower do
+        while line and Utf8Proc.lowercase(line:sub(1, line:find(";") - 1), NORM) < word_lower do
             new_dict:write(line .. "\n")
             line = dict:read()
+            if NORM then
+                line = line and Utf8Proc.normalize_NFC(line)
+            end
         end
 
         -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
         if line then
-            local last_word = Utf8Proc.lowercase(line:sub(1, line:find(";") - 1))
-            if last_word == Utf8Proc.lowercase(word) then
+            local last_word = Utf8Proc.lowercase(line:sub(1, line:find(";") - 1), NORM)
+            if last_word == word_lower then
                 line = nil -- word found
             end
         else
@@ -156,6 +179,9 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
     if dict then
         repeat
             line = dict:read()
+            if NORM then
+                line = line and Utf8Proc.normalize_NFC(line)
+            end
             if line then
                 new_dict:write(line .. "\n")
             end
@@ -170,19 +196,87 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
     self:loadUserDictionary(true) -- dictionary has changed, force a reload here
 end
 
+-- This is called when the file is badly sorted or has double entries (which should only happen
+-- if a user has edited the hyphenation file by hand).
+function ReaderUserHyph:scrubDictionary()
+    logger.dbg("UserHyph: scrubbing and sorting user hyphenation dict")
+
+    local dict_file = self:getDictionaryPath()
+    local dict = io.open(dict_file, "r")
+    if not dict then
+        return
+    end
+
+    local dict_entries = {}
+
+    local line = dict:read()
+    if NORM then
+        line = line and Utf8Proc.normalize_NFC(line)
+    end
+    while line do
+        table.insert(dict_entries, line)
+        line = dict:read()
+        if NORM then
+            line = line and Utf8Proc.normalize_NFC(line)
+        end
+    end
+    dict:close()
+
+    if #dict_entries == 1 then
+        return
+    end
+
+    table.sort(dict_entries, function(a,b) return Utf8Proc.lowercase(a, NORM) < Utf8Proc.lowercase(b, NORM) end)
+
+    -- remove double entries
+    local later_key = Utf8Proc.lowercase(dict_entries[#dict_entries]:gsub(";.*$",""), NORM)
+    for i = #dict_entries-1, 1, -1 do
+        local former_key = Utf8Proc.lowercase(dict_entries[i]:gsub(";.*$",""), NORM)
+        if later_key == former_key then
+            logger.dbg("UserHyph: remove double entry", dict_entries[i])
+            table.remove(dict_entries, i)
+        end
+        later_key = former_key
+    end
+
+    local new_dict_file = dict_file .. ".new"
+
+    local new_dict = io.open(new_dict_file, "w")
+    if not new_dict then
+        logger.err("UserHyph: could not open " .. new_dict_file)
+        return
+    end
+
+    for i = 1, #dict_entries do
+        new_dict:write(dict_entries[i], "\n")
+    end
+    new_dict:close()
+
+    os.remove(dict_file)
+    os.rename(new_dict_file, dict_file)
+end
+
 function ReaderUserHyph:modifyUserEntry(word)
     if word:find("[ ,;-%.]") then return end -- no button if more than one word
 
     if not self.ui.document then return end
 
+    if NORM then
+        word = Utf8Proc.normalize_NFC(word)
+    end
+
     local suggested_hyphenation = cre.getHyphenationForWord(word)
+
+    -- word may have some strange punctuation marks (as the upper dot),
+    -- so we use crengine to trimm that.
+    word = suggested_hyphenation:gsub("-","")
 
     local input_dialog
     input_dialog = InputDialog:new{
         title = T(_("Hyphenate: %1"), word),
         description = _("Add hyphenation positions with hyphens ('-') or spaces (' ')."),
         input = suggested_hyphenation,
-        old_hyph_lowercase = Utf8Proc.lowercase(suggested_hyphenation),
+        old_hyph_lowercase = Utf8Proc.lowercase(suggested_hyphenation, NORM),
         input_type = "string",
         buttons = {
             {
@@ -211,13 +305,13 @@ function ReaderUserHyph:modifyUserEntry(word)
 
                         if self:checkHyphenation(new_suggestion, word) then
                             -- don't save if no changes
-                            if Utf8Proc.lowercase(new_suggestion) ~= input_dialog.old_hyph_lowercase then
+                            if Utf8Proc.lowercase(new_suggestion, NORM) ~= input_dialog.old_hyph_lowercase then
                                 self:updateDictionary(word, new_suggestion)
                             end
                             UIManager:close(input_dialog)
                         else
                             UIManager:show(InfoMessage:new{
-                                text = T(_("Invalid hyphenation!"), self.dict_file),
+                                text = _("Invalid hyphenation!"),
                             })
                         end
                     end,
