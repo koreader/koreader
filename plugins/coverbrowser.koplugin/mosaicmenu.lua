@@ -15,6 +15,7 @@ local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
+local ProgressWidget = require("ui/widget/progresswidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -86,6 +87,8 @@ function ItemShortCutIcon:init()
         },
     }
 end
+
+
 
 
 -- We may find a better algorithm, or just a set of
@@ -363,6 +366,7 @@ function MosaicMenuItem:init()
     -- filepath may be provided as 'file' (history) or 'path' (filechooser)
     -- store it as attribute so we can use it elsewhere
     self.filepath = self.entry.file or self.entry.path
+    -- logger.dbg(self.filepath)
 
     -- As done in MenuItem
     -- Squared letter for keyboard navigation
@@ -378,7 +382,28 @@ function MosaicMenuItem:init()
             style = self.shortcut_style,
         }
     end
+
+    -- self.progress_bar = ProgressWidget:new
+
+
     self.detail = self.text
+
+    if not self.menu.cover_info_cache then
+        self.menu.cover_info_cache = {}
+    end
+
+    self.progress = nil
+    self.percentage, self.has_cover = unpack(self:getProgress())
+
+    if self.percentage ~= nil then
+        self.progress = ProgressWidget:new{
+            percentage = self.percentage,
+            bgcolor = Blitbuffer.COLOR_WHITE,
+            fillcolor = Blitbuffer.COLOR_BLACK,
+            bordercolor = Blitbuffer.COLOR_BLACK,
+            height = Screen:scaleBySize(6),
+        }
+    end
 
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
@@ -690,6 +715,37 @@ function MosaicMenuItem:update()
     self._underline_container[1] = widget
 end
 
+
+function MosaicMenuItem:getProgress()
+    local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
+    local percent_finished
+    local status
+    if bookinfo then
+        if self.menu.cover_info_cache[self.filepath] then
+            percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
+        else
+            local docinfo = DocSettings:open(self.filepath)
+            -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
+            if docinfo.data.summary and docinfo.data.summary.status then
+                status = docinfo.data.summary.status
+            end
+            percent_finished = docinfo.data.percent_finished
+            self.menu.cover_info_cache[self.filepath] = {percent_finished, status}
+        end
+        if status == "complete" then
+            -- Display these instead of the read %
+            percent_finished = nil
+        end
+    end
+    local has_cover
+    if self.do_cover_image and bookinfo.has_cover and not bookinfo.ignore_cover then
+        has_cover = true
+    else
+        has_cover = false
+    end
+    return {percent_finished, has_cover}
+end
+
 function MosaicMenuItem:paintTo(bb, x, y)
     -- We used to get non-integer x or y that would cause some mess with image
     -- inside FrameContainer were image would be drawn on top of the top border...
@@ -717,18 +773,25 @@ function MosaicMenuItem:paintTo(bb, x, y)
     end
 
     -- to which we paint over a dogear if needed
-    if corner_mark and self.do_hint_opened and self.been_opened then
-        -- align it on bottom right corner of sub-widget
-        local target =  self[1][1][1]
-        local ix
-        if BD.mirroredUILayout() then
-            ix = math.floor((self.width - target.dimen.w)/2)
-        else
-            ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark:getSize().w
-        end
-        local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
-        -- math.ceil() makes it looks better than math.floor()
-        corner_mark:paintTo(bb, x+ix, y+iy)
+    -- if corner_mark and self.do_hint_opened and self.been_opened then
+    --     -- align it on bottom right corner of sub-widget
+    --     local target =  self[1][1][1]
+    --     local ix
+    --     if BD.mirroredUILayout() then
+    --         ix = math.floor((self.width - target.dimen.w)/2)
+    --     else
+    --         ix = self.width - math.ceil((self.width - target.dimen.w)/2) - corner_mark:getSize().w
+    --     end
+    --     local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
+    --     -- math.ceil() makes it looks better than math.floor()
+    --     corner_mark:paintTo(bb, x+ix, y+iy)
+    -- end
+
+
+    if self.progress ~= nil then
+        self.progress.width = self[1][1][1].width * 0.66
+        local pos_x = x+self.width - self.progress.width - ((self.width - self[1][1][1].width) / 2) -self.progress.bordersize
+        self.progress:paintTo(bb, pos_x, y+self.height-self.progress.height-self.progress.bordersize)
     end
 
     -- to which we paint a small indicator if this book has a description
@@ -839,19 +902,19 @@ function MosaicMenu:_recalculateDimen()
 
     -- Create or replace corner_mark if needed
     -- 1/12 (larger) or 1/16 (smaller) of cover looks allright
-    local mark_size = math.floor(math.min(self.item_width, self.item_height) / 16)
-    if mark_size ~= corner_mark_size then
-        corner_mark_size = mark_size
-        if corner_mark then
-            corner_mark:free()
-        end
-        corner_mark = IconWidget:new{
-            icon = "dogear.opaque",
-            rotation_angle = BD.mirroredUILayout() and 180 or 270,
-            width = corner_mark_size,
-            height = corner_mark_size,
-        }
-    end
+    -- local mark_size = math.floor(math.min(self.item_width, self.item_height) / 16)
+    -- if mark_size ~= corner_mark_size then
+    --     corner_mark_size = mark_size
+    --     if corner_mark then
+    --         corner_mark:free()
+    --     end
+    --     corner_mark = IconWidget:new{
+    --         icon = "dogear.opaque",
+    --         rotation_angle = BD.mirroredUILayout() and 180 or 270,
+    --         width = corner_mark_size,
+    --         height = corner_mark_size,
+    --     }
+    -- end
 end
 
 function MosaicMenu:_updateItemsBuildUI()
