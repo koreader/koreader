@@ -3,7 +3,6 @@
 --]]
 
 local CalibreMetadata = require("metadata")
-local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
@@ -14,7 +13,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local Persist = require("persist")
 local Screen = require("device").screen
-local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
@@ -381,7 +379,6 @@ function CalibreSearch:browse(option)
     if self.search_value ~= "" then
         search_value = self.search_value
     end
-        
     local name
     local menu_entries = {}
 
@@ -456,7 +453,6 @@ function CalibreSearch:switchResults(t, title, is_child, page)
         path_entry.page = (self.search_menu.perpage or 1) * (self.search_menu.page or 1)
         table.insert(self.search_menu.paths, path_entry)
     end
-    
     self.search_menu:switchItemTable(title, t, page or 1)
 end
 
