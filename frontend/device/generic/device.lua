@@ -69,7 +69,9 @@ local Device = {
     canSuspend = yes,
     canStandby = no,
     total_standby_tv = TimeVal.zero, -- total time spent in standby
-    last_standby_tv = TimeVal.zero, -- last time spent in standby
+    last_standby_tv = TimeVal.zero,
+    total_suspend_tv = TimeVal.zero, -- total time spent in suspend
+    last_suspend_tv = TimeVal.zero,
     canReboot = no,
     canPowerOff = no,
     canAssociateFileExtensions = no,
@@ -241,7 +243,7 @@ end
 function Device:rescheduleSuspend()
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
-    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
 end
 
 -- Only used on platforms where we handle suspend ourselves.

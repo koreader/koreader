@@ -46,6 +46,10 @@ function SystemStat:appendCounters()
     end
     self:put({_("  Up time"),
             util.secondsToClockDuration("", os.difftime(os.time(), self.start_sec), false, true, true)})
+    if Device:canSuspend() then
+        self:put({_("  Time in suspend"),
+            util.secondsToClockDuration("", Device.total_suspend_tv:tonumber(), false, true, true)})
+    end
     if Device:canStandby() then
         self:put({_("  Time in standby"),
             util.secondsToClockDuration("", Device.total_standby_tv:tonumber(), false, true, true)})

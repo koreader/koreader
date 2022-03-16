@@ -718,7 +718,7 @@ local function getProductId()
 end
 
 local unexpected_wakeup_count = 0
-local function check_unexpected_wakeup()
+local function check_unexpected_wakeup(_self)
     local UIManager = require("ui/uimanager")
     -- just in case other events like SleepCoverClosed also scheduled a suspend
     UIManager:unschedule(Kobo.suspend)
@@ -733,7 +733,7 @@ local function check_unexpected_wakeup()
         logger.info("Kobo suspend: putting device back to sleep.")
         -- Most wakeup actions are linear, but we need some leeway for the
         -- poweroff action to send out close events to all requisite widgets.
-        UIManager:scheduleIn(30, Kobo.suspend)
+        UIManager:scheduleIn(30, Kobo.suspend, _self)
     else
         logger.dbg("Kobo suspend: checking unexpected wakeup:",
                    unexpected_wakeup_count)
@@ -749,7 +749,7 @@ local function check_unexpected_wakeup()
 
         logger.err("Kobo suspend: putting device back to sleep. Unexpected wakeups:",
                    unexpected_wakeup_count)
-        Kobo.suspend()
+        Kobo.suspend(_self)
     end
 end
 
@@ -862,15 +862,23 @@ function Kobo:suspend()
         end
         return false
     end
-    re, err_msg, err_code = f:write("mem\n")
-    -- NOTE: At this point, we *should* be in suspend to RAM, as such,
-    -- execution should only resume on wakeup...
 
-    logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
+    local TimeVal = require("ui/timeval")
+    local suspend_time_tv = TimeVal:boottime_or_realtime_coarse()
+
+    re, err_msg, err_code = f:write("mem\n")
     if not re then
         logger.err("write error: ", err_msg, err_code)
     end
     f:close()
+
+    -- NOTE: At this point, we *should* be in suspend to RAM, as such,
+    -- execution should only resume on wakeup...
+
+    self.last_suspend_tv = TimeVal:boottime_or_realtime_coarse() - suspend_time_tv
+    self.total_suspend_tv = self.total_suspend_tv + self.last_suspend_tv
+
+    logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
     -- gloriously failed at this point...
     -- We can safely assume that just from a non-zero return code, without
@@ -902,7 +910,7 @@ function Kobo:suspend()
     unexpected_wakeup_count = unexpected_wakeup_count + 1
     -- assuming Kobo:resume() will be called in 15 seconds
     logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
-    UIManager:scheduleIn(15, check_unexpected_wakeup)
+    UIManager:scheduleIn(15, check_unexpected_wakeup, self)
 end
 
 function Kobo:resume()
