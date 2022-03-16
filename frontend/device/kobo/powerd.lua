@@ -1,4 +1,5 @@
 local BasePowerD = require("device/generic/powerd")
+local Math = require("optmath")
 local NickelConf = require("device/kobo/nickel_conf")
 local SysfsLight = require ("device/sysfs_light")
 local ffiUtil = require("ffi/util")
@@ -16,7 +17,6 @@ local KoboPowerD = BasePowerD:new{
     battery_sysfs = nil,
     aux_battery_sysfs = nil,
     fl_warmth_min = 0, fl_warmth_max = 100,
-    fl_warmth = nil,
     fl_was_on = nil,
 }
 
@@ -41,8 +41,8 @@ function KoboPowerD:_syncKoboLightOnStart()
                 if new_color ~= nil then
                     -- ColorSetting is stored as a color temperature scale in Kelvin,
                     -- from 1500 to 6400
-                    -- so normalize this to [0,100] on our end.
-                    new_warmth = (100 - math.floor((new_color - 1500) / 49))
+                    -- so normalize this to [0, 100] on our end.
+                    new_warmth = (100 - Math.round((new_color - 1500) / 49))
                 end
             end
             if is_frontlight_on == nil then
@@ -106,7 +106,11 @@ function KoboPowerD:init()
         end
 
         self.isAuxBatteryConnectedHW = function(this)
-            return this:read_int_file(this.aux_batt_connected_file) == 1
+            -- aux_batt_connected_file shows us:
+            -- 0 if power cover is not connected
+            -- 1 if the power cover is connected
+            -- 1 or sometimes -1 if the power cover is connected without a charger
+            return this:read_int_file(this.aux_batt_connected_file) ~= 0
         end
 
         self.isAuxChargingHW = function(this)
@@ -132,7 +136,7 @@ function KoboPowerD:init()
         if self.device:hasNaturalLight() then
             local nl_config = G_reader_settings:readSetting("natural_light_config")
             if nl_config then
-                for key,val in pairs(nl_config) do
+                for key, val in pairs(nl_config) do
                     self.device.frontlight_settings[key] = val
                 end
             end
@@ -250,22 +254,19 @@ function KoboPowerD:setIntensityHW(intensity)
     self:_decideFrontlightState()
 end
 
-function KoboPowerD:setWarmth(warmth)
+-- NOTE: We *can* actually read this from the system (as well as frontlight level, since Mk. 7),
+--       but this is already a huge mess, so, keep ignoring it...
+function KoboPowerD:frontlightWarmthHW()
+    return self.fl_warmth
+end
+
+function KoboPowerD:setWarmthHW(warmth)
     if self.fl == nil then return end
-    self.fl_warmth = warmth or self.fl_warmth
     -- Don't turn the light back on on legacy NaturalLight devices just for the sake of setting the warmth!
     -- That's because we can only set warmth independently of brightness on devices with a mixer.
     -- On older ones, calling setWarmth *will* actually set the brightness, too!
     if self.device:hasNaturalLightMixer() or self:isFrontlightOnHW() then
-        self.fl:setWarmth(self.fl_warmth)
-        self:stateChanged()
-    end
-end
-
-function KoboPowerD:getWarmth()
-    if self.fl == nil then return end
-    if self.device:hasNaturalLight() then
-        return self.fl_warmth
+        self.fl:setWarmth(warmth)
     end
 end
 

@@ -347,7 +347,7 @@ end
 
 function NaturalLightWidget:setValueTextBox(widget, val)
     widget:focus()
-    widget:setText(val)
+    widget:setText(tostring(val))
     widget:unfocus()
 end
 
@@ -360,7 +360,7 @@ end
 
 function NaturalLightWidget:onShow()
     UIManager:setDirty(self, function()
-                           return "ui", self.nl_frame.dimen
+        return "ui", self.nl_frame.dimen
     end)
     -- Store values in case user cancels
     self.old_values = self:getCurrentValues()

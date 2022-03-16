@@ -42,18 +42,14 @@ function AndroidPowerD:init()
         self.fl_warmth_min = android.getScreenMinWarmth()
         self.fl_warmth_max = android.getScreenMaxWarmth()
         self.warm_diff = self.fl_warmth_max - self.fl_warmth_min
-        self.fl_warmth = self:getWarmth()
     end
 end
 
-function AndroidPowerD:setWarmth(warmth)
-    self.fl_warmth = warmth
-    local new_warmth = math.floor(warmth * self.fl_warmth_max / 100)
-    android.setScreenWarmth(new_warmth)
-    self:stateChanged()
+function AndroidPowerD:setWarmthHW(warmth)
+    android.setScreenWarmth(warmth)
 end
 
-function AndroidPowerD:getWarmth()
+function AndroidPowerD:frontlightWarmthHW()
     return android.getScreenWarmth() * self.warm_diff
 end
 

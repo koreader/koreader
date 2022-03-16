@@ -440,10 +440,6 @@ function CoverMenu:onHistoryMenuHold(item)
         UIManager:close(self.histfile_dialog)
     end
 
-    -- Remove last button ("Clear history of deleted files"), we'll
-    -- add it back after our buttons
-    local last_button = table.remove(orig_buttons)
-
     -- Add some new buttons to original buttons set
     table.insert(orig_buttons, {
         { -- Allow user to view real size cover in ImageViewer
@@ -522,9 +518,6 @@ function CoverMenu:onHistoryMenuHold(item)
             end,
         },
     })
-    table.insert(orig_buttons, {}) -- separator
-    -- Put back "Clear history of deleted files"
-    table.insert(orig_buttons, last_button)
 
     -- Create the new ButtonDialog, and let UIManager show it
     local ButtonDialogTitle = require("ui/widget/buttondialogtitle")

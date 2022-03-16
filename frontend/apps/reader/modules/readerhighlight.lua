@@ -13,6 +13,7 @@ local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
 local util = require("util")
+local Size = require("ui/size")
 local ffiUtil = require("ffi/util")
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -47,6 +48,28 @@ end
 
 function ReaderHighlight:init()
     self.select_mode = false -- extended highlighting
+    self._start_indicator_highlight = false
+    self._current_indicator_pos = nil
+    self._previous_indicator_pos = nil
+
+    if Device:hasDPad() then
+        -- Used for text selection with dpad/keys
+        local QUICK_INDICTOR_MOVE = true
+        self.key_events.StopHighlightIndicator = { {Device.input.group.Back}, doc = "Stop non-touch highlight", args = true } -- true: clear highlight selection
+        self.key_events.UpHighlightIndicator = { {"Up"}, doc = "move indicator up", event = "MoveHighlightIndicator", args = {0, -1} }
+        self.key_events.DownHighlightIndicator = { {"Down"}, doc = "move indicator down", event = "MoveHighlightIndicator", args = {0, 1} }
+        -- let FewKeys device can move indicator left
+        self.key_events.LeftHighlightIndicator = { {"Left"}, doc = "move indicator left", event = "MoveHighlightIndicator", args = {-1, 0} }
+        self.key_events.RightHighlightIndicator = { {"Right"}, doc = "move indicator right", event = "MoveHighlightIndicator", args = {1, 0} }
+        self.key_events.HighlightPress = { {"Press"}, doc = "highlight start or end" }
+        if Device:hasKeys() then
+            self.key_events.QuicklyUpHighlightIndicator = { {"Shift", "Up"}, doc = "quick move indicator up", event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuicklyDownHighlightIndicator = { {"Shift", "Down"}, doc = "quick move indicator down", event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuicklyLeftHighlightIndicator = { {"Shift", "Left"}, doc = "quick move indicator left", event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuicklyRightHighlightIndicator = { {"Shift", "Right"}, doc = "quick move indicator right", event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.StartHighlightIndicator = { {"H"}, doc = "start non-touch highlight" }
+        end
+    end
 
     self._highlight_buttons = {
         -- highlight and add_note are for the document itself,
@@ -295,6 +318,14 @@ local long_press_action = {
 
 function ReaderHighlight:addToMainMenu(menu_items)
     -- insert table to main reader menu
+    if Device:hasDPad() then
+        menu_items.start_content_selection = {
+            text = _("Start content selection"),
+            callback = function()
+                self:onStartHighlightIndicator()
+            end,
+        }
+    end
     menu_items.highlight_options = {
         text = _("Highlight style"),
         sub_item_table = {},
@@ -361,14 +392,35 @@ function ReaderHighlight:addToMainMenu(menu_items)
     end
     menu_items.translation_settings = Translator:genSettingsMenu()
 
-    if not Device:isTouchDevice() then
-        -- Menu items below aren't needed.
-        return
-    end
-
     menu_items.long_press = {
         text = _("Long-press on text"),
         sub_item_table = {
+            {
+                text = _("Highlight long-press interval"),
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local items = SpinWidget:new{
+                        title_text = _("Highlight long-press interval"),
+                        info_text = _([[
+If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will not be triggered.
+
+The interval value is in seconds and can range from 3 to 20 seconds.]]),
+                        width = math.floor(Screen:getWidth() * 0.75),
+                        value = G_reader_settings:readSetting("highlight_long_hold_threshold", 3),
+                        value_min = 3,
+                        value_max = 20,
+                        value_step = 1,
+                        value_hold_step = 5,
+                        ok_text = _("Set interval"),
+                        default_value = 3,
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("highlight_long_hold_threshold", spin.value)
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+            },
             {
                 text = _("Dictionary on single word selection"),
                 checked_func = function()
@@ -396,6 +448,12 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 self.view.highlight.disabled = v[2] == "nothing"
             end,
         })
+    end
+    -- long_press menu is under taps_and_gestures menu which is not available for non touch device
+    -- Clone long_press menu and change label making much meaning for non touch devices
+    if Device:hasDPad() then
+        menu_items.selection_text = util.tableDeepCopy(menu_items.long_press)
+        menu_items.selection_text.text = _("Select on text")
     end
 end
 
@@ -907,6 +965,7 @@ function ReaderHighlight:onHold(arg, ges)
             fullscreen = true,
         }
         UIManager:show(imgviewer)
+        self:onStopHighlightIndicator()
         return true
     end
 
@@ -1365,7 +1424,8 @@ function ReaderHighlight:onHoldRelease()
     local long_final_hold = false
     if self.hold_last_tv then
         local hold_duration = TimeVal:now() - self.hold_last_tv
-        if hold_duration > TimeVal:new{ sec = 3, usec = 0 } then
+        local long_hold_threshold = G_reader_settings:readSetting("highlight_long_hold_threshold", 3)
+        if hold_duration > TimeVal:new{ sec = long_hold_threshold, usec = 0 } then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
         end
@@ -1805,5 +1865,126 @@ function ReaderHighlight:onClose()
     -- clear highlighted text
     self:clear()
 end
+
+function ReaderHighlight:onHighlightPress()
+    if self._current_indicator_pos then
+        if not self._start_indicator_highlight then
+            -- try a tap at current indicator position to open any existing highlight
+            if not self:onTap(nil, self:_createHighlightGesture("tap")) then
+                -- no existing highlight at current indicator position: start hold
+                self._start_indicator_highlight = true
+                self:onHold(nil, self:_createHighlightGesture("hold"))
+                if self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes then
+                    local pos = self.selected_text.sboxes[1]
+                    -- set hold_pos to center of selected_test to make center selection more stable, not jitted at edge
+                    self.hold_pos = self.view:screenToPageTransform({
+                        x = pos.x + pos.w / 2,
+                        y = pos.y + pos.h / 2
+                    })
+                    -- move indicator to center selected text making succeed same row selection much accurate.
+                    UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
+                    self._current_indicator_pos.x = pos.x + pos.w / 2 - self._current_indicator_pos.w / 2
+                    self._current_indicator_pos.y = pos.y + pos.h / 2 - self._current_indicator_pos.h / 2
+                    UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
+                end
+            else
+                self:onStopHighlightIndicator(true) -- need_clear_selection=true
+            end
+        else
+            self:onHoldRelease(nil, self:_createHighlightGesture("hold_release"))
+            self:onStopHighlightIndicator()
+        end
+        return true
+    end
+    return false
+end
+
+function ReaderHighlight:onStartHighlightIndicator()
+    if self.view.visible_area and not self._current_indicator_pos then
+        -- set start position to centor of page
+        local rect = self._previous_indicator_pos
+        if not rect then
+            rect = Geom:new()
+            rect.x = self.view.visible_area.w / 2
+            rect.y = self.view.visible_area.h / 2
+            rect.w = Size.item.height_default
+            rect.h = rect.w
+        end
+        self._current_indicator_pos = rect
+        self.view.highlight.indicator = rect
+        UIManager:setDirty(self.dialog, "ui", rect)
+        return true
+    end
+    return false
+end
+
+function ReaderHighlight:onStopHighlightIndicator(need_clear_selection)
+    if self._current_indicator_pos then
+        local rect = self._current_indicator_pos
+        self._previous_indicator_pos = rect
+        self._start_indicator_highlight = false
+        self._current_indicator_pos = nil
+        self.view.highlight.indicator = nil
+        UIManager:setDirty(self.dialog, "ui", rect)
+        if need_clear_selection then
+            self:clear()
+        end
+        return true
+    end
+    return false
+end
+
+function ReaderHighlight:onMoveHighlightIndicator(args)
+    if self.view.visible_area and self._current_indicator_pos then
+        local dx, dy, quick_move = unpack(args)
+        local step_distance = self.view.visible_area.w / 5 -- quick move distance: fifth of visible_area
+        local y_step_distance = self.view.visible_area.h / 5
+        if step_distance > y_step_distance then
+            -- take the smaller, make all direction move distance much predictable
+            step_distance = y_step_distance
+        end
+        if not quick_move then
+            step_distance = step_distance / 4 -- twentieth of visible_area
+        end
+        local rect = self._current_indicator_pos:copy()
+        rect.x = rect.x + step_distance * dx
+        rect.y = rect.y + step_distance * dy
+        if rect.x < 0 then
+            rect.x = 0
+        end
+        if rect.x + rect.w > self.view.visible_area.w then
+            rect.x = self.view.visible_area.w - rect.w
+        end
+        if rect.y < 0 then
+            rect.y = 0
+        end
+        if rect.y + rect.h > self.view.visible_area.h then
+            rect.y = self.view.visible_area.h - rect.h
+        end
+        UIManager:setDirty(self.dialog, "ui", self._current_indicator_pos)
+        self._current_indicator_pos = rect
+        self.view.highlight.indicator = rect
+        UIManager:setDirty(self.dialog, "ui", rect)
+        if self._start_indicator_highlight then
+            self:onHoldPan(nil, self:_createHighlightGesture("hold_pan"))
+        end
+        return true
+    end
+    return false
+end
+
+function ReaderHighlight:_createHighlightGesture(gesture)
+    local point = self._current_indicator_pos:copy()
+    point.x = point.x + point.w / 2
+    point.y = point.y + point.h / 2
+    point.w = 0
+    point.h = 0
+    return {
+        ges = gesture,
+        pos = point,
+        time = TimeVal:realtime(),
+    }
+end
+
 
 return ReaderHighlight

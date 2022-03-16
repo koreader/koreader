@@ -527,7 +527,7 @@ local BookMapWidget = InputContainer:new{
 }
 
 function BookMapWidget:init()
-    if self.ui.view.inverse_reading_order then
+    if self.ui.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
 

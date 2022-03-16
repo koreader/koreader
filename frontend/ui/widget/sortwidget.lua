@@ -6,6 +6,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
 local Font = require("ui/font")
+local FocusManager = require("ui/widget/focusmanager")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
@@ -34,20 +35,18 @@ local SortItemWidget = InputContainer:new{
 
 function SortItemWidget:init()
     self.dimen = Geom:new{w = self.width, h = self.height}
-    if Device:isTouchDevice() then
-        self.ges_events.Tap = {
-            GestureRange:new{
-                ges = "tap",
-                range = self.dimen,
-            }
+    self.ges_events.Tap = {
+        GestureRange:new{
+            ges = "tap",
+            range = self.dimen,
         }
-        self.ges_events.Hold = {
-            GestureRange:new{
-                ges = "hold",
-                range = self.dimen,
-            }
+    }
+    self.ges_events.Hold = {
+        GestureRange:new{
+            ges = "hold",
+            range = self.dimen,
         }
-    end
+    }
 
     local item_checkable = false
     local item_checked = self.item.checked
@@ -69,6 +68,8 @@ function SortItemWidget:init()
     self[1] = FrameContainer:new{
         padding = 0,
         bordersize = 0,
+        focusable = true,
+        focus_border_size = Size.border.thin,
         LeftContainer:new{ -- needed only for auto UI mirroring
             dimen = Geom:new{
                 w = self.width,
@@ -113,7 +114,7 @@ function SortItemWidget:onHold()
     return true
 end
 
-local SortWidget = InputContainer:new{
+local SortWidget = FocusManager:new{
     title = "",
     width = nil,
     height = nil,
@@ -125,6 +126,7 @@ local SortWidget = InputContainer:new{
 }
 
 function SortWidget:init()
+    self.layout = {}
     -- no item is selected on start
     self.marked = 0
     self.orig_item_table = nil
@@ -134,11 +136,9 @@ function SortWidget:init()
         h = self.height or Screen:getHeight(),
     }
     if Device:hasKeys() then
-        self.key_events = {
-            --don't get locked in on non touch devices
-            AnyKeyPressed = { { Device.input.group.Any },
-                seqtext = "any key", doc = "close dialog" }
-        }
+        self.key_events.Close = { { Device.input.group.Back }, doc = "close dialog" }
+        self.key_events.NextPage = { { Device.input.group.PgFwd}, doc = "next page"}
+        self.key_events.PrevPage = { { Device.input.group.PgBack}, doc = "prev page"}
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
@@ -257,6 +257,10 @@ function SortWidget:init()
         self.footer_last_down,
         self.footer_ok,
     }
+    table.insert(self.layout, {
+        self.footer_cancel,
+        self.footer_ok,
+    })
     local bottom_line = LineWidget:new{
         dimen = Geom:new{ w = self.item_width, h = Size.line.thick },
         background = Blitbuffer.COLOR_DARK_GRAY,
@@ -364,6 +368,7 @@ end
 -- make sure self.item_margin and self.item_height are set before calling this
 function SortWidget:_populateItems()
     self.main_content:clear()
+    self.layout = { self.layout[#self.layout] } -- keep footer
     local idx_offset = (self.show_page - 1) * self.items_per_page
     local page_last
     if idx_offset + self.items_per_page <= #self.item_table then
@@ -377,16 +382,18 @@ function SortWidget:_populateItems()
         if idx == self.marked then
             invert_status = true
         end
+        local item = SortItemWidget:new{
+            height = self.item_height,
+            width = self.item_width,
+            item = self.item_table[idx],
+            invert = invert_status,
+            index = idx,
+            show_parent = self,
+        }
+        table.insert(self.layout, #self.layout, {item})
         table.insert(
             self.main_content,
-            SortItemWidget:new{
-                height = self.item_height,
-                width = self.item_width,
-                item = self.item_table[idx],
-                invert = invert_status,
-                index = idx,
-                show_parent = self,
-            }
+            item
         )
     end
     self.footer_page:setText(T(_("Page %1 of %2"), self.show_page, self.pages), self.footer_center_width)
@@ -418,10 +425,6 @@ function SortWidget:_populateItems()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
-end
-
-function SortWidget:onAnyKeyPressed()
-    return self:onClose()
 end
 
 function SortWidget:onNextPage()

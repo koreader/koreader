@@ -229,7 +229,6 @@ koboupdate: all
 	rm -f $(KOBO_PACKAGE)
 	# Kobo launching scripts
 	cp $(KOBO_DIR)/koreader.png $(INSTALL_DIR)/koreader.png
-	cp $(KOBO_DIR)/fmon/README.txt $(INSTALL_DIR)/README_kobo.txt
 	cp $(KOBO_DIR)/*.sh $(INSTALL_DIR)/koreader
 	cp $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	# create new package

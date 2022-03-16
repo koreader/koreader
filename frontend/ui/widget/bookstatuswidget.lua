@@ -655,7 +655,7 @@ end
 
 function BookStatusWidget:closeInputDialog()
     UIManager:close(self.note_dialog)
-    self.input_note:onUnfocus();
+    self.input_note:onUnfocus()
 end
 
 return BookStatusWidget

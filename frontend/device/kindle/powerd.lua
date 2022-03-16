@@ -3,6 +3,7 @@ local BasePowerD = require("device/generic/powerd")
 
 local KindlePowerD = BasePowerD:new{
     fl_min = 0, fl_max = 24,
+    fl_warmth_min = 0, fl_warmth_max = 24,
 
     lipc_handle = nil,
 }
@@ -87,14 +88,36 @@ function KindlePowerD:setIntensityHW(intensity)
     --       it knows what the UI values should map to for the specific hardware much better than us.
     if self.lipc_handle ~= nil then
         -- NOTE: We want to bypass setIntensity's shenanigans and simply restore the light as-is
-        self.lipc_handle:set_int_property(
-            "com.lab126.powerd", "flIntensity", intensity)
+        self.lipc_handle:set_int_property("com.lab126.powerd", "flIntensity", intensity)
     end
     if turn_it_off then
         -- NOTE: when intensity is 0, we want to *really* kill the light, so do it manually
         -- (asking lipc to set it to 0 would in fact set it to > 0 on ! canTurnFrontlightOff Kindles).
         -- We do *both* to make the fl restore on resume less jarring on devices where lipc 0 != off.
         os.execute("printf '%s' ".. intensity .." > " .. self.fl_intensity_file)
+
+        -- And in case there are two LED groups...
+        if self.warmth_intensity_file then
+            os.execute("printf '%s' ".. intensity .." > " .. self.warmth_intensity_file)
+        end
+    end
+end
+
+function KindlePowerD:frontlightWarmthHW()
+    if self.lipc_handle ~= nil then
+        local nat_warmth = self.lipc_handle:get_int_property("com.lab126.powerd", "currentAmberLevel")
+        if nat_warmth then
+            -- [0...24] -> [0...100]
+            return self:fromNativeWarmth(nat_warmth)
+        else
+            return 0
+        end
+    end
+end
+
+function KindlePowerD:setWarmthHW(warmth)
+    if self.lipc_handle ~= nil then
+        self.lipc_handle:set_int_property("com.lab126.powerd", "currentAmberLevel", warmth)
     end
 end
 
