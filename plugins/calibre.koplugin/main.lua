@@ -17,6 +17,7 @@ local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 
 local Calibre = WidgetContainer:new{
@@ -267,7 +268,7 @@ function Calibre:getWirelessMenuTable()
             enabled_func = isEnabled,
             sub_item_table = {
                 {
-                    text = _("Automatic"),
+                    text = C_("Configuration type", "Automatic"),
                     checked_func = function()
                         return G_reader_settings:hasNot("calibre_wireless_url")
                     end,
@@ -276,7 +277,7 @@ function Calibre:getWirelessMenuTable()
                     end,
                 },
                 {
-                    text = _("Manual"),
+                    text = C_("Configuration type", "Manual"),
                     checked_func = function()
                         return G_reader_settings:has("calibre_wireless_url")
                     end,
