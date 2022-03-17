@@ -389,8 +389,6 @@ function MosaicMenuItem:init()
     self.detail = self.text
     self.percent_finished = nil
 
-    
-
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -542,8 +540,6 @@ function MosaicMenuItem:update()
         if self.do_hint_opened and DocSettings:hasSidecarFile(self.filepath) then
             self.been_opened = true
         end
-
-        
 
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
