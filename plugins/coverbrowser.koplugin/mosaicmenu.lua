@@ -44,6 +44,7 @@ local BookInfoManager = require("bookinfomanager")
 -- recreated if height changes)
 local corner_mark_size = -1
 local corner_mark
+local progress_widget
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
@@ -342,9 +343,6 @@ function FakeCover:init()
     }
 end
 
-
-local progress_widget
-
 -- Based on menu.lua's MenuItem
 local MosaicMenuItem = InputContainer:new{
     entry = {},
@@ -389,10 +387,9 @@ function MosaicMenuItem:init()
 
 
     self.detail = self.text
+    self.percent_finished = nil
 
-    if not self.menu.cover_info_cache then
-        self.menu.cover_info_cache = {}
-    end
+    
 
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
@@ -546,6 +543,8 @@ function MosaicMenuItem:update()
             self.been_opened = true
         end
 
+        
+
         local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
         if bookinfo and self.do_cover_image and not bookinfo.ignore_cover then
             if bookinfo.cover_fetched then
@@ -662,6 +661,30 @@ function MosaicMenuItem:update()
                 self.has_description = true
             end
 
+            if not self.menu.cover_info_cache then
+                self.menu.cover_info_cache = {}
+            end
+
+            local percent_finished, status
+            if bookinfo then
+                if self.menu.cover_info_cache[self.filepath] then
+                    percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
+                else
+                    local docinfo = DocSettings:open(self.filepath)
+                    -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
+                    if docinfo.data.summary and docinfo.data.summary.status then
+                        status = docinfo.data.summary.status
+                    end
+                    percent_finished = docinfo.data.percent_finished
+                    self.menu.cover_info_cache[self.filepath] = {percent_finished, status}
+                end
+                if status == "complete" then
+                    -- Display these instead of the read %
+                    percent_finished = nil
+                end
+            end
+            self.percent_finished = percent_finished
+
         else -- bookinfo not found
             if self.init_done then
                 -- Non-initial update(), but our widget is still not found:
@@ -748,30 +771,9 @@ function MosaicMenuItem:paintTo(bb, x, y)
         corner_mark:paintTo(bb, x+ix, y+iy)
     end
 
-    -- Paint Progressbar if needed
-    local bookinfo = BookInfoManager:getBookInfo(self.filepath, self.do_cover_image)
-    local percent_finished
-    local status
-    if bookinfo then
-        if self.menu.cover_info_cache[self.filepath] then
-            percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
-        else
-            local docinfo = DocSettings:open(self.filepath)
-            -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
-            if docinfo.data.summary and docinfo.data.summary.status then
-                status = docinfo.data.summary.status
-            end
-            percent_finished = docinfo.data.percent_finished
-            self.menu.cover_info_cache[self.filepath] = {percent_finished, status}
-        end
-        if status == "complete" then
-            -- Display these instead of the read %
-            percent_finished = nil
-        end
-    end
-    if percent_finished ~= nil then
+    if self.percent_finished then
         local pos_x = x+self.width - progress_widget.width - ((self.width - self[1][1][1].width) / 2) -progress_widget.bordersize
-        progress_widget.percentage = percent_finished
+        progress_widget:setPercentage(self.percent_finished)
         progress_widget:paintTo(bb, pos_x, y+self.height-progress_widget.height-progress_widget.bordersize)
     end
 
@@ -900,7 +902,7 @@ function MosaicMenu:_recalculateDimen()
     -- Create or replace progress_widget if needed
     local progress_bar_width = self.item_width * 0.60;
 
-    if progress_widget == nil or progress_widget.width ~= progress_bar_width then
+    if not progress_widget or progress_widget.width ~= progress_bar_width then
         if progress_widget then
             progress_widget:free()
         end
