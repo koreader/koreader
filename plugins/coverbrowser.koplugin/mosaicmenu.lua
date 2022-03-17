@@ -394,8 +394,6 @@ function MosaicMenuItem:init()
         self.menu.cover_info_cache = {}
     end
 
-    
-
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -901,7 +899,7 @@ function MosaicMenu:_recalculateDimen()
 
     -- Create or replace progress_widget if needed
     local progress_bar_width = self.item_width * 0.60;
-    
+
     if progress_widget == nil or progress_widget.width ~= progress_bar_width then
         if progress_widget then
             progress_widget:free()
