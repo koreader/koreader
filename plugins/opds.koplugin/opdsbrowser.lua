@@ -5,14 +5,14 @@ local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
+local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
-local RenderImage = require("ui/renderimage")
-local ImageViewer = require("ui/widget/imageviewer")
 local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("opdsparser")
+local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local http = require("socket.http")
@@ -762,7 +762,7 @@ function OPDSBrowser:showDownloads(item)
         if acquisition.stream then
             -- this is an OPDS PSE stream
             table.insert(type_buttons, {
-                text = _("Page Stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
+                text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                 callback = function()
                     self:streamPages(item, acquisition.href, acquisition.count)
                     UIManager:close(self.download_dialog)
