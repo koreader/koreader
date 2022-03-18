@@ -89,9 +89,6 @@ function ItemShortCutIcon:init()
     }
 end
 
-
-
-
 -- We may find a better algorithm, or just a set of
 -- nice looking combinations of 3 sizes to iterate thru
 -- The rendering of the TextBoxWidget we're doing below
@@ -731,9 +728,6 @@ function MosaicMenuItem:update()
     end
     self._underline_container[1] = widget
 end
-
-
-
 
 function MosaicMenuItem:paintTo(bb, x, y)
     -- We used to get non-integer x or y that would cause some mess with image
