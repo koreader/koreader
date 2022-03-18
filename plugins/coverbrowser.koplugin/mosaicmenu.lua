@@ -662,13 +662,12 @@ function MosaicMenuItem:update()
             if not self.menu.cover_info_cache then
                 self.menu.cover_info_cache = {}
             end
-            local pages_str = ""
             local percent_finished, status
             local pages = bookinfo.pages -- default to those in bookinfo db
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 if self.menu.cover_info_cache[self.filepath] then
-                    pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
+                    percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
                 else
                     local docinfo = DocSettings:open(self.filepath)
                     -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
@@ -686,7 +685,7 @@ function MosaicMenuItem:update()
                     self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
                 end
             end
-
+            self.percent_finished = percent_finished
         else -- bookinfo not found
             if self.init_done then
                 -- Non-initial update(), but our widget is still not found:
