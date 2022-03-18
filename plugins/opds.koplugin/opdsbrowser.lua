@@ -701,7 +701,7 @@ function OPDSBrowser:streamPages(item, remote_url, count)
             local code
             if parsed.scheme == "http" or parsed.scheme == "https" then
                 socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-                code, _ = socket.skip(1, http.request {
+                code = socket.skip(1, http.request {
                     url         = page_url,
                     headers     = {
                         ["Accept-Encoding"] = "identity",
