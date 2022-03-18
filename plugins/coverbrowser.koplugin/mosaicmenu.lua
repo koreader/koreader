@@ -383,9 +383,6 @@ function MosaicMenuItem:init()
         }
     end
 
-    -- self.progress_bar = ProgressWidget:new
-
-
     self.detail = self.text
     self.percent_finished = nil
 
@@ -661,25 +658,37 @@ function MosaicMenuItem:update()
                 self.menu.cover_info_cache = {}
             end
 
+            -- Current page / pages are available or more accurate in .sdr/metadata.lua
+            -- We use a cache (cleaned at end of this browsing session) to store
+            -- page, percent read and book status from sidecar files, to avoid
+            -- re-parsing them when re-rendering a visited page
+            if not self.menu.cover_info_cache then
+                self.menu.cover_info_cache = {}
+            end
+            local pages_str = ""
             local percent_finished, status
-            if bookinfo then
+            local pages = bookinfo.pages -- default to those in bookinfo db
+            if DocSettings:hasSidecarFile(self.filepath) then
+                self.been_opened = true
                 if self.menu.cover_info_cache[self.filepath] then
-                    percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
+                    pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
                 else
                     local docinfo = DocSettings:open(self.filepath)
                     -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
+                    if docinfo.data.doc_pages then
+                        pages = docinfo.data.doc_pages
+                    elseif docinfo.data.stats and docinfo.data.stats.pages then
+                        if docinfo.data.stats.pages ~= 0 then -- crengine with statistics disabled stores 0
+                            pages = docinfo.data.stats.pages
+                        end
+                    end
                     if docinfo.data.summary and docinfo.data.summary.status then
                         status = docinfo.data.summary.status
                     end
                     percent_finished = docinfo.data.percent_finished
-                    self.menu.cover_info_cache[self.filepath] = {percent_finished, status}
-                end
-                if status == "complete" then
-                    -- Display these instead of the read %
-                    percent_finished = nil
+                    self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
                 end
             end
-            self.percent_finished = percent_finished
 
         else -- bookinfo not found
             if self.init_done then
