@@ -340,6 +340,7 @@ function FakeCover:init()
     }
 end
 
+
 -- Based on menu.lua's MenuItem
 local MosaicMenuItem = InputContainer:new{
     entry = {},
@@ -663,11 +664,11 @@ function MosaicMenuItem:update()
                 self.menu.cover_info_cache = {}
             end
             local percent_finished, status
-            local pages = bookinfo.pages -- default to those in bookinfo db
+            local pages = bookinfo.pages
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 if self.menu.cover_info_cache[self.filepath] then
-                    percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
+                    pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath]) -- luacheck: no unused
                 else
                     local docinfo = DocSettings:open(self.filepath)
                     -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
