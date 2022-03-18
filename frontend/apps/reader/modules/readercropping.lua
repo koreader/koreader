@@ -9,7 +9,8 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local Screen = require("device").screen
+local Device = require("device")
+local Screen = Device.screen
 local _ = require("gettext")
 
 local ReaderCropping = InputContainer:new{}
@@ -85,7 +86,11 @@ function ReaderCropping:onPageCrop(mode)
         }
     }
     -- height available for page
-    local page_container_h = Screen:getHeight() - button_table:getSize().h
+    local page_container_h = Screen:getHeight()
+    if Device:isTouchDevice() then
+        -- non-touch devices do not need cancel and apply buttons
+        page_container_h = page_container_h - button_table:getSize().h
+    end
     local page_dimen = Geom:new{
         w = Screen:getWidth(),
         h = page_container_h,
@@ -102,9 +107,8 @@ function ReaderCropping:onPageCrop(mode)
     self.crop_dialog = VerticalGroup:new{
         align = "left",
         self.bbox_widget,
-        button_container,
+        (Device:isTouchDevice() and button_container) or nil, -- button bar only availble for touch devices
     }
-
     UIManager:show(self.crop_dialog)
     return true
 end
