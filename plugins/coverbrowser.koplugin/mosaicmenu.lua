@@ -685,6 +685,9 @@ function MosaicMenuItem:update()
                     self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
                 end
             end
+            if status == "completed" then
+                percent_finished = 100
+            end
             self.percent_finished = percent_finished
         else -- bookinfo not found
             if self.init_done then
