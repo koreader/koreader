@@ -685,7 +685,7 @@ end
 
 function OPDSBrowser:streamPages(item, remote_url, count)
     local page_table = {image_disposable = true}
-    setmetatable(page_table, {__index = function (t, key)
+    setmetatable(page_table, {__index = function (_, key)
         if type(key) ~= "number" then
             local error_bb = RenderImage:renderImageFile("resources/koreader.png", false)
             return error_bb
@@ -694,14 +694,14 @@ function OPDSBrowser:streamPages(item, remote_url, count)
             local page_url = remote_url:gsub("{pageNumber}", tostring(index))
             page_url = page_url:gsub("{maxWidth}", tostring(Screen:getWidth()))
             local page_data = {}
-            
+
             logger.dbg("Streaming page from", page_url)
             local parsed = url.parse(page_url)
 
-            local code, headers
+            local code
             if parsed.scheme == "http" or parsed.scheme == "https" then
                 socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-                code, headers = socket.skip(1, http.request {
+                code, _ = socket.skip(1, http.request {
                     url         = page_url,
                     headers     = {
                         ["Accept-Encoding"] = "identity",
@@ -717,9 +717,9 @@ function OPDSBrowser:streamPages(item, remote_url, count)
                     timeout = 3,
                 })
             end
-            
+
             local data = table.concat(page_data)
-        
+
             if code == 200 then
                 local page_bb = RenderImage:renderImageData(data, #data, false)
                 return page_bb
@@ -758,7 +758,7 @@ function OPDSBrowser:showDownloads(item)
     local type_buttons = {} -- file type download buttons
     for i = 1, #acquisitions do -- filter out unsupported file types
         local acquisition = acquisitions[i]
-        
+
         if acquisition.stream then
             -- this is an OPDS PSE stream
             table.insert(type_buttons, {
