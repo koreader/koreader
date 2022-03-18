@@ -9,6 +9,8 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
+local RenderImage = require("ui/renderimage")
+local ImageViewer = require("ui/widget/imageviewer")
 local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("opdsparser")
 local Screen = require("device").screen
@@ -70,6 +72,7 @@ local OPDSBrowser = Menu:extend{
     acquisition_rel = "^http://opds%-spec%.org/acquisition",
     image_rel = "http://opds-spec.org/image",
     thumbnail_rel = "http://opds-spec.org/image/thumbnail",
+    stream_rel = "http://vaemendis.net/opds-pse/stream",
 
     width = Screen:getWidth(),
     height = Screen:getHeight(),
@@ -500,6 +503,14 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                             href = build_href(link.href),
                             title = link.title,
                         })
+                    elseif link.rel == self.stream_rel then
+                        table.insert(item.acquisitions, {
+                            type = link.type,
+                            href = build_href(link.href),
+                            title = link.title,
+                            stream = true,
+                            count = tonumber(link["pse:count"] or "1"),
+                        })
                     elseif link.rel == self.thumbnail_rel then
                         item.thumbnail = build_href(link.href)
                     elseif link.rel == self.image_rel then
@@ -672,6 +683,63 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
     end
 end
 
+function OPDSBrowser:streamPages(item, remote_url, count)
+    local page_table = {image_disposable = true}
+    setmetatable(page_table, {__index = function (t, key)
+        if type(key) ~= "number" then
+            local error_bb = RenderImage:renderImageFile("resources/koreader.png", false)
+            return error_bb
+        else
+            local index = key - 1
+            local page_url = remote_url:gsub("{pageNumber}", tostring(index))
+            page_url = page_url:gsub("{maxWidth}", tostring(Screen:getWidth()))
+            local page_data = {}
+            
+            logger.dbg("Streaming page from", page_url)
+            local parsed = url.parse(page_url)
+
+            local code, headers
+            if parsed.scheme == "http" or parsed.scheme == "https" then
+                socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+                code, headers = socket.skip(1, http.request {
+                    url         = page_url,
+                    headers     = {
+                        ["Accept-Encoding"] = "identity",
+                    },
+                    sink        = ltn12.sink.table(page_data),
+                    user        = item.username,
+                    password    = item.password,
+                })
+                socketutil:reset_timeout()
+            else
+                UIManager:show(InfoMessage:new {
+                    text = T(_("Invalid protocol:\n%1"), parsed.scheme),
+                    timeout = 3,
+                })
+            end
+            
+            local data = table.concat(page_data)
+        
+            if code == 200 then
+                local page_bb = RenderImage:renderImageData(data, #data, false)
+                return page_bb
+            else
+                local error_bb = RenderImage:renderImageFile("resources/koreader.png", false)
+                return error_bb
+            end
+        end
+    end})
+    local viewer = ImageViewer:new{
+        image = page_table,
+        fullscreen = true,
+        with_title_bar = false,
+        image_disposable = false, -- instead set page_table image_disposable to true
+    }
+    -- in Lua 5.2 we could override __len, but this works too
+    viewer._images_list_nb = count
+    UIManager:show(viewer)
+end
+
 function OPDSBrowser:showDownloads(item)
     local acquisitions = item.acquisitions
     local filename = item.title
@@ -690,23 +758,36 @@ function OPDSBrowser:showDownloads(item)
     local type_buttons = {} -- file type download buttons
     for i = 1, #acquisitions do -- filter out unsupported file types
         local acquisition = acquisitions[i]
-        local filetype = util.getFileNameSuffix(acquisition.href)
-        logger.dbg("Filetype for download is", filetype)
-        if not DocumentRegistry:hasProvider("dummy." .. filetype) then
-            filetype = nil
-        end
-        if not filetype and DocumentRegistry:hasProvider(nil, acquisition.type) then
-            filetype = DocumentRegistry:mimeToExt(acquisition.type)
-        end
-        if filetype then -- supported file type
-            local text = acquisition.title and acquisition.title or string.upper(filetype)
+        
+        if acquisition.stream then
+            -- this is an OPDS PSE stream
             table.insert(type_buttons, {
-                text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
+                text = _("Page Stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                 callback = function()
-                    self:downloadFile(item, filename .. "." .. string.lower(filetype), acquisition.href)
+                    self:streamPages(item, acquisition.href, acquisition.count)
                     UIManager:close(self.download_dialog)
                 end,
             })
+        else
+            -- this is some other type of file
+            local filetype = util.getFileNameSuffix(acquisition.href)
+            logger.dbg("Filetype for download is", filetype)
+            if not DocumentRegistry:hasProvider("dummy." .. filetype) then
+                filetype = nil
+            end
+            if not filetype and DocumentRegistry:hasProvider(nil, acquisition.type) then
+                filetype = DocumentRegistry:mimeToExt(acquisition.type)
+            end
+            if filetype then -- supported file type
+                local text = acquisition.title and acquisition.title or string.upper(filetype)
+                table.insert(type_buttons, {
+                    text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
+                    callback = function()
+                        self:downloadFile(item, filename .. "." .. string.lower(filetype), acquisition.href)
+                        UIManager:close(self.download_dialog)
+                    end,
+                })
+            end
         end
     end
     if (#type_buttons % 2 == 1) then -- we need even number of type buttons
