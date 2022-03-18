@@ -768,9 +768,11 @@ function MosaicMenuItem:paintTo(bb, x, y)
     end
 
     if self.percent_finished then
-        local pos_x = x+self.width - progress_widget.width - ((self.width - self[1][1][1].width) / 2) -progress_widget.bordersize
+        local cover_item = self[1][1][1]
+        local pos_x = x + self.width - progress_widget.width - math.ceil((self.width - cover_item.width) / 2) - progress_widget.bordersize
+        local pos_y = y + self.height - progress_widget.height - math.ceil((self.height - cover_item.height) / 2)
         progress_widget:setPercentage(self.percent_finished)
-        progress_widget:paintTo(bb, pos_x, y+self.height-progress_widget.height-progress_widget.bordersize)
+        progress_widget:paintTo(bb, pos_x, pos_y)
     end
 
     -- to which we paint a small indicator if this book has a description
@@ -899,15 +901,17 @@ function MosaicMenu:_recalculateDimen()
     local progress_bar_width = self.item_width * 0.60;
 
     if not progress_widget or progress_widget.width ~= progress_bar_width then
-        if progress_widget then
-            progress_widget:free()
-        end
+        -- if progress_widget then
+        --     progress_widget:free()
+        -- end
         progress_widget = ProgressWidget:new{
             bgcolor = Blitbuffer.COLOR_WHITE,
             fillcolor = Blitbuffer.COLOR_BLACK,
             bordercolor = Blitbuffer.COLOR_BLACK,
             height = Screen:scaleBySize(6),
-            width = progress_bar_width
+            width = progress_bar_width,
+            -- radius = 0,
+            bordersize = Size.border.thin,
         }
     end
 end
