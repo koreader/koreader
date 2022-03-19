@@ -227,7 +227,7 @@ fi
 version() { echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1,$2,$3); }'; }
 
 # Detect kernels w/ CLOEXEC support
-if [ "$(version "$(uname -r | sed -n -r 's/^([[:digit:]\.]*)(.*?)$/\1/p')")" -lt "$(version "2.6.23")" ] ; then
+if [ "$(version "$(uname -r | sed -n -r 's/^([[:digit:]\.]*)(.*?)$/\1/p')")" -lt "$(version "2.6.23")" ]; then
     export KINDLE_LEGACY="yes"
 fi
 
