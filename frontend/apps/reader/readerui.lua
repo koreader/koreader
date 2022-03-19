@@ -290,19 +290,19 @@ function ReaderUI:init()
         end
         -- make sure we render document first before calling any callback
         self:registerPostInitCallback(function()
-            local start_tv = TimeVal:now()
+            local start_fts = TimeVal.now_fts()
             if not self.document:loadDocument() then
                 self:dealWithLoadDocumentFailure()
             end
-            logger.dbg(string.format("  loading took %.3f seconds", TimeVal:getDuration(start_tv)))
+            logger.dbg(string.format("  loading took %.3f seconds", TimeVal:getDuration(TimeVal.fts2tv(start_fts))))
 
             -- used to read additional settings after the document has been
             -- loaded (but not rendered yet)
             self:handleEvent(Event:new("PreRenderDocument", self.doc_settings))
 
-            start_tv = TimeVal:now()
+            start_fts = TimeVal.now_fts()
             self.document:render()
-            logger.dbg(string.format("  rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
+            logger.dbg(string.format("  rendering took %.3f seconds", TimeVal:getDuration(TimeVal.fts2tv(start_fts))))
 
             -- Uncomment to output the built DOM (for debugging)
             -- logger.dbg(self.document:getHTMLFromXPointer(".0", 0x6830))
