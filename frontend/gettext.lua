@@ -280,6 +280,7 @@ function GetText_mt.__index.changeLang(new_lang)
             end
         end
     end
+    po:close()
     GetText.current_lang = new_lang
 end
 
