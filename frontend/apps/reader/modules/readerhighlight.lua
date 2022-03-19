@@ -896,9 +896,9 @@ dbg:guard(ReaderHighlight, "onShowHighlightMenu",
 
 function ReaderHighlight:_resetHoldTimer(clear)
     if clear then
-        self.hold_last_tv = nil
+        self.hold_last_fts = nil
     else
-        self.hold_last_tv = UIManager:getTime()
+        self.hold_last_fts = UIManager:getTime_fts()
     end
 end
 
@@ -1422,14 +1422,14 @@ function ReaderHighlight:onHoldRelease()
     end
 
     local long_final_hold = false
-    if self.hold_last_tv then
-        local hold_duration = TimeVal:now() - self.hold_last_tv
+    if self.hold_last_fts then
+        local hold_duration = TimeVal.now_fts() - self.hold_last_fts
         local long_hold_threshold = G_reader_settings:readSetting("highlight_long_hold_threshold", 3)
-        if hold_duration > TimeVal:new{ sec = long_hold_threshold, usec = 0 } then
+        if hold_duration > TimeVal.s2fts(long_hold_threshold) then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
         end
-        self.hold_last_tv = nil
+        self.hold_last_fts = nil
     end
     if self.is_word_selection then -- single-word selection
         if long_final_hold or G_reader_settings:isTrue("highlight_action_on_single_word") then
