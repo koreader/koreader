@@ -822,13 +822,13 @@ function Kobo:standby(max_duration)
     end
 
     local TimeVal = require("ui/timeval")
-    local standby_time_tv = TimeVal:boottime_or_realtime_coarse()
+    local standby_time_fts = TimeVal.tv2fts(TimeVal:boottime_or_realtime_coarse())
 
     logger.info("Kobo suspend: asking to enter standby . . .")
     local ret = writeToSys("standby", "/sys/power/state")
 
-    self.last_standby_tv = TimeVal:boottime_or_realtime_coarse() - standby_time_tv
-    self.total_standby_tv = self.total_standby_tv + self.last_standby_tv
+    self.last_standby_fts = TimeVal.tv2fts(TimeVal:boottime_or_realtime_coarse()) - standby_time_fts
+    self.total_standby_tfs = self.total_standby_fts + self.last_standby_fts
 
     logger.info("Kobo suspend: zZz zZz zZz zZz? Write syscall returned: ", ret)
 
@@ -917,7 +917,7 @@ function Kobo:suspend()
     end
 
     local TimeVal = require("ui/timeval")
-    local suspend_time_tv = TimeVal:boottime_or_realtime_coarse()
+    local suspend_time_fts = TimeVal.tv2fts(TimeVal:boottime_or_realtime_coarse())
 
     re, err_msg, err_code = f:write("mem\n")
     if not re then
@@ -928,8 +928,8 @@ function Kobo:suspend()
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
     -- execution should only resume on wakeup...
 
-    self.last_suspend_tv = TimeVal:boottime_or_realtime_coarse() - suspend_time_tv
-    self.total_suspend_tv = self.total_suspend_tv + self.last_suspend_tv
+    self.last_suspend_fts = TimeVal.tv2fts(TimeVal:boottime_or_realtime_coarse()) - suspend_time_fts
+    self.total_suspend_fts = self.total_suspend_fts + self.last_suspend_fts
 
     logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
     -- NOTE: Ideally, we'd need a way to warn the user that suspending

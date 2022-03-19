@@ -32,7 +32,7 @@ local AutoSuspend = WidgetContainer:new{
     autoshutdown_timeout_seconds = default_autoshutdown_timeout_seconds,
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
-    last_action_tv = TimeVal.zero,
+    last_action_fts = 0,
     is_standby_scheduled = false,
     task = nil,
     standby_task = nil,
@@ -71,9 +71,9 @@ function AutoSuspend:_schedule(shutdown_only)
         suspend_delay = self.auto_suspend_timeout_seconds
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
-        local now_tv = UIManager:getElapsedTimeSinceBoot()
-        suspend_delay = self.auto_suspend_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
-        shutdown_delay = self.autoshutdown_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
+        local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
+        delay_suspend = TimeVal.fts2s(self.last_action_fts - now_fts) + self.auto_suspend_timeout_seconds
+        delay_shutdown = TimeVal.fts2s(self.last_action_fts - now_fts) + self.autoshutdown_timeout_seconds
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -183,7 +183,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fst()
 end
 
 function AutoSuspend:_unschedule_standby()
@@ -569,7 +569,7 @@ function AutoSuspend:onAllowStandby()
     if #scheduler_times == 2 then
         -- Wake up slightly after the formerly scheduled event,
         -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
-        wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
+        wake_in = math.floor(scheduler_times[2]) + 1
     end
 
     if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
@@ -579,7 +579,7 @@ function AutoSuspend:onAllowStandby()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        logger.dbg("AutoSuspend: left standby after", Device.last_standby_tv:tonumber(), "s")
+        logger.dbg("AutoSuspend: leaving standby after " .. fts.toSecs(Device.last_standby_fts) .. " s")
 
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
         -- to make sure UIManager will consume the input events that woke us up first
