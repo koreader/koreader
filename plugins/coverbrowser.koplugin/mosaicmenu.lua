@@ -89,6 +89,7 @@ function ItemShortCutIcon:init()
     }
 end
 
+
 -- We may find a better algorithm, or just a set of
 -- nice looking combinations of 3 sizes to iterate thru
 -- The rendering of the TextBoxWidget we're doing below
@@ -364,7 +365,6 @@ function MosaicMenuItem:init()
     -- filepath may be provided as 'file' (history) or 'path' (filechooser)
     -- store it as attribute so we can use it elsewhere
     self.filepath = self.entry.file or self.entry.path
-    -- logger.dbg(self.filepath)
 
     -- As done in MenuItem
     -- Squared letter for keyboard navigation
@@ -652,14 +652,13 @@ function MosaicMenuItem:update()
                 self.has_description = true
             end
 
-            if not self.menu.cover_info_cache then
-                self.menu.cover_info_cache = {}
-            end
-
             -- Current page / pages are available or more accurate in .sdr/metadata.lua
             -- We use a cache (cleaned at end of this browsing session) to store
             -- page, percent read and book status from sidecar files, to avoid
             -- re-parsing them when re-rendering a visited page
+            -- This cache is shared with ListMenu, so we need to fill it with the same
+            -- info here than there, even if we don't need them all here.
+            
             if not self.menu.cover_info_cache then
                 self.menu.cover_info_cache = {}
             end
@@ -907,9 +906,6 @@ function MosaicMenu:_recalculateDimen()
     local progress_bar_width = self.item_width * 0.60;
 
     if not progress_widget or progress_widget.width ~= progress_bar_width then
-        -- if progress_widget then
-        --     progress_widget:free()
-        -- end
         progress_widget = ProgressWidget:new{
             bgcolor = Blitbuffer.COLOR_WHITE,
             fillcolor = Blitbuffer.COLOR_BLACK,
