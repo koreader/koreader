@@ -5,7 +5,6 @@ local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
@@ -14,6 +13,7 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
+local fts = require("ui/fixedpointtimesecond")
 
 local function copyPageState(page_state)
     return {
@@ -98,7 +98,7 @@ function ReaderPaging:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
-    self.pan_interval = TimeVal:new{ usec = 1000000 / self.pan_rate }
+    self.pan_interval_fts = fts.fromSec(1.000000 / self.pan_rate)
     self.number_of_pages = self.ui.document.info.number_of_pages
 end
 
@@ -321,9 +321,9 @@ function ReaderPaging:bookmarkFlipping(flipping_page, flipping_ges)
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
-function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay)
+function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_fts)
     self.scroll_method = scroll_method
-    self.scroll_activation_delay = TimeVal:new{ usec = scroll_activation_delay * 1000 }
+    self.scroll_activation_delay_fts = scroll_activation_delay_fts * 1000
     if inertial_scroll_enabled then
         self.ui.scrolling:setInertialScrollCallbacks(
             function(distance) -- do_scroll_callback
@@ -408,11 +408,11 @@ function ReaderPaging:onPan(_, ges)
                 self._pan_has_scrolled = false
                 self._pan_prev_relative_y = 0
                 self._pan_to_scroll_later = 0
-                self._pan_real_last_time = TimeVal.zero
+                self._pan_real_last_time_fts = 0
                 if ges.mousewheel_direction then
-                    self._pan_activation_time = false
+                    self._pan_activation_time_fts = false
                 else
-                    self._pan_activation_time = ges.time + self.scroll_activation_delay
+                    self._pan_activation_time_fts = ges.time_fts + self.scroll_activation_delay_fts
                 end
                 -- We will restore the previous position if this pan
                 -- ends up being a swipe or a multiswipe
@@ -425,12 +425,12 @@ function ReaderPaging:onPan(_, ges)
                 self._pan_page_states_to_restore = self.view.page_states
             end
             local scroll_now = false
-            if self._pan_activation_time and ges.time >= self._pan_activation_time then
-                self._pan_activation_time = false -- We can go on, no need to check again
+            if self._pan_activation_time_fts and ges.time_fts >= self._pan_activation_time_fts then
+                self._pan_activation_time_fts = false -- We can go on, no need to check again
             end
-            if not self._pan_activation_time and ges.time - self._pan_real_last_time >= self.pan_interval then
+            if not self._pan_activation_time_fts and ges.time_fts - self._pan_real_last_time_fts >= self.pan_interval_fts then
                 scroll_now = true
-                self._pan_real_last_time = ges.time
+                self._pan_real_last_time_fts = ges.time_fts
             end
             local scroll_dist = 0
             if self.scroll_method == self.ui.scrolling.SCROLL_METHOD_CLASSIC then
@@ -443,9 +443,9 @@ function ReaderPaging:onPan(_, ges)
                     if self.ui.scrolling:cancelInertialScroll() or self.ui.scrolling:cancelledByTouch() then
                         -- If this pan or its initial touch did cancel some inertial scrolling,
                         -- ignore activation delay to allow continuous scrolling
-                        self._pan_activation_time = false
+                        self._pan_activation_time_fts = false
                         scroll_now = true
-                        self._pan_real_last_time = ges.time
+                        self._pan_real_last_time_fts = ges.time_fts
                     end
                 end
                 self.ui.scrolling:accountManualScroll(scroll_dist, ges.time)

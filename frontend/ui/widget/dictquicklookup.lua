@@ -18,7 +18,6 @@ local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
-local TimeVal = require("ui/timeval")
 local TitleBar = require("ui/widget/titlebar")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
@@ -32,6 +31,8 @@ local C_ = _.pgettext
 local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
+
+local fts = require("ui/fixedpointtimesecond")
 
 --[[
 Display quick lookup word definition
@@ -151,10 +152,10 @@ function DictQuickLookup:init()
                     range = range,
                 },
                 -- callback function when HoldReleaseText is handled as args
-                args = function(text, hold_duration)
+                args = function(text, hold_duration_fts)
                     -- do this lookup in the same domain (dict/wikipedia)
                     local lookup_wikipedia = self.is_wiki
-                    if hold_duration >= TimeVal:new{ sec = 3, usec = 0 } then
+                    if hold_duration_fts >= fts.fromSec(3) then
                         -- but allow switching domain with a long hold
                         lookup_wikipedia = not lookup_wikipedia
                     end

@@ -1,12 +1,13 @@
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
+
+local fts = require("ui/fixedpointtimesecond")
 
 -- This module exposes Scrolling settings, and additionnally
 -- handles inertial scrolling on non-eInk devices.
@@ -30,7 +31,7 @@ local ReaderScrolling = InputContainer:new{
     -- go at ending scrolling soon when we reach steps smaller than this
     end_scroll_dist = Screen:scaleBySize(10),
     -- no inertial scrolling if 300ms pause without any movement before release
-    pause_before_release_cancel_duration = TimeVal:new{ sec = 0, usec = 300000 },
+    pause_before_release_cancel_duration_fts = fts.fromSec(0.300000),
 
     -- Callbacks to be updated by readerrolling or readerpaging
     _do_scroll_callback = function(distance) return false end,
@@ -66,7 +67,7 @@ function ReaderScrolling:init()
         -- we miss a first touch event.
         -- We can keep it obsolete, which will result in a long
         -- duration and a small/zero velocity that won't hurt.
-        self._last_manual_scroll_timev = TimeVal.zero
+        self._last_manual_scroll_timev_fts = 0
         self:_setupAction()
     end
 
@@ -232,7 +233,7 @@ function ReaderScrolling:setupTouchZones()
             handler = function(ges)
                 -- A touch might set the start of the first pan event,
                 -- that we need to compute its duration
-                self._last_manual_scroll_timev = ges.time
+                self._last_manual_scroll_timev_fts = ges.time_fts
                 -- If we are scrolling, a touch cancels it.
                 -- We want its release (which will trigger a tap) to not change pages.
                 -- This also allows a pan following this touch to skip any scroll
@@ -303,13 +304,13 @@ function ReaderScrolling:cancelledByTouch()
     return self._cancelled_by_touch
 end
 
-function ReaderScrolling:accountManualScroll(dy, timev)
+function ReaderScrolling:accountManualScroll(dy, timev_fts)
     if not self._inertial_scroll_enabled then
         return
     end
     self._last_manual_scroll_dy = dy
-    self._last_manual_scroll_duration = timev - self._last_manual_scroll_timev
-    self._last_manual_scroll_timev = timev
+    self._last_manual_scroll_duration = timev_fts - self._last_manual_scroll_timev_fts
+    self._last_manual_scroll_timev_fts = timev_fts
 end
 
 function ReaderScrolling:_setupAction()
@@ -334,7 +335,7 @@ function ReaderScrolling:_setupAction()
             end
 
             -- Initiate inertial scrolling (action=true), unless we should not
-            if UIManager:getTime() - self._last_manual_scroll_timev >= self.pause_before_release_cancel_duration then
+            if UIManager:getTime_fts() - self._last_manual_scroll_timev_fts >= self.pause_before_release_cancel_duration_fts then
                 -- but not if no finger move for 0.3s before finger up
                 self._last_manual_scroll_dy = 0
                 return false

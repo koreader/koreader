@@ -1,5 +1,6 @@
 require("commonrequire")
 local TimeVal = require("ui/timeval")
+local fts = require("ui/fixedpointtimesecond")
 local ffi = require("ffi")
 local dummy = require("ffi/posix_h")
 local logger = require("logger")
@@ -21,6 +22,10 @@ local MockTime = {
     realtime = 0,
     boottime = 0,
     boottime_or_realtime_coarse = 0,
+    monotonic_fts = 0,
+    realtime_fts = 0,
+    boottime_fts = 0,
+    boottime_or_realtime_coarse_fts = 0,
 }
 
 function MockTime:install()
@@ -100,7 +105,72 @@ function MockTime:install()
         logger.dbg("MockTime:TimeVal.now: ", self.monotonic)
         return TimeVal:new{ sec = self.monotonic }
     end
-end
+
+    if self.original_tv_realtime_fts == nil then
+        self.original_tv_realtime_fts = fts.realtime
+        assert(self.original_tv_realtime ~= nil)
+    end
+    if self.original_tv_realtime_coarse_fts == nil then
+        self.original_tv_realtime_coarse_fts = fts.realtime_coarse
+        assert(self.original_tv_realtime_coarse ~= nil)
+    end
+    if self.original_tv_monotonic_fts == nil then
+        self.original_tv_monotonic_fts = fts.monotonic
+        assert(self.original_tv_monotonic_fts ~= nil)
+    end
+    if self.original_tv_monotonic_coarse_fts == nil then
+        self.original_tv_monotonic_coarse_fts = fts.monotonic_coarse
+        assert(self.original_tv_monotonic_coarse_fts ~= nil)
+    end
+    if self.original_tv_boottime_fts == nil then
+        self.original_tv_boottime_fts = fts.boottime
+        assert(self.original_tv_boottime_fts ~= nil)
+    end
+    if self.original_tv_boottime_or_realtime_coarse_fts == nil then
+        self.original_tv_boottime_or_realtime_coarse_fts = fts.boottime_or_realtime_coarse
+        assert(self.original_tv_boottime_or_realtime_coarse_fts ~= nil)
+    end
+    if self.original_tv_now_fts == nil then
+        self.original_tv_now_fts = fts.now
+        assert(self.original_tv_now_fts ~= nil)
+    end
+
+        -- Store both REALTIME & MONOTONIC clocks for fts
+    self.realtime_fts = os.time() * 1e6
+    local timespec_fts = ffi.new("struct timespec")
+    C.clock_gettime(C.CLOCK_MONOTONIC_COARSE, timespec_fts)
+    self.monotonic_fts = tonumber(timespec.tv_sec) * 1e6
+
+    fts.realtime = function()
+        logger.dbg("MockTime:TimeVal.realtime: ", self.realtime_fts)
+        return self.realtime_fts
+    end
+    fts.realtime_coarse = function()
+        logger.dbg("MockTime:TimeVal.realtime_coarse: ", self.realtime_coarse_fts)
+        return self.realtime_coarse_fts
+    end
+    fts.monotonic = function()
+        logger.dbg("MockTime:TimeVal.monotonic: ", self.monotonic_fts)
+        return self.monotonic_fts
+    end
+    fts.monotonic_coarse = function()
+        logger.dbg("MockTime:TimeVal.monotonic_coarse: ", self.monotonic_fts)
+        return self.monotonic_fts
+    end
+    fts.boottime = function()
+        logger.dbg("MockTime:TimeVal.boottime: ", self.boottime_fts)
+        return self.boottime_fts
+    end
+    fts.boottime_or_realtime_coarse = function()
+        logger.dbg("MockTime:TimeVal.boottime: ", self.boottime_or_realtime_coarse_fts)
+        return self.boottime_or_realtime_coarse_fts
+    end
+    fts.now = function()
+        logger.dbg("MockTime:TimeVal.now: ", self.monotonic_fts)
+        return self.monotonic_fts
+    end
+
+ end
 
 function MockTime:uninstall()
     assert(self ~= nil)
@@ -240,6 +310,17 @@ function MockTime:increase(value)
     logger.dbg("MockTime:increase (boottime) ", self.boottime)
     self.boottime_or_realtime_coarse = math.floor(self.boottime_or_realtime_coarse + value)
     logger.dbg("MockTime:increase (boottime) ", self.boottime_or_realtime_coarse)
+
+    local value_fts = value * 1e6
+    self.realtime_fts = math.floor(self.realtime_fts + value_fts)
+    logger.dbg("MockTime:increase (realtime) ", self.realtime_fts)
+    self.monotonic_fts = math.floor(self.monotonic_fts + value_fts)
+    logger.dbg("MockTime:increase (monotonic) ", self.monotonic_fts)
+    self.boottime_fts = math.floor(self.boottime_fts + value_fts)
+    logger.dbg("MockTime:increase (boottime) ", self.boottime_fts)
+    self.boottime_or_realtime_coarse_fts = math.floor(self.boottime_or_realtime_coarse_fts + value_fts)
+    logger.dbg("MockTime:increase (boottime) ", self.boottime_or_realtime_coarse_fts)
+
     return true
 end
 

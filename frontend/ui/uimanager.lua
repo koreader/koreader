@@ -14,6 +14,8 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
+local fts = require("ui/fixedpointtimesecond")
+
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
 -- there is only one instance of this
@@ -31,6 +33,7 @@ local UIManager = {
 
     _running = true,
     _now = TimeVal:now(),
+    _now_fts = fts.now(),
     _window_stack = {},
     _task_queue = {},
     _task_queue_dirty = false,
@@ -42,7 +45,7 @@ local UIManager = {
     _exit_code = nil,
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
-    _discard_events_till = nil,
+    _discard_events_till_fts = nil,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -523,14 +526,15 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
 end
 
 -- schedule an execution task, task queue is in ascendant order
-function UIManager:schedule(time, action, ...)
+function UIManager:schedule(time_fts, action, ...)
     local p, s, e = 1, 1, #self._task_queue
+
     if e ~= 0 then
         -- do a binary insert
         repeat
-            p = math.floor(s + (e - s) / 2)
-            local p_time = self._task_queue[p].time
-            if time > p_time then
+            p = math.floor(s + (e - s) / 2) -- we could use (e+s)/2 here.
+            local p_time_fts = self._task_queue[p].time_fts
+            if time_fts > p_time_fts then
                 if s == e then
                     p = e + 1
                     break
@@ -539,11 +543,11 @@ function UIManager:schedule(time, action, ...)
                 else
                     s = p
                 end
-            elseif time < p_time then
-                e = p
-                if s == e then
+            elseif time_fts < p_time_fts then
+                if s == p then
                     break
                 end
+                e = p
             else
                 -- for fairness, it's better to make p+1 is strictly less than
                 -- p might want to revisit here in the future
@@ -551,17 +555,19 @@ function UIManager:schedule(time, action, ...)
             end
         until e < s
     end
+
     table.insert(self._task_queue, p, {
-        time = time,
+        time_fts = time_fts,
         action = action,
         argc = select('#', ...),
         args = {...},
     })
+
     self._task_queue_dirty = true
 end
 dbg:guard(UIManager, 'schedule',
-    function(self, time, action)
-        assert(time.sec >= 0, "Only positive time allowed")
+    function(self, time_fts, action)
+        assert(time_fts >= 0, "Only positive time allowed")
         assert(action ~= nil, "No action")
     end)
 
@@ -577,8 +583,8 @@ Schedules a task to be run a certain amount of seconds from now.
 function UIManager:scheduleIn(seconds, action, ...)
     -- We might run significantly late inside an UI frame, so we can't use the cached value here.
     -- It would also cause some bad interactions with the way nextTick & co behave.
-    local when = TimeVal:now() + TimeVal:fromnumber(seconds)
-    self:schedule(when, action, ...)
+    local when_fts = fts.now() + fts.fromSec(seconds)
+    self:schedule(when_fts, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
     function(self, seconds, action)
@@ -1052,10 +1058,10 @@ Request all @{ui.event.Event|Event}s to be ignored for some duration.
 ]]
 function UIManager:discardEvents(set_or_seconds)
     if not set_or_seconds then -- remove any previously set
-        self._discard_events_till = nil
+        self._discard_events_till_fts = nil
         return
     end
-    local delay
+    local delay_fts
     if set_or_seconds == true then
         -- Use an adequate delay to account for device refresh duration
         -- so any events happening in this delay (ie. before a widget
@@ -1065,15 +1071,15 @@ function UIManager:discardEvents(set_or_seconds)
             -- sometimes > 500ms on some devices/temperatures.
             -- So, block for 400ms (to have it displayed) + 400ms
             -- for user reaction to it
-            delay = TimeVal:new{ sec = 0, usec = 800000 }
+            delay_fts = fts.fromSec(0.8)
         else
             -- On non-eInk screen, display is usually instantaneous
-            delay = TimeVal:new{ sec = 0, usec = 400000 }
+            delay_fts = fts.fromSec(0.4)
         end
     else -- we expect a number
-        delay = TimeVal:new{ sec = set_or_seconds, usec = 0 }
+        delay_fts = fts.fromSec(set_or_seconds)
     end
-    self._discard_events_till = TimeVal:now() + delay
+    self._discard_events_till_fts = self._now_fts + delay_fts
 end
 
 --[[--
@@ -1088,11 +1094,11 @@ function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
 
     -- Ensure discardEvents
-    if self._discard_events_till then
-        if TimeVal:now() < self._discard_events_till then
+    if self._discard_events_till_fts then
+        if fts.now() < self._discard_events_till_fts then
             return
         else
-            self._discard_events_till = nil
+            self._discard_events_till_fts = nil
         end
     end
 
@@ -1192,7 +1198,8 @@ end
 
 function UIManager:_checkTasks()
     self._now = TimeVal:now()
-    local wait_until = nil
+    self._now_fts = fts.fromTv(self._now)
+    local wait_until_fts = nil
 
     -- task.action may schedule other events
     self._task_queue_dirty = false
@@ -1202,8 +1209,8 @@ function UIManager:_checkTasks()
             break
         end
         local next_task = self._task_queue[1]
-        local task_tv = next_task.time or TimeVal.zero
-        if task_tv <= self._now then
+        local task_fts = next_task.time_fts or 0
+        if task_fts <= self._now_fts then
             -- remove from table
             local task = table.remove(self._task_queue, 1)
             -- task is pending to be executed right now. do it.
@@ -1213,12 +1220,12 @@ function UIManager:_checkTasks()
         else
             -- queue is sorted in ascendant order, safe to assume all items
             -- are future tasks for now
-            wait_until = next_task.time
+            wait_until_fts = next_task.time_fts
             break
         end
     end
 
-    return wait_until, self._now
+    return wait_until_fts, self._now_fts
 end
 
 --[[--
@@ -1244,10 +1251,19 @@ function UIManager:getTime()
 end
 
 --[[--
-Returns a TimeVal object corresponding to the last UI tick plus the time in standby and suspend.
+Returns a fts corresponding to the last tick.
+
+Anything else as explained in getTime
 ]]
-function UIManager:getElapsedTimeSinceBoot()
-    return self:getTime() + Device.total_standby_tv + Device.total_suspend_tv
+function UIManager:getTime_fts()
+    return self._now_fts
+end
+
+--[[--
+Returns a TimeVal object corresponding to the last UI tick plus the time in standby.
+]]
+function UIManager:getElapsedTimeSinceBoot_fts()
+    return self:getTime_fts() + Device.total_standby_fts + Device.total_suspend_fts
 end
 
 -- precedence of refresh modes:
@@ -1635,12 +1651,12 @@ function UIManager:processZMQs()
 end
 
 function UIManager:handleInput()
-    local wait_until, now
+    local wait_until_fts, now_fts
     -- run this in a loop, so that paints can trigger events
     -- that will be honored when calculating the time to wait
     -- for input events:
     repeat
-        wait_until, now = self:_checkTasks()
+        wait_until_fts, now_fts = self:_checkTasks()
         --dbg("---------------------------------------------------")
         --dbg("wait_until", wait_until)
         --dbg("now", now)
@@ -1665,7 +1681,7 @@ function UIManager:handleInput()
     --       which gives us a chance for another iteration, meaning going through _checkTasks to catch said scheduled tasks.
     -- Figure out how long to wait.
     -- Ultimately, that'll be the earliest of INPUT_TIMEOUT, ZMQ_TIMEOUT or the next earliest scheduled task.
-    local deadline
+    local deadline_fts
     -- Default to INPUT_TIMEOUT (which may be nil, i.e. block until an event happens).
     local wait_us = self.INPUT_TIMEOUT
 
@@ -1676,14 +1692,14 @@ function UIManager:handleInput()
 
     -- We pass that on as an absolute deadline, not a relative wait time.
     if wait_us then
-        deadline = now + TimeVal:new{ usec = wait_us }
+        deadline_fts = now_fts + wait_us
     end
 
     -- If there's a scheduled task pending, that puts an upper bound on how long to wait.
-    if wait_until and (not deadline or wait_until < deadline) then
+    if wait_until_fts and (not deadline_fts or wait_until_fts < deadline_fts) then
         --             ^ We don't have a TIMEOUT induced deadline, making the choice easy.
         --                             ^ We have a task scheduled for *before* our TIMEOUT induced deadline.
-        deadline = wait_until
+        deadline_fts = wait_until_fts
     end
 
     -- Run ZMQs if any
@@ -1695,7 +1711,7 @@ function UIManager:handleInput()
     self:_standbyTransition()
 
     -- wait for next batch of events
-    local input_events = Input:waitEvent(now, deadline)
+    local input_events = Input:waitEvent(now_fts, deadline_fts)
 
     -- delegate each input event to handler
     if input_events then
@@ -1720,7 +1736,6 @@ function UIManager:handleInput()
         end)
     end
 end
-
 
 function UIManager:onRotation()
     self:setDirty("all", "full")

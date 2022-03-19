@@ -14,6 +14,8 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local lru = require("ffi/lru")
 
+local fts = require("ui/fixedpointtimesecond")
+
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
 
@@ -694,16 +696,16 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- We also honor the current smooth scaling setting,
     -- as well as the global SW dithering setting.
 
-    --local start_tv = TimeVal:now()
+    --local start_fts = fts.now_fts()
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
-    --local end_tv = TimeVal:now()
-    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_tv - start_tv):tomsecs()))
+    --local end_fts = fts.now_fts()
+    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", end_fts - start_fts)
 
-    --start_tv = TimeVal:now()
+    --start_fts = fts.now_fts()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
-    --end_tv = TimeVal:now()
-    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (end_tv - start_tv):tomsecs()))
+    --end_fts = fts.now_fts()
+    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", end_fts - start_fts)
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)

@@ -56,7 +56,6 @@ local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screenshoter = require("ui/widget/screenshoter")
 local SettingsMigration = require("ui/data/settings_migration")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local ffiUtil  = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
@@ -65,6 +64,8 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = ffiUtil.template
+
+local fts = require("ui/fixedpointtimesecond")
 
 local ReaderUI = InputContainer:new{
     name = "ReaderUI",
@@ -290,19 +291,19 @@ function ReaderUI:init()
         end
         -- make sure we render document first before calling any callback
         self:registerPostInitCallback(function()
-            local start_tv = TimeVal:now()
+            local start_fts = fts.now()
             if not self.document:loadDocument() then
                 self:dealWithLoadDocumentFailure()
             end
-            logger.dbg(string.format("  loading took %.3f seconds", TimeVal:getDuration(start_tv)))
+            logger.dbg(string.format("  loading took %.3f seconds", fts.getDuration(start_fts)))
 
             -- used to read additional settings after the document has been
             -- loaded (but not rendered yet)
             self:handleEvent(Event:new("PreRenderDocument", self.doc_settings))
 
-            start_tv = TimeVal:now()
+            start_fts = fts.now()
             self.document:render()
-            logger.dbg(string.format("  rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
+            logger.dbg(string.format("  rendering took %.3f seconds", fts.getDuration(start_fts)))
 
             -- Uncomment to output the built DOM (for debugging)
             -- logger.dbg(self.document:getHTMLFromXPointer(".0", 0x6830))

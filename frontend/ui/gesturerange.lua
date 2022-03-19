@@ -1,4 +1,5 @@
-local TimeVal = require("ui/timeval")
+
+local fts = require("ui/fixedpointtimesecond")
 
 local GestureRange = {
     -- gesture matching type
@@ -43,9 +44,9 @@ function GestureRange:match(gs)
         -- This field sets up rate-limiting (in matches per second).
         -- It's mostly useful for e-Ink devices with less powerful CPUs
         -- and screens that cannot handle the amount of gesture events that would otherwise be generated.
-        local last_time = self.last_time or TimeVal.zero
-        if gs.time - last_time > TimeVal:new{ usec = 1000000 / self.rate } then
-            self.last_time = gs.time
+        local last_time_fts = self.last_time_fts or 0
+        if gs.time_fts - last_time_fts > fts.fromSec(1.000000 / self.rate) then
+            self.last_time_fst = gs.time_fts
         else
             return false
         end

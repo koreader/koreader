@@ -824,14 +824,14 @@ function Kobo:standby(max_duration)
         self.wakeup_mgr:addTask(max_duration, standby_alarm)
     end
 
-    local TimeVal = require("ui/timeval")
+    local fts = require("ui/fixedpointtimesecond")
     logger.info("Kobo standby: asking to enter standby . . .")
-    local standby_time_tv = TimeVal:boottime_or_realtime_coarse()
+    local standby_time_fts = fts.boottime_or_realtime_coarse()
 
     local ret = writeToSys("standby", "/sys/power/state")
 
-    self.last_standby_tv = TimeVal:boottime_or_realtime_coarse() - standby_time_tv
-    self.total_standby_tv = self.total_standby_tv + self.last_standby_tv
+    self.last_standby_fts = fts:boottime_or_realtime_coarse() - standby_time_fts
+    self.total_standby_tfs = self.total_standby_fts + self.last_standby_fts
 
     if ret then
         logger.info("Kobo standby: zZz zZz zZz zZz... And woke up!")
@@ -927,14 +927,14 @@ function Kobo:suspend()
 
     local TimeVal = require("ui/timeval")
     logger.info("Kobo suspend: asking for a suspend to RAM . . .")
-    local suspend_time_tv = TimeVal:boottime_or_realtime_coarse()
+    local suspend_time_fts = TimeVal.tv2fts(TimeVal:boottime_or_realtime_coarse())
 
     ret = writeToSys("mem", "/sys/power/state")
 
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
     --       execution should only resume on wakeup...
-    self.last_suspend_tv = TimeVal:boottime_or_realtime_coarse() - suspend_time_tv
-    self.total_suspend_tv = self.total_suspend_tv + self.last_suspend_tv
+    self.last_suspend_fts = fts.boottime_or_realtime_coarse() - suspend_time_fts
+    self.total_suspend_fts = self.total_suspend_fts + self.last_suspend_fts
 
     if ret then
         logger.info("Kobo suspend: ZzZ ZzZ ZzZ... And woke up!")

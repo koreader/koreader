@@ -13,7 +13,6 @@ end
 local Event = require("ui/event")
 local NetworkMgr = require("ui/network/manager")
 local PluginShare = require("pluginshare")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -21,6 +20,8 @@ local util = require("util")
 local _ = require("gettext")
 local Math = require("optmath")
 local T = require("ffi/util").template
+
+local fts = require("ui/fixedpointtimesecond")
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
@@ -32,7 +33,7 @@ local AutoSuspend = WidgetContainer:new{
     autoshutdown_timeout_seconds = default_autoshutdown_timeout_seconds,
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
-    last_action_tv = TimeVal.zero,
+    last_action_fts = 0,
     is_standby_scheduled = false,
     task = nil,
     standby_task = nil,
@@ -71,9 +72,9 @@ function AutoSuspend:_schedule(shutdown_only)
         suspend_delay = self.auto_suspend_timeout_seconds
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
-        local now_tv = UIManager:getElapsedTimeSinceBoot()
-        suspend_delay = self.auto_suspend_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
-        shutdown_delay = self.autoshutdown_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
+        local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
+        delay_suspend = fts.toSec(self.last_action_fts - now_fts) + self.auto_suspend_timeout_seconds
+        delay_shutdown = fts.toSec(self.last_action_fts - now_fts) + self.autoshutdown_timeout_seconds
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -185,7 +186,15 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+<<<<<<< HEAD
+    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fst()
+=======
+    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
+
+    -- NOTE: The fact that we run this on *this* event ensures we don't have to handle the standby scheduling
+    --       at all in setSuspendShutdownTimes ;).
+    self:_reschedule_standby()
+>>>>>>> 7638f709 (Switch to fts)
 end
 
 function AutoSuspend:_unschedule_standby()
@@ -583,7 +592,7 @@ function AutoSuspend:AllowStandbyHandler()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        logger.dbg("AutoSuspend: left standby after", Device.last_standby_tv:tonumber(), "s")
+        logger.dbg("AutoSuspend: leaving standby after " .. fts.toSec(Device.last_standby_fts) .. " s")
 
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
         -- to make sure UIManager will consume the input events that woke us up first
