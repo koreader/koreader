@@ -658,7 +658,6 @@ function MosaicMenuItem:update()
             -- re-parsing them when re-rendering a visited page
             -- This cache is shared with ListMenu, so we need to fill it with the same
             -- info here than there, even if we don't need them all here.
-            
             if not self.menu.cover_info_cache then
                 self.menu.cover_info_cache = {}
             end
