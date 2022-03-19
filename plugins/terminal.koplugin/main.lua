@@ -245,7 +245,7 @@ function Terminal:killShell(ask)
         return -1
     end
 
-    local pid = tonumber(pid_file:read("*a"))
+    local pid = pid_file:read("*n")
     pid_file:close()
 
     if ask then

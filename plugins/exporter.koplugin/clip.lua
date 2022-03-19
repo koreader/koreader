@@ -85,6 +85,7 @@ function MyClipping:parseMyClippings()
             end
             index = index + 1
         end
+        file:close()
     end
 
     return clippings

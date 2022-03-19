@@ -454,6 +454,7 @@ function ReaderStatistics:partialMd5(file)
             break
         end
     end
+    file_handle:close()
     return update()
 end
 

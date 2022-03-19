@@ -140,7 +140,7 @@ function SysfsLight:_write_value(file, value)
         return false
     end
     local ret, err_msg, err_code = f:write(value)
-    io.close(f)
+    f:close()
     if not ret then
         logger.err("Write error: ", err_msg, err_code)
         return false
