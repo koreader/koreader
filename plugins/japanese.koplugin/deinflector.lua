@@ -55,7 +55,14 @@ end
 
 local function parsePluginJson(filename)
     local jsonPath = getSourceDir().."/"..filename
-    local file, err = io.open(jsonPath, "r")
+    local open_flags = "r"
+    if jit.os == "Linux" then
+        -- Oldest Kindle devices are too old to support O_CLOEXEC...
+        if os.getenv("KINDLE_LEGACY") ~= "yes" then
+            open_flags = "re"
+        end
+    end
+    local file, err = io.open(jsonPath, open_flags)
     if file then
         local contents = file:read("*all")
         local ok, parsed = pcall(JSON.decode, contents)
