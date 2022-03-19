@@ -906,7 +906,6 @@ function MosaicMenu:_recalculateDimen()
 
     -- Create or replace progress_widget if needed
     local progress_bar_width =  self.item_width * 0.60;
-
     if not progress_widget or progress_widget.width ~= progress_bar_width then
         progress_widget = ProgressWidget:new{
             bgcolor = Blitbuffer.COLOR_WHITE,
