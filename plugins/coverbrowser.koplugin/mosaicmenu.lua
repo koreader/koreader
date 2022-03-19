@@ -757,8 +757,9 @@ function MosaicMenuItem:paintTo(bb, x, y)
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
 
+    local show_progress_in_mosaic = BookInfoManager:getSetting("show_progress_in_mosaic")
     -- to which we paint over a dogear if needed
-    if false and corner_mark and self.do_hint_opened and self.been_opened then
+    if not show_progress_in_mosaic and corner_mark and self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of sub-widget
         local target =  self[1][1][1]
         local ix
@@ -772,7 +773,7 @@ function MosaicMenuItem:paintTo(bb, x, y)
         corner_mark:paintTo(bb, x+ix, y+iy)
     end
 
-    if self.percent_finished then
+    if show_progress_in_mosaic and self.percent_finished then
         local cover_item = self[1][1][1]
         local width = math.min(self.width * 0.60, cover_item.width)
         progress_widget.width = width
@@ -891,7 +892,7 @@ function MosaicMenu:_recalculateDimen()
     -- Create or replace corner_mark if needed
     -- 1/12 (larger) or 1/16 (smaller) of cover looks allright
     local mark_size = math.floor(math.min(self.item_width, self.item_height) / 16)
-    if false and mark_size ~= corner_mark_size then
+    if mark_size ~= corner_mark_size then
         corner_mark_size = mark_size
         if corner_mark then
             corner_mark:free()
@@ -913,6 +914,7 @@ function MosaicMenu:_recalculateDimen()
             fillcolor = Blitbuffer.COLOR_BLACK,
             bordercolor = Blitbuffer.COLOR_BLACK,
             height = Screen:scaleBySize(6),
+            margin_h = Screen:scaleBySize(1),
             width = progress_bar_width,
             radius = Size.border.thin,
             bordersize = Size.border.thin,
