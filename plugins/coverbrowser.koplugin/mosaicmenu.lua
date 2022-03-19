@@ -774,6 +774,8 @@ function MosaicMenuItem:paintTo(bb, x, y)
 
     if self.percent_finished then
         local cover_item = self[1][1][1]
+        local width = math.min(self.width * 0.60, cover_item.width)
+        progress_widget.width = width
         local pos_x = x + self.width - progress_widget.width - math.ceil((self.width - cover_item.width) / 2) - progress_widget.bordersize
         local pos_y = y + self.height - progress_widget.height - math.ceil((self.height - cover_item.height) / 2)
         progress_widget:setPercentage(self.percent_finished)
@@ -903,7 +905,7 @@ function MosaicMenu:_recalculateDimen()
     end
 
     -- Create or replace progress_widget if needed
-    local progress_bar_width = self.item_width * 0.60;
+    local progress_bar_width =  self.item_width * 0.60;
 
     if not progress_widget or progress_widget.width ~= progress_bar_width then
         progress_widget = ProgressWidget:new{
