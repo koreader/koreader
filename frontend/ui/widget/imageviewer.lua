@@ -81,11 +81,11 @@ local ImageViewer = InputContainer:new{
 function ImageViewer:init()
     if Device:hasKeys() then
         if type(self.image) == "table" then
-            -- if self.image is a table, then use hardware keys to change page
+            -- if self.image is a table, then use hardware keys to change image
             self.key_events = {
                 Close = { {Device.input.group.Back}, doc = "close viewer" },
-                PageBack = { {Device.input.group.PgBack}, doc = "Page back" },
-                PageForward = { {Device.input.group.PgFwd}, doc = "Page forward" },
+                ShowPrevImage = { {Device.input.group.PgBack}, doc = "Previous image" },
+                ShowNextImage = { {Device.input.group.PgFwd}, doc = "Next image" },
             }
         else
             -- otherwise, use hardware keys to zoom in/out
@@ -459,14 +459,14 @@ function ImageViewer:switchToImageNum(image_num)
     self:update()
 end
 
--- Page events
-function ImageViewer:onPageForward()
+-- Image switching events
+function ImageViewer:onShowNextImage()
     if self._images_list_cur < self._images_list_nb then
         self:switchToImageNum(self._images_list_cur + 1)
     end
 end
 
-function ImageViewer:onPageBack()
+function ImageViewer:onShowPrevImage()
     if self._images_list_cur > 1 then
         self:switchToImageNum(self._images_list_cur - 1)
     end
@@ -502,9 +502,9 @@ function ImageViewer:onTap(_, ges)
             show_next_image = not BD.mirroredUILayout()
         end
         if show_prev_image then
-            self:onPageBack()
+            self:onShowPrevImage()
         elseif show_next_image then
-            self:onPageForward()
+            self:onShowNextImage()
         else -- toggle buttons when tap on middle 1/3 of screen width
             self.buttons_visible = not self.buttons_visible
             self:update()
