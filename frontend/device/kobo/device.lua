@@ -718,7 +718,7 @@ local function getProductId()
 end
 
 local unexpected_wakeup_count = 0
-local function check_unexpected_wakeup(_self)
+local function check_unexpected_wakeup(this)
     local UIManager = require("ui/uimanager")
     -- just in case other events like SleepCoverClosed also scheduled a suspend
     UIManager:unschedule(Kobo.suspend)
@@ -733,7 +733,7 @@ local function check_unexpected_wakeup(_self)
         logger.info("Kobo suspend: putting device back to sleep.")
         -- Most wakeup actions are linear, but we need some leeway for the
         -- poweroff action to send out close events to all requisite widgets.
-        UIManager:scheduleIn(30, Kobo.suspend, _self)
+        UIManager:scheduleIn(30, Kobo.suspend, this)
     else
         logger.dbg("Kobo suspend: checking unexpected wakeup:",
                    unexpected_wakeup_count)
@@ -749,7 +749,7 @@ local function check_unexpected_wakeup(_self)
 
         logger.err("Kobo suspend: putting device back to sleep. Unexpected wakeups:",
                    unexpected_wakeup_count)
-        Kobo.suspend(_self)
+        Kobo.suspend(this)
     end
 end
 

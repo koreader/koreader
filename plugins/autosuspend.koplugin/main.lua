@@ -310,7 +310,7 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
             time_spinner:update(nil, hour, min)
         end,
         extra_text = _("Disable"),
-        extra_callback = function(_self)
+        extra_callback = function(this)
             self[setting] = -1 -- disable with a negative time/number
             G_reader_settings:saveSetting(setting, -1)
             self:_unschedule()
@@ -319,7 +319,7 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
                 text = T(_("%1: disabled"), title),
                 timeout = 3,
             })
-            _self:onClose()
+            this:onClose()
         end,
         keep_shown_on_apply = true,
     }
@@ -432,7 +432,7 @@ function AutoSuspend:onAllowStandby()
     end
 
     -- Don't enter standby if device is charging and it is a non sunxi kobo
-    if Device:isKobo() and not Device:isSunxi() and Device.powerd:isCharging() then
+    if Device:isKobo() and Device.powerd:isCharging() and not Device:isSunxi() and not Device:isMk7() then
         logger.dbg("AutoSuspend: charging, no standby")
         return
     end
