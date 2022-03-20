@@ -131,7 +131,7 @@ function Remarkable:init()
         status_file = self.status_path,
     }
 
-    event_map = require("device/remarkable/event_map")
+    local event_map = require("device/remarkable/event_map")
     -- If we were launched from Oxide, remove Power from the event map
     if oxide_running then
         event_map[116] = "noop"
