@@ -65,7 +65,6 @@ local Kobo = Generic:new{
     canStandby = no, -- will get updated by checkStandby()
     canReboot = yes,
     canPowerOff = yes,
-
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
     -- most Kobos have also mirrored X coordinates
@@ -550,6 +549,9 @@ function Kobo:init()
     self:enableCPUCores(1)
 
     self.canStandby = checkStandby()
+    if self.canStandby() and (self:isMk7() or self:isSunxi())  then
+        self.canChargeWhileStandby = yes
+    end
 end
 
 function Kobo:setDateTime(year, month, day, hour, min, sec)

@@ -68,6 +68,7 @@ local Device = {
     canRestart = yes,
     canSuspend = yes,
     canStandby = no,
+    canChargeWhileStandby = no,
     total_standby_tv = TimeVal.zero, -- total time spent in standby
     last_standby_tv = TimeVal.zero,
     total_suspend_tv = TimeVal.zero, -- total time spent in suspend
