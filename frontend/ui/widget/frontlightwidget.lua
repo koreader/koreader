@@ -519,7 +519,7 @@ function FrontLightWidget:setFrontLightIntensity(intensity)
         self.powerd:setIntensity(self.fl.cur)
     end
 
-    -- Retrieve the real level set by PowerD (will be different from intensity on toggle)
+    -- Retrieve the real level set by PowerD (will be different from `intensity` on toggle)
     self.fl.cur = self.powerd:frontlightIntensity()
 end
 
