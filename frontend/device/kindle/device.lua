@@ -129,6 +129,8 @@ local Kindle = Generic:new{
     hasFastWifiStatusQuery = yes,
     -- NOTE: HW inversion is generally safe on mxcfb Kindles
     canHWInvert = yes,
+    -- NOTE: And the fb driver is generally sane on those, too
+    canModifyFBInfo = yes,
     -- NOTE: Newer devices will turn the frontlight off at 0
     canTurnFrontlightOff = yes,
     home_dir = "/mnt/us",
@@ -326,6 +328,7 @@ local Kindle2 = Kindle:new{
     hasKeys = yes,
     hasDPad = yes,
     canHWInvert = no,
+    canModifyFBInfo = no,
     canUseCBB = no, -- 4bpp
     canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
     supportsScreensaver = yes, -- The first ad-supported device was the K3
@@ -338,6 +341,7 @@ local KindleDXG = Kindle:new{
     hasKeys = yes,
     hasDPad = yes,
     canHWInvert = no,
+    canModifyFBInfo = no,
     canUseCBB = no, -- 4bpp
     canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
     supportsScreensaver = yes, -- The first ad-supported device was the K3
@@ -350,6 +354,7 @@ local Kindle3 = Kindle:new{
     hasKeys = yes,
     hasDPad = yes,
     canHWInvert = no,
+    canModifyFBInfo = no,
     canUseCBB = no, -- 4bpp
     isSpecialOffers = hasSpecialOffers(),
 }
@@ -360,6 +365,7 @@ local Kindle4 = Kindle:new{
     hasKeys = yes,
     hasDPad = yes,
     canHWInvert = no,
+    canModifyFBInfo = no,
     -- NOTE: It could *technically* use the C BB, as it's running @ 8bpp, but it's expecting an inverted palette...
     canUseCBB = no,
     isSpecialOffers = hasSpecialOffers(),
