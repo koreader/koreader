@@ -263,7 +263,7 @@ function FrontLightWidget:layout()
             position = math.floor(self.nl.cur / self.nl.stride),
             default_position = math.floor(self.nl.cur / self.nl.stride),
             callback = function(i)
-                self:setWarmth(i, false)
+                self:setWarmth(Math.round(i * self.nl.stride), false)
             end,
             show_parent = self,
             enabled = true,
@@ -479,23 +479,19 @@ function FrontLightWidget:setBrightness(intensity)
 end
 
 function FrontLightWidget:setWarmth(warmth, update_position)
-    -- `warmth` is currently not an actual warmth level, but a position inside the ButtonProgressWidget, rescale it appropriately.
-    local warmth_lvl = Math.round(warmth * self.nl.stride)
-
-    if warmth_lvl == self.nl.cur then
+    if warmth == self.nl.cur then
         return
     end
 
     -- Set warmth
-    self.powerd:setWarmth(self.powerd:fromNativeWarmth(warmth_lvl))
+    self.powerd:setWarmth(self.powerd:fromNativeWarmth(warmth))
     -- Retrieve the value PowerD actually set, in case there were rounding shenanigans and we blew the range...
     self.nl.cur = self.powerd:toNativeWarmth(self.powerd:frontlightWarmth())
 
     -- Update the progress bar, if we were called from outside ButtonProgressWidget
     -- (as it already handles that internally ;)).
     if update_position then
-        -- We do want to use the position here, not the actual warmth level ;).
-        self.nl_progress:setPosition(warmth, self.nl_progress.default_position)
+        self.nl_progress:setPosition(math.floor(self.nl.cur / self.nl.stride), self.nl_progress.default_position)
     end
 
     self.nl_level:setText(tostring(self.nl.cur))
