@@ -488,8 +488,7 @@ function FrontLightWidget:setWarmth(warmth, update_position)
     -- Retrieve the value PowerD actually set, in case there were rounding shenanigans and we blew the range...
     self.nl.cur = self.powerd:toNativeWarmth(self.powerd:frontlightWarmth())
 
-    -- Update the progress bar, if we were called from outside ButtonProgressWidget
-    -- (as it already handles that internally ;)).
+    -- If we were not called by ButtonProgressWidget's callback, we'll have to update its progress bar ourselves.
     if update_position then
         self.nl_progress:setPosition(math.floor(self.nl.cur / self.nl.stride), self.nl_progress.default_position)
     end
