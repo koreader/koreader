@@ -113,8 +113,6 @@ end
 
 
 function Remarkable:init()
-    -- Check if we were launched from Oxide launcher
-    --- @fixme this could be changed to check parent process of KOReader instead
     local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
     logger.info(string.format("Oxide running?: %s", oxide_running))
 
