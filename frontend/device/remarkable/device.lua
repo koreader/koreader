@@ -134,7 +134,7 @@ function Remarkable:init()
     local event_map = require("device/remarkable/event_map")
     -- If we were launched from Oxide, remove Power from the event map
     if oxide_running then
-        event_map[116] = "noop"
+        event_map[116] = nil
     end
 
     self.input = require("device/input"):new{
