@@ -85,6 +85,7 @@ function MyClipping:parseMyClippings()
             end
             index = index + 1
         end
+        file:close()
     end
 
     return clippings
@@ -256,6 +257,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             clipping.time = self:getTime(item.datetime or "")
             clipping.text = self:getText(item.text)
             clipping.chapter = item.chapter
+            clipping.drawer = item.drawer
             for _, bookmark in pairs(bookmarks) do
                 if bookmark.datetime == item.datetime and bookmark.text then
                     local bookmark_quote = bookmark.text:match(pattern)

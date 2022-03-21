@@ -318,7 +318,7 @@ local long_press_action = {
 
 function ReaderHighlight:addToMainMenu(menu_items)
     -- insert table to main reader menu
-    if Device:hasDPad() then
+    if not Device:isTouchDevice() and Device:hasDPad() then
         menu_items.start_content_selection = {
             text = _("Start content selection"),
             callback = function()
@@ -451,7 +451,7 @@ The interval value is in seconds and can range from 3 to 20 seconds.]]),
     end
     -- long_press menu is under taps_and_gestures menu which is not available for non touch device
     -- Clone long_press menu and change label making much meaning for non touch devices
-    if Device:hasDPad() then
+    if not Device:isTouchDevice() and Device:hasDPad() then
         menu_items.selection_text = util.tableDeepCopy(menu_items.long_press)
         menu_items.selection_text.text = _("Select on text")
     end
@@ -1874,7 +1874,8 @@ function ReaderHighlight:onHighlightPress()
                 -- no existing highlight at current indicator position: start hold
                 self._start_indicator_highlight = true
                 self:onHold(nil, self:_createHighlightGesture("hold"))
-                if self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes then
+                -- With crengine, selected_text.sboxes does return good coordinates.
+                if self.ui.rolling and self.selected_text and self.selected_text.sboxes and #self.selected_text.sboxes > 0 then
                     local pos = self.selected_text.sboxes[1]
                     -- set hold_pos to center of selected_test to make center selection more stable, not jitted at edge
                     self.hold_pos = self.view:screenToPageTransform({

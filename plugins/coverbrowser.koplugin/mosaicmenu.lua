@@ -15,6 +15,7 @@ local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
+local ProgressWidget = require("ui/widget/progresswidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -43,6 +44,7 @@ local BookInfoManager = require("bookinfomanager")
 -- recreated if height changes)
 local corner_mark_size = -1
 local corner_mark
+local progress_widget
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
@@ -378,7 +380,9 @@ function MosaicMenuItem:init()
             style = self.shortcut_style,
         }
     end
+
     self.detail = self.text
+    self.percent_finished = nil
 
     -- we need this table per-instance, so we declare it here
     if Device:isTouchDevice() then
@@ -648,6 +652,42 @@ function MosaicMenuItem:update()
                 self.has_description = true
             end
 
+            -- Current page / pages are available or more accurate in .sdr/metadata.lua
+            -- We use a cache (cleaned at end of this browsing session) to store
+            -- page, percent read and book status from sidecar files, to avoid
+            -- re-parsing them when re-rendering a visited page
+            -- This cache is shared with ListMenu, so we need to fill it with the same
+            -- info here than there, even if we don't need them all here.
+            if not self.menu.cover_info_cache then
+                self.menu.cover_info_cache = {}
+            end
+            local percent_finished, status
+            local pages = bookinfo.pages
+            if DocSettings:hasSidecarFile(self.filepath) then
+                self.been_opened = true
+                if self.menu.cover_info_cache[self.filepath] then
+                    pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath]) -- luacheck: no unused
+                else
+                    local docinfo = DocSettings:open(self.filepath)
+                    -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
+                    if docinfo.data.doc_pages then
+                        pages = docinfo.data.doc_pages
+                    elseif docinfo.data.stats and docinfo.data.stats.pages then
+                        if docinfo.data.stats.pages ~= 0 then -- crengine with statistics disabled stores 0
+                            pages = docinfo.data.stats.pages
+                        end
+                    end
+                    if docinfo.data.summary and docinfo.data.summary.status then
+                        status = docinfo.data.summary.status
+                    end
+                    percent_finished = docinfo.data.percent_finished
+                    self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
+                end
+            end
+            if status == "completed" then
+                percent_finished = 100
+            end
+            self.percent_finished = percent_finished
         else -- bookinfo not found
             if self.init_done then
                 -- Non-initial update(), but our widget is still not found:
@@ -716,8 +756,9 @@ function MosaicMenuItem:paintTo(bb, x, y)
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
 
+    local show_progress_in_mosaic = BookInfoManager:getSetting("show_progress_in_mosaic")
     -- to which we paint over a dogear if needed
-    if corner_mark and self.do_hint_opened and self.been_opened then
+    if not show_progress_in_mosaic and corner_mark and self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of sub-widget
         local target =  self[1][1][1]
         local ix
@@ -729,6 +770,16 @@ function MosaicMenuItem:paintTo(bb, x, y)
         local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
         -- math.ceil() makes it looks better than math.floor()
         corner_mark:paintTo(bb, x+ix, y+iy)
+    end
+
+    if show_progress_in_mosaic and self.percent_finished then
+        local cover_item = self[1][1][1]
+        local width = math.min(self.width * 0.60, cover_item.width)
+        progress_widget.width = width
+        local pos_x = x + self.width - progress_widget.width - math.ceil((self.width - cover_item.width) / 2) - progress_widget.bordersize
+        local pos_y = y + self.height - progress_widget.height - math.ceil((self.height - cover_item.height) / 2)
+        progress_widget:setPercentage(self.percent_finished)
+        progress_widget:paintTo(bb, pos_x, pos_y)
     end
 
     -- to which we paint a small indicator if this book has a description
@@ -850,6 +901,21 @@ function MosaicMenu:_recalculateDimen()
             rotation_angle = BD.mirroredUILayout() and 180 or 270,
             width = corner_mark_size,
             height = corner_mark_size,
+        }
+    end
+
+    -- Create or replace progress_widget if needed
+    local progress_bar_width =  self.item_width * 0.60;
+    if not progress_widget or progress_widget.width ~= progress_bar_width then
+        progress_widget = ProgressWidget:new{
+            bgcolor = Blitbuffer.COLOR_WHITE,
+            fillcolor = Blitbuffer.COLOR_BLACK,
+            bordercolor = Blitbuffer.COLOR_BLACK,
+            height = Screen:scaleBySize(6),
+            margin_h = Screen:scaleBySize(1),
+            width = progress_bar_width,
+            radius = Size.border.thin,
+            bordersize = Size.border.thin,
         }
     end
 end

@@ -349,6 +349,18 @@ function CoverBrowser:addToMainMenu(menu_items)
                 separator = true
             },
             {
+                text = _("Show progress % in mosaic mode"),
+                checked_func = function() return BookInfoManager:getSetting("show_progress_in_mosaic") end,
+                callback = function()
+                    if BookInfoManager:getSetting("show_progress_in_mosaic") then
+                        BookInfoManager:saveSetting("show_progress_in_mosaic", false)
+                    else
+                        BookInfoManager:saveSetting("show_progress_in_mosaic", true)
+                    end
+                    self:refreshFileManagerInstance()
+                end,
+            },
+            {
                 text = _("Show number of pages read instead of progress %"),
                 checked_func = function() return BookInfoManager:getSetting("show_pages_read_as_progress") end,
                 callback = function()

@@ -58,6 +58,7 @@ local function parsePluginJson(filename)
     local file, err = io.open(jsonPath, "r")
     if file then
         local contents = file:read("*all")
+        file:close()
         local ok, parsed = pcall(JSON.decode, contents)
         if ok then
             return parsed

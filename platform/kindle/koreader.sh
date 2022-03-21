@@ -226,6 +226,11 @@ fi
 # c.f., https://stackoverflow.com/a/37939589
 version() { echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1,$2,$3); }'; }
 
+# Detect kernels w/ CLOEXEC support
+if [ "$(version "$(uname -r | sed -n -r 's/^([[:digit:]\.]*)(.*?)$/\1/p')")" -lt "$(version "2.6.23")" ]; then
+    export KINDLE_LEGACY="yes"
+fi
+
 # There's no pillow if we stopped the framework, and it's only there on systems with upstart anyway
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
     # NOTE: If we were launched from KUAL, don't even try to deal with KPVBooklet-specific workarounds
