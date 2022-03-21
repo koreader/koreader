@@ -550,7 +550,7 @@ function Kobo:init()
 
     self.canStandby = checkStandby()
     if self.canStandby() and (self:isMk7() or self:isSunxi())  then
-        self.canChargeWhileStandby = yes
+        self.canPowerSaveWhileCharge = yes
     end
 end
 
