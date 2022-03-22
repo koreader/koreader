@@ -98,11 +98,7 @@ function ButtonProgressWidget:update()
                 self.callback("-")
                 self:update()
             end,
-            hold_callback = self.hold_callback and
-                function()
-                    self.hold_callback("-")
-                end
-                or nil,
+            hold_callback = self.hold_callback and function() self.hold_callback("-") end,
         }
         if self.thin_grey_style then
             button.frame.color = Blitbuffer.COLOR_DARK_GRAY
@@ -149,11 +145,7 @@ function ButtonProgressWidget:update()
                 self:update()
             end,
             no_focus = highlighted,
-            hold_callback = self.hold_callback and
-                function()
-                    self.hold_callback(i)
-                end
-                or nil,
+            hold_callback = self.hold_callback and function() self.hold_callback(i) end,
         }
         if self.thin_grey_style then
             if is_default then
@@ -208,11 +200,7 @@ function ButtonProgressWidget:update()
                 self.callback("+")
                 self:update()
             end,
-            hold_callback = self.hold_callback and
-                function()
-                    self.hold_callback("+")
-                end
-                or nil,
+            hold_callback = self.hold_callback and function() self.hold_callback("+") end,
         }
 
         if self.thin_grey_style then
@@ -247,11 +235,7 @@ function ButtonProgressWidget:update()
                 self.callback("⋮")
                 self:update()
             end,
-            hold_callback = self.hold_callback and
-                function()
-                    self.hold_callback("⋮")
-                end
-                or nil,
+            hold_callback = self.hold_callback and function() self.hold_callback("⋮") end,
         }
         if self.thin_grey_style then
             button.frame.color = Blitbuffer.COLOR_DARK_GRAY
