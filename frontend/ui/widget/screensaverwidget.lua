@@ -72,6 +72,13 @@ function ScreenSaverWidget:onTap(_, ges)
 end
 
 function ScreenSaverWidget:onClose()
+    -- If we happened to shortcut a delayed close via user input, unschedule it to avoid a spurious refresh.
+    local Screensaver = require("ui/screensaver")
+    if Screensaver.delayed_close then
+        UIManager:unschedule(Screensaver.close_widget)
+        Screensaver.delayed_close = nil
+    end
+
     UIManager:close(self)
     return true
 end

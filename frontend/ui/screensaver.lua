@@ -746,6 +746,18 @@ function Screensaver:show()
     end
 end
 
+function Screensaver:close_widget()
+    logger.dbg("close screensaver")
+    if self.screensaver_widget then
+        UIManager:close(self.screensaver_widget)
+        self.screensaver_widget = nil
+    end
+
+    if self.delayed_close then
+        self.delayed_close = nil
+    end
+end
+
 function Screensaver:close()
     if self.screensaver_widget == nil then
         return
@@ -754,19 +766,10 @@ function Screensaver:close()
     local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
     local screensaver_delay_number = tonumber(screensaver_delay)
     if screensaver_delay_number then
-        UIManager:scheduleIn(screensaver_delay_number, function()
-            logger.dbg("close screensaver")
-            if self.screensaver_widget then
-                UIManager:close(self.screensaver_widget)
-                self.screensaver_widget = nil
-            end
-        end)
+        UIManager:scheduleIn(screensaver_delay_number, self.close_widget, self)
+        self.delayed_close = true
     elseif screensaver_delay == "disable" then
-        logger.dbg("close screensaver")
-        if self.screensaver_widget then
-            UIManager:close(self.screensaver_widget)
-            self.screensaver_widget = nil
-        end
+        self:close_widget()
     else
         logger.dbg("tap to exit from screensaver")
     end
