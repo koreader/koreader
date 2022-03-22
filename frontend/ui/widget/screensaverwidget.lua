@@ -82,8 +82,15 @@ function ScreenSaverWidget:onAnyKeyPressed()
 end
 
 function ScreenSaverWidget:onCloseWidget()
+    -- Restore to previous rotation mode, if need be.
+    if Device.orig_rotation_mode then
+        Screen:setRotationMode(Device.orig_rotation_mode)
+        Device.orig_rotation_mode = nil
+    end
+
+    -- Make it full-screen (self.main_frame.dimen might be in a different orientation, and it's already full-screen anyway...)
     UIManager:setDirty(nil, function()
-        return "full", self.main_frame.dimen
+        return "full"
     end)
 
     -- Will come after the Resume event, iff screensaver_delay is set.
