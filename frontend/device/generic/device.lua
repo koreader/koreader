@@ -282,7 +282,6 @@ function Device:onPowerEvent(ev)
         logger.dbg("Suspending...")
         -- Add the current state of the SleepCover flag...
         logger.dbg("Sleep cover is", self.is_cover_closed and "closed" or "open")
-        -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
         Screensaver:setup()
         Screensaver:show()
         -- NOTE: show() will return well before the refresh ioctl is even *sent*:
