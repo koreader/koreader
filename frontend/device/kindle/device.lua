@@ -228,8 +228,6 @@ function Kindle:intoScreenSaver()
         if self:supportsScreensaver() then
             -- NOTE: Meaning this is not a SO device ;)
             local Screensaver = require("ui/screensaver")
-            -- NOTE: Pilefered from Device:onPowerEvent @ frontend/device/generic/device.lua
-            -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
             Screensaver:setup()
             Screensaver:show()
         else
