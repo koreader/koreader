@@ -153,6 +153,9 @@ function KindlePowerD:_readFLIntensity()
 end
 
 function KindlePowerD:afterResume()
+    if self.device.screen:getHWNightmode() then
+        self.device.screen:setHWNightmode(true)
+    end
     if not self.device:hasFrontlight() then
         return
     end
