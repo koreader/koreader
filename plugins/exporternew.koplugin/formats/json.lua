@@ -7,7 +7,6 @@ local JsonExporter = require("formats/base"):new{
 }
 
 function JsonExporter:export(t, export_type, timestamp)
-    logger.dbg("json export", t, timestamp)
     local path
     if export_type == "single" then
         path = self:getFilePath(timestamp, t[1].title)
