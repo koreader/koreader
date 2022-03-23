@@ -25,6 +25,8 @@ function HtmlExporter:export(t, export_type, timestamp)
         local content = slt2.render(template, {
             clippings = t,
             document_title = title,
+            version = self.version,
+            timestamp = timestamp
         })
         file:write(content)
         file:close()
