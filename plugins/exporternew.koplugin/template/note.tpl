@@ -57,14 +57,14 @@
 <body>
   <div style="width:90%; max-width:600px; margin:0 auto; padding:5px; font-size:12pt; font-family:Georgia, serif">
   #{ for  _, booknotes in ipairs(clippings) do }#
+    #{ logger.dbg(booknotes.title) }#
     <h2 style="font-size:18pt; text-align:right;">#{= htmlescape(booknotes.title) }#</h2>
     <h5 style="font-size:12pt; text-align:right; color:gray;">#{= htmlescape(booknotes.author) }#</h5>
-    #{ for  _, chapter in ipairs(booknotes) do }#
-      #{ if chapter.title then }#
-        <div style="font-size:14pt; font-weight:bold; text-align:center; margin:0.5em;"><span>#{= htmlescape(chapter.title) }#</span></div>
+    #{ for  index, clipping in ipairs(booknotes.entries) do }#
+      #{ if clipping.title then }#
+        <div style="font-size:14pt; font-weight:bold; text-align:center; margin:0.5em;"><span>#{= htmlescape(clipping.title) }#</span></div>
       #{ end }#
-      #{ for index, clipping in ipairs(chapter) do }#
-        <div style="padding-top:0.5em; padding-bottom:0.5em;#{ if index > 1 then }# border-top:1px dotted lightgray;#{ end }#">
+      <div style="padding-top:0.5em; padding-bottom:0.5em;#{ if index > 1 then }# border-top:1px dotted lightgray;#{ end }#">
           <div style="font-size:10pt; margin-bottom:0.2em; color:darkgray">
             <div style="display:inline-block; width:0.2em; height:0.9em; margin-right:0.2em; background-color:#{= timecolor(clipping.time)}#;"></div>
             <span>#{= os.date("%x", clipping.time) }#</span><span style="float:right">#{ if clipping.chapter then }#<b>#{= clipping.chapter }#</b>: #{ end }# #{= clipping.page }#</span>
@@ -81,8 +81,8 @@
             </div>
           #{ end }#
         </div>
-      #{ end }#
     #{ end }#
+
   #{ end }#
   <div style="font-size:10pt; margin-top:2em; color:darkgray; font-style: italic; text-align: right">Version: #{= htmlescape(version) }#, Generated On: #{= htmlescape(timestamp) }#</div>
   </div>

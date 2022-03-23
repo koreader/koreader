@@ -4,8 +4,17 @@ local T = util.template
 
 local TextExporter = require("formats/base"):new{
     name = "text",
-    version = "text/1.0.0"
+    version = "text/1.0.0",
+    extension = "txt",
 }
+
+function TextExporter:exportOne(t, timestamp)
+    self:export({t}, "single", timestamp)
+end
+
+function TextExporter:exportAll(t, timestamp)
+    self:export(t, "all", timestamp)
+end
 
 function TextExporter:export(t, export_type, timestamp)
     local path
@@ -41,15 +50,6 @@ function TextExporter:export(t, export_type, timestamp)
         end
         file:write("\n")
         file:close()
-    end
-end
-
-
-function TextExporter:getFilePath(timestamp, title)
-    if title then
-        return self.clipping_dir .. "/" .. timestamp .. "-" .. title .. ".txt"
-    else
-        return self.clipping_dir .. "/" .. timestamp .. "-all-books.txt"
     end
 end
 
