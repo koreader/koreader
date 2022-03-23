@@ -30,29 +30,27 @@ function MarkdownExporter:export(t, export_type, timestamp)
             file:write(string.format("# %s\n", booknotes.title))
             file:write(string.format("##### %s\n", booknotes.author))
             local current_chapter
-            for _ignore1, chapter in ipairs(booknotes) do
-                for _ignore2, clipping in ipairs(chapter) do
-                    if current_chapter ~= clipping.chapter then
-                        file:write(string.format("\n## %s\n", clipping.chapter))
-                        current_chapter = clipping.chapter
+            for _ignore1, clipping in ipairs(booknotes.entries) do
+                if current_chapter ~= clipping.chapter then
+                    file:write(string.format("\n## %s\n", clipping.chapter))
+                    current_chapter = clipping.chapter
+                end
+                file:write(string.format("\n### %s\n", os.date("%d %b %Y %X", clipping.time)))
+                if clipping.text then
+                    local text = clipping.text
+                    if clipping.drawer == 'lighten' then
+                        text = string.format("**%s**", text)
+                    elseif clipping.drawer == 'underscore' then
+                        text = string.format("<u>%s</u>", text)
+                    elseif clipping.drawer == 'strikeout' then
+                        text = string.format("~~%s~~", text)
+                    elseif clipping.drawer == 'invert' then
+                        text = string.format("_%s_", text)
                     end
-                    file:write(string.format("\n### %s\n", os.date("%d %b %Y %X", clipping.time)))
-                    if clipping.text then
-                        local text = clipping.text
-                        if clipping.drawer == 'lighten' then
-                            text = string.format("**%s**", text)
-                        elseif clipping.drawer == 'underscore' then
-                            text = string.format("<u>%s</u>", text)
-                        elseif clipping.drawer == 'strikeout' then
-                            text = string.format("~~%s~~", text)
-                        elseif clipping.drawer == 'invert' then
-                            text = string.format("_%s_", text)
-                        end
-                        file:write(string.format("%s\n", text))
-                    end
-                    if clipping.note then
-                        file:write("\n---\n" .. clipping.note)
-                    end
+                    file:write(string.format("%s\n", text))
+                end
+                if clipping.note then
+                    file:write("\n---\n" .. clipping.note)
                 end
             end
             file:write("\n\n")
