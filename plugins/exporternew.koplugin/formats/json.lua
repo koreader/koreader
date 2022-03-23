@@ -3,6 +3,7 @@ local json = require("json")
 
 local JsonExporter = require("formats/base"):new{
     name = "json",
+    version = "json/1.0.0"
 }
 
 function JsonExporter:export(t, export_type, timestamp)
@@ -20,11 +21,11 @@ function JsonExporter:export(t, export_type, timestamp)
             -- We will handle single document export here.
             exportable = self:prepareBooknotesForJSON(t[1])
             exportable.created_on = timestamp
-            exportable.version = "json/1.0.0"
+            exportable.version = self.version
         else
             exportable = {
                 created_on = timestamp,
-                version = "json/1.0.0",
+                version = self.version,
                 documents = {}
             }
             for _, booknotes in ipairs(t) do
