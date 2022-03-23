@@ -49,9 +49,9 @@ end
 
 function BaseExporter:getFilePath(timestamp, title)
     if title then
-        return self.clipping_dir .. "/" .. self:getFileTimeStamp() .. "-" .. title .. "." .. self.extension
+        return self.clipping_dir .. "/" .. self:getFileTimeStamp(timestamp) .. "-" .. title .. "." .. self.extension
     else
-        return self.clipping_dir .. "/" .. self:getFileTimeStamp() .. "-all-books." .. self.extension
+        return self.clipping_dir .. "/" .. self:getFileTimeStamp(timestamp) .. "-all-books." .. self.extension
     end
 end
 
