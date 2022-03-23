@@ -8,7 +8,7 @@ local http = require("socket.http")
 local json = require("json")
 local ltn12 = require("ltn12")
 local socketutil = require("socketutil")
-local logger = require("logger")
+-- local logger = require("logger")
 
 local JoplinClient =  {
     server_ip = "localhost",
@@ -318,7 +318,7 @@ function JoplinExporter:getMenuTable()
                                     end
                                 },
                                 {
-                                    text = _("Set token"),
+                                    text = _("Set Notebook Name"),
                                     callback = function()
                                         self.settings.notebook_name = notebook_dialog:getInputText()
                                         self:saveSettings()
@@ -403,7 +403,7 @@ function JoplinExporter:prepareNote(booknotes)
         if clipping.note then
             note = note .. "\n---\n" .. clipping.note
         end
-        note = note .. "\n * * *\n"        
+        note = note .. "\n * * *\n"
     end
     return note
 end

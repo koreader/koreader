@@ -1,6 +1,3 @@
-
-local logger = require("logger")
-
 local MarkdownExporter = require("formats/base"):new{
     name = "markdown",
     version = "markdown/1.0.0",
