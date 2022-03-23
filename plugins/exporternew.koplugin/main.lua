@@ -32,6 +32,9 @@ function Exporter:init()
         my_clippings = "/mnt/us/documents/My Clippings.txt",
         history_dir = "./history",
     }
+    for k, _ in pairs(self.targets) do
+        self.targets[k].path = self.path
+    end
     self.config = DocSettings:open(util.joinPath(self.clipping_dir, "exporter.sdr"))
     self.ui.menu:registerToMainMenu(self)
 
