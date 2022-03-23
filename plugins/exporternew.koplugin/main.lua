@@ -6,6 +6,8 @@
 --]]
 
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InfoMessage = require("ui/widget/infomessage")
+local UIManager = require("ui/uimanager")
 local DataStorage = require("datastorage")
 local _ = require("gettext")
 local MyClipping = require("clip")
@@ -22,7 +24,6 @@ local Exporter = InputContainer:new{
         json = require("formats/json"),
         readwise = require("formats/readwise"),
         text = require("formats/text"),
-        markdown = require("formats/markdown"),
     },
 }
 
@@ -31,19 +32,9 @@ function Exporter:init()
         my_clippings = "/mnt/us/documents/My Clippings.txt",
         history_dir = "./history",
     }
-    for k, _ in pairs(self.targets) do
-        self.targets[k].path = self.path
-    end
     self.config = DocSettings:open(util.joinPath(self.clipping_dir, "exporter.sdr"))
     self.ui.menu:registerToMainMenu(self)
 
-end
-
-function Exporter:setTimeStamp()
-    local timestamp = os.time()
-    for k, _ in pairs(self.targets) do
-        self.targets[k].timestamp = timestamp
-    end
 end
 
 function Exporter:updateHistoryClippings(clippings, new_clippings)
@@ -102,46 +93,43 @@ function Exporter:requiresNetwork()
     end
 end
 
-function Exporter:normalizeBookNotes(booknotes)
-    local normalized = {
-            title = booknotes.title,
-            author = booknotes.author,
-            entries = {},
-            exported = booknotes.exported,
-            file = booknotes.file
-    }
-    for _, entry in ipairs(booknotes) do
-        table.insert(normalized.entries, entry[1])
-    end
-    return normalized
-end
-
-function Exporter:export(exportType)
-    self:setTimeStamp()
+function Exporter:export(t, export_type)
+    if type(t) ~= "table" then return end
     if self:requiresNetwork() then
         print("enable network here")
     end
-    local clippings
-    if exportType == 'current' then
-        clippings = self.parser:parseCurrentDoc(self.view)
-    else
-        clippings = self:getAllNotes()
-    end
-    if type(clippings) ~= "table" then return end
-    local normalized = {}
-    for _, content in pairs(clippings) do
-        if content then
-            table.insert(normalized, self:normalizeBookNotes(content))
-        end
-    end
+
     for k, v in pairs(self.targets) do
         if v:isEnabled() then
-            v:export(normalized)
+            v:export(t, export_type, os.date("%Y-%m-%dT%H-%M-%S"))
         end
     end
 end
 
+function Exporter:normalizeDocumentExport(clippings)
+    local new_clippings = {}
+    for i, content in ipairs(clippings) do
+        local actual_content
+        for j, c in pairs(content) do
+            actual_content = c
+        end
+        if actual_content then
+            table.insert(new_clippings, actual_content)
+        end
+    end
+    return new_clippings
+end
 
+function Exporter:normalizeClippings(clippings)
+
+    local new_clippings = {}
+    for i, content in pairs(clippings) do
+        if content then
+            table.insert(new_clippings, content)
+        end
+    end
+    return new_clippings
+end
 
 function Exporter:getAllNotes()
     local clippings = self.config:readSetting("clippings") or {}
@@ -149,9 +137,14 @@ function Exporter:getAllNotes()
     clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
     self.config:saveSetting("clippings", clippings)
     self.config:flush()
-    return clippings
+    logger.dbg(clippings)
+    return self:normalizeClippings(clippings)
 end
 
+function Exporter:getCurrentNotes(view)
+    local clippings = self.parser:parseCurrentDoc(view)
+    return self:normalizeDocumentExport({clippings})
+end
 
 function Exporter:addToMainMenu(menu_items)
     local submenu = {}
@@ -171,7 +164,7 @@ function Exporter:addToMainMenu(menu_items)
                     return self:isDocReady()
                 end,
                 callback = function()
-                    self:export('current')
+                    self:export(self:getCurrentNotes(self.view), "single")
                 end,
             },
             {
@@ -180,7 +173,7 @@ function Exporter:addToMainMenu(menu_items)
                     return self:isReady()
                 end,
                 callback = function()
-                    self:export('all')
+                    self:export(self:getAllNotes(), "all")
                 end,
                 separator = true,
             },
