@@ -21,11 +21,13 @@ function MarkdownExporter:export(t, export_type, timestamp)
             logger.dbg("booknotes", booknotes.title)
             file:write(string.format("# %s\n", booknotes.title))
             file:write(string.format("##### %s\n", booknotes.author))
+            local current_chapter
             for _ignore1, chapter in ipairs(booknotes) do
-                if chapter.title then
-                    file:write(string.format("\n## %s\n", chapter.title))
-                end
                 for _ignore2, clipping in ipairs(chapter) do
+                    if current_chapter ~= clipping.chapter then
+                        file:write(string.format("\n## %s\n", clipping.chapter))
+                        current_chapter = clipping.chapter
+                    end
                     file:write(string.format("\n### %s\n", os.date("%d %b %Y %X", clipping.time)))
                     if clipping.text then
                         local text = clipping.text
