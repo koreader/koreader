@@ -84,6 +84,7 @@
       #{ end }#
     #{ end }#
   #{ end }#
+  <div style="font-size:10pt; margin-top:2em; color:darkgray; font-style: italic; text-align: right">Version: #{= htmlescape(version) }#, Generated On: #{= htmlescape(timestamp) }#</div>
   </div>
 </body>
 </html>
