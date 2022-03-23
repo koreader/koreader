@@ -9,6 +9,13 @@ local HtmlExporter = require("formats/base"):new{
 
 }
 
+function HtmlExporter:exportOne(t, timestamp)
+    self:export({t}, "single", timestamp)
+end
+
+function HtmlExporter:exportAll(t, timestamp)
+    self:export(t, "all", timestamp)
+end
 
 function HtmlExporter:export(t, export_type, timestamp)
     local path, title
@@ -21,23 +28,17 @@ function HtmlExporter:export(t, export_type, timestamp)
     end
     local file = io.open(path, "w")
     local template = slt2.loadfile(self.path .. "/template/note.tpl")
+    logger.dbg("html", t)
     if file then
         local content = slt2.render(template, {
             clippings = t,
             document_title = title,
             version = self.version,
-            timestamp = timestamp
+            timestamp = self:getFileTimeStamp(),
+            logger = logger
         })
         file:write(content)
         file:close()
-    end
-end
-
-function HtmlExporter:getFilePath(timestamp, title)
-    if title then
-        return self.clipping_dir .. "/" .. timestamp .. "-" .. title .. ".html"
-    else
-        return self.clipping_dir .. "/" .. timestamp .. "-all-books.html"
     end
 end
 

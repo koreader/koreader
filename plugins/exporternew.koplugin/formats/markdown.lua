@@ -3,8 +3,17 @@ local logger = require("logger")
 
 local MarkdownExporter = require("formats/base"):new{
     name = "markdown",
-    version = "markdown/1.0.0"
+    version = "markdown/1.0.0",
+    extension = "md"
 }
+
+function MarkdownExporter:exportOne(t, timestamp)
+    self:export({t}, "single", timestamp)
+end
+
+function MarkdownExporter:exportAll(t, timestamp)
+    self:export(t, "all", timestamp)
+end
 
 function MarkdownExporter:export(t, export_type, timestamp)
     local path
@@ -15,10 +24,9 @@ function MarkdownExporter:export(t, export_type, timestamp)
     end
     local file = io.open(path, "w")
     if file then
-        local wide_space = "\227\128\128"
         for _ignore, booknotes in ipairs(t) do
 
-            logger.dbg("booknotes", booknotes.title)
+            -- logger.dbg("booknotes", booknotes.title)
             file:write(string.format("# %s\n", booknotes.title))
             file:write(string.format("##### %s\n", booknotes.author))
             local current_chapter
@@ -52,15 +60,6 @@ function MarkdownExporter:export(t, export_type, timestamp)
         file:write(string.format("\n_Generated on: %s, Version: %s_\n", timestamp, self.version))
         file:write("\n")
         file:close()
-    end
-end
-
-
-function MarkdownExporter:getFilePath(timestamp, title)
-    if title then
-        return self.clipping_dir .. "/" .. timestamp .. "-" .. title .. ".md"
-    else
-        return self.clipping_dir .. "/" .. timestamp .. "-all-books.md"
     end
 end
 

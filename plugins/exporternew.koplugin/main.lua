@@ -97,43 +97,62 @@ function Exporter:requiresNetwork()
     end
 end
 
-function Exporter:export(t, export_type)
-    if type(t) ~= "table" then return end
+function Exporter:normalizeBookNotes(booknotes)
+    local normalized = {
+            title = booknotes.title,
+            author = booknotes.author,
+            entries = {},
+            exported = booknotes.exported,
+            file = booknotes.file
+    }
+    for _, entry in ipairs(booknotes) do
+        table.insert(normalized.entries, entry[1])
+    end
+    return normalized
+end
+
+function Exporter:exportOne()
     if self:requiresNetwork() then
         print("enable network here")
     end
+    local booknotes = self.parser:parseCurrentDoc(self.view)
+    if type(booknotes) ~= "table" then return end
 
+    local t
+    for _, entry in pairs(booknotes) do
+
+        t = Exporter:normalizeBookNotes(entry)
+    end
     for k, v in pairs(self.targets) do
         if v:isEnabled() then
-            v:export(t, export_type, os.date("%Y-%m-%dT%H-%M-%S"))
+            v:exportOne(t, os.time())
         end
     end
 end
 
-function Exporter:normalizeDocumentExport(clippings)
-    local new_clippings = {}
-    for i, content in ipairs(clippings) do
-        local actual_content
-        for j, c in pairs(content) do
-            actual_content = c
-        end
-        if actual_content then
-            table.insert(new_clippings, actual_content)
-        end
+function Exporter:exportAll()
+    if self:requiresNetwork() then
+        print("enable network here")
     end
-    return new_clippings
-end
+    local clippings = self:getAllNotes()
+    if type(clippings) ~= "table" then return end
 
-function Exporter:normalizeClippings(clippings)
-
-    local new_clippings = {}
-    for i, content in pairs(clippings) do
+    local normalized = {}
+    for _, content in pairs(clippings) do
         if content then
-            table.insert(new_clippings, content)
+            table.insert(normalized, self:normalizeBookNotes(content))
         end
     end
-    return new_clippings
+    for k, v in pairs(self.targets) do
+        if v:isEnabled() then
+            v:exportAll(normalized, os.time())
+        end
+    end
 end
+
+
+
+
 
 function Exporter:getAllNotes()
     local clippings = self.config:readSetting("clippings") or {}
@@ -141,13 +160,9 @@ function Exporter:getAllNotes()
     clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
     self.config:saveSetting("clippings", clippings)
     self.config:flush()
-    return self:normalizeClippings(clippings)
+    return clippings
 end
 
-function Exporter:getCurrentNotes(view)
-    local clippings = self.parser:parseCurrentDoc(view)
-    return self:normalizeDocumentExport({clippings})
-end
 
 function Exporter:addToMainMenu(menu_items)
     local submenu = {}
@@ -167,7 +182,7 @@ function Exporter:addToMainMenu(menu_items)
                     return self:isDocReady()
                 end,
                 callback = function()
-                    self:export(self:getCurrentNotes(self.view), "single")
+                    self:exportOne()
                 end,
             },
             {
@@ -176,7 +191,7 @@ function Exporter:addToMainMenu(menu_items)
                     return self:isReady()
                 end,
                 callback = function()
-                    self:export(self:getAllNotes(), "all")
+                    self:exportAll()
                 end,
                 separator = true,
             },
