@@ -48,7 +48,7 @@ function BookShortcuts:onBookShortcut(path)
                     end
                 end
             else
-                file = ReadHistory:getFileByDirectory(path)
+                file = ReadHistory:getFileByDirectory(path, G_reader_settings:isTrue("BookShortcuts_recursive_directory"))
             end
         else
             file = path
@@ -121,6 +121,13 @@ function BookShortcuts:getSubMenuItems()
                     callback = function() G_reader_settings:saveSetting("BookShortcuts_directory_action", "FM") end,
                 },
             },
+        },
+        {
+            text = _("Recursively search folders"),
+            keep_menu_open = true,
+            checked_func = function() return G_reader_settings:isTrue("BookShortcuts_recursive_directory") end,
+            enabled_func = function() return G_reader_settings:readSetting("BookShortcuts_directory_action") == "Last" end,
+            callback = function() G_reader_settings:flipNilOrFalse("BookShortcuts_recursive_directory") end,
             separator = true,
         }
     }

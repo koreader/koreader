@@ -198,11 +198,12 @@ function ReadHistory:getPreviousFile(current_file)
     end
 end
 
-function ReadHistory:getFileByDirectory(directory)
+function ReadHistory:getFileByDirectory(directory, recursive)
     assert(self ~= nil)
     local real_path = realpath(directory)
     for i=1, #self.hist do
-        if realpath(ffiutil.dirname(self.hist[i].file)) == real_path then
+        local ipath = realpath(ffiutil.dirname(self.hist[i].file))
+        if ipath == real_path or (recursive and util.stringStartsWith(ipath, real_path)) then
              return self.hist[i].file
         end
     end
