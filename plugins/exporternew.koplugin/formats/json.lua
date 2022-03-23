@@ -1,4 +1,3 @@
-local logger = require("logger")
 local json = require("json")
 
 local JsonExporter = require("formats/base"):new{
