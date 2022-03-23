@@ -6,8 +6,6 @@
 --]]
 
 local InputContainer = require("ui/widget/container/inputcontainer")
-local InfoMessage = require("ui/widget/infomessage")
-local UIManager = require("ui/uimanager")
 local DataStorage = require("datastorage")
 local _ = require("gettext")
 local MyClipping = require("clip")
