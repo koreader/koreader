@@ -105,6 +105,8 @@ local Kobo = Generic:new{
     isSMP = no,
     -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
     hasEclipseWfm = no,
+
+    unexpected_wakeup_count = 0
 }
 
 -- Kobo Touch:
@@ -719,8 +721,7 @@ local function getProductId()
     return product_id
 end
 
-local unexpected_wakeup_count = 0
-local function check_unexpected_wakeup(this)
+function Kobo:checkUnexpectedWakeup()
     local UIManager = require("ui/uimanager")
     -- just in case other events like SleepCoverClosed also scheduled a suspend
     UIManager:unschedule(Kobo.suspend)
@@ -735,11 +736,11 @@ local function check_unexpected_wakeup(this)
         logger.info("Kobo suspend: putting device back to sleep.")
         -- Most wakeup actions are linear, but we need some leeway for the
         -- poweroff action to send out close events to all requisite widgets.
-        UIManager:scheduleIn(30, Kobo.suspend, this)
+        UIManager:scheduleIn(30, Kobo.suspend, self)
     else
         logger.dbg("Kobo suspend: checking unexpected wakeup:",
-                   unexpected_wakeup_count)
-        if unexpected_wakeup_count == 0 or unexpected_wakeup_count > 20 then
+                   self.unexpected_wakeup_count)
+        if self.unexpected_wakeup_count == 0 or self.unexpected_wakeup_count > 20 then
             -- Don't put device back to sleep under the following two cases:
             --   1. a resume event triggered Kobo:resume() function
             --   2. trying to put device back to sleep more than 20 times after unexpected wakeup
@@ -750,12 +751,12 @@ local function check_unexpected_wakeup(this)
         end
 
         logger.err("Kobo suspend: putting device back to sleep. Unexpected wakeups:",
-                   unexpected_wakeup_count)
-        Kobo.suspend(this)
+                   self.unexpected_wakeup_count)
+        Kobo:suspend()
     end
 end
 
-function Kobo:getUnexpectedWakeup() return unexpected_wakeup_count end
+function Kobo:getUnexpectedWakeup() return self.unexpected_wakeup_count end
 
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
@@ -785,7 +786,7 @@ end
 function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
     local UIManager = require("ui/uimanager")
-    UIManager:unschedule(check_unexpected_wakeup)
+    UIManager:unschedule(self.checkUnexpectedWakeup)
     local f, re, err_msg, err_code
     -- NOTE: Sleep as little as possible here, sleeping has a tendency to make
     -- everything mysteriously hang...
@@ -908,18 +909,18 @@ function Kobo:suspend()
     -- things tidy and easier to follow
 
     -- Kobo:resume() will reset unexpected_wakeup_count = 0 to signal an
-    -- expected wakeup, which gets checked in check_unexpected_wakeup().
-    unexpected_wakeup_count = unexpected_wakeup_count + 1
+    -- expected wakeup, which gets checked in checkUnexpectedWakeup().
+    self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
     -- assuming Kobo:resume() will be called in 15 seconds
     logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
-    UIManager:scheduleIn(15, check_unexpected_wakeup, self)
+    UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
 end
 
 function Kobo:resume()
     logger.info("Kobo resume: clean up after wakeup")
     -- reset unexpected_wakeup_count ASAP
-    unexpected_wakeup_count = 0
-    require("ui/uimanager"):unschedule(check_unexpected_wakeup)
+    self.unexpected_wakeup_count = 0
+    require("ui/uimanager"):unschedule(self.checkUnexpectedWakeup)
 
     -- Now that we're up, unflag subsystems for suspend...
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
