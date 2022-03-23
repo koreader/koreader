@@ -1,6 +1,4 @@
-local _ = require("gettext")
-local util = require("ffi/util")
-local T = util.template
+
 local logger = require("logger")
 
 local MarkdownExporter = require("formats/base"):new{
