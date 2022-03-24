@@ -82,7 +82,6 @@
         </div>
       #{ end }#
     #{ end }#
-
   </div>
 </body>
 </html>
