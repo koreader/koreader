@@ -45,7 +45,27 @@ function ReadwiseClient:_makeRequest(endpoint, method, request_body)
     return response
 end
 
-function ReadwiseClient:createHighlights(clippings)
+function ReadwiseClient:createHighlights(booknotes)
+    local highlights = {}
+    for _, clipping in ipairs(booknotes.entries) do
+        local highlight = {
+            text = clipping.text,
+            title = booknotes.title,
+            author = booknotes.author ~= "" and booknotes.author or nil, -- optional author
+            source_type = "koreader",
+            category = "books",
+            note = clipping.note,
+            location = clipping.page,
+            location_type = "page",
+            highlighted_at = os.date("!%Y-%m-%dT%TZ", clipping.time),
+        }
+        table.insert(highlights, highlight)
+    end
+    local result = self:_makeRequest("highlights", "POST", { highlights = highlights })
+    logger.dbg("ReadwiseClient createHighlights result", result)
+end
+
+function ReadwiseClient:createAllHighlights(clippings)
     local highlights = {}
     for _, booknotes in ipairs(clippings) do
         for _, clipping in ipairs(booknotes.entries) do

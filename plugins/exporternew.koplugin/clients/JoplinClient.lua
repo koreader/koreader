@@ -187,5 +187,3 @@ function JoplinClient:updateNote(note_id, note, title, parent_id)
     local response = self:_makeRequest(url, "PUT", request_body)
     return response.id
 end
-
-return JoplinClient
