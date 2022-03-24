@@ -1,7 +1,6 @@
 
 local ReadwiseClient = require("clients/ReadwiseClient")
 local _ = require("gettext")
-local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 
