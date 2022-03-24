@@ -53,9 +53,29 @@
 <head>
   <meta charset="utf-8"/>
   <title>#{= htmlescape(document_title) }#</title>
+  <style>
+      #style-enable:checked ~ * .underscore {
+        text-decoration: underline;
+      }
+
+      #style-enable:checked ~ * .lighten {
+        background-color: #aaaaaa;
+      }
+
+      #style-enable:checked ~ * .invert {
+        background-color: #000000;
+        color: #ffffff;
+      }
+
+      #style-enable:checked ~ * .strikeout {
+        text-decoration: line-through;
+      }
+    </style>
 </head>
 <body>
-  <div id="notes" style="width:90%; max-width:600px; margin:0 auto; padding:5px; font-size:12pt; font-family:Georgia, serif">
+  <div id="notes" style="width:90%; max-width:600px; margin:0 auto; padding:5px; font-size:12pt; font-family:Georgia, serif; text-align: right;">
+  <input type="checkbox" id="style-enable" name="style-enable" checked />
+  <label for="style-enable"> Bookmark Style</label>
   #{ for  _, booknotes in ipairs(clippings) do }#
     <div class="book">
       <h2 style="font-size:18pt; text-align:right;">#{= htmlescape(booknotes.title) }#</h2>
@@ -69,8 +89,8 @@
               <div style="display:inline-block; width:0.2em; height:0.9em; margin-right:0.2em; background-color:#{= timecolor(clipping.time)}#;"></div>
               <span>#{= os.date("%x", clipping.time) }#</span><span style="float:right">#{ if clipping.chapter then }#<b>#{= clipping.chapter }#</b>: #{ end }# #{= clipping.page }#</span>
             </div>
-            <div style="font-size:12pt">
-              <span>#{= newline_to_br(htmlescape(clipping.text)) }#</span>
+            <div style="font-size:12pt; text-align: left">
+              <span class="#{= clipping.drawer }#">#{= newline_to_br(htmlescape(clipping.text)) }#</span>
               #{ if clipping.image then }#
                 <en-media type="image/png" hash="#{= clipping.image.hash }#"/>
               #{ end }#
