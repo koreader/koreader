@@ -64,10 +64,10 @@ function ReaderHighlight:init()
         self.key_events.RightHighlightIndicator = { {"Right"}, doc = "move indicator right", event = "MoveHighlightIndicator", args = {1, 0} }
         self.key_events.HighlightPress = { {"Press"}, doc = "highlight start or end" }
         if Device:hasKeys() then
-            self.key_events.QuicklyUpHighlightIndicator = { {"Shift", "Up"}, doc = "quick move indicator up", event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICTOR_MOVE} }
-            self.key_events.QuicklyDownHighlightIndicator = { {"Shift", "Down"}, doc = "quick move indicator down", event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICTOR_MOVE} }
-            self.key_events.QuicklyLeftHighlightIndicator = { {"Shift", "Left"}, doc = "quick move indicator left", event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICTOR_MOVE} }
-            self.key_events.QuicklyRightHighlightIndicator = { {"Shift", "Right"}, doc = "quick move indicator right", event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickUpHighlightIndicator = { {"Shift", "Up"}, doc = "quick move indicator up", event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickDownHighlightIndicator = { {"Shift", "Down"}, doc = "quick move indicator down", event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickLeftHighlightIndicator = { {"Shift", "Left"}, doc = "quick move indicator left", event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickRightHighlightIndicator = { {"Shift", "Right"}, doc = "quick move indicator right", event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICTOR_MOVE} }
             self.key_events.StartHighlightIndicator = { {"H"}, doc = "start non-touch highlight" }
         end
     end
@@ -1939,14 +1939,14 @@ end
 function ReaderHighlight:onMoveHighlightIndicator(args)
     if self.view.visible_area and self._current_indicator_pos then
         local dx, dy, quick_move = unpack(args)
-        local quickly_move_distance_dx = self.view.visible_area.w / 5 -- quick move distance: fifth of visible_area
-        local quickly_move_distance_dy = self.view.visible_area.h / 5
+        local quick_move_distance_dx = self.view.visible_area.w / 5 -- quick move distance: fifth of visible_area
+        local quick_move_distance_dy = self.view.visible_area.h / 5
         -- single move distance, small and capable to move on word with small font size and narrow line height
         local move_distance = Size.item.height_default / 4
         local rect = self._current_indicator_pos:copy()
         if quick_move then
-            rect.x = rect.x + quickly_move_distance_dx * dx
-            rect.y = rect.y + quickly_move_distance_dy * dy
+            rect.x = rect.x + quick_move_distance_dx * dx
+            rect.y = rect.y + quick_move_distance_dy * dy
         else
             local now = TimeVal:now()
             if dx == self._last_indicator_move_args.dx and dy == self._last_indicator_move_args.dy then
