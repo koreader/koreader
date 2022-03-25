@@ -430,6 +430,12 @@ function Wallabag:getArticleList()
                           .. filtering
         local articles_json = self:callAPI("GET", articles_url, nil, "", "", true)
 
+        if articles_json == false then
+            -- request error, signal error
+            logger.warn("Wallabag: getArticleList: failed request for page #", page)
+            return false
+        end
+
         if not articles_json then
             -- we may have hit the last page, there are no more articles
             logger.dbg("Wallabag: couldn't get page #", page)
