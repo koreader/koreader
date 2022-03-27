@@ -643,7 +643,7 @@ function ReaderToc:expandParentNode(index)
 end
 
 function ReaderToc:onShowToc()
-    if self.view.inverse_reading_order then
+    if self.view:shouldInvertBiDiLayoutMirroring() then
         BD.invert()
     end
 
@@ -667,6 +667,7 @@ function ReaderToc:onShowToc()
             v.index = k
             v.indent = toc_indent * (v.depth-1)
             v.text = self:cleanUpTocTitle(v.title, true)
+            v.bidi_wrap_func = BD.auto
             v.mandatory = v.page
             if has_hidden_flows then
                 local flow = self.ui.document:getPageFlow(v.page)
@@ -814,7 +815,7 @@ function ReaderToc:onShowToc()
     function toc_menu:onMenuHold(item)
         if not Device:isTouchDevice() and (item.state and item.state.callback) then
             -- non touch to expand toc
-            item.state.callback()
+            item.state.callback(item.index)
         else
             -- Match the items' width
             local infomessage = InfoMessage:new{

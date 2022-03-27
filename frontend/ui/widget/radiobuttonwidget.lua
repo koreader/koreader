@@ -3,10 +3,10 @@ local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local FocusManager = require("ui/widget/focusmanager")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
 local Size = require("ui/size")
@@ -17,7 +17,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local RadioButtonWidget = InputContainer:new{
+local RadioButtonWidget = FocusManager:new{
     title_text = "",
     info_text = nil,
     width = nil,
@@ -49,27 +49,24 @@ function RadioButtonWidget:init()
         self.width = math.floor(math.min(self.screen_width, self.screen_height) * self.width_factor)
     end
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {Device.input.group.Back}, doc = "close widget" }
-        }
+        self.key_events.Close = { {Device.input.group.Back}, doc = "close widget" }
     end
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapClose = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = Geom:new{
-                        w = self.screen_width,
-                        h = self.screen_height,
-                    }
-                },
+    self.ges_events = {
+        TapClose = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    w = self.screen_width,
+                    h = self.screen_height,
+                }
             },
-         }
-    end
+        },
+        }
     self:update()
 end
 
 function RadioButtonWidget:update()
+    self.layout = {}
     if self.default_provider then
         local row, col = self:getButtonIndex(self.default_provider)
         self.radio_buttons[row][col].text = self.radio_buttons[row][col].text .. "\u{A0}\u{A0}★"
@@ -83,6 +80,7 @@ function RadioButtonWidget:update()
         parent = self,
         face = self.face,
     }
+    self:mergeLayoutInVertical(value_widget)
     local value_group = HorizontalGroup:new{
         align = "center",
         value_widget,
@@ -149,7 +147,7 @@ function RadioButtonWidget:update()
         zero_sep = true,
         show_parent = self,
     }
-
+    self:mergeLayoutInVertical(ok_cancel_buttons)
     local vgroup = VerticalGroup:new{
         align = "left",
         title_bar,

@@ -96,7 +96,7 @@ function Button:init()
                 local new_size = self.label_widget.face.orig_size - 1
                 if new_size < font_size_2_lines then
                     -- Switch to a 2-lines TextBoxWidget
-                    self.label_widget:free()
+                    self.label_widget:free(true)
                     self.label_widget = TextBoxWidget:new{
                         text = self.text,
                         line_height = 0,
@@ -118,7 +118,7 @@ function Button:init()
                 if new_size < 8 then -- don't go too small
                     break
                 end
-                self.label_widget:free()
+                self.label_widget:free(true)
                 self.label_widget = TextWidget:new{
                     text = self.text,
                     max_width = max_width,

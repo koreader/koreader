@@ -130,7 +130,7 @@ end
 -- This fuction can be used by document widgets to temporarily match a widget
 -- to the document page turn direction instead of the UI layout direction.
 function Bidi.invert()
-    if G_reader_settings:isTrue("invert_ui_layout_mirroring") and not Bidi._inverted then
+    if not Bidi._inverted then
         Bidi._mirrored_ui_layout = not Bidi._mirrored_ui_layout
         Bidi._inverted = true
     end

@@ -19,6 +19,7 @@ local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
 local optionsutil = require("ui/data/optionsutil")
+local Size = require("ui/size")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -44,6 +45,7 @@ local ReaderView = OverlapGroup:extend{
         temp = {},
         saved_drawer = "lighten",
         saved = {},
+        indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     },
     highlight_visible = true,
     -- PDF/DjVu continuous paging
@@ -198,6 +200,10 @@ function ReaderView:paintTo(bb, x, y)
     -- draw temporary highlight
     if self.highlight.temp then
         self:drawTempHighlight(bb, x, y)
+    end
+    -- draw highlight position indicator for non-touch
+    if self.highlight.indicator then
+        self:drawHighlightIndicator(bb, x, y)
     end
     -- paint dogear
     if self.dogear_visible then
@@ -452,6 +458,23 @@ function ReaderView:drawScrollView(bb, x, y)
         y + self.state.offset.y,
         self.visible_area,
         self.state.pos)
+end
+
+function ReaderView:drawHighlightIndicator(bb, x, y)
+    local rect = self.highlight.indicator
+    -- paint big cross line +
+    bb:paintRect(
+        rect.x,
+        rect.y + rect.h / 2 - Size.border.thick / 2,
+        rect.w,
+        Size.border.thick
+    )
+    bb:paintRect(
+        rect.x + rect.w / 2 - Size.border.thick / 2,
+        rect.y,
+        Size.border.thick,
+        rect.h
+    )
 end
 
 function ReaderView:drawTempHighlight(bb, x, y)
@@ -829,6 +852,11 @@ function ReaderView:onReadSettings(config)
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
                                               or G_reader_settings:readSetting("kopt_page_gap_height")
                                               or 8)
+end
+
+function ReaderView:shouldInvertBiDiLayoutMirroring()
+    -- A few widgets may temporarily invert UI layout mirroring when both these settings are true
+    return self.inverse_reading_order and G_reader_settings:isTrue("invert_ui_layout_mirroring")
 end
 
 function ReaderView:onPageUpdate(new_page_no)

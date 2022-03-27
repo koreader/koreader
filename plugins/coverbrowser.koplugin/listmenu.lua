@@ -581,10 +581,10 @@ function ListMenuItem:update()
             while true do
                 -- Free previously made widgets to avoid memory leaks
                 if wtitle then
-                    wtitle:free()
+                    wtitle:free(true)
                 end
                 if wauthors then
-                    wauthors:free()
+                    wauthors:free(true)
                     wauthors = nil
                 end
                 -- BookInfoManager:extractBookInfo() made sure
@@ -730,7 +730,7 @@ function ListMenuItem:update()
             local fontsize_no_bookinfo = _fontSize(18, 22)
             repeat
                 if text_widget then
-                    text_widget:free()
+                    text_widget:free(true)
                 end
                 text_widget = TextBoxWidget:new{
                     text = text .. hint,

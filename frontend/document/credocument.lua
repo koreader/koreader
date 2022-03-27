@@ -51,6 +51,7 @@ local CreDocument = Document:new{
         "Noto Sans CJK SC",
         "Noto Naskh Arabic",
         "Noto Sans Devanagari UI",
+        "Noto Sans Bengali UI",
         "FreeSans",
         "FreeSerif",
         "Noto Serif",

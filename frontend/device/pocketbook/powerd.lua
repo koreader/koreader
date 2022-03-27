@@ -4,7 +4,6 @@ local inkview = ffi.load("inkview")
 
 local PocketBookPowerD = BasePowerD:new{
     is_charging = nil,
-    fl_warmth = nil,
 
     fl_min = 0,
     fl_max = 100,
@@ -12,19 +11,11 @@ local PocketBookPowerD = BasePowerD:new{
     fl_warmth_max = 100,
 }
 
-function PocketBookPowerD:init()
-    -- needed for SetFrontlightState / GetFrontlightState
-    if self.device:hasNaturalLight() then
-        local color = inkview.GetFrontlightColor()
-        self.fl_warmth = color >= 0 and color or 0
-    end
-end
-
 function PocketBookPowerD:frontlightIntensityHW()
-    -- Always update fl_intensity (and perhaps fl_warmth) from the OS value whenever queried (its fast).
-    -- This way koreader setting can stay in sync even if the value is changed behind its back.
+    -- Always update fl_intensity (and perhaps fl_warmth) from the OS value whenever queried (it's fast).
+    -- This way koreader settings can stay in sync even if the value is changed behind its back.
     self.fl_intensity = math.max(0, inkview.GetFrontlightState())
-    if self.fl_warmth then
+    if self.device:hasNaturalLight() then
         self.fl_warmth = math.max(0, inkview.GetFrontlightColor())
     end
     return self.fl_intensity
@@ -33,6 +24,8 @@ end
 function PocketBookPowerD:frontlightIntensity()
     if not self.device:hasFrontlight() then return 0 end
     if self:isFrontlightOff() then return 0 end
+    --- @note: We actually have a working frontlightIntensityHW implementation,
+    ---        use it instead of returning a cached self.fl_intensity like BasePowerD.
     return self:frontlightIntensityHW()
 end
 
@@ -60,18 +53,12 @@ function PocketBookPowerD:isFrontlightOn()
     return enabled
 end
 
-function PocketBookPowerD:setWarmth(level)
-    if self.fl_warmth then
-        self.fl_warmth = level or self.fl_warmth
-        inkview.SetFrontlightColor(self.fl_warmth)
-        self:stateChanged()
-    end
+function PocketBookPowerD:setWarmthHW(level)
+    return inkview.SetFrontlightColor(level)
 end
 
-function PocketBookPowerD:getWarmth()
-    if self.fl_warmth then
-        return self.fl_warmth
-    end
+function PocketBookPowerD:frontlightWarmthHW()
+    return inkview.GetFrontlightColor()
 end
 
 function PocketBookPowerD:getCapacityHW()

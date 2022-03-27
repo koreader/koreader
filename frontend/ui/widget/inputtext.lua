@@ -360,7 +360,7 @@ end
 -- lines than before
 function InputText:initTextBox(text, char_added)
     if self.text_widget then
-        self.text_widget:free()
+        self.text_widget:free(true)
     end
     self.text = text
     local fgcolor
@@ -438,7 +438,7 @@ function InputText:initTextBox(text, char_added)
         }
         self.height = text_widget:getTextHeight()
         self.scroll = true
-        text_widget:free()
+        text_widget:free(true)
     end
     if self.scroll then
         self.text_widget = ScrollTextWidget:new{
@@ -517,6 +517,11 @@ function InputText:initTextBox(text, char_added)
         self.edit_callback(self.is_text_edited)
     end
 end
+dbg:guard(InputText, "initTextBox",
+    function(self, text, char_added)
+        assert(type(text) == "string",
+            "Wrong text type (expected string)")
+    end)
 
 function InputText:initKeyboard()
     local keyboard_layer = 2
@@ -634,6 +639,11 @@ function InputText:onTextInput(text)
     end
     return false
 end
+dbg:guard(InputText, "onTextInput",
+    function(self, text)
+        assert(type(text) == "string",
+            "Wrong text type (expected string)")
+    end)
 
 function InputText:onShowKeyboard(ignore_first_hold_release)
     Device:startTextInput()
@@ -932,5 +942,10 @@ function InputText:setText(text, keep_edited_state)
         self:checkTextEditability()
     end
 end
+dbg:guard(InputText, "setText",
+    function(self, text, keep_edited_state)
+        assert(type(text) == "string",
+            "Wrong text type (expected string)")
+    end)
 
 return InputText

@@ -1077,12 +1077,14 @@ end
 
 function Wallabag:setDownloadDirectory(touchmenu_instance)
     require("ui/downloadmgr"):new{
-       onConfirm = function(path)
-           logger.dbg("Wallabag: set download directory to: ", path)
-           self.directory = path
-           self:saveSettings()
-           touchmenu_instance:updateItems()
-       end,
+        onConfirm = function(path)
+            logger.dbg("Wallabag: set download directory to: ", path)
+            self.directory = path
+            self:saveSettings()
+            if touchmenu_instance then
+                touchmenu_instance:updateItems()
+            end
+        end,
     }:chooseDir()
 end
 

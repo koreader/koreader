@@ -80,11 +80,14 @@ function Dbg:turnOn()
     --- @note: On Linux, use CLOEXEC to avoid polluting the fd table of our child processes.
     ---        Otherwise, it can be problematic w/ wpa_supplicant & USBMS...
     ---        Note that this is entirely undocumented, but at least LuaJIT passes the mode as-is to fopen, so, we're good.
+    local open_flags = "w"
     if jit.os == "Linux" then
-        self.ev_log = io.open("ev.log", "we")
-    else
-        self.ev_log = io.open("ev.log", "w")
+        -- Oldest Kindle devices are too old to support O_CLOEXEC...
+        if os.getenv("KINDLE_LEGACY") ~= "yes" then
+            open_flags = "we"
+        end
     end
+    self.ev_log = io.open("ev.log", open_flags)
 end
 
 --- Turn off debug mode.
@@ -99,7 +102,7 @@ function Dbg:turnOff()
         return check
     end
     if self.ev_log then
-        io.close(self.ev_log)
+        self.ev_log:close()
         self.ev_log = nil
     end
 end

@@ -609,10 +609,47 @@ function Exporter:exportBooknotesToHTML(title, booknotes)
     end
 end
 
-function Exporter:exportBooknotesToJSON(title, booknotes)
+function Exporter:prepareBooknotesForJSON(booknotes)
+    local exportable = {
+            title = booknotes.title,
+            author = booknotes.author,
+            entries = {},
+            exported = booknotes.exported,
+            file = booknotes.file
+    }
+    for _, entry in ipairs(booknotes) do
+        table.insert(exportable.entries, entry[1])
+    end
+    return exportable
+end
+
+-- This function should handle both multidocument export and single exports.
+-- For Single Exports, it will create a JSON file with a object ({}) as root node.
+-- For Multidocument export, it will create a JSON file with an array ([]) as root node.
+function Exporter:exportToJSON(clippings)
     local file = io.open(self.json_clipping_file, "a")
     if file then
-        file:write(json.encode(booknotes))
+        local exportable = {}
+        if table.getn(clippings) == 1 then
+            -- We will handle single document export here.
+            exportable = self:prepareBooknotesForJSON(clippings[0])
+        else
+            for _, booknotes in ipairs(clippings) do
+                table.insert(exportable, self:prepareBooknotesForJSON(booknotes))
+            end
+        end
+        file:write(json.encode(exportable))
+        file:write("\n")
+        file:close()
+    end
+end
+
+function Exporter:exportBooknotesToJSON(title, booknotes)
+    logger.dbg("booknotes", booknotes)
+    local file = io.open(self.json_clipping_file, "a")
+    if file then
+        local exportable = self:prepareBooknotesForJSON(booknotes)
+        file:write(json.encode(exportable))
         file:write("\n")
         file:close()
     end

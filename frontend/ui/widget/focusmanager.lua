@@ -33,11 +33,6 @@ local FocusManager = InputContainer:new{
 }
 
 function FocusManager:init()
-    if not self.selected then
-        self.selected = { x = 1, y = 1 }
-    else
-        self.selected = self.selected -- make sure current FocusManager has its own selected field
-    end
     if Device:hasDPad() then
         local event_keys = {}
         -- these will all generate the same event, just with different arguments
@@ -94,6 +89,23 @@ function FocusManager:init()
                 end
             end
         end
+    end
+end
+
+
+function FocusManager:_init()
+    InputContainer._init(self)
+    -- Make sure each FocusManager instance has its own selection field.
+    -- Take ButtonTable = FocusManager:new{} for example.
+    -- FocusManager:init method called once and all ButtonTable instances share same selected field.
+    -- It has problem when
+    -- 1. ButtonTable A (layout 1 row, 4 columns) shown, and move focus, make selected to (4, 1)
+    -- 2. ButtonTable A closed and ButtonTable B (layout 2 rows, 2 columns) shown
+    -- 3. selected (4, 1) is invalid(overflow) for ButtonTable B, and FocusManager ignore all focus move events.
+    if not self.selected then
+        self.selected = { x = 1, y = 1 }
+    else
+        self.selected = {x = self.selected.x, y = self.selected.y }
     end
 end
 
@@ -219,7 +231,7 @@ function FocusManager:onFocusMove(args)
             self.selected.y = self.selected.y + dy
             self.selected.x = self.selected.x + dx
         end
-        logger.dbg("Cursor position : ".. self.selected.y .." : "..self.selected.x)
+        logger.dbg("FocusManager cursor position is:", self.selected.x, ",", self.selected.y)
 
         if self.layout[self.selected.y][self.selected.x] ~= current_item
         or not self.layout[self.selected.y][self.selected.x].is_inactive then
@@ -257,7 +269,7 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
         target_item = self.layout[y][x]
     end
     if target_item then
-        logger.dbg("Move focus position to: " .. y .. ", " .. x)
+        logger.dbg("FocusManager: Move focus position to:", y, ",", x)
         self.selected.x = x
         self.selected.y = y
         -- widget create new layout on update, previous may be removed from new layout.
@@ -351,7 +363,7 @@ function FocusManager:_sendGestureEventToFocusedWidget(gesture)
         point.y = point.y + point.h / 2
         point.w = 0
         point.h = 0
-        logger.dbg("FocusManager: Send " .. gesture .. " to " .. point.x .. ", " .. point.y)
+        logger.dbg("FocusManager: Send", gesture, "to", point.x , ",", point.y)
         UIManager:sendEvent(Event:new("Gesture", {
             ges = gesture,
             pos = point,

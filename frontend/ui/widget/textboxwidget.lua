@@ -28,6 +28,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local logger = require("logger")
+local dbg = require("dbg")
 local util = require("util")
 local Screen = require("device").screen
 
@@ -151,6 +152,26 @@ function TextBoxWidget:init()
         self.text_height = self.lines_per_page * self.line_height_px
     end
 
+    self:_computeTextDimensions()
+    self:_updateLayout()
+    if self.editable then
+        self:moveCursorToCharPos(self.charpos or 1)
+    end
+    self.dimen = Geom:new(self:getSize())
+
+    if Device:isTouchDevice() then
+        self.ges_events = {
+            TapImage = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = function() return self.dimen end,
+                },
+            },
+        }
+    end
+end
+
+function TextBoxWidget:_computeTextDimensions()
     if self.use_xtext then
         self:_measureWithXText()
     else
@@ -184,21 +205,6 @@ function TextBoxWidget:init()
         if self.editable and self.charpos then
             self:scrollViewToCharPos()
         end
-    end
-    self:_updateLayout()
-    if self.editable then
-        self:moveCursorToCharPos(self.charpos or 1)
-    end
-    self.dimen = Geom:new(self:getSize())
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapImage = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = function() return self.dimen end,
-                },
-            },
-        }
     end
 end
 
@@ -1167,6 +1173,26 @@ function TextBoxWidget:update(scheduled_update)
     self:_updateLayout()
     self.scheduled_update = nil
 end
+
+function TextBoxWidget:setText(text)
+    if text == self.text then
+        return
+    end
+
+    self.text = text
+    self:_computeTextDimensions()
+    self:update()
+
+    -- Don't break the reference
+    local new_size = self:getSize()
+    self.dimen.w = new_size.w
+    self.dimen.h = new_size.h
+end
+dbg:guard(TextBoxWidget, "setText",
+    function(self, text)
+        assert(type(text) == "string",
+            "Wrong text type (expected string)")
+    end)
 
 function TextBoxWidget:onTapImage(arg, ges)
     if self.line_num_to_image and self.line_num_to_image[self.virtual_line_num] then

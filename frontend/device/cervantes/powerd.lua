@@ -5,7 +5,6 @@ local battery_sysfs = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892
 
 local CervantesPowerD = BasePowerD:new{
     fl = nil,
-    fl_warmth = nil,
 
     fl_min = 0,
     fl_max = 100,
@@ -15,16 +14,16 @@ local CervantesPowerD = BasePowerD:new{
     status_file = battery_sysfs .. 'status'
 }
 
+-- We can't read back the current state from the OS or hardware.
+-- Use the last value stored in KOReader settings instead.
+function CervantesPowerD:frontlightWarmthHW()
+    return G_reader_settings:readSetting("frontlight_warmth") or 0
+end
+
 function CervantesPowerD:_syncLightOnStart()
-    -- We can't read value from the OS or hardware.
-    -- Use last values stored in koreader settings.
+
     local new_intensity = G_reader_settings:readSetting("frontlight_intensity") or nil
     local is_frontlight_on = G_reader_settings:readSetting("is_frontlight_on") or nil
-    local new_warmth = nil
-
-    if self.fl_warmth ~= nil then
-        new_warmth = G_reader_settings:readSetting("frontlight_warmth") or nil
-    end
 
     if new_intensity ~= nil then
         self.hw_intensity = new_intensity
@@ -34,9 +33,7 @@ function CervantesPowerD:_syncLightOnStart()
         self.initial_is_fl_on = is_frontlight_on
     end
 
-    if new_warmth ~= nil then
-        self.fl_warmth = new_warmth
-    end
+    self.fl_warmth = self:frontlightWarmthHW()
 
     if self.initial_is_fl_on == false and self.hw_intensity == 0 then
         self.hw_intensity = 1
@@ -67,7 +64,6 @@ function CervantesPowerD:init()
                 end
             end
             self.fl = SysfsLight:new(self.device.frontlight_settings)
-            self.fl_warmth = 0
             self:_syncLightOnStart()
         else
             local kobolight = require("ffi/kobolight")
@@ -122,16 +118,9 @@ function CervantesPowerD:setIntensityHW(intensity)
     self:_decideFrontlightState()
 end
 
-function CervantesPowerD:setWarmth(warmth)
+function CervantesPowerD:setWarmthHW(warmth)
     if self.fl == nil then return end
-    self.fl_warmth = warmth
-    self.fl:setWarmth(self.fl_warmth)
-    self:stateChanged()
-end
-
-function CervantesPowerD:getWarmth()
-    if self.fl == nil then return end
-    return self.fl_warmth
+    self.fl:setWarmth(warmth)
 end
 
 function CervantesPowerD:getCapacityHW()
@@ -151,7 +140,7 @@ end
 function CervantesPowerD:afterResume()
     if self.fl == nil then return end
     -- just re-set it to self.hw_intensity that we haven't change on Suspend
-    if self.fl_warmth == nil then
+    if not self.device:hasNaturalLight() then
         self.fl:setBrightness(self.hw_intensity)
     else
         self.fl:setNaturalBrightness(self.hw_intensity, self.fl_warmth)

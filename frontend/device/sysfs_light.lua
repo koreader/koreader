@@ -53,6 +53,7 @@ dbg:guard(SysfsLight, 'setWarmth',
                      "Wrong warmth value given!")
           end)
 
+--- @note: warmth is already in the *native* scale!
 function SysfsLight:setNaturalBrightness(brightness, warmth)
     local set_brightness = true
     local set_warmth = true
@@ -67,8 +68,6 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
 
     -- Newer devices use a mixer instead of writting values per color.
     if self.frontlight_mixer then
-        -- Honor the device's scale, which may not be [0...100] (e.g., it's [0...10] on the Forma) ;).
-        warmth = math.floor(warmth / self.nl_max)
         if set_brightness then
             -- Prefer the ioctl, as it's much lower latency.
             if self.frontlight_ioctl then
@@ -77,7 +76,7 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
                 self:_write_value(self.frontlight_white, brightness)
             end
         end
-        -- And it may be inverted... (cold is nl_max, warm is nl_min)
+        -- The mixer might be using inverted values... (cold is nl_max, warm is nl_min)
         if set_warmth then
             if self.nl_inverted then
                 self:_write_value(self.frontlight_mixer, self.nl_max - warmth)
@@ -141,7 +140,7 @@ function SysfsLight:_write_value(file, value)
         return false
     end
     local ret, err_msg, err_code = f:write(value)
-    io.close(f)
+    f:close()
     if not ret then
         logger.err("Write error: ", err_msg, err_code)
         return false

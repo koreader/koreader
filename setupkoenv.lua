@@ -20,7 +20,7 @@ ffi.load = function(lib)
     local loaded, re = pcall(ffi_load, lib)
     if loaded then return re end
 
-    local lib_path = package.searchpath(lib, "./lib?.so;./libs/lib?.so;./libs/lib?.so.1")
+    local lib_path = package.searchpath(lib, "./lib?.so;./libs/lib?.so;./libs/lib?.so.1;./rocks/lib/lua/5.1/lib?.so")
 
     if not lib_path then
         io.write("ffi.load (warning): ", re, "\n")
