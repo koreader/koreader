@@ -6,6 +6,7 @@ function BaseExporter:new(o)
     o = o or {}
     o.id = "exporter_new"
     o.name = o.name or "generic"
+    o.timestamp = o.timestamp or os.time()
     o.extension = o.extension or o.name or "export"
     o.clipping_dir = DataStorage:getDataDir() .. "/clipboard"
     o.is_remote = o.is_remote or false
@@ -43,15 +44,19 @@ end
 function BaseExporter:exportOne(t) end
 function BaseExporter:exportAll(t) end
 
-function BaseExporter:getFileTimeStamp(timestamp)
-    return os.date("%Y-%m-%d %H:%M:%S", timestamp)
+function BaseExporter:getTimeStamp()
+    return self.timestamp or os.time()
 end
 
-function BaseExporter:getFilePath(timestamp, title)
+function BaseExporter:getFileTimeStamp()
+    return os.date("%Y-%m-%d %H:%M:%S", self:getTimeStamp())
+end
+
+function BaseExporter:getFilePath(title)
     if title then
-        return self.clipping_dir .. "/" .. self:getFileTimeStamp(timestamp) .. "-" .. title .. "." .. self.extension
+        return self.clipping_dir .. "/" .. self:getFileTimeStamp() .. "-" .. title .. "." .. self.extension
     else
-        return self.clipping_dir .. "/" .. self:getFileTimeStamp(timestamp) .. "-all-books." .. self.extension
+        return self.clipping_dir .. "/" .. self:getFileTimeStamp() .. "-all-books." .. self.extension
     end
 end
 

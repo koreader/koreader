@@ -220,7 +220,7 @@ function JoplinExporter:prepareNote(booknotes)
     return note
 end
 
-function JoplinExporter:exportOne(t, timestamp)
+function JoplinExporter:exportOne(t)
     local client = self:getClient()
     local note_guid = client:findNoteByTitle(t.title, self.settings.joplin_notebook_guid)
     local note = self:prepareNote(t)
@@ -231,7 +231,7 @@ function JoplinExporter:exportOne(t, timestamp)
     end
 end
 
-function JoplinExporter:exportAll(t, timestamp)
+function JoplinExporter:exportAll(t)
     local client = self:getClient()
     for _, booknotes in pairs(t) do
         local note_guid = client:findNoteByTitle(booknotes.title, self.settings.joplin_notebook_guid)

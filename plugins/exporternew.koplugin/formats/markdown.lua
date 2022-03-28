@@ -4,20 +4,20 @@ local MarkdownExporter = require("formats/base"):new{
     extension = "md"
 }
 
-function MarkdownExporter:exportOne(t, timestamp)
-    self:export({t}, "single", timestamp)
+function MarkdownExporter:exportOne(t)
+    self:export({t}, "single")
 end
 
-function MarkdownExporter:exportAll(t, timestamp)
-    self:export(t, "all", timestamp)
+function MarkdownExporter:exportAll(t)
+    self:export(t, "all")
 end
 
-function MarkdownExporter:export(t, export_type, timestamp)
+function MarkdownExporter:export(t, export_type)
     local path
     if export_type == "single" then
-        path = self:getFilePath(timestamp, t[1].title)
+        path = self:getFilePath( t[1].title)
     else
-        path = self:getFilePath(timestamp)
+        path = self:getFilePath()
     end
     local file = io.open(path, "w")
     if file then
@@ -52,7 +52,7 @@ function MarkdownExporter:export(t, export_type, timestamp)
             end
             file:write("\n\n")
         end
-        file:write(string.format("\n_Generated on: %s, Version: %s_\n", timestamp, self.version))
+        file:write(string.format("\n_Generated on: %s, Version: %s_\n", self:getFileTimeStamp(), self.version))
         file:write("\n")
         file:close()
     end
