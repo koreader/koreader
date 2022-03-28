@@ -8,20 +8,20 @@ local TextExporter = require("formats/base"):new{
     extension = "txt",
 }
 
-function TextExporter:exportOne(t, timestamp)
-    self:export({t}, "single", timestamp)
+function TextExporter:exportOne(t)
+    self:export({t}, "single")
 end
 
-function TextExporter:exportAll(t, timestamp)
-    self:export(t, "all", timestamp)
+function TextExporter:exportAll(t)
+    self:export(t, "all")
 end
 
-function TextExporter:export(t, export_type, timestamp)
+function TextExporter:export(t, export_type)
     local path
     if export_type == "single" then
-        path = self:getFilePath(timestamp, t[1].title)
+        path = self:getFilePath(t[1].title)
     else
-        path = self:getFilePath(timestamp)
+        path = self:getFilePath()
     end
     local file = io.open(path, "w")
     if file then

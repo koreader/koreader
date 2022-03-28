@@ -39,6 +39,13 @@ function Exporter:init()
 
 end
 
+function Exporter:setTimeStamp()
+    local timestamp = os.time()
+    for k, _ in pairs(self.targets) do
+        self.targets[k].timestamp = timestamp
+    end
+end
+
 function Exporter:updateHistoryClippings(clippings, new_clippings)
     -- update clippings from history clippings
     for title, booknotes in pairs(new_clippings) do
@@ -110,6 +117,7 @@ function Exporter:normalizeBookNotes(booknotes)
 end
 
 function Exporter:exportOne()
+    self:setTimeStamp()
     if self:requiresNetwork() then
         print("enable network here")
     end
@@ -123,12 +131,13 @@ function Exporter:exportOne()
     end
     for k, v in pairs(self.targets) do
         if v:isEnabled() then
-            v:exportOne(t, os.time())
+            v:exportOne(t)
         end
     end
 end
 
 function Exporter:exportAll()
+    self:setTimeStamp()
     if self:requiresNetwork() then
         print("enable network here")
     end
@@ -143,7 +152,7 @@ function Exporter:exportAll()
     end
     for k, v in pairs(self.targets) do
         if v:isEnabled() then
-            v:exportAll(normalized, os.time())
+            v:exportAll(normalized)
         end
     end
 end

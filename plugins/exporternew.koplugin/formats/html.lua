@@ -9,21 +9,21 @@ local HtmlExporter = require("formats/base"):new{
 
 }
 
-function HtmlExporter:exportOne(t, timestamp)
-    self:export({t}, "single", timestamp)
+function HtmlExporter:exportOne(t)
+    self:export({t}, "single")
 end
 
-function HtmlExporter:exportAll(t, timestamp)
-    self:export(t, "all", timestamp)
+function HtmlExporter:exportAll(t)
+    self:export(t, "all")
 end
 
 function HtmlExporter:export(t, export_type, timestamp)
     local path, title
     if export_type == "single" then
-        path = self:getFilePath(timestamp, t[1].title)
+        path = self:getFilePath(t[1].title)
         title = t[1].title
     else
-        path = self:getFilePath(timestamp)
+        path = self:getFilePath()
         title = "All Books"
     end
     local file = io.open(path, "w")
@@ -34,7 +34,7 @@ function HtmlExporter:export(t, export_type, timestamp)
             clippings = t,
             document_title = title,
             version = self.version,
-            timestamp = self:getFileTimeStamp(timestamp),
+            timestamp = self:getFileTimeStamp(),
             logger = logger
         })
         file:write(content)
