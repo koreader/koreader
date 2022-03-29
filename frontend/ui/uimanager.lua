@@ -1179,6 +1179,15 @@ function UIManager:broadcastEvent(event)
     end
 end
 
+function UIManager:getNextTaskTimes(count)
+    count = count or 1
+    local times = {}
+    for i = 1, math.min(count, #self._task_queue) do
+        times[i] = UIManager._task_queue[i].time - TimeVal:now()
+    end
+    return times
+end
+
 function UIManager:_checkTasks()
     self._now = TimeVal:now()
     local wait_until = nil

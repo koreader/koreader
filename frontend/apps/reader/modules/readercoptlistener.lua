@@ -147,6 +147,11 @@ function ReaderCoptListener:onResume()
     self:headerRefresh()
 end
 
+function ReaderCoptListener:onLeaveStandby()
+    self:onResume()
+    self:onOutOfScreenSaver()
+end
+
 function ReaderCoptListener:onOutOfScreenSaver()
     if not self._delayed_screensaver then
         return
@@ -159,6 +164,7 @@ end
 -- Unschedule on these events
 ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
 ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
+ReaderCoptListener.onEnterStandby = ReaderCoptListener.unscheduleHeaderRefresh
 
 function ReaderCoptListener:setAndSave(setting, property, value)
     self.ui.document._document:setIntProperty(property, value)
