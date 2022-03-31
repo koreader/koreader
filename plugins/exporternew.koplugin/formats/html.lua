@@ -26,7 +26,7 @@ function HtmlExporter:export(t)
             clippings = t,
             document_title = title,
             version = self.version,
-            timestamp = self:getFileTimeStamp(),
+            timestamp = self:getTimeStamp(),
             logger = logger
         })
         file:write(content)

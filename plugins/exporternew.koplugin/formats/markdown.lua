@@ -44,7 +44,7 @@ function MarkdownExporter:export(t)
             end
             file:write("\n\n")
         end
-        file:write(string.format("\n_Generated on: %s, Version: %s_\n", self:getFileTimeStamp(), self.version))
+        file:write(string.format("\n_Generated on: %s, Version: %s_\n", self:getTimeStamp(), self.version))
         file:write("\n")
         file:close()
     end
