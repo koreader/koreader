@@ -263,7 +263,7 @@ function FrontLightWidget:layout()
             position = math.floor(self.nl.cur / self.nl.stride),
             default_position = math.floor(self.nl.cur / self.nl.stride),
             callback = function(i)
-                self:setWarmth(i, false)
+                self:setWarmth(Math.round(i * self.nl.stride), false)
             end,
             show_parent = self,
             enabled = true,
@@ -484,13 +484,13 @@ function FrontLightWidget:setWarmth(warmth, update_position)
     end
 
     -- Set warmth
-    self.nl.cur = warmth
-    self.powerd:setWarmth(self.powerd:fromNativeWarmth(self.nl.cur))
+    self.powerd:setWarmth(self.powerd:fromNativeWarmth(warmth))
+    -- Retrieve the value PowerD actually set, in case there were rounding shenanigans and we blew the range...
+    self.nl.cur = self.powerd:toNativeWarmth(self.powerd:frontlightWarmth())
 
-    -- Update the progress bar, if we were called from outside ButtonProgressWidget
-    -- (as it already handles that internally ;)).
+    -- If we were not called by ButtonProgressWidget's callback, we'll have to update its progress bar ourselves.
     if update_position then
-        self.nl_progress:setPosition(warmth, self.nl_progress.default_position)
+        self.nl_progress:setPosition(math.floor(self.nl.cur / self.nl.stride), self.nl_progress.default_position)
     end
 
     self.nl_level:setText(tostring(self.nl.cur))
@@ -519,7 +519,7 @@ function FrontLightWidget:setFrontLightIntensity(intensity)
         self.powerd:setIntensity(self.fl.cur)
     end
 
-    -- Retrieve the real level (different from intensity on toggle)
+    -- Retrieve the real level set by PowerD (will be different from `intensity` on toggle)
     self.fl.cur = self.powerd:frontlightIntensity()
 end
 

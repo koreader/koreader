@@ -7,10 +7,7 @@ local FeedView = {
     DOWNLOAD_FULL_ARTICLE = "download_full_article",
     INCLUDE_IMAGES = "include_images",
     ENABLE_FILTER = "enable_filter",
-    FILTER_ELEMENT = "filter_element",
-    VOLUMIZE = "volumize",
-    ACTION_RESET_HISTORY = "reset_history",
-    ACTION_DELETE_FEED = "delete_feed",
+    FILTER_ELEMENT = "filter_element"
 }
 
 function FeedView:getList(feed_config, callback, edit_feed_attribute_callback, delete_feed_callback)
@@ -52,7 +49,7 @@ function FeedView:getList(feed_config, callback, edit_feed_attribute_callback, d
     return view_content
 end
 
-function FeedView:getItem(id, feed, edit_feed_callback, feed_action_callback)
+function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
 
     logger.dbg("NewsDownloader:", feed)
 
@@ -70,7 +67,6 @@ function FeedView:getItem(id, feed, edit_feed_callback, feed_action_callback)
     local include_images = feed.include_images ~= false
     local enable_filter = feed.enable_filter ~= false
     local filter_element = feed.filter_element
-    local volumize = feed.volumize ~= false
 
     local vc = {
         {
@@ -140,22 +136,11 @@ function FeedView:getItem(id, feed, edit_feed_callback, feed_action_callback)
                 )
             end
         },
-        {
-            _("Volumize feed"),
-            volumize,
-            callback = function()
-                edit_feed_callback(
-                    id,
-                    FeedView.VOLUMIZE,
-                    volumize
-                )
-            end
-        },
     }
 
-    -- These actions only pertain to initiated feeds, so we don't always
-    -- display them.
-    if feed_action_callback then
+    -- We don't always display this. For instance: if a feed
+    -- is being created, this button is not necessary.
+    if delete_feed_callback then
         table.insert(
             vc,
             "---"
@@ -166,22 +151,8 @@ function FeedView:getItem(id, feed, edit_feed_callback, feed_action_callback)
                 _("Delete feed"),
                 "",
                 callback = function()
-                    feed_action_callback(
-                        id,
-                        FeedView.ACTION_DELETE_FEED
-                    )
-                end
-            }
-        )
-        table.insert(
-            vc,
-            {
-                _("Reset feed history"),
-                "",
-                callback = function()
-                    feed_action_callback(
-                        url,
-                        FeedView.ACTION_RESET_HISTORY
+                    delete_feed_callback(
+                        id
                     )
                 end
             }

@@ -6,6 +6,7 @@ This module defines stubs for common methods.
 
 local DataStorage = require("datastorage")
 local Geom = require("ui/geometry")
+local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -67,6 +68,12 @@ local Device = {
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
     canSuspend = yes,
+    canStandby = no,
+    canPowerSaveWhileCharging = no,
+    total_standby_tv = TimeVal.zero, -- total time spent in standby
+    last_standby_tv = TimeVal.zero,
+    total_suspend_tv = TimeVal.zero, -- total time spent in suspend
+    last_suspend_tv = TimeVal.zero,
     canReboot = no,
     canPowerOff = no,
     canAssociateFileExtensions = no,
@@ -238,7 +245,7 @@ end
 function Device:rescheduleSuspend()
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
-    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
 end
 
 -- Only used on platforms where we handle suspend ourselves.
@@ -429,6 +436,9 @@ function Device:saveSettings() end
 -- Simulates suspend/resume
 function Device:simulateSuspend() end
 function Device:simulateResume() end
+
+-- Put device into standby, input devices (buttons, touchscreen ...) stay enabled
+function Device:standby(max_duration) end
 
 --[[--
 Device specific method for performing haptic feedback.

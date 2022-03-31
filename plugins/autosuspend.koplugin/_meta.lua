@@ -1,6 +1,6 @@
 local _ = require("gettext")
 return {
     name = "autosuspend",
-    fullname = _("Auto suspend"),
-    description = _([[Suspends the device after a period of inactivity.]]),
+    fullname = _("Auto power save"),
+    description = _([["Puts the device into standby, suspend or power off after specified periods of inactivity."]]),
 }

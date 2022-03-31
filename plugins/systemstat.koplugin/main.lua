@@ -44,8 +44,16 @@ function SystemStat:appendCounters()
     if self.resume_sec then
         self:put({_("  Last resume time"), os.date("%c", self.resume_sec)})
     end
-    self:put({_("  Up hours"),
-             string.format("%.2f", os.difftime(os.time(), self.start_sec) / 60 / 60)})
+    self:put({_("  Up time"),
+            util.secondsToClockDuration("", os.difftime(os.time(), self.start_sec), false, true, true)})
+    if Device:canSuspend() then
+        self:put({_("  Time in suspend"),
+            util.secondsToClockDuration("", Device.total_suspend_tv:tonumber(), false, true, true)})
+    end
+    if Device:canStandby() then
+        self:put({_("  Time in standby"),
+            util.secondsToClockDuration("", Device.total_standby_tv:tonumber(), false, true, true)})
+    end
     self:put({_("Counters"), ""})
     self:put({_("  wake-ups"), self.wakeup_count})
     -- @translators The number of "sleeps", that is the number of times the device has entered standby. This could also be translated as a rendition of a phrase like "entered sleep".
