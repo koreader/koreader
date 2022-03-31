@@ -4,17 +4,9 @@ local MarkdownExporter = require("formats/base"):new{
     extension = "md"
 }
 
-function MarkdownExporter:exportOne(t)
-    self:export({t}, "single")
-end
-
-function MarkdownExporter:exportAll(t)
-    self:export(t, "all")
-end
-
-function MarkdownExporter:export(t, export_type)
+function MarkdownExporter:export(t)
     local path
-    if export_type == "single" then
+    if #t == 1 then
         path = self:getFilePath( t[1].title)
     else
         path = self:getFilePath()

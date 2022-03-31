@@ -8,17 +8,9 @@ local TextExporter = require("formats/base"):new{
     extension = "txt",
 }
 
-function TextExporter:exportOne(t)
-    self:export({t}, "single")
-end
-
-function TextExporter:exportAll(t)
-    self:export(t, "all")
-end
-
-function TextExporter:export(t, export_type)
+function TextExporter:export(t)
     local path
-    if export_type == "single" then
+    if #t == 1 then
         path = self:getFilePath(t[1].title)
     else
         path = self:getFilePath()

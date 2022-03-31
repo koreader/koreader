@@ -64,15 +64,11 @@ function ReadwiseExporter:getClient()
         }
 end
 
-function ReadwiseExporter:exportOne(t)
+function ReadwiseExporter:export(t)
     local client = self:getClient()
     client:createHighlights(t)
 end
 
-function ReadwiseExporter:exportAll(t)
-    local client = self:getClient()
-    client:createAllHighlights(t)
-end
 
 return ReadwiseExporter
 

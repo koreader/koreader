@@ -41,8 +41,7 @@ function BaseExporter:saveSettings()
     G_reader_settings:saveSetting(self.id, plugin_settings)
 end
 
-function BaseExporter:exportOne(t) end
-function BaseExporter:exportAll(t) end
+function BaseExporter:export(t) end
 
 function BaseExporter:getTimeStamp()
     return self.timestamp or os.time()

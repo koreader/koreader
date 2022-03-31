@@ -74,7 +74,7 @@
 </head>
 <body>
   <div id="notes" style="width:90%; max-width:600px; margin:0 auto; padding:5px; font-size:12pt; font-family:Georgia, serif; text-align: right;">
-  <input type="checkbox" id="style-enable" name="style-enable" checked />
+  <input type="checkbox" id="style-enable" name="style-enable" />
   <label for="style-enable"> Bookmark Style</label>
   #{ for  _, booknotes in ipairs(clippings) do }#
     <div class="book">

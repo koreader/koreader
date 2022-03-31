@@ -116,34 +116,18 @@ function Exporter:normalizeBookNotes(booknotes)
     return normalized
 end
 
-function Exporter:exportOne()
+function Exporter:export(exportType)
     self:setTimeStamp()
     if self:requiresNetwork() then
         print("enable network here")
     end
-    local booknotes = self.parser:parseCurrentDoc(self.view)
-    if type(booknotes) ~= "table" then return end
-
-    local t
-    for _, entry in pairs(booknotes) do
-
-        t = Exporter:normalizeBookNotes(entry)
+    local clippings
+    if exportType == 'current' then
+        clippings = self.parser:parseCurrentDoc(self.view)
+    else
+        clippings = self:getAllNotes()
     end
-    for k, v in pairs(self.targets) do
-        if v:isEnabled() then
-            v:exportOne(t)
-        end
-    end
-end
-
-function Exporter:exportAll()
-    self:setTimeStamp()
-    if self:requiresNetwork() then
-        print("enable network here")
-    end
-    local clippings = self:getAllNotes()
     if type(clippings) ~= "table" then return end
-
     local normalized = {}
     for _, content in pairs(clippings) do
         if content then
@@ -152,12 +136,10 @@ function Exporter:exportAll()
     end
     for k, v in pairs(self.targets) do
         if v:isEnabled() then
-            v:exportAll(normalized)
+            v:export(normalized)
         end
     end
 end
-
-
 
 
 
@@ -189,7 +171,7 @@ function Exporter:addToMainMenu(menu_items)
                     return self:isDocReady()
                 end,
                 callback = function()
-                    self:exportOne()
+                    self:export('current')
                 end,
             },
             {
@@ -198,7 +180,7 @@ function Exporter:addToMainMenu(menu_items)
                     return self:isReady()
                 end,
                 callback = function()
-                    self:exportAll()
+                    self:export('all')
                 end,
                 separator = true,
             },
