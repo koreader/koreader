@@ -39,12 +39,7 @@ function Exporter:init()
 
 end
 
-function Exporter:setTimeStamp()
-    local timestamp = os.time()
-    for k, _ in pairs(self.targets) do
-        self.targets[k].timestamp = timestamp
-    end
-end
+
 
 function Exporter:updateHistoryClippings(clippings, new_clippings)
     -- update clippings from history clippings
@@ -116,16 +111,25 @@ function Exporter:normalizeBookNotes(booknotes)
     return normalized
 end
 
-function Exporter:export(exportType)
-    self:setTimeStamp()
+
+function Exporter:exportCurrentNotes()
+    local clippings = self.parser:parseCurrentDoc(self.view)
+    self:exportClippings(clippings)
+end
+
+function Exporter:exportAllNotes()
+    local clippings = self.config:readSetting("clippings") or {}
+    clippings = self:updateHistoryClippings(clippings, self.parser:parseHistory())
+    clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
+    self.config:saveSetting("clippings", clippings)
+    self.config:flush()
+    self:exportClippings(clippings)
+end
+
+function Exporter:exportClippings(clippings)
+    local timestamp = os.time()
     if self:requiresNetwork() then
         print("enable network here")
-    end
-    local clippings
-    if exportType == 'current' then
-        clippings = self.parser:parseCurrentDoc(self.view)
-    else
-        clippings = self:getAllNotes()
     end
     if type(clippings) ~= "table" then return end
     local normalized = {}
@@ -136,7 +140,9 @@ function Exporter:export(exportType)
     end
     for k, v in pairs(self.targets) do
         if v:isEnabled() then
+            v.timestamp = timestamp
             v:export(normalized)
+            v.timestamp = nil
         end
     end
 end
@@ -171,7 +177,7 @@ function Exporter:addToMainMenu(menu_items)
                     return self:isDocReady()
                 end,
                 callback = function()
-                    self:export('current')
+                    self:exportCurrentNotes()
                 end,
             },
             {
@@ -180,7 +186,7 @@ function Exporter:addToMainMenu(menu_items)
                     return self:isReady()
                 end,
                 callback = function()
-                    self:export('all')
+                    self:exportAllNotes()
                 end,
                 separator = true,
             },

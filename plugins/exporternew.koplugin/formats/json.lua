@@ -7,15 +7,16 @@ local JsonExporter = require("formats/base"):new{
 
 function JsonExporter:exportOne(t)
     local path, exportable
+    local timestamp = self.timestamp or os.time()
     if #t == 1 then
         path = self:getFilePath(t[1].title)
         exportable = t[1]
-        exportable.created_on = self:getTimeStamp()
+        exportable.created_on = timestamp
         exportable.version = self.version
     else
         path = self:getFilePath()
         exportable = {
-            created_on = self:getTimeStamp(),
+            created_on = timestamp,
             version = self.version,
             documents = t
         }
