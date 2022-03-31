@@ -219,6 +219,9 @@ function BasePowerD:getCapacity()
         now_ts = TimeVal:now()
     end
 
+    -- Add time the device was in standby
+    now_ts = now_ts + self.device.total_standby_tv
+
     if (now_ts - self.last_capacity_pull_time):tonumber() >= 60 then
         self.batt_capacity = self:getCapacityHW()
         self.last_capacity_pull_time = now_ts
@@ -237,6 +240,9 @@ function BasePowerD:getAuxCapacity()
     else
         now_ts = TimeVal:now()
     end
+
+    -- Add time the device was in standby
+    now_ts = now_ts + self.device.total_standby_tv
 
     if (now_ts - self.last_aux_capacity_pull_time):tonumber() >= 60 then
         local aux_batt_capa = self:getAuxCapacityHW()
