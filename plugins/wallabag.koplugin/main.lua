@@ -428,12 +428,19 @@ function Wallabag:getArticleList()
                           .. "&page=" .. page
                           .. "&perPage=" .. self.articles_per_sync
                           .. filtering
-        local articles_json = self:callAPI("GET", articles_url, nil, "", "", true)
+        local articles_json, err, code = self:callAPI("GET", articles_url, nil, "", "", true)
 
-        if not articles_json then
+        if err == "http_error" and code == 404 then
             -- we may have hit the last page, there are no more articles
             logger.dbg("Wallabag: couldn't get page #", page)
             break -- exit while loop
+        elseif err then
+            -- another error has occured. Don't proceed with downloading
+            -- or deleting articles
+            logger.warn("Wallabag: download of page #" .. page .. " failed with", err, code)
+            UIManager:show(InfoMessage:new{
+                text = _("Requesting article list failed."), })
+            return
         end
 
         -- We're only interested in the actual articles in the JSON
@@ -553,6 +560,8 @@ end
 -- headers: defaults to auth if given nil value, provide all headers necessary if in use
 -- body: empty string if not needed
 -- filepath: downloads the file if provided, returns JSON otherwise
+-- @treturn result or (nil, "network_error") or (nil, "json_error")
+-- or (nil, "http_error", code)
 ---- @todo separate call to internal API from the download on external server
 function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     local sink = {}
@@ -597,7 +606,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     -- raise error message when network is unavailable
     if resp_headers == nil then
         logger.dbg("Wallabag: Server error: ", code)
-        return false
+        return nil, "network_error"
     end
     if code == 200 then
         if filepath ~= "" then
@@ -619,6 +628,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
                 UIManager:show(InfoMessage:new{
                     text = _("Server response is not valid."), })
             end
+            return nil, "json_error"
         end
     else
         if filepath ~= "" then
@@ -631,7 +641,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
             UIManager:show(InfoMessage:new{
                 text = _("Communication with server failed."), })
         end
-        return false
+        return nil, "http_error", code
     end
 end
 
