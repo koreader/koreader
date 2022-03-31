@@ -76,7 +76,7 @@ local ReaderView = OverlapGroup:extend{
     -- in flipping state
     flipping_visible = false,
     -- to ensure periodic flush of settings
-    settings_last_save_tv = nil,
+    settings_last_save_btv = nil,
     -- might be directly updated by readerpaging/readerrolling when
     -- they handle some panning/scrolling, to request "fast" refreshes
     currently_scrolling = false,
@@ -1030,17 +1030,17 @@ end
 
 function ReaderView:onReaderReady()
     self.ui.doc_settings:delSetting("docsettings_reset_done")
-    self.settings_last_save_tv = UIManager:getTime()
+    self.settings_last_save_btv = UIManager:getTime() + Device.total_standby_tv
 end
 
 function ReaderView:onResume()
     -- As settings were saved on suspend, reset this on resume,
     -- as there's no need for a possibly immediate save.
-    self.settings_last_save_tv = UIManager:getTime()
+    self.settings_last_save_btv = UIManager:getTime() + Device.total_standby_tv
 end
 
 function ReaderView:checkAutoSaveSettings()
-    if not self.settings_last_save_tv then -- reader not yet ready
+    if not self.settings_last_save_btv then -- reader not yet ready
         return
     end
     if G_reader_settings:nilOrFalse("auto_save_settings_interval_minutes") then
@@ -1050,9 +1050,9 @@ function ReaderView:checkAutoSaveSettings()
 
     local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
     interval = TimeVal:new{ sec = interval*60, usec = 0 }
-    local now_tv = UIManager:getTime()
-    if now_tv - self.settings_last_save_tv >= interval then
-        self.settings_last_save_tv = now_tv
+    local now_btv = UIManager:getTime() + Device.total_standby_tv
+    if now_btv - self.settings_last_save_btv >= interval then
+        self.settings_last_save_btv = now_btv
         -- I/O, delay until after the pageturn
         UIManager:tickAfterNext(function()
             self.ui:saveSettings()
