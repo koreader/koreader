@@ -437,7 +437,7 @@ function Wallabag:getArticleList()
         elseif err then
             -- another error has occured. Don't proceed with downloading
             -- or deleting articles
-            logger.warn("Wallabag: download of page #" .. page .. " failed with", err, code)
+            logger.warn("Wallabag: download of page #", page, "failed with", err, code)
             UIManager:show(InfoMessage:new{
                 text = _("Requesting article list failed."), })
             return
