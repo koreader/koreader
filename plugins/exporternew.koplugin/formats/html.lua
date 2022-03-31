@@ -9,17 +9,9 @@ local HtmlExporter = require("formats/base"):new{
 
 }
 
-function HtmlExporter:exportOne(t)
-    self:export({t}, "single")
-end
-
-function HtmlExporter:exportAll(t)
-    self:export(t, "all")
-end
-
-function HtmlExporter:export(t, export_type, timestamp)
+function HtmlExporter:export(t)
     local path, title
-    if export_type == "single" then
+    if #t == 1 then
         path = self:getFilePath(t[1].title)
         title = t[1].title
     else
