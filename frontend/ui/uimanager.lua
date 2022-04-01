@@ -1238,6 +1238,13 @@ function UIManager:getTime()
     return self._now
 end
 
+--[[--
+Returns a TimeVal object corresponding to the last UI tick plus the time in standby.
+]]
+function UIManager:getElapsedTimeSinceBoot()
+    return self:getTime() + Device.total_standby_tv
+end
+
 -- precedence of refresh modes:
 local refresh_modes = { fast = 1, ui = 2, partial = 3, flashui = 4, flashpartial = 5, full = 6 }
 -- NOTE: We might want to introduce a "force_fast" that points to fast, but has the highest priority,

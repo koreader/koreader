@@ -1030,13 +1030,13 @@ end
 
 function ReaderView:onReaderReady()
     self.ui.doc_settings:delSetting("docsettings_reset_done")
-    self.settings_last_save_btv = UIManager:getTime() + Device.total_standby_tv
+    self.settings_last_save_btv = UIManager:getElapsedTimeSinceBoot()
 end
 
 function ReaderView:onResume()
     -- As settings were saved on suspend, reset this on resume,
     -- as there's no need for a possibly immediate save.
-    self.settings_last_save_btv = UIManager:getTime() + Device.total_standby_tv
+    self.settings_last_save_btv = UIManager:getElapsedTimeSinceBoot()
 end
 
 function ReaderView:checkAutoSaveSettings()
@@ -1050,7 +1050,7 @@ function ReaderView:checkAutoSaveSettings()
 
     local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
     interval = TimeVal:new{ sec = interval*60, usec = 0 }
-    local now_btv = UIManager:getTime() + Device.total_standby_tv
+    local now_btv = UIManager:getElapsedTimeSinceBoot()
     if now_btv - self.settings_last_save_btv >= interval then
         self.settings_last_save_btv = now_btv
         -- I/O, delay until after the pageturn
