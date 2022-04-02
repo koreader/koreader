@@ -554,6 +554,11 @@ function Kobo:init()
     if self.canStandby() and (self:isMk7() or self:isSunxi())  then
         self.canPowerSaveWhileCharging = yes
     end
+
+    -- Check if the device has a Neonode IR grid (to tone down the chatter on resume ;)).
+    if lfs.attributes("/sys/devices/virtual/input/input1/neocmd", "mode") == "file" then
+        self.hasIRGrid = true
+    end
 end
 
 function Kobo:setDateTime(year, month, day, hour, min, sec)
@@ -932,9 +937,12 @@ function Kobo:resume()
 
     -- HACK: wait a bit (0.1 sec) for the kernel to catch up
     util.usleep(100000)
-    -- cf. #1862, I can reliably break IR touch input on resume...
-    -- cf. also #1943 for the rationale behind applying this workaorund in every case...
-    writeToSys("a", "/sys/devices/virtual/input/input1/neocmd")
+
+    if self.hasIRGrid then
+        -- cf. #1862, I can reliably break IR touch input on resume...
+        -- cf. also #1943 for the rationale behind applying this workaorund in every case...
+        writeToSys("a", "/sys/devices/virtual/input/input1/neocmd")
+    end
 
     -- A full suspend may have toggled the LED off.
     self:setupChargingLED()
