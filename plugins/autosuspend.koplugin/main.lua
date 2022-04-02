@@ -34,6 +34,7 @@ local AutoSuspend = WidgetContainer:new{
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
     last_action_tv = TimeVal.zero,
     is_standby_scheduled = nil,
+    prevent_standby_count = 0,
     task = nil,
 }
 
@@ -142,8 +143,12 @@ function AutoSuspend:onCloseWidget()
     self.task = nil
 
     self:_unschedule_standby()
-    -- allowStandby is necessary, as we do a preventStandby on plugin start
-    UIManager:allowStandby()
+    if not Device:canStandby() then return end
+    -- allowStandby may be necessary, as we do a preventStandby on plugin start
+    while self.prevent_standby_count > 0 do
+        UIManager:allowStandby()
+        self.prevent_standby_count = self.prevent_standby_count - 1
+    end
 end
 
 function AutoSuspend:onInputEvent()
@@ -174,6 +179,7 @@ function AutoSuspend:preventStandby()
     if self.is_standby_scheduled ~= false then
         self.is_standby_scheduled = false
         UIManager:preventStandby()
+        self.prevent_standby_count = self.prevent_standby_count + 1
     end
 end
 
@@ -181,6 +187,7 @@ function AutoSuspend:allowStandby()
     if not self.is_standby_scheduled then
         self.is_standby_scheduled = true
         UIManager:allowStandby()
+        self.prevent_standby_count = self.prevent_standby_count - 1
 
         -- This is necessary for wakeup from standby, as the deadline for receiving input events
         -- is calculated from the time to the next scheduled function.
