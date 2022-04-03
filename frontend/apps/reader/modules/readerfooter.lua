@@ -1571,7 +1571,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
     if Device:hasBattery() then
         table.insert(sub_items[settings_submenu_num].sub_item_table, 4, {
             text_func = function()
-                if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200) or 100 then
+                if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
                     return T(_("Hide battery status if level higher than: %1%"), self.settings.battery_hide_threshold)
                 else
                     return _("Hide battery status")
