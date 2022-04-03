@@ -231,12 +231,12 @@ function BasePowerD:isCharging()
 end
 
 function BasePowerD:getAuxCapacity()
-    local now_btv = self.device.total_standby_tv -- Add time the device was in standby
+    local now_btv
 
     if UIManager then
-        now_btv = now_btv + UIManager:getTime()
+        now_btv = UIManager:getElapsedTimeSinceBoot()
     else
-        now_btv = now_btv + TimeVal:now()
+        now_btv = TimeVal:now() + self.device.total_standby_tv -- Add time the device was in standby
     end
 
     if (now_btv - self.last_aux_capacity_pull_time):tonumber() >= 60 then
