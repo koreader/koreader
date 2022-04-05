@@ -181,14 +181,14 @@ function AutoSuspend:_reschedule_standby()
 end
 
 function AutoSuspend:preventStandby()
-    logger.dbg("AutoSuspend:preventStandby:", self.is_standby_scheduled)
+    logger.dbg("AutoSuspend:preventStandby")
     -- Tell UIManager that we want to prevent standby until our allowStandby scheduled task runs.
     UIManager:preventStandby()
 end
 
 -- NOTE: This is the scheduled task that should trip the UIManager state to standby
 function AutoSuspend:allowStandby()
-    logger.dbg("AutoSuspend:allowStandby:", self.is_standby_scheduled)
+    logger.dbg("AutoSuspend:allowStandby")
     -- Tell UIManager that we now allow standby.
     UIManager:allowStandby()
 
