@@ -163,6 +163,7 @@ end
 
 function AutoSuspend:_unschedule_standby()
     UIManager:unschedule(AutoSuspend.allowStandby)
+    self.is_standby_scheduled = false
 end
 
 function AutoSuspend:_reschedule_standby()
@@ -174,37 +175,36 @@ function AutoSuspend:_reschedule_standby()
     if not self:_enabledStandby() then return end
 
     logger.dbg("AutoSuspend: schedule autoStandby in", self.auto_standby_timeout_seconds)
-    self.is_standby_scheduled = true
     UIManager:scheduleIn(self.auto_standby_timeout_seconds, self.allowStandby, self)
+    self.is_standby_scheduled = true
 
     self:preventStandby()
 end
 
 function AutoSuspend:preventStandby()
     logger.dbg("AutoSuspend:preventStandby:", self.is_standby_scheduled)
-    if self.is_standby_scheduled then
-        self.is_standby_scheduled = false
-        UIManager:preventStandby()
-        self.prevent_standby_count = self.prevent_standby_count + 1
-        logger.dbg("Increasing prevent_standby_count to", self.prevent_standby_count)
-    end
+    -- We're only called *right* after scheduling standby...
+    UIManager:preventStandby()
+    self.prevent_standby_count = self.prevent_standby_count + 1
+    logger.dbg("Increasing prevent_standby_count to", self.prevent_standby_count)
 end
 
 function AutoSuspend:allowStandby()
     logger.dbg("AutoSuspend:allowStandby:", self.is_standby_scheduled)
-    if not self.is_standby_scheduled then
-        self.is_standby_scheduled = true
-        UIManager:allowStandby()
-        self.prevent_standby_count = self.prevent_standby_count - 1
-        logger.dbg("Decreasing prevent_standby_count to", self.prevent_standby_count)
+    -- By definition, is_standby_scheduled will be true, because *we are* that very task!
+    UIManager:allowStandby()
+    self.prevent_standby_count = self.prevent_standby_count - 1
+    logger.dbg("Decreasing prevent_standby_count to", self.prevent_standby_count)
 
-        -- This is necessary for wakeup from standby, as the deadline for receiving input events
-        -- is calculated from the time to the next scheduled function.
-        -- Make sure this function comes soon, as the time for going to standby after a scheduled wakeup
-        -- is prolonged by the given time. Any time between 0.500 and 0.001 seconds would go.
-        -- Let's call it deadline_guard.
-        UIManager:scheduleIn(0.100, function() end)
-    end
+    -- This is necessary for wakeup from standby, as the deadline for receiving input events
+    -- is calculated from the time to the next scheduled function.
+    -- Make sure this function comes soon, as the time for going to standby after a scheduled wakeup
+    -- is prolonged by the given time. Any time between 0.500 and 0.001 seconds would go.
+    -- Let's call it deadline_guard.
+    UIManager:scheduleIn(0.100, function() end)
+
+    -- We've just run our course.
+    self.is_standby_scheduled = false
 end
 
 function AutoSuspend:onSuspend()
