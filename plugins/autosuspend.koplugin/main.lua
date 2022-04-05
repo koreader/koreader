@@ -449,7 +449,7 @@ function AutoSuspend:onAllowStandby()
         return
     end
 
-    -- Don't enter standby if device is charging and it is a non sunxi kobo
+    -- Don't enter standby when charging on devices where charging prevents entering low power states.
     if Device.powerd:isCharging() and not Device:canPowerSaveWhileCharging() then
         logger.dbg("AutoSuspend: charging, no standby")
         return
