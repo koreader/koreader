@@ -35,6 +35,7 @@ local AutoSuspend = WidgetContainer:new{
     last_action_tv = TimeVal.zero,
     is_standby_scheduled = false,
     task = nil,
+    standby_task = nil,
 }
 
 function AutoSuspend:_enabledStandby()
@@ -123,9 +124,18 @@ function AutoSuspend:init()
     UIManager.event_hook:registerWidget("InputEvent", self)
     -- We need an instance-specific function reference to schedule, because in some rare cases,
     -- we may instantiate a new plugin instance *before* tearing down the old one.
+    -- If we only cared about accessing the right instance members,
+    -- we could use scheduleIn(t, self.function, self),
+    -- but we also care about unscheduling the task from *this* instance only:
+    -- unschedule(self.function) would unschedule that function for *every* instance,
+    -- as self.function == AutoSuspend.function ;).
     self.task = function(shutdown_only)
         self:_schedule(shutdown_only)
     end
+    self.standby_task = function()
+        self:allowStandby()
+    end
+
     self:_start()
     self:_reschedule_standby()
 
@@ -144,6 +154,7 @@ function AutoSuspend:onCloseWidget()
     if not Device:canStandby() then return end
 
     self:_unschedule_standby()
+    self.standby_task = nil
 end
 
 function AutoSuspend:onInputEvent()
@@ -154,9 +165,9 @@ function AutoSuspend:onInputEvent()
 end
 
 function AutoSuspend:_unschedule_standby()
-    if self.is_standby_scheduled then
+    if self.is_standby_scheduled and self.standby_task then
         logger.dbg("AutoSuspend: unschedule standby")
-        UIManager:unschedule(AutoSuspend.allowStandby)
+        UIManager:unschedule(self.standby_task)
         -- Restore the UIManager balance, as we run preventStandby right after scheduling this task.
         UIManager:allowStandby()
 
@@ -173,7 +184,7 @@ function AutoSuspend:_reschedule_standby()
     if not self:_enabledStandby() then return end
 
     logger.dbg("AutoSuspend: schedule autoStandby in", self.auto_standby_timeout_seconds)
-    UIManager:scheduleIn(self.auto_standby_timeout_seconds, self.allowStandby, self)
+    UIManager:scheduleIn(self.auto_standby_timeout_seconds, self.standby_task)
     self.is_standby_scheduled = true
 
     -- Prevent standby until our scheduled allowStandby
