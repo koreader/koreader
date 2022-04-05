@@ -144,13 +144,10 @@ function AutoSuspend:onCloseWidget()
 
     if not Device:canStandby() then return end
 
-    self:_unschedule_standby()
-
-    -- allowStandby may be necessary, as we do a preventStandby on plugin start
-    while self.prevent_standby_count > 0 do
-        logger.debug("AutoSuspend: prevent_standby_count is", self.prevent_standby_count)
-        UIManager:allowStandby()
-        self.prevent_standby_count = self.prevent_standby_count - 1
+    -- If we still have an allowStandby scheduled, run it early, so as to make sure we balance our UIManager standby state.
+    if self.is_standby_scheduled then
+        self:_unschedule_standby()
+        self:allowStandby()
     end
 end
 
@@ -178,12 +175,13 @@ function AutoSuspend:_reschedule_standby()
     UIManager:scheduleIn(self.auto_standby_timeout_seconds, self.allowStandby, self)
     self.is_standby_scheduled = true
 
+    -- Prevent standby until our scheduled allowStandby
     self:preventStandby()
 end
 
 function AutoSuspend:preventStandby()
     logger.dbg("AutoSuspend:preventStandby:", self.is_standby_scheduled)
-    -- We're only called *right* after scheduling standby...
+    -- We're only called *right* after scheduling standby, so, again, is_standby_scheduled will be true...
     UIManager:preventStandby()
     self.prevent_standby_count = self.prevent_standby_count + 1
     logger.dbg("Increasing prevent_standby_count to", self.prevent_standby_count)
