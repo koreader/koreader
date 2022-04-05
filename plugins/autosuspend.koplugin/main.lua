@@ -161,6 +161,8 @@ function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
     self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
 
+    -- NOTE: The fact that we run this on *this* event ensures we don't have to handle the standby scheduling
+    --       at all in setSuspendShutdownTimes ;).
     self:_reschedule_standby()
 end
 
