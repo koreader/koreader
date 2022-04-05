@@ -173,9 +173,11 @@ function AutoSuspend:_reschedule_standby()
 
     if not self:_enabledStandby() then return end
 
-    self:preventStandby()
     logger.dbg("AutoSuspend: schedule autoStandby in", self.auto_standby_timeout_seconds)
+    self.is_standby_scheduled = true
     UIManager:scheduleIn(self.auto_standby_timeout_seconds, self.allowStandby, self)
+
+    self:preventStandby()
 end
 
 function AutoSuspend:preventStandby()
