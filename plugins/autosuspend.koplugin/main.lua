@@ -146,6 +146,7 @@ function AutoSuspend:onCloseWidget()
     if not Device:canStandby() then return end
     -- allowStandby may be necessary, as we do a preventStandby on plugin start
     while self.prevent_standby_count > 0 do
+        logger.debug("AutoSuspend: prevent_standby_count is", self.prevent_standby_count)
         UIManager:allowStandby()
         self.prevent_standby_count = self.prevent_standby_count - 1
     end
