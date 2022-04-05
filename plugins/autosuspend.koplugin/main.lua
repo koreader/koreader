@@ -418,7 +418,7 @@ Upon user input, the device needs a certain amount of time to wake up. With some
             help_text = standby_help,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
-                -- 5 sec is the minimum and 60*60 sec (15min) is the maximum standby time.
+                -- 3 sec is the minimum and 15*60 sec (15min) is the maximum standby time.
                 -- We need a minimum time, so that scheduled function have a chance to execute.
                 -- A standby time of 15 min seem excessive.
                 -- But or battery testing it might give some sense.
