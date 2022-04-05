@@ -432,11 +432,18 @@ end
 -- UI signals us that standby is allowed at this very moment because nothing else goes on in the background.
 function AutoSuspend:onAllowStandby()
     logger.dbg("AutoSuspend: onAllowStandby")
+
     -- In case the OS frontend itself doesn't manage power state, we can do it on our own here.
     -- One should also configure wake-up pins and perhaps wake alarm,
     -- if we want to enter deeper sleep states later on from within standby.
 
-    -- Don't enter standby if wifi is on, as this my break reconnecting (at least on Kobo-Sage)
+    -- Don't enter standby if we haven't set a proper timeout yet.
+    if not self:_enabledStandby() then
+        logger.dbg("AutoSuspend: No timeout set, no standby")
+        return
+    end
+
+    -- Don't enter standby if wifi is on, as this will break in fun and interesting ways (from Wi-Fi issues to kernel deadlocks).
     if NetworkMgr:isWifiOn() then
         logger.dbg("AutoSuspend: WiFi is on, no standby")
         return
