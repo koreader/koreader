@@ -142,8 +142,9 @@ function AutoSuspend:onCloseWidget()
     self:_unschedule()
     self.task = nil
 
-    self:_unschedule_standby()
     if not Device:canStandby() then return end
+
+    self:_unschedule_standby()
 
     -- allowStandby may be necessary, as we do a preventStandby on plugin start
     while self.prevent_standby_count > 0 do
@@ -167,7 +168,9 @@ end
 function AutoSuspend:_reschedule_standby()
     if not Device:canStandby() then return end
 
+    -- We may have just disabled the feature, so unschedule before checking it.
     self:_unschedule_standby()
+
     if not self:_enabledStandby() then return end
 
     self:preventStandby()
