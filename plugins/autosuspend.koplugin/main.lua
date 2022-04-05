@@ -433,7 +433,7 @@ end
 function AutoSuspend:onAllowStandby()
     logger.dbg("AutoSuspend: onAllowStandby")
     -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
-    -- see its own AllowStandby handlers for more details.
+    -- see its own AllowStandby handler for more details.
 
     -- Don't enter standby if we haven't set a proper timeout yet.
     if not self:_enabledStandby() then
