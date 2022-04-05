@@ -176,18 +176,22 @@ function AutoSuspend:_reschedule_standby(standby_timeout)
 end
 
 function AutoSuspend:preventStandby()
+    logger.dbg("AutoSuspend:preventStandby:", self.is_standby_scheduled)
     if self.is_standby_scheduled ~= false then
         self.is_standby_scheduled = false
         UIManager:preventStandby()
         self.prevent_standby_count = self.prevent_standby_count + 1
+        logger.dbg("Increasing prevent_standby_count to", self.prevent_standby_count)
     end
 end
 
 function AutoSuspend:allowStandby()
+    logger.dbg("AutoSuspend:allowStandby:", self.is_standby_scheduled)
     if not self.is_standby_scheduled then
         self.is_standby_scheduled = true
         UIManager:allowStandby()
         self.prevent_standby_count = self.prevent_standby_count - 1
+        logger.dbg("Decreasing prevent_standby_count to", self.prevent_standby_count)
 
         -- This is necessary for wakeup from standby, as the deadline for receiving input events
         -- is calculated from the time to the next scheduled function.
