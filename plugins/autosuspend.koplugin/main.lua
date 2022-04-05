@@ -33,7 +33,7 @@ local AutoSuspend = WidgetContainer:new{
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
     last_action_tv = TimeVal.zero,
-    is_standby_scheduled = nil,
+    is_standby_scheduled = false,
     prevent_standby_count = 0,
     task = nil,
 }
@@ -180,7 +180,7 @@ end
 
 function AutoSuspend:preventStandby()
     logger.dbg("AutoSuspend:preventStandby:", self.is_standby_scheduled)
-    if self.is_standby_scheduled ~= false then
+    if self.is_standby_scheduled then
         self.is_standby_scheduled = false
         UIManager:preventStandby()
         self.prevent_standby_count = self.prevent_standby_count + 1
