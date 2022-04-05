@@ -34,7 +34,6 @@ local AutoSuspend = WidgetContainer:new{
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
     last_action_tv = TimeVal.zero,
     is_standby_scheduled = false,
-    prevent_standby_count = 0,
     task = nil,
 }
 
@@ -159,7 +158,7 @@ function AutoSuspend:_unschedule_standby()
         logger.dbg("AutoSuspend: unschedule standby")
         UIManager:unschedule(AutoSuspend.allowStandby)
         -- Restore the UIManager balance, as we run preventStandby right after scheduling this task.
-        self:_allowStandby()
+        UIManager:allowStandby()
 
         self.is_standby_scheduled = false
     end
@@ -181,29 +180,17 @@ function AutoSuspend:_reschedule_standby()
     self:preventStandby()
 end
 
-function AutoSuspend:_preventStandby()
-    UIManager:preventStandby()
-    self.prevent_standby_count = self.prevent_standby_count + 1
-    logger.dbg("Increasing prevent_standby_count to", self.prevent_standby_count)
-end
-
 function AutoSuspend:preventStandby()
     logger.dbg("AutoSuspend:preventStandby:", self.is_standby_scheduled)
     -- Tell UIManager that we want to prevent standby until our allowStandby scheduled task runs.
-    self:_preventStandby()
-end
-
-function AutoSuspend:_allowStandby()
-    UIManager:allowStandby()
-    self.prevent_standby_count = self.prevent_standby_count - 1
-    logger.dbg("Decreasing prevent_standby_count to", self.prevent_standby_count)
+    UIManager:preventStandby()
 end
 
 -- NOTE: This is the scheduled task that should trip the UIManager state to standby
 function AutoSuspend:allowStandby()
     logger.dbg("AutoSuspend:allowStandby:", self.is_standby_scheduled)
     -- Tell UIManager that we now allow standby.
-    self:_allowStandby()
+    UIManager:allowStandby()
 
     -- This is necessary for wakeup from standby, as the deadline for receiving input events
     -- is calculated from the time to the next scheduled function.
