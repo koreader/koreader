@@ -194,7 +194,6 @@ function AutoSuspend:_reschedule_standby()
 end
 
 function AutoSuspend:preventStandby()
-    logger.dbg("AutoSuspend:preventStandby")
     -- Tell UIManager that we want to prevent standby until our allowStandby scheduled task runs.
     UIManager:preventStandby()
 end
@@ -436,7 +435,7 @@ Upon user input, the device needs a certain amount of time to wake up. With some
                 self:setSuspendShutdownTimes(touchmenu_instance,
                     _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
-                    {4, 15*60}, 0)
+                    {default_auto_standby_timeout_seconds, 15*60}, 0)
             end,
         }
     end
