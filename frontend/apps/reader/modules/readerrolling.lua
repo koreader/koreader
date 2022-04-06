@@ -1006,6 +1006,9 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
     else
         self.view.dim_area:clear()
     end
+    if self.current_pos and not UIManager.currently_scrolling then
+        self.ui:handleEvent(Event:new("PageChangeAnimation", new_pos > self.current_pos))
+    end
     self.ui.document:gotoPos(new_pos)
     -- The current page we get in scroll mode may be a bit innacurate,
     -- but we give it anyway to onPosUpdate so footer and statistics can
@@ -1037,6 +1040,9 @@ function ReaderRolling:_gotoPage(new_page, free_first_page, internal)
                 new_page = new_page - 1
             end
         end
+    end
+    if self.current_page then
+        self.ui:handleEvent(Event:new("PageChangeAnimation", new_page > self.current_page))
     end
     self.ui.document:gotoPage(new_page, internal)
     if self.view.view_mode == "page" then

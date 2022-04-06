@@ -889,6 +889,14 @@ function ReaderView:onRotationUpdate(rotation)
     self:recalculate()
 end
 
+function ReaderView:onPageChangeAnimation(forward)
+    if Device:canDoSwipeAnimation() and G_reader_settings:isTrue("swipe_animations") then
+        if self.inverse_reading_order then forward = not forward end
+        Screen:setSwipeAnimations(true)
+        Screen:setSwipeDirection(forward)
+    end
+end
+
 function ReaderView:onReaderFooterVisibilityChange()
     -- Don't bother ReaderRolling with this nonsense, the footer's height is NOT handled via visible_area there ;)
     if self.ui.paging and self.state.page then
