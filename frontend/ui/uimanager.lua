@@ -1226,11 +1226,14 @@ This is essentially a cached TimeVal:now(), computed at the top of every iterati
 (right before checking/running scheduled tasks).
 This is mainly useful to compute/schedule stuff in the same time scale as the UI loop (i.e., MONOTONIC),
 without having to resort to a syscall.
-It should never be significantly stale (i.e., it should be precise enough),
-unless you're blocking the UI for a significant amount of time in the same UI tick.
+It should never be significantly stale, assuming the UI is in use (e.g., there are input events),
+unless you're blocking the UI for a significant amount of time in a single UI frame.
 
-Prefer the appropriate TimeVal method for your needs if you require perfect accuracy
-(e.g., when you're actually working on the event loop *itself* (UIManager, Input, GestureDetector)).
+That is to say, its granularity is an UI frame.
+
+Prefer the appropriate TimeVal method for your needs if you require perfect accuracy or better granularity
+(e.g., when you're actually working on the event loop *itself* (UIManager, Input, GestureDetector),
+or if you're dealing with intra-frame timers).
 
 This is *NOT* wall clock time (REALTIME).
 ]]
