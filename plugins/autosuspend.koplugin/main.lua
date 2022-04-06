@@ -449,6 +449,11 @@ function AutoSuspend:onAllowStandby()
     -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
     -- see its own AllowStandby handler for more details.
 
+    -- Start the long list of conditions in which we do *NOT* want to go into standby ;).
+    if not Device:canStandby() then
+        return
+    end
+
     -- Don't enter standby if we haven't set a proper timeout yet.
     if not self:_enabledStandby() then
         logger.dbg("AutoSuspend: No timeout set, no standby")
@@ -467,33 +472,32 @@ function AutoSuspend:onAllowStandby()
         return
     end
 
-    if Device:canStandby() then
-        local wake_in = math.huge
-        -- The next scheduled function should be the deadline_guard
-        -- Wake up before the second next scheduled function executes (e.g. footer update, suspend ...)
-        local scheduler_times = UIManager:getNextTaskTimes(2)
-        if #scheduler_times == 2 then
-            -- Wake up slightly after the formerly scheduled event, to avoid resheduling the same function
-            -- after a fraction of a second again (e.g. don't draw footer twice).
-            wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
-        end
-
-        if wake_in > 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
-            UIManager:broadcastEvent(Event:new("EnterStandby"))
-            logger.dbg("AutoSuspend: going to standby and wake in " .. wake_in .. "s zZzzZzZzzzzZZZzZZZz")
-
-            -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
-            Device:standby(wake_in)
-
-            logger.dbg("AutoSuspend: leaving standby after " .. Device.last_standby_tv:tonumber() .. " s")
-
-            UIManager:broadcastEvent(Event:new("LeaveStandby"))
-            self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
-            self:_schedule()   -- reschedule suspend and shutdown with the new time
-        end
-        -- Don't do a `self:_reschedule_standby()` here, as this will interfere with suspend.
-        -- Leave that to onLeaveStandby.
+    -- Do the thing!
+    local wake_in = math.huge
+    -- The next scheduled function should be our deadline_guard (c.f., `AutoSuspend:allowStandby`).
+    -- Wake up before the second next scheduled function executes (e.g. footer update, suspend ...)
+    local scheduler_times = UIManager:getNextTaskTimes(2)
+    if #scheduler_times == 2 then
+        -- Wake up slightly after the formerly scheduled event, to avoid resheduling the same function
+        -- after a fraction of a second again (e.g. don't draw footer twice).
+        wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
     end
+
+    if wake_in > 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
+        UIManager:broadcastEvent(Event:new("EnterStandby"))
+        logger.dbg("AutoSuspend: going to standby and wake in " .. wake_in .. "s zZzzZzZzzzzZZZzZZZz")
+
+        -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
+        Device:standby(wake_in)
+
+        logger.dbg("AutoSuspend: leaving standby after " .. Device.last_standby_tv:tonumber() .. " s")
+
+        UIManager:broadcastEvent(Event:new("LeaveStandby"))
+        self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
+        self:_schedule()   -- reschedule suspend and shutdown with the new time
+    end
+    -- Don't do a `self:_reschedule_standby()` here, as this will interfere with suspend.
+    -- Leave that to `onLeaveStandby`.
 end
 
 return AutoSuspend
