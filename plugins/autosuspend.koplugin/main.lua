@@ -409,7 +409,7 @@ function AutoSuspend:addToMainMenu(menu_items)
 
 Standby can not be entered if Wi-Fi is on.
 
-Upon user input, the device needs a certain amount of time to wake up. With some devices this period of time is not noticeable, with other devices it can be annoying.]])
+Upon user input, the device needs a certain amount of time to wake up. Generally, the newer the device, the less noticeable this delay will be, but it can be fairly aggravating on slower devices.]])
 
         menu_items.autostandby = {
             sorting_hint = "device",
