@@ -846,6 +846,7 @@ function ReaderView:onReadSettings(config)
             config:delSetting("highlight_paging")
         end
     end
+    self.swipe_animations = config:isTrue("swipe_animations") or G_reader_settings:isTrue("swipe_animations")
     self.inverse_reading_order = config:isTrue("inverse_reading_order") or G_reader_settings:isTrue("inverse_reading_order")
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or DSHOWOVERLAP
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
@@ -994,6 +995,7 @@ function ReaderView:onSaveSettings()
     end
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
+    self.ui.doc_settings:saveSetting("swipe_animations", self.swipe_animations)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
@@ -1077,6 +1079,11 @@ function ReaderView:setupTouchZones()
     else
         self.ui.paging:setupTouchZones()
     end
+end
+
+function ReaderView:onToggleSwipeAnimations()
+    self.swipe_animations = not self.swipe_animations
+    return true
 end
 
 function ReaderView:onToggleReadingOrder()

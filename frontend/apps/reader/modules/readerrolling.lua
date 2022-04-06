@@ -1021,7 +1021,7 @@ function ReaderRolling:_gotoPercent(new_percent)
 end
 
 function ReaderRolling:onPageChange(new_page)
-    if Device:canAnimate() and self.current_page then
+    if Device:canAnimate() and self.view.swipe_animations and self.current_page then
         local forward = new_page > self.current_page
         if self.view.inverse_reading_order then forward = not forward end
         Screen:toggleSwipeAnimations(true)

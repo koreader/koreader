@@ -141,6 +141,50 @@ When enabled the UI direction for the Table of Contents, Book Map, and Page Brow
     }
 }
 
+if Device:canAnimate() then
+    table.insert(PageTurns.sub_item_table, {
+        text_func = function()
+            local text = _("Page Turn Animations")
+            if G_reader_settings:isTrue("swipe_animations") then
+                text = text .. "   ★"
+            end
+            return text
+        end,
+        enabled_func = function()
+            return Device:canAnimate()
+        end,
+        checked_func = function()
+            return ReaderUI.instance.view.swipe_animations
+        end,
+        callback = function()
+            UIManager:broadcastEvent(Event:new("ToggleSwipeAnimations"))
+        end,
+        hold_callback = function(touchmenu_instance)
+            local swipe_animations = G_reader_settings:isTrue("swipe_animations")
+            local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+            UIManager:show(MultiConfirmBox:new{
+                text = swipe_animations and _("The default (★) for newly opened books is to enable page turn animations.\n\nWould you like to change it?")
+                or _("The default (★) for newly opened books is to disable page turn animations.\n\nWould you like to change it?"),
+                choice1_text_func = function()
+                    return swipe_animations and _("Disable") or _("Disable (★)")
+                end,
+                choice1_callback = function()
+                    G_reader_settings:makeFalse("swipe_animations")
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+                choice2_text_func = function()
+                    return swipe_animations and _("Enable (★)") or _("Enable")
+                end,
+                choice2_callback = function()
+                    G_reader_settings:makeTrue("swipe_animations")
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
+        end,
+        separator = true,
+    })
+end
+
 if Device:hasKeys() then
     table.insert(PageTurns.sub_item_table, {
         text = _("Invert page turn buttons"),
