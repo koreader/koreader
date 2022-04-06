@@ -477,8 +477,8 @@ function AutoSuspend:onAllowStandby()
     -- Wake up before the second next scheduled function executes (e.g. footer update, suspend ...)
     local scheduler_times = UIManager:getNextTaskTimes(2)
     if #scheduler_times == 2 then
-        -- Wake up slightly after the formerly scheduled event, to avoid resheduling the same function
-        -- after a fraction of a second again (e.g. don't draw footer twice).
+        -- Wake up slightly after the formerly scheduled event,
+        -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
         wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
     end
 
