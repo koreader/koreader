@@ -473,6 +473,7 @@ local KindlePaperWhite5 = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
     canHWDither = no,
+    canDoSwipeAnimation = yes,
 }
 
 function Kindle2:init()
