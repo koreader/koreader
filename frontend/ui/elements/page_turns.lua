@@ -141,6 +141,19 @@ When enabled the UI direction for the Table of Contents, Book Map, and Page Brow
     }
 }
 
+if Device:canDoSwipeAnimation() then
+    table.insert(PageTurns.sub_item_table, {
+        text =_("Page Turn Animations"),
+        checked_func = function()
+            return G_reader_settings:isTrue("swipe_animations")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("swipe_animations")
+        end,
+        separator = true,
+    })
+end
+
 if Device:hasKeys() then
     table.insert(PageTurns.sub_item_table, {
         text = _("Invert page turn buttons"),
