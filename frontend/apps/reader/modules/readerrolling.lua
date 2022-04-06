@@ -1020,6 +1020,15 @@ function ReaderRolling:_gotoPercent(new_percent)
     end
 end
 
+function ReaderRolling:onPageChange(new_page)
+    if Device:canAnimate() and self.current_page then
+        local forward = new_page > self.current_page
+        if self.view.inverse_reading_order then forward = not forward end
+        Screen:toggleSwipeAnimations(true)
+        Screen:setSwipeDirection(forward)
+    end
+end
+
 function ReaderRolling:_gotoPage(new_page, free_first_page, internal)
     if self.ui.document:getVisiblePageCount() > 1 and not free_first_page
             and (internal or self.ui.document:getVisiblePageNumberCount() == 2) then
@@ -1036,6 +1045,7 @@ function ReaderRolling:_gotoPage(new_page, free_first_page, internal)
             end
         end
     end
+    self.ui:handleEvent(Event:new("PageChange", new_page))
     self.ui.document:gotoPage(new_page, internal)
     if self.view.view_mode == "page" then
         self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
