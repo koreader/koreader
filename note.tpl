@@ -53,9 +53,28 @@
 <head>
   <meta charset="utf-8"/>
   <title>#{= htmlescape(document_title) }#</title>
+  <style>
+      #style-enable:checked ~ * .underscore {
+        text-decoration: underline;
+      }
+
+      #style-enable:checked ~ * .lighten {
+        background-color: #aaaaaa;
+      }
+
+      #style-enable:checked ~ * .invert {
+        background-color: #000000;
+        color: #ffffff;
+      }
+
+      #style-enable:checked ~ * .strikeout {
+        text-decoration: line-through;
+      }
+    </style>
 </head>
 <body>
   <div id="notes" style="width:90%; max-width:600px; margin:0 auto; padding:5px; font-size:12pt; font-family:Georgia, serif; text-align: right;">
+  <input type="checkbox" id="style-enable" name="style-enable" />
   <label for="style-enable"> Bookmark Style</label>
   #{ for  _, booknotes in ipairs(clippings) do }#
     <div class="book">

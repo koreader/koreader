@@ -22,7 +22,6 @@ local Exporter = InputContainer:new{
         json = require("formats/json"),
         readwise = require("formats/readwise"),
         text = require("formats/text"),
-        markdown = require("formats/markdown"),
     },
 }
 
