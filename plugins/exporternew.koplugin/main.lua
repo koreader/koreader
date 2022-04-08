@@ -12,6 +12,9 @@ local MyClipping = require("clip")
 local logger = require("logger")
 local util = require("ffi/util")
 local DocSettings = require("docsettings")
+local NetworkMgr = require("ui/network/manager")
+local UIManager = require("ui/uimanager")
+local InfoMessage = require("ui/widget/infomessage")
 
 local Exporter = InputContainer:new{
     name = "exporter",
@@ -126,23 +129,34 @@ function Exporter:exportAllNotes()
 end
 
 function Exporter:exportClippings(clippings)
-    local timestamp = os.time()
-    if self:requiresNetwork() then
-        print("enable network here")
-    end
     if type(clippings) ~= "table" then return end
-    local normalized = {}
-    for _, content in pairs(clippings) do
-        if content then
-            table.insert(normalized, self:normalizeBookNotes(content))
-        end
+    local export_callback = function()
+        UIManager:nextTick(function()
+            local timestamp = os.time()
+            local normalized = {}
+            for _, content in pairs(clippings) do
+                if content then
+                    table.insert(normalized, self:normalizeBookNotes(content))
+                end
+            end
+            for k, v in pairs(self.targets) do
+                if v:isEnabled() then
+                    v.timestamp = timestamp
+                    v:export(normalized)
+                    v.timestamp = nil
+                end
+            end
+        end)
+
+        UIManager:show(InfoMessage:new{
+            text = _("Exporting may take several seconds…"),
+            timeout = 1,
+        })
     end
-    for k, v in pairs(self.targets) do
-        if v:isEnabled() then
-            v.timestamp = timestamp
-            v:export(normalized)
-            v.timestamp = nil
-        end
+    if self:requiresNetwork() then
+        NetworkMgr:runWhenOnline(export_callback)
+    else
+        export_callback()
     end
 end
 
