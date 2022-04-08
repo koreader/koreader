@@ -27,6 +27,8 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
 
+local  MAX_BATTERY_HIDE_THRESHOLD = 1000
+
 local MODE = {
     off = 0,
     page_progress = 1,
@@ -460,7 +462,7 @@ ReaderFooter.default_settings = {
     time = true,
     pages_left = true,
     battery = Device:hasBattery(),
-    battery_hide_threshold = 100,
+    battery_hide_threshold = Device:hasAuxBattery() and 200 or 100,
     percentage = true,
     book_time_to_read = true,
     chapter_time_to_read = true,
@@ -1569,7 +1571,14 @@ With this enabled, the current page is included, so the count goes from n to 1 i
     if Device:hasBattery() then
         table.insert(sub_items[settings_submenu_num].sub_item_table, 4, {
             text_func = function()
-                return T(_("Hide battery status if level higher than: %1%"), self.settings.battery_hide_threshold)
+                if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
+                    return T(_("Hide battery status if level higher than: %1%"), self.settings.battery_hide_threshold)
+                else
+                    return _("Hide battery status")
+                end
+            end,
+            checked_func = function()
+                return self.settings.battery_hide_threshold < MAX_BATTERY_HIDE_THRESHOLD
             end,
             enabled_func = function()
                 return self.settings.all_at_once == true
@@ -1578,10 +1587,10 @@ With this enabled, the current page is included, so the count goes from n to 1 i
             callback = function(touchmenu_instance)
                 local SpinWidget = require("ui/widget/spinwidget")
                 local battery_threshold = SpinWidget:new{
-                    value = self.settings.battery_hide_threshold,
+                    value = math.min(self.settings.battery_hide_threshold, Device:hasAuxBattery() and 200 or 100),
                     value_min = 0,
                     value_max = Device:hasAuxBattery() and 200 or 100,
-                    default_value = 100,
+                    default_value = Device:hasAuxBattery() and 200 or 100,
                     value_hold_step = 10,
                     title_text =  _("Hide battery threshold"),
                     callback = function(spin)
@@ -1589,6 +1598,12 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                         self:refreshFooter(true, true)
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
+                    extra_text = _("Disable"),
+                    extra_callback = function()
+                        self.settings.battery_hide_threshold = MAX_BATTERY_HIDE_THRESHOLD
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                    ok_always_enabled = true,
                 }
                 UIManager:show(battery_threshold)
             end,
