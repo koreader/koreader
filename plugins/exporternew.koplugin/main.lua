@@ -103,6 +103,9 @@ function Exporter:migrateSettings()
             new_settings.readwise.token = settings.readwise_token
             migrated = true
         end
+        if settings.notebook then
+            migrated = true
+        end
         if migrated then
             G_reader_settings:saveSetting(self.name, new_settings)
         end

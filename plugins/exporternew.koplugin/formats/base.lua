@@ -4,7 +4,7 @@ local BaseExporter = {}
 
 function BaseExporter:new(o)
     o = o or {}
-    o.id = "exporter_new"
+    o.id = "exporter"
     o.name = o.name or "generic"
     o.extension = o.extension or o.name or "export"
     o.clipping_dir = DataStorage:getDataDir() .. "/clipboard"
