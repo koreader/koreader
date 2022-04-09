@@ -29,17 +29,9 @@ function BaseExporter:toggleEnabled()
     self:saveSettings()
 end
 
-function BaseExporter:migrateOrDiscardSettings(plugin_settings)
-    -- Plugin developer might implement extra logic here to
-    -- migrate or discard previous version of settiings
-    -- and return current exporter's settings to be saved.
-    return plugin_settings[self.name]
-end
-
 function BaseExporter:loadSettings()
     local plugin_settings = G_reader_settings:readSetting(self.id) or {}
-    local settings = self:migrateOrDiscardSettings(plugin_settings)
-    self.settings = settings or {}
+    self.settings = plugin_settings[self.name] or {}
 end
 
 function BaseExporter:saveSettings()

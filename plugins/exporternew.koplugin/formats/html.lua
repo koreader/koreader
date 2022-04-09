@@ -10,22 +10,6 @@ local HtmlExporter = require("formats/base"):new{
 
 }
 
-function HtmlExporter:migrateOrDiscardSettings(plugin_settings)
-    if plugin_settings[self.name] == nil then
-        if plugin_settings.html_export ~= nil then
-            local settings = {
-                version = self.settings_version,
-                enabled = plugin_settings.html_export
-            }
-            plugin_settings.html_export = nil
-            plugin_settings[self.name] = settings
-            G_reader_settings:saveSetting(self.id, plugin_settings)
-            return settings
-        end
-    end
-    return plugin_settings[self.name]
-end
-
 function HtmlExporter:export(t)
     local path, title
     if #t == 1 then

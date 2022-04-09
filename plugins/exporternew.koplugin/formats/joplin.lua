@@ -184,14 +184,14 @@ function JoplinExporter:getClient()
         self.settings.notebook_name = _("KOReader Notes")
         self:saveSettings()
     end
-    if not self.settings.joplin_notebook_guid then
-        self.settings.joplin_notebook_guid = client:createNotebook(self.settings.notebook_name)
+    if not self.settings.notebook_guid then
+        self.settings.notebook_guid = client:createNotebook(self.settings.notebook_name)
         self:saveSettings()
     else
         local notebook = client:findNotebookByTitle(self.settings.notebook_name)
-        -- logger.dbg("err", self.settings.joplin_notebook_guid, notebook)
+        -- logger.dbg("err", self.settings.notebook_guid, notebook)
         if not notebook then
-            self.settings.joplin_notebook_guid = client:createNotebook(self.settings.notebook_name)
+            self.settings.notebook_guid = client:createNotebook(self.settings.notebook_name)
             self:saveSettings()
         end
     end
@@ -223,7 +223,7 @@ end
 function JoplinExporter:export(t)
     local client = self:getClient()
     for _, booknotes in pairs(t) do
-        local note_guid = client:findNoteByTitle(booknotes.title, self.settings.joplin_notebook_guid)
+        local note_guid = client:findNoteByTitle(booknotes.title, self.settings.notebook_guid)
         local note = self:prepareNote(booknotes)
         if note_guid then
             client:updateNote(note_guid, note)

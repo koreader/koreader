@@ -28,7 +28,89 @@ local Exporter = InputContainer:new{
     },
 }
 
+function Exporter:migrateSettings()
+    local settings = G_reader_settings:readSetting(self.name)
+    if not settings then
+        -- migrate settings from old plugin and remove specific evernote ones.
+        local evernote_settings = G_reader_settings:readSetting("evernote")
+        if type(settings) == "table" then
+            evernote_settings.domain = nil
+            evernote_settings.username = nil
+            evernote_settings.token = nil
+        end
+        G_reader_settings.saveSettings("evernote", evernote_settings)
+    else
+        local migrated, new_settings = false, {
+            html = {
+                enabled = false
+            },
+            json = {
+                enabled = false
+            },
+            text = {
+                enabled = false
+            },
+            readwise = {
+                enabled = false,
+                token = nil
+            },
+            joplin = {
+                enabled = false,
+                token = nil,
+                ip = nil,
+                port = nil,
+                notebook_name = _("KOReader Notes"),
+                notebook_guid = nil,
+            },
+        }
+        if settings.html_export then
+            new_settings.html.enabled = settings.html_export
+            migrated = true
+        end
+        if settings.json_export then
+            new_settings.json.enabled = settings.json_export
+            migrated = true
+        end
+        if settings.text_export then
+            new_settings.text.enabled = settings.text_export
+            migrated = true
+        end
+        if settings.readwise_export then
+            new_settings.readwise.enabled = settings.readwise_export
+            migrated = true
+        end
+        if settings.json_export then
+            new_settings.json.enabled = settings.json_export
+            migrated = true
+        end
+        if settings.joplin_notebook_guid then
+            new_settings.joplin.notebook_guid = settings.joplin_notebook_guid
+            migrated = true
+        end
+        if settings.joplin_IP then
+            new_settings.joplin.ip = settings.joplin_IP
+            migrated = true
+        end
+        if settings.joplin_port then
+            new_settings.joplin.port = settings.joplin_port
+            migrated = true
+        end
+        if settings.joplin_token then
+            new_settings.joplin.token = settings.joplin_token
+            migrated = true
+        end
+        if settings.readwise_token then
+            new_settings.readwise.token = settings.readwise_token
+            migrated = true
+        end
+        if migrated then
+            G_reader_settings:saveSetting(self.name, new_settings)
+        end
+    end
+end
+
 function Exporter:init()
+    self:migrateSettings()
     self.parser = MyClipping:new{
         my_clippings = "/mnt/us/documents/My Clippings.txt",
         history_dir = "./history",
