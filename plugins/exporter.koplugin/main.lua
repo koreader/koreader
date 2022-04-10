@@ -40,7 +40,6 @@ function Exporter:migrateSettings()
         end
         G_reader_settings:saveSetting("evernote", evernote_settings)
     else
-        
         local migrated, new_settings = false, {
             html = {
                 enabled = false
