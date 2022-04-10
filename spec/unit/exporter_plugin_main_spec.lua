@@ -92,7 +92,7 @@ describe("Exporter plugin module", function()
         end
         })
 
-        readerui.exporter.targets["text"]:export(readerui.exporter:normalizeBookNotes({sample_clippings.Title1}))
+        readerui.exporter.targets["text"]:export({readerui.exporter:normalizeBookNotes(sample_clippings.Title1)})
         assert.spy(io.open).was.called()
         assert.spy(file_mock.write).was.called_with(match.is_ref(file_mock), "Some important stuff 1")
         _G.io = old_io
