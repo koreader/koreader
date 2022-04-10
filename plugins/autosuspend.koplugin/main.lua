@@ -196,7 +196,7 @@ function AutoSuspend:_schedule_standby()
     end
 
     -- When we're in a state where entering suspend is undesirable, we simply postpone the check by the full delay.
-    local delay_standby = self.auto_standby_timeout_seconds
+    local standby_delay = self.auto_standby_timeout_seconds
     if NetworkMgr:isWifiOn() then
         -- Don't enter standby if wifi is on, as this will break in fun and interesting ways (from Wi-Fi issues to kernel deadlocks).
         logger.dbg("AutoSuspend: WiFi is on, delaying standby")
@@ -205,16 +205,16 @@ function AutoSuspend:_schedule_standby()
         logger.dbg("AutoSuspend: charging, delaying standby")
     else
         local now_tv = UIManager:getElapsedTimeSinceBoot()
-        delay_standby = (self.last_action_tv - now_tv):tonumber() + self.auto_standby_timeout_seconds
+        standby_delay = self.auto_standby_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
     end
 
-    if delay_standby <= 0 then
+    if standby_delay <= 0 then
         -- We blew the deadline, tell UIManager we're ready to enter standby
         self:allowStandby()
     else
         -- Reschedule standby for the full or remaining delay
-        logger.dbg("AutoSuspend: scheduling next standby check in", delay_standby)
-        UIManager:scheduleIn(delay_standby, self.standby_task)
+        logger.dbg("AutoSuspend: scheduling next standby check in", standby_delay)
+        UIManager:scheduleIn(standby_delay, self.standby_task)
 
         -- Prevent standby until we actually blow the deadline
         if not self.is_standby_scheduled then
