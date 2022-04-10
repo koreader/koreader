@@ -228,36 +228,7 @@ function Kindle:intoScreenSaver()
         if self:supportsScreensaver() then
             -- NOTE: Meaning this is not a SO device ;)
             local Screensaver = require("ui/screensaver")
-            -- NOTE: Pilefered from Device:onPowerEvent @ frontend/device/generic/device.lua
-            -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
             Screensaver:setup()
-            -- Mostly always suspend in Portrait/Inverted Portrait mode...
-            -- ... except when we just show an InfoMessage or when the screensaver
-            -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
-            -- We also exclude full-screen widgets that work fine in Landscape mode,
-            -- like ReadingProgress and BookStatus (c.f., #5724)
-            if Screensaver:modeExpectsPortrait() then
-                self.orig_rotation_mode = self.screen:getRotationMode()
-                -- Leave Portrait & Inverted Portrait alone, that works just fine.
-                if bit.band(self.orig_rotation_mode, 1) == 1 then
-                    -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
-                    self.screen:setRotationMode(self.screen.ORIENTATION_PORTRAIT)
-                else
-                    self.orig_rotation_mode = nil
-                end
-
-                -- On eInk, if we're using a screensaver mode that shows an image,
-                -- flash the screen to white first, to eliminate ghosting.
-                if self:hasEinkScreen() and Screensaver:modeIsImage() then
-                    if Screensaver:withBackground() then
-                        self.screen:clear()
-                    end
-                    self.screen:refreshFull()
-                end
-            else
-                -- nil it, in case user switched ScreenSaver modes during our lifetime.
-                self.orig_rotation_mode = nil
-            end
             Screensaver:show()
         else
             -- Let the native system handle screensavers on SO devices...
@@ -276,10 +247,6 @@ function Kindle:outofScreenSaver()
     if self.screen_saver_mode == true then
         if self:supportsScreensaver() then
             local Screensaver = require("ui/screensaver")
-            -- Restore to previous rotation mode, if need be.
-            if self.orig_rotation_mode then
-                self.screen:setRotationMode(self.orig_rotation_mode)
-            end
             Screensaver:close()
             -- And redraw everything in case the framework managed to screw us over...
             local UIManager = require("ui/uimanager")

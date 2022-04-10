@@ -21,8 +21,9 @@ local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 local Screen = Device.screen
-local T = require("ffi/util").template
 
 -- Default settings
 if G_reader_settings:hasNot("screensaver_show_message") then
@@ -564,6 +565,39 @@ function Screensaver:show()
         return
     end
 
+    -- We mostly always suspend in Portrait/Inverted Portrait mode...
+    -- ... except when we just show an InfoMessage or when the screensaver
+    -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
+    -- We also exclude full-screen widgets that work fine in Landscape mode,
+    -- like ReadingProgress and BookStatus (c.f., #5724)
+    if self:modeExpectsPortrait() then
+        Device.orig_rotation_mode = Screen:getRotationMode()
+        -- Leave Portrait & Inverted Portrait alone, that works just fine.
+        if bit.band(Device.orig_rotation_mode, 1) == 1 then
+            -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
+            Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
+        else
+            Device.orig_rotation_mode = nil
+        end
+
+        -- On eInk, if we're using a screensaver mode that shows an image,
+        -- flash the screen to white first, to eliminate ghosting.
+        if Device:hasEinkScreen() and self:modeIsImage() then
+            if self:withBackground() then
+                Screen:clear()
+            end
+            Screen:refreshFull()
+
+            -- On Kobo, on sunxi SoCs with a recent kernel, wait a tiny bit more to avoid weird refresh glitches...
+            if Device:isKobo() and Device:isSunxi() then
+                ffiUtil.usleep(150 * 1000)
+            end
+        end
+    else
+        -- nil it, in case user switched ScreenSaver modes during our lifetime.
+        Device.orig_rotation_mode = nil
+    end
+
     -- Build the main widget for the effective mode, all the sanity checks were handled in setup
     local widget = nil
     if self.screensaver_type == "cover" then
@@ -712,6 +746,18 @@ function Screensaver:show()
     end
 end
 
+function Screensaver:close_widget()
+    logger.dbg("close screensaver")
+    if self.screensaver_widget then
+        UIManager:close(self.screensaver_widget)
+        self.screensaver_widget = nil
+    end
+
+    if self.delayed_close then
+        self.delayed_close = nil
+    end
+end
+
 function Screensaver:close()
     if self.screensaver_widget == nil then
         return
@@ -720,19 +766,10 @@ function Screensaver:close()
     local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
     local screensaver_delay_number = tonumber(screensaver_delay)
     if screensaver_delay_number then
-        UIManager:scheduleIn(screensaver_delay_number, function()
-            logger.dbg("close screensaver")
-            if self.screensaver_widget then
-                UIManager:close(self.screensaver_widget)
-                self.screensaver_widget = nil
-            end
-        end)
+        UIManager:scheduleIn(screensaver_delay_number, self.close_widget, self)
+        self.delayed_close = true
     elseif screensaver_delay == "disable" then
-        logger.dbg("close screensaver")
-        if self.screensaver_widget then
-            UIManager:close(self.screensaver_widget)
-            self.screensaver_widget = nil
-        end
+        self:close_widget()
     else
         logger.dbg("tap to exit from screensaver")
     end

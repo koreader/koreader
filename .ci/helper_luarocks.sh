@@ -14,7 +14,7 @@ travis_retry luarocks --local install ansicolors
 travis_retry luarocks --local install busted 2.0.0-1
 #- mv -f $HOME/.luarocks/bin/busted_bootstrap $HOME/.luarocks/bin/busted
 
-travis_retry luarocks --local install luacheck
+travis_retry luarocks --local install luacheck 0.25.0-1
 travis_retry luarocks --local install lanes # for parallel luacheck
 
 # used only on master branch but added to cache for better speed

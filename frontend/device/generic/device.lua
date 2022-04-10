@@ -268,10 +268,6 @@ function Device:onPowerEvent(ev)
                     end
                 end
                 self:resume()
-                -- Restore to previous rotation mode, if need be.
-                if self.orig_rotation_mode then
-                    self.screen:setRotationMode(self.orig_rotation_mode)
-                end
                 Screensaver:close()
                 if self:needsScreenRefreshAfterResume() then
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
@@ -293,40 +289,7 @@ function Device:onPowerEvent(ev)
         logger.dbg("Suspending...")
         -- Add the current state of the SleepCover flag...
         logger.dbg("Sleep cover is", self.is_cover_closed and "closed" or "open")
-        -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
         Screensaver:setup()
-        -- Mostly always suspend in Portrait/Inverted Portrait mode...
-        -- ... except when we just show an InfoMessage or when the screensaver
-        -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
-        -- We also exclude full-screen widgets that work fine in Landscape mode,
-        -- like ReadingProgress and BookStatus (c.f., #5724)
-        if Screensaver:modeExpectsPortrait() then
-            self.orig_rotation_mode = self.screen:getRotationMode()
-            -- Leave Portrait & Inverted Portrait alone, that works just fine.
-            if bit.band(self.orig_rotation_mode, 1) == 1 then
-                -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
-                self.screen:setRotationMode(self.screen.ORIENTATION_PORTRAIT)
-            else
-                self.orig_rotation_mode = nil
-            end
-
-            -- On eInk, if we're using a screensaver mode that shows an image,
-            -- flash the screen to white first, to eliminate ghosting.
-            if self:hasEinkScreen() and Screensaver:modeIsImage() then
-                if Screensaver:withBackground() then
-                    self.screen:clear()
-                end
-                self.screen:refreshFull()
-
-                -- On Kobo, on sunxi SoCs with a recent kernel, wait a tiny bit more to avoid weird refresh glitches...
-                if self:isKobo() and self:isSunxi() then
-                    ffiUtil.usleep(150 * 1000)
-                end
-            end
-        else
-            -- nil it, in case user switched ScreenSaver modes during our lifetime.
-            self.orig_rotation_mode = nil
-        end
         Screensaver:show()
         -- NOTE: show() will return well before the refresh ioctl is even *sent*:
         --       the only thing it's done is *enqueued* the refresh in UIManager's stack.

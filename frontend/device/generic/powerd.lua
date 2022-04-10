@@ -212,16 +212,16 @@ end
 function BasePowerD:getCapacity()
     -- BasePowerD is loaded before UIManager.
     -- Nothing *currently* calls this before UIManager is actually loaded, but future-proof this anyway.
-    local now_ts
+    local now_btv
     if UIManager then
-        now_ts = UIManager:getTime()
+        now_btv = UIManager:getElapsedTimeSinceBoot()
     else
-        now_ts = TimeVal:now()
+        now_btv = TimeVal:now() + self.device.total_standby_tv -- Add time the device was in standby
     end
 
-    if (now_ts - self.last_capacity_pull_time):tonumber() >= 60 then
+    if (now_btv - self.last_capacity_pull_time):tonumber() >= 60 then
         self.batt_capacity = self:getCapacityHW()
-        self.last_capacity_pull_time = now_ts
+        self.last_capacity_pull_time = now_btv
     end
     return self.batt_capacity
 end
@@ -231,19 +231,20 @@ function BasePowerD:isCharging()
 end
 
 function BasePowerD:getAuxCapacity()
-    local now_ts
+    local now_btv
+
     if UIManager then
-        now_ts = UIManager:getTime()
+        now_btv = UIManager:getElapsedTimeSinceBoot()
     else
-        now_ts = TimeVal:now()
+        now_btv = TimeVal:now() + self.device.total_standby_tv -- Add time the device was in standby
     end
 
-    if (now_ts - self.last_aux_capacity_pull_time):tonumber() >= 60 then
+    if (now_btv - self.last_aux_capacity_pull_time):tonumber() >= 60 then
         local aux_batt_capa = self:getAuxCapacityHW()
         -- If the read failed, don't update our cache, and retry next time.
         if aux_batt_capa then
             self.aux_batt_capacity = aux_batt_capa
-            self.last_aux_capacity_pull_time = now_ts
+            self.last_aux_capacity_pull_time = now_btv
         end
     end
     return self.aux_batt_capacity

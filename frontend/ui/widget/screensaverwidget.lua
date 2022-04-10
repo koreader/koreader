@@ -72,6 +72,13 @@ function ScreenSaverWidget:onTap(_, ges)
 end
 
 function ScreenSaverWidget:onClose()
+    -- If we happened to shortcut a delayed close via user input, unschedule it to avoid a spurious refresh.
+    local Screensaver = require("ui/screensaver")
+    if Screensaver.delayed_close then
+        UIManager:unschedule(Screensaver.close_widget)
+        Screensaver.delayed_close = nil
+    end
+
     UIManager:close(self)
     return true
 end
@@ -82,8 +89,15 @@ function ScreenSaverWidget:onAnyKeyPressed()
 end
 
 function ScreenSaverWidget:onCloseWidget()
+    -- Restore to previous rotation mode, if need be.
+    if Device.orig_rotation_mode then
+        Screen:setRotationMode(Device.orig_rotation_mode)
+        Device.orig_rotation_mode = nil
+    end
+
+    -- Make it full-screen (self.main_frame.dimen might be in a different orientation, and it's already full-screen anyway...)
     UIManager:setDirty(nil, function()
-        return "full", self.main_frame.dimen
+        return "full"
     end)
 
     -- Will come after the Resume event, iff screensaver_delay is set.
