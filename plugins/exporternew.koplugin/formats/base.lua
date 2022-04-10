@@ -47,8 +47,6 @@ function BaseExporter:getTimeStamp()
     return os.date("%Y-%m-%d %H:%M:%S", ts)
 end
 
-
-
 function BaseExporter:getFilePath(title)
     if title then
         return self.clipping_dir .. "/" .. self:getTimeStamp() .. "-" .. title .. "." .. self.extension

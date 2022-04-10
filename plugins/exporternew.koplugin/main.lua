@@ -16,7 +16,7 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 
-local Exporter = InputContainer:new{
+local Exporter = InputContainer:new {
     name = "exporter",
     clipping_dir = DataStorage:getDataDir() .. "/clipboard",
     targets = {
@@ -38,7 +38,7 @@ function Exporter:migrateSettings()
             evernote_settings.username = nil
             evernote_settings.token = nil
         end
-        G_reader_settings.saveSettings("evernote", evernote_settings)
+        G_reader_settings:saveSetting("evernote", evernote_settings)
     else
         local migrated, new_settings = false, {
             html = {
@@ -114,7 +114,7 @@ end
 
 function Exporter:init()
     self:migrateSettings()
-    self.parser = MyClipping:new{
+    self.parser = MyClipping:new {
         my_clippings = "/mnt/us/documents/My Clippings.txt",
         history_dir = "./history",
     }
@@ -125,8 +125,6 @@ function Exporter:init()
     self.ui.menu:registerToMainMenu(self)
 
 end
-
-
 
 function Exporter:updateHistoryClippings(clippings, new_clippings)
     -- update clippings from history clippings
@@ -186,18 +184,17 @@ end
 
 function Exporter:normalizeBookNotes(booknotes)
     local normalized = {
-            title = booknotes.title,
-            author = booknotes.author,
-            entries = {},
-            exported = booknotes.exported,
-            file = booknotes.file
+        title = booknotes.title,
+        author = booknotes.author,
+        entries = {},
+        exported = booknotes.exported,
+        file = booknotes.file
     }
     for _, entry in ipairs(booknotes) do
         table.insert(normalized.entries, entry[1])
     end
     return normalized
 end
-
 
 function Exporter:exportCurrentNotes()
     local clippings = self.parser:parseCurrentDoc(self.view)
@@ -233,7 +230,7 @@ function Exporter:exportClippings(clippings)
             end
         end)
 
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = _("Exporting may take several seconds…"),
             timeout = 1,
         })
@@ -245,8 +242,6 @@ function Exporter:exportClippings(clippings)
     end
 end
 
-
-
 function Exporter:getAllNotes()
     local clippings = self.config:readSetting("clippings") or {}
     clippings = self:updateHistoryClippings(clippings, self.parser:parseHistory())
@@ -255,7 +250,6 @@ function Exporter:getAllNotes()
     self.config:flush()
     return clippings
 end
-
 
 function Exporter:addToMainMenu(menu_items)
     local submenu = {}
