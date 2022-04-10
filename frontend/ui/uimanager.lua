@@ -1242,10 +1242,10 @@ function UIManager:getTime()
 end
 
 --[[--
-Returns a TimeVal object corresponding to the last UI tick plus the time in standby.
+Returns a TimeVal object corresponding to the last UI tick plus the time in standby and suspend.
 ]]
 function UIManager:getElapsedTimeSinceBoot()
-    return self:getTime() + Device.total_standby_tv
+    return self:getTime() + Device.total_standby_tv + Device.total_suspend_tv
 end
 
 -- precedence of refresh modes:
