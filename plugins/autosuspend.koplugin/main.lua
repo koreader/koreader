@@ -33,8 +33,9 @@ local AutoSuspend = WidgetContainer:new{
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
     last_action_tv = TimeVal.zero,
-    is_standby_scheduled = nil,
+    is_standby_scheduled = false,
     task = nil,
+    standby_task = nil,
 }
 
 function AutoSuspend:_enabledStandby()
@@ -61,7 +62,7 @@ function AutoSuspend:_schedule(shutdown_only)
         delay_suspend = self.auto_suspend_timeout_seconds
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
-        local now_tv = UIManager:getTime() + Device.total_standby_tv
+        local now_tv = UIManager:getElapsedTimeSinceBoot()
         delay_suspend = (self.last_action_tv - now_tv):tonumber() + self.auto_suspend_timeout_seconds
         delay_shutdown = (self.last_action_tv - now_tv):tonumber() + self.autoshutdown_timeout_seconds
     end
@@ -94,7 +95,7 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        self.last_action_tv = UIManager:getTime() + Device.total_standby_tv
+        self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
         logger.dbg("AutoSuspend: start at", self.last_action_tv:tonumber())
         self:_schedule()
     end
@@ -103,7 +104,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        self.last_action_tv = UIManager:getTime() + Device.total_standby_tv
+        self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
         logger.dbg("AutoSuspend: restart at", self.last_action_tv:tonumber())
         self:_schedule(true)
     end
@@ -123,9 +124,18 @@ function AutoSuspend:init()
     UIManager.event_hook:registerWidget("InputEvent", self)
     -- We need an instance-specific function reference to schedule, because in some rare cases,
     -- we may instantiate a new plugin instance *before* tearing down the old one.
+    -- If we only cared about accessing the right instance members,
+    -- we could use scheduleIn(t, self.function, self),
+    -- but we also care about unscheduling the task from *this* instance only:
+    -- unschedule(self.function) would unschedule that function for *every* instance,
+    -- as self.function == AutoSuspend.function ;).
     self.task = function(shutdown_only)
         self:_schedule(shutdown_only)
     end
+    self.standby_task = function()
+        self:allowStandby()
+    end
+
     self:_start()
     self:_reschedule_standby()
 
@@ -141,54 +151,68 @@ function AutoSuspend:onCloseWidget()
     self:_unschedule()
     self.task = nil
 
+    if not Device:canStandby() then return end
+
     self:_unschedule_standby()
-    -- allowStandby is necessary, as we do a preventStandby on plugin start
-    UIManager:allowStandby()
+    self.standby_task = nil
 end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action_tv = UIManager:getTime() + Device.total_standby_tv
+    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
 
+    -- NOTE: The fact that we run this on *this* event ensures we don't have to handle the standby scheduling
+    --       at all in setSuspendShutdownTimes ;).
     self:_reschedule_standby()
 end
 
 function AutoSuspend:_unschedule_standby()
-    UIManager:unschedule(AutoSuspend.allowStandby)
+    if self.is_standby_scheduled and self.standby_task then
+        logger.dbg("AutoSuspend: unschedule standby")
+        UIManager:unschedule(self.standby_task)
+        -- Restore the UIManager balance, as we run preventStandby right after scheduling this task.
+        UIManager:allowStandby()
+
+        self.is_standby_scheduled = false
+    end
 end
 
-function AutoSuspend:_reschedule_standby(standby_timeout)
+function AutoSuspend:_reschedule_standby()
     if not Device:canStandby() then return end
-    standby_timeout = standby_timeout or self.auto_standby_timeout_seconds
-    self:_unschedule_standby()
-    if standby_timeout < 1 then
-        return
-    end
 
+    -- We may have just disabled the feature, so unschedule before checking it.
+    self:_unschedule_standby()
+
+    if not self:_enabledStandby() then return end
+
+    logger.dbg("AutoSuspend: schedule autoStandby in", self.auto_standby_timeout_seconds)
+    UIManager:scheduleIn(self.auto_standby_timeout_seconds, self.standby_task)
+    self.is_standby_scheduled = true
+
+    -- Prevent standby until our scheduled allowStandby
     self:preventStandby()
-    logger.dbg("AutoSuspend: schedule autoStandby in", standby_timeout) -- xxx may be deleted later
-    UIManager:scheduleIn(standby_timeout, self.allowStandby, self)
 end
 
 function AutoSuspend:preventStandby()
-    if self.is_standby_scheduled ~= false then
-        self.is_standby_scheduled = false
-        UIManager:preventStandby()
-    end
+    -- Tell UIManager that we want to prevent standby until our allowStandby scheduled task runs.
+    UIManager:preventStandby()
 end
 
+-- NOTE: This is the scheduled task that should trip the UIManager state to standby
 function AutoSuspend:allowStandby()
-    if not self.is_standby_scheduled then
-        self.is_standby_scheduled = true
-        UIManager:allowStandby()
+    logger.dbg("AutoSuspend:allowStandby")
+    -- Tell UIManager that we now allow standby.
+    UIManager:allowStandby()
 
-        -- This is necessary for wakeup from standby, as the deadline for receiving input events
-        -- is calculated from the time to the next scheduled function.
-        -- Make sure this function comes soon, as the time for going to standby after a scheduled wakeup
-        -- is prolonged by the given time. Any time between 0.500 and 0.001 seconds would go.
-        -- Let's call it deadline_guard.
-        UIManager:scheduleIn(0.100, function() end)
-    end
+    -- This is necessary for wakeup from standby, as the deadline for receiving input events
+    -- is calculated from the time to the next scheduled function.
+    -- Make sure this function comes soon, as the time for going to standby after a scheduled wakeup
+    -- is prolonged by the given time. Any time between 0.500 and 0.001 seconds would go.
+    -- Let's call it deadline_guard.
+    UIManager:scheduleIn(0.100, function() end)
+
+    -- We've just run our course.
+    self.is_standby_scheduled = false
 end
 
 function AutoSuspend:onSuspend()
@@ -385,7 +409,7 @@ function AutoSuspend:addToMainMenu(menu_items)
 
 Standby can not be entered if Wi-Fi is on.
 
-Upon user input, the device needs a certain amount of time to wake up. With some devices this period of time is not noticeable, with other devices it can be annoying.]])
+Upon user input, the device needs a certain amount of time to wake up. Generally, the newer the device, the less noticeable this delay will be, but it can be fairly aggravating on slower devices.]])
 
         menu_items.autostandby = {
             sorting_hint = "device",
@@ -404,14 +428,14 @@ Upon user input, the device needs a certain amount of time to wake up. With some
             help_text = standby_help,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
-                -- 5 sec is the minimum and 60*60 sec (15min) is the maximum standby time.
+                -- 4 sec is the minimum and 15*60 sec (15min) is the maximum standby time.
                 -- We need a minimum time, so that scheduled function have a chance to execute.
                 -- A standby time of 15 min seem excessive.
                 -- But or battery testing it might give some sense.
                 self:setSuspendShutdownTimes(touchmenu_instance,
                     _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
-                    {3, 15*60}, 0)
+                    {default_auto_standby_timeout_seconds, 15*60}, 0)
             end,
         }
     end
@@ -421,50 +445,58 @@ end
 -- UI signals us that standby is allowed at this very moment because nothing else goes on in the background.
 function AutoSuspend:onAllowStandby()
     logger.dbg("AutoSuspend: onAllowStandby")
-    -- In case the OS frontend itself doesn't manage power state, we can do it on our own here.
-    -- One should also configure wake-up pins and perhaps wake alarm,
-    -- if we want to enter deeper sleep states later on from within standby.
+    -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
+    -- see its own AllowStandby handler for more details.
 
-    -- Don't enter standby if wifi is on, as this my break reconnecting (at least on Kobo-Sage)
+    -- Start the long list of conditions in which we do *NOT* want to go into standby ;).
+    if not Device:canStandby() then
+        return
+    end
+
+    -- Don't enter standby if we haven't set a proper timeout yet.
+    if not self:_enabledStandby() then
+        logger.dbg("AutoSuspend: No timeout set, no standby")
+        return
+    end
+
+    -- Don't enter standby if wifi is on, as this will break in fun and interesting ways (from Wi-Fi issues to kernel deadlocks).
     if NetworkMgr:isWifiOn() then
         logger.dbg("AutoSuspend: WiFi is on, no standby")
         return
     end
 
-    -- Don't enter standby if device is charging and it is a non sunxi kobo
+    -- Don't enter standby when charging on devices where charging prevents entering low power states.
     if Device.powerd:isCharging() and not Device:canPowerSaveWhileCharging() then
         logger.dbg("AutoSuspend: charging, no standby")
         return
     end
 
-    if Device:canStandby() then
-        local wake_in = math.huge
-        -- The next scheduled function should be the deadline_guard
-        -- Wake before the second next scheduled function executes (e.g. footer update, suspend ...)
-        local scheduler_times = UIManager:getNextTaskTimes(2)
-        if #scheduler_times == 2 then
-            -- Wake up slightly after the formerly scheduled event, to avoid resheduling the same function
-            -- after a fraction of a second again (e.g. don't draw footer twice)
-            wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
-        end
-
-        if wake_in > 3 then -- don't go into standby, if scheduled wake is in less than 3 secs
-            UIManager:broadcastEvent(Event:new("EnterStandby"))
-            logger.dbg("AutoSuspend: going to standby and wake in " .. wake_in .. "s zZzzZzZzzzzZZZzZZZz")
-
-            -- This is for the Kobo Sage/Elipsa for now, as these are the only with useStandby.
-            -- Other devices may be added
-            Device:standby(wake_in)
-
-            logger.dbg("AutoSuspend: leaving standby after " .. Device.last_standby_tv:tonumber() .. " s")
-
-            UIManager:broadcastEvent(Event:new("LeaveStandby"))
-            self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked
-            self:_schedule()   -- reschedule suspend and shutdown with the new time
-        end
-        -- Don't do a `self:_reschedule_standby()` here, as this will interfere with suspend.
-        -- Better to to it in onLeaveStandby.
+    -- Do the thing!
+    local wake_in = math.huge
+    -- The next scheduled function should be our deadline_guard (c.f., `AutoSuspend:allowStandby`).
+    -- Wake up before the second next scheduled function executes (e.g. footer update, suspend ...)
+    local scheduler_times = UIManager:getNextTaskTimes(2)
+    if #scheduler_times == 2 then
+        -- Wake up slightly after the formerly scheduled event,
+        -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
+        wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
     end
+
+    if wake_in > 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
+        UIManager:broadcastEvent(Event:new("EnterStandby"))
+        logger.dbg("AutoSuspend: going to standby and wake in " .. wake_in .. "s zZzzZzZzzzzZZZzZZZz")
+
+        -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
+        Device:standby(wake_in)
+
+        logger.dbg("AutoSuspend: leaving standby after " .. Device.last_standby_tv:tonumber() .. " s")
+
+        UIManager:broadcastEvent(Event:new("LeaveStandby"))
+        self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
+        self:_schedule()   -- reschedule suspend and shutdown with the new time
+    end
+    -- Don't do a `self:_reschedule_standby()` here, as this will interfere with suspend.
+    -- Leave that to `onLeaveStandby`.
 end
 
 return AutoSuspend
