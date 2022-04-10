@@ -271,7 +271,7 @@ function AutoSuspend:onResume()
 end
 
 function AutoSuspend:onLeaveStandby()
-    self:_schedule_standby()
+    self:_start_standby()
 end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
