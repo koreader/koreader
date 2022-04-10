@@ -45,10 +45,10 @@ function ReadwiseClient:_makeRequest(endpoint, method, request_body)
     return response
 end
 
-function ReadwiseClient:createHighlights(booknotes)
+function ReadwiseClient:createHighlights(clippings)
     local highlights = {}
-    for _, chapter in ipairs(booknotes) do
-        for _, clipping in ipairs(chapter) do
+    for _, booknotes in ipairs(clippings) do
+        for _, clipping in ipairs(booknotes.entries) do
             local highlight = {
                 text = clipping.text,
                 title = booknotes.title,

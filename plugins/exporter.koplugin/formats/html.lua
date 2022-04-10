@@ -21,7 +21,6 @@ function HtmlExporter:export(t)
     end
     local file = io.open(path, "w")
     local template = slt2.loadfile(self.path .. "/template/note.tpl")
-    logger.dbg("html", t)
     if file then
         local content = slt2.render(template, {
             clippings = t,

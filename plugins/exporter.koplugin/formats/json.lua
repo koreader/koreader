@@ -1,11 +1,12 @@
 local json = require("json")
+local logger = require("logger")
 
 local JsonExporter = require("formats/base"):new{
     name = "json",
     version = "json/1.0.0"
 }
 
-function JsonExporter:exportOne(t)
+function JsonExporter:export(t)
     local path, exportable
     local timestamp = self.timestamp or os.time()
     if #t == 1 then
