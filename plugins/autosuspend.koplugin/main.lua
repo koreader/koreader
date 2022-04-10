@@ -56,32 +56,31 @@ function AutoSuspend:_schedule(shutdown_only)
         return
     end
 
-    local delay_suspend, delay_shutdown
-
+    local suspend_delay, shutdown_delay
     if PluginShare.pause_auto_suspend or Device.powerd:isCharging() then
-        delay_suspend = self.auto_suspend_timeout_seconds
-        delay_shutdown = self.autoshutdown_timeout_seconds
+        suspend_delay = self.auto_suspend_timeout_seconds
+        shutdown_delay = self.autoshutdown_timeout_seconds
     else
         local now_tv = UIManager:getElapsedTimeSinceBoot()
-        delay_suspend = (self.last_action_tv - now_tv):tonumber() + self.auto_suspend_timeout_seconds
-        delay_shutdown = (self.last_action_tv - now_tv):tonumber() + self.autoshutdown_timeout_seconds
+        suspend_delay = self.auto_suspend_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
+        shutdown_delay = self.autoshutdown_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
-    if self:_enabledShutdown() and delay_shutdown <= 0 then
+    if self:_enabledShutdown() and shutdown_delay <= 0 then
         logger.dbg("AutoSuspend: initiating shutdown")
         UIManager:poweroff_action()
-    elseif self:_enabled() and delay_suspend <= 0 and not shutdown_only then
+    elseif self:_enabled() and suspend_delay <= 0 and not shutdown_only then
         logger.dbg("AutoSuspend: will suspend the device")
         UIManager:suspend()
     else
         if self:_enabled() and not shutdown_only then
-            logger.dbg("AutoSuspend: scheduling next suspend check in", delay_suspend)
-            UIManager:scheduleIn(delay_suspend, self.task)
+            logger.dbg("AutoSuspend: scheduling next suspend check in", suspend_delay)
+            UIManager:scheduleIn(suspend_delay, self.task)
         end
         if self:_enabledShutdown() then
-            logger.dbg("AutoSuspend: scheduling next shutdown check in", delay_shutdown)
-            UIManager:scheduleIn(delay_shutdown, self.task)
+            logger.dbg("AutoSuspend: scheduling next shutdown check in", shutdown_delay)
+            UIManager:scheduleIn(shutdown_delay, self.task)
         end
     end
 end
