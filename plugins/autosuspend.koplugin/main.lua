@@ -143,7 +143,7 @@ function AutoSuspend:onCloseWidget()
 
     self:_unschedule_standby()
     -- allowStandby is necessary, as we do a preventStandby on plugin start
-    UIManager:allowStandby()
+    self:allowStandby()
 end
 
 function AutoSuspend:onInputEvent()
@@ -461,9 +461,11 @@ function AutoSuspend:onAllowStandby()
             UIManager:broadcastEvent(Event:new("LeaveStandby"))
             self:_unschedule() -- unschedule suspend and shutdown as the realtime clock has ticked
             self:_schedule()   -- reschedule suspend and shutdown with the new time
+            -- Don't do a `self:_reschedule_standby()` here, as this will interfere with suspend.
+            -- Better to to it in onLeaveStandby.
+        else
+            self:_reschedule()
         end
-        -- Don't do a `self:_reschedule_standby()` here, as this will interfere with suspend.
-        -- Better to to it in onLeaveStandby.
     end
 end
 
