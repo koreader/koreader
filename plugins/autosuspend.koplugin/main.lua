@@ -207,7 +207,8 @@ function AutoSuspend:_schedule_standby()
         standby_delay = self.auto_standby_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
     end
 
-    if standby_delay <= 0 then
+    -- We need to actually have been scheduled once (i.e., we need a deadline to be able to blow past it ;)).
+    if self.is_standby_scheduled and standby_delay <= 0 then
         -- We blew the deadline, tell UIManager we're ready to enter standby
         self:allowStandby()
     else
