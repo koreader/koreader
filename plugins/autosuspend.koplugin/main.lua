@@ -195,6 +195,7 @@ function AutoSuspend:_schedule_standby()
         return
     end
 
+    -- When we're in a state where entering suspend is undesirable, we simply postpone the check by the full delay.
     local delay_standby = self.auto_standby_timeout_seconds
     if NetworkMgr:isWifiOn() then
         -- Don't enter standby if wifi is on, as this will break in fun and interesting ways (from Wi-Fi issues to kernel deadlocks).
@@ -211,11 +212,11 @@ function AutoSuspend:_schedule_standby()
         -- We blew the deadline, tell UIManager we're ready to enter standby
         self:allowStandby()
     else
-        -- Reschedule standby
+        -- Reschedule standby for the full or remaining delay
         logger.dbg("AutoSuspend: scheduling next standby check in", delay_standby)
         UIManager:scheduleIn(delay_standby, self.standby_task)
 
-        -- Prevent standby until our scheduled allowStandby
+        -- Prevent standby until we actually blow the deadline
         if not self.is_standby_scheduled then
             self:preventStandby()
         end
@@ -231,7 +232,7 @@ end
 
 -- NOTE: This is what our scheduled task runs to trip the UIManager state to standby
 function AutoSuspend:allowStandby()
-    logger.dbg("AutoSuspend:allowStandby")
+    logger.dbg("AutoSuspend: allowStandby")
     -- Tell UIManager that we now allow standby.
     UIManager:allowStandby()
 
@@ -504,12 +505,12 @@ function AutoSuspend:onAllowStandby()
 
     if wake_in > 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
         UIManager:broadcastEvent(Event:new("EnterStandby"))
-        logger.dbg("AutoSuspend: going to standby and wake in " .. wake_in .. "s zZzzZzZzzzzZZZzZZZz")
+        logger.dbg("AutoSuspend: entering standby with a wakeup alarm in", wake_in, "s")
 
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        logger.dbg("AutoSuspend: leaving standby after " .. Device.last_standby_tv:tonumber() .. " s")
+        logger.dbg("AutoSuspend: left standby after", Device.last_standby_tv:tonumber(), "s")
 
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
         self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
