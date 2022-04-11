@@ -432,7 +432,7 @@ function Kobo:setupChargingLED()
 end
 
 function Kobo:getKeyRepeat()
-    self.key_repeat = ffi.new("int[?]", C.REP_CNT)
+    self.key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
     if C.ioctl(self.ntx_fd, C.EVIOCGREP, self.key_repeat) < 0 then
         local err = ffi.errno()
         logger.warn("Device:getKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
@@ -450,7 +450,7 @@ function Kobo:disableKeyRepeat()
         return
     end
 
-    local key_repeat = ffi.new("int[?]", C.REP_CNT)
+    local key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
         local err = ffi.errno()
         logger.warn("Device:disableKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
