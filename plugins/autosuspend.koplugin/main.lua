@@ -205,10 +205,16 @@ function AutoSuspend:_schedule_standby()
     else
         local now_tv = UIManager:getElapsedTimeSinceBoot()
         standby_delay = self.auto_standby_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
+
+        -- If we somehow blow past the deadline on the first call of a scheduling cycle,
+        -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...
+        -- (This shouldn't really ever happen, unless something is going seriously wrong somewhere).
+        if not self.is_standby_scheduled and standby_delay <= 0 then
+            standby_delay = 0.001
+        end
     end
 
-    -- We need to actually have been scheduled once (i.e., we need a deadline to be able to blow past it ;)).
-    if self.is_standby_scheduled and standby_delay <= 0 then
+    if standby_delay <= 0 then
         -- We blew the deadline, tell UIManager we're ready to enter standby
         self:allowStandby()
     else
