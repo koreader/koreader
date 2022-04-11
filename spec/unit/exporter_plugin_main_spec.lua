@@ -1,10 +1,9 @@
 describe("Exporter plugin module", function()
-    local readerui, match
+    local readerui
     local sample_clippings, sample_epub
     local DocumentRegistry, Screen
     setup(function()
         require("commonrequire")
-        match = require("luassert.match")
         local ReaderUI = require("apps/reader/readerui")
         DocumentRegistry = require("document/documentregistry")
         Screen = require("device").screen
