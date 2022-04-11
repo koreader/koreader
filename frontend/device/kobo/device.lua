@@ -10,6 +10,7 @@ local ffi = require("ffi")
 local C = ffi.C
 require("ffi/linux_fb_h")
 require("ffi/linux_input_h")
+require("ffi/posix_h")
 
 local function yes() return true end
 local function no() return false end
@@ -430,6 +431,42 @@ function Kobo:setupChargingLED()
     end
 end
 
+function Kobo:getKeyRepeat()
+    self.key_repeat = ffi.new("int[?]", C.REP_CNT)
+    if C.ioctl(self.ntx_dev, C.EVIOCGREP, self.key_repeat) < 0 then
+        local err = ffi.errno()
+        logger.warn("Device:getKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
+        self.hasKeyRepeat = false
+    else
+        self.hasKeyRepeat = true
+    end
+
+    return self.hasKeyRepeat
+end
+
+function Kobo:disableKeyRepeat()
+    if not self.hasKeyRepeat then
+        return
+    end
+
+    local key_repeat = ffi.new("int[?]", C.REP_CNT)
+    if C.ioctl(self.ntx_dev, C.EVIOCSREP, key_repeat) < 0 then
+        local err = ffi.errno()
+        logger.warn("Device:disableKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+    end
+end
+
+function Kobo:restoreKeyRepeat()
+    if not self.hasKeyRepeat then
+        return
+    end
+
+    if C.ioctl(self.ntx_dev, C.EVIOCSREP, self.key_repeat) < 0 then
+        local err = ffi.errno()
+        logger.warn("Device:restoreKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+    end
+end
+
 function Kobo:init()
     -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
     local mxcfb_bypass_wait_for
@@ -541,6 +578,9 @@ function Kobo:init()
             self:initEventAdjustHooks()
         end
     end
+
+    -- See if the device supports key repeat
+    self:getKeyRepeat()
 
     -- We have no way of querying the current state of the charging LED, so, start from scratch.
     -- Much like Nickel, start by turning it off.

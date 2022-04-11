@@ -448,6 +448,14 @@ function Device:setupChargingLED() end
 -- (Should only be implemented on embedded platforms where we can afford to control that without screwing with the system).
 function Device:enableCPUCores(amount) end
 
+-- NOTE: For this to work, all three must be implemented, and getKeyRepeat must be run on init (c.f., Kobo)!
+-- Device specific method to get the current key repeat setup
+function Device:getKeyRepeat() end
+-- Device specific method to disable key repeat
+function Device:disableKeyRepeat() end
+-- Device specific method to restore key repeat
+function Device:restoreKeyRepeat() end
+
 --[[
 prepare for application shutdown
 --]]
