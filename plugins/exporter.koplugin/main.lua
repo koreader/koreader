@@ -287,16 +287,16 @@ function Exporter:addToMainMenu(menu_items)
                 sub_item_table = submenu,
                 separator = true,
             },
-            -- {
-            --     text = _("Purge history records"),
-            --     callback = function()
-            --         self.config:purge()
-            --         UIManager:show(InfoMessage:new{
-            --             text = _("History records have been purged.\nAll notes will be exported again next time.\n"),
-            --             timeout = 2,
-            --         })
-            --     end,
-            -- },
+            {
+                text = _("Purge history records"),
+                callback = function()
+                    self.config:purge()
+                    UIManager:show(InfoMessage:new {
+                        text = _("History records have been purged.\nAll notes will be exported again next time.\n"),
+                        timeout = 2,
+                    })
+                end,
+            },
         }
     }
 end
