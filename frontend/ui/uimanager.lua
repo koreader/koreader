@@ -1081,7 +1081,7 @@ function UIManager:discardEvents(set_or_seconds)
     else -- we expect a number
         delay = TimeVal:new{ sec = set_or_seconds, usec = 0 }
     end
-    self._discard_events_till = self._now + delay
+    self._discard_events_till = TimeVal:now() + delay
 end
 
 --[[--
