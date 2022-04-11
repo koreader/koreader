@@ -884,7 +884,9 @@ function ReaderRolling:onUpdatePos()
     self:updatePos()
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
-    UIManager:discardEvents(true) -- Discard events, which might have occured (double tap).
+    UIManager:discardEvents(0.2) -- Discard events, which might have occurred (double tap).
+    -- We can use a smaller duration than the default (quite large to avoid accidental dismissals),
+    -- to allow for quicker setting changes and rendering comparisons.
 end
 
 function ReaderRolling:updatePos()
