@@ -439,6 +439,7 @@ function Kobo:getKeyRepeat()
         self.hasKeyRepeat = false
     else
         self.hasKeyRepeat = true
+        logger.dbg("Key repeat is setup to repeat every", self.key_repeat[C.REP_PERIOD], "after a delay of", self.key_repeat[C.REP_DELAY])
     end
 
     return self.hasKeyRepeat
