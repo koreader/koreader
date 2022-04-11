@@ -5,8 +5,10 @@ This plugin provides a terminal emulator (VT52 (+some ANSI))
 ]]
 
 local Device = require("device")
+local logger = require("logger")
 local ffi = require("ffi")
 local C = ffi.C
+require("ffi/posix_h")
 
 -- for terminal emulator
 ffi.cdef[[
@@ -23,14 +25,22 @@ int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
 ]]
 
 local function check_prerequisites()
-    local ptmx_name = "/dev/ptmx"
-    local ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
+    local ptmx = C.open("/dev/ptmx", bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
+    if ptmx == -1 then
+        local err = ffi.errno()
+        logger.warn("Plugin:Terminal: failed to open /dev/ptmx:", ffi.string(C.strerror(err)))
+        return false
+    end
 
     if C.grantpt(ptmx) ~= 0 then
+        local err = ffi.errno()
+        logger.warn("Plugin:Terminal: grantpt:", ffi.string(C.strerror(err)))
         C.close(ptmx)
         return false
     end
     if C.unlockpt(ptmx) ~= 0 then
+        local err = ffi.errno()
+        logger.warn("Plugin:Terminal: unlockpt:", ffi.string(C.strerror(err)))
         C.close(ptmx)
         return false
     end
@@ -60,7 +70,6 @@ local TermInputText = require("terminputtext")
 local TextWidget = require("ui/widget/textwidget")
 local bit = require("bit")
 local lfs = require("libs/libkoreader-lfs")
-local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
