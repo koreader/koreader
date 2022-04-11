@@ -450,6 +450,7 @@ function Kobo:disableKeyRepeat()
         return
     end
 
+    -- NOTE: LuaJIT zero inits, and PERIOD == 0 with DELAY == 0 disables repeats ;).
     local key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
         local err = ffi.errno()
