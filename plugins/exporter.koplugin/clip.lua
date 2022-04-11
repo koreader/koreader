@@ -239,11 +239,24 @@ function MyClipping:getImage(image)
 end
 
 local function sortByPosition(a, b)
-    if a.pos0 ~= b.pos0 then
-        return a.pos0 < b.pos0
+    if a.pos0.x and b.pos0.x then
+        if a.pos0.x ~= b.pos0.x then
+            return a.pos0.x < b.pos0.x
+        elseif a.pos0.y ~= b.pos0.y then
+            return a.pos0.y < b.pos0.y
+        elseif a.pos1.x ~= b.pos1.x then
+            return a.pos1.x < b.pos1.x
+        else
+            return a.pos1.y < b.pos1.y
+        end
     else
-        return a.pos1 < b.pos1
+        if a.pos0 ~= b.pos0 then
+            return a.pos0 < b.pos0
+        else
+            return a.pos1 < b.pos1
+        end
     end
+
 end
 
 function MyClipping:parseHighlight(highlights, bookmarks, book)
