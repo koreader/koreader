@@ -263,7 +263,7 @@ Note that we adhere to the "." syntax here for compatibility.
 @todo Clean up separation FFI/this.
 --]]
 function Input.open(device, is_emu_events)
-    input.open(device, is_emu_events and 1 or 0)
+    return input.open(device, is_emu_events and 1 or 0)
 end
 
 --[[--
