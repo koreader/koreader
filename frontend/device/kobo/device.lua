@@ -433,7 +433,7 @@ end
 
 function Kobo:getKeyRepeat()
     self.key_repeat = ffi.new("int[?]", C.REP_CNT)
-    if C.ioctl(self.ntx_dev, C.EVIOCGREP, self.key_repeat) < 0 then
+    if C.ioctl(self.ntx_fd, C.EVIOCGREP, self.key_repeat) < 0 then
         local err = ffi.errno()
         logger.warn("Device:getKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
         self.hasKeyRepeat = false
@@ -450,7 +450,7 @@ function Kobo:disableKeyRepeat()
     end
 
     local key_repeat = ffi.new("int[?]", C.REP_CNT)
-    if C.ioctl(self.ntx_dev, C.EVIOCSREP, key_repeat) < 0 then
+    if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
         local err = ffi.errno()
         logger.warn("Device:disableKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
     end
@@ -461,7 +461,7 @@ function Kobo:restoreKeyRepeat()
         return
     end
 
-    if C.ioctl(self.ntx_dev, C.EVIOCSREP, self.key_repeat) < 0 then
+    if C.ioctl(self.ntx_fd, C.EVIOCSREP, self.key_repeat) < 0 then
         local err = ffi.errno()
         logger.warn("Device:restoreKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
     end
@@ -551,7 +551,7 @@ function Kobo:init()
     Generic.init(self)
 
     -- When present, event2 is the raw accelerometer data (3-Axis Orientation/Motion Detection)
-    self.input.open(self.ntx_dev) -- Various HW Buttons, Switches & Synthetic NTX events
+    self.ntx_fd = self.input.open(self.ntx_dev) -- Various HW Buttons, Switches & Synthetic NTX events
     self.input.open(self.touch_dev)
     -- fake_events is only used for usb plug event so far
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
