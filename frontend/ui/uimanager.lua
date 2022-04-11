@@ -1780,7 +1780,7 @@ end
 
 -- The common operations that should be performed after resuming the device.
 function UIManager:_afterResume()
-    -- Restore key repeating
+    -- Restore key repeat
     Device:restoreKeyRepeat()
 
     self:broadcastEvent(Event:new("Resume"))
