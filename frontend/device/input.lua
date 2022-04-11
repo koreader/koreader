@@ -119,6 +119,11 @@ local linux_evdev_abs_code_map = {
 local linux_evdev_msc_code_map = {
     [C.MSC_RAW] = "MSC_RAW",
 }
+
+local linux_evdev_rep_code_map = {
+    [C.REP_DELAY] = "REP_DELAY",
+    [C.REP_PERIOD] = "REP_PERIOD",
+}
 -- luacheck: pop
 
 local _internal_clipboard_text = nil -- holds the last copied text
@@ -1157,6 +1162,11 @@ function Input:waitEvent(now, deadline)
                     logger.dbg(string.format(
                         "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
                         event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_msc_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                elseif event.type == C.EV_REP then
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_rep_code_map[event.code], event.value,
                         event.time.sec, event.time.usec))
                 else
                     logger.dbg(string.format(
