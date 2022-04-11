@@ -1,12 +1,12 @@
 local Device = require("device")
 local Event = require("ui/event")
 local PluginShare = require("pluginshare")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
+local fts = require("ui/fixedpointtimesecond")
 
 local AutoTurn = WidgetContainer:new{
     name = "autoturn",
@@ -28,8 +28,8 @@ function AutoTurn:_schedule()
         return
     end
 
-    local delay_fts = self.last_action_fts + TimeVal.s2fts(self.autoturn_sec) - UIManager:getTime_fts()
-    local delay_ts = TimeVal.fts2s(delay_fts)
+    local delay_fts = self.last_action_fts + fts.fromSec(self.autoturn_sec) - UIManager:getTime_fts()
+    local delay_ts = fts.fts2s(delay_fts)
 
     if delay_ts <= 0 then
         if UIManager:getTopWidget() == "ReaderUI" then
@@ -59,7 +59,7 @@ end
 function AutoTurn:_start()
     if self:_enabled() then
         local now_fts = UIManager:getTime_fts()
-        logger.dbg("AutoTurn: start at", TimeVal.format_fts(now_fts))
+        logger.dbg("AutoTurn: start at", fts.format_fts(now_fts))
         PluginShare.pause_auto_suspend = true
         self.last_action_fts = now_fts
         self:_schedule()

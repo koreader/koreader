@@ -1,12 +1,13 @@
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
+
+local fts = require("ui/fixedpointtimesecond")
 
 -- This module exposes Scrolling settings, and additionnally
 -- handles inertial scrolling on non-eInk devices.
@@ -232,7 +233,7 @@ function ReaderScrolling:setupTouchZones()
             handler = function(ges)
                 -- A touch might set the start of the first pan event,
                 -- that we need to compute its duration
-                self._last_manual_scroll_timev_fts = TimeVal.tv2fts(ges.time)
+                self._last_manual_scroll_timev_fts = fts.fromTv(ges.time)
                 -- If we are scrolling, a touch cancels it.
                 -- We want its release (which will trigger a tap) to not change pages.
                 -- This also allows a pan following this touch to skip any scroll

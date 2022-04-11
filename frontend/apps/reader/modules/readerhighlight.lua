@@ -20,6 +20,8 @@ local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
+local fts = require("ui/fixedpointtimesecond")
+
 local ReaderHighlight = InputContainer:new{
 }
 
@@ -1423,9 +1425,9 @@ function ReaderHighlight:onHoldRelease()
 
     local long_final_hold = false
     if self.hold_last_fts then
-        local hold_duration = TimeVal.now_fts() - self.hold_last_fts
+        local hold_duration = fts.now() - self.hold_last_fts
         local long_hold_threshold = G_reader_settings:readSetting("highlight_long_hold_threshold", 3)
-        if hold_duration > TimeVal.s2fts(long_hold_threshold) then
+        if hold_duration > fts.fromSec(long_hold_threshold) then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
         end
