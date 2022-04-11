@@ -27,20 +27,17 @@ int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
 local function check_prerequisites()
     local ptmx = C.open("/dev/ptmx", bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
     if ptmx == -1 then
-        local err = ffi.errno()
-        logger.warn("Plugin:Terminal: failed to open /dev/ptmx:", ffi.string(C.strerror(err)))
+        logger.warn("Terminal: can not open /dev/ptmx:", ffi.string(C.strerror(ffi.errno())))
         return false
     end
 
     if C.grantpt(ptmx) ~= 0 then
-        local err = ffi.errno()
-        logger.warn("Plugin:Terminal: grantpt:", ffi.string(C.strerror(err)))
+        logger.warn("Terminal: can not grantpt:", ffi.string(C.strerror(ffi.errno())))
         C.close(ptmx)
         return false
     end
     if C.unlockpt(ptmx) ~= 0 then
-        local err = ffi.errno()
-        logger.warn("Plugin:Terminal: unlockpt:", ffi.string(C.strerror(err)))
+        logger.warn("Terminal: can not unlockpt:", ffi.string(C.strerror(ffi.errno())))
         C.close(ptmx)
         return false
     end
@@ -109,17 +106,17 @@ function Terminal:spawnShell(cols, rows)
     self.ptmx = C.open(ptmx_name, bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
 
     if self.ptmx == -1 then
-        logger.err("Terminal: can not open", ptmx_name, ffi.string(C.strerror(ffi.errno())))
+        logger.err("Terminal: can not open", ptmx_name .. ":", ffi.string(C.strerror(ffi.errno())))
         return false
     end
 
     if C.grantpt(self.ptmx) ~= 0 then
-        logger.err("Terminal: can not grantpt", ffi.string(C.strerror(ffi.errno())))
+        logger.err("Terminal: can not grantpt:", ffi.string(C.strerror(ffi.errno())))
         C.close(self.ptmx)
         return false
     end
     if C.unlockpt(self.ptmx) ~= 0 then
-        logger.err("Terminal: can not unockpt", ffi.string(C.strerror(ffi.errno())))
+        logger.err("Terminal: can not unockpt:", ffi.string(C.strerror(ffi.errno())))
         C.close(self.ptmx)
         return false
     end
@@ -137,7 +134,7 @@ function Terminal:spawnShell(cols, rows)
 
     local pid = C.fork()
     if pid < 0 then
-        logger.err("Terminal: fork failed", ffi.string(C.strerror(ffi.errno())))
+        logger.err("Terminal: fork failed:", ffi.string(C.strerror(ffi.errno())))
         return false
     elseif pid == 0 then
         C.close(self.ptmx)
