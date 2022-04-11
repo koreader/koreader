@@ -13,7 +13,6 @@ end
 local Event = require("ui/event")
 local NetworkMgr = require("ui/network/manager")
 local PluginShare = require("pluginshare")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -21,6 +20,8 @@ local util = require("util")
 local _ = require("gettext")
 local Math = require("optmath")
 local T = require("ffi/util").template
+
+local fts = require("ui/fixedpointtimesecond")
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
@@ -72,8 +73,8 @@ function AutoSuspend:_schedule(shutdown_only)
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
         local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
-        delay_suspend = TimeVal.fts2s(self.last_action_fts - now_fts) + self.auto_suspend_timeout_seconds
-        delay_shutdown = TimeVal.fts2s(self.last_action_fts - now_fts) + self.autoshutdown_timeout_seconds
+        delay_suspend = fts.toSec(self.last_action_fts - now_fts) + self.auto_suspend_timeout_seconds
+        delay_shutdown = fts.toSec(self.last_action_fts - now_fts) + self.autoshutdown_timeout_seconds
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -183,7 +184,15 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
+<<<<<<< HEAD
     self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fst()
+=======
+    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
+
+    -- NOTE: The fact that we run this on *this* event ensures we don't have to handle the standby scheduling
+    --       at all in setSuspendShutdownTimes ;).
+    self:_reschedule_standby()
+>>>>>>> 7638f709 (Switch to fts)
 end
 
 function AutoSuspend:_unschedule_standby()

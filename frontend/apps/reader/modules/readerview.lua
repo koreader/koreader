@@ -14,7 +14,6 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
@@ -23,6 +22,8 @@ local Size = require("ui/size")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
+
+local fts = require("ui/fixedpointtimesecond")
 
 local ReaderView = OverlapGroup:extend{
     document = nil,
@@ -1049,7 +1050,7 @@ function ReaderView:checkAutoSaveSettings()
     end
 
     local interval_min = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-    local interval_fts = TimeVal.s2fts(interval_min * 60)
+    local interval_fts = fts.fromSec(interval_min * 60)
     local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
     if now_fts - self.settings_last_save_fts >= interval_fts then
         self.settings_last_save_fts = now_fts

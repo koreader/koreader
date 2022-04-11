@@ -14,6 +14,8 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
+local fts = require("ui/fixedpointtimesecond")
+
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
 -- there is only one instance of this
@@ -31,7 +33,7 @@ local UIManager = {
 
     _running = true,
     _now = TimeVal:now(),
-    _now_fts = TimeVal.now_fts(),
+    _now_fts = fts.now(),
     _window_stack = {},
     _task_queue = {},
     _task_queue_dirty = false,
@@ -589,8 +591,8 @@ Schedules a task to be run a certain amount of seconds from now.
 function UIManager:scheduleIn(seconds, action, ...)
     -- We might run significantly late inside an UI frame, so we can't use the cached value here.
     -- It would also cause some bad interactions with the way nextTick & co behave.
-    local when = TimeVal.now_fts() + TimeVal.s2fts(seconds)
-    self:schedule(when, action, ...)
+    local when_fts = fts.now() + fts.fromSec(seconds)
+    self:schedule(when_fts, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
     function(self, seconds, action)
@@ -1067,7 +1069,7 @@ function UIManager:discardEvents(set_or_seconds)
         self._discard_events_till_fts = nil
         return
     end
-    local delay
+    local delay_fts
     if set_or_seconds == true then
         -- Use an adequate delay to account for device refresh duration
         -- so any events happening in this delay (ie. before a widget
@@ -1077,15 +1079,15 @@ function UIManager:discardEvents(set_or_seconds)
             -- sometimes > 500ms on some devices/temperatures.
             -- So, block for 400ms (to have it displayed) + 400ms
             -- for user reaction to it
-            delay = TimeVal.s2fts(0.8)
+            delay_fts = fts.fromSec(0.8)
         else
             -- On non-eInk screen, display is usually instantaneous
-            delay = TimeVal.s2fts(0.4)
+            delay_fts = fts.fromSec(0.4)
         end
     else -- we expect a number
-        delay = TimeVal.s2fts(set_or_seconds)
+        delay_fts = fts.fromSec(set_or_seconds)
     end
-    self._discard_events_till_fts = self._now_fts + delay
+    self._discard_events_till_fts = self._now_fts + delay_fts
 end
 
 --[[--
@@ -1101,7 +1103,7 @@ function UIManager:sendEvent(event)
 
     -- Ensure discardEvents
     if self._discard_events_till_fts then
-        if TimeVal.now_fts() < self._discard_events_till_fts then
+        if fts.now() < self._discard_events_till_fts then
             return
         else
             self._discard_events_till_fts = nil
@@ -1187,14 +1189,14 @@ function UIManager:getNextTaskTimes(count)
     count = count or 1
     local times = {}
     for i = 1, math.min(count, #self._task_queue) do
-        times[i] = UIManager._task_queue[i].time_fts - TimeVal.now_fts()
+        times[i] = UIManager._task_queue[i].time_fts - fts.now()
     end
     return times
 end
 
 function UIManager:_checkTasks()
     self._now = TimeVal:now()
-    self._now_fts = TimeVal.tv2fts(self._now)
+    self._now_fts = fts.fromTv(self._now)
     local wait_until_fts = nil
 
     -- task.action may schedule other events
@@ -1707,7 +1709,7 @@ function UIManager:handleInput()
     self:_standbyTransition()
 
     -- wait for next batch of events
-    local input_events = Input:waitEvent(TimeVal.fts2tv(now_fts), TimeVal.fts2tv(deadline_fts))
+    local input_events = Input:waitEvent(fts.toTv(now_fts), fts.toTv(deadline_fts))
 
     -- delegate each input event to handler
     if input_events then
