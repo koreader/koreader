@@ -86,6 +86,8 @@ function DoubleSpinWidget:init()
 end
 
 function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_value)
+    local prev_movable_offset = self.movable and self.movable:getMovedOffset()
+    local prev_movable_alpha = self.movable and self.movable.alpha
     self.layout = {}
     local left_widget = NumberPickerWidget:new{
         show_parent = self,
@@ -256,6 +258,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         }
     }
     self.movable = MovableContainer:new{
+        alpha = prev_movable_alpha,
         self.widget_frame,
     }
     self[1] = WidgetContainer:new{
@@ -267,6 +270,9 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         self.movable,
     }
+    if prev_movable_offset then
+        self.movable:setMovedOffset(prev_movable_offset)
+    end
     self:refocusWidget()
     UIManager:setDirty(self, function()
         return "ui", self.widget_frame.dimen
