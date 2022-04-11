@@ -694,15 +694,15 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- We also honor the current smooth scaling setting,
     -- as well as the global SW dithering setting.
 
-    --local start_fts = TimeVal.now_fts()
+    --local start_fts = fts.now_fts()
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
-    --local end_fts = TimeVal.now_fts()
+    --local end_fts = fts.now_fts()
     --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", end_fts - start_fts)
 
-    --start_fts = TimeVal.now_fts()
+    --start_fts = fts.now_fts()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
-    --end_fts = TimeVal.now_fts()
+    --end_fts = fts.now_fts()
     --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", end_fts - start_fts)
 end
 

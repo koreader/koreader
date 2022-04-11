@@ -15,7 +15,6 @@ local NaturalLight = require("ui/widget/naturallightwidget")
 local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
-local TimeVal = require("ui/timeval")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -23,6 +22,8 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
+
+local fts = require("ui/fixedpointtimesecond")
 
 local FrontLightWidget = FocusManager:new{
     width = nil,
@@ -569,9 +570,9 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
 
         -- But limit the widget update frequency on E Ink.
         if Screen.low_pan_rate then
-            local current_time_fts = TimeVal.now_fts()
+            local current_time_fts = fts.now()
             local last_time_fts = self.last_time_fts or 0
-            if current_time_fts - last_time_fts > TimeVal.s2fts(1000000 / self.rate) then
+            if current_time_fts - last_time_fts > fts.fromSec(1000000 / self.rate) then
                 self.last_time_fts = current_time_fts
             else
                 -- Schedule a final update after we stop panning.

@@ -7,7 +7,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Size = require("ui/size")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
@@ -15,6 +14,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
+local fts = require("ui/fixedpointtimesecond")
 local band = bit.band
 
 --[[
@@ -112,7 +112,7 @@ function ReaderRolling:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
-    self.pan_interval_fts = TimeVal.s2fts(1000000 / self.pan_rate)
+    self.pan_interval_fts = fts.fromSec(1000000 / self.pan_rate)
 
     table.insert(self.ui.postInitCallback, function()
         self.rendering_hash = self.ui.document:getDocumentRenderingHash()
@@ -405,7 +405,7 @@ end
 
 function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay)
     self.scroll_method = scroll_method
-    self.scroll_activation_delay = TimeVal:new{ usec = scroll_activation_delay * 1000 }
+    self.scroll_activation_delay_fts = scroll_activation_delay * 1000
     if inertial_scroll_enabled then
         self.ui.scrolling:setInertialScrollCallbacks(
             function(distance) -- do_scroll_callback
@@ -1167,7 +1167,7 @@ function ReaderRolling:handleEngineCallback(ev, ...)
     -- ignore other events
 end
 
-local ENGINE_PROGRESS_INITIAL_DELAY_FTS = TimeVal.s2fts(2)
+local ENGINE_PROGRESS_INITIAL_DELAY_FTS = fts.fromSec(2)
 local ENGINE_PROGRESS_UPDATE_DELAY_FTS = 500000
 
 function ReaderRolling:showEngineProgress(percent)
@@ -1180,11 +1180,11 @@ function ReaderRolling:showEngineProgress(percent)
     end
 
     if percent then
-        local now_fts = TimeVal.now_fts()
-        if self.engine_progress_update_not_before.fts and now_fts < self.engine_progress_update_not_before.fts then
+        local now_fts = fts.now()
+        if self.engine_progress_update_not_before_fts and now_fts < self.engine_progress_update_not_before_fts then
             return
         end
-        if not self.engine_progress_update_not_before.fts then
+        if not self.engine_progress_update_not_before_fts then
             -- Start showing the progress widget only if load or re-rendering
             -- have not yet finished after 2 seconds
             self.engine_progress_update_not_before_fts= now_fts + ENGINE_PROGRESS_INITIAL_DELAY_FTS
@@ -1232,7 +1232,7 @@ function ReaderRolling:showEngineProgress(percent)
     else
         -- Done: cleanup
         self.engine_progress_widget = nil
-        self.engine_progress_update_not_before = nil
+        self.engine_progress_update_not_before_fts = nil
         -- No need for any paint/refresh: any action we got
         -- some progress callback for will generate a full
         -- screen refresh.
