@@ -221,9 +221,6 @@ function JoplinExporter:prepareNote(booknotes)
 end
 
 function JoplinExporter:export(t)
-    if not self.client then
-        self:createClient()
-    end
     if self.client:ping() then
         return
     end
