@@ -300,7 +300,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
 
     local setting_val = self[setting] > 0 and self[setting] or default_value
 
-    -- Standby uses a different scheduled task that suspend/shutdown
+    -- Standby uses a different scheduled task than suspend/shutdown
     local is_standby = setting == "auto_standby_timeout_seconds"
 
     local left_val
