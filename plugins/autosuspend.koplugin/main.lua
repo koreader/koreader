@@ -21,7 +21,7 @@ local _ = require("gettext")
 local Math = require("optmath")
 local T = require("ffi/util").template
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
@@ -73,8 +73,8 @@ function AutoSuspend:_schedule(shutdown_only)
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
         local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
-        delay_suspend = fts.toSec(self.last_action_fts - now_fts) + self.auto_suspend_timeout_seconds
-        delay_shutdown = fts.toSec(self.last_action_fts - now_fts) + self.autoshutdown_timeout_seconds
+        suspend_delay = fts.toSec(self.last_action_fts - now_fts) + self.auto_suspend_timeout_seconds
+        shutdown_delay = fts.toSec(self.last_action_fts - now_fts) + self.autoshutdown_timeout_seconds
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -184,15 +184,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-<<<<<<< HEAD
-    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fst()
-=======
     self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
-
-    -- NOTE: The fact that we run this on *this* event ensures we don't have to handle the standby scheduling
-    --       at all in setSuspendShutdownTimes ;).
-    self:_reschedule_standby()
->>>>>>> 7638f709 (Switch to fts)
 end
 
 function AutoSuspend:_unschedule_standby()
@@ -238,8 +230,8 @@ function AutoSuspend:_schedule_standby()
         --logger.dbg("AutoSuspend: charging, delaying standby")
         standby_delay = self.auto_standby_timeout_seconds
     else
-        local now_tv = UIManager:getElapsedTimeSinceBoot()
-        standby_delay = self.auto_standby_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
+        local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
+        standby_delay = self.auto_standby_timeout_seconds - fts.tonumber(now_fts - self.last_action_fts)
 
         -- If we blow past the deadline on the first call of a scheduling cycle,
         -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...

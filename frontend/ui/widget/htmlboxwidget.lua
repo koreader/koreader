@@ -13,7 +13,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local HtmlBoxWidget = InputContainer:new{
     bb = nil,

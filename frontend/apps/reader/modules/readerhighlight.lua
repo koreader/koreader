@@ -7,7 +7,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
-local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
@@ -20,7 +19,7 @@ local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local ReaderHighlight = InputContainer:new{
 }
@@ -1426,9 +1425,9 @@ function ReaderHighlight:onHoldRelease()
 
     local long_final_hold = false
     if self.hold_last_fts then
-        local hold_duration = fts.now() - self.hold_last_fts
-        local long_hold_threshold = G_reader_settings:readSetting("highlight_long_hold_threshold", 3)
-        if hold_duration > fts.fromSec(long_hold_threshold) then
+        local hold_duration_fts = fts.now() - self.hold_last_fts
+        local long_hold_threshold = G_reader_settings:readSetting("highlight_long_hold_threshold", 3) -- seconds
+        if hold_duration_fts > fts.fromSec(long_hold_threshold) then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
         end
@@ -2000,7 +1999,7 @@ function ReaderHighlight:_createHighlightGesture(gesture)
     return {
         ges = gesture,
         pos = point,
-        time = TimeVal:realtime(),
+        time_fts = fts.realtime(),
     }
 end
 

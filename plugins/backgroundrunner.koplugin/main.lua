@@ -14,7 +14,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 -- BackgroundRunner is an experimental feature to execute non-critical jobs in
 -- the background.
@@ -150,7 +150,7 @@ function BackgroundRunner:_executeJob(job)
             job.result = 1
             job.exception = err
         end
-        job.end_fts = fts:now()
+        job.end_fts = fts.now()
         self:_finishJob(job)
         return true
     else

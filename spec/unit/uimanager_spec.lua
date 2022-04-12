@@ -6,7 +6,7 @@ describe("UIManager spec", function()
 
     setup(function()
         require("commonrequire")
-        fts = require("ui/fixedpointtimesecond")
+        fts = require("ui/fts")
         UIManager = require("ui/uimanager")
     end)
 
