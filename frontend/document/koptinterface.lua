@@ -1245,6 +1245,7 @@ Returns 1 if positions are ordered (if ppos2 is after ppos1), -1 if not, 0 if sa
 Positions of the word boxes containing ppos1 and ppos2 are compared.
 --]]
 function KoptInterface:comparePositions(doc, ppos1, ppos2)
+    -- logger.err("ppos1", ppos1)
     local box1 = self:getWordFromPosition(doc, ppos1).pbox
     local box2 = self:getWordFromPosition(doc, ppos2).pbox
     if box1.y == box2.y then

@@ -1614,18 +1614,35 @@ function ReaderHighlight:getHighlightBookmarkItem()
 end
 
 function ReaderHighlight:determineHighlightInsertionPosition(page, highlight)
+    logger.err("provider", self.ui.document.provider)
+    logger.err("to determine", highlight)
     if self.view.highlight.saved[page] == nil or #self.view.highlight.saved[page] == 0 then
         return 1
     end
     local page_highlights = self.view.highlight.saved[page]
     local highlight_beginning = highlight.pos0
+    if type(highlight_beginning) ~= "string" then
+        highlight_beginning.page = page
+    end
     for i, cur_highlight in ipairs(page_highlights) do
+        local cur_pos = cur_highlight.pos0
+        if type(cur_pos) ~= "string" then
+            cur_pos.page = page
+        end
+        -- logger.err("beginning", highlight_beginning)
+        -- logger.err("end", cur_pos)
         local order
         if self.ui.document.provider == "crengine" then -- we do this only if it's epub file
-            order = self.ui.document:compareXPointers(highlight_beginning, cur_highlight.pos0)
+            if type(highlight_beginning) == "string" then
+                order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
+            else
+                order = self.ui.document:compareXPointers(highlight_beginning, cur_pos)
+            end
         else
-            order = self.ui.document:comparePositions(highlight_beginning, cur_highlight.pos0)
+            
+            order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
         end
+        
         if order > 0 then
             return i
         end
