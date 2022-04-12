@@ -25,6 +25,15 @@ int tcflush(int fd, int queue_selector) __attribute__((nothrow, leaf));
 ]]
 
 local function check_prerequisites()
+    -- We of course need to be able to manipulate pseudoterminals,
+    -- but Kobo's init scripts fail to set this up...
+    if Device:isKobo() then
+        os.execute([[if [ ! -d "/dev/pts" ] ; then
+            mkdir -p /dev/pts
+            mount -t devpts devpts /dev/pts
+            fi]])
+    end
+
     local ptmx = C.open("/dev/ptmx", bit.bor(C.O_RDWR, C.O_NONBLOCK, C.O_CLOEXEC))
     if ptmx == -1 then
         logger.warn("Terminal: can not open /dev/ptmx:", ffi.string(C.strerror(ffi.errno())))
