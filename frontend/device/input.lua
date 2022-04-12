@@ -7,7 +7,6 @@ local DEBUG = require("dbg")
 local Event = require("ui/event")
 local GestureDetector = require("device/gesturedetector")
 local Key = require("device/key")
-local TimeVal = require("ui/timeval")
 local framebuffer = require("ffi/framebuffer")
 local input = require("ffi/input")
 local logger = require("logger")
@@ -1088,7 +1087,7 @@ function Input:waitEvent(now_fts, deadline_fts)
                 end -- if poll returned ETIME
 
                 -- Refresh now on the next iteration (e.g., when we have multiple timers to check, and we've just timed out)
-                now = nil
+                now_fts = nil
             end -- while #timer_callbacks > 0
         else
             -- If there aren't any timers, just block for the requested amount of time.
@@ -1136,7 +1135,7 @@ function Input:waitEvent(now_fts, deadline_fts)
         end
 
         -- We'll need to refresh now on the next iteration, if there is one.
-        now = nil
+        now_fts = nil
     end
 
     if ok and ev then
