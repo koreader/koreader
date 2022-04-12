@@ -528,7 +528,7 @@ function AutoSuspend:onAllowStandby()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        logger.dbg("AutoSuspend: leaving standby after " .. fts.toSecs(Device.last_standby_fts) .. " s")
+        logger.dbg("AutoSuspend: leaving standby after " .. fts.toSec(Device.last_standby_fts) .. " s")
 
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
         self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked

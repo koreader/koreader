@@ -29,7 +29,7 @@ function AutoTurn:_schedule()
     end
 
     local delay_fts = self.last_action_fts + fts.fromSec(self.autoturn_sec) - UIManager:getTime_fts()
-    local delay_ts = fts.fts2s(delay_fts)
+    local delay_ts = fts.toSec(delay_fts)
 
     if delay_ts <= 0 then
         if UIManager:getTopWidget() == "ReaderUI" then

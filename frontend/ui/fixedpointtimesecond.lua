@@ -226,11 +226,17 @@ function fts.fromTv(tv)
     return tv.sec * fts.precision + tv.usec
 end
 
+function fts.splitsus(time_fts)
+    if not time_fts then return 0, 0 end
+    local sec = math.floor(time_fts / fts.precision)
+    local usec = math.floor(time_fts - sec * fts.precision)
+    return sec, usec
+end
+
 function fts.toTv(time_fts)
     local TimeVal = require("ui/timeval")
     if not time_fts then return TimeVal.zero end
-    local sec = math.floor(time_fts / fts.precision)
-    local usec = math.floor(time_fts - sec * fts.precision)
+    local sec, usec = fts.splitsus(time_fts)
     return TimeVal:new{ sec = sec, usec = usec }
 end
 
