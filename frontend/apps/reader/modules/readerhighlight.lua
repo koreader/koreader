@@ -632,7 +632,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
         return
     end
 
-    local highlight = self.view.highlight.saved[page][index]
+    local highlight = table.remove(self.view.highlight.saved[page], index)
     local highlight_time = highlight.datetime
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
@@ -654,7 +654,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
         if updated_highlight_beginning then
             local order = self.ui.document:compareXPointers(updated_highlight_beginning, highlight_end)
             if order and order > 0 then -- only if beginning did not go past end
-                self.view.highlight.saved[page][index].pos0 = updated_highlight_beginning
+                highlight.pos0 = updated_highlight_beginning
             end
         end
     else -- we move pos1
@@ -675,18 +675,20 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
         if updated_highlight_end then
             local order = self.ui.document:compareXPointers(highlight_beginning, updated_highlight_end)
             if order and order > 0 then -- only if end did not go back past beginning
-                self.view.highlight.saved[page][index].pos1 = updated_highlight_end
+                highlight.pos1 = updated_highlight_end
             end
         end
     end
 
-    local new_beginning = self.view.highlight.saved[page][index].pos0
-    local new_end = self.view.highlight.saved[page][index].pos1
+    local new_beginning = highlight.pos0
+    local new_end = highlight.pos1
     local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
     local new_chapter = self.ui.toc:getTocTitleByPage(new_beginning)
-    self.view.highlight.saved[page][index].text = cleanupSelectedText(new_text)
-    self.view.highlight.saved[page][index].chapter = new_chapter
-    local new_highlight = self.view.highlight.saved[page][index]
+    highlight.text = cleanupSelectedText(new_text)
+    highlight.chapter = new_chapter
+    local new_highlight = highlight
+    local insertion_position = self:determineHighlightInsertionPosition(page, new_highlight)
+    table.insert(self.view.highlight.saved[page], insertion_position, new_highlight)
     self.ui.bookmark:updateBookmark({
         page = highlight_beginning,
         datetime = highlight_time,
@@ -1611,6 +1613,26 @@ function ReaderHighlight:getHighlightBookmarkItem()
     end
 end
 
+function ReaderHighlight:determineHighlightInsertionPosition(page, highlight)
+    if self.view.highlight.saved[page] == nil or #self.view.highlight.saved[page] == 0 then
+        return 1
+    end
+    local page_highlights = self.view.highlight.saved[page]
+    local highlight_beginning = highlight.pos0
+    for i, cur_highlight in ipairs(page_highlights) do
+        local order
+        if self.ui.document.provider == "crengine" then -- we do this only if it's epub file
+            order = self.ui.document:compareXPointers(highlight_beginning, cur_highlight.pos0)
+        else
+            order = self.ui.document:comparePositions(highlight_beginning, cur_highlight.pos0)
+        end
+        if order > 0 then
+            return i
+        end
+    end
+    return #page_highlights + 1
+end
+
 function ReaderHighlight:saveHighlight()
     self.ui:handleEvent(Event:new("AddHighlight"))
     logger.dbg("save highlight")
@@ -1631,7 +1653,8 @@ function ReaderHighlight:saveHighlight()
             drawer = self.view.highlight.saved_drawer,
             chapter = chapter_name,
         }
-        table.insert(self.view.highlight.saved[page], hl_item)
+        local insertion_position = self:determineHighlightInsertionPosition(page, hl_item)
+        table.insert(self.view.highlight.saved[page], insertion_position, hl_item)
         local bookmark_item = self:getHighlightBookmarkItem()
         if bookmark_item then
             bookmark_item.datetime = datetime
