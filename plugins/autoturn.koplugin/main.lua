@@ -6,7 +6,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local AutoTurn = WidgetContainer:new{
     name = "autoturn",

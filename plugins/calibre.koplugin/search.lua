@@ -13,7 +13,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local Persist = require("persist")
 local Screen = require("device").screen
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -21,6 +20,8 @@ local rapidjson = require("rapidjson")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
+
+local fts = require("ui/fts")
 
 -- get root dir for disk scans
 local function getDefaultRootDir()
@@ -325,10 +326,10 @@ function CalibreSearch:find(option)
     end
 
     -- measure time elapsed searching
-    local start = TimeVal:now()
+    local start_fts = fts.now()
         self:browse(option)
     logger.info(string.format("search done in %.3f milliseconds (%s, %s, %s, %s, %s)",
-        TimeVal:getDurationMs(start),
+        fts.getDurationMs(start_fts),
         option == "find" and "books" or option,
         "case sensitive: " .. tostring(not self.case_insensitive),
         "title: " .. tostring(self.find_by_title),
@@ -552,7 +553,7 @@ end
 
 -- get metadata from cache or calibre files
 function CalibreSearch:getMetadata()
-    local start = TimeVal:now()
+    local start_fts = fts.now()
     local template = "metadata: %d books imported from %s in %.3f milliseconds"
 
     -- try to load metadata from cache
@@ -594,7 +595,7 @@ function CalibreSearch:getMetadata()
                 end
             end
             if is_newer then
-                logger.info(string.format(template, #cache, "cache", TimeVal:getDurationMs(start)))
+                logger.info(string.format(template, #cache, "cache", fts.getDurationMs(start_fts)))
                 return cache
             else
                 logger.warn("cache is older than metadata, ignoring it")
@@ -623,7 +624,7 @@ function CalibreSearch:getMetadata()
             logger.info("Failed to serialize calibre metadata cache:", err)
         end
     end
-    logger.info(string.format(template, #books, "calibre", TimeVal:getDurationMs(start)))
+    logger.info(string.format(template, #books, "calibre", fts.getDurationMs(start_fts)))
     return books
 end
 

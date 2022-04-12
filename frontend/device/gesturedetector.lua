@@ -43,18 +43,17 @@ detection result when you feed a touch release event to it.
 --]]
 
 local Geom = require("ui/geometry")
-local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util = require("util")
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 -- We're going to need some clockid_t constants
 local ffi = require("ffi")
 local C = ffi.C
 require("ffi/posix_h")
 
--- default values (all the time parameters are in microseconds)
+-- default values (all the time parameters are in microseconds (µs))
 local TAP_INTERVAL_US = 0 * 1000
 local DOUBLE_TAP_INTERVAL_US = 300 * 1000
 local TWO_FINGER_TAP_DURATION_US = 300 * 1000
@@ -62,15 +61,15 @@ local HOLD_INTERVAL_US = 500 * 1000
 local SWIPE_INTERVAL_US = 900 * 1000
 -- current values
 local ges_tap_interval_fts = G_reader_settings:readSetting("ges_tap_interval") or TAP_INTERVAL_US
-ges_tap_interval_fts = ges_tap_interval_fts
+ges_tap_interval_fts = fts.fromuSec(ges_tap_interval_fts)
 local ges_double_tap_interval_fts = G_reader_settings:readSetting("ges_double_tap_interval") or DOUBLE_TAP_INTERVAL_US
-ges_double_tap_interval_fts = ges_double_tap_interval_fts
+ges_double_tap_interval_fts = fts.fromuSec(ges_double_tap_interval_fts)
 local ges_two_finger_tap_duration_fts = G_reader_settings:readSetting("ges_two_finger_tap_duration") or TWO_FINGER_TAP_DURATION_US
-ges_two_finger_tap_duration_fts = ges_two_finger_tap_duration_fts
+ges_two_finger_tap_duration_fts = fts.fromuSec(ges_two_finger_tap_duration_fts)
 local ges_hold_interval_fts = G_reader_settings:readSetting("ges_hold_interval") or HOLD_INTERVAL_US
-ges_hold_interval_fts = ges_hold_interval_fts
+ges_hold_interval_fts = fts.fromuSec(ges_hold_interval_fts)
 local ges_swipe_interval_fts = G_reader_settings:readSetting("ges_swipe_interval") or SWIPE_INTERVAL_US
-ges_swipe_interval_fts = ges_swipe_interval_fts
+ges_swipe_interval_fts = fts.fromuSec(ges_swipe_interval_fts)
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
@@ -313,29 +312,29 @@ end
 
 function GestureDetector:setNewInterval(type, interval_us)
     if type == "ges_tap_interval" then
-        ges_tap_interval_fts = interval_us
+        ges_tap_interval_fts = fts.fromuSec(interval_us)
     elseif type == "ges_double_tap_interval" then
-        ges_double_tap_interval_fts = interval_us
+        ges_double_tap_interval_fts = fts.fromuSec(interval_us)
     elseif type == "ges_two_finger_tap_duration" then
-        ges_two_finger_tap_duration_fts = interval_us
+        ges_two_finger_tap_duration_fts = fts.fromuSec(interval_us)
     elseif type == "ges_hold_interval" then
-        ges_hold_interval_fts = interval_us
+        ges_hold_interval_fts = fts.fromuSec(interval_us)
     elseif type == "ges_swipe_interval" then
-        ges_swipe_interval_fts = interval_us
+        ges_swipe_interval_fts = fts.fromuSec(interval_us)
     end
 end
 
 function GestureDetector:getInterval(type)
     if type == "ges_tap_interval" then
-        return fts.touSecs(ges_tap_interval_fts)
+        return fts.touSec(ges_tap_interval_fts)
     elseif type == "ges_double_tap_interval" then
-        return fts.touSecs(ges_double_tap_interval_fts)
+        return fts.touSec(ges_double_tap_interval_fts)
     elseif type == "ges_two_finger_tap_duration" then
-        return fts.touSecs(ges_two_finger_tap_duration_fts)
+        return fts.touSec(ges_two_finger_tap_duration_fts)
     elseif type == "ges_hold_interval" then
-        return fts.touSecs(ges_hold_interval_fts)
+        return fts.touSec(ges_hold_interval_fts)
     elseif type == "ges_swipe_interval" then
-        return fts.touSecs(ges_swipe_interval_fts)
+        return fts.touSec(ges_swipe_interval_fts)
     end
 end
 
@@ -372,33 +371,34 @@ end
 --[[--
 Attempts to figure out which clock source tap events are using...
 ]]
-function GestureDetector:probeClockSource(timev)
-    print("xxxxxxxxxxx", timev, timev.sec, timev.usec)
+function GestureDetector:probeClockSource(timev_fts)
+    print("xxxxxxxxxxx probeClockSource", timev_fts)
     -- We'll check if that timestamp is +/- 2.5s away from the three potential clock sources supported by evdev.
     -- We have bigger issues than this if we're parsing events more than 3s late ;).
-    local threshold = TimeVal:new{ sec = 2, usec = 500000 }
+    local threshold_fts = fts.fromSec(2,5)
 
     -- Start w/ REALTIME, because it's the easiest to detect ;).
-    local realtime = TimeVal:realtime_coarse()
+    local realtime_fts = fts.realtime_coarse()
     -- clock-threshold <= timev <= clock+threshold
-    if timev >= realtime - threshold and timev <= realtime + threshold then
+    if timev_fts >= realtime_fts - threshold_fts and timev_fts <= realtime_fts + threshold_fts then
         self.clock_id = C.CLOCK_REALTIME
         logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_REALTIME")
         return
     end
 
     -- Then MONOTONIC, as it's (hopefully) more common than BOOTTIME (and also guaranteed to be an usable clock source)
-    local monotonic = TimeVal:monotonic_coarse()
-    if timev >= monotonic - threshold and timev <= monotonic + threshold then
+    local monotonic_fts = fts.monotonic_coarse()
+    if timev_fts >= monotonic_fts - threshold_fts and timev_fts <= monotonic_fts + threshold_fts then
         self.clock_id = C.CLOCK_MONOTONIC
         logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_MONOTONIC")
         return
     end
 
     -- Finally, BOOTTIME
-    local boottime = TimeVal:boottime()
+    local boottime_fts = fts.boottime()
     -- NOTE: It was implemented in Linux 2.6.39, so, reject 0, which would mean it's unsupported...
-    if not boottime:isZero() and timev >= boottime - threshold and timev <= boottime + threshold then
+    if not boottime_fts == 0 and timev_fts >= boottime_fts - threshold_fts
+        and timev_fts <= boottime_fts + threshold_fts then
         self.clock_id = C.CLOCK_BOOTTIME
         logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_BOOTTIME")
         return
@@ -408,10 +408,10 @@ function GestureDetector:probeClockSource(timev)
     self.clock_id = -1
     logger.info("GestureDetector:probeClockSource: Touch event clock source detection was inconclusive")
     -- Print all all the gory details in debug mode when this happens...
-    logger.dbg("Input frame    :", timev:tonumber())
-    logger.dbg("CLOCK_REALTIME :", realtime:tonumber())
-    logger.dbg("CLOCK_MONOTONIC:", monotonic:tonumber())
-    logger.dbg("CLOCK_BOOTTIME :", boottime:tonumber())
+    logger.dbg("Input frame    :", fts.tonumber(timev_fts))
+    logger.dbg("CLOCK_REALTIME :", fts.tonumber(realtime_fts))
+    logger.dbg("CLOCK_MONOTONIC:", fts.tonumber(monotonic_fts))
+    logger.dbg("CLOCK_BOOTTIME :", fts.tonumber(boottime_fts))
 end
 
 function GestureDetector:getClockSource()
@@ -428,8 +428,7 @@ Handles both single and double tap.
 function GestureDetector:tapState(tev)
     -- Attempt to detect the clock source for these events (we reset it on suspend to discriminate MONOTONIC from BOOTTIME).
     if not self.clock_id then
-        print("xxx tev", tev.timev_fts)
-        self:probeClockSource(fts.toTv(tev.timev_fts))
+        self:probeClockSource(tev.timev_fts)
     end
 
     logger.dbg("in tap state...")
