@@ -14,6 +14,8 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local lru = require("ffi/lru")
 
+local fts = require("ui/fixedpointtimesecond")
+
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
 

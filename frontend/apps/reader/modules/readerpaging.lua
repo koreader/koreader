@@ -98,7 +98,7 @@ function ReaderPaging:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
-    self.pan_interval_fts = 1000000 / self.pan_rate
+    self.pan_interval_fts = fts.fromSec(1.000000 / self.pan_rate)
     self.number_of_pages = self.ui.document.info.number_of_pages
 end
 

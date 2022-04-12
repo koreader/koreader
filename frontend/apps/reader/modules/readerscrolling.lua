@@ -31,7 +31,7 @@ local ReaderScrolling = InputContainer:new{
     -- go at ending scrolling soon when we reach steps smaller than this
     end_scroll_dist = Screen:scaleBySize(10),
     -- no inertial scrolling if 300ms pause without any movement before release
-    pause_before_release_cancel_duration_fts = 300000,
+    pause_before_release_cancel_duration_fts = fts.fromSec(0.300000),
 
     -- Callbacks to be updated by readerrolling or readerpaging
     _do_scroll_callback = function(distance) return false end,
