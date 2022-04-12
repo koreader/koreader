@@ -233,7 +233,7 @@ function ReaderScrolling:setupTouchZones()
             handler = function(ges)
                 -- A touch might set the start of the first pan event,
                 -- that we need to compute its duration
-                self._last_manual_scroll_timev_fts = fts.fromTv(ges.time)
+                self._last_manual_scroll_timev_fts = ges.time_fts
                 -- If we are scrolling, a touch cancels it.
                 -- We want its release (which will trigger a tap) to not change pages.
                 -- This also allows a pan following this touch to skip any scroll

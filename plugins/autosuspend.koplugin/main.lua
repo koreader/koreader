@@ -588,7 +588,7 @@ function AutoSuspend:onAllowStandby()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        logger.dbg("AutoSuspend: leaving standby after " .. fts.toSecs(Device.last_standby_fts) .. " s")
+        logger.dbg("AutoSuspend: leaving standby after " .. fts.toSec(Device.last_standby_fts) .. " s")
 
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
         -- to make sure UIManager will consume the input events that woke us up first
