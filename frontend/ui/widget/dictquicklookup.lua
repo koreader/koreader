@@ -32,7 +32,7 @@ local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 --[[
 Display quick lookup word definition

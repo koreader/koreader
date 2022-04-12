@@ -8,12 +8,13 @@ of storing it.
 @module koplugin.calibre.metadata
 --]]--
 
-local TimeVal = require("ui/timeval")
 local lfs = require("libs/libkoreader-lfs")
 local rapidjson = require("rapidjson")
 local logger = require("logger")
 local parser = require("parser")
 local util = require("util")
+
+local fts = require("ui/fts")
 
 local used_metadata = {
     "uuid",
@@ -242,7 +243,7 @@ end
 
 function CalibreMetadata:init(dir, is_search)
     if not dir then return end
-    local start = TimeVal:now()
+    local start_fts = fts.now()
     self.path = dir
     local ok_meta, ok_drive, file_meta, file_drive = findCalibreFiles(dir)
     self.driveinfo = file_drive
@@ -261,12 +262,12 @@ function CalibreMetadata:init(dir, is_search)
     if is_search then
         self:cleanUnused(is_search)
         msg = string.format("(search) in %.3f milliseconds: %d books",
-            TimeVal:getDurationMs(start), #self.books)
+            fts.getDurationMs(start_fts), #self.books)
     else
         local deleted_count = self:prune()
         self:cleanUnused()
         msg = string.format("in %.3f milliseconds: %d books. %d pruned",
-            TimeVal:getDurationMs(start), #self.books, deleted_count)
+            fts.getDurationMs(start_fts), #self.books, deleted_count)
     end
     logger.info(string.format("calibre info loaded from disk %s", msg))
     return true

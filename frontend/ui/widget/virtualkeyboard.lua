@@ -14,7 +14,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local KeyboardLayoutDialog = require("ui/widget/keyboardlayoutdialog")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -22,6 +21,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
 local Screen = Device.screen
+
+local fts = require("ui/fts")
 
 local keyboard_state = {
     force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)
@@ -665,8 +666,8 @@ function VirtualKeyPopup:init()
             }
         },
     }
-    self.tap_interval_override = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
-    self.tap_interval_override = TimeVal:new{ usec = self.tap_interval_override }
+    local tap_interval_override_us = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
+    self.tap_interval_override_fts = fts.fromuSec(tap_interval_override_us)
 
     if Device:hasKeys() then
         self.key_events.Close = { {Device.input.group.Back}, doc = "close keyboard" }
@@ -787,8 +788,8 @@ function VirtualKeyboard:init()
     self.min_layer = keyboard.min_layer
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
-    self.tap_interval_override = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
-    self.tap_interval_override = TimeVal:new{ usec = self.tap_interval_override }
+    local tap_interval_override_us = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
+    self.tap_interval_override_fts = fts.fromuSec(tap_interval_override_us)
     if Device:hasKeys() then
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end

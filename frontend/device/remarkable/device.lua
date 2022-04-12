@@ -1,10 +1,11 @@
 local Generic = require("device/generic/device") -- <= look at this file!
-local TimeVal = require("ui/timeval")
 local PluginShare = require("pluginshare")
 local logger = require("logger")
 local ffi = require("ffi")
 local C = ffi.C
 require("ffi/linux_input_h")
+
+local fts = require("ui/fts")
 
 local function yes() return true end
 local function no() return false end
@@ -95,7 +96,7 @@ function Remarkable2:adjustTouchEvent(ev, by)
     -- Inject CLOCK_MONOTONIC timestamps at the end of every input frame in order to have consistent gesture detection across input devices.
     -- c.f., #7536
     if ev.type == C.EV_SYN and ev.code == C.SYN_REPORT then
-       ev.time = TimeVal:now()
+       ev.time_fts = fts.now()
     end
 end
 

@@ -13,7 +13,7 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local function copyPageState(page_state)
     return {
@@ -321,9 +321,9 @@ function ReaderPaging:bookmarkFlipping(flipping_page, flipping_ges)
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
-function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_fts)
+function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_ms)
     self.scroll_method = scroll_method
-    self.scroll_activation_delay_fts = scroll_activation_delay_fts * 1000
+    self.scroll_activation_delay_fts = fts.frommSec(scroll_activation_delay_ms)
     if inertial_scroll_enabled then
         self.ui.scrolling:setInertialScrollCallbacks(
             function(distance) -- do_scroll_callback

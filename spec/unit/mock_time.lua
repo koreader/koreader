@@ -1,6 +1,6 @@
 require("commonrequire")
 local TimeVal = require("ui/timeval")
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 local ffi = require("ffi")
 local dummy = require("ffi/posix_h")
 local logger = require("logger")

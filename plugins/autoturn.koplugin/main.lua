@@ -6,7 +6,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local AutoTurn = WidgetContainer:new{
     name = "autoturn",
@@ -29,7 +29,7 @@ function AutoTurn:_schedule()
     end
 
     local delay_fts = self.last_action_fts + fts.fromSec(self.autoturn_sec) - UIManager:getTime_fts()
-    local delay_ts = fts.toSec(delay_fts)
+    local delay_ts = fts.tonumber(delay_fts)
 
     if delay_ts <= 0 then
         if UIManager:getTopWidget() == "ReaderUI" then

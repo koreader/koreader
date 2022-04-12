@@ -12,7 +12,7 @@ local input = require("ffi/input")
 local logger = require("logger")
 local _ = require("gettext")
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 -- We're going to need a few <linux/input.h> constants...
 local ffi = require("ffi")
@@ -183,7 +183,7 @@ local Input = {
 
     timer_callbacks = {},
     disable_double_tap = true,
-    tap_interval_override = nil,
+    tap_interval_override_fts = nil,
 
     -- keyboard state:
     modifiers = {
@@ -373,7 +373,7 @@ function Input:setTimeout(slot, ges, cb, origin_fts, delay_fts)
     if input.setTimer then
         -- If GestureDetector's clock source probing was inconclusive, do this on the UI timescale instead.
         if clock_id == -1 then
-            deadline_fts = fts:now() + delay_fts
+            deadline_fts = fts.now() + delay_fts
             clock_id = C.CLOCK_MONOTONIC
         else
             deadline_fts = origin_fts + delay_fts
@@ -397,7 +397,7 @@ function Input:setTimeout(slot, ges, cb, origin_fts, delay_fts)
         else
             -- Otherwise, fudge it by using a current timestamp in the UI's timescale (MONOTONIC).
             -- This isn't the end of the world in practice (c.f., #7415).
-            deadline_fts = fts:now() + delay_fts
+            deadline_fts = fts.now() + delay_fts
         end
         item.deadline_fts = deadline_fts
     end
@@ -774,8 +774,6 @@ function Input:handleTouchEvPhoenix(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
-                print("xxx2", ev, ev.time, ev.time_fts)
-
                 self:setMtSlot(MTSlot.slot, "timev_fts", fts.fromTv(ev.time))
             end
             -- feed ev in all slots to state machine
@@ -811,8 +809,6 @@ function Input:handleTouchEvLegacy(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
-                                print("xxx3", ev, ev.time, ev.time_fts)
-
                 self:setMtSlot(MTSlot.slot, "timev_fts", fts.fromTv(ev.time))
             end
 
@@ -1024,8 +1020,8 @@ end
 
 
 --- Main event handling.
--- `now` corresponds to UIManager:getTime() (a TimeVal), and it's just been updated by UIManager.
--- `deadline` (a TimeVal) is the absolute deadline imposed by UIManager:handleInput() (a.k.a., our main event loop ^^):
+-- `now`_fts corresponds to UIManager:getTime_fts() (an fts time), and it's just been updated by UIManager.
+-- `deadline_fts` (a fts time) is the absolute deadline imposed by UIManager:handleInput() (a.k.a., our main event loop ^^):
 -- it's either nil (meaning block forever waiting for input), or the earliest UIManager deadline (in most cases, that's the next scheduled task,
 -- in much less common cases, that's the earliest of UIManager.INPUT_TIMEOUT (currently, only KOSync ever sets it) or UIManager.ZMQ_TIMEOUT if there are pending ZMQs).
 function Input:waitEvent(now_fts, deadline_fts)
@@ -1075,7 +1071,7 @@ function Input:waitEvent(now_fts, deadline_fts)
                 if poll_deadline_fts then
                     -- If we haven't hit that deadline yet, poll until it expires, otherwise,
                     -- have select return immediately so that we trip a timeout.
-                    now_fts = now_fts or fts:now()
+                    now_fts = now_fts or fts.now()
                     if poll_deadline_fts > now_fts then
                         -- Deadline hasn't been blown yet, honor it.
                         poll_timeout_fts = poll_deadline_fts - now_fts
@@ -1087,7 +1083,7 @@ function Input:waitEvent(now_fts, deadline_fts)
 
                 local timerfd
                 local sec, usec = fts.splitsus(poll_timeout_fts)
-                ok, ev, timerfd = input.waitForEvent(poll_timeout_fts and sec, poll_timeout_fts and usec)
+                ok, ev, timerfd = input.waitForEvent(poll_timeout_fts and sec or nil, poll_timeout_fts and usec or nil)
                 -- We got an actual input event, go and process it
                 if ok then break end
 
@@ -1105,7 +1101,7 @@ function Input:waitEvent(now_fts, deadline_fts)
                             -- We're only guaranteed to have blown the timer's deadline
                             -- when our actual select deadline *was* the timer's!
                             consume_callback = true
-                        elseif fts:now() >= self.timer_callbacks[1].deadline_fts then
+                        elseif fts.now() >= self.timer_callbacks[1].deadline_fts then
                             -- But if it was a task deadline instead, we to have to check the timer's against the current time,
                             -- to double-check whether we blew it or not.
                             consume_callback = true
@@ -1147,7 +1143,7 @@ function Input:waitEvent(now_fts, deadline_fts)
             -- If UIManager put us on deadline, enforce it, otherwise, block forever.
             if deadline_fts then
                 -- Convert that absolute deadline to value relative to *now*, as we may loop multiple times between UI ticks.
-                now_fts = now_fts or fts:now()
+                now_fts = now_fts or fts.now()
                 if deadline_fts > now_fts then
                     -- Deadline hasn't been blown yet, honor it.
                     poll_timeout_fts = deadline_fts - now_fts
@@ -1158,7 +1154,7 @@ function Input:waitEvent(now_fts, deadline_fts)
             end
 
             local sec, usec = fts.splitsus(poll_timeout_fts)
-            ok, ev = input.waitForEvent(poll_timeout_fts and sec, poll_timeout_fts and usec)
+            ok, ev = input.waitForEvent(poll_timeout_fts and sec or nil, poll_timeout_fts and usec or nil)
         end -- if #timer_callbacks > 0
 
         -- Handle errors

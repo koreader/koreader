@@ -2,7 +2,7 @@ local UIManager -- will be updated when available
 local Math = require("optmath")
 local logger = require("logger")
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local BasePowerD = {
     fl_min = 0,                       -- min frontlight intensity
@@ -226,7 +226,7 @@ function BasePowerD:getCapacity()
         now_fts = fts.now_fts() + self.device.total_standby_fts + self.device.total_suspend_fts
     end
 
-    if fts.fromSec(now_fts - self.last_capacity_pull_time_fts) >= 60 then
+    if now_fts - self.last_capacity_pull_time_fts >= fts.fromSec(60) then
         self.batt_capacity = self:getCapacityHW()
         self.last_capacity_pull_time_fts = now_fts
     end
@@ -247,11 +247,11 @@ function BasePowerD:getAuxCapacity()
     if UIManager then
         now_fts = UIManager:getElapsedTimeSinceBoot_fts()
     else
-         -- Add time the device was in standby and suspend
+        -- Add time the device was in standby and suspend
         now_fts = fts.now() + self.device.total_standby_fts + self.device.total_suspend_fts
     end
 
-    if fts.fts2s(now_fts - self.last_aux_capacity_pull_time_fts) >= 60 then
+    if fts.toSec(now_fts - self.last_aux_capacity_pull_time_fts) >= 60 then
         local aux_batt_capa = self:getAuxCapacityHW()
         -- If the read failed, don't update our cache, and retry next time.
         if aux_batt_capa then

@@ -14,7 +14,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 local band = bit.band
 
 --[[
@@ -403,9 +403,9 @@ function ReaderRolling:getLastPercent()
     end
 end
 
-function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay)
+function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_ms)
     self.scroll_method = scroll_method
-    self.scroll_activation_delay_fts = scroll_activation_delay * 1000
+    self.scroll_activation_delay_fts = fts.frommSec(scroll_activation_delay_ms)
     if inertial_scroll_enabled then
         self.ui.scrolling:setInertialScrollCallbacks(
             function(distance) -- do_scroll_callback
@@ -482,7 +482,7 @@ function ReaderRolling:onPan(_, ges)
                 if ges.mousewheel_direction then
                     self._pan_activation_time_fts = false
                 else
-                    self._pan_activation_time_fts = ges.time_fts + self.scroll_activation_delay
+                    self._pan_activation_time_fts = ges.time_fts + self.scroll_activation_delay_fts
                 end
                 -- We will restore the previous position if this pan
                 -- ends up being a swipe or a multiswipe
@@ -1168,7 +1168,7 @@ function ReaderRolling:handleEngineCallback(ev, ...)
 end
 
 local ENGINE_PROGRESS_INITIAL_DELAY_FTS = fts.fromSec(2)
-local ENGINE_PROGRESS_UPDATE_DELAY_FTS = 500000
+local ENGINE_PROGRESS_UPDATE_DELAY_FTS = fts.fromuSec(500000)
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then

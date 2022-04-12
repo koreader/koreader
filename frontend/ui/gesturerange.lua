@@ -1,5 +1,5 @@
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local GestureRange = {
     -- gesture matching type

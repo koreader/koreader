@@ -19,16 +19,6 @@ local util = require("ffi/util")
 
 local C = ffi.C
 
--- Numbers in lua are double float which have a mantissa (precision) of 53 bit (plus sign + exponent)
--- We won't use the exponent here.
--- So we can store 2^53 = 9.0072*10^15 different values. If we use the lower 6 digits for µs, we can store
--- up to 9.0072*10^9 seconds.
--- A year has 365.25*24*3600 = 3.15576*10^7 s, so we can store up to 285 years (9.0072e9/3.15576r7) with µs precision.
-
--- A TV_PRECISION of 1e6 will give us a µs precision.
-local TV_PRECISION = 1e6
-
-
 -- We prefer CLOCK_MONOTONIC_COARSE if it's available and has a decent resolution,
 -- as we generally don't need nano/micro second precision,
 -- and it can be more than twice as fast as CLOCK_MONOTONIC/CLOCK_REALTIME/gettimeofday...
@@ -205,7 +195,7 @@ function TimeVal:monotonic_coarse()
     return TimeVal:new{ sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000)) }
 end
 
--- Ditto, but w/ CLOCK_REALTIME_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_REALTIME otherwise).
+--- Ditto, but w/ CLOCK_REALTIME_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_REALTIME otherwise).
 function TimeVal:realtime_coarse()
     local timespec = ffi.new("struct timespec")
     C.clock_gettime(PREFERRED_REALTIME_CLOCKID, timespec)
@@ -243,34 +233,12 @@ else
     TimeVal.boottime_or_realtime_coarse = TimeVal.realtime_coarse
 end
 
---- Like the above, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_MONOTONIC otherwise) but returning an fts
-function TimeVal:monotonic_coarse_fts()
-    local timespec = ffi.new("struct timespec")
-    C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
-
-    -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * TV_PRECISION +  math.floor(tonumber(timespec.tv_nsec / 1000))
-end
-
---- Like the above, but w/ CLOCK_REALTIME_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_REALTIME otherwise), but returning an fts
-function TimeVal:realtime_coarse_fts()
-    local timespec = ffi.new("struct timespec")
-    C.clock_gettime(PREFERRED_REALTIME_CLOCKID, timespec)
-
-    -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * TV_PRECISION +  math.floor(tonumber(timespec.tv_nsec / 1000))
-end
-
 --[[-- Alias for `monotonic_coarse`.
 
 The assumption being anything that requires accurate timestamps expects a monotonic clock source.
 This is certainly true for KOReader's UI scheduling.
 ]]
 TimeVal.now = TimeVal.monotonic_coarse
-
-function TimeVal.now_fts()
-    return TimeVal.monotonic_coarse_fts()
-end
 
 --- Converts a TimeVal object to a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
 function TimeVal:tonumber()
@@ -338,30 +306,5 @@ TimeVal.zero = TimeVal:new{ sec = 0, usec = 0 }
 
 --- Ditto for one set to math.huge
 TimeVal.huge = TimeVal:new{ sec = math.huge, usec = 0 }
-
-
-function TimeVal.tv2fts(tv)
-    return tv.sec * TV_PRECISION + tv.usec
-end
-
-function TimeVal.fts2tv(fts)
-    local sec = math.floor(fts / TV_PRECISION)
-    local usec = fts - sec * TV_PRECISION
-    return TimeVal:new{ sec = sec, usec = usec }
-end
-
-function TimeVal.s2fts(seconds)
-    return math.floor(seconds * TV_PRECISION)
-end
-
-function TimeVal.fts2s(fts)
-    return fts / TV_PRECISION
-end
-
--- for debugging
-function TimeVal.format_fts(fts)
-    return string.format("%.06f", math.floor(fts / TV_PRECISION))
-end
-
 
 return TimeVal

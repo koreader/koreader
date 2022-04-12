@@ -5,7 +5,6 @@ This module manages widgets.
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
-local TimeVal = require("ui/timeval")
 local dbg = require("dbg")
 local logger = require("logger")
 local ffiUtil = require("ffi/util")
@@ -14,7 +13,7 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
@@ -32,7 +31,6 @@ local UIManager = {
     event_handlers = nil,
 
     _running = true,
-    _now = TimeVal:now(),
     _now_fts = fts.now(),
     _window_stack = {},
     _task_queue = {},
@@ -445,7 +443,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
         Input.disable_double_tap = true
     end
     -- a widget may override tap interval (when it doesn't, nil restores the default)
-    Input.tap_interval_override = widget.tap_interval_override
+    Input.tap_interval_override_fts = widget.tap_interval_override_fts
 end
 
 --[[--
@@ -514,7 +512,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
     if #self._window_stack > 0 then
         -- set tap interval override to what the topmost widget specifies (when it doesn't, nil restores the default)
-        Input.tap_interval_override = self._window_stack[#self._window_stack].widget.tap_interval_override
+        Input.tap_interval_override_fts = self._window_stack[#self._window_stack].widget.tap_interval_override_fts
     end
     if dirty and not widget.invisible then
         -- schedule the remaining visible (i.e., uncovered) widgets to be painted
@@ -528,11 +526,10 @@ end
 -- schedule an execution task, task queue is in ascendant order
 function UIManager:schedule(time_fts, action, ...)
     local p, s, e = 1, 1, #self._task_queue
-
     if e ~= 0 then
         -- do a binary insert
         repeat
-            p = math.floor(s + (e - s) / 2) -- we could use (e+s)/2 here.
+            p = math.floor((e + s) / 2) -- Not necessary to use (s + (e -s) / 2) here!
             local p_time_fts = self._task_queue[p].time_fts
             if time_fts > p_time_fts then
                 if s == e then
@@ -555,14 +552,12 @@ function UIManager:schedule(time_fts, action, ...)
             end
         until e < s
     end
-
     table.insert(self._task_queue, p, {
         time_fts = time_fts,
         action = action,
         argc = select('#', ...),
         args = {...},
     })
-
     self._task_queue_dirty = true
 end
 dbg:guard(UIManager, 'schedule',
@@ -1079,7 +1074,7 @@ function UIManager:discardEvents(set_or_seconds)
     else -- we expect a number
         delay_fts = fts.fromSec(set_or_seconds)
     end
-    self._discard_events_till_fts = self._now_fts + delay_fts
+    self._discard_events_till_fts = fts.now() + delay_fts
 end
 
 --[[--
@@ -1197,8 +1192,7 @@ function UIManager:getNextTaskTime()
 end
 
 function UIManager:_checkTasks()
-    self._now = TimeVal:now()
-    self._now_fts = fts.fromTv(self._now)
+    self._now_fts = fts.now()
     local wait_until_fts = nil
 
     -- task.action may schedule other events
@@ -1229,9 +1223,9 @@ function UIManager:_checkTasks()
 end
 
 --[[--
-Returns a TimeVal object corresponding to the last UI tick.
+Returns a fts corresponding to the last tick.
 
-This is essentially a cached TimeVal:now(), computed at the top of every iteration of the main UI loop,
+This is essentially a cached fts.now_fts(), computed at the top of every iteration of the main UI loop,
 (right before checking/running scheduled tasks).
 This is mainly useful to compute/schedule stuff in the same time scale as the UI loop (i.e., MONOTONIC),
 without having to resort to a syscall.
@@ -1240,27 +1234,18 @@ unless you're blocking the UI for a significant amount of time in a single UI fr
 
 That is to say, its granularity is an UI frame.
 
-Prefer the appropriate TimeVal method for your needs if you require perfect accuracy or better granularity
+Prefer the appropriate fts function for your needs if you require perfect accuracy or better granularity
 (e.g., when you're actually working on the event loop *itself* (UIManager, Input, GestureDetector),
 or if you're dealing with intra-frame timers).
 
 This is *NOT* wall clock time (REALTIME).
-]]
-function UIManager:getTime()
-    return self._now
-end
-
---[[--
-Returns a fts corresponding to the last tick.
-
-Anything else as explained in getTime
 ]]
 function UIManager:getTime_fts()
     return self._now_fts
 end
 
 --[[--
-Returns a TimeVal object corresponding to the last UI tick plus the time in standby.
+Returns an fts time corresponding to the last UI tick plus the time in standby.
 ]]
 function UIManager:getElapsedTimeSinceBoot_fts()
     return self:getTime_fts() + Device.total_standby_fts + Device.total_suspend_fts

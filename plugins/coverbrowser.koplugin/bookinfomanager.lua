@@ -16,7 +16,7 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local T = FFIUtil.template
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 -- Database definition
 local BOOKINFO_DB_VERSION = 20201210
@@ -731,7 +731,7 @@ function BookInfoManager:extractInBackground(files)
     -- counter on each task, and undo that inside collectSubprocesses() zombie reaper.
     UIManager:preventStandby()
     table.insert(self.subprocesses_pids, task_pid)
-    self.subprocesses_last_added_fts = fts:now()
+    self.subprocesses_last_added_fts = fts.now()
 
     -- We need to collect terminated jobs pids (so they do not stay "zombies"
     -- and fill linux processes table)

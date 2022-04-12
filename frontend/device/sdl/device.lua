@@ -168,7 +168,6 @@ function Device:init()
         event_map = require("device/sdl/event_map_sdl2"),
         handleSdlEv = function(device_input, ev)
             local Geom = require("ui/geometry")
-            local TimeVal = require("ui/timeval")
             local UIManager = require("ui/uimanager")
 
             -- SDL events can remain cdata but are almost completely transparent
@@ -192,8 +191,6 @@ function Device:init()
                     w = 0, h = 0,
                 }
 
-                setmetatable(ev.time, TimeVal)
-
                 local fake_ges = {
                     ges = "pan",
                     distance = 200,
@@ -202,7 +199,7 @@ function Device:init()
                         y = 100*scrolled_y,
                     },
                     pos = pos,
-                    time = ev.time,
+                    time_fts = ev.time_fts,
                     mousewheel_direction = scrolled_y,
                 }
                 local fake_ges_release = {
@@ -210,7 +207,7 @@ function Device:init()
                     distance = fake_ges.distance,
                     relative = fake_ges.relative,
                     pos = pos,
-                    time = ev.time,
+                    time_fts = ev.time_fts,
                     from_mousewheel = true,
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)

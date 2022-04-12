@@ -824,14 +824,14 @@ function Kobo:standby(max_duration)
         self.wakeup_mgr:addTask(max_duration, standby_alarm)
     end
 
-    local fts = require("ui/fixedpointtimesecond")
     logger.info("Kobo standby: asking to enter standby . . .")
+    local fts = require("ui/fts")
     local standby_time_fts = fts.boottime_or_realtime_coarse()
 
     local ret = writeToSys("standby", "/sys/power/state")
 
-    self.last_standby_fts = fts:boottime_or_realtime_coarse() - standby_time_fts
-    self.total_standby_tfs = self.total_standby_fts + self.last_standby_fts
+    self.last_standby_fts = fts.boottime_or_realtime_coarse() - standby_time_fts
+    self.total_standby_fts = self.total_standby_fts + self.last_standby_fts
 
     if ret then
         logger.info("Kobo standby: zZz zZz zZz zZz... And woke up!")
