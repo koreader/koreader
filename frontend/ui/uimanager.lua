@@ -1709,7 +1709,7 @@ function UIManager:handleInput()
     self:_standbyTransition()
 
     -- wait for next batch of events
-    local input_events = Input:waitEvent(fts.toTv(now_fts), fts.toTv(deadline_fts))
+    local input_events = Input:waitEvent(now_fts, deadline_fts)
 
     -- delegate each input event to handler
     if input_events then
