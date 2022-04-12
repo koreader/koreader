@@ -498,7 +498,7 @@ end
 -- to ensure current highlight has not already been cleared, and that we
 -- are not going to clear a new highlight
 function ReaderHighlight:getClearId()
-    self.clear_id = UIManager:getTime() -- can act as a unique id
+    self.clear_id = UIManager:getTime_fts() -- can act as a unique id
     return self.clear_id
 end
 
