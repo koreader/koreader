@@ -432,6 +432,12 @@ function Kobo:setupChargingLED()
 end
 
 function Kobo:getKeyRepeat()
+    -- Sanity check (mostly for the testsuite's benefit...)
+    if not self.ntx_fd then
+        self.hasKeyRepeat = false
+        return false
+    end
+
     self.key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
     if C.ioctl(self.ntx_fd, C.EVIOCGREP, self.key_repeat) < 0 then
         local err = ffi.errno()
