@@ -71,7 +71,7 @@
               <span>#{= os.date("%x", clipping.time) }#</span><span style="float:right">#{ if clipping.chapter then }#<b>#{= clipping.chapter }#</b>: #{ end }# #{= clipping.page }#</span>
             </div>
             <div style="font-size:12pt; text-align: left">
-              <span class="#{= clipping.drawer }#">#{= newline_to_br(htmlescape(clipping.text)) }#</span>
+              <span>#{= newline_to_br(htmlescape(clipping.text)) }#</span>
               #{ if clipping.image then }#
                 <en-media type="image/png" hash="#{= clipping.image.hash }#"/>
               #{ end }#
@@ -85,7 +85,6 @@
       #{ end }#
     </div>
   #{ end }#
-  <div style="font-size:10pt; margin-top:2em; color:darkgray; font-style: italic; text-align: right">Version: #{= htmlescape(version) }#, Generated On: #{= htmlescape(timestamp) }#</div>
   </div>
 </body>
 </html>

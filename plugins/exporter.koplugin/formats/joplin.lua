@@ -22,6 +22,11 @@ function JoplinExporter:toggleEnabled()
     self:saveSettings()
 end
 
+function JoplinExporter:init()
+    self.loadSettings()
+    self:createClient()
+end
+
 function JoplinExporter:getMenuTable()
     return {
         text = _("Joplin"),
@@ -165,35 +170,36 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
     }
 end
 
-function JoplinExporter:getClient()
-    -- logger.dbg("settings", self.settings)
-    local client = JoplinClient:new {
-        server_ip = self.settings.ip,
-        server_port = self.settings.port,
-        auth_token = self.settings.token
-    }
-    ---@todo Check if user deleted our notebook, in that case note
-    -- will end up in random folder in Joplin.
-    if not self.settings.notebook_name then
-        self.settings.notebook_name = _("KOReader Notes")
-        self:saveSettings()
-    end
-    if not self.settings.notebook_guid then
-        self.settings.notebook_guid = client:createNotebook(self.settings.notebook_name)
-        self:saveSettings()
-    else
-        local notebook = client:findNotebookByTitle(self.settings.notebook_name)
-        -- logger.dbg("err", self.settings.notebook_guid, notebook)
-        if not notebook then
-            self.settings.notebook_guid = client:createNotebook(self.settings.notebook_name)
+function JoplinExporter:createClient()
+    if self.settings.ip and self.settings.port and self.settings.auth_token then
+        self.client = JoplinClient:new {
+            server_ip = self.settings.ip,
+            server_port = self.settings.port,
+            auth_token = self.settings.token
+        }
+        ---@todo Check if user deleted our notebook, in that case note
+        -- will end up in random folder in Joplin.
+        if not self.settings.notebook_name then
+            self.settings.notebook_name = _("KOReader Notes")
             self:saveSettings()
+            self:createClient()
         end
+        if not self.settings.notebook_guid then
+            self.settings.notebook_guid = self.client:createNotebook(self.settings.notebook_name)
+            self:saveSettings()
+            self:createClient()
+        else
+            local notebook = self.client:findNotebookByTitle(self.settings.notebook_name)
+            -- logger.dbg("err", self.settings.notebook_guid, notebook)
+            if not notebook then
+                self.settings.notebook_guid = self.client:createNotebook(self.settings.notebook_name)
+                self:saveSettings()
+                self:createClient()
+            end
+        end
+    else
+        self.client = nil
     end
-
-    if not client:ping() then
-        error("Cannot reach Joplin server")
-    end
-    return client
 end
 
 function JoplinExporter:prepareNote(booknotes)
@@ -215,14 +221,19 @@ function JoplinExporter:prepareNote(booknotes)
 end
 
 function JoplinExporter:export(t)
-    local client = self:getClient()
+    if not self.client then
+        self:createClient()
+    end
+    if self.client:ping() then
+        return
+    end
     for _, booknotes in pairs(t) do
-        local note_guid = client:findNoteByTitle(booknotes.title, self.settings.notebook_guid)
+        local note_guid = self.client:findNoteByTitle(booknotes.title, self.settings.notebook_guid)
         local note = self:prepareNote(booknotes)
         if note_guid then
-            client:updateNote(note_guid, note)
+            self.client:updateNote(note_guid, note)
         else
-            client:createNote(booknotes.title, note, note_guid)
+            self.client:createNote(booknotes.title, note, note_guid)
         end
     end
 end

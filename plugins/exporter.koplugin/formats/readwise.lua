@@ -10,6 +10,10 @@ local ReadwiseExporter = require("formats/base"):new {
     version = "1.0.0"
 }
 
+function ReadwiseExporter:init()
+    self.loadSettings()
+    self:createClient()
+end
 
 function ReadwiseExporter:getMenuTable()
     return {
@@ -37,6 +41,7 @@ function ReadwiseExporter:getMenuTable()
                                     callback = function()
                                         self.settings.token = auth_dialog:getInputText()
                                         self:saveSettings()
+                                        self.createClient()
                                         UIManager:close(auth_dialog)
                                     end
                                 }
@@ -57,15 +62,18 @@ function ReadwiseExporter:getMenuTable()
     }
 end
 
-function ReadwiseExporter:getClient()
-    return ReadwiseClient:new {
-        auth_token = self.settings.token
-    }
+function ReadwiseExporter:createClient()
+    if self.settings.token then
+        self.client = ReadwiseClient:new {
+            auth_token = self.settings.token
+        }
+    else
+        self.client = nil
+    end
 end
 
 function ReadwiseExporter:export(t)
-    local client = self:getClient()
-    client:createHighlights(t)
+    self.client:createHighlights(t)
 end
 
 return ReadwiseExporter
