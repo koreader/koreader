@@ -3,11 +3,9 @@ local logger = require("logger")
 local slt2 = require('template/slt2')
 
 
-local HtmlExporter = require("formats/base"):new{
+local HtmlExporter = require("formats/base"):new {
     name = "html",
     version = "html/1.0.0",
-    settings_version = "1.0.0"
-
 }
 
 function HtmlExporter:export(t)
@@ -36,4 +34,3 @@ function HtmlExporter:export(t)
 end
 
 return HtmlExporter
-

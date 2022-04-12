@@ -6,7 +6,7 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local JoplinClient = require("clients/JoplinClient")
 
-local JoplinExporter = require("formats/base"):new{
+local JoplinExporter = require("formats/base"):new {
     name = "joplin",
     is_remote = true,
     version = "joplin/1.0.0"
@@ -14,12 +14,6 @@ local JoplinExporter = require("formats/base"):new{
 
 function JoplinExporter:isEnabled()
     return self.settings.enabled and self.settings.ip and self.settings.port and self.settings.token
-end
-
-function JoplinExporter:loadSettings()
-    local plugin_settings = G_reader_settings:readSetting(self.id) or {}
-    self.settings = plugin_settings[self.name] or {}
-    -- logger.dbg("Joplin settings:", self.settings)
 end
 
 function JoplinExporter:toggleEnabled()
@@ -30,16 +24,16 @@ end
 
 function JoplinExporter:getMenuTable()
     return {
-        text = _("Joplin") ,
+        text = _("Joplin"),
         checked_func = function() return self:isEnabled() end,
-        sub_item_table ={
+        sub_item_table = {
             {
                 text = _("Set Joplin IP and Port"),
                 keep_menu_open = true,
                 callback = function()
                     local MultiInputDialog = require("ui/widget/multiinputdialog")
                     local url_dialog
-                    url_dialog = MultiInputDialog:new{
+                    url_dialog = MultiInputDialog:new {
                         title = _("Set Joplin IP and port number"),
                         fields = {
                             {
@@ -87,7 +81,7 @@ function JoplinExporter:getMenuTable()
                 keep_menu_open = true,
                 callback = function()
                     local auth_dialog
-                    auth_dialog = InputDialog:new{
+                    auth_dialog = InputDialog:new {
                         title = _("Set authorization token for Joplin"),
                         input = self.settings.token,
                         buttons = {
@@ -118,7 +112,7 @@ function JoplinExporter:getMenuTable()
                 keep_menu_open = true,
                 callback = function()
                     local notebook_dialog
-                    notebook_dialog = InputDialog:new{
+                    notebook_dialog = InputDialog:new {
                         title = _("Set notebook name for Joplin"),
                         input = self.settings.notebook_name,
                         buttons = {
@@ -153,7 +147,7 @@ function JoplinExporter:getMenuTable()
                 text = _("Help"),
                 keep_menu_open = true,
                 callback = function()
-                    UIManager:show(InfoMessage:new{
+                    UIManager:show(InfoMessage:new {
                         text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the exporter.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
 
 To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
@@ -164,7 +158,7 @@ For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
 
 For more information, please visit https://github.com/koreader/koreader/wiki/Highlight-export.]])
                             , BD.dirpath("example"))
-                            })
+                    })
                 end
             }
         }
@@ -173,11 +167,11 @@ end
 
 function JoplinExporter:getClient()
     -- logger.dbg("settings", self.settings)
-    local client = JoplinClient:new{
-            server_ip = self.settings.ip,
-            server_port = self.settings.port,
-            auth_token = self.settings.token
-        }
+    local client = JoplinClient:new {
+        server_ip = self.settings.ip,
+        server_port = self.settings.port,
+        auth_token = self.settings.token
+    }
     ---@todo Check if user deleted our notebook, in that case note
     -- will end up in random folder in Joplin.
     if not self.settings.notebook_name then
@@ -234,4 +228,3 @@ function JoplinExporter:export(t)
 end
 
 return JoplinExporter
-
