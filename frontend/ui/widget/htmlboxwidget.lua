@@ -9,7 +9,6 @@ local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Mupdf = require("ffi/mupdf")
 local Screen = Device.screen
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
@@ -240,7 +239,7 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
 
     local words = self:getSelectedText(lines, start_pos, end_pos)
     local selected_text = table.concat(words, " ")
-    callback(selected_text, hold_duration)
+    callback(selected_text, hold_duration_fts)
 
     return true
 end
