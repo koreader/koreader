@@ -7,6 +7,7 @@ function BaseExporter:new(o)
     o.id = "exporter"
     o.name = o.name or "generic"
     o.extension = o.extension or o.name or "export"
+    o.version = o.version or "1.0.0"
     o.clipping_dir = DataStorage:getDataDir() .. "/clipboard"
     o.is_remote = o.is_remote or false
     setmetatable(o, self)
@@ -41,6 +42,10 @@ function BaseExporter:saveSettings()
 end
 
 function BaseExporter:export(t) end
+
+function BaseExporter:getVersion()
+    return self.name .. "/" .. self.version
+end
 
 function BaseExporter:getTimeStamp()
     local ts = self.timestamp or os.time()

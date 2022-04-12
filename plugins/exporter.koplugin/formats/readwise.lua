@@ -1,28 +1,27 @@
-
 local ReadwiseClient = require("clients/ReadwiseClient")
 local _ = require("gettext")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 
 
-local ReadwiseExporter = require("formats/base"):new{
+local ReadwiseExporter = require("formats/base"):new {
     name = "readwise",
     is_remote = true,
-    version = "readwise/1.0.0"
+    version = "1.0.0"
 }
 
 
 function ReadwiseExporter:getMenuTable()
     return {
-        text = _("Readwise") ,
+        text = _("Readwise"),
         checked_func = function() return self:isEnabled() end,
-        sub_item_table ={
+        sub_item_table = {
             {
                 text = _("Set authorization token"),
                 keep_menu_open = true,
                 callback = function()
                     local auth_dialog
-                    auth_dialog = InputDialog:new{
+                    auth_dialog = InputDialog:new {
                         title = _("Set authorization token for Readwise"),
                         input = self.settings.token,
                         buttons = {
@@ -59,9 +58,9 @@ function ReadwiseExporter:getMenuTable()
 end
 
 function ReadwiseExporter:getClient()
-    return ReadwiseClient:new{
-            auth_token = self.settings.token
-        }
+    return ReadwiseClient:new {
+        auth_token = self.settings.token
+    }
 end
 
 function ReadwiseExporter:export(t)
@@ -69,6 +68,4 @@ function ReadwiseExporter:export(t)
     client:createHighlights(t)
 end
 
-
 return ReadwiseExporter
-

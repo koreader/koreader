@@ -2,9 +2,9 @@ local _ = require("gettext")
 local util = require("ffi/util")
 local T = util.template
 
-local TextExporter = require("formats/base"):new{
+local TextExporter = require("formats/base"):new {
     name = "text",
-    version = "text/1.0.0",
+    version = "1.0.0",
     extension = "txt",
 }
 
@@ -27,8 +27,8 @@ function TextExporter:export(t)
                     file:write(wide_space .. clipping.chapter .. "\n" .. wide_space .. "\n")
                 end
                 file:write(wide_space .. wide_space ..
-                                T(_("-- Page: %1, added on %2\n"),
-                                    clipping.page, os.date("%c", clipping.time)))
+                T(_("-- Page: %1, added on %2\n"),
+                    clipping.page, os.date("%c", clipping.time)))
                 if clipping.text then
                     file:write(clipping.text)
                 end
@@ -47,4 +47,3 @@ function TextExporter:export(t)
 end
 
 return TextExporter
-

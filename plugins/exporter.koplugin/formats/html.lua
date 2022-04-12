@@ -5,7 +5,7 @@ local slt2 = require('template/slt2')
 
 local HtmlExporter = require("formats/base"):new {
     name = "html",
-    version = "html/1.0.0",
+    version = "1.0.0",
 }
 
 function HtmlExporter:export(t)
@@ -24,7 +24,7 @@ function HtmlExporter:export(t)
         local content = slt2.render(template, {
             clippings = t,
             document_title = title,
-            version = self.version,
+            version = self:getVersion(),
             timestamp = self:getTimeStamp(),
             logger = logger
         })

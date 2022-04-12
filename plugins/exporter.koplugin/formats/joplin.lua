@@ -9,7 +9,7 @@ local JoplinClient = require("clients/JoplinClient")
 local JoplinExporter = require("formats/base"):new {
     name = "joplin",
     is_remote = true,
-    version = "joplin/1.0.0"
+    version = "1.0.0"
 }
 
 function JoplinExporter:isEnabled()
