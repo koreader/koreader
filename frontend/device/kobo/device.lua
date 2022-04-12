@@ -805,7 +805,6 @@ function Kobo:suspend()
     -- So, unless that changes, unconditionally disable it.
 
     --[[
-
     local has_wakeup_count = false
     f = io.open("/sys/power/wakeup_count", "re")
     if f ~= nil then
@@ -822,12 +821,11 @@ function Kobo:suspend()
         curr_wakeup_count = "$(cat /sys/power/wakeup_count)"
         logger.info("Kobo suspend: Current WakeUp count:", curr_wakeup_count)
     end
-
     -]]
 
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
-    -- cf. kernel/power/main.c @ L#207
+    -- c.f., state_extended_store @ kernel/power/main.c
     local ret = writeToSys("1", "/sys/power/state-extended")
     logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", ret)
 
@@ -838,7 +836,6 @@ function Kobo:suspend()
     logger.info("Kobo suspend: synced FS")
 
     --[[
-
     if has_wakeup_count then
         f = io.open("/sys/power/wakeup_count", "we")
         if not f then
@@ -854,13 +851,12 @@ function Kobo:suspend()
         end
         f:close()
     end
-
     --]]
 
     logger.info("Kobo suspend: asking for a suspend to RAM . . .")
     f = io.open("/sys/power/state", "we")
     if not f then
-        -- reset state-extend back to 0 since we are giving up
+        -- Reset state-extended back to 0 since we are giving up.
         local ext_fd = io.open("/sys/power/state-extended", "we")
         if not ext_fd then
             logger.err("cannot open /sys/power/state-extended for writing!")

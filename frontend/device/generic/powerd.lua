@@ -216,7 +216,8 @@ function BasePowerD:getCapacity()
     if UIManager then
         now_btv = UIManager:getElapsedTimeSinceBoot()
     else
-        now_btv = TimeVal:now() + self.device.total_standby_tv -- Add time the device was in standby
+        -- Add time the device was in standby and suspend
+        now_btv = TimeVal:now() + self.device.total_standby_tv + self.device.total_suspend_tv
     end
 
     if (now_btv - self.last_capacity_pull_time):tonumber() >= 60 then
@@ -236,7 +237,8 @@ function BasePowerD:getAuxCapacity()
     if UIManager then
         now_btv = UIManager:getElapsedTimeSinceBoot()
     else
-        now_btv = TimeVal:now() + self.device.total_standby_tv -- Add time the device was in standby
+        -- Add time the device was in standby and suspend
+        now_btv = TimeVal:now() + self.device.total_standby_tv + self.device.total_suspend_tv
     end
 
     if (now_btv - self.last_aux_capacity_pull_time):tonumber() >= 60 then
