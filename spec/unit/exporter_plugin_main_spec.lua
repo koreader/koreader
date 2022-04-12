@@ -1,18 +1,17 @@
 describe("Exporter plugin module", function()
-    local readerui, match
+    local readerui
     local sample_clippings, sample_epub
     local DocumentRegistry, Screen
     setup(function()
         require("commonrequire")
-        match = require("luassert.match")
         local ReaderUI = require("apps/reader/readerui")
         DocumentRegistry = require("document/documentregistry")
         Screen = require("device").screen
         sample_epub = "spec/front/unit/data/juliet.epub"
-        readerui = ReaderUI:new{
-                dimen = Screen:getSize(),
-                document = DocumentRegistry:openDocument(sample_epub),
-            }
+        readerui = ReaderUI:new {
+            dimen = Screen:getSize(),
+            document = DocumentRegistry:openDocument(sample_epub),
+        }
 
         sample_clippings = {
             ["Title1"] = {
@@ -21,7 +20,8 @@ describe("Exporter plugin module", function()
                         ["page"] = 6,
                         ["time"] = 1578946897,
                         ["sort"] = "highlight",
-                        ["text"] = "Some important stuff 1"
+                        ["text"] = "Some important stuff 1",
+                        ["drawer"] = "lighten"
                     }
                 },
                 [2] = {
@@ -29,7 +29,8 @@ describe("Exporter plugin module", function()
                         ["page"] = 13,
                         ["time"] = 1578946903,
                         ["sort"] = "highlight",
-                        ["text"] = "Some important stuff 2"
+                        ["text"] = "Some important stuff 2",
+                        ["drawer"] = "lighten"
                     }
                 },
                 ["file"] = "path/to/title1",
@@ -45,7 +46,8 @@ describe("Exporter plugin module", function()
                         ["page"] = 233,
                         ["time"] = 1578946918,
                         ["sort"] = "highlight",
-                        ["text"] = "Some important stuff 3"
+                        ["text"] = "Some important stuff 3",
+                        ["drawer"] = "lighten"
                     }
                 },
                 [2] = {
@@ -54,6 +56,7 @@ describe("Exporter plugin module", function()
                         ["time"] = 1578947501,
                         ["sort"] = "highlight",
                         ["text"] = "",
+                        ["drawer"] = "lighten",
                         ["image"] = {
                             ["hash"] = "cb7b40a63afc89f0aa452f2b655877e6",
                             ["png"] = "Binary Encoding of image"
@@ -65,43 +68,22 @@ describe("Exporter plugin module", function()
                 },
                 ["title"] = "Title2"
             },
-    }
+        }
 
     end)
     teardown(function()
         readerui:onClose()
     end)
 
-    it("should write clippings to txt file", function ()
-        local file_mock = mock( {
-            write = function() return end,
-            close = function() return end
-        })
-        local old_io = _G.io
-        _G.io = mock({
-           open = function(file, mode)
-            if file == readerui.exporter.text_clipping_file then
-                return file_mock
-            else
-                return old_io.open(file, mode)
-            end
-        end
-        })
-
-        readerui.exporter:exportBooknotesToTXT("Title1", sample_clippings.Title1)
-        assert.spy(io.open).was.called()
-        assert.spy(file_mock.write).was.called_with(match.is_ref(file_mock), "Some important stuff 1")
-        _G.io = old_io
-
+    it("should write clippings to a timestamped txt file", function()
+        local timestamp = os.time()
+        readerui.exporter.targets["text"].timestamp = timestamp
+        local exportable = { readerui.exporter:normalizeBookNotes(sample_clippings.Title1) }
+        local file_path = readerui.exporter.targets["text"]:getFilePath(exportable[1].title)
+        readerui.exporter.targets["text"]:export(exportable)
+        local f = io.open(file_path, "r")
+        assert.is.truthy(string.find(f:read("*all"), "Some important stuff 1"))
+        f:close()
+        os.remove(file_path)
     end)
-
-    it("should not export booknotes with exported_stamp", function()
-        readerui.exporter.html_export = true
-        stub(readerui.exporter, "exportBooknotesToHTML")
-        readerui.exporter:exportClippings(sample_clippings)
-        assert.stub(readerui.exporter.exportBooknotesToHTML).was_called_with(match.is_truthy(), "Title2", match.is_truthy())
-        assert.stub(readerui.exporter.exportBooknotesToHTML).was_not_called_with(match.is_truthy(), "Title1", match.is_truthy())
-    end)
-
-
 end)
