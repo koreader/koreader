@@ -776,12 +776,13 @@ function Kobo:standby(max_duration)
     local TimeVal = require("ui/timeval")
     local standby_time_tv = TimeVal:boottime_or_realtime_coarse()
 
+    logger.info("Kobo suspend: asking to enter standby . . .")
     local ret = writeToSys("standby", "/sys/power/state")
 
     self.last_standby_tv = TimeVal:boottime_or_realtime_coarse() - standby_time_tv
     self.total_standby_tv = self.total_standby_tv + self.last_standby_tv
 
-    logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", ret)
+    logger.info("Kobo suspend: zZz zZz zZz zZz? Write syscall returned: ", ret)
 
     if max_duration then
         self.wakeup_mgr:removeTask(nil, nil, dummy)
