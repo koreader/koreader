@@ -195,13 +195,15 @@ function AutoSuspend:_schedule_standby()
     end
 
     -- When we're in a state where entering suspend is undesirable, we simply postpone the check by the full delay.
-    local standby_delay = self.auto_standby_timeout_seconds
+    local standby_delay
     if NetworkMgr:isWifiOn() then
         -- Don't enter standby if wifi is on, as this will break in fun and interesting ways (from Wi-Fi issues to kernel deadlocks).
         --logger.dbg("AutoSuspend: WiFi is on, delaying standby")
+        standby_delay = self.auto_standby_timeout_seconds
     elseif Device.powerd:isCharging() and not Device:canPowerSaveWhileCharging() then
         -- Don't enter standby when charging on devices where charging prevents entering low power states.
         --logger.dbg("AutoSuspend: charging, delaying standby")
+        standby_delay = self.auto_standby_timeout_seconds
     else
         local now_tv = UIManager:getElapsedTimeSinceBoot()
         standby_delay = self.auto_standby_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
