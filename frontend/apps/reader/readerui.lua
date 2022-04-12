@@ -65,7 +65,7 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = ffiUtil.template
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local ReaderUI = InputContainer:new{
     name = "ReaderUI",

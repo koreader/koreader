@@ -2,7 +2,7 @@ require("commonrequire")
 
 local UIManager = require("ui/uimanager")
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local NB_TESTS = 40000
 local noop = function() end

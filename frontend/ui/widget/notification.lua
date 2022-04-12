@@ -18,7 +18,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local Input = Device.input
 local Screen = Device.screen
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local band = bit.band
 
