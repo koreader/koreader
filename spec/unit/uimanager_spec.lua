@@ -1,11 +1,11 @@
 describe("UIManager spec", function()
-    local TimeVal, UIManager
+    local UIManager
+    local fts
     local now_fts, wait_until_fts
     local noop = function() end
 
     setup(function()
         require("commonrequire")
-        TimeVal = require("ui/timeval")
         fts = require("ui/fixedpointtimesecond")
         UIManager = require("ui/uimanager")
     end)
