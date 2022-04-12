@@ -23,7 +23,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local fts = require("ui/fixedpointtimesecond")
+local fts = require("ui/fts")
 
 local ReaderView = OverlapGroup:extend{
     document = nil,
