@@ -1168,7 +1168,7 @@ function ReaderRolling:handleEngineCallback(ev, ...)
 end
 
 local ENGINE_PROGRESS_INITIAL_DELAY_FTS = fts.fromSec(2)
-local ENGINE_PROGRESS_UPDATE_DELAY_FTS = 500000
+local ENGINE_PROGRESS_UPDATE_DELAY_FTS = fts.fromuSec(500000)
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then
