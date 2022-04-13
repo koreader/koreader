@@ -175,7 +175,10 @@ function fts.toSec(time_fts)
     return time_fts / FTS_PRECISION
 end
 
---- Converts an fts to a Lua (int) number (resolution: 1ms)
+--[[-- Converts a fts to a Lua (int) number (resolution: 1ms).
+
+(Mainly useful when computing a time lapse for benchmarking purposes).
+]]
 function fts.tomSec(time_fts)
     return math.floor(time_fts / FTS_PRECISION * 1e3 + 0.5)
 end
@@ -184,14 +187,6 @@ end
 function fts.touSec(time_fts)
 
     return math.floor(time_fts / FTS_PRECISION * 1e6 + 0.5)
-end
-
---[[-- Converts a fts to a Lua (int) number (resolution: 1ms).
-
-(Mainly useful when computing a time lapse for benchmarking purposes).
-]]
-function fts.tomSec(time_fts)
-    return math.floor(fts.toSec(time_fts) * 1e3 + 0.5)
 end
 
 --- Converts a Lua number (sec.usecs) to an fts time
@@ -260,6 +255,5 @@ end
 function fts.format_fts(time_fts)
     return string.format("%.06f", time_fts / FTS_PRECISION)
 end
-
 
 return fts
