@@ -1624,27 +1624,21 @@ function ReaderHighlight:determineHighlightInsertionPosition(page, highlight)
     if type(highlight_beginning) ~= "string" then
         highlight_beginning.page = page
     end
-    for i, cur_highlight in ipairs(page_highlights) do
-        local cur_pos = cur_highlight.pos0
-        if type(cur_pos) ~= "string" then
-            cur_pos.page = page
-        end
-        -- logger.err("beginning", highlight_beginning)
-        -- logger.err("end", cur_pos)
-        local order
-        if self.ui.document.provider == "crengine" then -- we do this only if it's epub file
-            if type(highlight_beginning) == "string" then
-                order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
-            else
-                order = self.ui.document:compareXPointers(highlight_beginning, cur_pos)
+    if self.ui.document.provider == "crengine" then
+        for i, cur_highlight in ipairs(page_highlights) do
+            local order = self.ui.document:compareXPointers(highlight_beginning, cur_highlight.pos0)
+            if order > 0 then
+                return i
             end
-        else
-            
-            order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
         end
-        
-        if order > 0 then
-            return i
+    else
+        for i, cur_highlight in ipairs(page_highlights) do
+            local cur_pos = cur_highlight.pos0
+            cur_pos.page = page
+            local order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
+            if order > 0 then
+                return i
+            end
         end
     end
     return #page_highlights + 1
