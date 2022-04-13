@@ -50,11 +50,11 @@ function SystemStat:appendCounters()
             util.secondsToClockDuration("", os.difftime(os.time(), self.start_sec), false, true, true)})
     if Device:canSuspend() then
         self:put({"  " .. _("Time in suspend"),
-            util.secondsToClockDuration("", fts.toSec(Device.total_suspend_fts), false, true, true)})
+            util.secondsToClockDuration("", fts.tonumber(Device.total_suspend_fts), false, true, true)})
     end
     if Device:canStandby() then
         self:put({"  " .. _("Time in standby"),
-            util.secondsToClockDuration("", fts.toSec(Device.total_standby_fts), false, true, true)})
+            util.secondsToClockDuration("", fts.tonumber(Device.total_standby_fts), false, true, true)})
     end
     self:put({_("Counters"), ""})
     self:put({_("  wake-ups"), self.wakeup_count})

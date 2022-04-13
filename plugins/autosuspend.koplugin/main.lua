@@ -73,8 +73,8 @@ function AutoSuspend:_schedule(shutdown_only)
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
         local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
-        suspend_delay = fts.toSec(self.last_action_fts - now_fts) + self.auto_suspend_timeout_seconds
-        shutdown_delay = fts.toSec(self.last_action_fts - now_fts) + self.autoshutdown_timeout_seconds
+        suspend_delay = self.auto_suspend_timeout_seconds - fts.tonumber(now_fts - self.last_action_fts)
+        shutdown_delay = self.autoshutdown_timeout_seconds- fts.tonumber(now_fts - self.last_action_fts)
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -570,7 +570,7 @@ function AutoSuspend:onAllowStandby()
     if #scheduler_times == 2 then
         -- Wake up slightly after the formerly scheduled event,
         -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
-        wake_in = math.floor(scheduler_times[2]) + 1
+        wake_in = fts.tonumber(math.floor(scheduler_times[2])) + 1
     end
 
     if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
@@ -580,7 +580,7 @@ function AutoSuspend:onAllowStandby()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        logger.dbg("AutoSuspend: leaving standby after " .. fts.toSec(Device.last_standby_fts) .. " s")
+        logger.dbg("AutoSuspend: left standby after " .. fts.tonumber(Device.last_standby_fts) .. " s")
 
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
         -- to make sure UIManager will consume the input events that woke us up first

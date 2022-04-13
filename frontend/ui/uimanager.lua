@@ -534,11 +534,10 @@ end
 -- schedule an execution task, task queue is in ascendant order
 function UIManager:schedule(time_fts, action, ...)
     local p, s, e = 1, 1, #self._task_queue
-
     if e ~= 0 then
         -- do a binary insert
         repeat
-            p = math.floor(s + (e - s) / 2) -- we could use (e+s)/2 here.
+            p = math.floor((e + s) / 2) -- Not necessary to use (s + (e -s) / 2) here!
             local p_time_fts = self._task_queue[p].time_fts
             if time_fts > p_time_fts then
                 if s == e then
@@ -561,14 +560,12 @@ function UIManager:schedule(time_fts, action, ...)
             end
         until e < s
     end
-
     table.insert(self._task_queue, p, {
         time_fts = time_fts,
         action = action,
         argc = select('#', ...),
         args = {...},
     })
-
     self._task_queue_dirty = true
 end
 dbg:guard(UIManager, 'schedule',
@@ -1085,7 +1082,7 @@ function UIManager:discardEvents(set_or_seconds)
     else -- we expect a number
         delay_fts = fts.fromSec(set_or_seconds)
     end
-    self._discard_events_till_fts = self._now_fts + delay_fts
+    self._discard_events_till_fts = fts.now() + delay_fts
 end
 
 --[[--
@@ -1241,7 +1238,6 @@ or if you're dealing with intra-frame timers).
 
 This is *NOT* wall clock time (REALTIME).
 ]]
-
 function UIManager:getTime_fts()
     return self._now_fts
 end
