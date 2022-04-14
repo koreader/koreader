@@ -74,7 +74,7 @@ function AutoSuspend:_schedule(shutdown_only)
     else
         local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
         suspend_delay = self.auto_suspend_timeout_seconds - fts.tonumber(now_fts - self.last_action_fts)
-        shutdown_delay = self.autoshutdown_timeout_seconds- fts.tonumber(now_fts - self.last_action_fts)
+        shutdown_delay = self.autoshutdown_timeout_seconds - fts.tonumber(now_fts - self.last_action_fts)
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -323,6 +323,7 @@ function AutoSuspend:onResume()
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
+    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
     self:_unschedule()
     -- We should always follow an InputEvent, so last_action_tv is already up to date :).
     self:_start()
@@ -407,6 +408,8 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             end
             self[setting] = Math.clamp(self[setting], range[1], range[2])
             G_reader_settings:saveSetting(setting, self[setting])
+            -- Not necessary to call self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts() here,
+            -- as there was a onInputEvent before.
             if is_standby then
                 self:_unschedule_standby()
                 self:_start_standby()
