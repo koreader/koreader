@@ -51,6 +51,7 @@ function ReaderHighlight:init()
     self._start_indicator_highlight = false
     self._current_indicator_pos = nil
     self._previous_indicator_pos = nil
+    self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = TimeVal:now()}
 
     if Device:hasDPad() then
         -- Used for text selection with dpad/keys
@@ -63,10 +64,10 @@ function ReaderHighlight:init()
         self.key_events.RightHighlightIndicator = { {"Right"}, doc = "move indicator right", event = "MoveHighlightIndicator", args = {1, 0} }
         self.key_events.HighlightPress = { {"Press"}, doc = "highlight start or end" }
         if Device:hasKeys() then
-            self.key_events.QuicklyUpHighlightIndicator = { {"Shift", "Up"}, doc = "quick move indicator up", event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICTOR_MOVE} }
-            self.key_events.QuicklyDownHighlightIndicator = { {"Shift", "Down"}, doc = "quick move indicator down", event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICTOR_MOVE} }
-            self.key_events.QuicklyLeftHighlightIndicator = { {"Shift", "Left"}, doc = "quick move indicator left", event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICTOR_MOVE} }
-            self.key_events.QuicklyRightHighlightIndicator = { {"Shift", "Right"}, doc = "quick move indicator right", event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickUpHighlightIndicator = { {"Shift", "Up"}, doc = "quick move indicator up", event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickDownHighlightIndicator = { {"Shift", "Down"}, doc = "quick move indicator down", event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickLeftHighlightIndicator = { {"Shift", "Left"}, doc = "quick move indicator left", event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickRightHighlightIndicator = { {"Shift", "Right"}, doc = "quick move indicator right", event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICTOR_MOVE} }
             self.key_events.StartHighlightIndicator = { {"H"}, doc = "start non-touch highlight" }
         end
     end
@@ -1938,18 +1939,33 @@ end
 function ReaderHighlight:onMoveHighlightIndicator(args)
     if self.view.visible_area and self._current_indicator_pos then
         local dx, dy, quick_move = unpack(args)
-        local step_distance = self.view.visible_area.w / 5 -- quick move distance: fifth of visible_area
-        local y_step_distance = self.view.visible_area.h / 5
-        if step_distance > y_step_distance then
-            -- take the smaller, make all direction move distance much predictable
-            step_distance = y_step_distance
-        end
-        if not quick_move then
-            step_distance = step_distance / 4 -- twentieth of visible_area
-        end
+        local quick_move_distance_dx = self.view.visible_area.w / 5 -- quick move distance: fifth of visible_area
+        local quick_move_distance_dy = self.view.visible_area.h / 5
+        -- single move distance, small and capable to move on word with small font size and narrow line height
+        local move_distance = Size.item.height_default / 4
         local rect = self._current_indicator_pos:copy()
-        rect.x = rect.x + step_distance * dx
-        rect.y = rect.y + step_distance * dy
+        if quick_move then
+            rect.x = rect.x + quick_move_distance_dx * dx
+            rect.y = rect.y + quick_move_distance_dy * dy
+        else
+            local now = TimeVal:now()
+            if dx == self._last_indicator_move_args.dx and dy == self._last_indicator_move_args.dy then
+                local diff = now - self._last_indicator_move_args.time
+                -- if press same arrow key in 1 second, speed up
+                -- double press: 4 single move distances, usually move to next word or line
+                -- triple press: 16 single distances, usually skip several words or lines
+                -- quadruple press: 54 single distances, almost move to screen edge
+                if diff < TimeVal:new{ sec = 1, usec = 0 } then
+                    move_distance = self._last_indicator_move_args.distance * 4
+                end
+            end
+            rect.x = rect.x + move_distance * dx
+            rect.y = rect.y + move_distance * dy
+            self._last_indicator_move_args.distance = move_distance
+            self._last_indicator_move_args.dx = dx
+            self._last_indicator_move_args.dy = dy
+            self._last_indicator_move_args.time = now
+        end
         if rect.x < 0 then
             rect.x = 0
         end
