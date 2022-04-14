@@ -222,7 +222,7 @@ function BasePowerD:getCapacity()
         now_fts = fts.now_fts() + self.device.total_standby_fts + self.device.total_suspend_fts
     end
 
-    if fts.toSec(now_fts - self.last_capacity_pull_time_fts) >= 60 then
+    if now_fts - self.last_capacity_pull_time_fts >= fts.fromSec(60) then
         self.batt_capacity = self:getCapacityHW()
         self.last_capacity_pull_time_fts = now_fts
     end
