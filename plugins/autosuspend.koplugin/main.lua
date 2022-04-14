@@ -346,7 +346,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             end
             self[setting] = Math.clamp(self[setting], range[1], range[2])
             G_reader_settings:saveSetting(setting, self[setting])
-            -- Not necessary to call self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts() here,
+            -- Not necessary to call self.last_action_tv = UIManager:getElapsedTimeSinceBoot() here,
             -- as there was a onInputEvent before.
             if is_standby then
                 self:_unschedule_standby()
