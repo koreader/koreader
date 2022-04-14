@@ -64,7 +64,7 @@ function AutoSuspend:_schedule(shutdown_only)
     else
         local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
         suspend_delay = self.auto_suspend_timeout_seconds - fts.tonumber(now_fts - self.last_action_fts)
-        shutdown_delay = self.autoshutdown_timeout_seconds- fts.tonumber(now_fts - self.last_action_fts)
+        shutdown_delay = self.autoshutdown_timeout_seconds - fts.tonumber(now_fts - self.last_action_fts)
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -95,7 +95,6 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
         logger.dbg("AutoSuspend: start (suspend/shutdown) at", fts.tonumber(self.last_action_fts))
         self:_schedule()
     end
@@ -103,7 +102,6 @@ end
 
 function AutoSuspend:_start_standby()
     if self:_enabledStandby() then
-        self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
         logger.dbg("AutoSuspend: start (standby) at", fts.tonumber(self.last_action_fts))
         self:_schedule_standby()
     end
@@ -145,6 +143,7 @@ function AutoSuspend:init()
         self:_schedule_standby()
     end
 
+    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
     self:_start()
     self:_start_standby()
 
@@ -274,6 +273,7 @@ function AutoSuspend:onResume()
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
+    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
     self:_unschedule()
     self:_start()
     self:_unschedule_standby()
@@ -347,6 +347,8 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             end
             self[setting] = Math.clamp(self[setting], range[1], range[2])
             G_reader_settings:saveSetting(setting, self[setting])
+            -- Not necessary to call self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts() here,
+            -- as there was a onInputEvent before.
             if is_standby then
                 self:_unschedule_standby()
                 self:_start_standby()
