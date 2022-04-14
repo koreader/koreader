@@ -916,7 +916,7 @@ function Kobo:suspend()
         return false
     end
 
-    local fts = require("ui/fixedpinttimesecond")
+    local fts = require("ui/fts")
     local suspend_time_fts = fts.boottime_or_realtime_coarse()
 
     re, err_msg, err_code = f:write("mem\n")
