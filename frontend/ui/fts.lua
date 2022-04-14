@@ -29,6 +29,14 @@ local C = ffi.C
 -- A TV_PRECISION of 1e6 will give us a µs precision.
 local FTS_PRECISION = 1e6
 
+local S2FTS = FTS_PRECISION
+local MS2FTS = FTS_PRECISION / 1e3
+local US2FTS = FTS_PRECISION / 1e6
+
+local FTS2S = 1 / S2FTS
+local FTS2MS = 1 / MS2FTS
+local FTS2US = 1 / US2FTS
+
 -- ffi object for C.clock_gettime calls
 local timespec = ffi.new("struct timespec")
 
@@ -92,7 +100,7 @@ Which means that, yes, this is a fancier POSIX Epoch ;).
 function fts.realtime()
     C.clock_gettime(C.CLOCK_REALTIME, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
 end
 
 --[[--
@@ -107,21 +115,21 @@ On Linux, this will not account for time spent with the device in suspend (unlik
 function fts.monotonic()
     C.clock_gettime(C.CLOCK_MONOTONIC, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
 end
 
 --- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_MONOTONIC otherwise).
 function fts.monotonic_coarse()
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
 end
 
 -- Ditto, but w/ CLOCK_REALTIME_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_REALTIME otherwise).
 function fts.realtime_coarse()
     C.clock_gettime(PREFERRED_REALTIME_CLOCKID, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
     end
 
 --- Since CLOCK_BOOTIME may not be supported, we offer a few aliases with automatic fallbacks to MONOTONIC or REALTIME
@@ -131,7 +139,7 @@ if HAVE_BOOTTIME then
     function fts.boottime()
         C.clock_gettime(C.CLOCK_BOOTTIME, timespec)
         -- TIMESPEC_TO_FTS
-        return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+        return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
     end
 
     fts.boottime_or_monotonic = fts.boottime
@@ -165,7 +173,7 @@ end
 
 -- Converts an fts to seconds (with comma)
 function fts.toSec(time_fts)
-    return time_fts / FTS_PRECISION
+    return time_fts * FTS2S
 end
 
 --[[-- Converts a fts to a Lua (int) number (resolution: 1ms).
@@ -173,18 +181,18 @@ end
 (Mainly useful when computing a time lapse for benchmarking purposes).
 ]]
 function fts.tomSec(time_fts)
-    return math.floor(time_fts / FTS_PRECISION * 1e3 + 0.5)
+    return math.floor(time_fts * FTS2MS + 0.5)
 end
 
 --- Converts an fts to a Lua (int) number (resolution: 1µs)
 function fts.touSec(time_fts)
 
-    return math.floor(time_fts / FTS_PRECISION * 1e6 + 0.5)
+    return math.floor(time_fts * FTS2US + 0.5)
 end
 
 --- Converts a Lua number (sec.usecs) to an fts time
 function fts.fromnumber(seconds)
-    return math.floor(seconds * FTS_PRECISION)
+    return math.floor(seconds * S2FTS)
 end
 
 --[[-- Compare a past *MONOTONIC* fts time to *now*, returning the elapsed time between the two. (sec.usecs variant)
@@ -215,26 +223,26 @@ end
 fts.huge = math.huge
 
 function fts.fromTv(tv)
-    return tv.sec * FTS_PRECISION + tv.usec
+    return tv.sec * S2FTS + tv.usec * US2FTS
 end
 
 function fts.splitsus(time_fts)
     if not time_fts then return 0, 0 end
-    local sec = math.floor(time_fts / FTS_PRECISION)
-    local usec = math.floor(time_fts - sec * FTS_PRECISION)
+    local sec = math.floor(time_fts * FTS2S)
+    local usec = math.floor(time_fts - sec * S2FTS)
     return sec, usec
 end
 
 function fts.fromSec(seconds)
-    return math.floor(seconds * FTS_PRECISION)
+    return math.floor(seconds * S2FTS)
 end
 
 function fts.frommSec(usec)
-    return math.floor(usec * FTS_PRECISION / 1e3)
+    return math.floor(usec * MS2FTS)
 end
 
 function fts.fromuSec(usec)
-    return math.floor(usec * FTS_PRECISION / 1e6)
+    return math.floor(usec * US2FTS)
 end
 
 --not needed any more
@@ -248,7 +256,7 @@ en]]
 
 -- for debugging
 function fts.format_fts(time_fts)
-    return string.format("%.06f", time_fts / FTS_PRECISION)
+    return string.format("%.06f", time_fts * FTS2S)
 end
 
 return fts
