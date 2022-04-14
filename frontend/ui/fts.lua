@@ -17,7 +17,6 @@ Times stored in that format shall be named with an "_fts" suffix.
 local ffi = require("ffi")
 require("ffi/posix_h")
 local logger = require("logger")
-local util = require("ffi/util")
 
 local C = ffi.C
 
@@ -30,6 +29,8 @@ local C = ffi.C
 -- A TV_PRECISION of 1e6 will give us a µs precision.
 local FTS_PRECISION = 1e6
 
+-- ffi object for C.clock_gettime calls
+local timespec = ffi.new("struct timespec")
 
 -- We prefer CLOCK_MONOTONIC_COARSE if it's available and has a decent resolution,
 -- as we generally don't need nano/micro second precision,
@@ -89,8 +90,9 @@ Which means that, yes, this is a fancier POSIX Epoch ;).
 @treturn fts fixed point time
 ]]
 function fts.realtime()
-    local sec, usec = util.gettime()
-    return sec * FTS_PRECISION + usec
+    C.clock_gettime(C.CLOCK_REALTIME, timespec)
+    -- TIMESPEC_TO_FTS
+    return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
 end
 
 --[[--
@@ -103,27 +105,21 @@ On Linux, this will not account for time spent with the device in suspend (unlik
 @treturn Tfts fixed point time
 ]]
 function fts.monotonic()
-    local timespec = ffi.new("struct timespec")
     C.clock_gettime(C.CLOCK_MONOTONIC, timespec)
-
     -- TIMESPEC_TO_FTS
     return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
 end
 
 --- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_MONOTONIC otherwise).
 function fts.monotonic_coarse()
-    local timespec = ffi.new("struct timespec")
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
-
     -- TIMESPEC_TO_FTS
     return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
 end
 
 -- Ditto, but w/ CLOCK_REALTIME_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_REALTIME otherwise).
 function fts.realtime_coarse()
-    local timespec = ffi.new("struct timespec")
     C.clock_gettime(PREFERRED_REALTIME_CLOCKID, timespec)
-
     -- TIMESPEC_TO_FTS
     return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
     end
@@ -133,9 +129,7 @@ if HAVE_BOOTTIME then
     --- Ditto, but w/ CLOCK_BOOTTIME (will return an fts time set to 0, 0 if the clock source is unsupported, as it's 2.6.39+)
     --- Only use it if you *know* it's going to be supported, otherwise, prefer the four following aliases.
     function fts.boottime()
-        local timespec = ffi.new("struct timespec")
         C.clock_gettime(C.CLOCK_BOOTTIME, timespec)
-
         -- TIMESPEC_TO_FTS
         return tonumber(timespec.tv_sec) * FTS_PRECISION +  math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
     end
@@ -147,7 +141,6 @@ if HAVE_BOOTTIME then
 else
     function fts.boottime()
         logger.warn("fts: Attemped to call boottime on a platform where it's unsupported!")
-
         return 0
     end
 
@@ -215,7 +208,7 @@ end
 Returns a Lua (int) number (resolution: 1µs)
 ]]
 function fts.getDurationUs(start_fts)
-   return fts.touSec(fts.tonumber(start_fts))
+   return fts.touSec(fts.now() - start_fts)
 end
 
 --- Ditto for one set to math.huge
@@ -244,12 +237,14 @@ function fts.fromuSec(usec)
     return math.floor(usec * FTS_PRECISION / 1e6)
 end
 
+--not needed any more
+--[[
 function fts.toTv(time_fts)
     local TimeVal = require("ui/timeval")
     if not time_fts then return TimeVal.zero end
     local sec, usec = fts.splitsus(time_fts)
     return TimeVal:new{ sec = sec, usec = usec }
-end
+en]]
 
 -- for debugging
 function fts.format_fts(time_fts)
