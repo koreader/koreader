@@ -169,7 +169,7 @@ function Notification:_cleanShownStack(num)
     -- to follow what is happening).
     -- As a sanity check, we also forget those shown for
     -- more than 30s in case no close event was received.
-    local expire_fts = UIManager:getTime_fts() - fts.fromSec(30)
+    local expire_fts = UIManager:getTime_fts() - fts.s(30)
     for i=#Notification._nums_shown, 1, -1 do
         if Notification._nums_shown[i] and Notification._nums_shown[i] > expire_fts then
             break -- still shown (or not yet expired)
