@@ -14,7 +14,7 @@ local logger = require("logger")
 local parser = require("parser")
 local util = require("util")
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local used_metadata = {
     "uuid",
@@ -243,7 +243,7 @@ end
 
 function CalibreMetadata:init(dir, is_search)
     if not dir then return end
-    local start_fts = fts.now()
+    local start_time = time.now()
     self.path = dir
     local ok_meta, ok_drive, file_meta, file_drive = findCalibreFiles(dir)
     self.driveinfo = file_drive
@@ -262,12 +262,12 @@ function CalibreMetadata:init(dir, is_search)
     if is_search then
         self:cleanUnused(is_search)
         msg = string.format("(search) in %.3f milliseconds: %d books",
-            fts.getDurationMs(start_fts), #self.books)
+            time.getDurationMs(start_time), #self.books)
     else
         local deleted_count = self:prune()
         self:cleanUnused()
         msg = string.format("in %.3f milliseconds: %d books. %d pruned",
-            fts.getDurationMs(start_fts), #self.books, deleted_count)
+            time.getDurationMs(start_time), #self.books, deleted_count)
     end
     logger.info(string.format("calibre info loaded from disk %s", msg))
     return true
