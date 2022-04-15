@@ -32,6 +32,7 @@ local FTS_PRECISION = 1e6
 local S2FTS = FTS_PRECISION
 local MS2FTS = FTS_PRECISION / 1e3
 local US2FTS = FTS_PRECISION / 1e6
+local NS2FTS = FTS_PRECISION / 1e9
 
 local FTS2S = 1 / S2FTS
 local FTS2MS = 1 / MS2FTS
@@ -100,7 +101,7 @@ Which means that, yes, this is a fancier POSIX Epoch ;).
 function fts.realtime()
     C.clock_gettime(C.CLOCK_REALTIME, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(tonumber(timespec.tv_nsec) * NS2FTS)
 end
 
 --[[--
@@ -115,21 +116,22 @@ On Linux, this will not account for time spent with the device in suspend (unlik
 function fts.monotonic()
     C.clock_gettime(C.CLOCK_MONOTONIC, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(tonumber(timespec.tv_nsec) * NS2FTS)
 end
 
 --- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_MONOTONIC otherwise).
 function fts.monotonic_coarse()
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(tonumber(timespec.tv_nsec) * NS2FTS)
 end
+
 
 -- Ditto, but w/ CLOCK_REALTIME_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_REALTIME otherwise).
 function fts.realtime_coarse()
     C.clock_gettime(PREFERRED_REALTIME_CLOCKID, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(tonumber(timespec.tv_nsec) * NS2FTS)
     end
 
 --- Since CLOCK_BOOTIME may not be supported, we offer a few aliases with automatic fallbacks to MONOTONIC or REALTIME
@@ -139,7 +141,7 @@ if HAVE_BOOTTIME then
     function fts.boottime()
         C.clock_gettime(C.CLOCK_BOOTTIME, timespec)
         -- TIMESPEC_TO_FTS
-        return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(tonumber(timespec.tv_nsec) * NS2FTS)
     end
 
     fts.boottime_or_monotonic = fts.boottime
@@ -168,7 +170,7 @@ fts.now = fts.monotonic_coarse
 --- Converts an fts time to a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
 function fts.tonumber(time_fts)
     -- Round to 4 decimal places
-    return math.floor(fts.toS(time_fts) * 10000) / 10000
+    return math.floor(fts.toS(time_fts) * 10000 + 0.5) / 10000
 end
 
 -- Converts an fts to seconds (with comma)
