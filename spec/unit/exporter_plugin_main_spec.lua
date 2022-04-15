@@ -9,9 +9,9 @@ describe("Exporter plugin module", function()
         Screen = require("device").screen
         sample_epub = "spec/front/unit/data/juliet.epub"
         readerui = ReaderUI:new {
-            dimen = Screen:getSize(),
-            document = DocumentRegistry:openDocument(sample_epub),
-        }
+                dimen = Screen:getSize(),
+                document = DocumentRegistry:openDocument(sample_epub),
+            }
 
         sample_clippings = {
             ["Title1"] = {
@@ -65,7 +65,7 @@ describe("Exporter plugin module", function()
                 },
                 ["file"] = "path/to/title2",
                 ["exported"] = {
-                },
+            },
                 ["title"] = "Title2"
             },
         }
