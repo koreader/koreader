@@ -112,7 +112,7 @@ function ReaderRolling:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
-    self.pan_interval_fts = fts.fromSec(1000000 / self.pan_rate)
+    self.pan_interval_fts = fts.s(1000000 / self.pan_rate)
 
     table.insert(self.ui.postInitCallback, function()
         self.rendering_hash = self.ui.document:getDocumentRenderingHash()
@@ -405,7 +405,7 @@ end
 
 function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_ms)
     self.scroll_method = scroll_method
-    self.scroll_activation_delay_fts = fts.frommSec(scroll_activation_delay_ms)
+    self.scroll_activation_delay_fts = fts.ms(scroll_activation_delay_ms)
     if inertial_scroll_enabled then
         self.ui.scrolling:setInertialScrollCallbacks(
             function(distance) -- do_scroll_callback
@@ -1167,8 +1167,8 @@ function ReaderRolling:handleEngineCallback(ev, ...)
     -- ignore other events
 end
 
-local ENGINE_PROGRESS_INITIAL_DELAY_FTS = fts.fromSec(2)
-local ENGINE_PROGRESS_UPDATE_DELAY_FTS = fts.fromuSec(500000)
+local ENGINE_PROGRESS_INITIAL_DELAY_FTS = fts.s(2)
+local ENGINE_PROGRESS_UPDATE_DELAY_FTS = fts.us(500000)
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then
