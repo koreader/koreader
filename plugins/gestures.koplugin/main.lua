@@ -20,6 +20,8 @@ local T = FFIUtil.template
 local _ = require("gettext")
 local logger = require("logger")
 
+local time = require("ui/time")
+
 if not Device:isTouchDevice() then
     return { disabled = true, }
 end
@@ -478,7 +480,7 @@ Any other taps made within this interval after a first tap will be considered ac
 
 The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = GestureDetector:getInterval("ges_tap_interval")/1000,
+                        value = GestureDetector:getInterval("ges_tap_interval")/1000, -- xxx
                         value_min = 0,
                         value_max = 2000,
                         value_step = 50,
@@ -504,7 +506,7 @@ Any other taps made within this interval after a first tap will be considered ac
 
 The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)/1000,
+                        value = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)/1000, -- xxxx
                         value_min = 0,
                         value_max = 2000,
                         value_step = 50,
@@ -529,7 +531,7 @@ When double tap is enabled, this sets the time to wait for the second tap. A sin
 
 The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = GestureDetector:getInterval("ges_double_tap_interval")/1000,
+                        value = GestureDetector:getInterval("ges_double_tap_interval")/1000, -- xxxxx
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -555,7 +557,7 @@ This sets the allowed duration of any of the two fingers touch/release for the c
 
 The duration value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = GestureDetector:getInterval("ges_two_finger_tap_duration")/1000,
+                        value = GestureDetector:getInterval(time.ms("ges_two_finger_tap_duration")), -- xxx
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -563,8 +565,8 @@ The duration value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         ok_text = _("Set duration"),
                         default_value = GestureDetector.TWO_FINGER_TAP_DURATION/1000,
                         callback = function(spin)
-                            G_reader_settings:saveSetting("ges_two_finger_tap_duration", spin.value*1000)
-                            GestureDetector:setNewInterval("ges_two_finger_tap_duration", spin.value*1000)
+                            G_reader_settings:saveSetting(time.toMS("ges_two_finger_tap_duration", spin.value))
+                            GestureDetector:setNewInterval(time.toMS("ges_two_finger_tap_duration", spin.value))
                         end
                     }
                     UIManager:show(items)
@@ -589,7 +591,7 @@ The interval value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         ok_text = _("Set interval"),
                         default_value = GestureDetector.HOLD_INTERVAL/1000,
                         callback = function(spin)
-                            G_reader_settings:saveSetting("ges_hold_interval", spin.value*1000)
+                            G_reader_settings:saveSetting("ges_hold_interval", spin.value*1000) -- xxxx
                             GestureDetector:setNewInterval("ges_hold_interval", spin.value*1000)
                         end
                     }
@@ -615,7 +617,7 @@ The interval value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         ok_text = _("Set interval"),
                         default_value = GestureDetector.SWIPE_INTERVAL/1000,
                         callback = function(spin)
-                            G_reader_settings:saveSetting("ges_swipe_interval", spin.value*1000)
+                            G_reader_settings:saveSetting("ges_swipe_interval", spin.value*1000) -- xxx
                             GestureDetector:setNewInterval("ges_swipe_interval", spin.value*1000)
                         end
                     }

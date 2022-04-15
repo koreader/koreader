@@ -17,7 +17,7 @@ local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local K = require("frontend/ui/data/keyboardlayouts/ja_keyboard_keys")
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local DEFAULT_KEITAI_TAP_INTERVAL = 2
 
@@ -37,7 +37,7 @@ end
 
 local function exitKeitaiMode(inputbox)
     logger.dbg("ja_kbd: clearing keitai window last tap tv")
-    inputbox._ja_last_tap_fts = nil
+    inputbox._ja_last_tap_time = nil
 end
 
 local function wrappedAddChars(inputbox, char)
@@ -48,10 +48,10 @@ local function wrappedAddChars(inputbox, char)
     -- For keitai buttons, are we still in the tap interval?
     local within_tap_window
     if keitai_cycle then
-        if inputbox._ja_last_tap_fts then
-            within_tap_window = fts.getDuration(inputbox._ja_last_tap_fts) < getKeitaiTapInterval()
+        if inputbox._ja_last_tap_time then
+            within_tap_window = time.getDuration(inputbox._ja_last_tap_time) < getKeitaiTapInterval()
         end
-        inputbox._ja_last_tap_fts = fts.now()
+        inputbox._ja_last_tap_time = time.now()
     else
         -- This is a non-keitai or non-tap key, so break out of keitai window.
         exitKeitaiMode(inputbox)
@@ -113,7 +113,7 @@ local function wrapInputBox(inputbox)
                 for _, wrapper in ipairs(wrappers) do
                     wrapper:revert()
                 end
-                inputbox._ja_last_tap_fts = nil
+                inputbox._ja_last_tap_time = nil
                 inputbox._ja_wrapped = nil
             end
         end
