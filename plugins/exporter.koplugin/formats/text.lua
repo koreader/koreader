@@ -7,14 +7,13 @@ local TextExporter = require("formats/base"):new {
     extension = "txt",
 }
 
+function TextExporter:getFilePath()
+    return self.clipping_dir .. "/KOReaderClipping.txt"
+end
+
 function TextExporter:export(t)
-    local path
-    if #t == 1 then
-        path = self:getFilePath(t[1].title)
-    else
-        path = self:getFilePath()
-    end
-    local file = io.open(path, "w")
+    local path = self:getFilePath()
+    local file = io.open(path, "a")
     if file then
         local wide_space = "\227\128\128"
         for _ignore, booknotes in ipairs(t) do
