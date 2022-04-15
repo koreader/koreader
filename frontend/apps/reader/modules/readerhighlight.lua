@@ -1427,7 +1427,7 @@ function ReaderHighlight:onHoldRelease()
     if self.hold_last_fts then
         local hold_duration_fts = fts.now() - self.hold_last_fts
         local long_hold_threshold = G_reader_settings:readSetting("highlight_long_hold_threshold", 3) -- seconds
-        if hold_duration_fts > fts.fromSec(long_hold_threshold) then
+        if hold_duration_fts > fts.s(long_hold_threshold) then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
         end

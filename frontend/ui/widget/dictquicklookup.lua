@@ -155,7 +155,7 @@ function DictQuickLookup:init()
                 args = function(text, hold_duration_fts)
                     -- do this lookup in the same domain (dict/wikipedia)
                     local lookup_wikipedia = self.is_wiki
-                    if hold_duration_fts >= fts.fromSec(3) then
+                    if hold_duration_fts >= fts.s(3) then
                         -- but allow switching domain with a long hold
                         lookup_wikipedia = not lookup_wikipedia
                     end

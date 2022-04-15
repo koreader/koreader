@@ -98,7 +98,7 @@ function ReaderPaging:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
-    self.pan_interval_fts = fts.fromSec(1.000000 / self.pan_rate)
+    self.pan_interval_fts = fts.s(1.000000 / self.pan_rate)
     self.number_of_pages = self.ui.document.info.number_of_pages
 end
 
@@ -323,7 +323,7 @@ end
 
 function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_ms)
     self.scroll_method = scroll_method
-    self.scroll_activation_delay_fts = fts.frommSec(scroll_activation_delay_ms)
+    self.scroll_activation_delay_fts = fts.ms(scroll_activation_delay_ms)
     if inertial_scroll_enabled then
         self.ui.scrolling:setInertialScrollCallbacks(
             function(distance) -- do_scroll_callback

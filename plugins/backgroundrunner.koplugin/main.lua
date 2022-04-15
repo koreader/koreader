@@ -119,7 +119,7 @@ function BackgroundRunner:_finishJob(job)
     assert(self ~= nil)
     if type(job.executable) == "function" then
         local fts_diff = job.end_fts - job.start_fts
-        local threshold_fts = fts.fromSec(1)
+        local threshold_fts = fts.s(1)
         job.timeout = (fts_diff > threshold_fts)
     end
     job.blocked = job.timeout
@@ -193,7 +193,7 @@ function BackgroundRunner:_execute()
                 end
             elseif type(job.when) == "number" then
                 if job.when >= 0 then
-                    should_execute = (fts.toSec(UIManager:getTime_fts() - job.insert_fts) >= job.when)
+                    should_execute = (fts.tonumber(UIManager:getTime_fts() - job.insert_fts) >= job.when)
                 else
                     should_ignore = true
                 end

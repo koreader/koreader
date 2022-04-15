@@ -33,7 +33,7 @@ a touch event should have following format:
         id = 46,
         x = 0,
         y = 1,
-        timev_fts = fts.fromSec(123.23),
+        timev_fts = fts.s(123.23),
     }
 
 Don't confuse `tev` with raw evs from kernel, `tev` is built according to ev.
@@ -61,15 +61,15 @@ local HOLD_INTERVAL_US = 500 * 1000
 local SWIPE_INTERVAL_US = 900 * 1000
 -- current values
 local ges_tap_interval_fts = G_reader_settings:readSetting("ges_tap_interval") or TAP_INTERVAL_US
-ges_tap_interval_fts = fts.fromuSec(ges_tap_interval_fts)
+ges_tap_interval_fts = fts.us(ges_tap_interval_fts)
 local ges_double_tap_interval_fts = G_reader_settings:readSetting("ges_double_tap_interval") or DOUBLE_TAP_INTERVAL_US
-ges_double_tap_interval_fts = fts.fromuSec(ges_double_tap_interval_fts)
+ges_double_tap_interval_fts = fts.us(ges_double_tap_interval_fts)
 local ges_two_finger_tap_duration_fts = G_reader_settings:readSetting("ges_two_finger_tap_duration") or TWO_FINGER_TAP_DURATION_US
-ges_two_finger_tap_duration_fts = fts.fromuSec(ges_two_finger_tap_duration_fts)
+ges_two_finger_tap_duration_fts = fts.us(ges_two_finger_tap_duration_fts)
 local ges_hold_interval_fts = G_reader_settings:readSetting("ges_hold_interval") or HOLD_INTERVAL_US
-ges_hold_interval_fts = fts.fromuSec(ges_hold_interval_fts)
+ges_hold_interval_fts = fts.us(ges_hold_interval_fts)
 local ges_swipe_interval_fts = G_reader_settings:readSetting("ges_swipe_interval") or SWIPE_INTERVAL_US
-ges_swipe_interval_fts = fts.fromuSec(ges_swipe_interval_fts)
+ges_swipe_interval_fts = fts.us(ges_swipe_interval_fts)
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
@@ -312,29 +312,29 @@ end
 
 function GestureDetector:setNewInterval(type, interval_us)
     if type == "ges_tap_interval" then
-        ges_tap_interval_fts = fts.fromuSec(interval_us)
+        ges_tap_interval_fts = fts.us(interval_us)
     elseif type == "ges_double_tap_interval" then
-        ges_double_tap_interval_fts = fts.fromuSec(interval_us)
+        ges_double_tap_interval_fts = fts.us(interval_us)
     elseif type == "ges_two_finger_tap_duration" then
-        ges_two_finger_tap_duration_fts = fts.fromuSec(interval_us)
+        ges_two_finger_tap_duration_fts = fts.us(interval_us)
     elseif type == "ges_hold_interval" then
-        ges_hold_interval_fts = fts.fromuSec(interval_us)
+        ges_hold_interval_fts = fts.us(interval_us)
     elseif type == "ges_swipe_interval" then
-        ges_swipe_interval_fts = fts.fromuSec(interval_us)
+        ges_swipe_interval_fts = fts.us(interval_us)
     end
 end
 
 function GestureDetector:getInterval(type)
     if type == "ges_tap_interval" then
-        return fts.touSec(ges_tap_interval_fts)
+        return fts.toUS(ges_tap_interval_fts)
     elseif type == "ges_double_tap_interval" then
-        return fts.touSec(ges_double_tap_interval_fts)
+        return fts.toUS(ges_double_tap_interval_fts)
     elseif type == "ges_two_finger_tap_duration" then
-        return fts.touSec(ges_two_finger_tap_duration_fts)
+        return fts.toUS(ges_two_finger_tap_duration_fts)
     elseif type == "ges_hold_interval" then
-        return fts.touSec(ges_hold_interval_fts)
+        return fts.toUS(ges_hold_interval_fts)
     elseif type == "ges_swipe_interval" then
-        return fts.touSec(ges_swipe_interval_fts)
+        return fts.toUS(ges_swipe_interval_fts)
     end
 end
 
@@ -375,7 +375,7 @@ function GestureDetector:probeClockSource(timev_fts)
     print("xxxxxxxxxxx probeClockSource", timev_fts)
     -- We'll check if that timestamp is +/- 2.5s away from the three potential clock sources supported by evdev.
     -- We have bigger issues than this if we're parsing events more than 3s late ;).
-    local threshold_fts = fts.fromSec(2,5)
+    local threshold_fts = fts.s(2,5)
 
     -- Start w/ REALTIME, because it's the easiest to detect ;).
     local realtime_fts = fts.realtime_coarse()

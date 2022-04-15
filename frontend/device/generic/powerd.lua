@@ -15,8 +15,8 @@ local BasePowerD = {
     aux_batt_capacity = 0,            -- auxiliary battery capacity
     device = nil,                     -- device object
 
-    last_capacity_pull_time_fts = fts.fromSec(-61),      -- timestamp of last pull
-    last_aux_capacity_pull_time_fts = fts.fromSec(-61),  -- timestamp of last pull
+    last_capacity_pull_time_fts = fts.s(-61),      -- timestamp of last pull
+    last_aux_capacity_pull_time_fts = fts.s(-61),  -- timestamp of last pull
 
     is_fl_on = false,                 -- whether the frontlight is on
 }
@@ -222,7 +222,7 @@ function BasePowerD:getCapacity()
         now_fts = fts.now_fts() + self.device.total_standby_fts + self.device.total_suspend_fts
     end
 
-    if now_fts - self.last_capacity_pull_time_fts >= fts.fromSec(60) then
+    if now_fts - self.last_capacity_pull_time_fts >= fts.s(60) then
         self.batt_capacity = self:getCapacityHW()
         self.last_capacity_pull_time_fts = now_fts
     end
@@ -243,7 +243,7 @@ function BasePowerD:getAuxCapacity()
         now_fts = fts.now() + self.device.total_standby_fts + self.device.total_suspend_fts
     end
 
-    if fts.toSec(now_fts - self.last_aux_capacity_pull_time_fts) >= 60 then
+    if now_fts - self.last_aux_capacity_pull_time_fts >= fts.s(60) then
         local aux_batt_capa = self:getAuxCapacityHW()
         -- If the read failed, don't update our cache, and retry next time.
         if aux_batt_capa then
@@ -255,7 +255,7 @@ function BasePowerD:getAuxCapacity()
 end
 
 function BasePowerD:invalidateCapacityCache()
-    self.last_capacity_pull_time_fts = fts.fromSec(-61)
+    self.last_capacity_pull_time_fts = fts.s(-61)
     self.last_aux_capacity_pull_time_fts = self.last_capacity_pull_time_fts
 end
 
