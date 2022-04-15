@@ -245,9 +245,9 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
     -- see ReaderBookmark:getBookmarkAutoText and ReaderBookmark:getBookmarkPageString
     --- @todo Remove this once we get rid of auto-text or improve the data model.
     local pattern = "^" .. T(_("Page %1 %2 @ %3"),
-                                "%[?%d*%]?%d+",
-                                "(.*)",
-                                "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
+                               "%[?%d*%]?%d+",
+                               "(.*)",
+                               "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
 
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
@@ -321,14 +321,14 @@ function MyClipping:parseHistory()
     local clippings = {}
     for f in lfs.dir(self.history_dir) do
         self:parseHistoryFile(clippings,
-                            self.history_dir .. "/" .. f,
-                            DocSettings:getPathFromHistory(f) .. "/" ..
-                            DocSettings:getNameFromHistory(f))
+                              self.history_dir .. "/" .. f,
+                              DocSettings:getPathFromHistory(f) .. "/" ..
+                              DocSettings:getNameFromHistory(f))
     end
     for _, item in ipairs(ReadHistory.hist) do
         self:parseHistoryFile(clippings,
-                            DocSettings:getSidecarFile(item.file),
-                            item.file)
+                              DocSettings:getSidecarFile(item.file),
+                              item.file)
     end
 
     return clippings
