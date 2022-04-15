@@ -586,7 +586,7 @@ Schedules a task to be run a certain amount of seconds from now.
 function UIManager:scheduleIn(seconds, action, ...)
     -- We might run significantly late inside an UI frame, so we can't use the cached value here.
     -- It would also cause some bad interactions with the way nextTick & co behave.
-    local when_fts = fts.now() + fts.fromSec(seconds)
+    local when_fts = fts.now() + fts.s(seconds)
     self:schedule(when_fts, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
@@ -1074,13 +1074,13 @@ function UIManager:discardEvents(set_or_seconds)
             -- sometimes > 500ms on some devices/temperatures.
             -- So, block for 400ms (to have it displayed) + 400ms
             -- for user reaction to it
-            delay_fts = fts.fromSec(0.8)
+            delay_fts = fts.s(0.8)
         else
             -- On non-eInk screen, display is usually instantaneous
-            delay_fts = fts.fromSec(0.4)
+            delay_fts = fts.s(0.4)
         end
     else -- we expect a number
-        delay_fts = fts.fromSec(set_or_seconds)
+        delay_fts = fts.s(set_or_seconds)
     end
     self._discard_events_till_fts = fts.now() + delay_fts
 end

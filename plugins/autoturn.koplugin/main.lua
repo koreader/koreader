@@ -28,7 +28,7 @@ function AutoTurn:_schedule()
         return
     end
 
-    local delay_fts = self.last_action_fts + fts.fromSec(self.autoturn_sec) - UIManager:getTime_fts()
+    local delay_fts = self.last_action_fts + fts.s(self.autoturn_sec) - UIManager:getTime_fts()
     local delay_ts = fts.tonumber(delay_fts)
 
     if delay_ts <= 0 then
