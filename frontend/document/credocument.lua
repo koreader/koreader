@@ -13,7 +13,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local lru = require("ffi/lru")
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
@@ -695,16 +695,16 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- We also honor the current smooth scaling setting,
     -- as well as the global SW dithering setting.
 
-    --local start_fts = fts.now_fts()
+    --local start_time = time.now()
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
-    --local end_fts = fts.now_fts()
-    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", end_fts - start_fts)
+    --local end_time = time.now()
+    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", time.toMS(end_time - start_time))
 
-    --start_fts = fts.now_fts()
+    --start = time.now()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
-    --end_fts = fts.now_fts()
-    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", end_fts - start_fts)
+    --end_time = time.now()
+    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", time.toMS(end_time - start_time))
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
@@ -1453,31 +1453,31 @@ function CreDocument:setupCallCache()
     local addStatMiss = no_op
     local addStatHit = no_op
     local dumpStats = no_op
-    local now_fts = no_op
+    local now = no_op
     if do_stats then
         -- cache statistics
         self._call_cache_stats = {}
-        now_fts = function()
-            return fts.now()
+        now = function()
+            return time.now()
         end
-        addStatMiss = function(name, starttime_fts, not_cached)
-            local duration_fts = fts.getDuration(starttime_fts)
+        addStatMiss = function(name, starttime, not_cached)
+            local duration = time.getDuration(starttime)
             if not self._call_cache_stats[name] then
-                self._call_cache_stats[name] = {0, 0.0, 1, duration_fts, not_cached}
+                self._call_cache_stats[name] = {0, 0.0, 1, duration, not_cached}
             else
                 local stat = self._call_cache_stats[name]
                 stat[3] = stat[3] + 1
-                stat[4] = stat[4] + duration_fts
+                stat[4] = stat[4] + duration
             end
         end
-        addStatHit = function(name, starttime_fts)
-            local duration_fts = fts.getDuration(starttime_fts)
+        addStatHit = function(name, starttime)
+            local duration = time.getDuration(starttime)
             if not self._call_cache_stats[name] then
-                self._call_cache_stats[name] = {1, duration_fts, 0, 0.0}
+                self._call_cache_stats[name] = {1, duration, 0, 0.0}
             else
                 local stat = self._call_cache_stats[name]
                 stat[1] = stat[1] + 1
-                stat[2] = stat[2] + duration_fts
+                stat[2] = stat[2] + duration
             end
         end
         dumpStats = function()
@@ -1681,12 +1681,12 @@ function CreDocument:setupCallCache()
             elseif cache_by_tag then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime_fts = now_fts()
+                    local starttime = now()
                     local cache_key = name .. buffer.encode({select(2, ...)})
                     local results = self._callCacheTagGet(cache_key)
                     if results then
                         if do_log then logger.dbg("callCache:", name, "cache hit:", cache_key) end
-                        addStatHit(name, starttime_fts)
+                        addStatHit(name, starttime)
                         -- We might want to return a deep-copy of results, in case callers
                         -- play at modifying values. But it looks like none currently do.
                         -- So, better to keep calling code not modifying returned results.
@@ -1695,26 +1695,26 @@ function CreDocument:setupCallCache()
                         if do_log then logger.dbg("callCache:", name, "cache miss:", cache_key) end
                         results = { func(...) }
                         self._callCacheTagSet(cache_key, results)
-                        addStatMiss(name, starttime_fts)
+                        addStatMiss(name, starttime)
                         return unpack(results)
                     end
                 end
             elseif cache_global then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime_fts = now_fts()
+                    local starttime = now()
                     local cache_key = name .. buffer.encode({select(2, ...)})
                     local results = self._callCacheGet(cache_key)
                     if results then
                         if do_log then logger.dbg("callCache:", name, "cache hit:", cache_key) end
-                        addStatHit(name, starttime_fts)
+                        addStatHit(name, starttime)
                         -- See comment above
                         return unpack(results)
                     else
                         if do_log then logger.dbg("callCache:", name, "cache miss:", cache_key) end
                         results = { func(...) }
                         self._callCacheSet(cache_key, results)
-                        addStatMiss(name, starttime_fts)
+                        addStatMiss(name, starttime)
                         return unpack(results)
                     end
                 end
@@ -1722,9 +1722,9 @@ function CreDocument:setupCallCache()
             if do_stats_include_not_cached and not is_cached then
                 local func2 = self[name] -- might already be wrapped
                 self[name] = function(...)
-                    local starttime_fts = now_fts()
+                    local starttime = now()
                     local results = { func2(...) }
-                    addStatMiss(name, starttime_fts, true) -- not_cached = true
+                    addStatMiss(name, starttime, true) -- not_cached = true
                     return unpack(results)
                 end
             end
@@ -1744,16 +1744,16 @@ function CreDocument:setupCallCache()
         elseif current_buffer_tag ~= current_tag then
             do_draw = true
         end
-        local starttime_fts = now_fts()
+        local starttime = now()
         if do_draw then
             if do_log then logger.dbg("callCache: ########## drawCurrentView: full draw") end
             CreDocument.drawCurrentView(_self, target, x, y, rect, pos)
-            addStatMiss("drawCurrentView", starttime_fts)
+            addStatMiss("drawCurrentView", starttime)
             _self._callCacheSet("current_buffer_tag", current_tag)
         else
             if do_log then logger.dbg("callCache: ---------- drawCurrentView: light draw") end
             target:blitFrom(_self.buffer, x, y, 0, 0, rect.w, rect.h)
-            addStatHit("drawCurrentView", starttime_fts)
+            addStatHit("drawCurrentView", starttime)
         end
     end
     -- Dump statistics on close

@@ -65,7 +65,7 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = ffiUtil.template
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local ReaderUI = InputContainer:new{
     name = "ReaderUI",
@@ -291,19 +291,19 @@ function ReaderUI:init()
         end
         -- make sure we render document first before calling any callback
         self:registerPostInitCallback(function()
-            local start_fts = fts.now()
+            local start_time = time.now()
             if not self.document:loadDocument() then
                 self:dealWithLoadDocumentFailure()
             end
-            logger.dbg(string.format("  loading took %.3f seconds", fts.getDuration(start_fts)))
+            logger.dbg(string.format("  loading took %.3f seconds", time.getDuration(start_time)))
 
             -- used to read additional settings after the document has been
             -- loaded (but not rendered yet)
             self:handleEvent(Event:new("PreRenderDocument", self.doc_settings))
 
-            start_fts = fts.now()
+            start_time = time.now()
             self.document:render()
-            logger.dbg(string.format("  rendering took %.3f seconds", fts.getDuration(start_fts)))
+            logger.dbg(string.format("  rendering took %.3f seconds", time.getDuration(start_time)))
 
             -- Uncomment to output the built DOM (for debugging)
             -- logger.dbg(self.document:getHTMLFromXPointer(".0", 0x6830))
