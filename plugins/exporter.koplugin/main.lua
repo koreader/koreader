@@ -146,6 +146,12 @@ function Exporter:exportAllNotes()
     local clippings = self.config:readSetting("clippings") or {}
     clippings = self:updateHistoryClippings(clippings, self.parser:parseHistory())
     clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
+    for title, booknotes in pairs(clippings) do
+        -- chapter number is zero
+        if #booknotes == 0 then
+            clippings[title] = nil
+        end
+    end
     self.config:saveSetting("clippings", clippings)
     self.config:flush()
     self:exportClippings(clippings)
