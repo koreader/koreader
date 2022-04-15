@@ -39,6 +39,7 @@ describe("BackgroundRunner widget tests", function()
 
         MockTime:increase(2)
         UIManager:handleInput()
+        assert.is_false(executed)
         MockTime:increase(9)
         UIManager:handleInput()
         assert.is_false(executed)
@@ -132,7 +133,7 @@ describe("BackgroundRunner widget tests", function()
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_fts == nil do
+        while job.end_time == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -157,7 +158,7 @@ describe("BackgroundRunner widget tests", function()
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_fts == nil do
+        while job.end_time == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -171,11 +172,11 @@ describe("BackgroundRunner widget tests", function()
             ENV1 = "yes",
             ENV2 = "no",
         }
-        job.end_fts = nil
+        job.end_time = nil
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_fts == nil do
+        while job.end_time == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -206,7 +207,7 @@ describe("BackgroundRunner widget tests", function()
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_fts == nil do
+        while job.end_time == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -216,12 +217,12 @@ describe("BackgroundRunner widget tests", function()
         assert.is_false(job.timeout)
         assert.is_false(job.bad_command)
 
-        job.end_fts = nil
+        job.end_time = nil
         env2 = "no"
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_fts == nil do
+        while job.end_time == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -244,7 +245,7 @@ describe("BackgroundRunner widget tests", function()
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_fts == nil do
+        while job.end_time == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end

@@ -14,7 +14,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 -- BackgroundRunner is an experimental feature to execute non-critical jobs in
 -- the background.
@@ -73,9 +73,9 @@ local fts = require("ui/fts")
 -- bad_command: boolean, whether the command is not found. Not available for
 --              function executable.
 -- blocked: boolean, whether the job is blocked.
--- start_fts: number, the fts when the job was started.
--- end_fts: number, the fts when the job was stopped.
--- insert_fts: number, the fts when the job was inserted into queue.
+-- start_time: number, the time (fts) when the job was started.
+-- end_time: number, the time (fts) when the job was stopped.
+-- insert_time: number, the time (fts) when the job was inserted into queue.
 -- (All of them in the monotonic time scale, like the main event loop & task queue).
 
 local BackgroundRunner = {
@@ -118,9 +118,9 @@ end
 function BackgroundRunner:_finishJob(job)
     assert(self ~= nil)
     if type(job.executable) == "function" then
-        local fts_diff = job.end_fts - job.start_fts
-        local threshold_fts = fts.fromSec(1)
-        job.timeout = (fts_diff > threshold_fts)
+        local time_diff = job.end_time - job.start_time
+        local threshold = time.s(1)
+        job.timeout = (time_diff > threshold)
     end
     job.blocked = job.timeout
     if not job.blocked and self:_shouldRepeat(job) then
@@ -142,7 +142,7 @@ function BackgroundRunner:_executeJob(job)
         CommandRunner:start(job)
         return true
     elseif type(job.executable) == "function" then
-        job.start_fts = UIManager:getTime_fts()
+        job.start_time = UIManager:getTime()
         local status, err = pcall(job.executable)
         if status then
             job.result = 0
@@ -150,7 +150,7 @@ function BackgroundRunner:_executeJob(job)
             job.result = 1
             job.exception = err
         end
-        job.end_fts = fts.now()
+        job.end_time = time.now()
         self:_finishJob(job)
         return true
     else
@@ -177,10 +177,10 @@ function BackgroundRunner:_execute()
         local round = 0
         while #self.jobs > 0 do
             local job = table.remove(self.jobs, 1)
-            if job.insert_fts == nil then
+            if job.insert_time == nil then
                 -- Jobs are first inserted to jobs table from external users.
                 -- So they may not have an insert field.
-                job.insert_fts = UIManager:getTime_fts()
+                job.insert_time = UIManager:getTime()
             end
             local should_execute = false
             local should_ignore = false
@@ -193,7 +193,7 @@ function BackgroundRunner:_execute()
                 end
             elseif type(job.when) == "number" then
                 if job.when >= 0 then
-                    should_execute = (fts.toSec(UIManager:getTime_fts() - job.insert_fts) >= job.when)
+                    should_execute = (UIManager:getTime() - job.insert_time >= time.s(job.when))
                 else
                     should_ignore = true
                 end
@@ -254,7 +254,7 @@ end
 
 function BackgroundRunner:_insert(job)
     assert(self ~= nil)
-    job.insert_fts = UIManager:getTime_fts()
+    job.insert_time = UIManager:getTime()
     table.insert(self.jobs, job)
 end
 

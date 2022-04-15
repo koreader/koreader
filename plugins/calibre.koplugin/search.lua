@@ -21,7 +21,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 -- get root dir for disk scans
 local function getDefaultRootDir()
@@ -326,10 +326,10 @@ function CalibreSearch:find(option)
     end
 
     -- measure time elapsed searching
-    local start_fts = fts.now()
+    local start_time = time.now()
         self:browse(option)
     logger.info(string.format("search done in %.3f milliseconds (%s, %s, %s, %s, %s)",
-        fts.getDurationMs(start_fts),
+        time.getDurationMs(start_time),
         option == "find" and "books" or option,
         "case sensitive: " .. tostring(not self.case_insensitive),
         "title: " .. tostring(self.find_by_title),
@@ -553,7 +553,7 @@ end
 
 -- get metadata from cache or calibre files
 function CalibreSearch:getMetadata()
-    local start_fts = fts.now()
+    local start_time = time.now()
     local template = "metadata: %d books imported from %s in %.3f milliseconds"
 
     -- try to load metadata from cache
@@ -595,7 +595,7 @@ function CalibreSearch:getMetadata()
                 end
             end
             if is_newer then
-                logger.info(string.format(template, #cache, "cache", fts.getDurationMs(start_fts)))
+                logger.info(string.format(template, #cache, "cache", time.getDurationMs(start_time)))
                 return cache
             else
                 logger.warn("cache is older than metadata, ignoring it")
@@ -624,7 +624,7 @@ function CalibreSearch:getMetadata()
             logger.info("Failed to serialize calibre metadata cache:", err)
         end
     end
-    logger.info(string.format(template, #books, "calibre", fts.getDurationMs(start_fts)))
+    logger.info(string.format(template, #books, "calibre", time.getDurationMs(start_time)))
     return books
 end
 

@@ -6,7 +6,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local AutoTurn = WidgetContainer:new{
     name = "autoturn",
@@ -14,7 +14,7 @@ local AutoTurn = WidgetContainer:new{
     autoturn_sec = 0,
     autoturn_distance = 1,
     enabled = false,
-    last_action_fts = 0,
+    last_action_time = 0,
     task = nil,
 }
 
@@ -28,21 +28,21 @@ function AutoTurn:_schedule()
         return
     end
 
-    local delay_fts = self.last_action_fts + fts.fromSec(self.autoturn_sec) - UIManager:getTime_fts()
-    local delay_ts = fts.tonumber(delay_fts)
+    local delay = self.last_action_time + time.s(self.autoturn_sec) - UIManager:getTime()
 
-    if delay_ts <= 0 then
+    if delay <= 0 then
         if UIManager:getTopWidget() == "ReaderUI" then
             logger.dbg("AutoTurn: go to next page")
             self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
-            self.last_action_fts = UIManager:getTime_fts()
+            self.last_action_time = UIManager:getTime()
         end
         logger.dbg("AutoTurn: schedule in", self.autoturn_sec)
         UIManager:scheduleIn(self.autoturn_sec, self.task)
         self.scheduled = true
     else
-        logger.dbg("AutoTurn: schedule in", delay_ts)
-        UIManager:scheduleIn(delay_ts, self.task)
+        local delay_s = time.tonumber(delay)
+        logger.dbg("AutoTurn: schedule in", delay_s, "s")
+        UIManager:scheduleIn(delay_s, self.task)
         self.scheduled = true
     end
 end
@@ -58,10 +58,10 @@ end
 
 function AutoTurn:_start()
     if self:_enabled() then
-        local now_fts = UIManager:getTime_fts()
-        logger.dbg("AutoTurn: start at", fts.format_fts(now_fts))
+        local now = UIManager:getTime()
+        logger.dbg("AutoTurn: start at", time.tonumber(now))
         PluginShare.pause_auto_suspend = true
-        self.last_action_fts = now_fts
+        self.last_action_time = now
         self:_schedule()
 
         local text
@@ -107,7 +107,7 @@ end
 
 function AutoTurn:onInputEvent()
     logger.dbg("AutoTurn: onInputEvent")
-    self.last_action_fts = UIManager:getTime_fts()
+    self.last_action_time = UIManager:getTime()
 end
 
 function AutoTurn:onEnterStandby()
@@ -122,9 +122,9 @@ function AutoTurn:onSuspend()
 end
 
 function AutoTurn:_onLeaveStandby()
-    self.last_action_fts = self.last_action_fts - Device.last_standby_fts
+    self.last_action_time = self.last_action_time - Device.last_standby_time
 
-    -- We messed with last_action_fts, so a complete reschedule has to be done.
+    -- We messed with last_action_time, so a complete reschedule has to be done.
     if self:_enabled() then
         self:_unschedule()
         self:_schedule()

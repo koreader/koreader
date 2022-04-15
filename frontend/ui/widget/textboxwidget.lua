@@ -31,7 +31,7 @@ local dbg = require("dbg")
 local util = require("util")
 local Screen = require("device").screen
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local TextBoxWidget = InputContainer:new{
     text = nil,
@@ -1853,18 +1853,18 @@ function TextBoxWidget:onHoldStartText(_, ges)
     -- check coordinates are actually inside our area
     if self.hold_start_x < 0 or self.hold_start_x > self.dimen.w or
         self.hold_start_y < 0 or self.hold_start_y > self.dimen.h then
-        self.hold_start_fts = nil -- don't process coming HoldRelease event
+        self.hold_start_time = nil -- don't process coming HoldRelease event
         return false -- let event be processed by other widgets
     end
 
-    self.hold_start_fts = UIManager:getTime_fts()
+    self.hold_start_time = UIManager:getTime()
     return true
 end
 
 function TextBoxWidget:onHoldPanText(_, ges)
     -- We don't highlight the currently selected text, but just let this
     -- event pop up if we are not currently selecting text
-    if not self.hold_start_fts then
+    if not self.hold_start_time then
         return false
     end
     -- Don't let that event be processed by other widget
@@ -1878,7 +1878,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
     local hold_end_y = ges.pos.y - self.dimen.y
 
     -- check we have seen a HoldStart event
-    if not self.hold_start_fts then
+    if not self.hold_start_time then
         return false
     end
     -- check start and end coordinates are actually inside our area
@@ -1889,7 +1889,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    local hold_duration_fts = fts.now() - self.hold_start_fts
+    local hold_duration = time.now() - self.hold_start_time
 
     -- If page contains an image, check if Hold is on this image and deal
     -- with it directly
@@ -1951,7 +1951,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
     -- a missed start event
     self.hold_start_x = nil
     self.hold_start_y = nil
-    self.hold_start_fts = nil
+    self.hold_start_time = nil
 
     if self.use_xtext then
         -- With xtext and fribidi, words may not be laid out in logical order,
@@ -1983,9 +1983,9 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         -- to consider when looking for word boundaries)
         local selected_text = self._xtext:getSelectedWords(sel_start_idx, sel_end_idx, 50)
 
-        logger.dbg("onHoldReleaseText (duration:", fts.tonumber(hold_duration_fts), ") :",
+        logger.dbg("onHoldReleaseText (duration:", time.tonumber(hold_duration), ") :",
                         sel_start_idx, ">", sel_end_idx, "=", selected_text)
-        callback(selected_text, hold_duration_fts)
+        callback(selected_text, hold_duration)
         return true
     end
 
@@ -2001,8 +2001,8 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
     end
 
     local selected_text = table.concat(self.charlist, "", sel_start_idx, sel_end_idx)
-    logger.dbg("onHoldReleaseText (duration:", fts.tonumber(hold_duration_fts), ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
-    callback(selected_text, hold_duration_fts)
+    logger.dbg("onHoldReleaseText (duration:", time.tonumber(hold_duration), ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
+    callback(selected_text, hold_duration)
     return true
 end
 

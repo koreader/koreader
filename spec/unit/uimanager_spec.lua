@@ -1,61 +1,61 @@
 describe("UIManager spec", function()
     local UIManager
-    local fts
-    local now_fts, wait_until_fts
+    local time
+    local now, wait_until
     local noop = function() end
 
     setup(function()
         require("commonrequire")
-        fts = require("ui/fts")
+        time = require("ui/time")
         UIManager = require("ui/uimanager")
     end)
 
     it("should consume due tasks", function()
-        now_fts = fts:now()
-        local future_fts = now_fts + 60000 * 1e6
-        local future2_fts = future_fts + 5 * 1e6
+        now = time.now()
+        local future = now + 60000 * 1e6
+        local future2 = future + 5 * 1e6
         UIManager:quit()
         UIManager._task_queue = {
-            { time_fts = now_fts - 10 * 1e6, action = noop, args = {}, argc = 0 },
-            { time_fts = now_fts - 5, action = noop, args = {}, argc = 0 },
-            { time_fts = now_fts, action = noop, args = {}, argc = 0 },
-            { time_fts = future_fts, action = noop, args = {}, argc = 0 },
-            { time_fts = future2_fts, action = noop, args = {}, argc = 0 },
+            { time = now - 10 * 1e6, action = noop, args = {}, argc = 0 },
+            { time = now - 5, action = noop, args = {}, argc = 0 },
+            { time = now, action = noop, args = {}, argc = 0 },
+            { time = future, action = noop, args = {}, argc = 0 },
+            { time = future2, action = noop, args = {}, argc = 0 },
         }
         UIManager:_checkTasks()
         assert.are.same(2, #UIManager._task_queue, 2)
-        assert.are.same(future_fts, UIManager._task_queue[1].time_fts)
-        assert.are.same(future2_fts, UIManager._task_queue[2].time_fts)
+        assert.are.same(future, UIManager._task_queue[1].time)
+        assert.are.same(future2, UIManager._task_queue[2].time)
     end)
 
     it("should calcualte wait_until properly in checkTasks routine", function()
-        now_fts = fts:now()
-        local future_fts = now_fts + 60000 * 1e6
+        now = time.now()
+        local future_time = now + 60000 * 1e6
         UIManager:quit()
         UIManager._task_queue = {
-            { time_fts = now_fts - 10 * 1e6, action = noop, args = {}, argc = 0 },
-            { time_fts = now_fts - 5, action = noop, args = {}, argc = 0 },
-            { time_fts = now_fts, action = noop, args = {}, argc = 0 },
-            { time_fts = future_fts, action = noop, args = {}, argc = 0 },
+            { time = now - 10 * 1e6, action = noop, args = {}, argc = 0 },
+            { time = now - 5, action = noop, args = {}, argc = 0 },
+            { time = now, action = noop, args = {}, argc = 0 },
+            { time = future_time, action = noop, args = {}, argc = 0 },
         }
-        wait_until_fts, now_fts = UIManager:_checkTasks()
-        assert.are.same(future_fts, wait_until_fts)
+        wait_until, now = UIManager:_checkTasks()
+        assert.are.same(future_time, wait_until)
     end)
 
     it("should return nil wait_until properly in checkTasks routine", function()
-        now_fts = fts:now()
+        now = time.now()
         UIManager:quit()
         UIManager._task_queue = {
-            { time_fts = now_fts - 10 * 1e6, action = noop, args = {}, argc = 0 },
-            { time_fts = now_fts - 5, action = noop, args = {}, argc = 0 },
-            { time_fts = now_fts, action = noop, args = {}, argc = 0 },
+            { time = now - 10 * 1e6, action = noop, args = {}, argc = 0 },
+            { time = now - 5, action = noop, args = {}, argc = 0 },
+            { time = now, action = noop, args = {}, argc = 0 },
         }
-        wait_until_fts, now_fts = UIManager:_checkTasks()
-        assert.are.same(nil, wait_until_fts)
+        wait_until, now = UIManager:_checkTasks()
+        assert.are.same(nil, wait_until)
     end)
 
     it("should insert new task properly in empty task queue", function()
-        now_fts = fts:now()
+        now = time.now()
         UIManager:quit()
         UIManager._task_queue = {}
         assert.are.same(0, #UIManager._task_queue)
@@ -65,11 +65,11 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task properly in single task queue", function()
-        now_fts = fts:now()
-        local future_fts = now_fts + 10000 * 1e6
+        now = time.now()
+        local future_time = now + 10000 * 1e6
         UIManager:quit()
         UIManager._task_queue = {
-            { time_fts = future_fts, action = '1', args = {}, argc = 0 },
+            { time = future_time, action = '1', args = {}, argc = 0 },
         }
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'quz')
@@ -78,7 +78,7 @@ describe("UIManager spec", function()
 
         UIManager:quit()
         UIManager._task_queue = {
-            { time_fts = now_fts, action = '1', args = {}, argc = 0 },
+            { time = now, action = '1', args = {}, argc = 0 },
         }
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'foo')
@@ -90,59 +90,59 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task in ascendant order", function()
-        now_fts = fts:now()
+        now = time.now()
         UIManager:quit()
         UIManager._task_queue = {
-            { time_fts = now_fts - 10 * 1e6, action = '1', args = {}, argc = 0 },
-            { time_fts = now_fts - 5, action = '2', args = {}, argc = 0 },
-            { time_fts = now_fts, action = '3', args = {}, argc = 0 },
+            { time = now - 10 * 1e6, action = '1', args = {}, argc = 0 },
+            { time = now - 5, action = '2', args = {}, argc = 0 },
+            { time = now, action = '3', args = {}, argc = 0 },
         }
         -- insert into the tail slot
         UIManager:scheduleIn(10, 'foo')
         assert.are.same('foo', UIManager._task_queue[4].action)
         -- insert into the second slot
-        UIManager:schedule(now_fts - 5 * 1e6, 'bar')
+        UIManager:schedule(now - 5 * 1e6, 'bar')
         assert.are.same('bar', UIManager._task_queue[2].action)
         -- insert into the head slot
-        UIManager:schedule(now_fts - 15 * 1e6, 'baz')
+        UIManager:schedule(now - 15 * 1e6, 'baz')
         assert.are.same('baz', UIManager._task_queue[1].action)
         -- insert into the last second slot
         UIManager:scheduleIn(5, 'qux')
         assert.are.same('qux', UIManager._task_queue[6].action)
         -- insert into the middle slot
-        UIManager:schedule(now_fts - 1, 'quux')
+        UIManager:schedule(now - 1, 'quux')
         assert.are.same('quux', UIManager._task_queue[5].action)
     end)
 
     it("should unschedule all the tasks with the same action", function()
-        now_fts = fts.now()
+        now = time.now()
         UIManager:quit()
         UIManager._task_queue = {
-            { time_fts = now_fts - 15 * 1e6, action = '3', args = {}, argc = 0 },
-            { time_fts = now_fts - 10 * 1e6, action = '1', args = {}, argc = 0 },
-            { time_fts = now_fts - 6, action = '3', args = {}, argc = 0 },
-            { time_fts = now_fts - 5, action = '2', args = {}, argc = 0 },
-            { time_fts = now_fts, action = '3', args = {}, argc = 0 },
+            { time = now - 15 * 1e6, action = '3', args = {}, argc = 0 },
+            { time = now - 10 * 1e6, action = '1', args = {}, argc = 0 },
+            { time = now - 6, action = '3', args = {}, argc = 0 },
+            { time = now - 5, action = '2', args = {}, argc = 0 },
+            { time = now, action = '3', args = {}, argc = 0 },
         }
         -- insert into the tail slot
         UIManager:unschedule('3')
         assert.are.same({
-            { time_fts = now_fts - 10 * 1e6, action = '1', args = {}, argc = 0 },
-            { time_fts = now_fts - 5 , action = '2', args = {}, argc = 0 },
+            { time = now - 10 * 1e6, action = '1', args = {}, argc = 0 },
+            { time = now - 5 , action = '2', args = {}, argc = 0 },
         }, UIManager._task_queue)
     end)
 
     it("should not have race between unschedule and _checkTasks", function()
-        now_fts = fts.now()
+        now = time.now()
         local run_count = 0
         local task_to_remove = function()
             run_count = run_count + 1
         end
         UIManager:quit()
         UIManager._task_queue = {
-            { time_fts = now_fts - 5, action = task_to_remove, args = {}, argc = 0 },
+            { time = now - 5, action = task_to_remove, args = {}, argc = 0 },
             {
-                time_fts = now_fts - 10 * 1e6,
+                time = now - 10 * 1e6,
                 action = function()
                     run_count = run_count + 1
                     UIManager:unschedule(task_to_remove)
@@ -150,7 +150,7 @@ describe("UIManager spec", function()
                 args = {},
                 argc = 0
             },
-            { time_fts = now_fts, action = task_to_remove, args = {}, argc = 0 },
+            { time = now, action = task_to_remove, args = {}, argc = 0 },
         }
         UIManager:_checkTasks()
         assert.are.same(2, run_count)

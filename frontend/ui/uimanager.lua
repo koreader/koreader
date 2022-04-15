@@ -13,7 +13,7 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
@@ -31,7 +31,7 @@ local UIManager = {
     event_handlers = nil,
 
     _running = true,
-    _now_fts = fts.now(),
+    _now = time.now(),
     _window_stack = {},
     _task_queue = {},
     _task_queue_dirty = false,
@@ -43,7 +43,7 @@ local UIManager = {
     _exit_code = nil,
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
-    _discard_events_till_fts = nil,
+    _discard_events_till = nil,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -443,7 +443,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
         Input.disable_double_tap = true
     end
     -- a widget may override tap interval (when it doesn't, nil restores the default)
-    Input.tap_interval_override_fts = widget.tap_interval_override_fts
+    Input.tap_interval_override = widget.tap_interval_override
 end
 
 --[[--
@@ -512,7 +512,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
     if #self._window_stack > 0 then
         -- set tap interval override to what the topmost widget specifies (when it doesn't, nil restores the default)
-        Input.tap_interval_override_fts = self._window_stack[#self._window_stack].widget.tap_interval_override_fts
+        Input.tap_interval_override = self._window_stack[#self._window_stack].widget.tap_interval_override
     end
     if dirty and not widget.invisible then
         -- schedule the remaining visible (i.e., uncovered) widgets to be painted
@@ -524,14 +524,14 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
 end
 
 -- schedule an execution task, task queue is in ascendant order
-function UIManager:schedule(time_fts, action, ...)
+function UIManager:schedule(sched_time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
         -- do a binary insert
         repeat
             p = math.floor((e + s) / 2) -- Not necessary to use (s + (e -s) / 2) here!
-            local p_time_fts = self._task_queue[p].time_fts
-            if time_fts > p_time_fts then
+            local p_time = self._task_queue[p].time
+            if sched_time > p_time then
                 if s == e then
                     p = e + 1
                     break
@@ -540,7 +540,7 @@ function UIManager:schedule(time_fts, action, ...)
                 else
                     s = p
                 end
-            elseif time_fts < p_time_fts then
+            elseif sched_time < p_time then
                 if s == p then
                     break
                 end
@@ -553,7 +553,7 @@ function UIManager:schedule(time_fts, action, ...)
         until e < s
     end
     table.insert(self._task_queue, p, {
-        time_fts = time_fts,
+        time = sched_time,
         action = action,
         argc = select('#', ...),
         args = {...},
@@ -561,8 +561,8 @@ function UIManager:schedule(time_fts, action, ...)
     self._task_queue_dirty = true
 end
 dbg:guard(UIManager, 'schedule',
-    function(self, time_fts, action)
-        assert(time_fts >= 0, "Only positive time allowed")
+    function(self, sched_time, action)
+        assert(sched_time >= 0, "Only positive time allowed")
         assert(action ~= nil, "No action")
     end)
 
@@ -578,8 +578,8 @@ Schedules a task to be run a certain amount of seconds from now.
 function UIManager:scheduleIn(seconds, action, ...)
     -- We might run significantly late inside an UI frame, so we can't use the cached value here.
     -- It would also cause some bad interactions with the way nextTick & co behave.
-    local when_fts = fts.now() + fts.fromSec(seconds)
-    self:schedule(when_fts, action, ...)
+    local when = time.now() + time.s(seconds)
+    self:schedule(when, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
     function(self, seconds, action)
@@ -1053,10 +1053,10 @@ Request all @{ui.event.Event|Event}s to be ignored for some duration.
 ]]
 function UIManager:discardEvents(set_or_seconds)
     if not set_or_seconds then -- remove any previously set
-        self._discard_events_till_fts = nil
+        self._discard_events_till = nil
         return
     end
-    local delay_fts
+    local delay
     if set_or_seconds == true then
         -- Use an adequate delay to account for device refresh duration
         -- so any events happening in this delay (ie. before a widget
@@ -1066,15 +1066,15 @@ function UIManager:discardEvents(set_or_seconds)
             -- sometimes > 500ms on some devices/temperatures.
             -- So, block for 400ms (to have it displayed) + 400ms
             -- for user reaction to it
-            delay_fts = fts.fromSec(0.8)
+            delay = time.us(800000)
         else
             -- On non-eInk screen, display is usually instantaneous
-            delay_fts = fts.fromSec(0.4)
+            delay = time.us(400000)
         end
     else -- we expect a number
-        delay_fts = fts.fromSec(set_or_seconds)
+        delay = time.s(set_or_seconds)
     end
-    self._discard_events_till_fts = fts.now() + delay_fts
+    self._discard_events_till = time.now() + delay
 end
 
 --[[--
@@ -1089,11 +1089,11 @@ function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
 
     -- Ensure discardEvents
-    if self._discard_events_till_fts then
-        if fts.now() < self._discard_events_till_fts then
+    if self._discard_events_till then
+        if time.now() < self._discard_events_till then
             return
         else
-            self._discard_events_till_fts = nil
+            self._discard_events_till = nil
         end
     end
 
@@ -1174,10 +1174,10 @@ end
 
 --[[
 function UIManager:getNextTaskTimes(count)
-    count = count or 1
+    count = math.min(count or 1, #self._task_queue)
     local times = {}
-    for i = 1, math.min(count, #self._task_queue) do
-        times[i] = self._task_queue[i].time - TimeVal:now()
+    for i = 1, count do
+        times[i] = UIManager._task_queue[i].time - time.now()
     end
     return times
 end
@@ -1192,8 +1192,8 @@ function UIManager:getNextTaskTime()
 end
 
 function UIManager:_checkTasks()
-    self._now_fts = fts.now()
-    local wait_until_fts = nil
+    self._now = time.now()
+    local wait_until = nil
 
     -- task.action may schedule other events
     self._task_queue_dirty = false
@@ -1203,8 +1203,8 @@ function UIManager:_checkTasks()
             break
         end
         local next_task = self._task_queue[1]
-        local task_fts = next_task.time_fts or 0
-        if task_fts <= self._now_fts then
+        local task_time = next_task.time or 0
+        if task_time <= self._now then
             -- remove from table
             local task = table.remove(self._task_queue, 1)
             -- task is pending to be executed right now. do it.
@@ -1214,18 +1214,18 @@ function UIManager:_checkTasks()
         else
             -- queue is sorted in ascendant order, safe to assume all items
             -- are future tasks for now
-            wait_until_fts = next_task.time_fts
+            wait_until = task_time
             break
         end
     end
 
-    return wait_until_fts, self._now_fts
+    return wait_until, self._now
 end
 
 --[[--
-Returns a fts corresponding to the last tick.
+Returns a time (fts) corresponding to the last tick.
 
-This is essentially a cached fts.now_fts(), computed at the top of every iteration of the main UI loop,
+This is essentially a cached time.now(), computed at the top of every iteration of the main UI loop,
 (right before checking/running scheduled tasks).
 This is mainly useful to compute/schedule stuff in the same time scale as the UI loop (i.e., MONOTONIC),
 without having to resort to a syscall.
@@ -1234,21 +1234,21 @@ unless you're blocking the UI for a significant amount of time in a single UI fr
 
 That is to say, its granularity is an UI frame.
 
-Prefer the appropriate fts function for your needs if you require perfect accuracy or better granularity
+Prefer the appropriate time function for your needs if you require perfect accuracy or better granularity
 (e.g., when you're actually working on the event loop *itself* (UIManager, Input, GestureDetector),
 or if you're dealing with intra-frame timers).
 
 This is *NOT* wall clock time (REALTIME).
 ]]
-function UIManager:getTime_fts()
-    return self._now_fts
+function UIManager:getTime()
+    return self._now
 end
 
 --[[--
-Returns an fts time corresponding to the last UI tick plus the time in standby.
+Returns an time (fts) corresponding to the last UI tick plus the time in standby.
 ]]
-function UIManager:getElapsedTimeSinceBoot_fts()
-    return self:getTime_fts() + Device.total_standby_fts + Device.total_suspend_fts
+function UIManager:getElapsedTimeSinceBoot()
+    return self:getTime() + Device.total_standby_time + Device.total_suspend_time
 end
 
 -- precedence of refresh modes:
@@ -1636,12 +1636,12 @@ function UIManager:processZMQs()
 end
 
 function UIManager:handleInput()
-    local wait_until_fts, now_fts
+    local wait_until, now
     -- run this in a loop, so that paints can trigger events
     -- that will be honored when calculating the time to wait
     -- for input events:
     repeat
-        wait_until_fts, now_fts = self:_checkTasks()
+        wait_until, now = self:_checkTasks()
         --dbg("---------------------------------------------------")
         --dbg("wait_until", wait_until)
         --dbg("now", now)
@@ -1666,7 +1666,7 @@ function UIManager:handleInput()
     --       which gives us a chance for another iteration, meaning going through _checkTasks to catch said scheduled tasks.
     -- Figure out how long to wait.
     -- Ultimately, that'll be the earliest of INPUT_TIMEOUT, ZMQ_TIMEOUT or the next earliest scheduled task.
-    local deadline_fts
+    local deadline
     -- Default to INPUT_TIMEOUT (which may be nil, i.e. block until an event happens).
     local wait_us = self.INPUT_TIMEOUT
 
@@ -1677,14 +1677,14 @@ function UIManager:handleInput()
 
     -- We pass that on as an absolute deadline, not a relative wait time.
     if wait_us then
-        deadline_fts = now_fts + wait_us
+        deadline = now + time.us(wait_us)
     end
 
     -- If there's a scheduled task pending, that puts an upper bound on how long to wait.
-    if wait_until_fts and (not deadline_fts or wait_until_fts < deadline_fts) then
+    if wait_until and (not deadline or wait_until < deadline) then
         --             ^ We don't have a TIMEOUT induced deadline, making the choice easy.
         --                             ^ We have a task scheduled for *before* our TIMEOUT induced deadline.
-        deadline_fts = wait_until_fts
+        deadline = wait_until
     end
 
     -- Run ZMQs if any
@@ -1696,7 +1696,7 @@ function UIManager:handleInput()
     self:_standbyTransition()
 
     -- wait for next batch of events
-    local input_events = Input:waitEvent(now_fts, deadline_fts)
+    local input_events = Input:waitEvent(now, deadline)
 
     -- delegate each input event to handler
     if input_events then

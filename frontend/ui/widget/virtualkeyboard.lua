@@ -22,7 +22,7 @@ local logger = require("logger")
 local util = require("util")
 local Screen = Device.screen
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local keyboard_state = {
     force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)
@@ -667,7 +667,7 @@ function VirtualKeyPopup:init()
         },
     }
     local tap_interval_override_us = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
-    self.tap_interval_override_fts = fts.fromuSec(tap_interval_override_us)
+    self.tap_interval_override = time.us(tap_interval_override_us)
 
     if Device:hasKeys() then
         self.key_events.Close = { {Device.input.group.Back}, doc = "close keyboard" }
@@ -789,7 +789,7 @@ function VirtualKeyboard:init()
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
     local tap_interval_override_us = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
-    self.tap_interval_override_fts = fts.fromuSec(tap_interval_override_us)
+    self.tap_interval_override = time.us(tap_interval_override_us)
     if Device:hasKeys() then
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end

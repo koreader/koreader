@@ -13,7 +13,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local HtmlBoxWidget = InputContainer:new{
     bb = nil,
@@ -22,7 +22,7 @@ local HtmlBoxWidget = InputContainer:new{
     page_count = 0,
     page_number = 1,
     hold_start_pos = nil,
-    hold_start_fts = nil,
+    hold_start_time = nil,
     html_link_tapped_callback = nil,
 }
 
@@ -167,7 +167,7 @@ function HtmlBoxWidget:onHoldStartText(_, ges)
         return false -- let event be processed by other widgets
     end
 
-    self.hold_start_fts = UIManager:getTime_fts()
+    self.hold_start_time = UIManager:getTime()
 
     return true
 end
@@ -231,7 +231,7 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    local hold_duration_fts = fts.now() - self.hold_start_fts
+    local hold_duration = time.now() - self.hold_start_time
 
     local page = self.document:openPage(self.page_number)
     local lines = page:getPageText()
@@ -239,7 +239,7 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
 
     local words = self:getSelectedText(lines, start_pos, end_pos)
     local selected_text = table.concat(words, " ")
-    callback(selected_text, hold_duration_fts)
+    callback(selected_text, hold_duration)
 
     return true
 end

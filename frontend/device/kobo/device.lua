@@ -825,13 +825,13 @@ function Kobo:standby(max_duration)
     end
 
     logger.info("Kobo standby: asking to enter standby . . .")
-    local fts = require("ui/fts")
-    local standby_time_fts = fts.boottime_or_realtime_coarse()
+    local time = require("ui/time")
+    local standby_time = time.boottime_or_realtime_coarse()
 
     local ret = writeToSys("standby", "/sys/power/state")
 
-    self.last_standby_fts = fts.boottime_or_realtime_coarse() - standby_time_fts
-    self.total_standby_fts = self.total_standby_fts + self.last_standby_fts
+    self.last_standby_time = time.boottime_or_realtime_coarse() - standby_time
+    self.total_standby_time = self.total_standby_time + self.last_standby_time
 
     if ret then
         logger.info("Kobo standby: zZz zZz zZz zZz... And woke up!")

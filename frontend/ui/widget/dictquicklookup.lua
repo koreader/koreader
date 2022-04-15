@@ -32,7 +32,7 @@ local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 --[[
 Display quick lookup word definition
@@ -152,10 +152,10 @@ function DictQuickLookup:init()
                     range = range,
                 },
                 -- callback function when HoldReleaseText is handled as args
-                args = function(text, hold_duration_fts)
+                args = function(text, hold_duration)
                     -- do this lookup in the same domain (dict/wikipedia)
                     local lookup_wikipedia = self.is_wiki
-                    if hold_duration_fts >= fts.fromSec(3) then
+                    if hold_duration >= time.s(3) then
                         -- but allow switching domain with a long hold
                         lookup_wikipedia = not lookup_wikipedia
                     end

@@ -18,7 +18,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local Input = Device.input
 local Screen = Device.screen
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local band = bit.band
 
@@ -111,7 +111,7 @@ function Notification:init()
     local notif_height = self.frame:getSize().h
 
     self:_cleanShownStack()
-    table.insert(Notification._nums_shown, UIManager:getTime_fts())
+    table.insert(Notification._nums_shown, UIManager:getTime())
     self.num = #Notification._nums_shown
 
     self[1] = VerticalGroup:new{
@@ -169,9 +169,9 @@ function Notification:_cleanShownStack(num)
     -- to follow what is happening).
     -- As a sanity check, we also forget those shown for
     -- more than 30s in case no close event was received.
-    local expire_fts = UIManager:getTime_fts() - fts.fromSec(30)
+    local expire_time = UIManager:getTime() - time.s(30)
     for i=#Notification._nums_shown, 1, -1 do
-        if Notification._nums_shown[i] and Notification._nums_shown[i] > expire_fts then
+        if Notification._nums_shown[i] and Notification._nums_shown[i] > expire_time then
             break -- still shown (or not yet expired)
         end
         table.remove(Notification._nums_shown, i)

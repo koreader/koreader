@@ -199,7 +199,7 @@ function Device:init()
                         y = 100*scrolled_y,
                     },
                     pos = pos,
-                    time_fts = ev.time_fts,
+                    time = ev.time,
                     mousewheel_direction = scrolled_y,
                 }
                 local fake_ges_release = {
@@ -207,7 +207,7 @@ function Device:init()
                     distance = fake_ges.distance,
                     relative = fake_ges.relative,
                     pos = pos,
-                    time_fts = ev.time_fts,
+                    time = ev.time,
                     from_mousewheel = true,
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)

@@ -7,7 +7,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 -- This module exposes Scrolling settings, and additionnally
 -- handles inertial scrolling on non-eInk devices.
@@ -31,7 +31,7 @@ local ReaderScrolling = InputContainer:new{
     -- go at ending scrolling soon when we reach steps smaller than this
     end_scroll_dist = Screen:scaleBySize(10),
     -- no inertial scrolling if 300ms pause without any movement before release
-    pause_before_release_cancel_duration_fts = fts.fromSec(0.300000),
+    pause_before_release_cancel_duration = time.us(300000),
 
     -- Callbacks to be updated by readerrolling or readerpaging
     _do_scroll_callback = function(distance) return false end,
@@ -67,7 +67,7 @@ function ReaderScrolling:init()
         -- we miss a first touch event.
         -- We can keep it obsolete, which will result in a long
         -- duration and a small/zero velocity that won't hurt.
-        self._last_manual_scroll_timev_fts = 0
+        self._last_manual_scroll_timev = 0
         self:_setupAction()
     end
 
@@ -197,7 +197,7 @@ end
 function ReaderScrolling:onReaderReady()
     -- We don't know if the gestures plugin is loaded in :init(), but we know it here
     self.scroll_activation_delay_ms = G_reader_settings:readSetting("scroll_activation_delay")
-                                       or self:getDefaultScrollActivationDelay_ms()
+                                          or self:getDefaultScrollActivationDelay_ms()
     self:applyScrollSettings()
 end
 
@@ -233,7 +233,7 @@ function ReaderScrolling:setupTouchZones()
             handler = function(ges)
                 -- A touch might set the start of the first pan event,
                 -- that we need to compute its duration
-                self._last_manual_scroll_timev_fts = ges.time_fts
+                self._last_manual_scroll_timev = ges.time
                 -- If we are scrolling, a touch cancels it.
                 -- We want its release (which will trigger a tap) to not change pages.
                 -- This also allows a pan following this touch to skip any scroll
@@ -304,13 +304,13 @@ function ReaderScrolling:cancelledByTouch()
     return self._cancelled_by_touch
 end
 
-function ReaderScrolling:accountManualScroll(dy, timev_fts)
+function ReaderScrolling:accountManualScroll(dy, timev)
     if not self._inertial_scroll_enabled then
         return
     end
     self._last_manual_scroll_dy = dy
-    self._last_manual_scroll_duration_fts = timev_fts - self._last_manual_scroll_timev_fts
-    self._last_manual_scroll_timev_fts = timev_fts
+    self._last_manual_scroll_duration = timev - self._last_manual_scroll_timev
+    self._last_manual_scroll_timev = timev
 end
 
 function ReaderScrolling:_setupAction()
@@ -335,19 +335,19 @@ function ReaderScrolling:_setupAction()
             end
 
             -- Initiate inertial scrolling (action=true), unless we should not
-            if UIManager:getTime_fts() - self._last_manual_scroll_timev_fts >= self.pause_before_release_cancel_duration_fts then
+            if UIManager:getTime() - self._last_manual_scroll_timev >= self.pause_before_release_cancel_duration then
                 -- but not if no finger move for 0.3s before finger up
                 self._last_manual_scroll_dy = 0
                 return false
             end
-            if self._last_manual_scroll_duration_fts == 0 or self._last_manual_scroll_dy == 0 then
+            if self._last_manual_scroll_duration == 0 or self._last_manual_scroll_dy == 0 then
                 return false
             end
 
             -- Initial velocity is the one of the last pan scroll given to accountManualScroll()
-            local delay_us = fts.tousec(self._last_manual_scroll_duration_fts)
+            local delay_us = time.tousec(self._last_manual_scroll_duration)
             if delay_us < 1 then delay_us = 1 end -- safety check
-            self._velocity = self._last_manual_scroll_dy * 1000000 / delay_us
+            self._velocity = self._last_manual_scroll_dy * time.s(1.000000 / delay_us)
             self._last_manual_scroll_dy = 0
 
             self._inertial_scroll_action_scheduled = true

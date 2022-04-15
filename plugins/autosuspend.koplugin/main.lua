@@ -21,7 +21,7 @@ local _ = require("gettext")
 local Math = require("optmath")
 local T = require("ffi/util").template
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
@@ -33,7 +33,7 @@ local AutoSuspend = WidgetContainer:new{
     autoshutdown_timeout_seconds = default_autoshutdown_timeout_seconds,
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
-    last_action_fts = 0,
+    last_action_time = 0,
     is_standby_scheduled = false,
     task = nil,
     standby_task = nil,
@@ -72,9 +72,9 @@ function AutoSuspend:_schedule(shutdown_only)
         suspend_delay = self.auto_suspend_timeout_seconds
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
-        local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
-        suspend_delay = self.auto_suspend_timeout_seconds - fts.tonumber(now_fts - self.last_action_fts)
-        shutdown_delay = self.autoshutdown_timeout_seconds - fts.tonumber(now_fts - self.last_action_fts)
+        local now = UIManager:getElapsedTimeSinceBoot()
+        suspend_delay = self.auto_suspend_timeout_seconds - time.tonumber(now - self.last_action_time)
+        shutdown_delay = self.autoshutdown_timeout_seconds - time.tonumber(now - self.last_action_time)
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -186,7 +186,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
 end
 
 function AutoSuspend:_unschedule_standby()
@@ -232,8 +232,8 @@ function AutoSuspend:_schedule_standby()
         --logger.dbg("AutoSuspend: charging, delaying standby")
         standby_delay = self.auto_standby_timeout_seconds
     else
-        local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
-        standby_delay = self.auto_standby_timeout_seconds - fts.tonumber(now_fts - self.last_action_fts)
+        local now = UIManager:getElapsedTimeSinceBoot()
+        standby_delay = self.auto_standby_timeout_seconds - time.tonumber(now - self.last_action_time)
 
         -- If we blow past the deadline on the first call of a scheduling cycle,
         -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...
@@ -318,7 +318,7 @@ function AutoSuspend:onResume()
         Device.wakeup_mgr:removeTasks(nil, UIManager.poweroff_action)
     end
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
-    self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts()
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     self:_unschedule()
     -- We should always follow an InputEvent, so last_action_tv is already up to date :).
     self:_start()
@@ -393,17 +393,17 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
         ok_text = _("Set timeout"),
         title_text = title,
         info_text = info,
-        callback = function(time)
+        callback = function(t)
             if time_scale == 2 then
-                self[setting] = (time.hour * 24 + time.min) * 3600
+                self[setting] = (t.hour * 24 + t.min) * 3600
             elseif time_scale == 1 then
-                self[setting] = time.hour * 3600 + time.min * 60
+                self[setting] = t.hour * 3600 + t.min * 60
             else
-                self[setting] = time.hour * 60 + time.min
+                self[setting] = t.hour * 60 + t.min
             end
             self[setting] = Math.clamp(self[setting], range[1], range[2])
             G_reader_settings:saveSetting(setting, self[setting])
-            -- Not necessary to call self.last_action_fts = UIManager:getElapsedTimeSinceBoot_fts() here,
+            -- Not necessary to call self.last_action_time = UIManager:getElapsedTimeSinceBoot() here,
             -- as there was a onInputEvent before.
             if is_standby then
                 self:_unschedule_standby()
@@ -587,7 +587,7 @@ function AutoSuspend:AllowStandbyHandler()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        logger.dbg("AutoSuspend: left standby after " .. fts.tonumber(Device.last_standby_fts) .. " s")
+        logger.dbg("AutoSuspend: left standby after " .. time.tonumber(Device.last_standby_time) .. " s")
 
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
         -- to make sure UIManager will consume the input events that woke us up first

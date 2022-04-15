@@ -14,7 +14,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 local band = bit.band
 
 --[[
@@ -112,7 +112,7 @@ function ReaderRolling:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
-    self.pan_interval_fts = fts.fromSec(1000000 / self.pan_rate)
+    self.pan_interval = time.s(1.000000 / self.pan_rate)
 
     table.insert(self.ui.postInitCallback, function()
         self.rendering_hash = self.ui.document:getDocumentRenderingHash()
@@ -405,7 +405,7 @@ end
 
 function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_ms)
     self.scroll_method = scroll_method
-    self.scroll_activation_delay_fts = fts.frommSec(scroll_activation_delay_ms)
+    self.scroll_activation_delay = time.ms(scroll_activation_delay_ms)
     if inertial_scroll_enabled then
         self.ui.scrolling:setInertialScrollCallbacks(
             function(distance) -- do_scroll_callback
@@ -478,23 +478,23 @@ function ReaderRolling:onPan(_, ges)
                 self._pan_has_scrolled = false
                 self._pan_prev_relative_y = 0
                 self._pan_to_scroll_later = 0
-                self._pan_real_last_time_fts = 0
+                self._pan_real_last_time = 0
                 if ges.mousewheel_direction then
-                    self._pan_activation_time_fts = false
+                    self._pan_activation_time = false
                 else
-                    self._pan_activation_time_fts = ges.time_fts + self.scroll_activation_delay_fts
+                    self._pan_activation_time = ges.time + self.scroll_activation_delay
                 end
                 -- We will restore the previous position if this pan
                 -- ends up being a swipe or a multiswipe
                 self._pan_pos_at_pan_start = self.current_pos
             end
             local scroll_now = false
-            if self._pan_activation_time_fts and ges.time_fts >= self._pan_activation_time_fts then
-                self._pan_activation_time_fts = false -- We can go on, no need to check again
+            if self._pan_activation_time and ges.time >= self._pan_activation_time then
+                self._pan_activation_time = false -- We can go on, no need to check again
             end
-            if not self._pan_activation_time_fts and ges.time_fts - self._pan_real_last_time_fts >= self.pan_interval_fts then
+            if not self._pan_activation_time and ges.time - self._pan_real_last_time >= self.pan_interval then
                 scroll_now = true
-                self._pan_real_last_time_fts = ges.time_fts
+                self._pan_real_last_time = ges.time
             end
             local scroll_dist = 0
             if self.scroll_method == self.ui.scrolling.SCROLL_METHOD_CLASSIC then
@@ -507,12 +507,12 @@ function ReaderRolling:onPan(_, ges)
                     if self.ui.scrolling:cancelInertialScroll() or self.ui.scrolling:cancelledByTouch() then
                         -- If this pan or its initial touch did cancel some inertial scrolling,
                         -- ignore activation delay to allow continuous scrolling
-                        self._pan_activation_time_fts = false
+                        self._pan_activation_time = false
                         scroll_now = true
-                        self._pan_real_last_time_fts = ges.time_fts
+                        self._pan_real_last_time = ges.time
                     end
                 end
-                self.ui.scrolling:accountManualScroll(scroll_dist, ges.time) -- xxx
+                self.ui.scrolling:accountManualScroll(scroll_dist, ges.time)
             elseif self.scroll_method == self.ui.scrolling.SCROLL_METHOD_TURBO then
                 -- Legacy scrolling "buggy" behaviour, that can actually be nice
                 -- Scroll by the distance from the initial finger position, this distance
@@ -1167,8 +1167,8 @@ function ReaderRolling:handleEngineCallback(ev, ...)
     -- ignore other events
 end
 
-local ENGINE_PROGRESS_INITIAL_DELAY_FTS = fts.fromSec(2)
-local ENGINE_PROGRESS_UPDATE_DELAY_FTS = fts.fromuSec(500000)
+local ENGINE_PROGRESS_INITIAL_DELAY = time.s(2)
+local ENGINE_PROGRESS_UPDATE_DELAY = time.us(500000)
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then
@@ -1180,14 +1180,14 @@ function ReaderRolling:showEngineProgress(percent)
     end
 
     if percent then
-        local now_fts = fts.now()
-        if self.engine_progress_update_not_before_fts and now_fts < self.engine_progress_update_not_before_fts then
+        local now = time.now()
+        if self.engine_progress_update_not_before and now < self.engine_progress_update_not_before then
             return
         end
-        if not self.engine_progress_update_not_before_fts then
+        if not self.engine_progress_update_not_before then
             -- Start showing the progress widget only if load or re-rendering
             -- have not yet finished after 2 seconds
-            self.engine_progress_update_not_before_fts= now_fts + ENGINE_PROGRESS_INITIAL_DELAY_FTS
+            self.engine_progress_update_not_before = now + ENGINE_PROGRESS_INITIAL_DELAY
             return
         end
 
@@ -1228,11 +1228,11 @@ function ReaderRolling:showEngineProgress(percent)
         -- is finished.
         self.engine_progress_widget:paintTo(Screen.bb, x, y)
         Screen:refreshFast(x, y, w, h)
-        self.engine_progress_update_not_before_fts= now_fts + ENGINE_PROGRESS_UPDATE_DELAY_FTS
+        self.engine_progress_update_not_before = now + ENGINE_PROGRESS_UPDATE_DELAY
     else
         -- Done: cleanup
         self.engine_progress_widget = nil
-        self.engine_progress_update_not_before_fts = nil
+        self.engine_progress_update_not_before = nil
         -- No need for any paint/refresh: any action we got
         -- some progress callback for will generate a full
         -- screen refresh.

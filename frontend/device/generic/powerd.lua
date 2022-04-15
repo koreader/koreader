@@ -2,7 +2,7 @@ local UIManager -- will be updated when available
 local Math = require("optmath")
 local logger = require("logger")
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 local BasePowerD = {
     fl_min = 0,                       -- min frontlight intensity
@@ -15,8 +15,8 @@ local BasePowerD = {
     aux_batt_capacity = 0,            -- auxiliary battery capacity
     device = nil,                     -- device object
 
-    last_capacity_pull_time_fts = fts.fromSec(-61),      -- timestamp of last pull
-    last_aux_capacity_pull_time_fts = fts.fromSec(-61),  -- timestamp of last pull
+    last_capacity_pull_time = time.s(-61),      -- timestamp of last pull
+    last_aux_capacity_pull_time = time.s(-61),  -- timestamp of last pull
 
     is_fl_on = false,                 -- whether the frontlight is on
 }
@@ -218,17 +218,17 @@ end
 function BasePowerD:getCapacity()
     -- BasePowerD is loaded before UIManager.
     -- Nothing *currently* calls this before UIManager is actually loaded, but future-proof this anyway.
-    local now_fts
+    local now
     if UIManager then
-        now_fts = UIManager:getElapsedTimeSinceBoot_fts()
+        now = UIManager:getElapsedTimeSinceBoot()
     else
          -- Add time the device was in standby and suspend
-        now_fts = fts.now_fts() + self.device.total_standby_fts + self.device.total_suspend_fts
+        now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
     end
 
-    if now_fts - self.last_capacity_pull_time_fts >= fts.fromSec(60) then
+    if now - self.last_capacity_pull_time >= time.s(60) then
         self.batt_capacity = self:getCapacityHW()
-        self.last_capacity_pull_time_fts = now_fts
+        self.last_capacity_pull_time = now
     end
     return self.batt_capacity
 end
@@ -242,29 +242,29 @@ function BasePowerD:isCharged()
 end
 
 function BasePowerD:getAuxCapacity()
-    local now_fts
+    local now
 
     if UIManager then
-        now_fts = UIManager:getElapsedTimeSinceBoot_fts()
+        now = UIManager:getElapsedTimeSinceBoot()
     else
         -- Add time the device was in standby and suspend
-        now_fts = fts.now() + self.device.total_standby_fts + self.device.total_suspend_fts
+        now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
     end
 
-    if fts.toSec(now_fts - self.last_aux_capacity_pull_time_fts) >= 60 then
+    if now - self.last_aux_capacity_pull_time >= time.s(60) then
         local aux_batt_capa = self:getAuxCapacityHW()
         -- If the read failed, don't update our cache, and retry next time.
         if aux_batt_capa then
             self.aux_batt_capacity = aux_batt_capa
-            self.last_aux_capacity_pull_time_fts = now_fts
+            self.last_aux_capacity_pull_time = now
         end
     end
     return self.aux_batt_capacity
 end
 
 function BasePowerD:invalidateCapacityCache()
-    self.last_capacity_pull_time_fts = fts.fromSec(-61)
-    self.last_aux_capacity_pull_time_fts = self.last_capacity_pull_time_fts
+    self.last_capacity_pull_time = time.s(-61)
+    self.last_aux_capacity_pull_time = self.last_capacity_pull_time
 end
 
 function BasePowerD:isAuxCharging()

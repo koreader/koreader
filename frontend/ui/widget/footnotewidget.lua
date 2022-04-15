@@ -20,7 +20,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local fts = require("ui/fts")
+local time = require("ui/time")
 
 -- If we wanted to use the default font set for the book,
 -- we'd need to add a few functions to crengine and cre.cpp
@@ -194,9 +194,9 @@ function FootnoteWidget:init()
                     range = range,
                 },
                 -- callback function when HoldReleaseText is handled as args
-                args = function(text, hold_duration_fts)
+                args = function(text, hold_duration)
                     if self.dialog then
-                        local lookup_target = hold_duration_fts < fts.fromSec(3) and "LookupWord" or "LookupWikipedia"
+                        local lookup_target = hold_duration < time.s(3) and "LookupWord" or "LookupWikipedia"
                         self.dialog:handleEvent(
                             Event:new(lookup_target, text)
                         )

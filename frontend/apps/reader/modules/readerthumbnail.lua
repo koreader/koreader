@@ -314,15 +314,15 @@ function ReaderThumbnail:startTileGeneration(request)
         local scale_factor = math.min(request.width / bb:getWidth(), request.height / bb:getHeight())
         local target_w = math.floor(bb:getWidth() * scale_factor)
         local target_h = math.floor(bb:getHeight() * scale_factor)
-        -- local fts = require("ui/fts")
-        -- local start_fts = fts.now()
+        -- local time = require("ui/time")
+        -- local start_time = time.now()
         local tile = TileCacheItem:new{
             bb = RenderImage:scaleBlitBuffer(bb, target_w, target_h, true),
             pageno = request.page,
         }
         tile.size = tonumber(tile.bb.stride) * tile.bb.h
         -- logger.info("tile size", tile.bb.w, tile.bb.h, "=>", tile.size)
-        -- logger.info(string.format("  scaling took %.3f seconds, %d bpp", fts.getDuration(start_fts), tile.bb:getBpp()))
+        -- logger.info(string.format("  scaling took %.3f seconds, %d bpp", time.getDuration(start_time), tile.bb:getBpp()))
         -- bb:free() -- no need to spend time freeing, we're dying soon anyway!
 
         ffiutil.writeToFD(child_write_fd, self.codec.serialize(tile:totable()), true)
@@ -343,8 +343,8 @@ function ReaderThumbnail:checkTileGeneration(request)
     local subprocess_done = ffiutil.isSubProcessDone(pid)
     logger.dbg("subprocess_done:", subprocess_done, " stuff_to_read:", stuff_to_read)
     if stuff_to_read then
-        -- local fts = require("ui/fts")
-        -- local start_fts = fts.now()
+        -- local time = require("ui/time")
+        -- local start_time = time.now()
         local result, err = self.codec.deserialize(ffiutil.readAllFromFD(parent_read_fd))
         if result then
             local tile = TileCacheItem:new{}
@@ -361,7 +361,7 @@ function ReaderThumbnail:checkTileGeneration(request)
                 request.when_generated_callback(nil, request.batch_id, true)
             end
         end
-        -- logger.info(string.format("  parsing result from subprocess took %.3f seconds", fts.getDuration(start_fts)))
+        -- logger.info(string.format("  parsing result from subprocess took %.3f seconds", time.getDuration(start_time)))
         if not subprocess_done then
             table.insert(pids_to_collect, pid)
             return false, true
