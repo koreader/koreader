@@ -1050,7 +1050,7 @@ function ReaderView:checkAutoSaveSettings()
     end
 
     local interval_min = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-    local interval_fts = fts.fromSec(interval_min * 60)
+    local interval_fts = fts.s(interval_min * 60)
     local now_fts = UIManager:getElapsedTimeSinceBoot_fts()
     if now_fts - self.settings_last_save_fts >= interval_fts then
         self.settings_last_save_fts = now_fts

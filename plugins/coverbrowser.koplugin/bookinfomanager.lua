@@ -139,7 +139,7 @@ function BookInfoManager:init()
     self.subprocesses_collect_interval = 10 -- do that every 10 seconds
     self.subprocesses_pids = {}
     self.subprocesses_last_added_fts = 0
-    self.subprocesses_killall_timeout_fts = fts.fromSec(300) -- cleanup timeout for stuck subprocesses
+    self.subprocesses_killall_timeout_fts = fts.s(300) -- cleanup timeout for stuck subprocesses
     -- 300 seconds should be more than enough to open and get info from 9-10 books
     -- Whether to use former blitbuffer:scale() (default to using MuPDF)
     self.use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling")

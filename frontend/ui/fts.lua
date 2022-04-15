@@ -11,7 +11,7 @@ Times stored in that format shall be named with an "_fts" suffix.
     -- You can add and subtract `fts times` objects.
     local duration_fts = fts.now_fts() - start.fts
     -- And convert that object to various more human-readable formats, e.g.,
-    print(string.format("Stuff took %.3fms", fts.tomSec(duration_fts)))
+    print(string.format("Stuff took %.3fms", fts.toMS(duration_fts)))
 ]]
 
 local ffi = require("ffi")
@@ -24,7 +24,7 @@ local C = ffi.C
 -- We won't use the exponent here.
 -- So we can store 2^53 = 9.0072*10^15 different values. If we use the lower 6 digits for µs, we can store
 -- up to 9.0072*10^9 seconds.
--- A year has 365.25*24*3600 = 3.15576*10^7 s, so we can store up to 285 years (9.0072e9/3.15576r7) with µs precision.
+-- A year has 365.25*24*3600 = 3.15576*10^7 s, so we can store up to 285 years (9.0072e9/3.15576e7) with µs precision.
 
 -- A TV_PRECISION of 1e6 will give us a µs precision.
 local FTS_PRECISION = 1e6
@@ -100,7 +100,7 @@ Which means that, yes, this is a fancier POSIX Epoch ;).
 function fts.realtime()
     C.clock_gettime(C.CLOCK_REALTIME, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
 end
 
 --[[--
@@ -115,21 +115,21 @@ On Linux, this will not account for time spent with the device in suspend (unlik
 function fts.monotonic()
     C.clock_gettime(C.CLOCK_MONOTONIC, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
 end
 
 --- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_MONOTONIC otherwise).
 function fts.monotonic_coarse()
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
 end
 
 -- Ditto, but w/ CLOCK_REALTIME_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_REALTIME otherwise).
 function fts.realtime_coarse()
     C.clock_gettime(PREFERRED_REALTIME_CLOCKID, timespec)
     -- TIMESPEC_TO_FTS
-    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+    return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
     end
 
 --- Since CLOCK_BOOTIME may not be supported, we offer a few aliases with automatic fallbacks to MONOTONIC or REALTIME
@@ -139,7 +139,7 @@ if HAVE_BOOTTIME then
     function fts.boottime()
         C.clock_gettime(C.CLOCK_BOOTTIME, timespec)
         -- TIMESPEC_TO_FTS
-        return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.touSec(tonumber(timespec.tv_nsec / 1000)))
+        return tonumber(timespec.tv_sec) * S2FTS + math.floor(fts.toUS(tonumber(timespec.tv_nsec / 1000)))
     end
 
     fts.boottime_or_monotonic = fts.boottime
@@ -168,11 +168,11 @@ fts.now = fts.monotonic_coarse
 --- Converts an fts time to a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
 function fts.tonumber(time_fts)
     -- Round to 4 decimal places
-    return math.floor(fts.toSec(time_fts) * 10000) / 10000
+    return math.floor(fts.toS(time_fts) * 10000) / 10000
 end
 
 -- Converts an fts to seconds (with comma)
-function fts.toSec(time_fts)
+function fts.toS(time_fts)
     return time_fts * FTS2S
 end
 
@@ -180,12 +180,12 @@ end
 
 (Mainly useful when computing a time lapse for benchmarking purposes).
 ]]
-function fts.tomSec(time_fts)
+function fts.toMS(time_fts)
     return math.floor(time_fts * FTS2MS + 0.5)
 end
 
 --- Converts an fts to a Lua (int) number (resolution: 1µs)
-function fts.touSec(time_fts)
+function fts.toUS(time_fts)
 
     return math.floor(time_fts * FTS2US + 0.5)
 end
@@ -208,7 +208,7 @@ end
 Returns a Lua (int) number (resolution: 1ms)
 ]]
 function fts.getDurationMs(start_fts)
-   return fts.tomSec(fts.now() - start_fts)
+   return fts.toMS(fts.now() - start_fts)
 end
 
 --[[-- Compare a past *MONOTONIC* fts time object to *now*, returning the elapsed time between the two. (µs variant)
@@ -216,13 +216,13 @@ end
 Returns a Lua (int) number (resolution: 1µs)
 ]]
 function fts.getDurationUs(start_fts)
-   return fts.touSec(fts.now() - start_fts)
+   return fts.toUS(fts.now() - start_fts)
 end
 
 --- Ditto for one set to math.huge
 fts.huge = math.huge
 
-function fts.fromTv(tv)
+function fts.tv(tv)
     return tv.sec * S2FTS + tv.usec * US2FTS
 end
 
@@ -233,15 +233,15 @@ function fts.splitsus(time_fts)
     return sec, usec
 end
 
-function fts.fromSec(seconds)
+function fts.s(seconds)
     return math.floor(seconds * S2FTS)
 end
 
-function fts.frommSec(usec)
+function fts.ms(usec)
     return math.floor(usec * MS2FTS)
 end
 
-function fts.fromuSec(usec)
+function fts.us(usec)
     return math.floor(usec * US2FTS)
 end
 
