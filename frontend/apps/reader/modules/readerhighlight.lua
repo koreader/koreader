@@ -52,7 +52,7 @@ function ReaderHighlight:init()
     self._start_indicator_highlight = false
     self._current_indicator_pos = nil
     self._previous_indicator_pos = nil
-    self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = TimeVal:now()}
+    self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
 
     if Device:hasDPad() then
         -- Used for text selection with dpad/keys
@@ -1948,14 +1948,14 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
             rect.x = rect.x + quick_move_distance_dx * dx
             rect.y = rect.y + quick_move_distance_dy * dy
         else
-            local now = TimeVal:now()
+            local now = time:now()
             if dx == self._last_indicator_move_args.dx and dy == self._last_indicator_move_args.dy then
                 local diff = now - self._last_indicator_move_args.time
                 -- if press same arrow key in 1 second, speed up
                 -- double press: 4 single move distances, usually move to next word or line
                 -- triple press: 16 single distances, usually skip several words or lines
                 -- quadruple press: 54 single distances, almost move to screen edge
-                if diff < TimeVal:new{ sec = 1, usec = 0 } then
+                if diff < time.s(1) then
                     move_distance = self._last_indicator_move_args.distance * 4
                 end
             end
