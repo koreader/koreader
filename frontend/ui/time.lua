@@ -128,8 +128,8 @@ end
 
 --- Converts an fts to a Lua (int) number (resolution: 1µs)
 function time.to_s(time_fts)
-    -- Time in mikroseconds µs(without comma)
-    return time_fts * FTS2US
+    -- Time in seconds with µs precision (without comma)
+    return time_fts * FTS2S
 end
 
 --[[-- Converts a fts to a Lua (int) number (resolution: 1ms, rounded).
