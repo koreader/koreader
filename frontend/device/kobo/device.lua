@@ -10,6 +10,7 @@ local ffi = require("ffi")
 local C = ffi.C
 require("ffi/linux_fb_h")
 require("ffi/linux_input_h")
+require("ffi/posix_h")
 
 local function yes() return true end
 local function no() return false end
@@ -430,6 +431,50 @@ function Kobo:setupChargingLED()
     end
 end
 
+function Kobo:getKeyRepeat()
+    -- Sanity check (mostly for the testsuite's benefit...)
+    if not self.ntx_fd then
+        self.hasKeyRepeat = false
+        return false
+    end
+
+    self.key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
+    if C.ioctl(self.ntx_fd, C.EVIOCGREP, self.key_repeat) < 0 then
+        local err = ffi.errno()
+        logger.warn("Device:getKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
+        self.hasKeyRepeat = false
+    else
+        self.hasKeyRepeat = true
+        logger.dbg("Key repeat is set up to repeat every", self.key_repeat[C.REP_PERIOD], "ms after a delay of", self.key_repeat[C.REP_DELAY], "ms")
+    end
+
+    return self.hasKeyRepeat
+end
+
+function Kobo:disableKeyRepeat()
+    if not self.hasKeyRepeat then
+        return
+    end
+
+    -- NOTE: LuaJIT zero inits, and PERIOD == 0 with DELAY == 0 disables repeats ;).
+    local key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
+    if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
+        local err = ffi.errno()
+        logger.warn("Device:disableKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+    end
+end
+
+function Kobo:restoreKeyRepeat()
+    if not self.hasKeyRepeat then
+        return
+    end
+
+    if C.ioctl(self.ntx_fd, C.EVIOCSREP, self.key_repeat) < 0 then
+        local err = ffi.errno()
+        logger.warn("Device:restoreKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
+    end
+end
+
 function Kobo:init()
     -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
     local mxcfb_bypass_wait_for
@@ -514,7 +559,7 @@ function Kobo:init()
     Generic.init(self)
 
     -- When present, event2 is the raw accelerometer data (3-Axis Orientation/Motion Detection)
-    self.input.open(self.ntx_dev) -- Various HW Buttons, Switches & Synthetic NTX events
+    self.ntx_fd = self.input.open(self.ntx_dev) -- Various HW Buttons, Switches & Synthetic NTX events
     self.input.open(self.touch_dev)
     -- fake_events is only used for usb plug event so far
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
@@ -541,6 +586,9 @@ function Kobo:init()
             self:initEventAdjustHooks()
         end
     end
+
+    -- See if the device supports key repeat
+    self:getKeyRepeat()
 
     -- We have no way of querying the current state of the charging LED, so, start from scratch.
     -- Much like Nickel, start by turning it off.
@@ -776,12 +824,13 @@ function Kobo:standby(max_duration)
     local TimeVal = require("ui/timeval")
     local standby_time_tv = TimeVal:boottime_or_realtime_coarse()
 
+    logger.info("Kobo suspend: asking to enter standby . . .")
     local ret = writeToSys("standby", "/sys/power/state")
 
     self.last_standby_tv = TimeVal:boottime_or_realtime_coarse() - standby_time_tv
     self.total_standby_tv = self.total_standby_tv + self.last_standby_tv
 
-    logger.info("Kobo suspend: asked the kernel to put subsystems to standby, ret:", ret)
+    logger.info("Kobo suspend: zZz zZz zZz zZz? Write syscall returned: ", ret)
 
     if max_duration then
         self.wakeup_mgr:removeTask(nil, nil, dummy)
