@@ -1618,9 +1618,6 @@ function ReaderHighlight:_insertHighlight(page, highlight)
     else
         local page_highlights = self.view.highlight.saved[page]
         local highlight_beginning = highlight.pos0
-        if type(highlight_beginning) ~= "string" then
-            highlight_beginning.page = page
-        end
         if self.ui.rolling then
             for i, cur_highlight in ipairs(page_highlights) do
                 local order = self.ui.document:compareXPointers(highlight_beginning, cur_highlight.pos0)
@@ -1630,6 +1627,7 @@ function ReaderHighlight:_insertHighlight(page, highlight)
                 end
             end
         else
+            highlight_beginning.page = page
             for i, cur_highlight in ipairs(page_highlights) do
                 local cur_pos = cur_highlight.pos0
                 cur_pos.page = page
