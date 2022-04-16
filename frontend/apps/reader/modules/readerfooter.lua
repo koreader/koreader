@@ -2214,7 +2214,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             -- c.f., ReaderView:paintTo()
             UIManager:widgetRepaint(self.view.footer, 0, 0)
             -- We've painted it first to ensure self.footer_content.dimen is sane
-            UIManager:setDirty(self.view.footer, function()
+            UIManager:setDirty(nil, function()
                 return self.view.currently_scrolling and "fast" or "ui", self.footer_content.dimen
             end)
         else
