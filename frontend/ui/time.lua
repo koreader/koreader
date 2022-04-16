@@ -36,7 +36,7 @@ Don't add a numerical constant to an fts time (in the best case, the numerical c
 
 But please be aware that higher order maths (multiply, divide, roots, power) won't work as expected. (If you really, really need that, you have to shift the position of the comma yourself!)
 
-If you want a duration form a given time_fts to *now* you can use `time.get_duration(time_fts)` as a shortcut (or simply use `fts.now - time_fts`), and you get time in fts encoding. If you need microseconds (mikroseconds) use `time.to_ms(time.get_duration(time_fts))`
+If you want a duration form a given time_fts to *now* you can use `time.time_since(time_fts)` as a shortcut (or simply use `fts.now - time_fts`), and you get time in fts encoding. If you need microseconds (mikroseconds) use `time.to_ms(time.time_since(time_fts))`
 
 **Background:**
 Numbers in lua are double float which have a mantissa (precision) of 53 bit (plus sign + exponent)
@@ -115,7 +115,7 @@ function time.us(usec)
 end
 
 --- Creates a time (fts) from a structure similar to timeval
-function time.tv(tv)
+function time.timeval(tv)
     return tv.sec * S2FTS + tv.usec * US2FTS
 end
 
@@ -151,7 +151,7 @@ end
 
 Returns a Lua (decimal) number (sec.usecs, with comma) (accurate to the µs)
 ]]
-function time.get_duration(start_time)
+function time.time_since(start_time)
     -- Time difference
    return time.now() - start_time
 end

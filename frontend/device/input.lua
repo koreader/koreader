@@ -661,7 +661,7 @@ function Input:handleTouchEv(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", time.tv(ev.time))
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
@@ -723,7 +723,7 @@ function Input:handleTouchEvPhoenix(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", time.tv(ev.time))
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
@@ -758,7 +758,7 @@ function Input:handleTouchEvLegacy(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", time.tv(ev.time))
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
 
             -- feed ev in all slots to state machine
