@@ -111,6 +111,9 @@ function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
         self:_updateLastAction()
         logger.dbg("AutoSuspend: start (suspend/shutdown) at", self.last_action_tv:tonumber())
+        if self.last_task_schedule_tv then
+            logger.dbg("But recomputing previous task delay by starting from", self.last_task_schedule_tv:tonumber())
+        end
         self:_schedule()
     end
 end
