@@ -686,12 +686,11 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
     local new_chapter = self.ui.toc:getTocTitleByPage(new_beginning)
     highlight.text = cleanupSelectedText(new_text)
     highlight.chapter = new_chapter
-    local new_highlight = highlight
-    self:_insertHighlight(page, new_highlight)
+    self:_insertHighlight(page, highlight)
     self.ui.bookmark:updateBookmark({
         page = highlight_beginning,
         datetime = highlight_time,
-        updated_highlight = new_highlight
+        updated_highlight = highlight
     })
     if side == 0 then
         -- Ensure we show the page with the new beginning of highlight
