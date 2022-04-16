@@ -87,12 +87,12 @@ function AutoSuspend:_schedule(shutdown_only)
             logger.dbg("AutoSuspend: scheduling next suspend check in", suspend_delay)
             UIManager:scheduleIn(suspend_delay, self.task)
             -- Remember the original schedule computation to reschedule it properly after standby
-            self.last_task_schedule_tv = self.last_action_tv
+            self.last_task_schedule_tv = self.last_task_schedule_tv or self.last_action_tv
         end
         if self:_enabledShutdown() then
             logger.dbg("AutoSuspend: scheduling next shutdown check in", shutdown_delay)
             UIManager:scheduleIn(shutdown_delay, self.task)
-            self.last_task_schedule_tv = self.last_action_tv
+            self.last_task_schedule_tv = self.last_task_schedule_tv or self.last_action_tv
         end
     end
 end
