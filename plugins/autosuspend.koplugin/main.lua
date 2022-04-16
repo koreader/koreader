@@ -73,8 +73,8 @@ function AutoSuspend:_schedule(shutdown_only)
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
         local now = UIManager:getElapsedTimeSinceBoot()
-        suspend_delay = self.auto_suspend_timeout_seconds - time.tonumber(now - self.last_action_time)
-        shutdown_delay = self.autoshutdown_timeout_seconds - time.tonumber(now - self.last_action_time)
+        suspend_delay = self.auto_suspend_timeout_seconds - time.to_number(now - self.last_action_time)
+        shutdown_delay = self.autoshutdown_timeout_seconds - time.to_number(now - self.last_action_time)
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -231,7 +231,7 @@ function AutoSuspend:_schedule_standby()
         standby_delay = self.auto_standby_timeout_seconds
     else
         local now = UIManager:getElapsedTimeSinceBoot()
-        standby_delay = self.auto_standby_timeout_seconds - time.tonumber(now - self.last_action_time)
+        standby_delay = self.auto_standby_timeout_seconds - time.to_number(now - self.last_action_time)
 
         -- If we blow past the deadline on the first call of a scheduling cycle,
         -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...
@@ -573,7 +573,7 @@ function AutoSuspend:onAllowStandby()
     if #scheduler_times == 2 then
         -- Wake up slightly after the formerly scheduled event,
         -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
-        wake_in = time.tonumber(math.floor(scheduler_times[2])) + 1
+        wake_in = time.to_number(math.floor(scheduler_times[2])) + 1
     end
 
     if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
@@ -583,7 +583,7 @@ function AutoSuspend:onAllowStandby()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        logger.dbg("AutoSuspend: left standby after " .. time.tonumber(Device.last_standby_time) .. " s")
+        logger.dbg("AutoSuspend: left standby after " .. time.to_number(Device.last_standby_time) .. " s")
 
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
         -- to make sure UIManager will consume the input events that woke us up first
