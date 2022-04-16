@@ -254,6 +254,7 @@ function AutoSuspend:allowStandby()
 
     -- We've just run our course.
     self.is_standby_scheduled = false
+    logger.dbg("AutoSuspend: allowStandby coda, self.is_standby_scheduled:", tostring(self.is_standby_scheduled))
 end
 
 function AutoSuspend:onSuspend()
@@ -280,6 +281,7 @@ function AutoSuspend:onResume()
 end
 
 function AutoSuspend:onLeaveStandby()
+    logger.dbg("AutoSuspend: onLeaveStandby, self.is_standby_scheduled:", tostring(self.is_standby_scheduled))
     self:_start_standby()
 end
 
