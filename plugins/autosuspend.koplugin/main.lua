@@ -110,9 +110,10 @@ end
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
         self:_updateLastAction()
-        logger.dbg("AutoSuspend: start (suspend/shutdown) at", self.last_action_tv:tonumber())
         if self.last_task_schedule_tv then
-            logger.dbg("But recomputing previous task delay by starting from", self.last_task_schedule_tv:tonumber())
+            logger.dbg("AutoSuspend: restart previous (suspend/shutdown) timer originally scheduled at", self.last_task_schedule_tv:tonumber())
+        else
+            logger.dbg("AutoSuspend: start (suspend/shutdown) timer at", self.last_action_tv:tonumber())
         end
         self:_schedule()
     end
@@ -121,7 +122,7 @@ end
 function AutoSuspend:_start_standby()
     if self:_enabledStandby() then
         self:_updateLastAction()
-        logger.dbg("AutoSuspend: start (standby) at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: start (standby) timer at", self.last_action_tv:tonumber())
         self:_schedule_standby()
     end
 end
@@ -130,7 +131,7 @@ end
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
         self:_updateLastAction()
-        logger.dbg("AutoSuspend: restart at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: restart (suspend/shutdown) timer at", self.last_action_tv:tonumber())
         self:_schedule(true)
     end
 end
