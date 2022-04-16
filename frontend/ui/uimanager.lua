@@ -569,8 +569,8 @@ function UIManager:schedule(sched_time, action, ...)
     self._task_queue_dirty = true
 end
 dbg:guard(UIManager, 'schedule',
-    function(self, time_fts, action)
-        assert(time_fts >= 0, "Only positive time allowed")
+    function(self, sched_time, action)
+        assert(sched_time >= 0, "Only positive time allowed")
         assert(action ~= nil, "No action")
     end)
 
