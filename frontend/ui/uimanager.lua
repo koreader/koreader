@@ -1181,9 +1181,9 @@ function UIManager:broadcastEvent(event)
 end
 
 function UIManager:getNextTaskTimes(count)
-    count = count or 1
+    count = math.min(count or 1, #self._task_queue)
     local times = {}
-    for i = 1, math.min(count, #self._task_queue) do
+    for i = 1, count do
         times[i] = UIManager._task_queue[i].time - time.now()
     end
     return times
