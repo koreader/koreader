@@ -687,8 +687,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
     highlight.text = cleanupSelectedText(new_text)
     highlight.chapter = new_chapter
     local new_highlight = highlight
-    local insertion_position = self:determineHighlightInsertionPosition(page, new_highlight)
-    table.insert(self.view.highlight.saved[page], insertion_position, new_highlight)
+    self:_insertHighlight(page, new_highlight)
     self.ui.bookmark:updateBookmark({
         page = highlight_beginning,
         datetime = highlight_time,
@@ -1613,35 +1612,40 @@ function ReaderHighlight:getHighlightBookmarkItem()
     end
 end
 
-function ReaderHighlight:determineHighlightInsertionPosition(page, highlight)
-    logger.err("provider", self.ui.document.provider)
-    logger.err("to determine", highlight)
+function ReaderHighlight:_insertHighlight(page, highlight)
+    local position
     if self.view.highlight.saved[page] == nil or #self.view.highlight.saved[page] == 0 then
-        return 1
-    end
-    local page_highlights = self.view.highlight.saved[page]
-    local highlight_beginning = highlight.pos0
-    if type(highlight_beginning) ~= "string" then
-        highlight_beginning.page = page
-    end
-    if self.ui.document.provider == "crengine" then
-        for i, cur_highlight in ipairs(page_highlights) do
-            local order = self.ui.document:compareXPointers(highlight_beginning, cur_highlight.pos0)
-            if order > 0 then
-                return i
-            end
-        end
+        position = 1
     else
-        for i, cur_highlight in ipairs(page_highlights) do
-            local cur_pos = cur_highlight.pos0
-            cur_pos.page = page
-            local order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
-            if order > 0 then
-                return i
+        local page_highlights = self.view.highlight.saved[page]
+        local highlight_beginning = highlight.pos0
+        if type(highlight_beginning) ~= "string" then
+            highlight_beginning.page = page
+        end
+        if self.ui.rolling then
+            for i, cur_highlight in ipairs(page_highlights) do
+                local order = self.ui.document:compareXPointers(highlight_beginning, cur_highlight.pos0)
+                if order > 0 then
+                    position = i
+                    break
+                end
+            end
+        else
+            for i, cur_highlight in ipairs(page_highlights) do
+                local cur_pos = cur_highlight.pos0
+                cur_pos.page = page
+                local order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
+                if order > 0 then
+                    position = i
+                    break
+                end
             end
         end
+        if position == nil then
+            position = #page_highlights + 1
+        end
     end
-    return #page_highlights + 1
+    table.insert(self.view.highlight.saved[page], position, highlight)
 end
 
 function ReaderHighlight:saveHighlight()
@@ -1664,8 +1668,7 @@ function ReaderHighlight:saveHighlight()
             drawer = self.view.highlight.saved_drawer,
             chapter = chapter_name,
         }
-        local insertion_position = self:determineHighlightInsertionPosition(page, hl_item)
-        table.insert(self.view.highlight.saved[page], insertion_position, hl_item)
+        self:_insertHighlight(page, hl_item)
         local bookmark_item = self:getHighlightBookmarkItem()
         if bookmark_item then
             bookmark_item.datetime = datetime
