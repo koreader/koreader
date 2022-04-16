@@ -40,7 +40,7 @@ function AutoTurn:_schedule()
         UIManager:scheduleIn(self.autoturn_sec, self.task)
         self.scheduled = true
     else
-    local delay_s = time.tonumber(delay)
+        local delay_s = time.tonumber(delay)
         logger.dbg("AutoTurn: schedule in", delay_s, "s")
         UIManager:scheduleIn(delay_s, self.task)
         self.scheduled = true
