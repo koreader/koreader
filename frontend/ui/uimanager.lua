@@ -1066,10 +1066,10 @@ function UIManager:discardEvents(set_or_seconds)
             -- sometimes > 500ms on some devices/temperatures.
             -- So, block for 400ms (to have it displayed) + 400ms
             -- for user reaction to it
-            delay = time.us(800000)
+            delay = time.ms(800)
         else
             -- On non-eInk screen, display is usually instantaneous
-            delay = time.us(400000)
+            delay = time.ms(400)
         end
     else -- we expect a number
         delay = time.s(set_or_seconds)

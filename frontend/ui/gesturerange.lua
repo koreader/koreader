@@ -45,7 +45,7 @@ function GestureRange:match(gs)
         -- It's mostly useful for e-Ink devices with less powerful CPUs
         -- and screens that cannot handle the amount of gesture events that would otherwise be generated.
         local last_time = self.last_time or 0
-        if gs.time - last_time > time.s(1.000000 / self.rate) then
+        if gs.time - last_time > time.s(1 / self.rate) then
             self.last_time = gs.time
         else
             return false

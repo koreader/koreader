@@ -112,7 +112,7 @@ function ReaderRolling:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
-    self.pan_interval = time.s(1.000000 / self.pan_rate)
+    self.pan_interval = time.s(1 / self.pan_rate)
 
     table.insert(self.ui.postInitCallback, function()
         self.rendering_hash = self.ui.document:getDocumentRenderingHash()
@@ -1168,7 +1168,7 @@ function ReaderRolling:handleEngineCallback(ev, ...)
 end
 
 local ENGINE_PROGRESS_INITIAL_DELAY = time.s(2)
-local ENGINE_PROGRESS_UPDATE_DELAY = time.us(500000)
+local ENGINE_PROGRESS_UPDATE_DELAY = time.ms(500)
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then

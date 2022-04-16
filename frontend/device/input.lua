@@ -381,7 +381,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         -- What this does is essentially to ask the kernel to wake us up when the timer expires,
         -- instead of ensuring that ourselves via a polling timeout.
         -- This ensures perfect accuracy, and allows it to be computed in the event's own timescale.
-        local sec, usec = time.splitsus(deadline)
+        local sec, usec = time.split_s_us(deadline)
         timerfd = input.setTimer(clock_id, sec, usec)
     end
     if timerfd then
@@ -712,7 +712,7 @@ function Input:handleTouchEv(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", time.tv(ev.time))
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
@@ -774,7 +774,7 @@ function Input:handleTouchEvPhoenix(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", time.tv(ev.time))
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
@@ -809,7 +809,7 @@ function Input:handleTouchEvLegacy(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", time.tv(ev.time))
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
 
             -- feed ev in all slots to state machine
@@ -1082,7 +1082,7 @@ function Input:waitEvent(now, deadline)
                 end
 
                 local timerfd
-                local sec, usec = time.splitsus(poll_timeout)
+                local sec, usec = time.split_s_us(poll_timeout)
                 ok, ev, timerfd = input.waitForEvent(sec, usec)
                 -- We got an actual input event, go and process it
                 if ok then break end
@@ -1153,7 +1153,7 @@ function Input:waitEvent(now, deadline)
                 end
             end
 
-            local sec, usec = time.splitsus(poll_timeout)
+            local sec, usec = time.split_s_us(poll_timeout)
             ok, ev = input.waitForEvent(sec, usec)
         end -- if #timer_callbacks > 0
 

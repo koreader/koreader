@@ -480,7 +480,7 @@ Any other taps made within this interval after a first tap will be considered ac
 
 The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = time.toMS(GestureDetector:getInterval("ges_tap_interval")),
+                        value = time.to_ms(GestureDetector:getInterval("ges_tap_interval")),
                         value_min = 0,
                         value_max = 2000,
                         value_step = 50,
@@ -506,7 +506,7 @@ Any other taps made within this interval after a first tap will be considered ac
 
 The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = time.toMS(G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)),
+                        value = time.to_ms(G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)),
                         value_min = 0,
                         value_max = 2000,
                         value_step = 50,
@@ -531,7 +531,7 @@ When double tap is enabled, this sets the time to wait for the second tap. A sin
 
 The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = time.toMS(GestureDetector:getInterval("ges_double_tap_interval")),
+                        value = time.to_ms(GestureDetector:getInterval("ges_double_tap_interval")),
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -557,7 +557,7 @@ This sets the allowed duration of any of the two fingers touch/release for the c
 
 The duration value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = time.toMS(GestureDetector:getInterval("ges_two_finger_tap_duration")),
+                        value = time.to_ms(GestureDetector:getInterval("ges_two_finger_tap_duration")),
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -583,7 +583,7 @@ If a touch is not released in this interval, it is considered a long-press. On d
 
 The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = time.toMS(GestureDetector:getInterval("ges_hold_interval")),
+                        value = time.to_ms(GestureDetector:getInterval("ges_hold_interval")),
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
@@ -609,7 +609,7 @@ This sets the maximum delay between the start and the end of a swipe for it to b
 
 The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = time.toMS(GestureDetector:getInterval("ges_swipe_interval")),
+                        value = time.to_ms(GestureDetector:getInterval("ges_swipe_interval")),
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,

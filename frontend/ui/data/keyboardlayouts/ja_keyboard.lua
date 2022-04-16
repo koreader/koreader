@@ -32,7 +32,7 @@ local function getKeitaiTapInterval()
 end
 
 local function setKeitaiTapInterval(interval)
-    G_reader_settings:saveSetting("keyboard_japanese_keitai_tap_interval", time.toS(interval))
+    G_reader_settings:saveSetting("keyboard_japanese_keitai_tap_interval", time.to_s(interval))
 end
 
 local function exitKeitaiMode(inputbox)
@@ -49,7 +49,7 @@ local function wrappedAddChars(inputbox, char)
     local within_tap_window
     if keitai_cycle then
         if inputbox._ja_last_tap_time then
-            within_tap_window = time.getDuration(inputbox._ja_last_tap_time) < getKeitaiTapInterval()
+            within_tap_window = time.time_since(inputbox._ja_last_tap_time) < getKeitaiTapInterval()
         end
         inputbox._ja_last_tap_time = time.now()
     else
@@ -127,7 +127,7 @@ local function genMenuItems(self)
                 local interval = getKeitaiTapInterval()
                 if interval ~= 0 then
                     -- @translators Keitai input is a kind of Japanese keyboard input mode (similar to T9 keypad input). See <https://en.wikipedia.org/wiki/Japanese_input_method#Mobile_phones> for more information.
-                    return T(N_("Keitai tap interval: %1 second", "Keitai tap interval: %1 seconds", time.toS(interval)), time.toS(interval))
+                    return T(N_("Keitai tap interval: %1 second", "Keitai tap interval: %1 seconds", time.to_s(interval)), time.to_s(interval))
                 else
                     -- @translators Flick and keitai are kinds of Japanese keyboard input modes. See <https://en.wikipedia.org/wiki/Japanese_input_method#Mobile_phones> for more information.
                     return _("Keitai input: disabled (flick-only input)")
@@ -146,7 +146,7 @@ How long to wait (in seconds) for the next tap when in keitai input mode before 
 
 If set to 0, keitai input is disabled entirely and only flick input can be used.]]),
                     width = math.floor(Screen:getWidth() * 0.75),
-                    value = time.toS(getKeitaiTapInterval()),
+                    value = time.to_s(getKeitaiTapInterval()),
                     value_min = 0,
                     value_max = 10,
                     value_step = 1,

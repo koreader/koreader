@@ -32,20 +32,20 @@ describe("Time module", function()
         local time4 = time.s(12) + time.us(40)
         local time5 = time.s(12) + time.us(60)
 
-        assert.is.same(12, time.toS(time1))
-        assert.is.same(12000, time.toMS(time1))
-        assert.is.same(12000000, time.toUS(time1))
+        assert.is.same(12, time.to_s(time1))
+        assert.is.same(12000, time.to_ms(time1))
+        assert.is.same(12000000, time.to_us(time1))
 
-        assert.is.same(0.012, time.toS(time2))
-        assert.is.same(12, time.toMS(time2))
-        assert.is.same(12000, time.toUS(time2))
+        assert.is.same(0.012, time.to_s(time2))
+        assert.is.same(12, time.to_ms(time2))
+        assert.is.same(12000, time.to_us(time2))
 
-        assert.is.same(0.000012, time.toS(time3))
-        assert.is.same(math.floor(0.012), time.toMS(time3))
-        assert.is.same(12, time.toUS(time3))
+        assert.is.same(0.000012, time.to_s(time3))
+        assert.is.same(math.floor(0.012), time.to_ms(time3))
+        assert.is.same(12, time.to_us(time3))
 
-        assert.is.same(12.0000, time.tonumber(time4))
-        assert.is.same(12.0001, time.tonumber(time5))
+        assert.is.same(12.0000, time.to_number(time4))
+        assert.is.same(12.0001, time.to_number(time5))
     end)
 
 
@@ -67,29 +67,29 @@ describe("Time module", function()
         assert.is.same(time.s(-5.001), backwards_sub)
 
         -- Check that to/from float conversions behave, even for negative values.
-        assert.is.same(-5.001, time.tonumber(backwards_sub))
-        assert.is.same(time.s(-6) + time.us(999000), time.fromnumber(-5.001))
+        assert.is.same(-5.001, time.to_number(backwards_sub))
+        assert.is.same(time.s(-6) + time.us(999000), time.s(-5.001))
 
         local tv = time.s(-6) + time.us(1000)
-        assert.is.same(-5.999, time.tonumber(tv))
-        assert.is.same(time.s(-6) + time.us(1000), time.fromnumber(-5.999))
+        assert.is.same(-5.999, time.to_number(tv))
+        assert.is.same(time.s(-6) + time.us(1000), time.s(-5.999))
 
         -- We lose precision because of rounding if we go higher resolution than a ms...
         tv = time.s(-6) + time.us(101)
-        assert.is.same(-5.9999, time.tonumber(tv))
-        assert.is.same(time.s(-6) + time.us(100), time.fromnumber(-5.9999))
+        assert.is.same(-5.9999, time.to_number(tv))
+        assert.is.same(time.s(-6) + time.us(100), time.s(-5.9999))
         --                                 ^ precision loss
 
         tv = time.s(-6) + time.us(11)
-        assert.is.same(-6, time.tonumber(tv))
+        assert.is.same(-6, time.to_number(tv))
         --              ^ precision loss
-        assert.is.same(time.s(-6) + time.us(10), time.fromnumber(-5.99999))
+        assert.is.same(time.s(-6) + time.us(10), time.s(-5.99999))
         --                                ^ precision loss
 
         tv = time.s(-6) + time.us(1)
-        assert.is.same(-6, time.tonumber(tv))
+        assert.is.same(-6, time.to_number(tv))
         --              ^ precision loss
-        assert.is.same(time.s(-6) + time.us(1), time.fromnumber(-5.999999))
+        assert.is.same(time.s(-6) + time.us(1), time.s(-5.999999))
     end)
 
     it("should derive sec and usec from more than 1 sec worth of usec", function()
@@ -120,5 +120,16 @@ describe("Time module", function()
         assert.is_false(time1 == time2)
         assert.is_true(time1 >= time3)
         assert.is_true(time1 <= time3)
+    end)
+
+    it("should calculate durations", function()
+        local time1 = time.s(5) + time.us(500000)
+        local function now() return time.s(10) end
+        local now_save = time.now
+        time.now = now
+        assert.is.equal(time.to_s(time.s(4) + time.us(500000)), time.to_s(time.time_since(time1)))
+        assert.is.equal(time.to_ms(time.s(4) + time.us(500000)), time.to_ms(time.time_since(time1)))
+        assert.is.equal(time.to_us(time.s(4) + time.us(500000)), time.to_us(time.time_since(time1)))
+        time.now = now_save
     end)
 end)

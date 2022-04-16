@@ -699,12 +699,12 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
     --local end_time = time.now()
-    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", time.toMS(end_time - start_time))
+    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", time.to_ms(end_time - start_time))
 
     --start = time.now()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
     --end_time = time.now()
-    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", time.toMS(end_time - start_time))
+    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", time.to_ms(end_time - start_time))
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
@@ -1461,7 +1461,7 @@ function CreDocument:setupCallCache()
             return time.now()
         end
         addStatMiss = function(name, starttime, not_cached)
-            local duration = time.getDuration(starttime)
+            local duration = time.time_since(starttime)
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {0, 0.0, 1, duration, not_cached}
             else
@@ -1471,7 +1471,7 @@ function CreDocument:setupCallCache()
             end
         end
         addStatHit = function(name, starttime)
-            local duration = time.getDuration(starttime)
+            local duration = time.time_since(starttime)
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {1, duration, 0, 0.0}
             else

@@ -1,5 +1,62 @@
 --[[--
-A simple module to compare and do arithmetic with fixed point time (seconds) values.
+A runtime optimized module to compare and do simple arithmetics with fixed point time values (which are called fts in here).
+
+Also some functions to get current fts times (monotonic, monotonic_coarse, realtime, realtime_coarse, boottime ...) are implementent here.
+
+**Encode:**
+
+Don't store a numerical constant in an fts encode time. Use the provided functions from here!
+
+You can calculate an fts encoded time of 3 s with  `time.s(3)`
+
+You can calculate an fts encoded time of 3 ms with  `time.ms(3)`
+
+You can calculate an fts encoded time of 3 us with  `time.us(3)`
+
+*But take care:* if you want a really exact time of 2.1 s (you have the problem, that .1 cannot be encoded to a float value exactly), `time.s(2.1)` is not what you want.
+Please use `time.s(2) + time.ms(100)` or `time.s(2) + time.us(100000)` instead. (The same procedure holds true for a time of 3.2 ms.)
+
+**Decode:**
+
+You can get the number of seconds in an fts encode time with `time.to_s(time_fts)`.
+
+You can get the number of milliseconds in an fts encode time with `time.to_ms(time_fts)`.
+
+You can get the number of mikroseconds in an fts encode time with `time.to_us(time_fts)`.
+
+Please be aware, that `time.to_number` is the same as a `time.to_s` with a precision of four decimal places.
+
+**Calculations:**
+
+You can add and subtract all fts encoded times, without any problems.
+
+You can multiply or divide fts encoded times by numerical constants. So if you need the half of a time, `time_fts/2` is correct.
+
+Don't add a numerical constant to an fts time (in the best case, the numerical constant is interpreted as µs).
+
+But please be aware that higher order maths (multiply, divide, roots, power) won't work as expected. (If you really, really need that, you have to shift the position of the comma yourself!)
+
+If you want a duration form a given time_fts to *now* you can use `time.time_since(time_fts)` as a shortcut (or simply use `fts.now - time_fts`), and you get time in fts encoding. If you need microseconds (mikroseconds) use `time.to_ms(time.time_since(time_fts))`
+
+**Background:**
+Numbers in lua are double float which have a mantissa (precision) of 53 bit (plus sign + exponent)
+We won't use the exponent here.
+
+So we can store 2^53 = 9.0072E15 different values. If we use the lower 6 digits for µs, we can store
+up to 9.0072E9 seconds.
+
+A year has 365.25*24*3600 = 3.15576E7 s, so we can store up to 285 years (9.0072E9/3.15576E7) with µs precision.
+
+The module has been tested with the fixed point comma at 10^6 (other values might work, but are not really tested).
+
+**Recommondations:**
+If the name of a variable implies a time (now, when, until, xxxdeadline, xxxtime, getElapsedTimeSinceBoot, lastxxxtimexxx, ...) we assume this value to be a time (fts encoded).
+
+Other objects which are times (like last_tap, tap_interval_override, ...) have to be renamed to something like last_tap_time or so (and hence be obvious fts-encoded too).
+
+All other time variables (a handfull) get the appropriate suffix _ms, _us, _s (_m, _h, _d) to show that they are special.
+
+@module time
 
 @usage
     local time = require("ui/time")
@@ -9,7 +66,10 @@ A simple module to compare and do arithmetic with fixed point time (seconds) val
     -- You can add and subtract `fts times` objects.
     local duration = time.now() - start.fts
     -- And convert that object to various more human-readable formats, e.g.,
-    print(string.format("Stuff took %.3fms", time.toMS(duration)))
+    print(string.format("Stuff took %.3fms", time.to_ms(duration)))
+
+    local offset = time.s(100)
+    print(string.format("Stuff plus 100s took %.3fms", time.to_ms(duration + offset)))
 ]]
 
 local ffi = require("ffi")
@@ -17,12 +77,6 @@ require("ffi/posix_h")
 local logger = require("logger")
 
 local C = ffi.C
-
--- Numbers in lua are double float which have a mantissa (precision) of 53 bit (plus sign + exponent)
--- We won't use the exponent here.
--- So we can store 2^53 = 9.0072*10^15 different values. If we use the lower 6 digits for µs, we can store
--- up to 9.0072*10^9 seconds.
--- A year has 365.25*24*3600 = 3.15576*10^7 s, so we can store up to 285 years (9.0072e9/3.15576e7) with µs precision.
 
 -- A FTS_PRECISION of 1e6 will give us a µs precision.
 local FTS_PRECISION = 1e6
@@ -35,6 +89,80 @@ local NS2FTS = FTS_PRECISION / 1e9
 local FTS2S = 1 / S2FTS
 local FTS2MS = 1 / MS2FTS
 local FTS2US = 1 / US2FTS
+
+--[[--
+Fixed point time.
+
+]]
+local time = {}
+
+--- Sometimes we need a very large time
+time.huge = math.huge
+
+--- Creates a time (fts) from a number in seconds
+function time.s(seconds)
+    return math.floor(seconds * S2FTS)
+end
+
+--- Creates a time (fts) from a number in milliseconds
+function time.ms(msec)
+    return math.floor(msec * MS2FTS)
+end
+
+--- Creates a time (fts) from a number in microseconds
+function time.us(usec)
+    return math.floor(usec * US2FTS)
+end
+
+--- Creates a time (fts) from a structure similar to timeval
+function time.timeval(tv)
+    return tv.sec * S2FTS + tv.usec * US2FTS
+end
+
+--- Converts an fts time to a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
+function time.to_number(time_fts)
+    -- Round to 4 decimal places
+    return math.floor(time.to_s(time_fts) * 10000 + 0.5) / 10000
+end
+
+
+--- Converts an fts to a Lua (int) number (resolution: 1µs)
+function time.to_s(time_fts)
+    -- Time in seconds with µs precision (without comma)
+    return time_fts * FTS2S
+end
+
+--[[-- Converts a fts to a Lua (int) number (resolution: 1ms, rounded).
+
+(Mainly useful when computing a time lapse for benchmarking purposes).
+]]
+function time.to_ms(time_fts)
+    -- Time in milliseconds ms (without comma)
+    return math.floor(time_fts * FTS2MS + 0.5)
+end
+
+--- Converts an fts to a Lua (int) number (resolution: 1µs, rounded)
+function time.to_us(time_fts)
+    -- Time in mikroseconds µs(without comma)
+    return math.floor(time_fts * FTS2US + 0.5)
+end
+
+--[[-- Compare a past *MONOTONIC* fts time to *now*, returning the elapsed time between the two. (sec.usecs variant)
+
+Returns a Lua (decimal) number (sec.usecs, with comma) (accurate to the µs)
+]]
+function time.time_since(start_time)
+    -- Time difference
+   return time.now() - start_time
+end
+
+function time.split_s_us(time_fts)
+    if not time_fts then return nil, nil end
+    local sec = math.floor(time_fts * FTS2S)
+    local usec = math.floor(time_fts - sec * S2FTS) * FTS2US
+    -- Seconds and µs
+    return sec, usec
+end
 
 -- ffi object for C.clock_gettime calls
 local timespec = ffi.new("struct timespec")
@@ -73,11 +201,6 @@ if ffi.os == "Linux" then
 
     probe_ts = nil --luacheck: ignore
 end
-
---[[--
-Fixed point time. Maps to a POSIX struct timeval (<sys/time.h>).
-]]
-local time = {}
 
 --[[--
 Returns an fts time based on the current wall clock time.
@@ -164,95 +287,6 @@ The assumption being anything that requires accurate timestamps expects a monoto
 This is certainly true for KOReader's UI scheduling.
 ]]
 time.now = time.monotonic_coarse
-
---- Converts an fts time to a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
-function time.tonumber(time_fts)
-    -- Round to 4 decimal places
-    return math.floor(time.toS(time_fts) * 10000 + 0.5) / 10000
-end
-
--- Converts an fts to seconds (with comma)
-function time.toS(time_fts)
-    return time_fts * FTS2S
-end
-
---[[-- Converts a fts to a Lua (int) number (resolution: 1ms).
-
-(Mainly useful when computing a time lapse for benchmarking purposes).
-]]
-function time.toMS(time_fts)
-    return math.floor(time_fts * FTS2MS + 0.5)
-end
-
---- Converts an fts to a Lua (int) number (resolution: 1µs)
-function time.toUS(time_fts)
-
-    return math.floor(time_fts * FTS2US + 0.5)
-end
-
---- Converts a Lua number (sec.usecs) to an fts time
-function time.fromnumber(seconds)
-    return math.floor(seconds * S2FTS)
-end
-
---[[-- Compare a past *MONOTONIC* fts time to *now*, returning the elapsed time between the two. (sec.usecs variant)
-
-Returns a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places) (i.e., time.tonumber())
-]]
-function time.getDuration(start_time)
-   return time.tonumber(time.now() - start_time)
-end
-
---[[-- Compare a past *MONOTONIC* fts time object to *now*, returning the elapsed time between the two. (ms variant)
-
-Returns a Lua (int) number (resolution: 1ms)
-]]
-function time.getDurationMs(start_time)
-   return time.toMS(time.now() - start_time)
-end
-
---[[-- Compare a past *MONOTONIC* fts time object to *now*, returning the elapsed time between the two. (µs variant)
-
-Returns a Lua (int) number (resolution: 1µs)
-]]
-function time.getDurationUs(start_time)
-   return time.toUS(time.now() - start_time)
-end
-
---- Ditto for one set to math.huge
-time.huge = math.huge
-
-function time.tv(tv)
-    return tv.sec * S2FTS + tv.usec * US2FTS
-end
-
-function time.splitsus(time_fts)
-    if not time_fts then return nil, nil end
-    local sec = math.floor(time_fts * FTS2S)
-    local usec = math.floor(time_fts - sec * S2FTS) * FTS2US
-    return sec, usec
-end
-
-function time.s(seconds)
-    return math.floor(seconds * S2FTS)
-end
-
-function time.ms(usec)
-    return math.floor(usec * MS2FTS)
-end
-
-function time.us(usec)
-    return math.floor(usec * US2FTS)
-end
-
---not needed any more
---[[
-function time.toTv(time)
-    local TimeVal = require("ui/timeval")
-    if not time then return TimeVal.zero end
-    local sec, usec = time.splitsus(time)
-    return TimeVal:new{ sec = sec, usec = usec }
-en]]
 
 -- for debugging
 function time.format_time(time_fts)

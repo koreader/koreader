@@ -31,7 +31,7 @@ local ReaderScrolling = InputContainer:new{
     -- go at ending scrolling soon when we reach steps smaller than this
     end_scroll_dist = Screen:scaleBySize(10),
     -- no inertial scrolling if 300ms pause without any movement before release
-    pause_before_release_cancel_duration = time.us(300000),
+    pause_before_release_cancel_duration = time.ms(300),
 
     -- Callbacks to be updated by readerrolling or readerpaging
     _do_scroll_callback = function(distance) return false end,
@@ -345,9 +345,9 @@ function ReaderScrolling:_setupAction()
             end
 
             -- Initial velocity is the one of the last pan scroll given to accountManualScroll()
-            local delay_us = time.tousec(self._last_manual_scroll_duration)
+            local delay_us = time.to_us(self._last_manual_scroll_duration)
             if delay_us < 1 then delay_us = 1 end -- safety check
-            self._velocity = self._last_manual_scroll_dy * time.s(1.000000 / delay_us)
+            self._velocity = self._last_manual_scroll_dy * time.s(1 / delay_us)
             self._last_manual_scroll_dy = 0
 
             self._inertial_scroll_action_scheduled = true
