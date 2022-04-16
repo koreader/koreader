@@ -40,7 +40,7 @@ function AutoTurn:_schedule()
         UIManager:scheduleIn(self.autoturn_sec, self.task)
         self.scheduled = true
     else
-        local delay_s = time.tonumber(delay)
+        local delay_s = time.to_number(delay)
         logger.dbg("AutoTurn: schedule in", delay_s, "s")
         UIManager:scheduleIn(delay_s, self.task)
         self.scheduled = true
@@ -59,7 +59,7 @@ end
 function AutoTurn:_start()
     if self:_enabled() then
         local now = UIManager:getTime()
-        logger.dbg("AutoTurn: start at", time.tonumber(now))
+        logger.dbg("AutoTurn: start at", time.to_number(now))
         PluginShare.pause_auto_suspend = true
         self.last_action_time = now
         self:_schedule()

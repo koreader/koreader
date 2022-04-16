@@ -345,7 +345,7 @@ function ReaderScrolling:_setupAction()
             end
 
             -- Initial velocity is the one of the last pan scroll given to accountManualScroll()
-            local delay_us = time.tousec(self._last_manual_scroll_duration)
+            local delay_us = time.to_us(self._last_manual_scroll_duration)
             if delay_us < 1 then delay_us = 1 end -- safety check
             self._velocity = self._last_manual_scroll_dy * time.s(1.000000 / delay_us)
             self._last_manual_scroll_dy = 0
