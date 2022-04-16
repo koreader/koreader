@@ -547,7 +547,7 @@ function AutoSuspend:onAllowStandby()
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
         self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
         self:_start()      -- reschedule suspend and shutdown (we'll recompute the delay based on the remaining time of the previously scheduled task, if any).
-                           -- i.e., the goal is to behave is if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
+                           -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
     end
     -- We don't reschedule standby here, as this will interfere with suspend.
     -- Leave that to `onLeaveStandby`.
