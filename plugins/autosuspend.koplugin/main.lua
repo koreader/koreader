@@ -50,6 +50,12 @@ function AutoSuspend:_enabledShutdown()
     return Device:canPowerOff() and self.autoshutdown_timeout_seconds > 0
 end
 
+function AutoSuspend:_updateLastAction()
+    logger.dbg("AutoSuspend: _updateLastAction prologue, last action @", self.last_action_tv:tonumber())
+    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+    logger.dbg("AutoSuspend: _updateLastAction coda, @", self.last_action_tv:tonumber())
+end
+
 function AutoSuspend:_schedule(shutdown_only)
     if not self:_enabled() and Device:canPowerOff() and not self:_enabledShutdown() then
         logger.dbg("AutoSuspend:_schedule is disabled")
@@ -94,7 +100,7 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+        self:_updateLastAction()
         logger.dbg("AutoSuspend: start (suspend/shutdown) at", self.last_action_tv:tonumber())
         self:_schedule()
     end
@@ -102,7 +108,7 @@ end
 
 function AutoSuspend:_start_standby()
     if self:_enabledStandby() then
-        self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+        self:_updateLastAction()
         logger.dbg("AutoSuspend: start (standby) at", self.last_action_tv:tonumber())
         self:_schedule_standby()
     end
@@ -111,7 +117,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+        self:_updateLastAction()
         logger.dbg("AutoSuspend: restart at", self.last_action_tv:tonumber())
         self:_schedule(true)
     end
@@ -166,7 +172,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+    self:_updateLastAction()
 end
 
 function AutoSuspend:_unschedule_standby()
