@@ -528,6 +528,7 @@ function AutoSuspend:onAllowStandby()
         logger.dbg("AutoSuspend: left standby after", Device.last_standby_tv:tonumber(), "s")
 
         -- Make sure UIManager will consume the input events that woke us up first!
+        -- (This ensures we'll use an up to date last_action_tv).
         UIManager:nextTick(function()
             UIManager:broadcastEvent(Event:new("LeaveStandby"))
             self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
