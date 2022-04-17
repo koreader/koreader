@@ -36,6 +36,7 @@ local AutoSuspend = WidgetContainer:new{
     is_standby_scheduled = false,
     task = nil,
     standby_task = nil,
+    pause_auto_standby = false,
 }
 
 function AutoSuspend:_enabledStandby()
@@ -286,12 +287,17 @@ function AutoSuspend:onSuspend()
     if self:_enabledStandby() then
         UIManager:preventStandby()
     end
+
+    -- And make sure onLeaveStandby, which will come *after* us if we suspended *during* standby,
+    -- won't re-schedule stuff right before entering suspend...
+    self.pause_auto_standby = true
 end
 
 function AutoSuspend:onResume()
     logger.dbg("AutoSuspend: onResume")
 
     -- Restore standby balance after onSuspend
+    self.pause_auto_standby = false
     if self:_enabledStandby() then
         UIManager:allowStandby()
     end
