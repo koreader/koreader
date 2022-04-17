@@ -93,21 +93,21 @@ end
 
 function AutoSuspend:_unschedule()
     if self.task then
-        logger.dbg("AutoSuspend: unschedule")
+        logger.dbg("AutoSuspend: unschedule suspend/shutdown timer")
         UIManager:unschedule(self.task)
     end
 end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        logger.dbg("AutoSuspend: start (suspend/shutdown) timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: start suspend/shutdown timer at", self.last_action_tv:tonumber())
         self:_schedule()
     end
 end
 
 function AutoSuspend:_start_standby()
     if self:_enabledStandby() then
-        logger.dbg("AutoSuspend: start (standby) timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: start standby timer at", self.last_action_tv:tonumber())
         self:_schedule_standby()
     end
 end
@@ -115,7 +115,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        logger.dbg("AutoSuspend: restart (shutdown) timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: restart shutdown timer at", self.last_action_tv:tonumber())
         self:_schedule(true)
     end
 end
@@ -175,7 +175,7 @@ end
 
 function AutoSuspend:_unschedule_standby()
     if self.is_standby_scheduled and self.standby_task then
-        logger.dbg("AutoSuspend: unschedule standby")
+        logger.dbg("AutoSuspend: unschedule standby timer")
         UIManager:unschedule(self.standby_task)
         -- Restore the UIManager balance, as we run preventStandby right after scheduling this task.
         UIManager:allowStandby()
