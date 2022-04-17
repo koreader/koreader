@@ -63,7 +63,15 @@ function AutoSuspend:_schedule(shutdown_only)
     end
 
     local suspend_delay, shutdown_delay
-    if PluginShare.pause_auto_suspend or Device.powerd:isCharging() then
+    local is_charging
+    -- On devices with an auxiliary battery, we only care about the auxiliary battery being charged...
+    local powerd = Device:getPowerDevice()
+    if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+        is_charging = powerd:isAuxCharging()
+    else
+        is_charging = powerd:isCharging()
+    end
+    if PluginShare.pause_auto_suspend or is_charging then
         suspend_delay = self.auto_suspend_timeout_seconds
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
