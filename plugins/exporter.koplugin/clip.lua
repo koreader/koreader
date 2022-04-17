@@ -1,4 +1,3 @@
-local DataStorage = require("datastorage")
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
 local ReadHistory = require("readhistory")
@@ -10,7 +9,7 @@ local T = require("ffi/util").template
 
 local MyClipping = {
     my_clippings = "/mnt/us/documents/My Clippings.txt",
-    history_dir = DataStorage:getDataDir() .. "/history",
+    history_dir = "./history",
 }
 
 function MyClipping:new(o)
