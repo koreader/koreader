@@ -189,6 +189,17 @@ if [ "${VIA_NICKEL}" = "true" ]; then
         #eval "$(awk -v 'RS="\0"' '/^(DBUS_SESSION_BUS_ADDRESS|NICKEL_HOME|WIFI_MODULE|LANG|INTERFACE)=/{gsub("\047", "\047\\\047\047"); print "export \047" $0 "\047"}' "/proc/$(pidof -s nickel)/environ")"
     fi
 
+    # If bluetooth is enabled, kill it.
+    if [ -e "/sys/devices/platform/bt/rfkill/rfkill0/state" ]; then
+        IFS= read -r bt_state <"/sys/devices/platform/bt/rfkill/rfkill0/state"
+        if [ "${bt_state}" = "1" ]; then
+            echo "0" > "/sys/devices/platform/bt/rfkill/rfkill0/state"
+
+            # Power the chip down
+            ./luajit frontend/device/kobo/ntx_io.lua 126 0
+        fi
+    fi
+
     # Flush disks, might help avoid trashing nickel's DB...
     sync
     # And we can now stop the full Kobo software stack
@@ -197,7 +208,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     #       as we want to be able to use our own per-if processes w/ custom args later on.
     #       A SIGTERM does not break anything, it'll just prevent automatic lease renewal until the time
     #       KOReader actually sets the if up itself (i.e., it'll do)...
-    killall -q -TERM nickel hindenburg sickel fickel strickel fontickel adobehost foxitpdf iink dhcpcd-dbus dhcpcd fmon nanoclock.lua
+    killall -q -TERM nickel hindenburg sickel fickel strickel fontickel adobehost foxitpdf iink dhcpcd-dbus dhcpcd bluealsa bluetoothd fmon nanoclock.lua
 
     # Wait for Nickel to die... (oh, procps with killall -w, how I miss you...)
     kill_timeout=0
