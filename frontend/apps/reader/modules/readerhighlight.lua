@@ -1618,9 +1618,13 @@ function ReaderHighlight:_insertHighlight(page, highlight)
     else
         local page_highlights = self.view.highlight.saved[page]
         local highlight_beginning = highlight.pos0
+        local highlight_end = highlight.pos1
         if self.ui.rolling then
             for i, cur_highlight in ipairs(page_highlights) do
                 local order = self.ui.document:compareXPointers(highlight_beginning, cur_highlight.pos0)
+                if order == 0 then
+                    order = self.ui.document:compareXPointers(highlight_end, cur_highlight.pos1)
+                end
                 if order > 0 then
                     position = i
                     break
@@ -1628,10 +1632,15 @@ function ReaderHighlight:_insertHighlight(page, highlight)
             end
         else
             highlight_beginning.page = page
+            highlight_end.page = page
             for i, cur_highlight in ipairs(page_highlights) do
-                local cur_pos = cur_highlight.pos0
+                local cur_pos, cur_pos_end = cur_highlight.pos0, cur_highlight.pos1
                 cur_pos.page = page
+                cur_pos_end.page = page
                 local order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
+                if order == 0 then
+                    order = self.ui.document:comparePositions(highlight_end, cur_pos_end)
+                end
                 if order > 0 then
                     position = i
                     break
