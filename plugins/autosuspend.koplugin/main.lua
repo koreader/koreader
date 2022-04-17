@@ -223,11 +223,13 @@ function AutoSuspend:_schedule_standby()
         local now_tv = UIManager:getElapsedTimeSinceBoot()
         standby_delay = self.auto_standby_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
 
-        -- If we somehow blow past the deadline on the first call of a scheduling cycle,
+        -- If we blow past the deadline on the first call of a scheduling cycle,
         -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...
-        -- (This shouldn't really ever happen, unless something is going seriously wrong somewhere).
         if not self.is_standby_scheduled and standby_delay <= 0 then
-            standby_delay = 0.001
+            -- If this happens, it means we somehow hit LeaveStandby orResume *before* consuming new input events,
+            -- meaning self.last_action_tv is farther in the past than it ought to.
+            -- Delay by the full amount to avoid further bad scheduling interactions.
+            standby_delay = self.auto_standby_timeout_seconds
         end
     end
 
@@ -250,6 +252,7 @@ function AutoSuspend:_schedule_standby()
 end
 
 function AutoSuspend:preventStandby()
+    logger.dbg("AutoSuspend: preventStandby")
     -- Tell UIManager that we want to prevent standby until our allowStandby scheduled task runs.
     UIManager:preventStandby()
 end
