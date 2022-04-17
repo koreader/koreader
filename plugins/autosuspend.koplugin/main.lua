@@ -560,6 +560,11 @@ function AutoSuspend:onAllowStandby()
         -- as opposed to an rtc wake alarm)!
         -- (This ensures we'll use an up to date last_action_tv, and that it only ever gets updated from *user* input).
         UIManager:nextTick(function()
+            -- Only if we're not already entering suspend...
+            if self.pause_auto_standby then
+                return
+            end
+
             UIManager:broadcastEvent(Event:new("LeaveStandby"))
             self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
             self:_start()      -- reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
