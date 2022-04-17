@@ -215,6 +215,19 @@ function Wallabag:addToMainMenu(menu_items)
                         separator = true,
                     },
                     {
+                        text_func = function()
+                            if not self.auto_tags or self.auto_tags == "" then
+                                return _("Automatic tags")
+                            end
+                            return T(_("Automatic tags (%1)"), self.auto_tags)
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            self:setAutoTags(touchmenu_instance)
+                        end,
+                        separator = true,
+                    },
+                    {
                         text = _("Article deletion"),
                         separator = true,
                         sub_item_table = {
@@ -964,6 +977,38 @@ function Wallabag:setIgnoreTags(touchmenu_instance)
     }
     UIManager:show(self.ignore_tags_dialog)
     self.ignore_tags_dialog:onShowKeyboard()
+end
+
+function Wallabag:setAutoTags(touchmenu_instance)
+   self.auto_tags_dialog = InputDialog:new {
+        title =  _("Tags to automatically add"),
+        description = _("Enter a comma-separated list of tags to automatically add."),
+        input = self.auto_tags,
+        input_type = "string",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(self.auto_tags_dialog)
+                    end,
+                },
+                {
+                    text = _("Set tags"),
+                    is_enter_default = true,
+                    callback = function()
+                        self.auto_tags = self.auto_tags_dialog:getInputText()
+                        self:saveSettings()
+                        touchmenu_instance:updateItems()
+                        UIManager:close(self.auto_tags_dialog)
+                    end,
+                }
+            }
+        },
+    }
+    UIManager:show(self.auto_tags_dialog)
+    self.auto_tags_dialog:onShowKeyboard()
 end
 
 function Wallabag:editServerSettings()
