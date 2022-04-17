@@ -527,10 +527,13 @@ function AutoSuspend:onAllowStandby()
 
         logger.dbg("AutoSuspend: left standby after", Device.last_standby_tv:tonumber(), "s")
 
-        UIManager:broadcastEvent(Event:new("LeaveStandby"))
-        self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
-        self:_start()      -- reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
-                           -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
+        -- Make sure UIManager will consume the input events that woke us up first!
+        UIManager:nextTick(function()
+            UIManager:broadcastEvent(Event:new("LeaveStandby"))
+            self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
+            self:_start()      -- reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
+                               -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
+        end)
     end
     -- We don't reschedule standby here, as this will interfere with suspend.
     -- Leave that to `onLeaveStandby`.
