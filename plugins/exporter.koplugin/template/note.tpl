@@ -52,17 +52,18 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8"/>
-  <title>#{= htmlescape(booknotes.title) }#</title>
+  <title>#{= htmlescape(document_title) }#</title>
 </head>
 <body>
   <div style="width:90%; max-width:600px; margin:0 auto; padding:5px; font-size:12pt; font-family:Georgia, serif">
+    #{ for  _, booknotes in ipairs(clippings) do }#
     <h2 style="font-size:18pt; text-align:right;">#{= htmlescape(booknotes.title) }#</h2>
     <h5 style="font-size:12pt; text-align:right; color:gray;">#{= htmlescape(booknotes.author) }#</h5>
-    #{ for  _, chapter in ipairs(booknotes) do }#
+    #{ for  _, chapter in ipairs(booknotes.chapters) do }#
       #{ if chapter.title then }#
         <div style="font-size:14pt; font-weight:bold; text-align:center; margin:0.5em;"><span>#{= htmlescape(chapter.title) }#</span></div>
       #{ end }#
-      #{ for index, clipping in ipairs(chapter) do }#
+      #{ for index, clipping in ipairs(chapter.entries) do }#
         <div style="padding-top:0.5em; padding-bottom:0.5em;#{ if index > 1 then }# border-top:1px dotted lightgray;#{ end }#">
           <div style="font-size:10pt; margin-bottom:0.2em; color:darkgray">
             <div style="display:inline-block; width:0.2em; height:0.9em; margin-right:0.2em; background-color:#{= timecolor(clipping.time)}#;"></div>
@@ -81,6 +82,7 @@
           #{ end }#
         </div>
       #{ end }#
+    #{ end }#
     #{ end }#
   </div>
 </body>
