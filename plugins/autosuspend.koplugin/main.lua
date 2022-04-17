@@ -271,10 +271,21 @@ function AutoSuspend:onSuspend()
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:addTask(self.autoshutdown_timeout_seconds, UIManager.poweroff_action)
     end
+
+    -- Make sure we won't attempt to standby during suspend...
+    if self:_enabledStandby() then
+        UIManager:preventStandby()
+    end
 end
 
 function AutoSuspend:onResume()
     logger.dbg("AutoSuspend: onResume")
+
+    -- Restore standby balance after onSuspend
+    if self:_enabledStandby() then
+        UIManager:allowStandby()
+    end
+
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
