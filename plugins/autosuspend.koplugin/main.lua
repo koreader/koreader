@@ -565,7 +565,8 @@ function AutoSuspend:onAllowStandby()
         -- Make sure UIManager will consume the input events that woke us up first (in case we were woken up by user input,
         -- as opposed to an rtc wake alarm)!
         -- (This ensures we'll use an up to date last_action_tv, and that it only ever gets updated from *user* input).
-        UIManager:nextTick(function()
+        -- NOTE: UIManager consumes scheduled tasks before input, so make sure we delay by a significant amount...
+        UIManager:scheduleIn(1, function()
             -- Only if we're not already entering suspend...
             if self.pause_auto_standby then
                 return
