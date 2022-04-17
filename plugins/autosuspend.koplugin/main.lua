@@ -176,7 +176,9 @@ end
 function AutoSuspend:_unschedule_standby()
     if self.is_standby_scheduled and self.standby_task then
         logger.dbg("AutoSuspend: unschedule standby timer")
-        UIManager:unschedule(self.standby_task)
+        if not UIManager:unschedule(self.standby_task) then
+            logger.dbg("AutoSuspend: nothing to unschedule?!")
+        end
         -- Restore the UIManager balance, as we run preventStandby right after scheduling this task.
         UIManager:allowStandby()
 
