@@ -36,6 +36,7 @@ local AutoSuspend = WidgetContainer:new{
     is_standby_scheduled = false,
     task = nil,
     standby_task = nil,
+    leave_standby_task = nil,
     pause_auto_standby = false,
 }
 
@@ -155,6 +156,14 @@ function AutoSuspend:init()
     self.standby_task = function()
         self:_schedule_standby()
     end
+    self.leave_standby_task = function()
+        -- Only if we're not already entering suspend...
+        if self.pause_auto_standby then
+            return
+        end
+
+        UIManager:broadcastEvent(Event:new("LeaveStandby"))
+    end
 
     self:_updateLastAction()
     self:_start()
@@ -175,6 +184,7 @@ function AutoSuspend:onCloseWidget()
 
     self:_unschedule_standby()
     self.standby_task = nil
+    self.leave_standby_task = nil
 end
 
 function AutoSuspend:onInputEvent()
@@ -190,6 +200,11 @@ function AutoSuspend:_unschedule_standby()
         UIManager:allowStandby()
 
         self.is_standby_scheduled = false
+    end
+
+    -- Make sure we don't trigger a ghost LeaveStandby event...
+    if self.leave_standby_task then
+        UIManager:unschedule(self.leave_standby_task)
     end
 end
 
@@ -569,14 +584,7 @@ function AutoSuspend:onAllowStandby()
         -- as opposed to an rtc wake alarm)!
         -- (This ensures we'll use an up to date last_action_tv, and that it only ever gets updated from *user* input).
         -- NOTE: UIManager consumes scheduled tasks before input, so make sure we delay by a significant amount...
-        UIManager:scheduleIn(1, function()
-            -- Only if we're not already entering suspend...
-            if self.pause_auto_standby then
-                return
-            end
-
-            UIManager:broadcastEvent(Event:new("LeaveStandby"))
-        end)
+        UIManager:scheduleIn(1, self.leave_standby_task)
     end
     -- We don't reschedule standby here, as this will interfere with suspend.
     -- Leave that to `onLeaveStandby`.
