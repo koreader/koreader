@@ -272,7 +272,9 @@ function AutoSuspend:onSuspend()
         Device.wakeup_mgr:addTask(self.autoshutdown_timeout_seconds, UIManager.poweroff_action)
     end
 
-    -- Make sure we won't attempt to standby during suspend...
+    -- Make sure we won't attempt to standby during suspend
+    -- (because _unschedule_standby calls allowStandby,
+    -- so we may trip UIManager's _standbyTransition and end up in AutoSuspend:onAllowStandby)...
     if self:_enabledStandby() then
         UIManager:preventStandby()
     end
