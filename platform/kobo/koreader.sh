@@ -193,7 +193,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     if [ -e "/sys/devices/platform/bt/rfkill/rfkill0/state" ]; then
         IFS= read -r bt_state <"/sys/devices/platform/bt/rfkill/rfkill0/state"
         if [ "${bt_state}" = "1" ]; then
-            echo "0" > "/sys/devices/platform/bt/rfkill/rfkill0/state"
+            echo "0" >"/sys/devices/platform/bt/rfkill/rfkill0/state"
 
             # Power the chip down
             ./luajit frontend/device/kobo/ntx_io.lua 126 0
