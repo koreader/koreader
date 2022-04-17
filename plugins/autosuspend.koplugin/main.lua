@@ -214,6 +214,8 @@ function AutoSuspend:_schedule_standby()
         standby_delay = self.auto_standby_timeout_seconds
     elseif Device.powerd:isCharging() and not Device:canPowerSaveWhileCharging() then
         -- Don't enter standby when charging on devices where charging prevents entering low power states.
+        -- NOTE: Minor simplification here, we currently don't do the hasAuxBattery dance like in _schedule,
+        --       because all the hasAuxBattery devices can currently enter PM states while charging ;).
         --logger.dbg("AutoSuspend: charging, delaying standby")
         standby_delay = self.auto_standby_timeout_seconds
     else
