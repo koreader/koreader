@@ -315,6 +315,12 @@ end
 
 function AutoSuspend:onLeaveStandby()
     logger.dbg("AutoSuspend: onLeaveStandby")
+    -- unschedule suspend and shutdown, as the realtime clock has ticked
+    self:_unschedule()
+    -- reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
+    -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
+    self:_start()
+    -- And reschedule standby, too (we're guaranteed that no standby task is currently scheduled, hence the lack of unscheduling).
     self:_start_standby()
 end
 
@@ -566,9 +572,6 @@ function AutoSuspend:onAllowStandby()
             end
 
             UIManager:broadcastEvent(Event:new("LeaveStandby"))
-            self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
-            self:_start()      -- reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
-                               -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
         end)
     end
     -- We don't reschedule standby here, as this will interfere with suspend.
