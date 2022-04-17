@@ -584,7 +584,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
                 text = _("Close"),
                 is_enter_default = true,
                 callback = function()
-                    UIManager:close(textviewer)
+                    textviewer:onClose()
                 end,
             },
         },
@@ -616,6 +616,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
                     callback = function()
                         UIManager:close(textviewer)
                         UIManager:close(ui.highlight.highlight_dialog)
+                        ui.highlight.highlight_dialog = nil
                         if page then
                             ui.highlight:editHighlight(page, index, false, text_main)
                         else
@@ -628,6 +629,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
                     callback = function()
                         UIManager:close(textviewer)
                         UIManager:close(ui.highlight.highlight_dialog)
+                        ui.highlight.highlight_dialog = nil
                         if page then
                             ui.highlight:editHighlight(page, index, false, text_all)
                         else
@@ -647,6 +649,14 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
         height = math.floor(Screen:getHeight() * 0.8),
         justified = G_reader_settings:nilOrTrue("dict_justify"),
         buttons_table = buttons_table,
+        close_callback = function()
+            if from_highlight then
+                local ui = require("apps/reader/readerui").instance
+                if not ui.highlight.highlight_dialog then
+                    ui.highlight:clear()
+                end
+            end
+        end,
     }
     UIManager:show(textviewer)
 end
