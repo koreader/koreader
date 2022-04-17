@@ -226,8 +226,8 @@ function AutoSuspend:_schedule_standby()
         -- If we blow past the deadline on the first call of a scheduling cycle,
         -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...
         if not self.is_standby_scheduled and standby_delay <= 0 then
-            -- If this happens, it means we somehow hit LeaveStandby orResume *before* consuming new input events,
-            -- meaning self.last_action_tv is farther in the past than it ought to.
+            -- If this happens, it means we somehow hit LeaveStandby or Resume *before* consuming new input events,
+            -- meaning self.last_action_tv is further in the past than it ought to.
             -- Delay by the full amount to avoid further bad scheduling interactions.
             standby_delay = self.auto_standby_timeout_seconds
         end
