@@ -35,7 +35,6 @@ local AutoSuspend = WidgetContainer:new{
     last_action_tv = TimeVal.zero,
     is_standby_scheduled = false,
     task = nil,
-    last_task_schedule_tv = nil,
     standby_task = nil,
 }
 
@@ -69,10 +68,8 @@ function AutoSuspend:_schedule(shutdown_only)
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
         local now_tv = UIManager:getElapsedTimeSinceBoot()
-        -- If this is a post-standby re-schedule, recompute the delay based on the pre-standby starting point,
-        -- in order to avoid basically extending the delay every standby cycle ;).
-        suspend_delay = self.auto_suspend_timeout_seconds - (now_tv - (self.last_task_schedule_tv or self.last_action_tv)):tonumber()
-        shutdown_delay = self.autoshutdown_timeout_seconds - (now_tv - (self.last_task_schedule_tv or self.last_action_tv)):tonumber()
+        suspend_delay = self.auto_suspend_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
+        shutdown_delay = self.autoshutdown_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -86,13 +83,10 @@ function AutoSuspend:_schedule(shutdown_only)
         if self:_enabled() and not shutdown_only then
             logger.dbg("AutoSuspend: scheduling next suspend check in", suspend_delay)
             UIManager:scheduleIn(suspend_delay, self.task)
-            -- Remember the original schedule computation to reschedule it properly after standby
-            self.last_task_schedule_tv = self.last_task_schedule_tv or self.last_action_tv
         end
         if self:_enabledShutdown() then
             logger.dbg("AutoSuspend: scheduling next shutdown check in", shutdown_delay)
             UIManager:scheduleIn(shutdown_delay, self.task)
-            self.last_task_schedule_tv = self.last_task_schedule_tv or self.last_action_tv
         end
     end
 end
@@ -100,28 +94,19 @@ end
 function AutoSuspend:_unschedule()
     if self.task then
         logger.dbg("AutoSuspend: unschedule")
-        if not UIManager:unschedule(self.task) then
-            -- We did not actually unschedule anything: there's nothing to restore after standby
-            self.last_task_schedule_tv = nil
-        end
+        UIManager:unschedule(self.task)
     end
 end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        self:_updateLastAction()
-        if self.last_task_schedule_tv then
-            logger.dbg("AutoSuspend: restart previous (suspend/shutdown) timer originally scheduled at", self.last_task_schedule_tv:tonumber())
-        else
-            logger.dbg("AutoSuspend: start (suspend/shutdown) timer at", self.last_action_tv:tonumber())
-        end
+        logger.dbg("AutoSuspend: start (suspend/shutdown) timer at", self.last_action_tv:tonumber())
         self:_schedule()
     end
 end
 
 function AutoSuspend:_start_standby()
     if self:_enabledStandby() then
-        self:_updateLastAction()
         logger.dbg("AutoSuspend: start (standby) timer at", self.last_action_tv:tonumber())
         self:_schedule_standby()
     end
@@ -130,8 +115,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        self:_updateLastAction()
-        logger.dbg("AutoSuspend: restart (suspend/shutdown) timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: restart (shutdown) timer at", self.last_action_tv:tonumber())
         self:_schedule(true)
     end
 end
@@ -163,6 +147,7 @@ function AutoSuspend:init()
         self:_schedule_standby()
     end
 
+    self:_updateLastAction()
     self:_start()
     self:_start_standby()
 
@@ -273,7 +258,6 @@ function AutoSuspend:allowStandby()
 
     -- We've just run our course.
     self.is_standby_scheduled = false
-    logger.dbg("AutoSuspend: allowStandby coda, self.is_standby_scheduled:", tostring(self.is_standby_scheduled))
 end
 
 function AutoSuspend:onSuspend()
@@ -294,15 +278,14 @@ function AutoSuspend:onResume()
     end
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
     self:_unschedule()
-    -- This is a real suspend/standby, we do NOT want to restore an old schedule delay.
-    self.last_task_schedule_tv = nil
+    -- We should always follow an InputEvent, so last_action_tv is already up to date :).
     self:_start()
     self:_unschedule_standby()
     self:_start_standby()
 end
 
 function AutoSuspend:onLeaveStandby()
-    logger.dbg("AutoSuspend: onLeaveStandby, self.is_standby_scheduled:", tostring(self.is_standby_scheduled))
+    logger.dbg("AutoSuspend: onLeaveStandby")
     self:_start_standby()
 end
 
@@ -546,7 +529,7 @@ function AutoSuspend:onAllowStandby()
 
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
         self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
-        self:_start()      -- reschedule suspend and shutdown (we'll recompute the delay based on the remaining time of the previously scheduled task, if any).
+        self:_start()      -- reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
                            -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
     end
     -- We don't reschedule standby here, as this will interfere with suspend.
