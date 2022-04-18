@@ -241,8 +241,9 @@ function AutoSuspend:_schedule_standby()
         -- If we blow past the deadline on the first call of a scheduling cycle,
         -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...
         if not self.is_standby_scheduled and standby_delay <= 0 then
-            -- If this happens, it means we somehow hit LeaveStandby or Resume *before* consuming new input events
-            -- (or before consuming input events that actually trigger an InputEvent event, e.g., when woken up by rotation events),
+            -- If this happens, it means we hit LeaveStandby or Resume *before* consuming new input events,
+            -- e.g., if there weren't any input events at all (woken up by an alarm),
+            -- or if the only input events we consumed did not trigger an InputEvent event (woken up by gyro events),
             -- meaning self.last_action_tv is further in the past than it ought to.
             -- Delay by the full amount to avoid further bad scheduling interactions.
             standby_delay = self.auto_standby_timeout_seconds
