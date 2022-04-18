@@ -334,13 +334,16 @@ end
 
 function AutoSuspend:onLeaveStandby()
     logger.dbg("AutoSuspend: onLeaveStandby")
-    -- unschedule suspend and shutdown, as the realtime clock has ticked
+    -- Unschedule suspend and shutdown, as the realtime clock has ticked
     self:_unschedule()
-    -- reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
+    -- Reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
     -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
     self:_start()
-    -- And reschedule standby, too (we're guaranteed that no standby task is currently scheduled, hence the lack of unscheduling).
-    self:_start_standby()
+    -- Assuming _start didn't send us straight to onSuspend (i.e., we were woken from standby by the scheduled suspend task!)...
+    if not self.pause_auto_standby then
+        -- Reschedule standby, too (we're guaranteed that no standby task is currently scheduled, hence the lack of unscheduling).
+        self:_start_standby()
+    end
 end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
