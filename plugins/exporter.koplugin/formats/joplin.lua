@@ -21,16 +21,6 @@ function JoplinExporter:toggleEnabled()
     self:saveSettings()
 end
 
-function JoplinExporter:pluginInit()
-    if self:isEnabled() then
-        self.client = JoplinClient:new {
-            server_ip = self.settings.ip,
-            server_port = self.settings.port,
-            auth_token = self.settings.token
-        }
-    end
-end
-
 function JoplinExporter:getMenuTable()
     return {
         text = _("Joplin"),
@@ -117,37 +107,6 @@ function JoplinExporter:getMenuTable()
                 end
             },
             {
-                text = _("Set Notebook Name"),
-                keep_menu_open = true,
-                callback = function()
-                    local notebook_dialog
-                    notebook_dialog = InputDialog:new {
-                        title = _("Set notebook name for Joplin"),
-                        input = self.settings.notebook_name,
-                        buttons = {
-                            {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(notebook_dialog)
-                                    end
-                                },
-                                {
-                                    text = _("Set Notebook Name"),
-                                    callback = function()
-                                        self.settings.notebook_name = notebook_dialog:getInputText()
-                                        self:saveSettings()
-                                        UIManager:close(notebook_dialog)
-                                    end
-                                }
-                            }
-                        }
-                    }
-                    UIManager:show(notebook_dialog)
-                    notebook_dialog:onShowKeyboard()
-                end
-            },
-            {
                 text = _("Export to Joplin"),
                 checked_func = function() return self:isEnabled() end,
                 callback = function() self:toggleEnabled() end,
@@ -173,7 +132,6 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
         }
     }
 end
-
 
 local function prepareNote(booknotes)
     -- logger.dbg("booknotes", booknotes)

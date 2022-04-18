@@ -13,14 +13,6 @@ function ReadwiseExporter:isEnabled()
     return self.settings.enabled and self.settings.token
 end
 
-function ReadwiseExporter:pluginInit()
-    if self:isEnabled() then
-        self.client = ReadwiseClient:new {
-            auth_token = self.settings.token
-        }
-    end
-end
-
 function ReadwiseExporter:getMenuTable()
     return {
         text = _("Readwise"),
@@ -66,7 +58,6 @@ function ReadwiseExporter:getMenuTable()
         }
     }
 end
-
 
 function ReadwiseExporter:export(t)
     if self.new_settings or not self.client then
