@@ -37,7 +37,7 @@ local AutoSuspend = WidgetContainer:new{
     task = nil,
     standby_task = nil,
     leave_standby_task = nil,
-    pause_auto_standby = false,
+    going_to_suspend = false,
 }
 
 function AutoSuspend:_enabledStandby()
@@ -158,7 +158,7 @@ function AutoSuspend:init()
     end
     self.leave_standby_task = function()
         -- Only if we're not already entering suspend...
-        if self.pause_auto_standby then
+        if self.going_to_suspend then
             return
         end
 
@@ -310,14 +310,14 @@ function AutoSuspend:onSuspend()
 
     -- And make sure onLeaveStandby, which will come *after* us if we suspended *during* standby,
     -- won't re-schedule stuff right before entering suspend...
-    self.pause_auto_standby = true
+    self.going_to_suspend = true
 end
 
 function AutoSuspend:onResume()
     logger.dbg("AutoSuspend: onResume")
 
     -- Restore standby balance after onSuspend
-    self.pause_auto_standby = false
+    self.going_to_suspend = false
     if self:_enabledStandby() then
         UIManager:allowStandby()
     end
@@ -341,7 +341,7 @@ function AutoSuspend:onLeaveStandby()
     -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
     self:_start()
     -- Assuming _start didn't send us straight to onSuspend (i.e., we were woken from standby by the scheduled suspend task!)...
-    if not self.pause_auto_standby then
+    if not self.going_to_suspend then
         -- Reschedule standby, too (we're guaranteed that no standby task is currently scheduled, hence the lack of unscheduling).
         self:_start_standby()
     end
