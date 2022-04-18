@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220205
+local CURRENT_MIGRATION_DATE = 20220420
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -365,6 +365,28 @@ if last_migration_date < 20220205 then
         G_reader_settings:makeFalse("followed_link_marker")
     end
 end
+
+-- Rename several time storing settings and shift their value to the new meaning
+if last_migration_date < 20220420 then
+    local function migrateSettingsName(old, new, factor)
+        factor = factor or 1
+        if G_reader_settings:readSetting(old) then
+            local value = math.floor(G_reader_settings:readSetting(old) * factor)
+            G_reader_settings:saveSetting(new, value)
+            G_reader_settings:delSetting(old)
+        end
+    end
+    migrateSettingsName("ges_tap_interval", "ges_tap_interval_ms", 1e-3)
+    migrateSettingsName("ges_double_tap_interval", "ges_double_tap_interval_ms", 1e-3)
+    migrateSettingsName("ges_two_finger_tap_duration", "ges_two_finger_tap_duration_ms", 1e-3)
+    migrateSettingsName("ges_hold_interval", "ges_hold_interval_ms", 1e-3)
+    migrateSettingsName("ges_swipe_interval", "ges_swipe_interval_ms", 1e-3)
+    migrateSettingsName("ges_tap_interval_on_keyboard", "ges_tap_interval_on_keyboard_ms", 1e-3)
+
+    migrateSettingsName("device_status_battery_interval", "device_status_battery_interval_minutes")
+    migrateSettingsName("device_status_memory_interval", "device_status_memory_interval_minutes")
+end
+
 
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
