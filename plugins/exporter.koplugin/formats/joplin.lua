@@ -1,14 +1,33 @@
 local BD = require("ui/bidi")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
+local JoplinClient = require("clients/JoplinClient")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
-local JoplinClient = require("clients/JoplinClient")
+
+local function prepareNote(booknotes)
+    local note = ""
+    for _, clipping in ipairs(booknotes.entries) do
+        if clipping.chapter then
+            note = note .. "\n\t*" .. clipping.chapter .. "*\n\n * * *"
+        end
+
+        note = note .. os.date("%Y-%m-%d %H:%M:%S \n", clipping.time)
+        note = note .. clipping.text
+        if clipping.note then
+            note = note .. "\n---\n" .. clipping.note
+        end
+        note = note .. "\n * * *\n"
+    end
+    return note
+end
 
 local JoplinExporter = require("formats/base"):new {
     name = "joplin",
     is_remote = true,
+    notebook_name = _("KOReader Notes"),
 }
 
 function JoplinExporter:isEnabled()
@@ -133,25 +152,14 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
     }
 end
 
-local function prepareNote(booknotes)
-    -- logger.dbg("booknotes", booknotes)
-    local note = ""
-    for _, clipping in ipairs(booknotes.entries) do
-        if clipping.chapter then
-            note = note .. "\n\t*" .. clipping.chapter .. "*\n\n * * *"
-        end
-
-        note = note .. os.date("%Y-%m-%d %H:%M:%S \n", clipping.time)
-        note = note .. clipping.text
-        if clipping.note then
-            note = note .. "\n---\n" .. clipping.note
-        end
-        note = note .. "\n * * *\n"
-    end
-    return note
-end
-
 function JoplinExporter:export(t)
+    ---@todo Check if user deleted our notebook, in that case note
+    -- will end up in random folder in Joplin.
+    if not self.settings.notebook_guid then
+        self.settings.notebook_guid = self.client:createNotebook(self.notebook_name)
+        self:saveSettings()
+    end
+
     if self.new_settings or not self.client then
         self.client = JoplinClient:new {
             server_ip = self.settings.ip,
@@ -160,26 +168,12 @@ function JoplinExporter:export(t)
         }
         self.new_settings = false
     end
-    if self.client:ping() then
+
+    if not self.client:ping() then
+        logger.warn("Cannot reach Joplin server")
         return
     end
-    ---@todo Check if user deleted our notebook, in that case note
-    -- will end up in random folder in Joplin.
-    if not self.settings.notebook_name then
-        self.settings.notebook_name = _("KOReader Notes")
-        self:saveSettings()
-    end
-    if not self.settings.notebook_guid then
-        self.settings.notebook_guid = self.client:createNotebook(self.settings.notebook_name)
-        self:saveSettings()
-    else
-        local notebook = self.client:findNotebookByTitle(self.settings.notebook_name)
-        -- logger.dbg("err", self.settings.notebook_guid, notebook)
-        if not notebook then
-            self.settings.notebook_guid = self.client:createNotebook(self.settings.notebook_name)
-            self:saveSettings()
-        end
-    end
+
     for _, booknotes in pairs(t) do
         local note_guid = self.client:findNoteByTitle(booknotes.title, self.settings.notebook_guid)
         local note = prepareNote(booknotes)
