@@ -1,53 +1,29 @@
-local DataStorage = require("datastorage")
+--[[--
+Base for highlights exporters.
 
-local BaseExporter = {}
+Each exporter should inherit from this class and implement *at least* an `export` function.
+
+@module baseexporter
+]]
+
+local BaseExporter = {
+    clipping_dir = require("datastorage"):getDataDir() .. "/clipboard"
+}
 
 function BaseExporter:new(o)
     o = o or {}
-    o.id = "exporter"
-    o.name = o.name or "generic"
-    o.extension = o.extension or o.name or "export"
-    o.version = o.version or "1.0.0"
-    o.clipping_dir = DataStorage:getDataDir() .. "/clipboard"
-    o.is_remote = o.is_remote or false
+    assert(type(o.name) == "string", "name is mandatory")
     setmetatable(o, self)
     self.__index = self
-    return o:init()
+    return o:_init()
 end
 
-function BaseExporter:init()
+function BaseExporter:_init()
+    self.extension = self.extension or self.name
+    self.is_remote = self.is_remote or false
+    self.version = self.version or "1.0.0"
     self:loadSettings()
-    self:pluginInit()
     return self
-end
-
-function BaseExporter:pluginInit() end
-
-function BaseExporter:isEnabled()
-    return self.settings.enabled
-end
-
-function BaseExporter:toggleEnabled()
-    self.settings.enabled = not self.settings.enabled
-    self:saveSettings()
-end
-
-function BaseExporter:loadSettings()
-    local plugin_settings = G_reader_settings:readSetting(self.id) or {}
-    self.settings = plugin_settings[self.name] or {}
-end
-
-function BaseExporter:saveSettings()
-    local plugin_settings = G_reader_settings:readSetting(self.id) or {}
-    plugin_settings[self.name] = self.settings
-    G_reader_settings:saveSetting(self.id, plugin_settings)
-    self.new_settings = true
-end
-
-function BaseExporter:export(t) end
-
-function BaseExporter:getVersion()
-    return self.name .. "/" .. self.version
 end
 
 function BaseExporter:getTimeStamp()
@@ -55,6 +31,35 @@ function BaseExporter:getTimeStamp()
     return os.date("%Y-%m-%d %H:%M:%S", ts)
 end
 
+function BaseExporter:getVersion()
+    return self.name .. "/" .. self.version
+end
+
+function BaseExporter:loadSettings()
+    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
+    self.settings = plugin_settings[self.name] or {}
+end
+
+function BaseExporter:saveSettings()
+    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
+    plugin_settings[self.name] = self.settings
+    G_reader_settings:saveSetting("exporter", plugin_settings)
+    self.new_settings = true
+end
+
+--[[--
+Exports a table of booknotes to local format or remote service
+
+@table t
+]]
+function BaseExporter:export(t) end
+
+--[[
+File path for local exporters
+
+@string title for single document or nil
+@treturn string absolute path of file
+]]
 function BaseExporter:getFilePath(title)
     if title then
         return self.clipping_dir .. "/" .. self:getTimeStamp() .. "-" .. title .. "." .. self.extension
@@ -63,6 +68,11 @@ function BaseExporter:getFilePath(title)
     end
 end
 
+--[[
+Configuration menu for the exporter
+
+@treturn table menu
+]]
 function BaseExporter:getMenuTable()
     return {
         text = self.name:gsub("^%l", string.upper),
@@ -73,6 +83,23 @@ function BaseExporter:getMenuTable()
             self:toggleEnabled()
         end,
     }
+end
+
+--[[--
+Checks if it's ready to export and was enabled by the user
+
+@treturn bool ready
+]]
+function BaseExporter:isEnabled()
+    return self.settings.enabled
+end
+
+--[[--
+Toggles enabled state if it's ready to export
+]]
+function BaseExporter:toggleEnabled()
+    self.settings.enabled = not self.settings.enabled
+    self:saveSettings()
 end
 
 return BaseExporter
