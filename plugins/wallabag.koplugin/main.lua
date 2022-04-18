@@ -55,6 +55,7 @@ function Wallabag:init()
     self.send_review_as_tags = false
     self.filter_tag = ""
     self.ignore_tags = ""
+    self.auto_tags = ""
     self.articles_per_sync = 30
 
     self:onDispatcherRegisterActions()
@@ -89,6 +90,9 @@ function Wallabag:init()
     end
     if self.wb_settings.data.wallabag.ignore_tags then
         self.ignore_tags = self.wb_settings.data.wallabag.ignore_tags
+    end
+    if self.wb_settings.data.wallabag.auto_tags then
+        self.auto_tags = self.wb_settings.data.wallabag.auto_tags
     end
     if self.wb_settings.data.wallabag.articles_per_sync ~= nil then
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
@@ -210,9 +214,15 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
-                            self:setIgnoreTags(touchmenu_instance)
+                            self:setTagsDialog(touchmenu_instance,
+                                _("Tags to ignore"),
+                                _("Enter a comma-separated list of tags to ignore."),
+                                self.ignore_tags,
+                                function(tags)
+                                    self.ignore_tags = tags
+                                end
+                            )
                         end,
-                        separator = true,
                     },
                     {
                         text_func = function()
@@ -223,7 +233,14 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
-                            self:setAutoTags(touchmenu_instance)
+                            self:setTagsDialog(touchmenu_instance,
+                                _("Tags to automatically add"),
+                                _("Enter a comma-separated list of tags to automatically add to new articles."),
+                                self.auto_tags,
+                                function(tags)
+                                    self.auto_tags = tags
+                                end
+                            )
                         end,
                         separator = true,
                     },
@@ -810,6 +827,7 @@ function Wallabag:addArticle(article_url)
 
     local body = {
         url = article_url,
+        tags = self.auto_tags,
     }
 
     local body_JSON = JSON.encode(body)
@@ -947,11 +965,11 @@ function Wallabag:setFilterTag(touchmenu_instance)
     self.tag_dialog:onShowKeyboard()
 end
 
-function Wallabag:setIgnoreTags(touchmenu_instance)
-   self.ignore_tags_dialog = InputDialog:new {
-        title =  _("Tags to ignore"),
-        description = _("Enter a comma-separated list of tags to ignore."),
-        input = self.ignore_tags,
+function Wallabag:setTagsDialog(touchmenu_instance, title, description, value, callback)
+   self.tags_dialog = InputDialog:new {
+        title =  title,
+        description = description,
+        input = value,
         input_type = "string",
         buttons = {
             {
@@ -959,56 +977,24 @@ function Wallabag:setIgnoreTags(touchmenu_instance)
                     text = _("Cancel"),
                     id = "close",
                     callback = function()
-                        UIManager:close(self.ignore_tags_dialog)
+                        UIManager:close(self.tags_dialog)
                     end,
                 },
                 {
                     text = _("Set tags"),
                     is_enter_default = true,
                     callback = function()
-                        self.ignore_tags = self.ignore_tags_dialog:getInputText()
+                        callback(self.tags_dialog:getInputText())
                         self:saveSettings()
                         touchmenu_instance:updateItems()
-                        UIManager:close(self.ignore_tags_dialog)
+                        UIManager:close(self.tags_dialog)
                     end,
                 }
             }
         },
     }
-    UIManager:show(self.ignore_tags_dialog)
-    self.ignore_tags_dialog:onShowKeyboard()
-end
-
-function Wallabag:setAutoTags(touchmenu_instance)
-   self.auto_tags_dialog = InputDialog:new {
-        title =  _("Tags to automatically add"),
-        description = _("Enter a comma-separated list of tags to automatically add."),
-        input = self.auto_tags,
-        input_type = "string",
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(self.auto_tags_dialog)
-                    end,
-                },
-                {
-                    text = _("Set tags"),
-                    is_enter_default = true,
-                    callback = function()
-                        self.auto_tags = self.auto_tags_dialog:getInputText()
-                        self:saveSettings()
-                        touchmenu_instance:updateItems()
-                        UIManager:close(self.auto_tags_dialog)
-                    end,
-                }
-            }
-        },
-    }
-    UIManager:show(self.auto_tags_dialog)
-    self.auto_tags_dialog:onShowKeyboard()
+    UIManager:show(self.tags_dialog)
+    self.tags_dialog:onShowKeyboard()
 end
 
 function Wallabag:editServerSettings()
@@ -1153,6 +1139,7 @@ function Wallabag:saveSettings()
         directory             = self.directory,
         filter_tag            = self.filter_tag,
         ignore_tags           = self.ignore_tags,
+        auto_tags             = self.auto_tags,
         is_delete_finished    = self.is_delete_finished,
         is_delete_read        = self.is_delete_read,
         is_archiving_deleted  = self.is_archiving_deleted,
