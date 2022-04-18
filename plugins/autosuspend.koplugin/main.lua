@@ -304,7 +304,9 @@ function AutoSuspend:onSuspend()
     -- Make sure we won't attempt to standby during suspend
     -- (because _unschedule_standby calls allowStandby,
     -- so we may trip UIManager's _standbyTransition and end up in AutoSuspend:onAllowStandby)...
-    if self:_enabledStandby() then
+    -- NOTE: We only want to do this *once*, because we might get a series of Suspend events before actually getting a Resume!
+    --       (e.g., Power (button) -> Charging (USB plug) -> SleepCover).
+    if self:_enabledStandby() and not self.going_to_suspend then
         UIManager:preventStandby()
     end
 
@@ -317,10 +319,10 @@ function AutoSuspend:onResume()
     logger.dbg("AutoSuspend: onResume")
 
     -- Restore standby balance after onSuspend
-    self.going_to_suspend = false
-    if self:_enabledStandby() then
+    if self:_enabledStandby() and self.going_to_suspend then
         UIManager:allowStandby()
     end
+    self.going_to_suspend = false
 
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
