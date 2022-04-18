@@ -374,7 +374,7 @@ Attempts to figure out which clock source tap events are using...
 function GestureDetector:probeClockSource(timev)
     -- We'll check if that timestamp is +/- 2.5s away from the three potential clock sources supported by evdev.
     -- We have bigger issues than this if we're parsing events more than 3s late ;).
-    local threshold = time.s(2) + time.us(500000)
+    local threshold = time.s(2) + time.ms(500)
 
     -- Start w/ REALTIME, because it's the easiest to detect ;).
     local realtime = time.realtime_coarse()
