@@ -666,8 +666,7 @@ function VirtualKeyPopup:init()
             }
         },
     }
-    local tap_interval_override_us = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
-    self.tap_interval_override = time.us(tap_interval_override_us)
+    self.tap_interval_override = time.ms(G_reader_settings:readSetting("ges_tap_interval_on_keyboard_ms", 0))
 
     if Device:hasKeys() then
         self.key_events.Close = { {Device.input.group.Back}, doc = "close keyboard" }
@@ -788,8 +787,7 @@ function VirtualKeyboard:init()
     self.min_layer = keyboard.min_layer
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
-    local tap_interval_override_us = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
-    self.tap_interval_override = time.us(tap_interval_override_us)
+    self.tap_interval_override = time.ms(G_reader_settings:readSetting("ges_tap_interval_on_keyboard_ms", 0))
     if Device:hasKeys() then
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end
