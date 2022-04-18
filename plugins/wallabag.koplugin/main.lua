@@ -51,7 +51,7 @@ function Wallabag:init()
     self.is_delete_read = false
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
-    self.is_archiving_deleted = false
+    self.is_archiving_deleted = true
     self.send_review_as_tags = false
     self.filter_tag = ""
     self.ignore_tags = ""
