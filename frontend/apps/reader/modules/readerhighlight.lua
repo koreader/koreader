@@ -297,6 +297,8 @@ end
 
 function ReaderHighlight:onReaderReady()
     self:setupTouchZones()
+    -- fixHighlightSort requires the reader ui to be ready
+    self:fixHighlightSort()
 end
 
 local highlight_style = {
@@ -1611,47 +1613,95 @@ function ReaderHighlight:getHighlightBookmarkItem()
     end
 end
 
+function ReaderHighlight:_getInsertionPositionForRolling(page, highlight)
+    local position
+    local highlight_beginning = highlight.pos0
+    local highlight_end = highlight.pos1
+    local page_highlights = self.view.highlight.saved[page]
+    for i, cur_highlight in ipairs(page_highlights) do
+        local order = self.ui.document:compareXPointers(highlight_beginning, cur_highlight.pos0)
+        if order == 0 then
+            if highlight.highlighted and cur_highlight.highlighted then
+                order = self.ui.document:compareXPointers(highlight_end, cur_highlight.pos1)
+            end
+        end
+        if not order then
+            break
+        end
+        if order > 0 then
+            position = i
+            break
+        end
+    end
+    if position == nil then
+        position = #page_highlights + 1
+    end
+    return position
+end
+
+function ReaderHighlight:_getSortedCursorPositions(page, highlight)
+    local highlight_beginning = highlight.pos0
+    local highlight_end = highlight.pos1
+    highlight_beginning.page = page
+    highlight_end.page = page
+    local order = self.ui.document:comparePositions(highlight_beginning, highlight_end)
+    if order > 0 then
+        return highlight_beginning, highlight_end
+    else
+        return highlight_end, highlight_beginning
+    end
+end
+
+function ReaderHighlight:_getInsertionPositionForNonRolling(page, highlight)
+    local position
+    local page_highlights = self.view.highlight.saved[page]
+    local highlight_beginning, highlight_end = self:_getSortedCursorPositions(page, highlight)
+    for i, cur_highlight in ipairs(page_highlights) do
+        local cur_pos, cur_pos_end = self:_getSortedCursorPositions(page, cur_highlight)
+        local order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
+        if order == 0 then
+            if highlight.highlighted and cur_highlight.highlighted then
+                order = self.ui.document:comparePositions(highlight_end, cur_pos_end)
+            end
+        end
+        if not order then
+            break
+        end
+        if order > 0 then
+            position = i
+            break
+        end
+    end
+    if position == nil then
+        position = #page_highlights + 1
+    end
+    return position
+end
+
 function ReaderHighlight:_insertHighlight(page, highlight)
     local position
     if self.view.highlight.saved[page] == nil or #self.view.highlight.saved[page] == 0 then
         position = 1
     else
-        local page_highlights = self.view.highlight.saved[page]
-        local highlight_beginning = highlight.pos0
-        local highlight_end = highlight.pos1
         if self.ui.rolling then
-            for i, cur_highlight in ipairs(page_highlights) do
-                local order = self.ui.document:compareXPointers(highlight_beginning, cur_highlight.pos0)
-                if order == 0 then
-                    order = self.ui.document:compareXPointers(highlight_end, cur_highlight.pos1)
-                end
-                if order > 0 then
-                    position = i
-                    break
-                end
-            end
+            position = self:_getInsertionPositionForRolling(page, highlight)
         else
-            highlight_beginning.page = page
-            highlight_end.page = page
-            for i, cur_highlight in ipairs(page_highlights) do
-                local cur_pos, cur_pos_end = cur_highlight.pos0, cur_highlight.pos1
-                cur_pos.page = page
-                cur_pos_end.page = page
-                local order = self.ui.document:comparePositions(highlight_beginning, cur_pos)
-                if order == 0 then
-                    order = self.ui.document:comparePositions(highlight_end, cur_pos_end)
-                end
-                if order > 0 then
-                    position = i
-                    break
-                end
-            end
-        end
-        if position == nil then
-            position = #page_highlights + 1
+            position = self:_getInsertionPositionForNonRolling(page, highlight)
         end
     end
     table.insert(self.view.highlight.saved[page], position, highlight)
+end
+
+function ReaderHighlight:fixHighlightSort()
+    if self.ui.doc_settings:hasNot("highlight_sorted_20220418") then
+        for page, highlights in pairs(self.view.highlight.saved) do
+            local prev_highlights = highlights
+            self.view.highlight.saved[page] = {}
+            for _, highlight in pairs(prev_highlights) do
+                self:_insertHighlight(page, highlight)
+            end
+        end
+    end
 end
 
 function ReaderHighlight:saveHighlight()
@@ -1901,6 +1951,7 @@ end
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
+    self.ui.doc_settings:saveSetting("highlight_sorted_20220418", true)
 end
 
 function ReaderHighlight:onClose()
