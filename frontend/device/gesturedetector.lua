@@ -54,6 +54,8 @@ local C = ffi.C
 require("ffi/posix_h")
 
 -- default values (all the time parameters are in microseconds (µs))
+-- todo: No one uses µs here, not even the input dialog
+-- todo: lets shift this value to milliseconds and do a onetimemigration and rename the settings to xxx_ms
 local TAP_INTERVAL_US = 0 * 1000
 local DOUBLE_TAP_INTERVAL_US = 300 * 1000
 local TWO_FINGER_TAP_DURATION_US = 300 * 1000
