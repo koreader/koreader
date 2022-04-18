@@ -152,9 +152,6 @@ local function prepareNote(booknotes)
 end
 
 function JoplinExporter:export(t)
-    if self.client:ping() then
-        return
-    end
     if self.new_settings or not self.client then
         self.client = JoplinClient:new {
             server_ip = self.settings.ip,
@@ -162,6 +159,9 @@ function JoplinExporter:export(t)
             auth_token = self.settings.token
         }
         self.new_settings = false
+    end
+    if self.client:ping() then
+        return
     end
     ---@todo Check if user deleted our notebook, in that case note
     -- will end up in random folder in Joplin.
