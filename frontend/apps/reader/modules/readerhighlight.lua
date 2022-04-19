@@ -1660,9 +1660,6 @@ function ReaderHighlight:_getPagingHighlightInsertionIndex(page, highlight)
         if order == 0 then
             order = self.ui.document:comparePositions(highlight_end, cur_pos_end)
         end
-        if order == nil then
-            break
-        end
         if order > 0 then
             position = i
             break
