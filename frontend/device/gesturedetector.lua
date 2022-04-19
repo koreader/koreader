@@ -53,35 +53,30 @@ local ffi = require("ffi")
 local C = ffi.C
 require("ffi/posix_h")
 
--- default values (all the time parameters are in microseconds (µs))
--- todo: No one uses µs here, not even the input dialog
--- todo: lets shift this value to milliseconds and do a onetimemigration and rename the settings to xxx_ms
-local TAP_INTERVAL_US = 0 * 1000
-local DOUBLE_TAP_INTERVAL_US = 300 * 1000
-local TWO_FINGER_TAP_DURATION_US = 300 * 1000
-local HOLD_INTERVAL_US = 500 * 1000
-local SWIPE_INTERVAL_US = 900 * 1000
+-- default values (time parameters are in milliseconds (ms))
+local TAP_INTERVAL_MS = 0
+local DOUBLE_TAP_INTERVAL_MS = 300
+local TWO_FINGER_TAP_DURATION_MS = 300
+local HOLD_INTERVAL_MS = 500
+local SWIPE_INTERVAL_MS = 900
 -- current values
-local ges_tap_interval = G_reader_settings:readSetting("ges_tap_interval") or TAP_INTERVAL_US
-ges_tap_interval = time.us(ges_tap_interval)
-local ges_double_tap_interval = G_reader_settings:readSetting("ges_double_tap_interval") or DOUBLE_TAP_INTERVAL_US
-ges_double_tap_interval = time.us(ges_double_tap_interval)
-local ges_two_finger_tap_duration = G_reader_settings:readSetting("ges_two_finger_tap_duration") or TWO_FINGER_TAP_DURATION_US
-ges_two_finger_tap_duration = time.us(ges_two_finger_tap_duration)
-local ges_hold_interval = G_reader_settings:readSetting("ges_hold_interval") or HOLD_INTERVAL_US
-ges_hold_interval = time.us(ges_hold_interval)
-local ges_swipe_interval = G_reader_settings:readSetting("ges_swipe_interval") or SWIPE_INTERVAL_US
-ges_swipe_interval = time.us(ges_swipe_interval)
+local ges_tap_interval = time.ms(G_reader_settings:readSetting("ges_tap_interval_ms") or TAP_INTERVAL_MS)
+local ges_double_tap_interval = time.ms(G_reader_settings:readSetting("ges_double_tap_interval_ms")
+    or DOUBLE_TAP_INTERVAL_MS)
+local ges_two_finger_tap_duration = time.ms(G_reader_settings:readSetting("ges_two_finger_tap_duration_ms")
+    or TWO_FINGER_TAP_DURATION_MS)
+local ges_hold_interval = time.ms(G_reader_settings:readSetting("ges_hold_interval_ms") or HOLD_INTERVAL_MS)
+local ges_swipe_interval = time.ms(G_reader_settings:readSetting("ges_swipe_interval_ms") or SWIPE_INTERVAL_MS)
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
     input = nil,
     -- default values (accessed for display by plugins/gestures.koplugin)
-    TAP_INTERVAL_US = TAP_INTERVAL_US,
-    DOUBLE_TAP_INTERVAL_US = DOUBLE_TAP_INTERVAL_US,
-    TWO_FINGER_TAP_DURATION_US = TWO_FINGER_TAP_DURATION_US,
-    HOLD_INTERVAL_US = HOLD_INTERVAL_US,
-    SWIPE_INTERVAL_US = SWIPE_INTERVAL_US,
+    TAP_INTERVAL_MS = TAP_INTERVAL_MS,
+    DOUBLE_TAP_INTERVAL_MS = DOUBLE_TAP_INTERVAL_MS,
+    TWO_FINGER_TAP_DURATION_MS = TWO_FINGER_TAP_DURATION_MS,
+    HOLD_INTERVAL_MS = HOLD_INTERVAL_MS,
+    SWIPE_INTERVAL_MS = SWIPE_INTERVAL_MS,
     -- pinch/spread direction table
     DIRECTION_TABLE = {
         east = "horizontal",
