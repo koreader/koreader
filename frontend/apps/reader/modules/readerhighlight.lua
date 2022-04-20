@@ -1614,7 +1614,7 @@ function ReaderHighlight:getHighlightBookmarkItem()
 end
 
 function ReaderHighlight:_getRollingHighlightInsertionIndex(page, highlight)
-    local position
+    local index
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
     local page_highlights = self.view.highlight.saved[page]
@@ -1627,14 +1627,14 @@ function ReaderHighlight:_getRollingHighlightInsertionIndex(page, highlight)
             break
         end
         if order > 0 then
-            position = i
+            index = i
             break
         end
     end
-    if position == nil then
-        position = #page_highlights + 1
+    if index == nil then
+        index = #page_highlights + 1
     end
-    return position
+    return index
 end
 
 function ReaderHighlight:_sortHighlightBounds(page, highlight)
@@ -1651,7 +1651,7 @@ function ReaderHighlight:_sortHighlightBounds(page, highlight)
 end
 
 function ReaderHighlight:_getPagingHighlightInsertionIndex(page, highlight)
-    local position
+    local index
     local page_highlights = self.view.highlight.saved[page]
     local highlight_beginning, highlight_end = self:_sortHighlightBounds(page, highlight)
     for i, cur_highlight in ipairs(page_highlights) do
@@ -1661,29 +1661,29 @@ function ReaderHighlight:_getPagingHighlightInsertionIndex(page, highlight)
             order = self.ui.document:comparePositions(highlight_end, cur_pos_end)
         end
         if order > 0 then
-            position = i
+            index = i
             break
         end
     end
-    if position == nil then
-        position = #page_highlights + 1
+    if index == nil then
+        index = #page_highlights + 1
     end
-    return position
+    return index
 end
 
 function ReaderHighlight:_insertHighlight(page, highlight)
-    local position
+    local index
     if #self.view.highlight.saved[page] == 0 then
-        position = 1
+        index = 1
     else
         if self.ui.rolling then
-            position = self:_getRollingHighlightInsertionIndex(page, highlight)
+            index = self:_getRollingHighlightInsertionIndex(page, highlight)
         else
-            position = self:_getPagingHighlightInsertionIndex(page, highlight)
+            index = self:_getPagingHighlightInsertionIndex(page, highlight)
         end
     end
-    table.insert(self.view.highlight.saved[page], position, highlight)
-    return position
+    table.insert(self.view.highlight.saved[page], index, highlight)
+    return index
 end
 
 function ReaderHighlight:fixHighlightSort()
@@ -1718,7 +1718,7 @@ function ReaderHighlight:saveHighlight()
             drawer = self.view.highlight.saved_drawer,
             chapter = chapter_name,
         }
-        local position = self:_insertHighlight(page, hl_item)
+        local index = self:_insertHighlight(page, hl_item)
         local bookmark_item = self:getHighlightBookmarkItem()
         if bookmark_item then
             bookmark_item.datetime = datetime
@@ -1728,7 +1728,7 @@ function ReaderHighlight:saveHighlight()
         if self.selected_text.pboxes then
             self:exportToDocument(page, hl_item)
         end
-        return page, position
+        return page, index
     end
 end
 
