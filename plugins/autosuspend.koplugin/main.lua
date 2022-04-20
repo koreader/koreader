@@ -52,12 +52,6 @@ function AutoSuspend:_enabledShutdown()
     return Device:canPowerOff() and self.autoshutdown_timeout_seconds > 0
 end
 
-function AutoSuspend:_updateLastAction()
-    logger.dbg("AutoSuspend: _updateLastAction prologue, last action @", self.last_action_tv:tonumber())
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
-    logger.dbg("AutoSuspend: _updateLastAction coda, @", self.last_action_tv:tonumber())
-end
-
 function AutoSuspend:_schedule(shutdown_only)
     if not self:_enabled() and Device:canPowerOff() and not self:_enabledShutdown() then
         logger.dbg("AutoSuspend:_schedule is disabled")
@@ -165,7 +159,7 @@ function AutoSuspend:init()
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
     end
 
-    self:_updateLastAction()
+    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
     self:_start()
     self:_start_standby()
 
@@ -189,7 +183,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self:_updateLastAction()
+    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
 end
 
 function AutoSuspend:_unschedule_standby()
