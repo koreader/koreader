@@ -153,13 +153,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
 end
 
 function JoplinExporter:export(t)
-    ---@todo Check if user deleted our notebook, in that case note
-    -- will end up in random folder in Joplin.
-    if not self.settings.notebook_guid then
-        self.settings.notebook_guid = self.client:createNotebook(self.notebook_name)
-        self:saveSettings()
-    end
-
+    -- Checking for refreshing/instantiating client should be the first thing in this function.
     if self.new_settings or not self.client then
         self.client = JoplinClient:new {
             server_ip = self.settings.ip,
@@ -168,7 +162,12 @@ function JoplinExporter:export(t)
         }
         self.new_settings = false
     end
-
+    ---@todo Check if user deleted our notebook, in that case note
+    -- will end up in random folder in Joplin.
+    if not self.settings.notebook_guid then
+        self.settings.notebook_guid = self.client:createNotebook(self.notebook_name)
+        self:saveSettings()
+    end
     if not self.client:ping() then
         logger.warn("Cannot reach Joplin server")
         return
