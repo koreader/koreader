@@ -555,7 +555,7 @@ Upon user input, the device needs a certain amount of time to wake up. Generally
                 self:pickTimeoutValue(touchmenu_instance,
                     _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
-                    {default_auto_standby_timeout_seconds, 15*60}, 0)
+                    {3, 15*60}, 0)
             end,
         }
     end
@@ -578,7 +578,7 @@ function AutoSuspend:onAllowStandby()
         wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
     end
 
-    if wake_in > 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
+    if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
         UIManager:broadcastEvent(Event:new("EnterStandby"))
         logger.dbg("AutoSuspend: entering standby with a wakeup alarm in", wake_in, "s")
 
