@@ -1183,9 +1183,17 @@ function UIManager:getNextTaskTimes(count)
     count = count or 1
     local times = {}
     for i = 1, math.min(count, #self._task_queue) do
-        times[i] = UIManager._task_queue[i].time - TimeVal:now()
+        times[i] = self._task_queue[i].time - TimeVal:now()
     end
     return times
+end
+
+function UIManager:getNextTaskTime()
+    if #self._task_queue > 0 then
+        return self._task_queue[i].time - TimeVal:now()
+    else
+        return nil
+    end
 end
 
 function UIManager:_checkTasks()

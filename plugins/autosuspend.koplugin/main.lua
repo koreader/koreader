@@ -555,13 +555,15 @@ function AutoSuspend:onAllowStandby()
     -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
     -- see its own AllowStandby handler for more details.
 
-    local wake_in = math.huge
+    local wake_in
     -- Wake up before the next scheduled function executes (e.g. footer update, suspend ...)
-    local scheduler_times = UIManager:getNextTaskTimes(1)
-    if #scheduler_times == 1 then
+    local next_task_time = UIManager:getNextTaskTime()
+    if next_task_time then
         -- Wake up slightly after the formerly scheduled event,
         -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
-        wake_in = math.floor(scheduler_times[1]:tonumber()) + 1
+        wake_in = math.floor(next_task_time:tonumber()) + 1
+    else
+        wake_in = math.huge
     end
 
     if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
