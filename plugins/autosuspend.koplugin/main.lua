@@ -274,13 +274,6 @@ function AutoSuspend:allowStandby()
     -- Tell UIManager that we now allow standby.
     UIManager:allowStandby()
 
-    -- This is necessary for wakeup from standby, as the deadline for receiving input events
-    -- is calculated from the time to the next scheduled function.
-    -- Make sure this function comes soon, as the time for going to standby after a scheduled wakeup
-    -- is prolonged by the given time. Any time between 0.500 and 0.001 seconds should do.
-    -- Let's call it deadline_guard.
-    UIManager:scheduleIn(0.100, function() end)
-
     -- We've just run our course.
     self.is_standby_scheduled = false
 end
@@ -563,13 +556,12 @@ function AutoSuspend:onAllowStandby()
     -- see its own AllowStandby handler for more details.
 
     local wake_in = math.huge
-    -- The next scheduled function should be our deadline_guard (c.f., `AutoSuspend:allowStandby`).
-    -- Wake up before the second next scheduled function executes (e.g. footer update, suspend ...)
-    local scheduler_times = UIManager:getNextTaskTimes(2)
-    if #scheduler_times == 2 then
+    -- Wake up before the next scheduled function executes (e.g. footer update, suspend ...)
+    local scheduler_times = UIManager:getNextTaskTimes(1)
+    if #scheduler_times == 1 then
         -- Wake up slightly after the formerly scheduled event,
         -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
-        wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
+        wake_in = math.floor(scheduler_times[1]:tonumber()) + 1
     end
 
     if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
