@@ -84,6 +84,12 @@ end
 -- Everything below is to handle auto_disable_wifi ;).
 local default_network_timeout_seconds = 5*60
 local max_network_timeout_seconds = 30*60
+-- If autostandby is enabled, shorten the timeouts
+local auto_standby = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1)
+if auto_standby > 0 then
+    default_network_timeout_seconds = default_network_timeout_seconds / 2
+    max_network_timeout_seconds = max_network_timeout_seconds / 2
+end
 -- This should be more than enough to catch actual activity vs. noise spread over 5 minutes.
 local network_activity_noise_margin = 12 -- unscaled_size_check: ignore
 
