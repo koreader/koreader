@@ -1673,7 +1673,7 @@ end
 
 function ReaderHighlight:_insertHighlight(page, highlight)
     local position
-    if self.view.highlight.saved[page] == nil or #self.view.highlight.saved[page] == 0 then
+    if #self.view.highlight.saved[page] == 0 then
         position = 1
     else
         if self.ui.rolling then
@@ -1683,6 +1683,7 @@ function ReaderHighlight:_insertHighlight(page, highlight)
         end
     end
     table.insert(self.view.highlight.saved[page], position, highlight)
+    return position
 end
 
 function ReaderHighlight:fixHighlightSort()
@@ -1717,7 +1718,7 @@ function ReaderHighlight:saveHighlight()
             drawer = self.view.highlight.saved_drawer,
             chapter = chapter_name,
         }
-        self:_insertHighlight(page, hl_item)
+        local position = self:_insertHighlight(page, hl_item)
         local bookmark_item = self:getHighlightBookmarkItem()
         if bookmark_item then
             bookmark_item.datetime = datetime
@@ -1727,7 +1728,7 @@ function ReaderHighlight:saveHighlight()
         if self.selected_text.pboxes then
             self:exportToDocument(page, hl_item)
         end
-        return page, #self.view.highlight.saved[page]
+        return page, position
     end
 end
 
