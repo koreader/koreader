@@ -53,8 +53,7 @@ local ffi = require("ffi")
 local C = ffi.C
 require("ffi/posix_h")
 
--- default values (all the time parameters are in microseconds (µs))
--- todo: missing onetimemigration to ms
+-- default values (time parameters are in milliseconds (ms))
 local TAP_INTERVAL_MS = 0
 local DOUBLE_TAP_INTERVAL_MS = 300
 local TWO_FINGER_TAP_DURATION_MS = 300
