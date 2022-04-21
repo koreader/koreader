@@ -635,7 +635,7 @@ Unschedules a previously scheduled task.
 In order to unschedule anonymous functions, store a reference.
 
 @func action
-@see scheduleIn
+@see scheduleIn, unscheduleSoonestN, unscheduleLatestN
 
 @usage
 
@@ -649,6 +649,65 @@ function UIManager:unschedule(action)
         if self._task_queue[i].action == action then
             table.remove(self._task_queue, i)
             removed = true
+        end
+    end
+    return removed
+end
+dbg:guard(UIManager, 'unschedule',
+    function(self, action) assert(action ~= nil) end)
+
+--[[--
+Unschedules the soonest N previously scheduled tasks.
+
+This function is faster than `self:unschedule`, if only a well known number of tasks have to be removed
+(and that number is not to big compared to the total number of scheduled tasks).
+
+@func action
+@see unschedule, unscheduleLatestN
+
+@return number of removed tasks
+]]
+function UIManager:unscheduleSoonestN(action, N)
+    logger.dbg("UIManager: unscheduleSoonestN", N) -- to be removed xxx
+    print("xxx unscheduleFirstN", N) -- to be removed xxx
+    local removed = 0
+    N = N or 1
+    for i = 1, #self._task_queue do
+        if self._task_queue[i].action == action then
+            table.remove(self._task_queue, i)
+            removed = removed + 1
+            if removed >= N then
+                return N
+            end
+        end
+    end
+    return removed
+end
+dbg:guard(UIManager, 'unschedule',
+    function(self, action) assert(action ~= nil) end)
+
+--[[--
+Unschedules the latest N previously scheduled tasks.
+
+This function is faster than `self:unschedule`, if only a well known number of tasks have to be removed.
+
+@func action
+@see unschedule, unscheduleSoonestN
+
+@return number of removed tasks
+]]
+function UIManager:unscheduleLatestN(action, N)
+    logger.dbg("UIManager: unscheduleLatestN", N) -- to be removed xxx
+    print("xxx unscheduleLatestN", N) -- to be removed xxx
+    local removed = 0
+    N = N or 1
+    for i = #self._task_queue, 1, -1 do
+        if self._task_queue[i].action == action then
+            table.remove(self._task_queue, i)
+            removed = removed + 1
+            if removed >= N then
+                return N
+            end
         end
     end
     return removed
