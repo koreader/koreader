@@ -78,6 +78,7 @@ end
 Remove task from queue.
 
 This method removes one or more tasks by either index, scheduled time or callback.
+If any tasks are left on exit, the next one will will automatically be re-scheduled.
 
 @int idx Task queue index. Mainly useful within this module.
 @int epoch The epoch for when this task is scheduled to wake up.
@@ -100,6 +101,13 @@ function WakeupMgr:removeTask(idx, epoch, callback)
             removed = true
         end
     end
+
+    -- Re-schedule the next wakeup action, if any
+    if self._task_queue[1] then
+        -- Set next scheduled wakeup, if any.
+        self:setWakeupAlarm(self._task_queue[1].epoch)
+    end
+
     return removed
 end
 
@@ -127,6 +135,19 @@ function WakeupMgr:wakeupAction()
         else
             return false
         end
+    end
+end
+
+--[[--
+Set up the next scheduled wakeup, if any.
+
+Useful for callers that may want to use removeTask *without* running wakeupAction
+(i.e., when an unexpected wakeup that invalidates the task is encountered),
+in a context where multiple wakeup tasks might have been previously added.
+--]]
+function WakeupMgr:setupNextAction()
+    if self._task_queue[1] then
+        self:setWakeupAlarm(self._task_queue[1].epoch)
     end
 end
 
