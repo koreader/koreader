@@ -780,9 +780,9 @@ function Kobo:checkUnexpectedWakeup()
     UIManager:unschedule(Kobo.suspend)
 
     -- Do an initial validation to discriminate unscheduled wakeups happening *outside* of the alarm proximity window.
-    if WakeupMgr:isWakeupAlarmScheduled() and WakeupMgr:validateWakeupAlarmByProximity() then
+    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:validateWakeupAlarmByProximity() then
         logger.info("Kobo suspend: scheduled wakeup.")
-        local res = WakeupMgr:wakeupAction()
+        local res = self.wakeup_mgr:wakeupAction()
         if not res then
             logger.err("Kobo suspend: wakeup action failed.")
         end
@@ -1000,7 +1000,7 @@ end
 
 function Kobo:powerOff()
     -- Much like Nickel itself, disable the RTC alarm before powering down.
-    WakeupMgr:unsetWakeupAlarm()
+    self.wakeup_mgr:unsetWakeupAlarm()
 
     -- Then shut down without init's help
     os.execute("poweroff -f")
