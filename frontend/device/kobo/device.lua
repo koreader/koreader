@@ -814,11 +814,12 @@ function Kobo:getUnexpectedWakeup() return self.unexpected_wakeup_count end
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
-    -- just for wake up, dummy function
-    local function dummy() end
+    local function standby_alarm()
+        logger.dbg("Kobo: woke up from standby via wake alarm")
+    end
 
     if max_duration then
-        self.wakeup_mgr:addTask(max_duration, dummy)
+        self.wakeup_mgr:addTask(max_duration, standby_alarm)
     end
 
     local TimeVal = require("ui/timeval")
@@ -833,7 +834,7 @@ function Kobo:standby(max_duration)
     logger.info("Kobo suspend: zZz zZz zZz zZz? Write syscall returned: ", ret)
 
     if max_duration then
-        self.wakeup_mgr:removeTask(nil, nil, dummy)
+        self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
     end
 end
 
