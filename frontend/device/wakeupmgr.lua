@@ -104,7 +104,6 @@ function WakeupMgr:removeTask(idx, epoch, callback)
 
     -- Re-schedule the next wakeup action, if any
     if self._task_queue[1] then
-        -- Set next scheduled wakeup, if any.
         self:setWakeupAlarm(self._task_queue[1].epoch)
     end
 
@@ -135,19 +134,6 @@ function WakeupMgr:wakeupAction()
         else
             return false
         end
-    end
-end
-
---[[--
-Set up the next scheduled wakeup, if any.
-
-Useful for callers that may want to use removeTask *without* running wakeupAction
-(i.e., when an unexpected wakeup that invalidates the task is encountered),
-in a context where multiple wakeup tasks might have been previously added.
---]]
-function WakeupMgr:setupNextAction()
-    if self._task_queue[1] then
-        self:setWakeupAlarm(self._task_queue[1].epoch)
     end
 end
 
