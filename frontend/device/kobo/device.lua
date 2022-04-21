@@ -815,7 +815,7 @@ function Kobo:getUnexpectedWakeup() return self.unexpected_wakeup_count end
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
     local function standby_alarm()
-        logger.dbg("Kobo: woke up from standby via wake alarm")
+        logger.dbg("Kobo: tripped standby wake alarm")
     end
 
     if max_duration then
