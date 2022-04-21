@@ -1453,7 +1453,6 @@ function ReaderHighlight:onHoldRelease()
                 self:onClose()
             elseif default_highlight_action == "translate" then
                 self:translate(self.selected_text)
-                self:onClose()
             elseif default_highlight_action == "wikipedia" then
                 self:lookupWikipedia()
                 self:onClose()
