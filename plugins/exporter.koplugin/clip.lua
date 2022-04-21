@@ -287,7 +287,8 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
         end
     end
     -- A table to map bookmarks timestamp to index in the bookmarks table
-    -- to facilitate sorting clippings by their position in the book.
+    -- to facilitate sorting clippings by their position in the book
+    -- since highlights are not sorted by position while bookmarks are.
     local bookmark_indexes = {}
     for i, bookmark in ipairs(bookmarks) do
         bookmark_indexes[self:getTime(bookmark.datetime)] = i
