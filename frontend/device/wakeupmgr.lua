@@ -77,7 +77,7 @@ end
 --[[--
 Remove task from queue.
 
-This method removes a task by either index, scheduled time or callback.
+This method removes one or more tasks by either index, scheduled time or callback.
 
 @int idx Task queue index. Mainly useful within this module.
 @int epoch The epoch for when this task is scheduled to wake up.
@@ -92,12 +92,15 @@ function WakeupMgr:removeTask(idx, epoch, callback)
 
     if #self._task_queue < 1 then return end
 
-    for k, v in ipairs(self._task_queue) do
+    local removed = false
+    for k = #self._task_queue, 1, -1 do
+        local v = self._task_queue[k]
         if k == idx or epoch == v.epoch or callback == v.callback then
             table.remove(self._task_queue, k)
-            return true
+            removed = true
         end
     end
+    return removed
 end
 
 --[[--
