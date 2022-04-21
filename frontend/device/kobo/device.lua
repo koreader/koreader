@@ -842,8 +842,6 @@ function Kobo:standby(max_duration)
         else
             -- We woke up early (user input?), remove the alarm
             self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
-            -- And set up the next one again (if any)
-            ---@todo
         end
     end
 end
