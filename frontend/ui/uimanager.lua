@@ -1190,7 +1190,7 @@ end
 
 function UIManager:getNextTaskTime()
     if #self._task_queue > 0 then
-        return self._task_queue[i].time - TimeVal:now()
+        return self._task_queue[1].time - TimeVal:now()
     else
         return nil
     end
