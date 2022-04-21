@@ -1179,6 +1179,7 @@ function UIManager:broadcastEvent(event)
     end
 end
 
+--[[
 function UIManager:getNextTaskTimes(count)
     count = count or 1
     local times = {}
@@ -1187,6 +1188,7 @@ function UIManager:getNextTaskTimes(count)
     end
     return times
 end
+--]]
 
 function UIManager:getNextTaskTime()
     if #self._task_queue > 0 then
