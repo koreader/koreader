@@ -288,10 +288,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
     end
     local bookmark_timestamps = {}
     for i = #bookmarks, 1, -1 do
-        local bookmark = bookmarks[i]
-        if bookmark.datetime then
-            bookmark_timestamps[self:getTime(bookmark.datetime)] = #bookmarks - i + 1
-        end
+        bookmark_timestamps[self:getTime(bookmarks[i].datetime)] = #bookmarks - i + 1
     end
     table.sort(book, function(v1, v2) return bookmark_timestamps[v1[1].time] < bookmark_timestamps[v2[1].time] end)
 end
