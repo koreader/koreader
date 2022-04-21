@@ -834,13 +834,13 @@ function Kobo:standby(max_duration)
     if max_duration then
         -- There's no scheduling shenanigans like in suspend, so the proximity window can be much tighter...
         if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:validateWakeupAlarmByProximity(nil, 5) then
-            -- If we registered other alarms further in the future, this will take care of scheduling the next one.
+            -- If we registered other alarms further in the future, this will take care of re-scheduling the next one.
             local res = self.wakeup_mgr:wakeupAction()
             if not res then
                 logger.err("Kobo standby: wakeup action failed.")
             end
         else
-            -- We woke up early (user input?), remove the alarm
+            -- We woke up early (user input?), remove the standby alarm (and re-schedule the next one, if any).
             self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
         end
     end
