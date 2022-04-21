@@ -286,7 +286,14 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             end
         end
     end
-    table.sort(book, function(v1, v2) return v1[1].page < v2[1].page end)
+    -- A table to map bookmarks timestamp to index in the bookmarks table
+    -- to facilitate sorting clippings by their position in the book.
+    local bookmark_indexes = {}
+    for i, bookmark in ipairs(bookmarks) do
+        bookmark_indexes[self:getTime(bookmark.datetime)] = i
+    end
+    -- Sort clippings by their position in the book.
+    table.sort(book, function(v1, v2) return bookmark_indexes[v1[1].time] > bookmark_indexes[v2[1].time] end)
 end
 
 function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
