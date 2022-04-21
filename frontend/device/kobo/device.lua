@@ -780,7 +780,7 @@ function Kobo:checkUnexpectedWakeup()
     UIManager:unschedule(Kobo.suspend)
 
     -- Do an initial validation to discriminate unscheduled wakeups happening *outside* of the alarm proximity window.
-    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:validateWakeupAlarmByProximity() then
+    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:validateWakeupAlarmByProximity(nil, 30) then
         logger.info("Kobo suspend: scheduled wakeup.")
         local res = self.wakeup_mgr:wakeupAction()
         if not res then
@@ -791,8 +791,7 @@ function Kobo:checkUnexpectedWakeup()
         -- poweroff action to send out close events to all requisite widgets.
         UIManager:scheduleIn(30, Kobo.suspend, self)
     else
-        logger.dbg("Kobo suspend: checking unexpected wakeup:",
-                   self.unexpected_wakeup_count)
+        logger.dbg("Kobo suspend: checking unexpected wakeup:", self.unexpected_wakeup_count)
         if self.unexpected_wakeup_count == 0 or self.unexpected_wakeup_count > 20 then
             -- Don't put device back to sleep under the following two cases:
             --   1. a resume event triggered Kobo:resume() function
@@ -803,8 +802,7 @@ function Kobo:checkUnexpectedWakeup()
             return
         end
 
-        logger.err("Kobo suspend: putting device back to sleep. Unexpected wakeups:",
-                   self.unexpected_wakeup_count)
+        logger.err("Kobo suspend: putting device back to sleep. Unexpected wakeups:", self.unexpected_wakeup_count)
         Kobo:suspend()
     end
 end
@@ -834,7 +832,19 @@ function Kobo:standby(max_duration)
     logger.info("Kobo suspend: zZz zZz zZz zZz? Write syscall returned: ", ret)
 
     if max_duration then
-        self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
+        -- There's no scheduling shenanigans like in suspend, so the proximity window can be much tighter...
+        if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:validateWakeupAlarmByProximity(nil, 5) then
+            -- If we registered other alarms further in the future, this will take care of scheduling the next one.
+            local res = self.wakeup_mgr:wakeupAction()
+            if not res then
+                logger.err("Kobo standby: wakeup action failed.")
+            end
+        else
+            -- We woke up early (user input?), remove the alarm
+            self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
+            -- And set up the next one again (if any)
+            ---@todo
+        end
     end
 end
 
