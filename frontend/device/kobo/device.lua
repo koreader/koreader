@@ -785,12 +785,12 @@ function Kobo:checkUnexpectedWakeup()
         -- Assume we want to go back to sleep after running the scheduled action
         -- (Kobo:resume will unschedule this on an user-triggered resume).
         logger.info("Kobo suspend: putting device back to sleep after scheduled wakeup.")
-        -- We need some leeway for the poweroff action to send out close events to all requisite widgets,
-        -- since we don't actually want to suspend behing its back ;).
+        -- We need significant leeway for the poweroff action to send out close events to all requisite widgets,
+        -- since we don't actually want to suspend behind its back ;).
         UIManager:scheduleIn(30, self.suspend, self)
     else
-        -- Wev'e hit an early resume, assume this is unexpected (as we only run if Kobo:resume hasn't already).
-        logger.dbg("Kobo suspend: checking unexpected wakeup:", self.unexpected_wakeup_count)
+        -- We've hit an early resume, assume this is unexpected (as we only run if Kobo:resume hasn't already).
+        logger.dbg("Kobo suspend: checking unexpected wakeup number", self.unexpected_wakeup_count)
         if self.unexpected_wakeup_count == 0 or self.unexpected_wakeup_count > 20 then
             -- Don't put device back to sleep under the following two cases:
             --   1. a resume event triggered Kobo:resume() function
