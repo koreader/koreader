@@ -960,7 +960,7 @@ function AutoWarmth:getAutodimMenu()
                         value_hold_step = 5,
                         precision = "%0.1f",
                         callback = function(spin)
-                            if not spin.value then starttime_m = DEFAULT_AUTODIM_STARTTIME_M end
+                            if not spin then return end
                             self.autodim_starttime_m = spin.value
                             G_reader_settings:saveSetting("autodim_starttime_minutes", spin.value)
                             self:_schedule_autodim_task()
@@ -996,7 +996,7 @@ function AutoWarmth:getAutodimMenu()
                         value_step = 1,
                         value_hold_step = 10,
                         callback = function(spin)
-                            if not spin.value then duration_s = DEFAULT_AUTODIM_DURATION_S end
+                            if not spin then return end
                             self.autodim_duration_s = spin.value
                             G_reader_settings:saveSetting("autodim_duration_seconds", spin.value)
                             self:_schedule_autodim_task()
