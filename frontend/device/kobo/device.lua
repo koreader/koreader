@@ -776,7 +776,7 @@ end
 
 function Kobo:checkUnexpectedWakeup()
     local UIManager = require("ui/uimanager")
-    -- just in case other events like SleepCoverClosed also scheduled a suspend
+    -- Just in case other events like SleepCoverClosed also scheduled a suspend
     UIManager:unschedule(Kobo.suspend)
 
     -- Do an initial validation to discriminate unscheduled wakeups happening *outside* of the alarm proximity window.
@@ -832,15 +832,15 @@ function Kobo:standby(max_duration)
     logger.info("Kobo suspend: zZz zZz zZz zZz? Write syscall returned: ", ret)
 
     if max_duration then
-        -- There's no scheduling shenanigans like in suspend, so the proximity window can be much tighter...
-        if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:validateWakeupAlarmByProximity(nil, 5) then
-            -- If we registered other alarms further in the future, this will take care of re-scheduling the next one.
-            local res = self.wakeup_mgr:wakeupAction()
-            if not res then
-                logger.err("Kobo standby: wakeup action failed.")
+        if self.wakeup_mgr:isWakeupAlarmScheduled() then
+            -- There's no scheduling shenanigans like in suspend, so the proximity window can be much tighter...
+            -- (This re-schedules the next task on success).
+            if not self.wakeup_mgr:wakeupAction(5) then
+                -- We woke up early (user input?), remove the standby alarm (and re-schedule the next one, if any).
+                self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
             end
         else
-            -- We woke up early (user input?), remove the standby alarm (and re-schedule the next one, if any).
+            -- Uh, RTC says there's no longer an alarm set :?!
             self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
         end
     end

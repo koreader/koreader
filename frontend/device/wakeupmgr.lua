@@ -116,14 +116,15 @@ Execute wakeup action.
 This method should be called by the device resume logic in case of a scheduled wakeup.
 
 It checks if the wakeup was scheduled by us using @{validateWakeupAlarmByProximity},
-executes the task, and schedules the next wakeup if any.
+executes the task, and, on success, schedules the next wakeup if any.
 
-@treturn bool
+@int proximity Proximity window to the scheduled wakeup (passed to @{validateWakeupAlarmByProximity}).
+@treturn bool (true if we were truly woken up by the scheduled wakeup; false otherwise)
 --]]
-function WakeupMgr:wakeupAction()
+function WakeupMgr:wakeupAction(proximity)
     if #self._task_queue > 0 then
         local task = self._task_queue[1]
-        if self:validateWakeupAlarmByProximity(task.epoch) then
+        if self:validateWakeupAlarmByProximity(task.epoch, proximity) then
             task.callback()
             self:removeTask(1)
             if self._task_queue[1] then
