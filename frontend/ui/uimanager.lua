@@ -164,17 +164,30 @@ function UIManager:init()
             -- Just ignore wakeup events, and do NOT set is_cover_closed,
             -- so device/generic/device will let us use the power button to wake ;).
             self.event_handlers["SleepCoverClosed"] = function()
+                if Device.input then
+                    Device.input:inhibitInput(true)
+                end
                 self:suspend()
             end
             self.event_handlers["SleepCoverOpened"] = function()
+                if Device.input then
+                    Device.input:inhibitInput(false)
+                end
                 Device.is_cover_closed = false
             end
         else
             self.event_handlers["SleepCoverClosed"] = function()
+                -- Block almost all user input while the cover is closed.
+                if Device.input then
+                    Device.input:inhibitInput(true)
+                end
                 Device.is_cover_closed = true
                 self:suspend()
             end
             self.event_handlers["SleepCoverOpened"] = function()
+                if Device.input then
+                    Device.input:inhibitInput(false)
+                end
                 Device.is_cover_closed = false
                 self:resume()
             end
