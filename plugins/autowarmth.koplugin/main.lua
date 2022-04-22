@@ -1047,7 +1047,9 @@ end
 
 function AutoWarmth:_schedule_autodim_task(seconds)
     UIManager:unscheduleSoonestN(self.autodim_task, 1)
-    if not seconds then
+    if self.autodim_starttime_m < 0 then
+        return
+    elseif not seconds then
         -- if starttime is lower or equal to 1 minute, use the exact time
         if self.autodim_starttime_m <= 1 then
             seconds = self.autodim_starttime_m * 60
