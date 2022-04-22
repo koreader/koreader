@@ -1277,28 +1277,37 @@ end
 -- Allow toggling the handling of most every kind of input, except for power management related events.
 function Input:inhibitInput(toggle)
     if toggle then
-        logger.info("Inhibiting user input")
-
-        self._key_ev_handler = self.handleKeyBoardEv
-        self._oasis_ev_handler = self.handleOasisOrientationEv
-        self._abs_ev_handler = self.handleTouchEv
-        self._msc_ev_handler = self.handleMiscEv
-        self._sdl_ev_handler = self.handleSdlEv
-        self._generic_ev_handler = self.handleGenericEv
-
         -- Only handle power management events
-        self.handleKeyBoardEv = self.handlePowerManagementOnlyEv
+        if not self._key_ev_handler then
+            logger.info("Inhibiting user input")
+            self._key_ev_handler = self.handleKeyBoardEv
+            self.handleKeyBoardEv = self.handlePowerManagementOnlyEv
+        end
         -- And send everything else to the void
-        self.handleOasisOrientationEv = self.voidEv
-        self.handleTouchEv = self.voidEv
-        self.handleMiscEv = self.voidEv
-        self.handleSdlEv = self.voidEv
-        self.handleGenericEv = self.voidEv
+        if not self._oasis_ev_handler then
+            self._oasis_ev_handler = self.handleOasisOrientationEv
+            self.handleOasisOrientationEv = self.voidEv
+        end
+        if not self._abs_ev_handler then
+            self._abs_ev_handler = self.handleTouchEv
+            self.handleTouchEv = self.voidEv
+        end
+        if not self._msc_ev_handler then
+            self._msc_ev_handler = self.handleMiscEv
+            self.handleMiscEv = self.voidEv
+        end
+        if not self._sdl_ev_handler then
+            self._sdl_ev_handler = self.handleSdlEv
+            self.handleSdlEv = self.voidEv
+        end
+        if not self._generic_ev_handler then
+            self._generic_ev_handler = self.handleGenericEv
+            self.handleGenericEv = self.voidEv
+        end
     else
-        logger.info("Restoring user input handling")
-
         -- Restore event handlers, if any
         if self._key_ev_handler then
+            logger.info("Restoring user input handling")
             self.handleKeyBoardEv = self._key_ev_handler
             self._key_ev_handler = nil
         end
