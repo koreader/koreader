@@ -36,6 +36,8 @@ local AutoSuspend = WidgetContainer:new{
     is_standby_scheduled = false,
     task = nil,
     standby_task = nil,
+    leave_standby_task = nil,
+    going_to_suspend = false,
 }
 
 function AutoSuspend:_enabledStandby()
@@ -57,7 +59,15 @@ function AutoSuspend:_schedule(shutdown_only)
     end
 
     local suspend_delay, shutdown_delay
-    if PluginShare.pause_auto_suspend or Device.powerd:isCharging() then
+    local is_charging
+    -- On devices with an auxiliary battery, we only care about the auxiliary battery being charged...
+    local powerd = Device:getPowerDevice()
+    if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+        is_charging = powerd:isAuxCharging()
+    else
+        is_charging = powerd:isCharging()
+    end
+    if PluginShare.pause_auto_suspend or is_charging then
         suspend_delay = self.auto_suspend_timeout_seconds
         shutdown_delay = self.autoshutdown_timeout_seconds
     else
@@ -87,23 +97,21 @@ end
 
 function AutoSuspend:_unschedule()
     if self.task then
-        logger.dbg("AutoSuspend: unschedule")
+        logger.dbg("AutoSuspend: unschedule suspend/shutdown timer")
         UIManager:unschedule(self.task)
     end
 end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
-        logger.dbg("AutoSuspend: start (suspend/shutdown) at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: start suspend/shutdown timer at", self.last_action_tv:tonumber())
         self:_schedule()
     end
 end
 
 function AutoSuspend:_start_standby()
     if self:_enabledStandby() then
-        self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
-        logger.dbg("AutoSuspend: start (standby) at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: start standby timer at", self.last_action_tv:tonumber())
         self:_schedule_standby()
     end
 end
@@ -111,8 +119,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
-        logger.dbg("AutoSuspend: restart at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: restart shutdown timer at", self.last_action_tv:tonumber())
         self:_schedule(true)
     end
 end
@@ -143,7 +150,16 @@ function AutoSuspend:init()
     self.standby_task = function()
         self:_schedule_standby()
     end
+    self.leave_standby_task = function()
+        -- Only if we're not already entering suspend...
+        if self.going_to_suspend then
+            return
+        end
 
+        UIManager:broadcastEvent(Event:new("LeaveStandby"))
+    end
+
+    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
     self:_start()
     self:_start_standby()
 
@@ -162,6 +178,7 @@ function AutoSuspend:onCloseWidget()
 
     self:_unschedule_standby()
     self.standby_task = nil
+    self.leave_standby_task = nil
 end
 
 function AutoSuspend:onInputEvent()
@@ -171,12 +188,17 @@ end
 
 function AutoSuspend:_unschedule_standby()
     if self.is_standby_scheduled and self.standby_task then
-        logger.dbg("AutoSuspend: unschedule standby")
+        logger.dbg("AutoSuspend: unschedule standby timer")
         UIManager:unschedule(self.standby_task)
         -- Restore the UIManager balance, as we run preventStandby right after scheduling this task.
         UIManager:allowStandby()
 
         self.is_standby_scheduled = false
+    end
+
+    -- Make sure we don't trigger a ghost LeaveStandby event...
+    if self.leave_standby_task then
+        UIManager:unschedule(self.leave_standby_task)
     end
 end
 
@@ -202,17 +224,23 @@ function AutoSuspend:_schedule_standby()
         standby_delay = self.auto_standby_timeout_seconds
     elseif Device.powerd:isCharging() and not Device:canPowerSaveWhileCharging() then
         -- Don't enter standby when charging on devices where charging prevents entering low power states.
+        -- NOTE: Minor simplification here, we currently don't do the hasAuxBattery dance like in _schedule,
+        --       because all the hasAuxBattery devices can currently enter PM states while charging ;).
         --logger.dbg("AutoSuspend: charging, delaying standby")
         standby_delay = self.auto_standby_timeout_seconds
     else
         local now_tv = UIManager:getElapsedTimeSinceBoot()
         standby_delay = self.auto_standby_timeout_seconds - (now_tv - self.last_action_tv):tonumber()
 
-        -- If we somehow blow past the deadline on the first call of a scheduling cycle,
+        -- If we blow past the deadline on the first call of a scheduling cycle,
         -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...
-        -- (This shouldn't really ever happen, unless something is going seriously wrong somewhere).
         if not self.is_standby_scheduled and standby_delay <= 0 then
-            standby_delay = 0.001
+            -- If this happens, it means we hit LeaveStandby or Resume *before* consuming new input events,
+            -- e.g., if there weren't any input events at all (woken up by an alarm),
+            -- or if the only input events we consumed did not trigger an InputEvent event (woken up by gyro events),
+            -- meaning self.last_action_tv is further in the past than it ought to.
+            -- Delay by the full amount to avoid further bad scheduling interactions.
+            standby_delay = self.auto_standby_timeout_seconds
         end
     end
 
@@ -235,6 +263,7 @@ function AutoSuspend:_schedule_standby()
 end
 
 function AutoSuspend:preventStandby()
+    logger.dbg("AutoSuspend: preventStandby")
     -- Tell UIManager that we want to prevent standby until our allowStandby scheduled task runs.
     UIManager:preventStandby()
 end
@@ -265,22 +294,53 @@ function AutoSuspend:onSuspend()
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:addTask(self.autoshutdown_timeout_seconds, UIManager.poweroff_action)
     end
+
+    -- Make sure we won't attempt to standby during suspend
+    -- (because _unschedule_standby calls allowStandby,
+    -- so we may trip UIManager's _standbyTransition and end up in AutoSuspend:onAllowStandby)...
+    -- NOTE: We only want to do this *once*, because we might get a series of Suspend events before actually getting a Resume!
+    --       (e.g., Power (button) -> Charging (USB plug) -> SleepCover).
+    if self:_enabledStandby() and not self.going_to_suspend then
+        UIManager:preventStandby()
+    end
+
+    -- And make sure onLeaveStandby, which will come *after* us if we suspended *during* standby,
+    -- won't re-schedule stuff right before entering suspend...
+    self.going_to_suspend = true
 end
 
 function AutoSuspend:onResume()
     logger.dbg("AutoSuspend: onResume")
+
+    -- Restore standby balance after onSuspend
+    if self:_enabledStandby() and self.going_to_suspend then
+        UIManager:allowStandby()
+    end
+    self.going_to_suspend = false
+
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
     self:_unschedule()
+    -- We should always follow an InputEvent, so last_action_tv is already up to date :).
     self:_start()
     self:_unschedule_standby()
     self:_start_standby()
 end
 
 function AutoSuspend:onLeaveStandby()
-    self:_start_standby()
+    logger.dbg("AutoSuspend: onLeaveStandby")
+    -- Unschedule suspend and shutdown, as the realtime clock has ticked
+    self:_unschedule()
+    -- Reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
+    -- i.e., the goal is to behave as if we'd never unscheduled it, making sure we do *NOT* reset the delay to the full timeout.
+    self:_start()
+    -- Assuming _start didn't send us straight to onSuspend (i.e., we were woken from standby by the scheduled suspend task!)...
+    if not self.going_to_suspend then
+        -- Reschedule standby, too (we're guaranteed that no standby task is currently scheduled, hence the lack of unscheduling).
+        self:_start_standby()
+    end
 end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
@@ -489,7 +549,7 @@ Upon user input, the device needs a certain amount of time to wake up. Generally
                 self:pickTimeoutValue(touchmenu_instance,
                     _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
-                    {default_auto_standby_timeout_seconds, 15*60}, 0)
+                    {3, 15*60}, 0)
             end,
         }
     end
@@ -512,7 +572,7 @@ function AutoSuspend:onAllowStandby()
         wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
     end
 
-    if wake_in > 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
+    if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
         UIManager:broadcastEvent(Event:new("EnterStandby"))
         logger.dbg("AutoSuspend: entering standby with a wakeup alarm in", wake_in, "s")
 
@@ -521,12 +581,14 @@ function AutoSuspend:onAllowStandby()
 
         logger.dbg("AutoSuspend: left standby after", Device.last_standby_tv:tonumber(), "s")
 
-        UIManager:broadcastEvent(Event:new("LeaveStandby"))
-        self:_unschedule() -- unschedule suspend and shutdown, as the realtime clock has ticked
-        self:_start()      -- reschedule suspend and shutdown with the new time
+        -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
+        -- to make sure UIManager will consume the input events that woke us up first
+        -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
+        -- (This ensures we'll use an up to date last_action_tv, and that it only ever gets updated from *user* input).
+        -- NOTE: UIManager consumes scheduled tasks before input events, so make sure we delay by a significant amount,
+        --       especially given that this delay will likely be used as the next input polling loop timeout...
+        UIManager:scheduleIn(1, self.leave_standby_task)
     end
-    -- We don't reschedule standby here, as this will interfere with suspend.
-    -- Leave that to `onLeaveStandby`.
 end
 
 return AutoSuspend

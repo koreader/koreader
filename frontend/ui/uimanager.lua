@@ -1841,6 +1841,7 @@ Standby is re-enabled only after all issued prevents are paired with allowStandb
 function UIManager:allowStandby()
     assert(self._prevent_standby_count > 0, "allowing standby that isn't prevented; you have an allow/prevent mismatch somewhere")
     self._prevent_standby_count = self._prevent_standby_count - 1
+    logger.dbg("UIManager:allowStandby, counter decreased to", self._prevent_standby_count)
 end
 
 --[[--
@@ -1850,6 +1851,7 @@ i.e., something is happening in background, yet UI may tick.
 ]]
 function UIManager:preventStandby()
     self._prevent_standby_count = self._prevent_standby_count + 1
+    logger.dbg("UIManager:preventStandby, counter increased to", self._prevent_standby_count)
 end
 
 -- The allow/prevent calls above can interminently allow standbys, but we're not interested until

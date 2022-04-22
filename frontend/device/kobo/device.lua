@@ -1012,7 +1012,6 @@ end
 
 function Kobo:toggleGSensor(toggle)
     if self:canToggleGSensor() and self.input then
-        -- Currently only supported on the Forma
         if self.misc_ntx_gsensor_protocol then
             self.input:toggleMiscEvNTX(toggle)
         end
