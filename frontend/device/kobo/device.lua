@@ -835,12 +835,7 @@ function Kobo:standby(max_duration)
         if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(5) then
             -- We tripped the standby alarm, UIManager will be able to run whatever was actually scheduled,
             -- and AutoSuspend will handle going back to standby if necessary.
-            -- NOTE: wakeupAction takes care of re-scheduling the next alarm, if any.
             logger.dbg("Kobo standby: tripped rtc wake alarm")
-        else
-            -- We woke up early (user input?), remove the standby alarm we've just set.
-            -- NOTE: removeTask takes care of re-scheduling the next alarm, if any.
-            self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
         end
     end
 end
