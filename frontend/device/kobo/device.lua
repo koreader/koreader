@@ -776,21 +776,20 @@ end
 
 function Kobo:checkUnexpectedWakeup()
     local UIManager = require("ui/uimanager")
-    -- Just in case other events like SleepCoverClosed also scheduled a suspend
-    UIManager:unschedule(Kobo.suspend)
+    -- Just in case another event like SleepCoverClosed also scheduled a suspend
+    UIManager:unschedule(self.suspend)
 
-    -- Do an initial validation to discriminate unscheduled wakeups happening *outside* of the alarm proximity window.
-    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:validateWakeupAlarmByProximity(nil, 30) then
-        logger.info("Kobo suspend: scheduled wakeup.")
-        local res = self.wakeup_mgr:wakeupAction()
-        if not res then
-            logger.err("Kobo suspend: wakeup action failed.")
-        end
-        logger.info("Kobo suspend: putting device back to sleep.")
-        -- Most wakeup actions are linear, but we need some leeway for the
-        -- poweroff action to send out close events to all requisite widgets.
-        UIManager:scheduleIn(30, Kobo.suspend, self)
+    -- The proximity window is rather large, because we're scheduled to run 15 seconds after resuming,
+    -- so we're already guaranteed to be at least 15s away from the alarm ;).
+    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(30) then
+        -- Assume we want to go back to sleep after running the scheduled action
+        -- (Kobo:resume will unschedule this on an user-triggered resume).
+        logger.info("Kobo suspend: putting device back to sleep after scheduled wakeup.")
+        -- We need some leeway for the poweroff action to send out close events to all requisite widgets,
+        -- since we don't actually want to suspend behing its back ;).
+        UIManager:scheduleIn(30, self.suspend, self)
     else
+        -- Wev'e hit an early resume, assume this is unexpected (as we only run if Kobo:resume hasn't already).
         logger.dbg("Kobo suspend: checking unexpected wakeup:", self.unexpected_wakeup_count)
         if self.unexpected_wakeup_count == 0 or self.unexpected_wakeup_count > 20 then
             -- Don't put device back to sleep under the following two cases:
@@ -802,7 +801,7 @@ function Kobo:checkUnexpectedWakeup()
             return
         end
 
-        logger.err("Kobo suspend: putting device back to sleep. Unexpected wakeups:", self.unexpected_wakeup_count)
+        logger.err("Kobo suspend: putting device back to sleep after", self.unexpected_wakeup_count, "unexpected wakeups.")
         Kobo:suspend()
     end
 end
@@ -970,16 +969,19 @@ function Kobo:suspend()
     -- Kobo:resume() will reset unexpected_wakeup_count = 0 to signal an
     -- expected wakeup, which gets checked in checkUnexpectedWakeup().
     self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
-    -- assuming Kobo:resume() will be called in 15 seconds
+    -- assuming Kobo:resume() will be called in the next 15 seconds
     logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
     UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
 end
 
 function Kobo:resume()
     logger.info("Kobo resume: clean up after wakeup")
-    -- reset unexpected_wakeup_count ASAP
+    -- Reset unexpected_wakeup_count ASAP
     self.unexpected_wakeup_count = 0
-    require("ui/uimanager"):unschedule(self.checkUnexpectedWakeup)
+    -- Unschedule the checkUnexpectedWakeup shenanigans.
+    local UIManager = require("ui/uimanager")
+    UIManager:unschedule(self.checkUnexpectedWakeup)
+    UIManager:unschedule(self.suspend)
 
     -- Now that we're up, unflag subsystems for suspend...
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
