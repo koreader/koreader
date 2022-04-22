@@ -169,7 +169,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     if self.default_values then
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Apply default values: %1 / %2"),
+                text = self.default_text or T(_("Spin to default values: %1 / %2"),
                     self.left_precision and string.format(self.left_precision, self.left_default) or self.left_default,
                     self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default),
                 callback = function()
@@ -177,7 +177,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
                     right_widget.value = self.right_default
                     left_widget:update()
                     right_widget:update()
-                    self.callback(self.left_default, self.right_default)
+                    self.callback(nil, nil)
                 end,
             }
         })
