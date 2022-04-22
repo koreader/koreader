@@ -966,7 +966,7 @@ function Kobo:suspend()
     -- Kobo:resume() will reset unexpected_wakeup_count = 0 to signal an
     -- expected wakeup, which gets checked in checkUnexpectedWakeup().
     self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
-    -- assuming Kobo:resume() will be called in the next 15 seconds
+    -- We're assuming Kobo:resume() will be called in the next 15 seconds in ordrer to cancel that check.
     logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
     UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
 end
