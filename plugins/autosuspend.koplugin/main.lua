@@ -105,14 +105,14 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        logger.dbg("AutoSuspend: start suspend/shutdown timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: start suspend/shutdown timer at", time.to_number(self.last_action_time))
         self:_schedule()
     end
 end
 
 function AutoSuspend:_start_standby()
     if self:_enabledStandby() then
-        logger.dbg("AutoSuspend: start standby timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: start standby timer at", time.to_number(self.last_action_time))
         self:_schedule_standby()
     end
 end
@@ -120,7 +120,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        logger.dbg("AutoSuspend: restart shutdown timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: restart shutdown timer at", time.to_number(self.last_action_time))
         self:_schedule(true)
     end
 end
@@ -160,7 +160,7 @@ function AutoSuspend:init()
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
     end
 
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     self:_start()
     self:_start_standby()
 
@@ -239,7 +239,7 @@ function AutoSuspend:_schedule_standby()
             -- If this happens, it means we hit LeaveStandby or Resume *before* consuming new input events,
             -- e.g., if there weren't any input events at all (woken up by an alarm),
             -- or if the only input events we consumed did not trigger an InputEvent event (woken up by gyro events),
-            -- meaning self.last_action_tv is further in the past than it ought to.
+            -- meaning self.last_action_time is further in the past than it ought to.
             -- Delay by the full amount to avoid further bad scheduling interactions.
             standby_delay = self.auto_standby_timeout_seconds
         end
@@ -325,7 +325,7 @@ function AutoSuspend:onResume()
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     self:_unschedule()
-    -- We should always follow an InputEvent, so last_action_tv is already up to date :).
+    -- We should always follow an InputEvent, so last_action_time is already up to date :).
     self:_start()
     self:_unschedule_standby()
     self:_start_standby()
@@ -588,7 +588,7 @@ function AutoSuspend:onAllowStandby()
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
         -- to make sure UIManager will consume the input events that woke us up first
         -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
-        -- (This ensures we'll use an up to date last_action_tv, and that it only ever gets updated from *user* input).
+        -- (This ensures we'll use an up to date last_action_time, and that it only ever gets updated from *user* input).
         -- NOTE: UIManager consumes scheduled tasks before input events, so make sure we delay by a significant amount,
         --       especially given that this delay will likely be used as the next input polling loop timeout...
         UIManager:scheduleIn(1, self.leave_standby_task)
