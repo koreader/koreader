@@ -811,8 +811,8 @@ function Kobo:getUnexpectedWakeup() return self.unexpected_wakeup_count end
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
+    -- We don't really have anything to schedule, we just need an alarm out of WakeupMgr ;).
     local function standby_alarm()
-        logger.dbg("Kobo: tripped standby wake alarm")
     end
 
     if max_duration then
@@ -822,24 +822,24 @@ function Kobo:standby(max_duration)
     local TimeVal = require("ui/timeval")
     local standby_time_tv = TimeVal:boottime_or_realtime_coarse()
 
-    logger.info("Kobo suspend: asking to enter standby . . .")
+    logger.info("Kobo standby: asking to enter standby . . .")
     local ret = writeToSys("standby", "/sys/power/state")
 
     self.last_standby_tv = TimeVal:boottime_or_realtime_coarse() - standby_time_tv
     self.total_standby_tv = self.total_standby_tv + self.last_standby_tv
 
-    logger.info("Kobo suspend: zZz zZz zZz zZz? Write syscall returned: ", ret)
+    logger.info("Kobo standby: zZz zZz zZz zZz? Write syscall returned: ", ret)
 
     if max_duration then
-        if self.wakeup_mgr:isWakeupAlarmScheduled() then
-            -- There's no scheduling shenanigans like in suspend, so the proximity window can be much tighter...
-            -- (This re-schedules the next task on success).
-            if not self.wakeup_mgr:wakeupAction(5) then
-                -- We woke up early (user input?), remove the standby alarm (and re-schedule the next one, if any).
-                self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
-            end
+        -- There's no scheduling shenanigans like in suspend, so the proximity window can be much tighter...
+        if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(5) then
+            -- We tripped the standby alarm, UIManager will be able to run whatever was actually scheduled,
+            -- and AutoSuspend will handle going back to standby if necessary.
+            -- NOTE: wakeupAction takes care of re-scheduling the next alarm, if any.
+            logger.dbg("Kobo standby: tripped rtc wake alarm")
         else
-            -- Uh, RTC says there's no longer an alarm set :?!
+            -- We woke up early (user input?), remove the standby alarm we've just set.
+            -- NOTE: removeTask takes care of re-scheduling the next alarm, if any.
             self.wakeup_mgr:removeTask(nil, nil, standby_alarm)
         end
     end
