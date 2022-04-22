@@ -578,6 +578,57 @@ function Input:handleKeyBoardEv(ev)
     end
 end
 
+-- Mangled variant of handleKeyBoardEv that will only handle power management related keys.
+-- (Used when blocking input during suspend via sleep cover).
+function Input:handlePowerManagementOnlyEv(ev)
+    local keycode = self.event_map[ev.code]
+    if not keycode then
+        -- Do not handle keypress for keys we don't know
+        return
+    end
+
+    -- We'll need to parse the synthetic event map, because SleepCover* events are synthetic.
+    if self.event_map_adapter[keycode] then
+        keycode = self.event_map_adapter[keycode](ev)
+    end
+
+    -- Power management synthetic events
+    if keycode == "SleepCoverClosed" or keycode == "SleepCoverOpened"
+    or keycode == "Suspend" or keycode == "Resume" then
+        return keycode
+    end
+
+    -- Fake events
+    if keycode == "IntoSS" or keycode == "OutOfSS"
+    or keycode == "UsbPlugIn" or keycode == "UsbPlugOut"
+    or keycode == "Charging" or keycode == "NotCharging" then
+        return keycode
+    end
+
+    if keycode == "Power" then
+        -- Kobo generates Power keycode only, we need to decide whether it's
+        -- power-on or power-off ourselves.
+        if ev.value == EVENT_VALUE_KEY_PRESS then
+            return "PowerPress"
+        elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+            return "PowerRelease"
+        end
+    end
+
+    -- Nothing to see, move along!
+    return
+end
+
+-- Empty event handler used to send input to the void
+function Input:voidEv(ev)
+    return
+end
+
+-- Generic event handler for unhandled input events
+function Input:handleGenericEv(ev)
+    return Event:new("GenericInput", ev)
+end
+
 function Input:handleMiscEv(ev)
     -- should be handled by a misc event protocol plugin
 end
@@ -892,13 +943,13 @@ function Input:toggleMiscEvNTX(toggle)
     elseif toggle == false then
         -- Ignore Gyro events
         if self.isNTXAccelHooked then
-            self.handleMiscEv = function() end
+            self.handleMiscEv = self.voidEv
             self.isNTXAccelHooked = false
         end
     else
         -- Toggle it
         if self.isNTXAccelHooked then
-            self.handleMiscEv = function() end
+            self.handleMiscEv = self.voidEv
         else
             self.handleMiscEv = self.handleMiscEvNTX
         end
@@ -1204,7 +1255,10 @@ function Input:waitEvent(now, deadline)
                 end
             else
                 -- Received some other kind of event that we do not know how to specifically handle yet
-                table.insert(handled, Event:new("GenericInput", event))
+                local handled_ev = self:handleGenericEv(event)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
             end
         end
         return handled
@@ -1217,6 +1271,57 @@ function Input:waitEvent(now, deadline)
         return {
             Event:new("InputError", "Catastrophic")
         }
+    end
+end
+
+-- Allow toggling the handling of most every kind of input, except for power management related events.
+function Input:inhibitInput(toggle)
+    if toggle then
+        logger.info("Inhibiting user input")
+
+        self._key_ev_handler = self.handleKeyBoardEv
+        self._oasis_ev_handler = self.handleOasisOrientationEv
+        self._abs_ev_handler = self.handleTouchEv
+        self._msc_ev_handler = self.handleMiscEv
+        self._sdl_ev_handler = self.handleSdlEv
+        self._generic_ev_handler = self.handleGenericEv
+
+        -- Only handle power management events
+        self.handleKeyBoardEv = self.handlePowerManagementOnlyEv
+        -- And send everything else to the void
+        self.handleOasisOrientationEv = self.voidEv
+        self.handleTouchEv = self.voidEv
+        self.handleMiscEv = self.voidEv
+        self.handleSdlEv = self.voidEv
+        self.handleGenericEv = self.voidEv
+    else
+        logger.info("Restoring user input handling")
+
+        -- Restore event handlers, if any
+        if self._key_ev_handler then
+            self.handleKeyBoardEv = self._key_ev_handler
+            self._key_ev_handler = nil
+        end
+        if self._oasis_ev_handler then
+            self.handleOasisOrientationEv = self._oasis_ev_handler
+            self._oasis_ev_handler = nil
+        end
+        if self._abs_ev_handler then
+            self.handleTouchEv = self._abs_ev_handler
+            self._abs_ev_handler = nil
+        end
+        if self._msc_ev_handler then
+            self.handleMiscEv = self._msc_ev_handler
+            self._msc_ev_handler = nil
+        end
+        if self._sdl_ev_handler then
+            self.handleSdlEv = self._sdl_ev_handler
+            self._sdl_ev_handler = nil
+        end
+        if self._generic_ev_handler then
+            self.handleGenericEv = self._generic_ev_handler
+            self._generic_ev_handler = nil
+        end
     end
 end
 
