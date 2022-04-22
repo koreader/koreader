@@ -102,7 +102,7 @@ function WakeupMgr:removeTask(idx, epoch, callback)
         end
     end
 
-    -- Re-schedule the next wakeup action, if any
+    -- Re-schedule the next wakeup action, if any.
     if self._task_queue[1] then
         self:setWakeupAlarm(self._task_queue[1].epoch)
     end
@@ -116,26 +116,31 @@ Execute wakeup action.
 This method should be called by the device resume logic in case of a scheduled wakeup.
 
 It checks if the wakeup was scheduled by us using @{validateWakeupAlarmByProximity},
-executes the task, and, on success, schedules the next wakeup if any.
+in which case the task is executed.
+
+Regardless of the success of the proximity check, the next task (if any) is re-scheduled.
 
 @int proximity Proximity window to the scheduled wakeup (passed to @{validateWakeupAlarmByProximity}).
-@treturn bool (true if we were truly woken up by the scheduled wakeup; false otherwise)
+@treturn bool (true if we were truly woken up by the scheduled wakeup; false otherwise; nil if there weren't any tasks scheduled).
 --]]
 function WakeupMgr:wakeupAction(proximity)
     if #self._task_queue > 0 then
+        local executed = false
         local task = self._task_queue[1]
         if self:validateWakeupAlarmByProximity(task.epoch, proximity) then
             task.callback()
             self:removeTask(1)
-            if self._task_queue[1] then
-                -- Set next scheduled wakeup, if any.
-                self:setWakeupAlarm(self._task_queue[1].epoch)
-            end
-            return true
-        else
-            return false
+            executed = true
         end
+
+        -- Re-schedule the next wakeup action, if any.
+        if self._task_queue[1] then
+            self:setWakeupAlarm(self._task_queue[1].epoch)
+        end
+        return executed
     end
+
+    return nil
 end
 
 --[[--
