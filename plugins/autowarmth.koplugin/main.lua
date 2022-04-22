@@ -28,7 +28,7 @@ local Screen = require("device").screen
 local util = require("util")
 
 local DEFAULT_AUTODIM_STARTTIME_M = 5
-local DEFAULT_AUTODIM_DURATION_M = 2
+local DEFAULT_AUTODIM_DURATION_S = 20
 local DEFAULT_AUTODIM_ENDPERCENTAGE = 20
 
 local activate_sun = 1
@@ -923,7 +923,7 @@ end
 
 function AutoWarmth:initAutoDim()
     self.autodim_starttime_m = G_reader_settings:readSetting("autodim_starttime_minutes", -1)
-    self.autodim_duration_m = G_reader_settings:readSetting("autodim_duration_minutes", DEFAULT_AUTODIM_DURATION_M)
+    self.autodim_duration_s = G_reader_settings:readSetting("autodim_duration_seconds", DEFAULT_AUTODIM_DURATION_S)
     self.autodim_endpercentage = G_reader_settings:readSetting("autodim_endpercentage", DEFAULT_AUTODIM_ENDPERCENTAGE)
 
     self.autodim_save_fl = Device.powerd:frontlightIntensity()
@@ -944,44 +944,68 @@ function AutoWarmth:getAutodimMenu()
             {
                 text_func = function()
                     return self.autodim_starttime_m <= 0 and _("Automatic dimmer") or
-                    T(_("Automatic dimmer (%1 / %2 minutes)"), self.autodim_starttime_m, self.autodim_duration_m)
+                    T(_("Idle time for dimmer (%1 minutes)"), self.autodim_starttime_m)
                 end,
                 checked_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
-                    local frontlight_dialog = DoubleSpinWidget:new{
-                        title_text = _("Automatic dimmer"),
+                    local idle_dialog = SpinWidget:new{
+                        title_text = _("Automatic dimmer idle time"),
                         info_text = _("Times are in minutes."),
                         left_text = _("Start after idle"),
-                        left_value = self.autodim_starttime_m,
-                        left_default = DEFAULT_AUTODIM_STARTTIME_M,
-                        left_min = 0.1, -- xxx
-                        left_max = 60,
-                        left_step = 0.5,
-                        left_hold_step = 5,
-                        left_precision = "%0.1f",
-                        right_text = _("Duration"),
-                        right_value = self.autodim_duration_m,
-                        right_default = DEFAULT_AUTODIM_DURATION_M,
-                        right_min = 0,
-                        right_max = 10,
-                        right_step = 0.5,
-                        right_hold_step = 5,
-                        right_precision = "%0.1f",
-                        callback = function(starttime_m, duration_m)
-                            self.autodim_starttime_m = starttime_m
-                            self.autodim_duration_m = duration_m
-                            G_reader_settings:saveSetting("autodim_starttime_minutes", starttime_m)
-                            G_reader_settings:saveSetting("autodim_duration_minutes", duration_m)
+                        value = self.autodim_starttime_m,
+                        default_value = DEFAULT_AUTODIM_STARTTIME_M,
+                        value_min = 0.1, -- xxx
+                        value_max = 60,
+                        value_step = 0.5,
+                        value_hold_step = 5,
+                        precision = "%0.1f",
+                        callback = function(spin)
+                            if not spin.value then starttime_m = DEFAULT_AUTODIM_STARTTIME_M end
+                            self.autodim_starttime_m = spin.value
+                            G_reader_settings:saveSetting("autodim_starttime_minutes", spin.value)
                             self:_schedule_autodim_task()
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
-                        default_values = true,
                         extra_text = _("Disable"),
                         extra_callback = function()
                             self.autodim_starttime_m = -1
-                            self.autodim_duration_m = -1
                             G_reader_settings:saveSetting("autodim_starttime_minutes", -1)
-                            G_reader_settings:saveSetting("autodim_duration_minutes", -1)
+                            self:_schedule_autodim_task()
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    }
+                    UIManager:show(idle_dialog)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+                keep_menu_open = true,
+            },
+            {
+                text_func = function()
+                    return self.autodim_starttime_m <= 0 and _("Automatic dimmer") or
+                    T(_("Dimmer duration (%2 seconds)"), self.autodim_starttime_m, self.autodim_duration_s)
+                end,
+                checked_func = function() return self.autodim_starttime_m > 0 end,
+                callback = function(touchmenu_instance)
+                    local frontlight_dialog = SpinWidget:new{
+                        title_text = _("Automatic dimmer duration"),
+                        info_text = _("Times are in seconds."),
+                        value = self.autodim_duration_s,
+                        default_value = DEFAULT_AUTODIM_DURATION_S,
+                        value_min = 0,
+                        max_max = 300,
+                        value_step = 1,
+                        value_hold_step = 10,
+                        callback = function(spin)
+                            if not spin.value then duration_s = DEFAULT_AUTODIM_DURATION_S end
+                            self.autodim_duration_s = spin.value
+                            G_reader_settings:saveSetting("autodim_duration_seconds", spin.value)
+                            self:_schedule_autodim_task()
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                        extra_text = _("Disable"),
+                        extra_callback = function()
+                            self.autodim_duration_s = -1
+                            G_reader_settings:saveSetting("autodim_duration_seconds", -1)
                             self:_schedule_autodim_task()
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
@@ -1078,7 +1102,8 @@ function AutoWarmth:autodim_task()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_endpercentage / 100 + 0.5)
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         -- calculate time until the next decrease step
-        self.autodim_step_time_s = (self.autodim_duration_m * 60) / fl_diff
+        -- add a minimal time to get a sharp ramp on weird devices (which will be at maximum 100ms)
+        self.autodim_step_time_s = self.autodim_duration_s / fl_diff + 0.001
 
         UIManager:discardEvents(math.huge)
         self:ramp_task() -- which schedules itself
