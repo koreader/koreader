@@ -1,6 +1,5 @@
 --[[--
 Plugin for setting screen warmth based on the sun position and/or a time schedule
-and for automatic dimming the frontlight after an idle period.
 
 @module koplugin.autowarmth
 --]]--
@@ -27,10 +26,6 @@ local C_ = _.pgettext
 local T = FFIUtil.template
 local Screen = require("device").screen
 local util = require("util")
-
-local DEFAULT_AUTODIM_STARTTIME_M = 5
-local DEFAULT_AUTODIM_DURATION_M = 2
-local DEFAULT_AUTODIM_ENDPERCENTAGE = 20
 
 local activate_sun = 1
 local activate_schedule = 2
@@ -77,8 +72,6 @@ function AutoWarmth:init()
 
     -- schedule recalculation shortly afer midnight
     self:scheduleMidnightUpdate()
-
-    self:initAutoDim()
 end
 
 function AutoWarmth:onDispatcherRegisterActions()
@@ -326,7 +319,6 @@ function AutoWarmth:addToMainMenu(menu_items)
             return self:getSubMenuItems()
         end,
     }
-    menu_items.autodim = self:getAutodimMenu()
 end
 
 local function tidy_menu(menu, request)
@@ -919,197 +911,6 @@ function AutoWarmth:getLocationString()
         return self.location
     else
         return "(" .. self.latitude .. "," .. self.longitude .. ")"
-    end
-end
-
------------------------------------- autodim ----------------------------------
-
-function AutoWarmth:initAutoDim()
-    self.autodim_starttime_m = G_reader_settings:readSetting("autodim_starttime_minutes", -1)
-    self.autodim_duration_m = G_reader_settings:readSetting("autodim_duration_minutes", DEFAULT_AUTODIM_DURATION_M)
-    self.autodim_endpercentage = G_reader_settings:readSetting("autodim_endpercentage", DEFAULT_AUTODIM_ENDPERCENTAGE)
-
-    self.autodim_save_fl = Device.powerd:frontlightIntensity()
-
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
-    UIManager.event_hook:registerWidget("InputEvent", self)
-
-    self:_schedule_autodim_task()
-    self.isCurrentlyDimming = false
-
-end
-
-function AutoWarmth:getAutodimMenu()
-    return {
-        text = _("Automatic dimmer"),
-        checked_func = function() return self.autodim_starttime_m > 0 end,
-        sub_item_table = {
-            {
-                text_func = function()
-                    return self.autodim_starttime_m <= 0 and _("Automatic dimmer") or
-                    T(_("Automatic dimmer (%1 / %2 minutes)"), self.autodim_starttime_m, self.autodim_duration_m)
-                end,
-                checked_func = function() return self.autodim_starttime_m > 0 end,
-                callback = function(touchmenu_instance)
-                    local frontlight_dialog = DoubleSpinWidget:new{
-                        title_text = _("Automatic dimmer"),
-                        info_text = _("Times are in minutes."),
-                        left_text = _("Start after idle"),
-                        left_value = self.autodim_starttime_m,
-                        left_default = DEFAULT_AUTODIM_STARTTIME_M,
-                        left_min = 0.1, -- xxx
-                        left_max = 60,
-                        left_step = 0.5,
-                        left_hold_step = 5,
-                        left_precision = "%0.1f",
-                        right_text = _("Duration"),
-                        right_value = self.autodim_duration_m,
-                        right_default = DEFAULT_AUTODIM_DURATION_M,
-                        right_min = 0,
-                        right_max = 10,
-                        right_step = 0.5,
-                        right_hold_step = 5,
-                        right_precision = "%0.1f",
-                        callback = function(starttime_m, duration_m)
-                            self.autodim_starttime_m = starttime_m
-                            self.autodim_duration_m = duration_m
-                            G_reader_settings:saveSetting("autodim_starttime_minutes", starttime_m)
-                            G_reader_settings:saveSetting("autodim_duration_minutes", duration_m)
-                            self:_schedule_autodim_task()
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                        default_values = true,
-                        extra_text = _("Disable"),
-                        extra_callback = function()
-                            self.autodim_starttime_m = -1
-                            self.autodim_duration_m = -1
-                            G_reader_settings:saveSetting("autodim_starttime_minutes", -1)
-                            G_reader_settings:saveSetting("autodim_duration_minutes", -1)
-                            self:_schedule_autodim_task()
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                    }
-                    UIManager:show(frontlight_dialog)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-                keep_menu_open = true,
-            },
-            {
-                text_func = function()
-                    return T(_("Dimming percentage: %1%"), self.autodim_endpercentage)
-                end,
-                checked_func = function() return self.autodim_starttime_m > 0 end,
-                callback = function(touchmenu_instance)
-                    local percentage_dialog = SpinWidget:new{
-                        title_text = _("Percentage"),
-                        info_text = _("Enter the percentage of you want the frontlight to dim to. 50% means half of your normal intensity."),
-                        value = self.autodim_endpercentage,
-                        value_default = DEFAULT_AUTODIM_ENDPERCENTAGE,
-                        value_min = 0,
-                        value_max = 100,
-                        value_hold_step = 10,
-                        callback = function(spin)
-                            self.autodim_endpercentage = spin.value
-                            G_reader_settings:saveSetting("autodim_endpercentage", spin.value)
-                            self:_schedule_autodim_task()
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
-                    }
-                    UIManager:show(percentage_dialog)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-                keep_menu_open = true,
-            },
-        }
-    }
-end
-
-function AutoWarmth:_schedule_autodim_task(seconds)
-    UIManager:unscheduleSoonestN(self.autodim_task, 1)
-    if not seconds then
-        -- if starttime is lower or equal to 1 minute, use the exact time
-        if self.autodim_starttime_m <= 1 then
-            seconds = self.autodim_starttime_m * 60
-        else -- use the next full minute (to minimize wakeups from standby)
-            seconds = self.autodim_starttime_m * 60 + (61 - tonumber(os.date("%S")))
-        end
-    end
-    UIManager:scheduleIn(seconds, self.autodim_task, self)
-    print("xxx secondes", seconds)
-end
-
-function AutoWarmth:onInputEvent()
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
-    print("xxx default input event!!! is in ramp", self.isCurrentlyDimming)
-
-    if self.isCurrentlyDimming then
-        Device.powerd:setIntensity(self.autodim_save_fl)
-
-        self:_unschedule_ramp_task()
-        self:_schedule_autodim_task()
-
-        UIManager:discardEvents(1) -- discard events for 1 sec after dimming
-    end
-end
-
-function AutoWarmth:onResume()
-    if self.isCurrentlyDimming then
-        Device.powerd:setIntensity(self.autodim_save_fl)
-        self:_schedule_autodim_task()
-        UIManager:discardEvents(0) -- stop discarding events
-    end
-end
-
-function AutoWarmth:onSuspend()
-    if self.isCurrentlyDimming then
-        self:_unschedule_ramp_task()
-        self.isCurrentlyDimming = true
-    end
-end
-
-function AutoWarmth:autodim_task()
-    if self.isCurrentlyDimming then return end
-
-    local TimeVal = require("ui/timeval")
-    local now = UIManager:getElapsedTimeSinceBoot()
-    local idle_duration =  now - self.last_action_tv
-    local check_delay = TimeVal:new{ sec = self.autodim_starttime_m * 60} - idle_duration
-    print("xxx idlee", idle_duration:tonumber())
-    print("xxx delay", check_delay:tonumber())
-    if check_delay:tonumber() <= 0 then
-        self.autodim_save_fl = Device.powerd:frontlightIntensity()
-        self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_endpercentage / 100 + 0.5)
-        local fl_diff = self.autodim_save_fl - self.autodim_end_fl
-        -- calculate time until the next decrease step
-        self.autodim_step_time_s = (self.autodim_duration_m * 60) / fl_diff
-
-        UIManager:discardEvents(math.huge)
-        self:ramp_task() -- which schedules itself
-        -- Don't schedule `autodim_task` here, as this is done on the next `onInputEvent`
-    else
-        self:_schedule_autodim_task(check_delay:tonumber())
-    end
-end
-
-function AutoWarmth:ramp_task()
-    self.isCurrentlyDimming = true
-    local new_fl_level = Device.powerd:frontlightIntensity() - 1
-    if new_fl_level <= self.autodim_end_fl then
-        new_fl_level = self.autodim_end_fl
-    else
-        self:_schedule_ramp_task()
-    end
-    Device.powerd:setIntensity(new_fl_level)
-end
-
-function AutoWarmth:_schedule_ramp_task()
-    UIManager:scheduleIn(self.autodim_step_time_s, self.ramp_task, self)
-end
-
-function AutoWarmth:_unschedule_ramp_task()
-    if self.isCurrentlyDimming then
-        UIManager:unscheduleSoonestN(self.ramp_task, 1)
-        self.isCurrentlyDimming = false
     end
 end
 
