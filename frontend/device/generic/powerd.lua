@@ -1,7 +1,6 @@
 local UIManager -- will be updated when available
 local Math = require("optmath")
 local logger = require("logger")
-
 local time = require("ui/time")
 
 local BasePowerD = {

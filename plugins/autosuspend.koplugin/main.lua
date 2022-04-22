@@ -19,9 +19,8 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Math = require("optmath")
-local T = require("ffi/util").template
-
 local time = require("ui/time")
+local T = require("ffi/util").template
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
@@ -105,14 +104,14 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        logger.dbg("AutoSuspend: start suspend/shutdown timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: start suspend/shutdown timer at", time.format_time(self.last_action_time))
         self:_schedule()
     end
 end
 
 function AutoSuspend:_start_standby()
     if self:_enabledStandby() then
-        logger.dbg("AutoSuspend: start standby timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: start standby timer at", time.format_time(self.last_action_time))
         self:_schedule_standby()
     end
 end
@@ -120,7 +119,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        logger.dbg("AutoSuspend: restart shutdown timer at", self.last_action_tv:tonumber())
+        logger.dbg("AutoSuspend: restart shutdown timer at", time.format_time(self.last_action_time))
         self:_schedule(true)
     end
 end
@@ -159,10 +158,14 @@ function AutoSuspend:init()
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
     end
 
+<<<<<<< HEAD
     -- Make sure we only have an AllowStandby handler when we actually want one...
     self:toggleStandbyHandler(self:_enabledStandby())
 
     self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+=======
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
+>>>>>>> dbaa24e2 (Changes due to rebase)
     self:_start()
     self:_start_standby()
 
@@ -241,7 +244,7 @@ function AutoSuspend:_schedule_standby()
             -- If this happens, it means we hit LeaveStandby or Resume *before* consuming new input events,
             -- e.g., if there weren't any input events at all (woken up by an alarm),
             -- or if the only input events we consumed did not trigger an InputEvent event (woken up by gyro events),
-            -- meaning self.last_action_tv is further in the past than it ought to.
+            -- meaning self.last_action_time is further in the past than it ought to.
             -- Delay by the full amount to avoid further bad scheduling interactions.
             standby_delay = self.auto_standby_timeout_seconds
         end
@@ -318,9 +321,8 @@ function AutoSuspend:onResume()
         Device.wakeup_mgr:removeTasks(nil, UIManager.poweroff_action)
     end
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
-    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     self:_unschedule()
-    -- We should always follow an InputEvent, so last_action_tv is already up to date :).
+    -- We should always follow an InputEvent, so last_action_time is already up to date :).
     self:_start()
     self:_unschedule_standby()
     self:_start_standby()
@@ -403,8 +405,6 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             end
             self[setting] = Math.clamp(self[setting], range[1], range[2])
             G_reader_settings:saveSetting(setting, self[setting])
-            -- Not necessary to call self.last_action_time = UIManager:getElapsedTimeSinceBoot() here,
-            -- as there was a onInputEvent before.
             if is_standby then
                 self:_unschedule_standby()
                 self:toggleStandbyHandler(self:_enabledStandby())
@@ -587,7 +587,7 @@ function AutoSuspend:AllowStandbyHandler()
         -- This obviously needs a matching implementation in Device, the canonical one being Kobo.
         Device:standby(wake_in)
 
-        logger.dbg("AutoSuspend: left standby after " .. time.to_number(Device.last_standby_time) .. " s")
+        logger.dbg("AutoSuspend: left standby after", time.format_time(Device.last_standby_time), "s")
 
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
         -- to make sure UIManager will consume the input events that woke us up first

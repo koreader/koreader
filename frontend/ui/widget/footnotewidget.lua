@@ -19,8 +19,8 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
-
 local time = require("ui/time")
+
 
 -- If we wanted to use the default font set for the book,
 -- we'd need to add a few functions to crengine and cre.cpp

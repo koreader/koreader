@@ -17,11 +17,11 @@ local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local ffiUtil  = require("ffi/util")
 local logger = require("logger")
+local time = require("ui/time")
 local util  = require("util")
 local _ = require("gettext")
 local T = ffiUtil.template
 
-local time = require("ui/time")
 
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()

@@ -20,10 +20,10 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local time = require("ui/time")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local time = require("ui/time")
 
 local FrontLightWidget = FocusManager:new{
     width = nil,

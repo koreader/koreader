@@ -12,12 +12,12 @@
 
 local logger = require("logger")
 local util = require("util")
+local time = require("ui/time")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local K = require("frontend/ui/data/keyboardlayouts/ja_keyboard_keys")
-local time = require("ui/time")
 
 local DEFAULT_KEITAI_TAP_INTERVAL_S = 2
 

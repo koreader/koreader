@@ -11,9 +11,8 @@ local Mupdf = require("ffi/mupdf")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util  = require("util")
-
 local time = require("ui/time")
+local util  = require("util")
 
 local HtmlBoxWidget = InputContainer:new{
     bb = nil,

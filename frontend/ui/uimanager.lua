@@ -12,7 +12,6 @@ local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
-
 local time = require("ui/time")
 
 local DEFAULT_FULL_REFRESH_COUNT = 6
@@ -1245,7 +1244,7 @@ function UIManager:getTime()
 end
 
 --[[--
-Returns an time (fts) corresponding to the last UI tick plus the time in standby.
+Returns a time (fts) corresponding to the last UI tick plus the time in standby.
 ]]
 function UIManager:getElapsedTimeSinceBoot()
     return self:getTime() + Device.total_standby_time + Device.total_suspend_time

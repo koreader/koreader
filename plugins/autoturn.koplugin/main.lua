@@ -5,8 +5,8 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
-local T = require("ffi/util").template
 local time = require("ui/time")
+local T = require("ffi/util").template
 
 local AutoTurn = WidgetContainer:new{
     name = "autoturn",
@@ -59,7 +59,7 @@ end
 function AutoTurn:_start()
     if self:_enabled() then
         local now = UIManager:getTime()
-        logger.dbg("AutoTurn: start at", time.to_number(now))
+        logger.dbg("AutoTurn: start at", time.format_time(now))
         PluginShare.pause_auto_suspend = true
         self.last_action_time = now
         self:_schedule()

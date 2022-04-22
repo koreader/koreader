@@ -12,7 +12,6 @@ local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local lru = require("ffi/lru")
-
 local time = require("ui/time")
 
 -- engine can be initialized only once, on first document opened

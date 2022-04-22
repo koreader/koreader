@@ -19,10 +19,10 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local time = require("ui/time")
 local util = require("util")
 local Screen = Device.screen
 
-local time = require("ui/time")
 
 local keyboard_state = {
     force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)

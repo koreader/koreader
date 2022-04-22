@@ -10,11 +10,11 @@ local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
+local time = require("ui/time")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local time = require("ui/time")
 local band = bit.band
 
 --[[

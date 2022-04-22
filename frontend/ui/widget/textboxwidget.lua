@@ -28,10 +28,9 @@ local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local logger = require("logger")
 local dbg = require("dbg")
+local time = require("ui/time")
 local util = require("util")
 local Screen = require("device").screen
-
-local time = require("ui/time")
 
 local TextBoxWidget = InputContainer:new{
     text = nil,
@@ -1983,7 +1982,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         -- to consider when looking for word boundaries)
         local selected_text = self._xtext:getSelectedWords(sel_start_idx, sel_end_idx, 50)
 
-        logger.dbg("onHoldReleaseText (duration:", time.to_number(hold_duration), ") :",
+        logger.dbg("onHoldReleaseText (duration:", time.format_time(hold_duration), ") :",
                         sel_start_idx, ">", sel_end_idx, "=", selected_text)
         callback(selected_text, hold_duration)
         return true
@@ -2001,7 +2000,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
     end
 
     local selected_text = table.concat(self.charlist, "", sel_start_idx, sel_end_idx)
-    logger.dbg("onHoldReleaseText (duration:", time.to_number(hold_duration), ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
+    logger.dbg("onHoldReleaseText (duration:", time.format_time(hold_duration), ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
     callback(selected_text, hold_duration)
     return true
 end

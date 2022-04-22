@@ -1,28 +1,30 @@
 --[[--
 A runtime optimized module to compare and do simple arithmetics with fixed point time values (which are called fts in here).
 
-Also some functions to get current fts times (monotonic, monotonic_coarse, realtime, realtime_coarse, boottime ...) are implementent here.
+Also implements functions to retrieve time from various system clocks (monotonic, monotonic_coarse, realtime, realtime_coarse, boottime ...).
 
 **Encode:**
 
-Don't store a numerical constant in an fts encode time. Use the provided functions from here!
+Don't store a numerical constant in an fts encoded time. Use the functions provided here!
 
-You can calculate an fts encoded time of 3 s with  `time.s(3)`
+To convert real world units to an fts, you can use the following functions: time.s(seconds), time.ms(milliseconds), time.us(microseconds).
 
-You can calculate an fts encoded time of 3 ms with  `time.ms(3)`
+You can calculate an fts encoded time of 3 s with  `time.s(3)`.
 
-You can calculate an fts encoded time of 3 us with  `time.us(3)`
+Beware of float encoding precision, though. For instance, take 2.1s: 2.1 cannot be encoded with full precision, so time.s(2.1) would be slightly inaccurate.
+(For small values (under 10 secs) the error will be ±1µs, for values below a minute the error will be below ±2µs, for values below an hour the error will be ±100µs.)
 
-*But take care:* if you want a really exact time of 2.1 s (you have the problem, that .1 cannot be encoded to a float value exactly), `time.s(2.1)` is not what you want.
-Please use `time.s(2) + time.ms(100)` or `time.s(2) + time.us(100000)` instead. (The same procedure holds true for a time of 3.2 ms.)
+When full precision is necessary, use `time.s(2) + time.ms(100)` or `time.s(2) + time.us(100000)` instead.
+
+(For more information about floating-point-representation see: https://stackoverflow.com/questions/3448777/how-to-represent-0-1-in-floating-point-arithmetic-and-decimal)
 
 **Decode:**
 
-You can get the number of seconds in an fts encode time with `time.to_s(time_fts)`.
+You can get the number of seconds in an fts encoded time with `time.to_s(time_fts)`.
 
-You can get the number of milliseconds in an fts encode time with `time.to_ms(time_fts)`.
+You can get the number of milliseconds in an fts encoded time with `time.to_ms(time_fts)`.
 
-You can get the number of mikroseconds in an fts encode time with `time.to_us(time_fts)`.
+You can get the number of microseconds in an fts encoded time with `time.to_us(time_fts)`.
 
 Please be aware, that `time.to_number` is the same as a `time.to_s` with a precision of four decimal places.
 
@@ -34,9 +36,9 @@ You can multiply or divide fts encoded times by numerical constants. So if you n
 
 Don't add a numerical constant to an fts time (in the best case, the numerical constant is interpreted as µs).
 
-But please be aware that higher order maths (multiply, divide, roots, power) won't work as expected. (If you really, really need that, you have to shift the position of the comma yourself!)
+But please be aware that higher order maths on fts encoded times (multiply, divide, roots, power) won't work as expected. You cannot easily multiply two times together. (If you really, really need that, you have to shift the position of the comma yourself!)
 
-If you want a duration form a given time_fts to *now* you can use `time.time_since(time_fts)` as a shortcut (or simply use `fts.now - time_fts`), and you get time in fts encoding. If you need microseconds (mikroseconds) use `time.to_ms(time.time_since(time_fts))`
+If you want a duration form a given time_fts to *now*, `time.time_since(time_fts)` as a shortcut (or simply use `fts.now - time_fts`) will return an fts encoded time. If you need milliseconds use `time.to_ms(time.time_since(time_fts))`.
 
 **Background:**
 Numbers in lua are double float which have a mantissa (precision) of 53 bit (plus sign + exponent)
@@ -49,12 +51,12 @@ A year has 365.25*24*3600 = 3.15576E7 s, so we can store up to 285 years (9.0072
 
 The module has been tested with the fixed point comma at 10^6 (other values might work, but are not really tested).
 
-**Recommondations:**
+**Recommendations:**
 If the name of a variable implies a time (now, when, until, xxxdeadline, xxxtime, getElapsedTimeSinceBoot, lastxxxtimexxx, ...) we assume this value to be a time (fts encoded).
 
-Other objects which are times (like last_tap, tap_interval_override, ...) have to be renamed to something like last_tap_time or so (and hence be obvious fts-encoded too).
+Other objects which are times (like last_tap, tap_interval_override, ...) shall be renamed to something like last_tap_time (so to make it clear that they are fts encoded).
 
-All other time variables (a handfull) get the appropriate suffix _ms, _us, _s (_m, _h, _d) to show that they are special.
+All other time variables (a handful) get the appropriate suffix _ms, _us, _s (_m, _h, _d) denoting their status as plain Lua numbers and their resolution.
 
 @module time
 
@@ -78,7 +80,7 @@ local logger = require("logger")
 
 local C = ffi.C
 
--- A FTS_PRECISION of 1e6 will give us a µs precision.
+-- An FTS_PRECISION of 1e6 will give us a µs precision.
 local FTS_PRECISION = 1e6
 
 local S2FTS = FTS_PRECISION
@@ -125,10 +127,12 @@ function time.to_number(time_fts)
     return math.floor(time.to_s(time_fts) * 10000 + 0.5) / 10000
 end
 
+--- Converts an fts time to a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
+time.format_time = time.to_number
 
 --- Converts an fts to a Lua (int) number (resolution: 1µs)
 function time.to_s(time_fts)
-    -- Time in seconds with µs precision (without comma)
+    -- Time in seconds with µs precision (without decimal places)
     return time_fts * FTS2S
 end
 
@@ -137,25 +141,27 @@ end
 (Mainly useful when computing a time lapse for benchmarking purposes).
 ]]
 function time.to_ms(time_fts)
-    -- Time in milliseconds ms (without comma)
+    -- Time in milliseconds ms (without decimal places)
     return math.floor(time_fts * FTS2MS + 0.5)
 end
 
 --- Converts an fts to a Lua (int) number (resolution: 1µs, rounded)
 function time.to_us(time_fts)
-    -- Time in mikroseconds µs(without comma)
+    -- Time in microseconds µs (without decimal places)
     return math.floor(time_fts * FTS2US + 0.5)
 end
 
 --[[-- Compare a past *MONOTONIC* fts time to *now*, returning the elapsed time between the two. (sec.usecs variant)
 
-Returns a Lua (decimal) number (sec.usecs, with comma) (accurate to the µs)
+Returns a Lua (decimal) number (sec.usecs, with decimal places) (accurate to the µs)
 ]]
 function time.time_since(start_time)
     -- Time difference
    return time.now() - start_time
 end
 
+--- Splits an fts to seconds and microseconds.
+-- If argument is nil, returns nil,nil.
 function time.split_s_us(time_fts)
     if not time_fts then return nil, nil end
     local sec = math.floor(time_fts * FTS2S)
@@ -206,7 +212,7 @@ end
 Returns an fts time based on the current wall clock time.
 (e.g., gettimeofday / clock_gettime(CLOCK_REALTIME).
 
-This is a simple wrapper around util.gettime() to get all the niceties of a time.
+This is a simple wrapper around clock_gettime(CLOCK_REALTIME) to get all the niceties of a time.
 If you don't need sub-second precision, prefer os.time().
 Which means that, yes, this is a fancier POSIX Epoch ;).
 
