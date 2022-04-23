@@ -78,7 +78,7 @@ describe("Exporter plugin module", function()
     it("should write clippings to a timestamped txt file", function()
         local timestamp = os.time()
         readerui.exporter.targets["text"].timestamp = timestamp
-        local exportable = { readerui.exporter:normalizeBookNotes(sample_clippings.Title1) }
+        local exportable = { sample_clippings.Title1 }
         local file_path = readerui.exporter.targets["text"]:getFilePath(exportable[1].title)
         readerui.exporter.targets["text"]:export(exportable)
         local f = io.open(file_path, "r")
