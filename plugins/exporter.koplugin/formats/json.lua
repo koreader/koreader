@@ -1,5 +1,4 @@
 local json = require("json")
-local logger = require("logger")
 
 local JsonExporter = require("formats/base"):new {
     name = "json",
@@ -22,7 +21,6 @@ end
 function JsonExporter:export(t)
     local path, exportable
     local timestamp = self.timestamp or os.time()
-    logger.dbg("JsonExporter:export", t)
     if #t == 1 then
         path = self:getFilePath(t[1].title)
         exportable = normalizeBookNotes(t[1])
