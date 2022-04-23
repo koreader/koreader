@@ -75,31 +75,55 @@ function WakeupMgr:addTask(seconds_from_now, callback)
 end
 
 --[[--
-Remove task from queue.
+Remove task(s) from queue.
 
-This method removes one or more tasks by either index, scheduled time or callback.
+This method removes one or more tasks by either scheduled time or callback.
 If any tasks are left on exit, the next one will will automatically be re-scheduled.
 
-@int idx Task queue index. Mainly useful within this module.
 @int epoch The epoch for when this task is scheduled to wake up.
 Normally the preferred method for outside callers.
 @int callback A scheduled callback function. Store a reference for use
 with anonymous functions.
+@treturn bool (true if one or more tasks were removed; false otherwise; nil if the task queue is empty or on API misuse).
 --]]
-function WakeupMgr:removeTask(idx, epoch, callback)
-    if not type(idx) == "number"
-        and not type(epoch) == "number"
-        and not type(callback) == "function" then return end
+function WakeupMgr:removeTasks(epoch, callback)
+    if not type(epoch) == "number"
+    and not type(callback) == "function" then
+        return
+    end
 
     if #self._task_queue < 1 then return end
 
     local removed = false
     for k = #self._task_queue, 1, -1 do
         local v = self._task_queue[k]
-        if k == idx or epoch == v.epoch or callback == v.callback then
+        if epoch == v.epoch or callback == v.callback then
             table.remove(self._task_queue, k)
             removed = true
         end
+    end
+
+    -- Re-schedule the next wakeup action, if any.
+    if self._task_queue[1] then
+        self:setWakeupAlarm(self._task_queue[1].epoch)
+    end
+
+    return removed
+end
+
+--[[--
+Variant of @{removeTasks} that will only remove a single task, identified by its task queue index.
+
+@int idx Task queue index. Mainly useful within this module.
+@treturn bool (true if a task was removed; false otherwise; nil on API misuse).
+--]]
+function WakeupMgr:removeTask(idx)
+    if not type(idx) == "number" then return end
+
+    local removed = false
+    -- We don't want to keep the pop'ed entry around, we just want to know if we pop'ed something.
+    if table.remove(self._task_queue, idx) then
+        removed = true
     end
 
     -- Re-schedule the next wakeup action, if any.
