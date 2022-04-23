@@ -12,21 +12,20 @@ function TextExporter:getFilePath()
 end
 
 function TextExporter:export(t)
+    -- Use wide_space to avoid crengine to treat it specially.
+    local wide_space = "\227\128\128"
     local path = self:getFilePath()
     local file = io.open(path, "a")
     if file then
-        local wide_space = "\227\128\128"
-        for _ignore, booknotes in ipairs(t) do
-            if booknotes.title then
-                file:write(wide_space .. booknotes.title .. "\n" .. wide_space .. "\n")
+        file:write(title .. "\n" .. wide_space .. "\n")
+        for _ignore1, chapter in ipairs(t) do
+            if chapter.title then
+                file:write(wide_space .. chapter.title .. "\n" .. wide_space .. "\n")
             end
-            for _ignore1, clipping in ipairs(booknotes.entries) do
-                if clipping.chapter then
-                    file:write(wide_space .. clipping.chapter .. "\n" .. wide_space .. "\n")
-                end
+            for _ignore2, clipping in ipairs(chapter) do
                 file:write(wide_space .. wide_space ..
-                T(_("-- Page: %1, added on %2\n"),
-                    clipping.page, os.date("%c", clipping.time)))
+                            T(_("-- Page: %1, added on %2\n"),
+                                clipping.page, os.date("%c", clipping.time)))
                 if clipping.text then
                     file:write(clipping.text)
                 end
@@ -39,9 +38,10 @@ function TextExporter:export(t)
                 file:write("\n-=-=-=-=-=-\n")
             end
         end
+
         file:write("\n")
         file:close()
-    end
+    end        
 end
 
 return TextExporter

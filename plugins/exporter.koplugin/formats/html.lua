@@ -10,20 +10,20 @@ local HtmlExporter = require("formats/base"):new {
 local function prepareBookNotesForExport(booknotes)
     local chapters = {}
     local curr_chapter = nil
-    for _, booknote in ipairs(booknotes.entries) do
+    for _, booknote in ipairs(booknotes) do
         if curr_chapter == nil then
             curr_chapter = {
-                title = booknote.chapter,
+                title = booknote[1].chapter,
                 entries = {}
             }
-        elseif curr_chapter.title ~= booknote.chapter then
+        elseif curr_chapter.title ~= booknote[1].chapter then
             table.insert(chapters, curr_chapter)
             curr_chapter = {
-                title = booknote.chapter,
+                title = booknote[1].chapter,
                 entries = {}
             }
         end
-        table.insert(curr_chapter.entries, booknote)
+        table.insert(curr_chapter.entries, booknote[1])
     end
     if curr_chapter ~= nil then
         table.insert(chapters, curr_chapter)

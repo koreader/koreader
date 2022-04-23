@@ -123,20 +123,6 @@ function Exporter:requiresNetwork()
     end
 end
 
-function Exporter:normalizeBookNotes(booknotes)
-    local normalized = {
-        title = booknotes.title,
-        author = booknotes.author,
-        entries = {},
-        exported = booknotes.exported,
-        file = booknotes.file
-    }
-    for _, entry in ipairs(booknotes) do
-        table.insert(normalized.entries, entry[1])
-    end
-    return normalized
-end
-
 function Exporter:exportCurrentNotes()
     local clippings = self.parser:parseCurrentDoc(self.view)
     self:exportClippings(clippings)
@@ -162,16 +148,10 @@ function Exporter:exportClippings(clippings)
     local export_callback = function()
         UIManager:nextTick(function()
             local timestamp = os.time()
-            local normalized = {}
-            for _, content in pairs(clippings) do
-                if content then
-                    table.insert(normalized, self:normalizeBookNotes(content))
-                end
-            end
             for k, v in pairs(self.targets) do
                 if v:isEnabled() then
                     v.timestamp = timestamp
-                    v:export(normalized)
+                    v:export(clippings)
                     v.timestamp = nil
                 end
             end

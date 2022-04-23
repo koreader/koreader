@@ -9,7 +9,7 @@ local _ = require("gettext")
 
 local function prepareNote(booknotes)
     local note = ""
-    for _, clipping in ipairs(booknotes.entries) do
+    for _, clipping in ipairs(booknotes) do
         if clipping.chapter then
             note = note .. "\n\t*" .. clipping.chapter .. "*\n\n * * *"
         end
