@@ -907,9 +907,11 @@ function ReaderBookmark:addBookmark(item)
             _start, direction = _middle + 1, 1
         end
     end
-    table.insert(self.bookmarks, _middle + direction, item)
+    local index = _middle + direction
+    table.insert(self.bookmarks, index, item)
     self.ui:handleEvent(Event:new("BookmarkAdded", item))
     self.view.footer:onUpdateFooter(self.view.footer_visible)
+    return index
 end
 
 -- binary search of sorted bookmarks

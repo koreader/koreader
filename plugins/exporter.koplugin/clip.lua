@@ -238,46 +238,41 @@ function MyClipping:getImage(image)
     end
 end
 
-function MyClipping:parseHighlight(highlights, bookmarks, book)
+function MyClipping:parseHighlight(bookmarks, book)
     --DEBUG("book", book.file)
 
     -- create a translated pattern that matches bookmark auto-text
     -- see ReaderBookmark:getBookmarkAutoText and ReaderBookmark:getBookmarkPageString
     --- @todo Remove this once we get rid of auto-text or improve the data model.
+    logger.dbg("MyClipping:parseHighlight", book, bookmarks)
     local pattern = "^" .. T(_("Page %1 %2 @ %3"),
                                "%[?%d*%]?%d+",
                                "(.*)",
                                "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
 
-    for page, items in pairs(highlights) do
-        for _, item in ipairs(items) do
+    for idx = #bookmarks, 1, -1 do
+        local bm = bookmarks[idx]
+        if bm.sort == "highlight" then
             local clipping = {}
-            clipping.page = page
+            clipping.page = bm.page_num
             clipping.sort = "highlight"
-            clipping.time = self:getTime(item.datetime or "")
-            clipping.text = self:getText(item.text)
-            clipping.chapter = item.chapter
-            clipping.drawer = item.drawer
-            for _, bookmark in pairs(bookmarks) do
-                if bookmark.datetime == item.datetime and bookmark.text then
-                    local bookmark_quote = bookmark.text:match(pattern)
-                    if bookmark_quote ~= clipping.text and bookmark.text ~= clipping.text then
-                        -- use modified quoted text or entire bookmark text if it's not a match
-                        clipping.note = bookmark_quote or bookmark.text
-                    end
-                end
-            end
-            if item.text == "" and item.pos0 and item.pos1 and
-                    item.pos0.x and item.pos0.y and
-                    item.pos1.x and item.pos1.y then
+            clipping.time = self:getTime(bm.datetime or "")
+            clipping.text = self:getText(bm.notes)
+            clipping.chapter = bm.chapter
+            clipping.drawer = bm.drawer
+            local bookmark_quote = bm.text and bm.text:match(pattern)
+            clipping.note = bookmark_quote or bm.text
+            if bm.notes == "" and bm.pos0 and bm.pos1 and
+                    bm.pos0.x and bm.pos0.y and
+                    bm.pos1.x and bm.pos1.y then
                 -- highlights in reflowing mode don't have page in pos
-                if item.pos0.page == nil then item.pos0.page = page end
-                if item.pos1.page == nil then item.pos1.page = page end
+                if bm.pos0.page == nil then bm.pos0.page = bm.page_num end
+                if bm.pos1.page == nil then bm.pos1.page = bm.page_num end
                 local image = {}
                 image.file = book.file
-                image.pos0, image.pos1 = item.pos0, item.pos1
-                image.pboxes = item.pboxes
-                image.drawer = item.drawer
+                image.pos0, image.pos1 = bm.pos0, bm.pos1
+                image.pboxes = bm.pboxes
+                image.drawer = bm.drawer
                 clipping.image = self:getImage(image)
             end
             --- @todo Store chapter info when exporting highlights.
@@ -286,15 +281,6 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             end
         end
     end
-    -- A table to map bookmarks timestamp to index in the bookmarks table
-    -- to facilitate sorting clippings by their position in the book
-    -- since highlights are not sorted by position while bookmarks are.
-    local bookmark_indexes = {}
-    for i, bookmark in ipairs(bookmarks) do
-        bookmark_indexes[self:getTime(bookmark.datetime)] = i
-    end
-    -- Sort clippings by their position in the book.
-    table.sort(book, function(v1, v2) return bookmark_indexes[v1[1].time] > bookmark_indexes[v2[1].time] end)
 end
 
 function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
@@ -311,7 +297,7 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
                         "has been found. The book associated is ",
                         doc_file)
             return
-        elseif not stored.highlight then
+        elseif not stored.bookmarks then
             return
         end
         local _, docname = util.splitFilePathName(doc_file)
@@ -321,7 +307,7 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
             title = title,
             author = author,
         }
-        self:parseHighlight(stored.highlight, stored.bookmarks, clippings[title])
+        self:parseHighlight(stored.bookmarks, clippings[title])
     end
 end
 
@@ -372,7 +358,7 @@ function MyClipping:parseCurrentDoc(view)
         title = title,
         author = author,
     }
-    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[title])
+    self:parseHighlight(view.ui.bookmark.bookmarks, clippings[title])
 
     return clippings
 end

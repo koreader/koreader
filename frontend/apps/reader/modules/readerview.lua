@@ -497,13 +497,10 @@ function ReaderView:drawSavedHighlight(bb, x, y)
 end
 
 function ReaderView:drawPageSavedHighlight(bb, x, y)
-    local pages = self:getCurrentPageList()
-    for _, page in pairs(pages) do
-        local items = self.highlight.saved[page]
-        if items then
-            for i = 1, #items do
-                local item = items[i]
-                local pos0, pos1 = item.pos0, item.pos1
+    if self.ui.bookmark and self.ui.bookmark.bookmarks then
+        for i, item in ipairs(self.ui.bookmark.bookmarks) do
+            if item.highlighted then
+                local pos0, pos1, page = item.pos0, item.pos1, item.page_num
                 local boxes = self.document:getPageBoxesFromPositions(page, pos0, pos1)
                 if boxes then
                     for _, box in pairs(boxes) do
@@ -513,9 +510,9 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
                         end
                     end -- end for each box
                 end -- end if boxes
-            end -- end for each highlight
-        end
-    end -- end for each page
+            end
+        end -- end for each highlight
+    end
 end
 
 function ReaderView:drawXPointerSavedHighlight(bb, x, y)
@@ -524,13 +521,10 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     -- clear that cache when page layout change or highlights are added
     -- or removed).
     local cur_view_top, cur_view_bottom
-    for page, items in pairs(self.highlight.saved) do
-        if items then
-            for j = 1, #items do
-                local item = items[j]
-                local pos0, pos1 = item.pos0, item.pos1
-                -- document:getScreenBoxesFromPositions() is expensive, so we
-                -- first check this item is on current page
+    if self.ui.bookmark and self.ui.bookmark.bookmarks then
+        for i, item in ipairs(self.ui.bookmark.bookmarks) do
+            if item.highlighted then
+                local pos0, pos1, page = item.pos0, item.pos1, item.page_num
                 if not cur_view_top then
                     -- Even in page mode, it's safer to use pos and ui.dimen.h
                     -- than pages' xpointers pos, even if ui.dimen.h is a bit
@@ -557,9 +551,9 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                         end -- end for each box
                     end -- end if boxes
                 end
-            end -- end for each highlight
+            end
         end
-    end -- end for all saved highlight
+    end
 end
 
 function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer)
