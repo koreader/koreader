@@ -10,14 +10,15 @@ local _ = require("gettext")
 local function prepareNote(booknotes)
     local note = ""
     for _, clipping in ipairs(booknotes) do
-        if clipping.chapter then
-            note = note .. "\n\t*" .. clipping.chapter .. "*\n\n * * *"
+        local entry = clipping[1]
+        if entry.chapter then
+            note = note .. "\n\t*" .. entry.chapter .. "*\n\n * * *"
         end
 
-        note = note .. os.date("%Y-%m-%d %H:%M:%S \n", clipping.time)
-        note = note .. clipping.text
-        if clipping.note then
-            note = note .. "\n---\n" .. clipping.note
+        note = note .. os.date("%Y-%m-%d %H:%M:%S \n", entry.time)
+        note = note .. entry.text
+        if entry.note then
+            note = note .. "\n---\n" .. entry.note
         end
         note = note .. "\n * * *\n"
     end
