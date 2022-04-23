@@ -248,6 +248,7 @@ function ReaderBookmark:isBookmarkInPositionOrder(a, b)
 end
 
 function ReaderBookmark:isBookmarkInPageOrder(a, b)
+    logger.dbg(a, b)
     if self.ui.document.info.has_pages then
         if a.page == b.page then -- have bookmarks before highlights
             return a.highlighted

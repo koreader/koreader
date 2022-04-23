@@ -1619,6 +1619,9 @@ function ReaderHighlight:saveHighlight()
             bookmark_item.datetime = datetime
             bookmark_item.chapter = chapter_name
             bookmark_item.page_num = page
+            if self.ui.document.info.has_pages then
+                bookmark_item.page = page
+            end
             bookmark_item.drawer = self.view.highlight.saved_drawer
             bookmark_item.pboxes = self.selected_text.pboxes
             index = self.ui.bookmark:addBookmark(bookmark_item)
