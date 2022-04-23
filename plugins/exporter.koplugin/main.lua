@@ -1,8 +1,29 @@
 --[[
-    This plugin exports highlights to specific formats and services
+    Export highlights to different targets.
 
-        - for the current document
-        - for all documents in history
+    Some conventions:
+
+    - Target: each local format or remote service this plugin can translate to.
+
+    Each new target should inherit from "formats/base" and implement *at least* an export function.
+
+    - Highlight: Text or image in document. Stored in "highlights" table of documents sidecar file.
+
+    Parser uses this table.
+    If highlight._._.text field is empty the parser uses highlight._._.pboxes field to get an image instead.
+
+    - Bookmarks: Data in bookmark explorer. Stored in "bookmarks" table of documents sidecar file.
+
+    Every field in bookmarks._ has "text" and "notes" fields.
+    When user edits a highlight or "renames" bookmark the text field is created or updated.
+    The parser looks to bookmarks._.text field for edited notes. bookmarks._.notes isn't used for exporting operations.
+
+    - Clippings: Parsed form of highlights, stored in clipboard/exporter.sdr/metadata.sdr.lua
+
+    Single table for all documents.
+    Used only for exporting bookmarks. Internal highlight or bookmark functions does not use this table.
+
+    - Booknotes: Every table in clippings table. clippings = {"title" = booknotes}
 --]]
 
 local DataStorage = require("datastorage")
@@ -17,6 +38,7 @@ local util = require("ffi/util")
 local _ = require("gettext")
 
 
+-- migrate settings from old "evernote.koplugin" or from previous (monolithic) "exporter.koplugin"
 local function migrateSettings()
     local formats = { "html", "joplin", "json", "readwise", "text" }
 
@@ -56,8 +78,7 @@ local Exporter = InputContainer:new {
 function Exporter:init()
     migrateSettings()
     self.parser = MyClipping:new {
-        my_clippings = "/mnt/us/documents/My Clippings.txt",
-        history_dir = "./history",
+        history_dir = DataStorage:getDataDir() .. "/history",
     }
     for k, _ in pairs(self.targets) do
         self.targets[k].path = self.path
