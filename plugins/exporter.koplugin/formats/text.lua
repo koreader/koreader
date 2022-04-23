@@ -7,10 +7,6 @@ local TextExporter = require("formats/base"):new {
     extension = "txt",
 }
 
-function TextExporter:getFilePath()
-    return self.clipping_dir .. "/KOReaderClipping.txt"
-end
-
 function TextExporter:export(t)
     -- Use wide_space to avoid crengine to treat it specially.
     local wide_space = "\227\128\128"
