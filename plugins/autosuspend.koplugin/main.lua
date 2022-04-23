@@ -312,7 +312,7 @@ function AutoSuspend:onResume()
     self.going_to_suspend = false
 
     if self:_enabledShutdown() and Device.wakeup_mgr then
-        Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
+        Device.wakeup_mgr:removeTasks(nil, UIManager.poweroff_action)
     end
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
     self:_unschedule()

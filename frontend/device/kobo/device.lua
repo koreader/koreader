@@ -831,7 +831,7 @@ function Kobo:standby(max_duration)
     logger.info("Kobo standby: zZz zZz zZz zZz? Write syscall returned: ", ret)
 
     if max_duration then
-        --- @fixme: Just switch back to removeTask, the scheduled action is a NOP,
+        --- @fixme: Just switch back to removeTasks, the scheduled action is a NOP,
         --          that whole thing was just an excuse to look into WakeupMgr ;).
         -- There's no scheduling shenanigans like in suspend, so the proximity window can be much tighter...
         if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(5) then
