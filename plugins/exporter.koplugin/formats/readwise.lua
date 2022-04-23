@@ -66,7 +66,9 @@ function ReadwiseExporter:export(t)
         }
         self.new_settings = false
     end
-    self.client:createHighlights(t)
+    for _, booknotes in ipairs(t) do
+        self.client:createHighlights(booknotes)
+    end
 end
 
 return ReadwiseExporter
