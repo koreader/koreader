@@ -10,8 +10,8 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local ReaderDeviceStatus = InputContainer:new{
-battery_confirm_box = nil,
-memory_confirm_box = nil,
+    battery_confirm_box = nil,
+    memory_confirm_box = nil,
 }
 
 function ReaderDeviceStatus:init()
@@ -19,7 +19,8 @@ function ReaderDeviceStatus:init()
         self.battery_interval_m = G_reader_settings:readSetting("device_status_battery_interval_minutes", 10)
         self.battery_threshold = G_reader_settings:readSetting("device_status_battery_threshold", 20)
         self.battery_threshold_high = G_reader_settings:readSetting("device_status_battery_threshold_high", 100)
-        self.checkLowBatteryLevel = function()
+        -- if sync is true, schedule on a full minute (to reduce wakeups from suspend)
+        self.checkLowBatteryLevel = function(sync)
             local is_charging = powerd:isCharging()
             local battery_capacity = powerd:getCapacity()
             if powerd:getDismissBatteryStatus() == true then  -- alerts dismissed
@@ -45,7 +46,8 @@ function ReaderDeviceStatus:init()
                     UIManager:show(self.battery_confirm_box)
                 end
             end
-            UIManager:scheduleIn(self.battery_interval_m * 60, self.checkLowBatteryLevel)
+            local offset = sync and os.date("%S") or 0
+            UIManager:scheduleIn(self.battery_interval_m * 60 - offset, self.checkLowBatteryLevel)
         end
         self:startBatteryChecker()
     end
@@ -53,7 +55,8 @@ function ReaderDeviceStatus:init()
     if not Device:isAndroid() then
         self.memory_interval_m = G_reader_settings:readSetting("device_status_memory_interval_minutes", 5)
         self.memory_threshold = G_reader_settings:readSetting("device_status_memory_threshold", 100)
-        self.checkHighMemoryUsage = function()
+        -- if sync is true, schedule on a full minute (to reduce wakeups from suspend)
+        self.checkHighMemoryUsage = function(sync)
             local statm = io.open("/proc/self/statm", "r")
             if statm then
                 local dummy, rss = statm:read("*number", "*number")
@@ -103,7 +106,8 @@ function ReaderDeviceStatus:init()
                     end
                 end
             end
-            UIManager:scheduleIn(self.memory_interval_m * 60, self.checkHighMemoryUsage)
+            local offset = sync and os.date("%S") or 0
+            UIManager:scheduleIn(self.memory_interval_m * 60 - offset, self.checkHighMemoryUsage)
         end
         self:startMemoryChecker()
     end
@@ -126,7 +130,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                 callback = function()
                     G_reader_settings:flipNilOrFalse("device_status_battery_alarm")
                     if G_reader_settings:isTrue("device_status_battery_alarm") then
-                        self:startBatteryChecker()
+                        self:startBatteryChecker(true)
                     else
                         self:stopBatteryChecker()
                         powerd:setDismissBatteryStatus(false)
@@ -155,7 +159,10 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                             G_reader_settings:saveSetting("device_status_battery_interval_minutes", self.battery_interval_m)
                             touchmenu_instance:updateItems()
                             powerd:setDismissBatteryStatus(false)
-                            UIManager:scheduleIn(self.battery_interval_m * 60, self.checkLowBatteryLevel)
+                            self:stopBatteryChecker()
+                            -- schedule first check on a full minute to reduce wakeups from standby)
+                            UIManager:scheduleIn(self.battery_interval_m * 60 - os.date("%S"),
+                                self.checkLowBatteryLevel)
                         end,
                     })
                 end,
@@ -219,7 +226,7 @@ High level threshold is checked when the device is charging.]]),
                 callback = function()
                     G_reader_settings:flipNilOrFalse("device_status_memory_alarm")
                     if G_reader_settings:isTrue("device_status_memory_alarm") then
-                        self:startMemoryChecker()
+                        self:startMemoryChecker(start)
                     else
                         self:stopMemoryChecker()
                     end
@@ -246,7 +253,10 @@ High level threshold is checked when the device is charging.]]),
                             self.memory_interval_m = spin.value
                             G_reader_settings:saveSetting("device_status_memory_interval_minutes", self.memory_interval_m)
                             touchmenu_instance:updateItems()
-                            UIManager:scheduleIn(self.memory_interval_m * 60, self.checkHighMemoryUsage)
+                            self:stopMemoryChecker()
+                            -- schedule first check on a full minute to reduce wakeups from standby)
+                            UIManager:scheduleIn(self.memory_interval_m * 60 - os.date("%S"),
+                                self.checkHighMemoryUsage)
                         end,
                     })
                 end,
@@ -293,9 +303,10 @@ High level threshold is checked when the device is charging.]]),
     end
 end
 
-function ReaderDeviceStatus:startBatteryChecker()
+-- if sync is true, the next schedule will be on a full minute (rounded down) to reduce wakeups from standby
+function ReaderDeviceStatus:startBatteryChecker(sync)
     if G_reader_settings:isTrue("device_status_battery_alarm") then
-        self.checkLowBatteryLevel()
+        self.checkLowBatteryLevel(sync)
     end
 end
 
@@ -305,9 +316,10 @@ function ReaderDeviceStatus:stopBatteryChecker()
     end
 end
 
-function ReaderDeviceStatus:startMemoryChecker()
+-- if sync is true, the next schedule will be on a full minute (rounded down) to reduce wakeups from standby
+function ReaderDeviceStatus:startMemoryChecker(sync)
     if G_reader_settings:isTrue("device_status_memory_alarm") then
-        self.checkHighMemoryUsage()
+        self.checkHighMemoryUsage(sync)
     end
 end
 
@@ -318,8 +330,8 @@ function ReaderDeviceStatus:stopMemoryChecker()
 end
 
 function ReaderDeviceStatus:onResume()
-    self:startBatteryChecker()
-    self:startMemoryChecker()
+    self:startBatteryChecker(true)
+    self:startMemoryChecker(true)
 end
 
 function ReaderDeviceStatus:onSuspend()
