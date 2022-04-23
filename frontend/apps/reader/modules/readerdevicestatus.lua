@@ -19,7 +19,7 @@ function ReaderDeviceStatus:init()
         self.battery_interval_m = G_reader_settings:readSetting("device_status_battery_interval_minutes", 10)
         self.battery_threshold = G_reader_settings:readSetting("device_status_battery_threshold", 20)
         self.battery_threshold_high = G_reader_settings:readSetting("device_status_battery_threshold_high", 100)
-        -- if sync is true, schedule on a full minute (to reduce wakeups from suspend)
+        -- If sync is true, schedule on a full minute (to reduce wakeups from suspend).
         self.checkLowBatteryLevel = function(sync)
             local is_charging = powerd:isCharging()
             local battery_capacity = powerd:getCapacity()
@@ -55,7 +55,7 @@ function ReaderDeviceStatus:init()
     if not Device:isAndroid() then
         self.memory_interval_m = G_reader_settings:readSetting("device_status_memory_interval_minutes", 5)
         self.memory_threshold = G_reader_settings:readSetting("device_status_memory_threshold", 100)
-        -- if sync is true, schedule on a full minute (to reduce wakeups from suspend)
+        -- If sync is true, schedule on a full minute (to reduce wakeups from suspend).
         self.checkHighMemoryUsage = function(sync)
             local statm = io.open("/proc/self/statm", "r")
             if statm then
@@ -226,7 +226,7 @@ High level threshold is checked when the device is charging.]]),
                 callback = function()
                     G_reader_settings:flipNilOrFalse("device_status_memory_alarm")
                     if G_reader_settings:isTrue("device_status_memory_alarm") then
-                        self:startMemoryChecker(start)
+                        self:startMemoryChecker(true)
                     else
                         self:stopMemoryChecker()
                     end
@@ -303,7 +303,7 @@ High level threshold is checked when the device is charging.]]),
     end
 end
 
--- if sync is true, the next schedule will be on a full minute (rounded down) to reduce wakeups from standby
+-- If sync is true, the next schedule will be on a full minute (rounded down) to reduce wakeups from standby.
 function ReaderDeviceStatus:startBatteryChecker(sync)
     if G_reader_settings:isTrue("device_status_battery_alarm") then
         self.checkLowBatteryLevel(sync)
@@ -316,7 +316,7 @@ function ReaderDeviceStatus:stopBatteryChecker()
     end
 end
 
--- if sync is true, the next schedule will be on a full minute (rounded down) to reduce wakeups from standby
+-- If sync is true, the next schedule will be on a full minute (rounded down) to reduce wakeups from standby.
 function ReaderDeviceStatus:startMemoryChecker(sync)
     if G_reader_settings:isTrue("device_status_memory_alarm") then
         self.checkHighMemoryUsage(sync)
