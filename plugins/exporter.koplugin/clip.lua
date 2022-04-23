@@ -252,7 +252,7 @@ function MyClipping:parseHighlight(bookmarks, book)
 
     for idx = #bookmarks, 1, -1 do
         local bm = bookmarks[idx]
-        if bm.sort == "highlight" then
+        if bm.highlighted then
             local clipping = {}
             clipping.page = bm.page_num
             clipping.sort = "highlight"
@@ -281,6 +281,7 @@ function MyClipping:parseHighlight(bookmarks, book)
             end
         end
     end
+
 end
 
 function MyClipping:parseHistoryFile(clippings, history_file, doc_file)

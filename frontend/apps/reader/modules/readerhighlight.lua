@@ -634,7 +634,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
     end
 
     local highlight = table.remove(self.ui.bookmark.bookmarks, index)
-    local highlight_time = highlight.datetime
+    -- local highlight_time = highlight.datetime
     local highlight_beginning = highlight.pos0
     local highlight_end = highlight.pos1
     if side == 0 then -- we move pos0
@@ -1563,9 +1563,6 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
                 idx = index
                 break
             end
-            if idx then
-                break
-            end
         end
     end
     if bookmark_item and not idx then
@@ -1651,7 +1648,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
 end
 
 function ReaderHighlight:addNote(text)
-    local page, index = self:saveHighlight()
+    local _, index = self:saveHighlight()
     if text then self:clear() end
     self:editHighlight(index, true, text)
     UIManager:close(self.edit_highlight_dialog)
