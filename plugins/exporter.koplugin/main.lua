@@ -145,13 +145,17 @@ end
 
 function Exporter:exportClippings(clippings)
     if type(clippings) ~= "table" then return end
+    local exportables = {}
+    for _title, booknotes in pairs(clippings) do
+        table.insert(exportables, booknotes)
+    end
     local export_callback = function()
         UIManager:nextTick(function()
             local timestamp = os.time()
             for k, v in pairs(self.targets) do
                 if v:isEnabled() then
                     v.timestamp = timestamp
-                    v:export(clippings)
+                    v:export(exportables)
                     v.timestamp = nil
                 end
             end
