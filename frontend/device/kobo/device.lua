@@ -784,7 +784,7 @@ function Kobo:checkUnexpectedWakeup()
     if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(30) then
         -- Assume we want to go back to sleep after running the scheduled action
         -- (Kobo:resume will unschedule this on an user-triggered resume).
-        logger.info("Kobo suspend: putting device back to sleep after scheduled wakeup.")
+        logger.info("Kobo suspend: scheduled wakeup; the device will go back to sleep in 30s.")
         -- We need significant leeway for the poweroff action to send out close events to all requisite widgets,
         -- since we don't actually want to suspend behind its back ;).
         UIManager:scheduleIn(30, self.suspend, self)
