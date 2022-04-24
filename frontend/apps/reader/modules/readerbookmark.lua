@@ -453,7 +453,7 @@ end
 function ReaderBookmark:onShowBookmark(match_table)
     self.select_mode = false
     self.filtered_mode = match_table and true or false
-    self:updateHighlightsIfNeeded()
+    -- self:updateHighlightsIfNeeded()
     -- build up item_table
     local item_table = {}
     local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")

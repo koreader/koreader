@@ -314,6 +314,14 @@ function ReaderHighlight:migrateHighlights()
     if self.ui.doc_settings:hasNot("highlight_merged") then
         for page, highlights in pairs(self.view.highlight.saved) do
             for _, highlight in ipairs(highlights) do
+                if not highlight.chapter then
+                    local pg_or_xp = self.ui.paging and page or highlight.pos0
+                    local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
+                    highlight.chapter = chapter_name
+                end
+                if not highlight.drawer then
+                    highlight.drawer = self.view.highlight.saved_drawer
+                end
                 highlight.page_num = page
                 if self.ui.paging then
                     highlight.page = page
@@ -323,6 +331,14 @@ function ReaderHighlight:migrateHighlights()
                     page = highlight.page,
                     highlight
                 });
+            end
+        end
+        for i, bookmark in ipairs(self.ui.bookmark.bookmarks) do
+            if not bookmark.drawer then
+                self.ui.bookmark.bookmarks[i].drawer = self.view.highlight.saved_drawer
+            end
+            if not bookmark.chapter and bookmark.pos0 or bookmark.page then
+                self.ui.bookmark.bookmarks[i].chapter = self.ui.toc:getTocTitleByPage(bookmark.page or bookmark.pos0)
             end
         end
     end
