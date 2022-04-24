@@ -105,13 +105,6 @@ function AutoDim:getAutodimMenu()
                             self:_schedule_autodim_task()
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
-                        extra_text = _("Disable"),
-                        extra_callback = function()
-                            self.autodim_duration_s = -1
-                            G_reader_settings:saveSetting("autodim_duration_seconds", -1)
-                            self:_schedule_autodim_task()
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end,
                     }
                     UIManager:show(dimmer_dialog)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -151,7 +144,7 @@ end
 -- Schedules the first idle task, the consecutive ones are scheduled by the `autodim_task` itself.
 -- `seconds` if given define the seconds, when the first task should be scheduled.
 function AutoDim:_schedule_autodim_task(seconds)
-    UIManager:unscheduleSoonest(self.autodim_task, 1)
+    UIManager:unschedule(self.autodim_task)
     if self.autodim_starttime_m < 0 then
         return
     end
@@ -169,7 +162,14 @@ function AutoDim:onInputEvent()
         self:_unschedule_ramp_task()
         self:_schedule_autodim_task()
 
-        UIManager:discardEvents(1) -- discard events for 1 sec after dimming
+        UIManager:discardEvents(0) -- stop discarding events
+    end
+end
+
+function AutoDim:_unschedule_autodim_task()
+    if self.isCurrentlyDimming then
+        UIManager:unschedule(self.ramp_task)
+        self.isCurrentlyDimming = false
     end
 end
 
@@ -183,8 +183,16 @@ end
 
 function AutoDim:onSuspend()
     if self.isCurrentlyDimming then
+        self:_unschedule_autodim_task()
         self:_unschedule_ramp_task()
+        UIManager:discardEvents(0) -- stop discarding events
+        self.isCurrentlyDimming = true -- message to onResume to go on with restoring
     end
+end
+
+function AutoDim:onCloseWidget()
+    UIManager:unschedule(self.autodim_task)
+    UIManager:unschedule(self.ramp_task)
 end
 
 function AutoDim:autodim_task()
@@ -199,7 +207,7 @@ function AutoDim:autodim_task()
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         -- calculate time until the next decrease step
         -- use a minimal step time for screen (footer) refreshes (50ms, works on the Sage)
-        self.autodim_step_time_s = math.floor(self.autodim_duration_s / fl_diff, 0.050)
+        self.autodim_step_time_s = math.max(self.autodim_duration_s / fl_diff, 0.050)
 
         UIManager:discardEvents(math.huge)
         self:ramp_task() -- which schedules itself
@@ -225,7 +233,7 @@ end
 
 function AutoDim:_unschedule_ramp_task()
     if self.isCurrentlyDimming then
-        UIManager:unscheduleSoonest(self.ramp_task, 1)
+        UIManager:unschedule(self.ramp_task)
         self.isCurrentlyDimming = false
     end
 end
