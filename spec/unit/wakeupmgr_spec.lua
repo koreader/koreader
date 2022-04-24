@@ -50,6 +50,6 @@ describe("WakeupMgr", function()
         assert.is_true(WakeupMgr:wakeupAction())
     end)
     it("should not have scheduled a wakeup without a task", function()
-        assert.stub(WakeupMgr.setWakeupAlarm).was.called(5) -- 3 from addTask, 1 from wakeupAction, 1 from removeTask
+        assert.stub(WakeupMgr.setWakeupAlarm).was.called(4) -- 3 from addTask, 1 from wakeupAction, 0 from removeTask (because it wasn't the upcoming task that was removed)
     end)
 end)
