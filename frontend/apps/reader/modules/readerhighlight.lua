@@ -683,7 +683,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
 
     local new_beginning, new_end = highlight.pos0, highlight.pos1
     local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
-    local new_chapter = self.ui.toc:getTocTitleByPage(new_end)
+    local new_chapter = self.ui.toc:getTocTitleByPage(new_beginning)
     highlight.text = cleanupSelectedText(new_text)
     highlight.chapter = new_chapter
     self.ui.bookmark:addBookmark(highlight)
@@ -1619,7 +1619,7 @@ function ReaderHighlight:saveHighlight()
             bookmark_item.datetime = datetime
             bookmark_item.chapter = chapter_name
             bookmark_item.page_num = page
-            if self.ui.document.info.has_pages then
+            if self.ui.paging then
                 bookmark_item.page = page
             end
             bookmark_item.drawer = self.view.highlight.saved_drawer
