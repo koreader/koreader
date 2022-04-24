@@ -39,11 +39,11 @@ function JsonExporter:export(t)
         }
     end
     local file = io.open(path, "w")
-    if file then
-        file:write(json.encode(exportable))
-        file:write("\n")
-        file:close()
-    end
+    if not file then return false end
+    file:write(json.encode(exportable))
+    file:write("\n")
+    file:close()
+    return true
 end
 
 return JsonExporter
