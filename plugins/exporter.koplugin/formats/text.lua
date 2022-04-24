@@ -17,8 +17,8 @@ function TextExporter:export(t)
         if booknotes.title then
             file:write(wide_space .. booknotes.title .. "\n" .. wide_space .. "\n")
         end
-        for __, entry in ipairs(booknotes) do
-            for __, clipping in ipairs(entry) do
+        for ___, entry in ipairs(booknotes) do
+            for ____, clipping in ipairs(entry) do
                 if clipping.chapter then
                     file:write(wide_space .. clipping.chapter .. "\n" .. wide_space .. "\n")
                 end
