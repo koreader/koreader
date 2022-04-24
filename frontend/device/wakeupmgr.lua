@@ -87,6 +87,9 @@ with anonymous functions.
 @treturn bool (true if one or more tasks were removed; false otherwise; nil if the task queue is empty or on API misuse).
 --]]
 function WakeupMgr:removeTasks(epoch, callback)
+    if epoch == nil and callback == nil then
+        return
+    end
     if (epoch and type(epoch) ~= "number")
     or (callback and type(callback) ~= "function") then
         return
