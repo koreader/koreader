@@ -630,68 +630,31 @@ end
 --]]
 
 --[[--
-Unschedules previously scheduled tasks.
+Unschedules a previously scheduled task.
 
 In order to unschedule anonymous functions, store a reference.
 
-@func action task to be removed
-@number N The maximum number of tasks to be unscheduled. For a well known number, using N improves speed. If N is omitted all action tasks will be removed.
-@return at least on task removed, number of tasks removed.
+@func action
+@see scheduleIn
 
-@see scheduleIn, unscheduleSoonest
 @usage
 
 self.anonymousFunction = function() self:regularFunction() end
 UIManager:scheduleIn(10.5, self.anonymousFunction)
 UIManager:unschedule(self.anonymousFunction)
 ]]
-function UIManager:unschedule(action, N)
-    local removed = 0
-    N = N or math.huge
+function UIManager:unschedule(action)
+    local removed = false
     for i = #self._task_queue, 1, -1 do
         if self._task_queue[i].action == action then
             table.remove(self._task_queue, i)
-            removed = removed + 1
-            if removed >= N then
-                return true, removed
-            end
+            removed = true
         end
     end
-    return false, removed
+    return removed
 end
 dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
-
---[[--
-Unschedules the soonest upcoming N previously scheduled tasks.
-
-This function is faster than `self:unschedule`, if only a well known number of tasks have to be removed
-from the beginning of `_task_queue` (and that number is not to big compared to the total number of scheduled tasks).
-
-@func action task to be removed
-@number N The maximum number of tasks to be unscheduled. For a well known number, using N improves speed. If N is omitted all action tasks will be removed.
-@return at least on task removed, number of tasks removed.
-
-@see unschedule, scheduleIn
-]]
-function UIManager:unscheduleSoonest(action, N)
-    local removed = 0
-    for i = 1, #self._task_queue do
-        if self._task_queue[i].action == action then
-            table.remove(self._task_queue, i)
-            removed = removed + 1
-            if removed >= N then
-                return false, removed
-            end
-        end
-    end
-    return false, removed
-end
-dbg:guard(UIManager, 'unscheduleSoonest',
-    function(self, action, N)
-        assert(action ~= nil)
-        assert(N ~= nil)
-    end)
 
 --[[--
 Mark a window-level widget as dirty, enqueuing a repaint & refresh request for that widget, to be processed on the next UI tick.
