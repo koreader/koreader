@@ -58,7 +58,7 @@ function AutoDim:getAutodimMenu()
                         info_text = _("Start the dimmer after that idle time. Time is in minutes."),
                         value = self.autodim_starttime_m >=0 and self.autodim_starttime_m or 0.5,
                         default_value = DEFAULT_AUTODIM_STARTTIME_M,
-                        value_min = 0.5,
+                        value_min = 0.1,
                         value_max = 60,
                         value_step = 0.5,
                         value_hold_step = 5,
@@ -95,7 +95,7 @@ function AutoDim:getAutodimMenu()
                         value = self.autodim_duration_s,
                         default_value = DEFAULT_AUTODIM_DURATION_S,
                         value_min = 0,
-                        max_max = 300,
+                        value_max = 300,
                         value_step = 1,
                         value_hold_step = 10,
                         callback = function(spin)
@@ -173,7 +173,7 @@ function AutoDim:onInputEvent()
     end
 end
 
-function AutoDim:Resume()
+function AutoDim:onResume()
     if self.isCurrentlyDimming then
         Device.powerd:setIntensity(self.autodim_save_fl)
         self:_schedule_autodim_task()
