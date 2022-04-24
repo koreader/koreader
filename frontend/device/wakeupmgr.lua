@@ -52,8 +52,6 @@ I'm not sure if the distinction between maintenance and sync makes sense
 but it's wifi on vs. off.
 --]]
 function WakeupMgr:addTask(seconds_from_now, callback)
-    if type(seconds_from_now) ~= "number" and type(callback) ~= "function" then return end
-
     local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
     logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now)
 
@@ -87,14 +85,6 @@ with anonymous functions.
 @treturn bool (true if one or more tasks were removed; false otherwise; nil if the task queue is empty or on API misuse).
 --]]
 function WakeupMgr:removeTasks(epoch, callback)
-    if epoch == nil and callback == nil then
-        return
-    end
-    if (epoch and type(epoch) ~= "number")
-    or (callback and type(callback) ~= "function") then
-        return
-    end
-
     if #self._task_queue < 1 then return end
 
     local removed = false
@@ -121,8 +111,6 @@ Variant of @{removeTasks} that will only remove a single task, identified by its
 @treturn bool (true if a task was removed; false otherwise; nil on API misuse).
 --]]
 function WakeupMgr:removeTask(idx)
-    if type(idx) ~= "number" then return end
-
     local removed = false
     -- We don't want to keep the pop'ed entry around, we just want to know if we pop'ed something.
     if table.remove(self._task_queue, idx) then
