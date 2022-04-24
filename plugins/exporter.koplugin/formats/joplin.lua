@@ -1,11 +1,59 @@
 local BD = require("ui/bidi")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
-local JoplinClient = require("clients/JoplinClient")
 local UIManager = require("ui/uimanager")
+local http = require("socket.http")
+local json = require("json")
 local logger = require("logger")
+local ltn12 = require("ltn12")
+local socketutil = require("socketutil")
 local T = require("ffi/util").template
 local _ = require("gettext")
+
+local function makeRequest(url, method, request_body)
+    local sink = {}
+    local request_body_json = json.encode(request_body)
+    local source = ltn12.source.string(request_body_json)
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+    http.request{
+        url     = url,
+        method  = method,
+        sink    = ltn12.sink.table(sink),
+        source  = source,
+        headers = {
+            ["Content-Length"] = #request_body_json,
+            ["Content-Type"] = "application/json"
+        },
+    }
+    socketutil:reset_timeout()
+
+    if not sink[1] then
+        return nil, "No response from Joplin Server"
+    end
+
+    local response = json.decode(sink[1])
+
+    if response.error then
+        return nil, response.error
+    end
+
+    return response
+end
+
+local function ping(ip, port)
+    local sink = {}
+    http.request{
+        url =  "http://"..ip..":"..port.."/ping",
+        method = "GET",
+        sink = ltn12.sink.table(sink)
+    }
+
+    if sink[1] == "JoplinClipperServer" then
+        return true
+    else
+        return false
+    end
+end
 
 local function prepareNote(booknotes)
     local note = ""
@@ -30,6 +78,115 @@ local JoplinExporter = require("formats/base"):new {
     is_remote = true,
     notebook_name = _("KOReader Notes"),
 }
+
+-- If successful returns id of found note.
+function JoplinExporter:findNoteByTitle(title, notebook_id)
+    local url_base = string.format("http://%s:%s/notes?token=%s&fields=id,title,parent_id&page=",
+        self.settings.ip, self.settings.port, self.settings.token)
+
+    local page = 1
+    local url, has_more
+
+    repeat
+        url = url_base..page
+        local notes, err = makeRequest(url, "GET")
+        if not notes then
+            logger.warn("Joplin findNoteByTitle error", err)
+            return
+        end
+        has_more = notes.has_more
+        for _, note in ipairs(notes.items) do
+            if note.title == title then
+                if notebook_id == nil or note.parent_id == notebook_id then
+                    return note.id
+                end
+            end
+        end
+        page = page + 1
+    until not has_more
+    return
+end
+
+-- If successful returns id of found notebook (folder).
+function JoplinExporter:findNotebookByTitle(title)
+    local url_base = string.format("http://%s:%s/folders?token=%s&query=title&page=",
+        self.settings.ip, self.settings.port, self.settings.token, title)
+
+    local page = 1
+    local url, has_more
+
+    repeat
+        url = url_base .. page
+        local folders, err = makeRequest(url, "GET")
+        if not folders then
+            logger.warn("Joplin findNotebookByTitle error", err)
+            return
+        end
+        has_more = folders.has_more
+        for _, folder in ipairs(folders.items) do
+            if folder.title == title then
+                return folder.id
+            end
+        end
+        page = page + 1
+    until not has_more
+    return
+end
+
+-- If successful returns id of created notebook (folder).
+function JoplinExporter:createNotebook(title, created_time)
+    local request_body = {
+        title = title,
+        created_time = created_time
+    }
+    local url = string.format("http://%s:%s/folders?token=%s",
+        self.settings.ip, self.settings.port, self.settings.token)
+
+    local response, err = makeRequest(url, "POST", request_body)
+    if not response then
+        logger.warn("Joplin createNotebook error", err)
+        return
+    end
+    return response.id
+end
+
+-- If successful returns id of created note.
+function JoplinExporter:createNote(title, note, parent_id, created_time)
+    local request_body = {
+        title = title,
+        body = note,
+        parent_id = parent_id,
+        created_time = created_time
+    }
+    local url = string.format("http://%s:%s/notes?token=%s",
+        self.settings.ip, self.settings.port, self.settings.token)
+
+    local response, err = makeRequest(url, "POST", request_body)
+    if not response then
+        logger.warn("Joplin createNote error", err)
+        return
+    end
+    return response.id
+end
+
+-- If successful returns id of updated note.
+function JoplinExporter:updateNote(note_id, note, title, parent_id)
+    local request_body = {
+        body = note,
+        title = title,
+        parent_id = parent_id
+    }
+
+    local url = string.format("http://%s:%s/notes/%s?token=%s",
+        self.settings.ip, self.settings.port, note_id, self.settings.token)
+
+    local response, err = makeRequest(url, "POST", request_body)
+    if not response then
+        logger.warn("Joplin updateNote error", err)
+        return
+    end
+    return response.id
+end
 
 function JoplinExporter:isEnabled()
     return self.settings.enabled and self.settings.ip and self.settings.port and self.settings.token
@@ -154,35 +311,36 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
 end
 
 function JoplinExporter:export(t)
-    -- Checking for refreshing/instantiating client should be the first thing in this function.
-    if self.new_settings or not self.client then
-        self.client = JoplinClient:new {
-            server_ip = self.settings.ip,
-            server_port = self.settings.port,
-            auth_token = self.settings.token
-        }
-        self.new_settings = false
+    if not ping(self.settings.ip, self.settings.port) then
+        logger.warn("Cannot reach Joplin server")
+        return false
     end
+
     ---@todo Check if user deleted our notebook, in that case note
     -- will end up in random folder in Joplin.
     if not self.settings.notebook_guid then
-        self.settings.notebook_guid = self.client:createNotebook(self.notebook_name)
-        self:saveSettings()
-    end
-    if not self.client:ping() then
-        logger.warn("Cannot reach Joplin server")
-        return
+        local notebook = self:createNotebook(self.notebook_name)
+        if notebook then
+            self.settings.notebook_guid = notebook
+            self:saveSettings()
+        end
     end
 
     for _, booknotes in pairs(t) do
-        local note_guid = self.client:findNoteByTitle(booknotes.title, self.settings.notebook_guid)
+        local note_guid = self:findNoteByTitle(booknotes.title, self.settings.notebook_guid)
         local note = prepareNote(booknotes)
+        local response
         if note_guid then
-            self.client:updateNote(note_guid, note)
+            response = self:updateNote(note_guid, note)
         else
-            self.client:createNote(booknotes.title, note, note_guid)
+            response = self:createNote(booknotes.title, note, note_guid)
+        end
+        if not response then
+            logger.warn("Cannot export to Joplin")
+            return false
         end
     end
+    return true
 end
 
 return JoplinExporter
