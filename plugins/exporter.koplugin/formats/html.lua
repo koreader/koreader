@@ -48,17 +48,17 @@ function HtmlExporter:export(t)
     for _, booknotes in ipairs(t) do
         table.insert(clipplings, prepareBookNotesForExport(booknotes))
     end
-    if file then
-        local content = slt2.render(template, {
-            clippings=clipplings,
-            document_title = title,
-            version = self:getVersion(),
-            timestamp = self:getTimeStamp(),
-            logger = logger
-        })
-        file:write(content)
-        file:close()
-    end
+    if not file then return false end
+    local content = slt2.render(template, {
+        clippings=clipplings,
+        document_title = title,
+        version = self:getVersion(),
+        timestamp = self:getTimeStamp(),
+        logger = logger
+    })
+    file:write(content)
+    file:close()
+    return true
 end
 
 return HtmlExporter
