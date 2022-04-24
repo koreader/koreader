@@ -82,7 +82,7 @@ If any tasks are left on exit, the next one will will automatically be re-schedu
 Normally the preferred method for outside callers.
 @int callback A scheduled callback function. Store a reference for use
 with anonymous functions.
-@treturn bool (true if one or more tasks were removed; false otherwise; nil if the task queue is empty or on API misuse).
+@treturn bool (true if one or more tasks were removed; false otherwise; nil if the task queue is empty).
 --]]
 function WakeupMgr:removeTasks(epoch, callback)
     if #self._task_queue < 1 then return end
@@ -108,7 +108,7 @@ end
 Variant of @{removeTasks} that will only remove a single task, identified by its task queue index.
 
 @int idx Task queue index. Mainly useful within this module.
-@treturn bool (true if a task was removed; false otherwise; nil on API misuse).
+@treturn bool (true if a task was removed; false otherwise).
 --]]
 function WakeupMgr:removeTask(idx)
     local removed = false
