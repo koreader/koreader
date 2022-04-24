@@ -26,13 +26,12 @@ gettext autoconf automake cmake libtool nasm ragel luarocks lua5.1 libsdl2-dev \
 libssl-dev libffi-dev libsdl2-dev libc6-dev-i386 xutils-dev linux-libc-dev:i386 zlib1g:i386
 ```
 
-
 ### Fedora/Red Hat
 
-Install the `libstdc++-static`, `SDL` and `SDL-devel` packages using DNF:
+Install the prerequisites using DNF:
 
 ```
-sudo dnf install libstdc++-static SDL SDL-devel
+sudo dnf install libstdc++-static SDL SDL-devel patch wget unzip git cmake luarocks autoconf nasm ragel gcc
 ```
 
 ### macOS
