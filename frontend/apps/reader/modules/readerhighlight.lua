@@ -306,6 +306,27 @@ end
 
 function ReaderHighlight:onReaderReady()
     self:setupTouchZones()
+    self:migrateHighlights()
+end
+
+
+function ReaderHighlight:migrateHighlights()
+    if self.ui.doc_settings:hasNot("highlight_merged") then
+        for page, highlights in pairs(self.view.highlight.saved) do
+            for _, highlight in ipairs(highlights) do
+                highlight.page_num = page
+                if self.ui.paging then
+                    highlight.page = page
+                end
+                self.ui.bookmark:patchBookmark({
+                    datetime = highlight.datetime,
+                    page = highlight.page,
+                    highlight
+                });
+            end
+        end
+    end
+    self.view.highlight.saved = nil;
 end
 
 local highlight_style = {
@@ -1833,6 +1854,7 @@ end
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
+    self.ui.doc_settings:makeTrue("highlight_merged")
 end
 
 function ReaderHighlight:onClose()

@@ -1014,6 +1014,25 @@ function ReaderBookmark:updateBookmark(item)
     end
 end
 
+
+function ReaderBookmark:patchBookmark(item)
+    for i=1, #self.bookmarks do
+        if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
+            local bookmark_before = util.tableDeepCopy(self.bookmarks[i])
+            local is_auto_text = self:isBookmarkAutoText(self.bookmarks[i])
+            for key, val in pairs(item.updated_highlight) do
+                self.bookmarks[i][key] = val
+            end
+            if is_auto_text then
+                self.bookmarks[i].text = self:getBookmarkAutoText(self.bookmarks[i])
+            end
+            self.ui:handleEvent(Event:new("BookmarkUpdated", self.bookmarks[i], bookmark_before))
+            self:onSaveSettings()
+            break
+        end
+    end
+end
+
 function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note, new_text)
     local bookmark
     if from_highlight then
