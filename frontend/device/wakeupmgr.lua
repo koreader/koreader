@@ -52,7 +52,7 @@ I'm not sure if the distinction between maintenance and sync makes sense
 but it's wifi on vs. off.
 --]]
 function WakeupMgr:addTask(seconds_from_now, callback)
-    if not type(seconds_from_now) == "number" and not type(callback) == "function" then return end
+    if type(seconds_from_now) ~= "number" and type(callback) ~= "function" then return end
 
     local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
     logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now)
