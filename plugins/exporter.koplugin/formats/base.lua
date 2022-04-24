@@ -26,20 +26,36 @@ function BaseExporter:_init()
     return self
 end
 
+--[[--
+Export timestamp
+
+@treturn string timestamp
+]]
 function BaseExporter:getTimeStamp()
     local ts = self.timestamp or os.time()
     return os.date("%Y-%m-%d %H:%M:%S", ts)
 end
 
+--[[--
+Exporter version
+
+@treturn string version
+]]
 function BaseExporter:getVersion()
     return self.name .. "/" .. self.version
 end
 
+--[[--
+Loads settings for the exporter
+]]
 function BaseExporter:loadSettings()
     local plugin_settings = G_reader_settings:readSetting("exporter") or {}
     self.settings = plugin_settings[self.name] or {}
 end
 
+--[[--
+Saves settings for the exporter
+]]
 function BaseExporter:saveSettings()
     local plugin_settings = G_reader_settings:readSetting("exporter") or {}
     plugin_settings[self.name] = self.settings
@@ -50,14 +66,15 @@ end
 --[[--
 Exports a table of booknotes to local format or remote service
 
-@table t
+@param t table of booknotes
+@treturn bool success
 ]]
 function BaseExporter:export(t) end
 
---[[
+--[[--
 File path for local exporters
 
-@string title for single document or nil
+@param title for single document or nil
 @treturn string absolute path of file
 ]]
 function BaseExporter:getFilePath(title)
@@ -68,10 +85,10 @@ function BaseExporter:getFilePath(title)
     end
 end
 
---[[
+--[[--
 Configuration menu for the exporter
 
-@treturn table menu
+@treturn table menu with exporter settings
 ]]
 function BaseExporter:getMenuTable()
     return {
@@ -86,7 +103,7 @@ function BaseExporter:getMenuTable()
 end
 
 --[[--
-Checks if it's ready to export and was enabled by the user
+Checks if the exporter is ready to export and was enabled by the user
 
 @treturn bool ready
 ]]
@@ -95,7 +112,7 @@ function BaseExporter:isEnabled()
 end
 
 --[[--
-Toggles enabled state if it's ready to export
+Toggles exporter enabled state if it's ready to export
 ]]
 function BaseExporter:toggleEnabled()
     self.settings.enabled = not self.settings.enabled
