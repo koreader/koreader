@@ -39,7 +39,7 @@ describe("WakeupMgr", function()
         assert.is_equal(epoch3, WakeupMgr._task_queue[2].epoch)
     end)
     it("should have scheduled next task after execution", function()
-        assert.stub(WakeupMgr.setWakeupAlarm).was.called(3) -- 2 from addTask, 1 from wakeupAction
+        assert.stub(WakeupMgr.setWakeupAlarm).was.called(3) -- 2 from addTask (the second addTask doesn't replace the upcoming task), 1 from wakeupAction
     end)
     it("should remove arbitrary task from stack", function()
         WakeupMgr:removeTask(2)
