@@ -58,7 +58,7 @@ function AutoDim:getAutodimMenu()
                         info_text = _("Start the dimmer after that idle time. Time is in minutes."),
                         value = self.autodim_starttime_m >=0 and self.autodim_starttime_m or 0.5,
                         default_value = DEFAULT_AUTODIM_STARTTIME_M,
-                        value_min = 0.1, -- xxx
+                        value_min = 0.5,
                         value_max = 60,
                         value_step = 0.5,
                         value_hold_step = 5,
@@ -193,14 +193,12 @@ function AutoDim:autodim_task()
     local now = UIManager:getElapsedTimeSinceBoot()
     local idle_duration =  now - self.last_action_tv
     local check_delay = TimeVal:new{ sec = self.autodim_starttime_m * 60} - idle_duration
-    print("xxx idlee", idle_duration:tonumber())
-    print("xxx delay", check_delay:tonumber())
     if check_delay:tonumber() <= 0 then
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_endpercentage / 100 + 0.5)
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         -- calculate time until the next decrease step
-        -- add a minimal time to get a sharp ramp on weird devices (which will be at maximum 100ms)
+        -- add a minimal time to get a sharp ramp on weird devices (which will be at least 100ms)
         self.autodim_step_time_s = self.autodim_duration_s / fl_diff + 0.001
 
         UIManager:discardEvents(math.huge)
@@ -214,8 +212,8 @@ end
 function AutoDim:ramp_task()
     self.isCurrentlyDimming = true -- this will disable rescheduling of the `autodim_task`
     local fl_level = Device.powerd:frontlightIntensity()
-    Device.powerd:setIntensity(fl_level - 1)
     if fl_level > self.autodim_end_fl then
+        Device.powerd:setIntensity(fl_level - 1)
         self:_schedule_ramp_task() -- Reschedule only if not ready
         -- `isCurrentlyDimming` stays true, to flag we have a dimmed FL.
     end
