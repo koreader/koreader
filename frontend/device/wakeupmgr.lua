@@ -97,6 +97,7 @@ function WakeupMgr:removeTasks(epoch, callback)
     end
 
     -- Re-schedule the next wakeup action, if any.
+    -- NOTE: We could be doing fancy checks like addTask, but, really, we'd just be saving an ioctl :p.
     if self._task_queue[1] then
         self:setWakeupAlarm(self._task_queue[1].epoch)
     end
@@ -118,6 +119,7 @@ function WakeupMgr:removeTask(idx)
     end
 
     -- Re-schedule the next wakeup action, if any.
+    -- NOTE: Same as above, this should technically only be necessary if we successfully pop'ed idx 1 ;).
     if self._task_queue[1] then
         self:setWakeupAlarm(self._task_queue[1].epoch)
     end
