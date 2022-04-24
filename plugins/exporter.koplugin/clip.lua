@@ -1,4 +1,3 @@
-local DataStorage = require("datastorage")
 local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
 local ReadHistory = require("readhistory")
