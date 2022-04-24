@@ -198,8 +198,8 @@ function AutoDim:autodim_task()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_endpercentage / 100 + 0.5)
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         -- calculate time until the next decrease step
-        -- add a minimal time to get a sharp ramp on weird devices (which will be at least 100ms)
-        self.autodim_step_time_s = self.autodim_duration_s / fl_diff + 0.001
+        -- use a minimal step time for screen (footer) refreshes (50ms, works on the Sage)
+        self.autodim_step_time_s = math.floor(self.autodim_duration_s / fl_diff, 0.050)
 
         UIManager:discardEvents(math.huge)
         self:ramp_task() -- which schedules itself
