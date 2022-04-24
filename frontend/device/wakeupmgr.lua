@@ -87,8 +87,8 @@ with anonymous functions.
 @treturn bool (true if one or more tasks were removed; false otherwise; nil if the task queue is empty or on API misuse).
 --]]
 function WakeupMgr:removeTasks(epoch, callback)
-    if not type(epoch) == "number"
-    and not type(callback) == "function" then
+    if (epoch and type(epoch) ~= "number")
+    or (callback and type(callback) ~= "function") then
         return
     end
 
@@ -118,7 +118,7 @@ Variant of @{removeTasks} that will only remove a single task, identified by its
 @treturn bool (true if a task was removed; false otherwise; nil on API misuse).
 --]]
 function WakeupMgr:removeTask(idx)
-    if not type(idx) == "number" then return end
+    if type(idx) ~= "number" then return end
 
     local removed = false
     -- We don't want to keep the pop'ed entry around, we just want to know if we pop'ed something.
