@@ -145,19 +145,16 @@ If necessary, the next upcoming task (if any) is scheduled on exit.
 --]]
 function WakeupMgr:wakeupAction(proximity)
     if #self._task_queue > 0 then
-        local executed = false
         local task = self._task_queue[1]
         if self:validateWakeupAlarmByProximity(task.epoch, proximity) then
             task.callback()
+            -- NOTE: removeTask will take care of scheduling the next upcoming task, if necessary.
             self:removeTask(1)
-            executed = true
+
+            return true
         end
 
-        -- Schedule the next wakeup action, if any (and if necessary).
-        if executed and self._task_queue[1] then
-            self:setWakeupAlarm(self._task_queue[1].epoch)
-        end
-        return executed
+        return false
     end
 
     return nil
