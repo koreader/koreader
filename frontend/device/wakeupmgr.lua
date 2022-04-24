@@ -76,7 +76,7 @@ end
 Remove task(s) from queue.
 
 This method removes one or more tasks by either scheduled time or callback.
-If any tasks are left on exit, the next one will will automatically be re-scheduled.
+If any tasks are left on exit, the next one will will automatically be re-scheduled (if necessary).
 
 @int epoch The epoch for when this task is scheduled to wake up.
 Normally the preferred method for outside callers.
@@ -88,17 +88,21 @@ function WakeupMgr:removeTasks(epoch, callback)
     if #self._task_queue < 1 then return end
 
     local removed = false
+    local reschedule = false
     for k = #self._task_queue, 1, -1 do
         local v = self._task_queue[k]
         if epoch == v.epoch or callback == v.callback then
             table.remove(self._task_queue, k)
             removed = true
+            -- If we've successfuly pop'ed the upcoming task, we need to schedule the next one (if any) on exit.
+            if k == 1 then
+                reschedule = true
+            end
         end
     end
 
-    -- Re-schedule the next wakeup action, if any.
-    -- NOTE: We could be doing fancy checks like addTask, but, really, we'd just be saving an ioctl :p.
-    if self._task_queue[1] then
+    -- Re-schedule the next wakeup action, if any (and if necessary).
+    if reschedule and self._task_queue[1] then
         self:setWakeupAlarm(self._task_queue[1].epoch)
     end
 
@@ -118,9 +122,8 @@ function WakeupMgr:removeTask(idx)
         removed = true
     end
 
-    -- Re-schedule the next wakeup action, if any.
-    -- NOTE: Same as above, this should technically only be necessary if we successfully pop'ed idx 1 ;).
-    if self._task_queue[1] then
+    -- Re-schedule the next wakeup action, if any (and if necessary).
+    if removed and idx == 1 and self._task_queue[1] then
         self:setWakeupAlarm(self._task_queue[1].epoch)
     end
 
