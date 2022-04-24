@@ -34,15 +34,6 @@ Install the prerequisites using DNF:
 sudo dnf install libstdc++-static SDL SDL-devel patch wget unzip git cmake luarocks autoconf nasm ragel gcc
 ```
 
-Install LUA LPEG and set symbolic link for KOReader to find it:
-
-```
-sudo dnf install lua5.1-lpeg
-sudo mkdir /usr/local/lib/lua
-sudo mkdir /usr/local/lib/lua/5.1
-sudo ln -s /usr/lib64/lua/5.1/lpeg.so /usr/local/lib/lua/5.1/lpeg.so
-```
-
 ### macOS
 
 Install the prerequisites using [Homebrew](https://brew.sh/):
