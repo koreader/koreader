@@ -138,7 +138,7 @@ This method should be called by the device resume logic in case of a scheduled w
 It checks if the wakeup was scheduled by us using @{validateWakeupAlarmByProximity},
 in which case the task is executed.
 
-Regardless of the success of the proximity check, the next task (if any) is re-scheduled.
+If necessary, the next task (if any) is re-scheduled.
 
 @int proximity Proximity window to the scheduled wakeup (passed to @{validateWakeupAlarmByProximity}).
 @treturn bool (true if we were truly woken up by the scheduled wakeup; false otherwise; nil if there weren't any tasks scheduled).
