@@ -76,7 +76,7 @@ end
 Remove task(s) from queue.
 
 This method removes one or more tasks by either scheduled time or callback.
-If any tasks are left on exit, the next one will will automatically be re-scheduled (if necessary).
+If any tasks are left on exit, the upcoming one will automatically be scheduled (if necessary).
 
 @int epoch The epoch for when this task is scheduled to wake up.
 Normally the preferred method for outside callers.
@@ -101,7 +101,7 @@ function WakeupMgr:removeTasks(epoch, callback)
         end
     end
 
-    -- Re-schedule the next wakeup action, if any (and if necessary).
+    -- Schedule the next wakeup action, if any (and if necessary).
     if reschedule and self._task_queue[1] then
         self:setWakeupAlarm(self._task_queue[1].epoch)
     end
@@ -122,7 +122,7 @@ function WakeupMgr:removeTask(idx)
         removed = true
     end
 
-    -- Re-schedule the next wakeup action, if any (and if necessary).
+    -- Schedule the next wakeup action, if any (and if necessary).
     if removed and idx == 1 and self._task_queue[1] then
         self:setWakeupAlarm(self._task_queue[1].epoch)
     end
@@ -138,7 +138,7 @@ This method should be called by the device resume logic in case of a scheduled w
 It checks if the wakeup was scheduled by us using @{validateWakeupAlarmByProximity},
 in which case the task is executed.
 
-If necessary, the next task (if any) is re-scheduled.
+If necessary, the next upcoming task (if any) is scheduled on exit.
 
 @int proximity Proximity window to the scheduled wakeup (passed to @{validateWakeupAlarmByProximity}).
 @treturn bool (true if we were truly woken up by the scheduled wakeup; false otherwise; nil if there weren't any tasks scheduled).
@@ -153,7 +153,7 @@ function WakeupMgr:wakeupAction(proximity)
             executed = true
         end
 
-        -- Re-schedule the next wakeup action, if any (and if necessary).
+        -- Schedule the next wakeup action, if any (and if necessary).
         if executed and self._task_queue[1] then
             self:setWakeupAlarm(self._task_queue[1].epoch)
         end
