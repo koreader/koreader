@@ -2448,8 +2448,8 @@ function ReaderFooter:onOutOfScreenSaver()
 end
 
 function ReaderFooter:onLeaveStandby()
-    self:onResume()
-    self:onOutOfScreenSaver()
+    self:maybeUpdateFooter()
+    self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
 function ReaderFooter:onSuspend()
