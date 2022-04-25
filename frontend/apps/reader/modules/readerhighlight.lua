@@ -23,7 +23,7 @@ local Screen = Device.screen
 local ReaderHighlight = InputContainer:new{
 }
 
-local function bookmarkToLocalHighlight(bm)
+local function bookmarkToFromLocalHighlight(bm)
     local item = util.tableDeepCopy(bm)
     local text = bm.notes
     local notes = bm.text
@@ -315,7 +315,7 @@ function ReaderHighlight:migrateHighlights()
         for page, highlights in pairs(self.view.highlight.saved) do
             for _, item in ipairs(highlights) do
                 -- This is to switch notes and text.
-                local highlight = bookmarkToLocalHighlight(item)
+                local highlight = bookmarkToFromLocalHighlight(item)
                 if not highlight.chapter then
                     local pg_or_xp = self.ui.paging and page or highlight.pos0
                     highlight.chapter = self.ui.toc:getTocTitleByPage(pg_or_xp)
@@ -815,7 +815,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             {
                 text = _("…"),
                 callback = function()
-                    self.selected_text = bookmarkToLocalHighlight(self.ui.bookmark.bookmarks[index])
+                    self.selected_text = bookmarkToFromLocalHighlight(self.ui.bookmark.bookmarks[index])
                     self:onShowHighlightMenu(page, index)
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
