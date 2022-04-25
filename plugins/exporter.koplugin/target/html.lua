@@ -1,13 +1,12 @@
 local logger = require("logger")
+local slt2 = require("template/slt2")
 
-local slt2 = require('template/slt2')
-
-
+-- html exporter
 local HtmlExporter = require("base"):new {
     name = "html",
 }
 
-local function prepareBookNotesForExport(booknotes)
+local function format(booknotes)
     local chapters = {}
     local curr_chapter = nil
     for _, booknote in ipairs(booknotes) do
@@ -45,7 +44,7 @@ function HtmlExporter:export(t)
     local template = slt2.loadfile(self.path .. "/template/note.tpl")
     local clipplings = {}
     for _, booknotes in ipairs(t) do
-        table.insert(clipplings, prepareBookNotesForExport(booknotes))
+        table.insert(clipplings, format(booknotes))
     end
     if not file then return false end
     local content = slt2.render(template, {

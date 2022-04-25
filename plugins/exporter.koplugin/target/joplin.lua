@@ -10,6 +10,13 @@ local socketutil = require("socketutil")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
+-- joplin exporter
+local JoplinExporter = require("base"):new {
+    name = "joplin",
+    is_remote = true,
+    notebook_name = _("KOReader Notes"),
+}
+
 local function makeRequest(url, method, request_body)
     local sink = {}
     local request_body_json = json.encode(request_body)
@@ -72,12 +79,6 @@ local function prepareNote(booknotes)
     end
     return note
 end
-
-local JoplinExporter = require("base"):new {
-    name = "joplin",
-    is_remote = true,
-    notebook_name = _("KOReader Notes"),
-}
 
 -- If successful returns id of found note.
 function JoplinExporter:findNoteByTitle(title, notebook_id)

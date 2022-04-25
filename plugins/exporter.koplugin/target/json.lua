@@ -1,11 +1,12 @@
 local json = require("json")
 
+-- json exporter
 local JsonExporter = require("base"):new {
     name = "json",
 }
 
-local function normalizeBookNotes(booknotes)
-    local normalized = {
+local function format(booknotes)
+    local t = {
         title = booknotes.title,
         author = booknotes.author,
         entries = {},
@@ -13,9 +14,9 @@ local function normalizeBookNotes(booknotes)
         file = booknotes.file
     }
     for _, entry in ipairs(booknotes) do
-        table.insert(normalized.entries, entry[1])
+        table.insert(t.entries, entry[1])
     end
-    return normalized
+    return t
 end
 
 function JsonExporter:export(t)
@@ -23,13 +24,13 @@ function JsonExporter:export(t)
     local timestamp = self.timestamp or os.time()
     local path = self:getFilePath(t)
     if #t == 1 then
-        exportable = normalizeBookNotes(t[1])
+        exportable = format(t[1])
         exportable.created_on = timestamp
         exportable.version = self:getVersion()
     else
         local documents = {}
         for _, booknotes in ipairs(t) do
-            table.insert(documents, normalizeBookNotes(booknotes))
+            table.insert(documents, format(booknotes))
         end
         exportable = {
             created_on = timestamp,

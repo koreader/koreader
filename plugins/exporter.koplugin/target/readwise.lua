@@ -8,6 +8,12 @@ local socket = require("socket")
 local socketutil = require("socketutil")
 local _ = require("gettext")
 
+-- readwise exporter
+local ReadwiseExporter = require("base"):new {
+    name = "readwise",
+    is_remote = true,
+}
+
 local function makeRequest(endpoint, method, request_body, token)
     local sink = {}
     local request_body_json = json.encode(request_body)
@@ -35,11 +41,6 @@ local function makeRequest(endpoint, method, request_body, token)
     local response = json.decode(sink[1])
     return response
 end
-
-local ReadwiseExporter = require("base"):new {
-    name = "readwise",
-    is_remote = true,
-}
 
 function ReadwiseExporter:isReadyToExport()
     if self.settings.token then return true end
