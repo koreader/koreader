@@ -36,7 +36,7 @@ local function makeRequest(endpoint, method, request_body, token)
     return response
 end
 
-local ReadwiseExporter = require("formats/base"):new {
+local ReadwiseExporter = require("base"):new {
     name = "readwise",
     is_remote = true,
 }

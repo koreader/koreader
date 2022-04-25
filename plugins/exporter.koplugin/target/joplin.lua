@@ -73,7 +73,7 @@ local function prepareNote(booknotes)
     return note
 end
 
-local JoplinExporter = require("formats/base"):new {
+local JoplinExporter = require("base"):new {
     name = "joplin",
     is_remote = true,
     notebook_name = _("KOReader Notes"),

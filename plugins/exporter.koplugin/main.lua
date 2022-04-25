@@ -67,11 +67,11 @@ local Exporter = InputContainer:new {
     name = "exporter",
     clipping_dir = DataStorage:getDataDir() .. "/clipboard",
     targets = {
-        html = require("formats/html"),
-        joplin = require("formats/joplin"),
-        json = require("formats/json"),
-        readwise = require("formats/readwise"),
-        text = require("formats/text"),
+        html = require("target/html"),
+        joplin = require("target/joplin"),
+        json = require("target/json"),
+        readwise = require("target/readwise"),
+        text = require("target/text"),
     },
 }
 

@@ -3,7 +3,7 @@ local logger = require("logger")
 local slt2 = require('template/slt2')
 
 
-local HtmlExporter = require("formats/base"):new {
+local HtmlExporter = require("base"):new {
     name = "html",
 }
 

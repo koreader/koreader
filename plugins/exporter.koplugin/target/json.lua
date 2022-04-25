@@ -1,6 +1,6 @@
 local json = require("json")
 
-local JsonExporter = require("formats/base"):new {
+local JsonExporter = require("base"):new {
     name = "json",
 }
 

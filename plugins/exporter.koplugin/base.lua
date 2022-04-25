@@ -1,7 +1,7 @@
 --[[--
 Base for highlights exporters.
 
-Each exporter should inherit from this class and implement *at least* an `export` function.
+Each target should inherit from this class and implement *at least* an `export` function.
 
 @module baseexporter
 ]]

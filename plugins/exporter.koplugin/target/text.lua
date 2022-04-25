@@ -2,7 +2,7 @@ local _ = require("gettext")
 local util = require("ffi/util")
 local T = util.template
 
-local TextExporter = require("formats/base"):new {
+local TextExporter = require("base"):new {
     name = "text",
     extension = "txt",
 }
