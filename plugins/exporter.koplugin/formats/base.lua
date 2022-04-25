@@ -105,20 +105,31 @@ function BaseExporter:getMenuTable()
 end
 
 --[[--
-Checks if the exporter is ready to export and was enabled by the user
+Checks if the exporter is ready to export
 
 @treturn bool ready
 ]]
+function BaseExporter:isReadyToExport()
+    return true
+end
+
+--[[--
+Checks if the exporter is was enabled by the user and it is ready to export
+
+@treturn bool enabled
+]]
 function BaseExporter:isEnabled()
-    return self.settings.enabled
+    return self.settings.enabled and self:isReadyToExport()
 end
 
 --[[--
 Toggles exporter enabled state if it's ready to export
 ]]
 function BaseExporter:toggleEnabled()
-    self.settings.enabled = not self.settings.enabled
-    self:saveSettings()
+    if self:isReadyToExport() then
+        self.settings.enabled = not self.settings.enabled
+        self:saveSettings()
+    end
 end
 
 return BaseExporter

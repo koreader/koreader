@@ -41,8 +41,9 @@ local ReadwiseExporter = require("formats/base"):new {
     is_remote = true,
 }
 
-function ReadwiseExporter:isEnabled()
-    return self.settings.enabled and self.settings.token
+function ReadwiseExporter:isReadyToExport()
+    if self.settings.token then return true end
+    return false
 end
 
 function ReadwiseExporter:getMenuTable()
@@ -121,6 +122,8 @@ function ReadwiseExporter:createHighlights(booknotes)
 end
 
 function ReadwiseExporter:export(t)
+    if not self:isReadyToExport() then return false end
+
     for _, booknotes in ipairs(t) do
         local ok = self:createHighlights(booknotes)
         if not ok then return false end

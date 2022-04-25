@@ -188,14 +188,8 @@ function JoplinExporter:updateNote(note_id, note, title, parent_id)
     return response.id
 end
 
-function JoplinExporter:isEnabled()
-    return self.settings.enabled and self.settings.ip and self.settings.port and self.settings.token
-end
-
-function JoplinExporter:toggleEnabled()
-    if not self.settings.ip or not self.settings.port or not self.settings.token then return end
-    self.settings.enabled = not self.settings.enabled
-    self:saveSettings()
+function JoplinExporter:isReadyToExport()
+    return self.settings.ip and self.settings.port and self.settings.token
 end
 
 function JoplinExporter:getMenuTable()
@@ -311,6 +305,8 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Hig
 end
 
 function JoplinExporter:export(t)
+    if not self:isReadyToExport() then return false end
+
     if not ping(self.settings.ip, self.settings.port) then
         logger.warn("Cannot reach Joplin server")
         return false
