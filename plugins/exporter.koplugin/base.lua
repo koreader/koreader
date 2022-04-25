@@ -1,5 +1,5 @@
 --[[--
-Base for highlights exporters.
+Base for highlight exporters.
 
 Each target should inherit from this class and implement *at least* an `export` function.
 
