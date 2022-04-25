@@ -313,7 +313,9 @@ end
 function ReaderHighlight:migrateHighlights()
     if self.ui.doc_settings:hasNot("highlight_merged") then
         for page, highlights in pairs(self.view.highlight.saved) do
-            for _, highlight in ipairs(highlights) do
+            for _, item in ipairs(highlights) do
+                -- This is to switch notes and text.
+                local highlight = bookmarkToLocalHighlight(item)
                 if not highlight.chapter then
                     local pg_or_xp = self.ui.paging and page or highlight.pos0
                     local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
