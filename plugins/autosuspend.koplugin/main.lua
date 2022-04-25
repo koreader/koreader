@@ -579,9 +579,8 @@ function AutoSuspend:onAllowStandby()
         -- to make sure UIManager will consume the input events that woke us up first
         -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
         -- (This ensures we'll use an up to date last_action_tv, and that it only ever gets updated from *user* input).
-        -- NOTE: UIManager consumes scheduled tasks before input events, so make sure we delay by a significant amount,
-        --       especially given that this delay will likely be used as the next input polling loop timeout...
-        UIManager:scheduleIn(1, self.leave_standby_task)
+        -- NOTE: UIManager consumes scheduled tasks before input events, which is why we can't use nextTick.
+        UIManager:tickAfterNext(self.leave_standby_task)
     end
 end
 
