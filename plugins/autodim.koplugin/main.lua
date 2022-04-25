@@ -6,6 +6,7 @@ and for automatic dimming the frontlight after an idle period.
 --]]--
 
 local Device = require("device")
+local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local SpinWidget = require("ui/widget/spinwidget")
 local TimeVal = require("ui/timeval")   -- this will havt to be changed to "ui/time", also the _tv will become _time
@@ -217,7 +218,6 @@ function AutoDim:autodim_task()
 end
 
 function AutoDim:ramp_task()
-    local Event = require("ui/event") -- xxx
     self.isCurrentlyDimming = true -- this will disable rescheduling of the `autodim_task`
     local fl_level = Device.powerd:frontlightIntensity()
     if fl_level > self.autodim_end_fl then
