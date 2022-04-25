@@ -114,7 +114,7 @@ function BaseExporter:isReadyToExport()
 end
 
 --[[--
-Checks if the exporter is was enabled by the user and it is ready to export
+Checks if the exporter was enabled by the user and it is ready to export
 
 @treturn bool enabled
 ]]
