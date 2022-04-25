@@ -6,6 +6,7 @@ and for automatic dimming the frontlight after an idle period.
 --]]--
 
 local Device = require("device")
+local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local SpinWidget = require("ui/widget/spinwidget")
 local TimeVal = require("ui/timeval")   -- this will havt to be changed to "ui/time", also the _tv will become _time
@@ -17,6 +18,7 @@ local T = FFIUtil.template
 local DEFAULT_AUTODIM_STARTTIME_M = 5
 local DEFAULT_AUTODIM_DURATION_S = 20
 local DEFAULT_AUTODIM_ENDPERCENTAGE = 20
+local AUTODIM_EVENT_FREQUENCY = 2 -- in Hz; Frequenzy for FrontlightChangedEvent on E-Ink devices
 
 
 local AutoDim = WidgetContainer:new{
@@ -162,7 +164,7 @@ function AutoDim:onInputEvent()
         self:_unschedule_ramp_task()
         self:_schedule_autodim_task()
 
-        UIManager:discardEvents(0) -- stop discarding events
+        UIManager:discardEvents(1) -- stop discarding events
     end
 end
 
@@ -177,7 +179,7 @@ function AutoDim:onResume()
     if self.isCurrentlyDimming then
         Device.powerd:setIntensity(self.autodim_save_fl)
         self:_schedule_autodim_task()
-        UIManager:discardEvents(0) -- stop discarding events
+        UIManager:discardEvents(1) -- stop discarding events
     end
 end
 
@@ -185,14 +187,9 @@ function AutoDim:onSuspend()
     if self.isCurrentlyDimming then
         self:_unschedule_autodim_task()
         self:_unschedule_ramp_task()
-        UIManager:discardEvents(0) -- stop discarding events
+        UIManager:discardEvents(1) -- stop discarding events
         self.isCurrentlyDimming = true -- message to onResume to go on with restoring
     end
-end
-
-function AutoDim:onCloseWidget()
-    UIManager:unschedule(self.autodim_task)
-    UIManager:unschedule(self.ramp_task)
 end
 
 function AutoDim:autodim_task()
@@ -207,7 +204,10 @@ function AutoDim:autodim_task()
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         -- calculate time until the next decrease step
         -- use a minimal step time for screen (footer) refreshes (50ms, works on the Sage)
-        self.autodim_step_time_s = math.max(self.autodim_duration_s / fl_diff, 0.050)
+        self.autodim_step_time_s = math.max(self.autodim_duration_s / fl_diff, 0.001)
+        self.ramp_event_countdown_startvalue = Device:hasEinkScreen() and
+            math.floor((1/AUTODIM_EVENT_FREQUENCY) / self.autodim_step_time_s + 0.5) or 0
+        self.ramp_event_countdown = self.ramp_event_countdown_startvalue
 
         UIManager:discardEvents(math.huge)
         self:ramp_task() -- which schedules itself
@@ -221,9 +221,19 @@ function AutoDim:ramp_task()
     self.isCurrentlyDimming = true -- this will disable rescheduling of the `autodim_task`
     local fl_level = Device.powerd:frontlightIntensity()
     if fl_level > self.autodim_end_fl then
-        Device.powerd:setIntensity(fl_level - 1)
+        Device.powerd:setIntensity(fl_level - 1, Device:hasEinkScreen()) -- don't generate event if eink-screen is present
+        self.ramp_event_countdown = self.ramp_event_countdown - 1
+        if Device:hasEinkScreen() and self.ramp_event_countdown <= 0 then
+            -- generate event on every self.ramp_event_countdown calls
+            UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+            self.ramp_event_countdown = self.ramp_event_countdown_startvalue
+        end
         self:_schedule_ramp_task() -- Reschedule only if not ready
         -- `isCurrentlyDimming` stays true, to flag we have a dimmed FL.
+    end
+    if Device:hasEinkScreen() and fl_level == self.autodim_end_fl then
+        -- generate even on the end of the ramp
+        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
 end
 
@@ -235,6 +245,7 @@ function AutoDim:_unschedule_ramp_task()
     if self.isCurrentlyDimming then
         UIManager:unschedule(self.ramp_task)
         self.isCurrentlyDimming = false
+        self.ramp_counter = self.autodim_nb_for_event
     end
 end
 
