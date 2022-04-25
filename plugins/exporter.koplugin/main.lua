@@ -242,6 +242,11 @@ function Exporter:addToMainMenu(menu_items)
             {
                 text = _("Purge history records"),
                 callback = function()
+                    self.config:purge()
+                    UIManager:show(InfoMessage:new{
+                        text = _("History records have been purged.\nAll notes will be exported again next time.\n"),
+                        timeout = 2,
+                    })
                 end,
             },
         }
