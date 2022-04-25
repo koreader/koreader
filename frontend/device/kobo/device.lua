@@ -43,17 +43,22 @@ local function checkStandby()
 end
 
 local function writeToSys(val, file)
-    local f = io.open(file, "we")
-    if not f then
-        logger.err("Cannot open:", file)
+    -- NOTE: We do things by hand via ffi, because io.write uses fwrite,
+    --       which isn't a great fit for procfs/sysfs (e.g., we lose failure cases like EBUSY,
+    --       as it only reports failures to write to the *stream*, not to the disk/file!).
+    local fd = C.open(file, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
+    if fd == -1 then
+        logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
         return
     end
-    local re, err_msg, err_code = f:write(val, "\n")
-    if not re then
-        logger.err("Error writing value to file:", val, file, err_msg, err_code)
+    local bytes = #val + 1 -- + LF
+    local nw = C.write(fd, val .. "\n", bytes)
+    if nw == -1 then
+        logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
     end
-    f:close()
-    return re
+    C.close(fd)
+    -- NOTE: Allows the caller to possibly handle short writes (not that these should ever happen here).
+    return nw == bytes
 end
 
 local Kobo = Generic:new{
