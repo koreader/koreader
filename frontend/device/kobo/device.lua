@@ -825,15 +825,19 @@ function Kobo:standby(max_duration)
     end
 
     local TimeVal = require("ui/timeval")
+    logger.info("Kobo standby: asking to enter standby . . .")
     local standby_time_tv = TimeVal:boottime_or_realtime_coarse()
 
-    logger.info("Kobo standby: asking to enter standby . . .")
     local ret = writeToSys("standby", "/sys/power/state")
 
     self.last_standby_tv = TimeVal:boottime_or_realtime_coarse() - standby_time_tv
     self.total_standby_tv = self.total_standby_tv + self.last_standby_tv
 
-    logger.info("Kobo standby: zZz zZz zZz zZz? Write syscall returned: ", ret)
+    if ret then
+        logger.info("Kobo standby: zZz zZz zZz zZz")
+    else
+        logger.warn("Kobo standby: the kernel refused to enter standby!")
+    end
 
     if max_duration then
         --- @fixme: Just switch back to removeTasks, the scheduled action is a NOP,
@@ -886,7 +890,11 @@ function Kobo:suspend()
     -- kernel to suspend/resume various subsystems
     -- c.f., state_extended_store @ kernel/power/main.c
     local ret = writeToSys("1", "/sys/power/state-extended")
-    logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", ret)
+    if ret then
+        logger.info("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
+    else
+        logger.warn("Kobo suspend: the kernel refused to flag subsystems for suspend!")
+    end
 
     util.sleep(2)
     logger.info("Kobo suspend: waited for 2s because of reasons...")
@@ -912,57 +920,43 @@ function Kobo:suspend()
     end
     --]]
 
-    logger.info("Kobo suspend: asking for a suspend to RAM . . .")
-    f = io.open("/sys/power/state", "we")
-    if not f then
-        -- Reset state-extended back to 0 since we are giving up.
-        local ext_fd = io.open("/sys/power/state-extended", "we")
-        if not ext_fd then
-            logger.err("cannot open /sys/power/state-extended for writing!")
-        else
-            ext_fd:write("0\n")
-            ext_fd:close()
-        end
-        return false
-    end
-
     local TimeVal = require("ui/timeval")
+    logger.info("Kobo suspend: asking for a suspend to RAM . . .")
     local suspend_time_tv = TimeVal:boottime_or_realtime_coarse()
 
-    re, err_msg, err_code = f:write("mem\n")
-    if not re then
-        logger.err("write error: ", err_msg, err_code)
-    end
-    f:close()
+    ret = writeToSys("mem", "/sys/power/state")
 
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
-    -- execution should only resume on wakeup...
-
+    --       execution should only resume on wakeup...
     self.last_suspend_tv = TimeVal:boottime_or_realtime_coarse() - suspend_time_tv
     self.total_suspend_tv = self.total_suspend_tv + self.last_suspend_tv
 
-    logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
-    -- NOTE: Ideally, we'd need a way to warn the user that suspending
-    -- gloriously failed at this point...
-    -- We can safely assume that just from a non-zero return code, without
-    -- looking at the detailed stderr message
-    -- (most of the failures we'll see are -EBUSY anyway)
-    -- For reference, when that happens to nickel, it appears to keep retrying
-    -- to wakeup & sleep ad nauseam,
-    -- which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
-    -- cf. nickel_suspend_strace.txt for more details.
+    if ret then
+        logger.info("Kobo suspend: ZzZ ZzZ ZzZ")
+    else
+        logger.warn("Kobo suspend: the kernel refused to enter suspend!")
+        -- Reset state-extended back to 0 since we are giving up.
+        ret = writeToSys("0", "/sys/power/state-extended")
+    end
 
+    -- NOTE: Ideally, we'd need a way to warn the user that suspending
+    --       gloriously failed at this point...
+    --       We can safely assume that just from a non-zero return code, without
+    --       looking at the detailed stderr message
+    --       (most of the failures we'll see are -EBUSY anyway)
+    --       For reference, when that happens to nickel, it appears to keep retrying
+    --       to wakeup & sleep ad nauseam,
+    --       which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
+    --       cf. nickel_suspend_strace.txt for more details.
     logger.info("Kobo suspend: woke up!")
 
     --[[
-
     if has_wakeup_count then
         logger.info("wakeup count: $(cat /sys/power/wakeup_count)")
     end
 
     -- Print tke kernel log since our attempt to sleep...
     --dmesg -c
-
     --]]
 
     -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep
@@ -987,18 +981,22 @@ function Kobo:resume()
 
     -- Now that we're up, unflag subsystems for suspend...
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
-    -- kernel to suspend/resume various subsystems
-    -- cf. kernel/power/main.c @ L#207
-
+    --       kernel to suspend/resume various subsystems
+    --       cf. kernel/power/main.c @ L#207
+    --       Among other things, this sets up the wakeup pins (e.g., resume on input).
     local ret = writeToSys("0", "/sys/power/state-extended")
-    logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", ret)
+    if ret then
+        logger.info("Kobo resume: successfully asked the kernel to resume subsystems")
+    else
+        logger.warn("Kobo resume: the kernel refused to flag subsystems for resume!")
+    end
 
     -- HACK: wait a bit (0.1 sec) for the kernel to catch up
     util.usleep(100000)
 
     if self.hasIRGrid then
         -- cf. #1862, I can reliably break IR touch input on resume...
-        -- cf. also #1943 for the rationale behind applying this workaorund in every case...
+        -- cf. also #1943 for the rationale behind applying this workaround in every case...
         writeToSys("a", "/sys/devices/virtual/input/input1/neocmd")
     end
 
