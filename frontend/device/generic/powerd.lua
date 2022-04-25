@@ -176,14 +176,16 @@ function BasePowerD:normalizeIntensity(intensity)
 end
 
 --- @note: Takes an intensity in the native scale (i.e., [self.fl_min, self.fl_max])
-function BasePowerD:setIntensity(intensity)
+function BasePowerD:setIntensity(intensity, no_event)
     if not self.device:hasFrontlight() then return false end
     if intensity == self:frontlightIntensity() then return false end
     self.fl_intensity = self:normalizeIntensity(intensity)
     self:_decideFrontlightState()
     logger.dbg("set light intensity", self.fl_intensity)
     self:setIntensityHW(self.fl_intensity)
-    self:stateChanged()
+    if not no_event then
+        self:stateChanged()
+    end
     return true
 end
 
