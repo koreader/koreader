@@ -72,16 +72,18 @@ Exports a table of booknotes to local format or remote service
 function BaseExporter:export(t) end
 
 --[[--
-File path for local exporters
+File path where the exporter writes its output
 
-@param title for single document or nil
-@treturn string absolute path of file
+@param t table of booknotes
+@treturn string absolute path or nil
 ]]
-function BaseExporter:getFilePath(title)
-    if title then
-        return self.clipping_dir .. "/" .. self:getTimeStamp() .. "-" .. title .. "." .. self.extension
-    else
-        return self.clipping_dir .. "/" .. self:getTimeStamp() .. "-all-books." .. self.extension
+function BaseExporter:getFilePath(t)
+    if not self.is_remote then
+        return string.format("%s/%s-%s.%s",
+            self.clipping_dir,
+            self:getTimeStamp(),
+            #t == 1 and t[1].title or "all-books",
+            self.extension)
     end
 end
 

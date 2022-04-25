@@ -10,12 +10,7 @@ local TextExporter = require("formats/base"):new {
 function TextExporter:export(t)
     -- Use wide_space to avoid crengine to treat it specially.
     local wide_space = "\227\128\128"
-    local path
-    if #t == 1 then
-        path = self:getFilePath(t[1].title)
-    else
-        path = self:getFilePath()
-    end
+    local path = self:getFilePath(t)
     local file = io.open(path, "a")
     if not file then return false end
     for __, booknotes in ipairs(t) do

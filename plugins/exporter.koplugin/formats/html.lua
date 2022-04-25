@@ -34,12 +34,11 @@ local function prepareBookNotesForExport(booknotes)
 end
 
 function HtmlExporter:export(t)
-    local path, title
+    local title
+    local path = self:getFilePath(t)
     if #t == 1 then
-        path = self:getFilePath(t[1].title)
         title = t[1].title
     else
-        path = self:getFilePath()
         title = "All Books"
     end
     local file = io.open(path, "w")

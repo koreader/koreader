@@ -79,7 +79,7 @@ describe("Exporter plugin module", function()
         local timestamp = os.time()
         readerui.exporter.targets["text"].timestamp = timestamp
         local exportable = { sample_clippings.Title1 }
-        local file_path = readerui.exporter.targets["text"]:getFilePath(exportable[1].title)
+        local file_path = readerui.exporter.targets["text"]:getFilePath(exportable)
         readerui.exporter.targets["text"]:export(exportable)
         local f = io.open(file_path, "r")
         assert.is.truthy(string.find(f:read("*all"), "Some important stuff 1"))

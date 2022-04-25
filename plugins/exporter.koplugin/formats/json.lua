@@ -19,23 +19,22 @@ local function normalizeBookNotes(booknotes)
 end
 
 function JsonExporter:export(t)
-    local path, exportable
+    local exportable
     local timestamp = self.timestamp or os.time()
+    local path = self:getFilePath(t)
     if #t == 1 then
-        path = self:getFilePath(t[1].title)
         exportable = normalizeBookNotes(t[1])
         exportable.created_on = timestamp
         exportable.version = self:getVersion()
     else
-        path = self:getFilePath()
-        local docmuents = {}
+        local documents = {}
         for _, booknotes in ipairs(t) do
-            table.insert(docmuents, normalizeBookNotes(booknotes))
+            table.insert(documents, normalizeBookNotes(booknotes))
         end
         exportable = {
             created_on = timestamp,
             version = self:getVersion(),
-            documents = docmuents
+            documents = documents
         }
     end
     local file = io.open(path, "w")
