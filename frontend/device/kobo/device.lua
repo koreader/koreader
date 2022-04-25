@@ -855,7 +855,6 @@ function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.checkUnexpectedWakeup)
-    local f, re, err_msg, err_code
     -- NOTE: Sleep as little as possible here, sleeping has a tendency to make
     -- everything mysteriously hang...
 
@@ -868,6 +867,7 @@ function Kobo:suspend()
     -- So, unless that changes, unconditionally disable it.
 
     --[[
+    local f, re, err_msg, err_code
     local has_wakeup_count = false
     f = io.open("/sys/power/wakeup_count", "re")
     if f ~= nil then
@@ -936,7 +936,7 @@ function Kobo:suspend()
     else
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
         -- Reset state-extended back to 0 since we are giving up.
-        ret = writeToSys("0", "/sys/power/state-extended")
+        writeToSys("0", "/sys/power/state-extended")
     end
 
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
