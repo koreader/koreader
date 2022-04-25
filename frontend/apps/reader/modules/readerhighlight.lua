@@ -318,8 +318,7 @@ function ReaderHighlight:migrateHighlights()
                 local highlight = bookmarkToLocalHighlight(item)
                 if not highlight.chapter then
                     local pg_or_xp = self.ui.paging and page or highlight.pos0
-                    local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
-                    highlight.chapter = chapter_name
+                    highlight.chapter = self.ui.toc:getTocTitleByPage(pg_or_xp)
                 end
                 if not highlight.drawer then
                     highlight.drawer = self.view.highlight.saved_drawer
@@ -331,7 +330,7 @@ function ReaderHighlight:migrateHighlights()
                 self.ui.bookmark:patchBookmark({
                     datetime = highlight.datetime,
                     page = highlight.page,
-                    highlight
+                    updated_highlight = highlight
                 });
             end
         end
