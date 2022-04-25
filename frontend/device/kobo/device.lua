@@ -887,8 +887,8 @@ function Kobo:suspend()
     -]]
 
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
-    -- kernel to suspend/resume various subsystems
-    -- c.f., state_extended_store @ kernel/power/main.c
+    --       kernel to suspend/resume various subsystems
+    --       c.f., state_extended_store @ kernel/power/main.c
     local ret = writeToSys("1", "/sys/power/state-extended")
     if ret then
         logger.info("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
@@ -960,7 +960,7 @@ function Kobo:suspend()
     --]]
 
     -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep
-    -- things tidy and easier to follow
+    --       things tidy and easier to follow
 
     -- Kobo:resume() will reset unexpected_wakeup_count = 0 to signal an
     -- expected wakeup, which gets checked in checkUnexpectedWakeup().
