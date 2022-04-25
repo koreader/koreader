@@ -339,9 +339,6 @@ function ReaderHighlight:migrateHighlights()
                 if not bookmark.drawer then
                     self.ui.bookmark.bookmarks[i].drawer = self.view.highlight.saved_drawer
                 end
-                if not bookmark.chapter and bookmark.pos0 or bookmark.page then
-                    self.ui.bookmark.bookmarks[i].chapter = self.ui.toc:getTocTitleByPage(bookmark.page or bookmark.pos0)
-                end
             end
         end
     end
