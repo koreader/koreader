@@ -618,7 +618,7 @@ function Kobo:setDateTime(year, month, day, hour, min, sec)
         command = string.format("date -s '%d:%d'",hour, min)
     end
     if os.execute(command) == 0 then
-        os.execute('hwclock -u -w')
+        os.execute("hwclock -u -w")
         return true
     else
         return false
