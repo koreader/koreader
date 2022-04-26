@@ -12,7 +12,6 @@ local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
-
 local time = require("ui/time")
 
 local DEFAULT_FULL_REFRESH_COUNT = 6

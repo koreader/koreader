@@ -31,7 +31,6 @@ local C_ = _.pgettext
 local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
-
 local time = require("ui/time")
 
 --[[

@@ -44,9 +44,8 @@ detection result when you feed a touch release event to it.
 
 local Geom = require("ui/geometry")
 local logger = require("logger")
-local util = require("util")
-
 local time = require("ui/time")
+local util = require("util")
 
 -- We're going to need some clockid_t constants
 local ffi = require("ffi")

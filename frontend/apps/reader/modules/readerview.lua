@@ -19,11 +19,10 @@ local dbg = require("dbg")
 local logger = require("logger")
 local optionsutil = require("ui/data/optionsutil")
 local Size = require("ui/size")
+local time = require("ui/time")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
-
-local time = require("ui/time")
 
 local ReaderView = OverlapGroup:extend{
     document = nil,

@@ -3,11 +3,10 @@ local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local time = require("ui/time")
 local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
-
-local time = require("ui/time")
 
 -- This module exposes Scrolling settings, and additionnally
 -- handles inertial scrolling on non-eInk devices.

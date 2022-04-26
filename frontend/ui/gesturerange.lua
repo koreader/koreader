@@ -1,4 +1,3 @@
-
 local time = require("ui/time")
 
 local GestureRange = {

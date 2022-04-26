@@ -28,10 +28,9 @@ local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local logger = require("logger")
 local dbg = require("dbg")
+local time = require("ui/time")
 local util = require("util")
 local Screen = require("device").screen
-
-local time = require("ui/time")
 
 local TextBoxWidget = InputContainer:new{
     text = nil,

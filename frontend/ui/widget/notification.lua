@@ -16,9 +16,9 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local Input = Device.input
+local time = require("ui/time")
 local Screen = Device.screen
 
-local time = require("ui/time")
 
 local band = bit.band
 

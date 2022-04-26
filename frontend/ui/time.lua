@@ -156,6 +156,8 @@ function time.time_since(start_time)
    return time.now() - start_time
 end
 
+--- Splits an fts to seconds and microseconds.
+-- If argument is nil, returns nil,nil.
 function time.split_s_us(time_fts)
     if not time_fts then return nil, nil end
     local sec = math.floor(time_fts * FTS2S)
