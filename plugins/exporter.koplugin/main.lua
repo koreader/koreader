@@ -18,23 +18,19 @@
     When user edits a highlight or "renames" bookmark the text field is created or updated.
     The parser looks to bookmarks._.text field for edited notes. bookmarks._.notes isn't used for exporting operations.
 
-    - Clippings: Parsed form of highlights, stored in clipboard/exporter.sdr/metadata.sdr.lua
-
-    Single table for all documents.
-    Used only for exporting bookmarks. Internal highlight or bookmark functions does not use this table.
+    - Clippings: Parsed form of highlights. Single table for all documents.
 
     - Booknotes: Every table in clippings table. clippings = {"title" = booknotes}
 --]]
 
 local DataStorage = require("datastorage")
-local DocSettings = require("docsettings")
+local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MyClipping = require("clip")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util = require("ffi/util")
 local _ = require("gettext")
 
 
@@ -63,6 +59,39 @@ local function migrateSettings()
     end
 end
 
+-- update clippings from history clippings
+local function updateHistoryClippings(clippings, new_clippings)
+    for title, booknotes in pairs(new_clippings) do
+        for chapter_index, chapternotes in ipairs(booknotes) do
+            for note_index, note in ipairs(chapternotes) do
+                if clippings[title] == nil or clippings[title][chapter_index] == nil
+                    or clippings[title][chapter_index][note_index] == nil
+                    or clippings[title][chapter_index][note_index].page ~= note.page
+                    or clippings[title][chapter_index][note_index].time ~= note.time
+                    or clippings[title][chapter_index][note_index].text ~= note.text
+                    or clippings[title][chapter_index][note_index].note ~= note.note then
+                    logger.dbg("found new notes in history", booknotes.title)
+                    clippings[title] = booknotes
+                end
+            end
+        end
+    end
+    return clippings
+end
+
+-- update clippings from Kindle annotation system
+local function updateMyClippings(clippings, new_clippings)
+    -- only new titles or new notes in My clippings are updated to clippings
+    -- since appending is the only way to modify notes in My Clippings
+    for title, booknotes in pairs(new_clippings) do
+        if clippings[title] == nil or #clippings[title] < #booknotes then
+            logger.dbg("found new notes in MyClipping", booknotes.title)
+            clippings[title] = booknotes
+        end
+    end
+    return clippings
+end
+
 local Exporter = InputContainer:new {
     name = "exporter",
     clipping_dir = DataStorage:getDataDir() .. "/clipboard",
@@ -83,41 +112,7 @@ function Exporter:init()
     for k, _ in pairs(self.targets) do
         self.targets[k].path = self.path
     end
-    self.config = DocSettings:open(util.joinPath(self.clipping_dir, "exporter.sdr"))
     self.ui.menu:registerToMainMenu(self)
-
-end
-
-function Exporter:updateHistoryClippings(clippings, new_clippings)
-    -- update clippings from history clippings
-    for title, booknotes in pairs(new_clippings) do
-        for chapter_index, chapternotes in ipairs(booknotes) do
-            for note_index, note in ipairs(chapternotes) do
-                if clippings[title] == nil or clippings[title][chapter_index] == nil
-                    or clippings[title][chapter_index][note_index] == nil
-                    or clippings[title][chapter_index][note_index].page ~= note.page
-                    or clippings[title][chapter_index][note_index].time ~= note.time
-                    or clippings[title][chapter_index][note_index].text ~= note.text
-                    or clippings[title][chapter_index][note_index].note ~= note.note then
-                    logger.dbg("found new notes in history", booknotes.title)
-                    clippings[title] = booknotes
-                end
-            end
-        end
-    end
-    return clippings
-end
-
-function Exporter:updateMyClippings(clippings, new_clippings)
-    -- only new titles or new notes in My clippings are updated to clippings
-    -- since appending is the only way to modify notes in My Clippings
-    for title, booknotes in pairs(new_clippings) do
-        if clippings[title] == nil or #clippings[title] < #booknotes then
-            logger.dbg("found new notes in MyClipping", booknotes.title)
-            clippings[title] = booknotes
-        end
-    end
-    return clippings
 end
 
 function Exporter:isReady()
@@ -150,17 +145,17 @@ function Exporter:exportCurrentNotes()
 end
 
 function Exporter:exportAllNotes()
-    local clippings = self.config:readSetting("clippings") or {}
-    clippings = self:updateHistoryClippings(clippings, self.parser:parseHistory())
-    clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
+    local clippings = {}
+    clippings = updateHistoryClippings(clippings, self.parser:parseHistory())
+    if Device:isKindle() then
+        clippings = updateMyClippings(clippings, self.parser:parseMyClippings())
+    end
     for title, booknotes in pairs(clippings) do
         -- chapter number is zero
         if #booknotes == 0 then
             clippings[title] = nil
         end
     end
-    self.config:saveSetting("clippings", clippings)
-    self.config:flush()
     self:exportClippings(clippings)
 end
 
@@ -192,15 +187,6 @@ function Exporter:exportClippings(clippings)
     else
         export_callback()
     end
-end
-
-function Exporter:getAllNotes()
-    local clippings = self.config:readSetting("clippings") or {}
-    clippings = self:updateHistoryClippings(clippings, self.parser:parseHistory())
-    clippings = self:updateMyClippings(clippings, self.parser:parseMyClippings())
-    self.config:saveSetting("clippings", clippings)
-    self.config:flush()
-    return clippings
 end
 
 function Exporter:addToMainMenu(menu_items)
@@ -238,16 +224,6 @@ function Exporter:addToMainMenu(menu_items)
                 text = _("Choose formats and services"),
                 sub_item_table = submenu,
                 separator = true,
-            },
-            {
-                text = _("Purge history records"),
-                callback = function()
-                    self.config:purge()
-                    UIManager:show(InfoMessage:new{
-                        text = _("History records have been purged.\nAll notes will be exported again next time.\n"),
-                        timeout = 2,
-                    })
-                end,
             },
         }
     }
