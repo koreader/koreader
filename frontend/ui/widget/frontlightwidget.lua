@@ -24,7 +24,6 @@ local time = require("ui/time")
 local _ = require("gettext")
 local Screen = Device.screen
 
-
 local FrontLightWidget = FocusManager:new{
     width = nil,
     height = nil,

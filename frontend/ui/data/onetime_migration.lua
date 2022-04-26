@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220420
+local CURRENT_MIGRATION_DATE = 20220426
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -367,7 +367,7 @@ if last_migration_date < 20220205 then
 end
 
 -- Rename several time storing settings and shift their value to the new meaning
-if last_migration_date < 20220420 then
+if last_migration_date < 20220426 then
     local function migrateSettingsName(old, new, factor)
         factor = factor or 1
         if G_reader_settings:readSetting(old) then

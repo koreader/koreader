@@ -17,9 +17,9 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
+local time = require("ui/time")
 local _ = require("gettext")
 local Math = require("optmath")
-local time = require("ui/time")
 local T = require("ffi/util").template
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days

@@ -12,11 +12,10 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local zstd = require("ffi/zstd")
+local time = require("ui/time")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = FFIUtil.template
-
-local time = require("ui/time")
 
 -- Database definition
 local BOOKINFO_DB_VERSION = 20201210

@@ -1,11 +1,10 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local PluginShare = require("pluginshare")
 local logger = require("logger")
+local time = require("ui/time")
 local ffi = require("ffi")
 local C = ffi.C
 require("ffi/linux_input_h")
-
-local time = require("ui/time")
 
 local function yes() return true end
 local function no() return false end
