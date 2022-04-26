@@ -840,14 +840,19 @@ function Kobo:standby(max_duration)
     end
 
     if max_duration then
-        --- @fixme: Just switch back to removeTasks, the scheduled action is a NOP,
-        --          that whole thing was just an excuse to look into WakeupMgr ;).
+        -- NOTE: We don't actually care about discriminating exactly *why* we woke up,
+        --       and our scheduled wakeup action is a NOP anyway,
+        --       so we can just drop the task instead of doing things the right way like suspend ;).
+        --       This saves us some pointless RTC shenanigans, so, everybody wins.
+        --[[
         -- There's no scheduling shenanigans like in suspend, so the proximity window can be much tighter...
         if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(5) then
             -- We tripped the standby alarm, UIManager will be able to run whatever was actually scheduled,
             -- and AutoSuspend will handle going back to standby if necessary.
             logger.dbg("Kobo standby: tripped rtc wake alarm")
         end
+        --]]
+        self.wakeup_mgr:removeTasks(nil, standby_alarm)
     end
 end
 
