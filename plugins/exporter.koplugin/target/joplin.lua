@@ -40,7 +40,9 @@ local function makeRequest(url, method, request_body)
 
     local response = json.decode(sink[1])
 
-    if response.error then
+    if not response then
+        return nil, "Unknown response from Joplin Server"
+    elseif response.error then
         return nil, response.error
     end
 
@@ -97,10 +99,8 @@ function JoplinExporter:findNoteByTitle(title, notebook_id)
         end
         has_more = notes.has_more
         for _, note in ipairs(notes.items) do
-            if note.title == title then
-                if notebook_id == nil or note.parent_id == notebook_id then
-                    return note.id
-                end
+            if note.title == title and note.parent_id == notebook_id then
+                return note.id
             end
         end
         page = page + 1
@@ -132,6 +132,25 @@ function JoplinExporter:findNotebookByTitle(title)
         page = page + 1
     until not has_more
     return
+end
+
+-- returns true if the notebook exists
+function JoplinExporter:notebookExist(title)
+    local url = string.format("http://%s:%s/folders?token=%s",
+        self.settings.ip, self.settings.port, self.settings.token)
+    local response, err = makeRequest(url, "GET")
+    if not response then
+        logger.warn("Joplin notebookExist error", err)
+    end
+
+    if not response.items or type(response.items) ~= "table" then
+        return false
+    end
+
+    for i, notebook in ipairs(response.items) do
+        if notebook.title == title then return true end
+    end
+    return false
 end
 
 -- If successful returns id of created notebook (folder).
@@ -171,7 +190,7 @@ function JoplinExporter:createNote(title, note, parent_id, created_time)
 end
 
 -- If successful returns id of updated note.
-function JoplinExporter:updateNote(note_id, note)
+function JoplinExporter:updateNote(note, note_id)
     local request_body = {
         body = note
     }
@@ -311,23 +330,28 @@ function JoplinExporter:export(t)
         return false
     end
 
-    ---@todo Check if user deleted our notebook, in that case note
-    -- will end up in random folder in Joplin.
-    if not self.settings.notebook_guid then
+    if not self:notebookExist(self.notebook_name) then
         local notebook = self:createNotebook(self.notebook_name)
         if notebook then
+            logger.info("Joplin: created new notebook",
+                "name", self.notebook_name, "id", notebook)
             self.settings.notebook_guid = notebook
             self:saveSettings()
+        else
+            logger.warn("Joplin: unable to create new notebook")
+            return false
         end
     end
+
+    local notebook_id = self.settings.notebook_guid
     for _, booknotes in pairs(t) do
-        local note_guid = self:findNoteByTitle(booknotes.title, self.settings.notebook_guid)
         local note = prepareNote(booknotes)
+        local note_id = self:findNoteByTitle(booknotes.title, notebook_id)
         local response
-        if note_guid then
-            response = self:updateNote(note_guid, note)
+        if note_id then
+            response = self:updateNote(note, note_id)
         else
-            response = self:createNote(booknotes.title, note, self.settings.notebook_guid)
+            response = self:createNote(booknotes.title, note, notebook_id)
         end
         if not response then
             logger.warn("Cannot export to Joplin")
