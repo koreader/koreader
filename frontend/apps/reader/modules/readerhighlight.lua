@@ -14,12 +14,11 @@ local logger = require("logger")
 local util = require("util")
 local Size = require("ui/size")
 local ffiUtil = require("ffi/util")
+local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
-
-local time = require("ui/time")
 
 local ReaderHighlight = InputContainer:new{
 }

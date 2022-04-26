@@ -4,8 +4,8 @@ local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
-local _ = require("gettext")
 local time = require("ui/time")
+local _ = require("gettext")
 local T = require("ffi/util").template
 
 local AutoTurn = WidgetContainer:new{

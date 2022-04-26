@@ -13,7 +13,6 @@ local rapidjson = require("rapidjson")
 local logger = require("logger")
 local parser = require("parser")
 local util = require("util")
-
 local time = require("ui/time")
 
 local used_metadata = {

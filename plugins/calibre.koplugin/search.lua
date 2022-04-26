@@ -18,10 +18,9 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
 local util = require("util")
+local time = require("ui/time")
 local _ = require("gettext")
 local T = require("ffi/util").template
-
-local time = require("ui/time")
 
 -- get root dir for disk scans
 local function getDefaultRootDir()

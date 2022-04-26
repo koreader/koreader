@@ -2,7 +2,6 @@ local UIManager -- will be updated when available
 local Math = require("optmath")
 local logger = require("logger")
 local time = require("ui/time")
-
 local BasePowerD = {
     fl_min = 0,                       -- min frontlight intensity
     fl_max = 10,                      -- max frontlight intensity

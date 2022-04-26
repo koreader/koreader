@@ -19,7 +19,6 @@ local Input = Device.input
 local time = require("ui/time")
 local Screen = Device.screen
 
-
 local band = bit.band
 
 -- The following constants are positions in a bitfield

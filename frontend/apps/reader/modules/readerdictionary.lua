@@ -22,7 +22,6 @@ local util  = require("util")
 local _ = require("gettext")
 local T = ffiUtil.template
 
-
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()
 local available_ifos = nil

@@ -23,7 +23,6 @@ local time = require("ui/time")
 local util = require("util")
 local Screen = Device.screen
 
-
 local keyboard_state = {
     force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)
 }

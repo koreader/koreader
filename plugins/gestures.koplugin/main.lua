@@ -17,10 +17,9 @@ local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local util = require("util")
 local T = FFIUtil.template
+local time = require("ui/time")
 local _ = require("gettext")
 local logger = require("logger")
-
-local time = require("ui/time")
 
 if not Device:isTouchDevice() then
     return { disabled = true, }

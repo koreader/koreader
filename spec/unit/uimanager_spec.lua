@@ -1,6 +1,5 @@
 describe("UIManager spec", function()
-    local UIManager
-    local time
+    local time, UIManager
     local now, wait_until
     local noop = function() end
 
