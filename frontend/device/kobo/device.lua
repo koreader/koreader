@@ -732,7 +732,7 @@ function Kobo:initEventAdjustHooks()
     end
 end
 
-function Kobo:getCodeName()
+local function getCodeName()
     -- Try to get it from the env first
     local codename = os.getenv("PRODUCT")
     -- If that fails, run the script ourselves
@@ -744,7 +744,7 @@ function Kobo:getCodeName()
     return codename
 end
 
-function Kobo:getFirmwareVersion()
+local function getFirmwareVersion()
     local version_file = io.open("/mnt/onboard/.kobo/version", "re")
     if not version_file then
         self.firmware_rev = "none"
@@ -807,7 +807,7 @@ function Kobo:checkUnexpectedWakeup()
         end
 
         logger.err("Kobo suspend: putting device back to sleep after", self.unexpected_wakeup_count, "unexpected wakeups.")
-        Kobo:suspend()
+        self:suspend()
     end
 end
 
@@ -1152,7 +1152,7 @@ end
 
 -------------- device probe ------------
 
-local codename = Kobo:getCodeName()
+local codename = getCodeName()
 local product_id = getProductId()
 
 if codename == "dahlia" then
