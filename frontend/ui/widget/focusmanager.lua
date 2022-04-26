@@ -208,6 +208,7 @@ function FocusManager:onFocusMove(args)
     end
 
     if not self.layout[self.selected.y] or not self.layout[self.selected.y][self.selected.x] then
+        logger.dbg("FocusManager: Not found current selected widget")
         return true
     end
     local current_item = self.layout[self.selected.y][self.selected.x]
@@ -269,7 +270,7 @@ function FocusManager:moveFocusTo(x, y, focus_flags)
         target_item = self.layout[y][x]
     end
     if target_item then
-        logger.dbg("FocusManager: Move focus position to:", y, ",", x)
+        logger.dbg("FocusManager: Move focus position to:", x, ",", y)
         self.selected.x = x
         self.selected.y = y
         -- widget create new layout on update, previous may be removed from new layout.
