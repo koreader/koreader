@@ -171,17 +171,15 @@ function JoplinExporter:createNote(title, note, parent_id, created_time)
 end
 
 -- If successful returns id of updated note.
-function JoplinExporter:updateNote(note_id, note, title, parent_id)
+function JoplinExporter:updateNote(note_id, note)
     local request_body = {
-        body = note,
-        title = title,
-        parent_id = parent_id
+        body = note
     }
 
     local url = string.format("http://%s:%s/notes/%s?token=%s",
         self.settings.ip, self.settings.port, note_id, self.settings.token)
 
-    local response, err = makeRequest(url, "POST", request_body)
+    local response, err = makeRequest(url, "PUT", request_body)
     if not response then
         logger.warn("Joplin updateNote error", err)
         return
@@ -322,7 +320,6 @@ function JoplinExporter:export(t)
             self:saveSettings()
         end
     end
-
     for _, booknotes in pairs(t) do
         local note_guid = self:findNoteByTitle(booknotes.title, self.settings.notebook_guid)
         local note = prepareNote(booknotes)
@@ -330,7 +327,7 @@ function JoplinExporter:export(t)
         if note_guid then
             response = self:updateNote(note_guid, note)
         else
-            response = self:createNote(booknotes.title, note, note_guid)
+            response = self:createNote(booknotes.title, note, self.settings.notebook_guid)
         end
         if not response then
             logger.warn("Cannot export to Joplin")
