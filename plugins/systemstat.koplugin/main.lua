@@ -3,10 +3,9 @@ local Dispatcher = require("dispatcher")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
-
-local time = require("ui/time")
 
 local SystemStat = {
     start_sec = os.time(),

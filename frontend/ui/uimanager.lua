@@ -1242,7 +1242,7 @@ function UIManager:getTime()
 end
 
 --[[--
-Returns an time (fts) corresponding to the last UI tick plus the time in standby.
+Returns a time (fts) corresponding to the last UI tick plus the time in standby.
 ]]
 function UIManager:getElapsedTimeSinceBoot()
     return self:getTime() + Device.total_standby_time + Device.total_suspend_time
