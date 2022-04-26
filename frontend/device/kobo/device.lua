@@ -744,7 +744,7 @@ local function getCodeName()
     return codename
 end
 
-local function getFirmwareVersion()
+function Kobo:getFirmwareVersion()
     local version_file = io.open("/mnt/onboard/.kobo/version", "re")
     if not version_file then
         self.firmware_rev = "none"
