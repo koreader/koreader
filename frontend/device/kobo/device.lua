@@ -834,7 +834,7 @@ function Kobo:standby(max_duration)
     self.total_standby_tv = self.total_standby_tv + self.last_standby_tv
 
     if ret then
-        logger.info("Kobo standby: zZz zZz zZz zZz")
+        logger.info("Kobo standby: zZz zZz zZz zZz... And woke up!")
     else
         logger.warn("Kobo standby: the kernel refused to enter standby!")
     end
@@ -937,7 +937,7 @@ function Kobo:suspend()
     self.total_suspend_tv = self.total_suspend_tv + self.last_suspend_tv
 
     if ret then
-        logger.info("Kobo suspend: ZzZ ZzZ ZzZ")
+        logger.info("Kobo suspend: ZzZ ZzZ ZzZ... And woke up!")
     else
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
         -- Reset state-extended back to 0 since we are giving up.
@@ -953,7 +953,6 @@ function Kobo:suspend()
     --       to wakeup & sleep ad nauseam,
     --       which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
     --       cf. nickel_suspend_strace.txt for more details.
-    logger.info("Kobo suspend: woke up!")
 
     --[[
     if has_wakeup_count then
