@@ -1,5 +1,5 @@
 --[[--
-Plugin for automatic dimming the frontlight after an idle period.
+Plugin for automatic dimming of the frontlight after an idle period.
 
 @module koplugin.autodim
 --]]--
