@@ -63,6 +63,7 @@ function AutoDim:getAutodimMenu()
                         value_step = 0.5,
                         value_hold_step = 5,
                         precision = "%0.1f",
+                        ok_always_enabled = true,
                         callback = function(spin)
                             if not spin then return end
                             self.autodim_starttime_m = spin.value
