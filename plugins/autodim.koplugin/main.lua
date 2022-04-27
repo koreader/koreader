@@ -1,6 +1,5 @@
 --[[--
-Plugin for setting screen warmth based on the sun position and/or a time schedule
-and for automatic dimming the frontlight after an idle period.
+Plugin for automatic dimming the frontlight after an idle period.
 
 @module koplugin.autodim
 --]]--
@@ -9,7 +8,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local SpinWidget = require("ui/widget/spinwidget")
-local TimeVal = require("ui/timeval")   -- this will havt to be changed to "ui/time", also the _tv will become _time
+local TimeVal = require("ui/timeval")   -- this will have to be changed to "ui/time", also the _tv will become _time
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
@@ -19,7 +18,6 @@ local DEFAULT_AUTODIM_STARTTIME_M = 5
 local DEFAULT_AUTODIM_DURATION_S = 20
 local DEFAULT_AUTODIM_ENDPERCENTAGE = 20
 local AUTODIM_EVENT_FREQUENCY = 2 -- in Hz; Frequenzy for FrontlightChangedEvent on E-Ink devices
-
 
 local AutoDim = WidgetContainer:new{
     name = "autodim",
@@ -65,6 +63,7 @@ function AutoDim:getAutodimMenu()
                         value_step = 0.5,
                         value_hold_step = 5,
                         precision = "%0.1f",
+                        ok_always_enabled = true,
                         callback = function(spin)
                             if not spin then return end
                             self.autodim_starttime_m = spin.value
@@ -144,7 +143,7 @@ function AutoDim:getAutodimMenu()
 end
 
 -- Schedules the first idle task, the consecutive ones are scheduled by the `autodim_task` itself.
--- `seconds` if given define the seconds, when the first task should be scheduled.
+-- `seconds` optionally define the seconds, when the first task should be scheduled.
 function AutoDim:_schedule_autodim_task(seconds)
     UIManager:unschedule(self.autodim_task)
     if self.autodim_starttime_m < 0 then
@@ -188,7 +187,7 @@ function AutoDim:onSuspend()
         self:_unschedule_autodim_task()
         self:_unschedule_ramp_task()
         UIManager:discardEvents(1) -- stop discarding events
-        self.isCurrentlyDimming = true -- message to onResume to go on with restoring
+        self.isCurrentlyDimming = true -- message to self:onResume to go on with restoring
     end
 end
 
@@ -203,7 +202,6 @@ function AutoDim:autodim_task()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_endpercentage / 100 + 0.5)
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         -- calculate time until the next decrease step
-        -- use a minimal step time for screen (footer) refreshes (50ms, works on the Sage)
         self.autodim_step_time_s = math.max(self.autodim_duration_s / fl_diff, 0.001)
         self.ramp_event_countdown_startvalue = Device:hasEinkScreen() and
             math.floor((1/AUTODIM_EVENT_FREQUENCY) / self.autodim_step_time_s + 0.5) or 0
@@ -232,7 +230,7 @@ function AutoDim:ramp_task()
         -- `isCurrentlyDimming` stays true, to flag we have a dimmed FL.
     end
     if Device:hasEinkScreen() and fl_level == self.autodim_end_fl then
-        -- generate even on the end of the ramp
+        -- generate event on the end of the ramp
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
 end
