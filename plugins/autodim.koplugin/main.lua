@@ -1,5 +1,5 @@
 --[[--
-Plugin for automatic dimming the frontlight after an idle period.
+Plugin for automatic dimming of the frontlight after an idle period.
 
 @module koplugin.autodim
 --]]--
@@ -55,7 +55,7 @@ function AutoDim:getAutodimMenu()
                 callback = function(touchmenu_instance)
                     local idle_dialog = SpinWidget:new{
                         title_text = _("Automatic dimmer idle time"),
-                        info_text = _("Start the dimmer after that idle time. Time is in minutes."),
+                        info_text = _("Start the dimmer after the designated period of inactivity. Time is in minutes."),
                         value = self.autodim_starttime_m >=0 and self.autodim_starttime_m or 0.5,
                         default_value = DEFAULT_AUTODIM_STARTTIME_M,
                         value_min = 0.1,
@@ -92,7 +92,7 @@ function AutoDim:getAutodimMenu()
                 callback = function(touchmenu_instance)
                     local dimmer_dialog = SpinWidget:new{
                         title_text = _("Automatic dimmer duration"),
-                        info_text = _("Time is in seconds."),
+                        info_text = _("Enter the duration until reaching the final brightness. Time is in seconds."),
                         value = self.autodim_duration_s,
                         default_value = DEFAULT_AUTODIM_DURATION_S,
                         value_min = 0,
@@ -114,13 +114,13 @@ function AutoDim:getAutodimMenu()
             },
             {
                 text_func = function()
-                    return T(_("Dimming percentage: %1%"), self.autodim_endpercentage)
+                    return T(_("Dim to: %1%"), self.autodim_endpercentage)
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
                     local percentage_dialog = SpinWidget:new{
-                        title_text = _("Percentage"),
-                        info_text = _("Enter the percentage of you want the frontlight to dim to. 50% means half of your normal intensity."),
+                        title_text = _("Dimming percentage"),
+                        info_text = _("A percentage of the normal brightness."),
                         value = self.autodim_endpercentage,
                         value_default = DEFAULT_AUTODIM_ENDPERCENTAGE,
                         value_min = 0,
@@ -143,7 +143,7 @@ function AutoDim:getAutodimMenu()
 end
 
 -- Schedules the first idle task, the consecutive ones are scheduled by the `autodim_task` itself.
--- `seconds` optionally define the seconds, when the first task should be scheduled.
+-- `seconds` the initial scheduling delay of the first task
 function AutoDim:_schedule_autodim_task(seconds)
     UIManager:unschedule(self.autodim_task)
     if self.autodim_starttime_m < 0 then
@@ -243,7 +243,6 @@ function AutoDim:_unschedule_ramp_task()
     if self.isCurrentlyDimming then
         UIManager:unschedule(self.ramp_task)
         self.isCurrentlyDimming = false
-        self.ramp_counter = self.autodim_nb_for_event
     end
 end
 
