@@ -294,7 +294,7 @@ function ReaderUI:init()
             if not self.document:loadDocument() then
                 self:dealWithLoadDocumentFailure()
             end
-            logger.dbg(string.format("  loading took %.3f seconds", time.time_since(start_time)))
+            logger.dbg(string.format("  loading took %.3f seconds", time.to_s(time.since(start_time))))
 
             -- used to read additional settings after the document has been
             -- loaded (but not rendered yet)
@@ -302,7 +302,7 @@ function ReaderUI:init()
 
             start_time = time.now()
             self.document:render()
-            logger.dbg(string.format("  rendering took %.3f seconds", time.time_since(start_time)))
+            logger.dbg(string.format("  rendering took %.3f seconds", time.to_s(time.since(start_time))))
 
             -- Uncomment to output the built DOM (for debugging)
             -- logger.dbg(self.document:getHTMLFromXPointer(".0", 0x6830))

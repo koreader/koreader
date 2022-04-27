@@ -322,7 +322,7 @@ function ReaderThumbnail:startTileGeneration(request)
         }
         tile.size = tonumber(tile.bb.stride) * tile.bb.h
         -- logger.info("tile size", tile.bb.w, tile.bb.h, "=>", tile.size)
-        -- logger.info(string.format("  scaling took %.3f seconds, %d bpp", time.time_since(start_time), tile.bb:getBpp()))
+        -- logger.info(string.format("  scaling took %.3f seconds, %d bpp", time.to_s(time.since(start_time)), tile.bb:getBpp()))
         -- bb:free() -- no need to spend time freeing, we're dying soon anyway!
 
         ffiutil.writeToFD(child_write_fd, self.codec.serialize(tile:totable()), true)
@@ -361,7 +361,7 @@ function ReaderThumbnail:checkTileGeneration(request)
                 request.when_generated_callback(nil, request.batch_id, true)
             end
         end
-        -- logger.info(string.format("  parsing result from subprocess took %.3f seconds", time.time_since(start_time)))
+        -- logger.info(string.format("  parsing result from subprocess took %.3f seconds", time.to_s(time.since(start_time))))
         if not subprocess_done then
             table.insert(pids_to_collect, pid)
             return false, true

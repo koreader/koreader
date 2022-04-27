@@ -49,7 +49,7 @@ local function wrappedAddChars(inputbox, char)
     local within_tap_window
     if keitai_cycle then
         if inputbox._ja_last_tap_time then
-            within_tap_window = time.time_since(inputbox._ja_last_tap_time) < getKeitaiTapInterval()
+            within_tap_window = time.since(inputbox._ja_last_tap_time) < getKeitaiTapInterval()
         end
         inputbox._ja_last_tap_time = time.now()
     else
