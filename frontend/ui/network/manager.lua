@@ -493,16 +493,7 @@ function NetworkMgr:getInfoMenuTable()
         keep_menu_open = true,
         enabled_func = function() return self:isNetworkInfoAvailable() end,
         callback = function()
-            if Device.retrieveNetworkInfo then
-                UIManager:show(InfoMessage:new{
-                    text = Device:retrieveNetworkInfo(),
-                })
-            else
-                UIManager:show(InfoMessage:new{
-                    text = _("Could not retrieve network info."),
-                    timeout = 3,
-                })
-            end
+            UIManager:broadcastEvent(Event:new("ShowNetworkInfo"))
         end
     }
 end

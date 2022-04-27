@@ -218,5 +218,17 @@ function NetworkListener:onSuspend()
     self:onNetworkDisconnected()
 end
 
+function NetworkListener:onShowNetworkInfo()
+    if Device.retrieveNetworkInfo then
+        UIManager:show(InfoMessage:new{
+            text = Device:retrieveNetworkInfo(),
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("Could not retrieve network info."),
+            timeout = 3,
+        })
+    end
+end
 
 return NetworkListener
