@@ -1,6 +1,5 @@
 --[[--
-Plugin for setting screen warmth based on the sun position and/or a time schedule
-and for automatic dimming the frontlight after an idle period.
+Plugin for automatic dimming the frontlight after an idle period.
 
 @module koplugin.autodim
 --]]--
@@ -19,7 +18,6 @@ local DEFAULT_AUTODIM_STARTTIME_M = 5
 local DEFAULT_AUTODIM_DURATION_S = 20
 local DEFAULT_AUTODIM_ENDPERCENTAGE = 20
 local AUTODIM_EVENT_FREQUENCY = 2 -- in Hz; Frequenzy for FrontlightChangedEvent on E-Ink devices
-
 
 local AutoDim = WidgetContainer:new{
     name = "autodim",
