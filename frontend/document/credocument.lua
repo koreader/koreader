@@ -1460,7 +1460,7 @@ function CreDocument:setupCallCache()
             return time.now()
         end
         addStatMiss = function(name, starttime, not_cached)
-            local duration = time.time_since(starttime)
+            local duration = time.since(starttime)
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {0, 0.0, 1, duration, not_cached}
             else
@@ -1470,7 +1470,7 @@ function CreDocument:setupCallCache()
             end
         end
         addStatHit = function(name, starttime)
-            local duration = time.time_since(starttime)
+            local duration = time.since(starttime)
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {1, duration, 0, 0.0}
             else
