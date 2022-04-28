@@ -25,10 +25,7 @@ local ReaderHighlight = InputContainer:new{
 
 local function bookmarkToFromLocalHighlight(bm)
     local item = util.tableDeepCopy(bm)
-    local text = bm.notes
-    local notes = bm.text
-    item.notes = notes
-    item.text = text
+    item.notes, item.text = item.text, item.notes
     return item
 end
 
@@ -692,7 +689,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
         if updated_highlight_beginning then
             local order = self.ui.document:compareXPointers(updated_highlight_beginning, highlight_end)
             if order and order > 0 then -- only if beginning did not go past end
-            highlight.pos0 = updated_highlight_beginning
+                highlight.pos0 = updated_highlight_beginning
             end
         end
     else -- we move pos1
