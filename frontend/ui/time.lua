@@ -9,7 +9,9 @@ Don't store a numerical constant in an fts encoded time. Use the functions provi
 
 To convert real world units to an fts, you can use the following functions: time.s(seconds), time.ms(milliseconds), time.us(microseconds).
 
-You can calculate an fts encoded time of 3 s with  `time.s(3)`.
+You can calculate an fts encoded time of 3 s with `time.s(3)`.
+
+Special values: `0` can be used for a zero time and `time.huge` can be used for the longest possible time.
 
 Beware of float encoding precision, though. For instance, take 2.1s: 2.1 cannot be encoded with full precision, so time.s(2.1) would be slightly inaccurate.
 (For small values (under 10 secs) the error will be ±1µs, for values below a minute the error will be below ±2µs, for values below an hour the error will be ±100µs.)
