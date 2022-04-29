@@ -963,10 +963,6 @@ Set min and max time spent (in seconds) on a page for it to be counted as read i
 The min value ensures pages you quickly browse and skip are not included.
 The max value ensures a page you stay on for a long time (because you fell asleep or went away) will be included, but with a duration capped to this specified max value.]]),
                                 callback = function(min, max)
-                                    if not min then -- "Default" button pressed
-                                        min = DEFAULT_MIN_READ_SEC
-                                        max = DEFAULT_MAX_READ_SEC
-                                    end
                                     self.settings.min_sec = min
                                     self.settings.max_sec = max
                                     UIManager:close(durations_widget)
