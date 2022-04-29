@@ -146,7 +146,7 @@ local Translator = {
     trans_servers = {
         "https://translate.googleapis.com/",
         -- "http://translate.google.cn",
-    "https://fanyi.youdao.com",
+        "https://fanyi.youdao.com",
     },
     trans_path = "/translate_a/single",
     trans_params = {
@@ -351,55 +351,55 @@ Returns decoded JSON table from translate server.
 @treturn string result, or nil
 --]]
 function Translator:loadPage(text, target_lang, source_lang)
-  local trans_server = self:getTransServer()
-  if trans_server == "https://fanyi.youdao.com" then
-    return self:loadPageByYoudao(text, target_lang, source_lang)
-  end
-  return self:loadPageByGoogle(text, target_lang, source_lang)
+    local trans_server = self:getTransServer()
+    if trans_server == "https://fanyi.youdao.com" then
+        return self:loadPageByYoudao(text, target_lang, source_lang)
+    end
+    return self:loadPageByGoogle(text, target_lang, source_lang)
 end
 
 local function http_request(s_url, method, headers, request)
-  local socket = require('socket')
-  local socketutil = require("socketutil")
-  local http = require('socket.http')
-  local ltn12 = require("ltn12")
+    local socket = require('socket')
+    local socketutil = require("socketutil")
+    local http = require('socket.http')
+    local ltn12 = require("ltn12")
 
-  local sink = {}
-  if request == nil then
-    request = {}
-  end
-  socketutil:set_timeout()
+    local sink = {}
+    if request == nil then
+        request = {}
+    end
+    socketutil:set_timeout()
 
-  request['url'] = s_url
-  request['method'] = method
-  request['sink'] = ltn12.sink.table(sink)
-  request['headers'] = headers
+    request['url'] = s_url
+    request['method'] = method
+    request['sink'] = ltn12.sink.table(sink)
+    request['headers'] = headers
 
-  http.TIMEOUT = 5
-  -- https.TIMEOUT = 5
-  http.USERAGENT = 'Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2950.0 Iron Safari/537.36'
-  local httpRequest = http.request
+    http.TIMEOUT = 5
+    -- https.TIMEOUT = 5
+    http.USERAGENT = 'Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2950.0 Iron Safari/537.36'
+    local httpRequest = http.request
 
-  local code, response_headers, status = socket.skip(
-    1, httpRequest(request))
+    local code, response_headers, status = socket.skip(
+        1, httpRequest(request))
 
-  socketutil:reset_timeout()
-  if response_headers == nil then
+    socketutil:reset_timeout()
+    if response_headers == nil then
+        return {
+            code = code,
+            response_headers = response_headers,
+            status = status,
+            response_body = nil
+        }
+    end
+    local xml = table.concat(sink)
+
     return {
-      code = code,
-      response_headers = response_headers,
-      status = status,
-      response_body = nil
+        code = code,
+        response_headers = response_headers,
+        status = status,
+        response_body = xml
     }
-  end
-  local xml = table.concat(sink)
-
-  return {
-    code = code,
-    response_headers = response_headers,
-    status = status,
-    response_body = xml
-  }
 end
 
 --[[--
@@ -412,50 +412,50 @@ Returns decoded JSON table from translate server.
 --]]
 
 function Translator:loadPageByYoudao(text, target_lang, source_lang)
-  local ltn12 = require("ltn12")
-  local headers = {}
-  headers['content-type'] = 'application/x-www-form-urlencoded'
-  local query = string.format(
-    'from=%s&to=%s&i=%s&doctype=json&xmlVersion=1.4&keyfrom=fanyi.web&ue=UTF-8&typoResult=true&flag=false',
-    source_lang, target_lang, text)
-  logger.dbg("query", query)
-  headers["content-length"] = string.len(query)
-  local request = {
-    source = ltn12.source.string(query)
-  }
+    local ltn12 = require("ltn12")
+    local headers = {}
+    headers['content-type'] = 'application/x-www-form-urlencoded'
+    local query = string.format(
+        'from=%s&to=%s&i=%s&doctype=json&xmlVersion=1.4&keyfrom=fanyi.web&ue=UTF-8&typoResult=true&flag=false',
+        source_lang, target_lang, text)
+    logger.dbg("query", query)
+    headers["content-length"] = string.len(query)
+    local request = {
+        source = ltn12.source.string(query)
+    }
 
-  local s_url = "https://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=dict.top"
-  local resp = http_request(s_url, "POST", headers, request)
-  local ok, youdao_result = pcall(JSON.decode, resp.response_body, JSON.decode.simple)
-  if ok and youdao_result then
-    logger.dbg("translator json:", youdao_result)
-  else
-    logger.warn("translator error:", youdao_result)
-  end
-  local google_result_6 = {}
-  local translateResult = {}
-  for _, v1 in ipairs(youdao_result.translateResult) do
-    for _, v2 in ipairs(v1) do
-      table.insert(translateResult,
-        { v2.tgt, v2.src }
-      )
-      table.insert(google_result_6,
-        {
-        [1] = v2.src,
-        [3] = {
-          [1] = {
-            [1] = v2.tgt,
-            [2] = 0,
-          }
-        }
-      })
+    local s_url = "https://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=dict.top"
+    local resp = http_request(s_url, "POST", headers, request)
+    local ok, youdao_result = pcall(JSON.decode, resp.response_body, JSON.decode.simple)
+    if ok and youdao_result then
+        logger.dbg("translator json:", youdao_result)
+    else
+        logger.warn("translator error:", youdao_result)
     end
-  end
-  local google_result = {}
-  google_result[1] = translateResult
-  google_result[6] = google_result_6
-  logger.dbg("translator json fake google:", google_result)
-  return google_result
+    local google_result_6 = {}
+    local translateResult = {}
+    for _, v1 in ipairs(youdao_result.translateResult) do
+        for _, v2 in ipairs(v1) do
+            table.insert(translateResult,
+                { v2.tgt, v2.src }
+            )
+            table.insert(google_result_6,
+                {
+                [1] = v2.src,
+                [3] = {
+                    [1] = {
+                        [1] = v2.tgt,
+                        [2] = 0,
+                    }
+                }
+            })
+        end
+    end
+    local google_result = {}
+    google_result[1] = translateResult
+    google_result[6] = google_result_6
+    logger.dbg("translator json fake google:", google_result)
+    return google_result
 end
 
 --[[--
