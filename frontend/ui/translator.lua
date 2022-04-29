@@ -178,8 +178,14 @@ local Translator = {
     default_lang = "en",
 }
 
+local TRANS_FUNCS = {}
+
 function Translator:getTransServer()
     return G_reader_settings:readSetting("trans_server") or self.trans_servers[1]
+end
+
+function Translator:getTransFunc(server)
+    return TRANS_FUNCS[server] or Translator.loadPageByGoogle
 end
 
 function Translator:getLanguageName(lang, default_string)
@@ -352,16 +358,14 @@ Returns decoded JSON table from translate server.
 --]]
 function Translator:loadPage(text, target_lang, source_lang)
     local trans_server = self:getTransServer()
-    if trans_server == "https://fanyi.youdao.com" then
-        return self:loadPageByYoudao(text, target_lang, source_lang)
-    end
-    return self:loadPageByGoogle(text, target_lang, source_lang)
+    local trans_func = self:getTransFunc(trans_server)
+    return trans_func(text, target_lang, source_lang)
 end
 
 local function http_request(s_url, method, headers, request)
-    local socket = require('socket')
+    local socket = require("socket")
     local socketutil = require("socketutil")
-    local http = require('socket.http')
+    local http = require("socket.http")
     local ltn12 = require("ltn12")
 
     local sink = {}
@@ -370,14 +374,13 @@ local function http_request(s_url, method, headers, request)
     end
     socketutil:set_timeout()
 
-    request['url'] = s_url
-    request['method'] = method
-    request['sink'] = ltn12.sink.table(sink)
-    request['headers'] = headers
+    request["url"] = s_url
+    request["method"] = method
+    request["sink"] = ltn12.sink.table(sink)
+    request["headers"] = headers
 
     http.TIMEOUT = 5
-    -- https.TIMEOUT = 5
-    http.USERAGENT = 'Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2950.0 Iron Safari/537.36'
+    http.USERAGENT = "Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2950.0 Iron Safari/537.36"
     local httpRequest = http.request
 
     local code, response_headers, status = socket.skip(
@@ -457,6 +460,7 @@ function Translator:loadPageByYoudao(text, target_lang, source_lang)
     logger.dbg("translator json as google translate format:", resultAsGoogleTranslate)
     return resultAsGoogleTranslate
 end
+TRANS_FUNCS["https://fanyi.youdao.com"] = Translator.loadPageByYoudao
 
 --[[--
 Returns decoded JSON table from translate server.
