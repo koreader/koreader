@@ -359,7 +359,7 @@ Returns decoded JSON table from translate server.
 function Translator:loadPage(text, target_lang, source_lang)
     local trans_server = self:getTransServer()
     local trans_func = self:getTransFunc(trans_server)
-    return trans_func(text, target_lang, source_lang)
+    return trans_func(self, text, target_lang, source_lang)
 end
 
 local function http_request(s_url, method, headers, request)
