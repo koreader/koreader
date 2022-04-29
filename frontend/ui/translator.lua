@@ -145,7 +145,7 @@ ALT_LANGUAGE_CODES["iw"] = "he"
 local Translator = {
     trans_servers = {
         "https://translate.googleapis.com/",
-        -- "http://translate.google.cn",
+        "https://translate.google.cn",
         "https://fanyi.youdao.com",
     },
     trans_path = "/translate_a/single",
@@ -201,26 +201,36 @@ end
 
 -- Will be called by ReaderHighlight to make it available in Reader menu
 function Translator:genSettingsMenu()
-    local function genLanguagesItems(setting_name, default_checked_item)
+    local function genItems(items, setting_name, default_checked_item)
         local items_table = {}
-        for lang_key, lang_name in ffiutil.orderedPairs(SUPPORTED_LANGUAGES) do
+        for key, value in ffiutil.orderedPairs(items) do
             table.insert(items_table, {
                 text_func = function()
-                    return T("%1 (%2)", lang_name, lang_key)
+                    return T("%1 (%2)", value, key)
                 end,
                 checked_func = function()
                     if G_reader_settings:has(setting_name) then
-                        return lang_key == G_reader_settings:readSetting(setting_name)
+                        return key == G_reader_settings:readSetting(setting_name)
                     else
-                        return lang_key == default_checked_item
+                        return key == default_checked_item
                     end
                 end,
                 callback = function()
-                    G_reader_settings:saveSetting(setting_name, lang_key)
+                    G_reader_settings:saveSetting(setting_name, key)
                 end,
             })
         end
         return items_table
+    end
+    local function genLanguagesItems(setting_name, default_checked_item)
+        return genItems(SUPPORTED_LANGUAGES, setting_name, default_checked_item)
+    end
+    local function genServersItems(setting_name, default_checked_item)
+        local servers = {}
+        for _, value in ipairs(self.trans_servers) do
+          servers[value] = ""
+        end
+        return genItems(servers, setting_name, default_checked_item)
     end
 
     return {
@@ -279,6 +289,14 @@ This is useful:
                     return T(_("Translate to: %1"), self:getLanguageName(lang, ""))
                 end,
                 sub_item_table = genLanguagesItems("translator_to_language", self:getTargetLanguage()),
+                keep_menu_open = true,
+            },
+            {
+                text_func = function()
+                    local value = self:getTransServer()
+                    return T(_("Translate Server: %1"), value)
+                end,
+                sub_item_table = genServersItems("trans_server", self:getTransServer()),
                 keep_menu_open = true,
             },
         },
