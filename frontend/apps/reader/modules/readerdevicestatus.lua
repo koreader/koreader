@@ -200,10 +200,6 @@ High level threshold is checked when the device is charging.]]),
                         right_hold_step = 5,
                         default_values = true,
                         callback = function(left_value, right_value)
-                            if not left_value then -- "Default" button pressed
-                                left_value = 20
-                                right_value = 100
-                            end
                             self.battery_threshold = left_value
                             self.battery_threshold_high = right_value
                             G_reader_settings:saveSetting("device_status_battery_threshold", self.battery_threshold)

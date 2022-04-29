@@ -384,6 +384,9 @@ These settings will apply to all books with any hyphenation dictionary.
 'Use language defaults' resets them.]]),
                 keep_shown_on_apply = true,
                 callback = function(left_hyphen_min, right_hyphen_min)
+                    if left_hyphen_min == alg_left_hyphen_min and right_hyphen_min == alg_right_hyphen_min then
+                        left_hyphen_min, right_hyphen_min = nil, nil -- don't store default values
+                    end
                     G_reader_settings:saveSetting("hyph_left_hyphen_min", left_hyphen_min)
                     G_reader_settings:saveSetting("hyph_right_hyphen_min", right_hyphen_min)
                     self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or 0)

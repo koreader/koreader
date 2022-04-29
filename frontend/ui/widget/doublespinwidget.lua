@@ -43,6 +43,7 @@ local DoubleSpinWidget = FocusManager:new{
     right_wrap = false,
     cancel_text = _("Close"),
     ok_text = _("Apply"),
+    ok_always_enabled = false, -- set to true to enable OK button for unchanged values
     cancel_callback = nil,
     callback = nil,
     close_callback = nil,
@@ -173,11 +174,10 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
                     self.left_precision and string.format(self.left_precision, self.left_default) or self.left_default,
                     self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default),
                 callback = function()
-                    left_widget.value = self.left_default
-                    right_widget.value = self.right_default
-                    left_widget:update()
-                    right_widget:update()
-                    self.callback(nil, nil)
+                    self.left_value = self.left_default
+                    self.right_value = self.right_default
+                    self.callback(self.left_default, self.right_default)
+                    self:update()
                 end,
             }
         })
@@ -209,7 +209,8 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         {
             text = self.ok_text,
-            enabled = self.left_value ~= left_widget:getValue() or self.right_value ~= right_widget:getValue(),
+            enabled = self.ok_always_enabled or self.left_value ~= left_widget:getValue()
+                or self.right_value ~= right_widget:getValue(),
             callback = function()
                 self.left_value = left_widget:getValue()
                 self.right_value = right_widget:getValue()
