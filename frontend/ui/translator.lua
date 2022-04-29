@@ -432,14 +432,14 @@ function Translator:loadPageByYoudao(text, target_lang, source_lang)
     else
         logger.warn("translator error:", youdao_result)
     end
-    local google_result_6 = {}
+    local resultAlternative = {}
     local translateResult = {}
     for _, v1 in ipairs(youdao_result.translateResult) do
         for _, v2 in ipairs(v1) do
             table.insert(translateResult,
                 { v2.tgt, v2.src }
             )
-            table.insert(google_result_6,
+            table.insert(resultAlternative,
                 {
                 [1] = v2.src,
                 [3] = {
@@ -451,11 +451,11 @@ function Translator:loadPageByYoudao(text, target_lang, source_lang)
             })
         end
     end
-    local google_result = {}
-    google_result[1] = translateResult
-    google_result[6] = google_result_6
-    logger.dbg("translator json fake google:", google_result)
-    return google_result
+    local resultAsGoogleTranslate = {}
+    resultAsGoogleTranslate[1] = translateResult
+    resultAsGoogleTranslate[6] = resultAlternative
+    logger.dbg("translator json as google translate format:", resultAsGoogleTranslate)
+    return resultAsGoogleTranslate
 end
 
 --[[--
