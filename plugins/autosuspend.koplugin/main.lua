@@ -168,7 +168,7 @@ function AutoSuspend:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
--- For event_hook automagic deregistration purposes
+-- NOTE: event_hook takes care of overloading this to unregister the hook, too.
 function AutoSuspend:onCloseWidget()
     logger.dbg("AutoSuspend: onCloseWidget")
     if Device:isPocketBook() and not Device:canSuspend() then return end
