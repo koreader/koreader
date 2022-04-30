@@ -965,7 +965,6 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                 callback = function(min, max)
                                     self.settings.min_sec = min
                                     self.settings.max_sec = max
-                                    UIManager:close(durations_widget)
                                     touchmenu_instance:updateItems()
                                 end,
                             }

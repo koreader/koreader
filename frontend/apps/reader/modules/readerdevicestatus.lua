@@ -204,7 +204,6 @@ High level threshold is checked when the device is charging.]]),
                             self.battery_threshold_high = right_value
                             G_reader_settings:saveSetting("device_status_battery_threshold", self.battery_threshold)
                             G_reader_settings:saveSetting("device_status_battery_threshold_high", self.battery_threshold_high)
-                            UIManager:close(thresholds_widget)
                             touchmenu_instance:updateItems()
                             powerd:setDismissBatteryStatus(false)
                         end,
