@@ -126,15 +126,14 @@ end
 
 function AutoSuspend:init()
     logger.dbg("AutoSuspend: init")
-    if Device:isPocketBook() and not Device:canSuspend() then return end
-
     self.autoshutdown_timeout_seconds = G_reader_settings:readSetting("autoshutdown_timeout_seconds",
         default_autoshutdown_timeout_seconds)
     self.auto_suspend_timeout_seconds = G_reader_settings:readSetting("auto_suspend_timeout_seconds",
         default_auto_suspend_timeout_seconds)
-
     -- Disabled, until the user opts in.
     self.auto_standby_timeout_seconds = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1)
+
+    if Device:isPocketBook() and not Device:canSuspend() then return end
 
     UIManager.event_hook:registerWidget("InputEvent", self)
     -- We need an instance-specific function reference to schedule, because in some rare cases,
