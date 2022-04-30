@@ -117,8 +117,7 @@ function KoboPowerD:init()
             -- 0 when not charging
             -- 3 when full
             -- 2 when charging via DCP
-            local charge_status = this:read_int_file(this.aux_batt_charging_file)
-            return charge_status ~= 0 and charge_status ~= 3
+            return this:read_int_file(this.aux_batt_charging_file) ~= 0
         end
     end
 
