@@ -205,13 +205,13 @@ end
 function AutoSuspend:_schedule_standby()
     -- Start the long list of conditions in which we do *NOT* want to go into standby ;).
     if not Device:canStandby() then
-        -- NOTE: This partly duplicates what `_enabledStandby` does,
-        --       but it's here to avoid logging noise on devices that can't even standby ;).
         return
     end
 
     -- Don't even schedule standby if we haven't set a proper timeout yet.
-    if not self:_enabledStandby() then
+    -- NOTE: We've essentially split the _enabledStandby check in two branches,
+    --       simplfy to avoid logging noise on devices that can't even standby ;).
+    if self.auto_standby_timeout_seconds <= 0 then
         logger.dbg("AutoSuspend: No timeout set, no standby")
         return
     end
