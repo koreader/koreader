@@ -166,6 +166,20 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         show_parent = self,
     }
 
+    -- helper for `OK` and `Default` buttons.
+    local function apply_callback(left_value, right_value)
+        self.left_value = left_value
+        self.right_value = right_value
+        if self.callback then
+            self.callback(left_value, right_value)
+        end
+        if self.keep_shown_on_apply then
+            self:update()
+        else
+            self:onClose()
+        end
+    end
+
     local buttons = {}
     if self.default_values then
         table.insert(buttons, {
@@ -174,10 +188,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
                     self.left_precision and string.format(self.left_precision, self.left_default) or self.left_default,
                     self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default),
                 callback = function()
-                    self.left_value = self.left_default
-                    self.right_value = self.right_default
-                    self.callback(self.left_default, self.right_default)
-                    self:update()
+                    apply_callback(self.left_default, self.right_default)
                 end,
             }
         })
@@ -212,16 +223,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
             enabled = self.ok_always_enabled or self.left_value ~= left_widget:getValue()
                 or self.right_value ~= right_widget:getValue(),
             callback = function()
-                self.left_value = left_widget:getValue()
-                self.right_value = right_widget:getValue()
-                if self.callback then
-                    self.callback(self.left_value, self.right_value)
-                end
-                if self.keep_shown_on_apply then
-                    self:update()
-                else
-                    self:onClose()
-                end
+                apply_callback(left_widget:getValue(), right_widget:getValue())
             end,
         },
     })
