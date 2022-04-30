@@ -5,6 +5,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -66,8 +67,11 @@ function AutoTurn:_start()
 
         local text
         if self.autoturn_distance == 1 then
-            text = T(_("Autoturn is now active and will automatically turn the page every %1 seconds."),
-                self.autoturn_sec)
+            local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+            local time_string = util.secondsToClockDuration(duration_format, self.autoturn_sec)
+            time_string = time_string:gsub("^00.", "") -- remove leading zero hours if necessary
+            text = T(_("Autoturn is now active and will automatically turn the page every %1."),
+                time_string)
         else
             text = T(_("Autoturn is now active and will automatically scroll %1 % of the page every %2 seconds."),
                 self.autoturn_distance * 100,
@@ -139,20 +143,31 @@ end
 function AutoTurn:addToMainMenu(menu_items)
     menu_items.autoturn = {
         sorting_hint = "navi",
-        text_func = function() return self:_enabled() and T(_("Autoturn: %1 s"), self.autoturn_sec)
-            or _("Autoturn") end,
+        text_func = function()
+            local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+            local time_string = util.secondsToClockDuration(duration_format, self.autoturn_sec)
+            time_string = time_string:gsub("^00.", "") -- remove leading zero hours if necessary
+            return self:_enabled() and T(_("Autoturn: %1"), time_string) or _("Autoturn")
+        end,
         checked_func = function() return self:_enabled() end,
         callback = function(menu)
-            local SpinWidget = require("ui/widget/spinwidget")
-            local curr_items = G_reader_settings:readSetting("autoturn_timeout_seconds") or 30
-            local autoturn_spin = SpinWidget:new {
-                value = curr_items,
-                value_min = 0,
-                value_max = 240,
-                value_hold_step = 5,
+            local DateTimeWidget = require("ui/widget/datetimewidget")
+            local autoturn_seconds = G_reader_settings:readSetting("autoturn_timeout_seconds", 30)
+            local autoturn_minutes = math.floor(autoturn_seconds / 60)
+            autoturn_seconds = autoturn_seconds % 60
+            local autoturn_spin = DateTimeWidget:new {
+                is_date = false,
+                title_text = _("Autoturn time"),
+                info_text = _("Enter time in minutes and seconds."),
+                -- We use hour for minutes and minutes for seconds
+                hour = autoturn_minutes,
+                hour_max = 60 * 24, -- maximum one day
+                hour_default = 0,
+                min = autoturn_seconds,
+                min_default = 30,
+                keep_shown_on_apply = true,
                 ok_text = _("Set timeout"),
                 cancel_text = _("Disable"),
-                title_text = _("Timeout in seconds"),
                 cancel_callback = function()
                     self.enabled = false
                     G_reader_settings:makeFalse("autoturn_enabled")
@@ -162,9 +177,9 @@ function AutoTurn:addToMainMenu(menu_items)
                     self.onLeaveStandby = nil
                 end,
                 ok_always_enabled = true,
-                callback = function(autoturn_spin)
-                    self.autoturn_sec = autoturn_spin.value
-                    G_reader_settings:saveSetting("autoturn_timeout_seconds", autoturn_spin.value)
+                callback = function(time)
+                    self.autoturn_sec = time.hour * 60 + time.min
+                    G_reader_settings:saveSetting("autoturn_timeout_seconds", self.autoturn_sec)
                     self.enabled = true
                     G_reader_settings:makeTrue("autoturn_enabled")
                     self:_unschedule()

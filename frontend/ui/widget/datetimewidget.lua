@@ -293,10 +293,17 @@ function DateTimeWidget:createLayout()
     }
 
     local buttons = {}
-    if self.default_value then
+    if (self.year_default and self.month_default and self.day_default) or
+        (self.hour_default and self.min_default) then
+        local text
+        if self.year_default and self.month_default and self.day_default then
+            text = T(_("Default value: %1 - %2 - %3"), self.year_default, self.month_default, self.day_default)
+        else
+            text = T(_("Default value: %1:%2"), self.hour_default, self.min_default)
+        end
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Default value: %1"), self.default_value),
+                text = text,
                 callback = function()
                     if self.default_callback then
                         self.default_callback({
@@ -308,7 +315,10 @@ function DateTimeWidget:createLayout()
                             second = sec_widget:getValue(),
                         })
                     end
-                    if not self.keep_shown_on_apply then -- assume extra wants it same as ok
+                    if self.keep_shown_on_apply then
+                        self:update(self.year_default, self.is_date and self.month_default or self.hour_default,
+                            self.is_date and self.day_default or self.min_default)
+                    else
                         self:onClose()
                     end
                 end,
