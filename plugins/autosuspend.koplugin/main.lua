@@ -227,6 +227,7 @@ function AutoSuspend:_schedule_standby()
         -- NOTE: Minor simplification here, we currently don't do the hasAuxBattery dance like in _schedule,
         --       because all the hasAuxBattery devices can currently enter PM states while charging ;).
         --logger.dbg("AutoSuspend: charging, delaying standby")
+        -- NOTE: Annoying quirk: On some devices, a device in the *charged* status (i.e., plugged in @ 100%) returns *false* in isCharging!
         standby_delay = self.auto_standby_timeout_seconds
     else
         local now_tv = UIManager:getElapsedTimeSinceBoot()
