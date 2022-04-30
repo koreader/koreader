@@ -831,7 +831,6 @@ function KindleOasis3:init()
         device = self,
         fl_intensity_file = "/sys/class/backlight/lm3697-bl1/brightness",
         warmth_intensity_file = "/sys/class/backlight/lm3697-bl0/brightness",
-        fl_intensity_file = "/sys/class/backlight/max77796-bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
     }
