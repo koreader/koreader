@@ -66,9 +66,8 @@ function WakeupMgr:addTask(seconds_from_now, callback)
     table.sort(self._task_queue, function(a, b) return a.epoch < b.epoch end)
 
     local new_upcoming_task = self._task_queue[1].epoch
-
     if not old_upcoming_task or (new_upcoming_task < old_upcoming_task) then
-        self:setWakeupAlarm(self._task_queue[1].epoch)
+        self:setWakeupAlarm(new_upcoming_task)
     end
 end
 
