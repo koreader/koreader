@@ -422,11 +422,8 @@ local KindleOasis3 = Kindle:new{
     isZelda = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
-    --- @fixme: Requires a proper KindleOasis3.init, notably with the right warmth_intensity_file entry.
-    --[[
     hasNaturalLight = yes,
     hasNaturalLightMixer = yes,
-    --]]
     hasKeys = yes,
     hasGSensor = yes,
     display_dpi = 300,
@@ -772,6 +769,7 @@ function KindleOasis2:init()
         }
     }
 
+
     --- @fixme When starting KOReader with the device upside down ("D"), touch input is registered wrong
     --        (i.e., probably upside down).
     --        If it's started upright ("U"), everything's okay, and turning it upside down after that works just fine.
@@ -827,9 +825,82 @@ function KindleOasis2:init()
     self.input.open("fake_events")
 end
 
--- For now, assume that the KOA3 doesn't do anything differently than the KOA2.
---- @fixme: That means, possibly among other things, that frontlight warmth needs to be implemented.
-KindleOasis3.init = KindleOasis2.init
+function KindleOasis3:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/lm3697-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/lm3697-bl0/brightness",
+        fl_intensity_file = "/sys/class/backlight/max77796-bl/brightness",
+        batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
+        is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
+    }
+
+    self.input = require("device/input"):new{
+        device = self,
+
+        -- Top, Bottom (yes, it's the reverse than on non-Oasis devices)
+        event_map = {
+            [104] = "RPgFwd",
+            [109] = "RPgBack",
+        }
+    }
+
+
+    --- @fixme When starting KOReader with the device upside down ("D"), touch input is registered wrong
+    --        (i.e., probably upside down).
+    --        If it's started upright ("U"), everything's okay, and turning it upside down after that works just fine.
+    --        See #2206 & #2209 for the original KOA implementation, which obviously doesn't quite cut it here...
+    --        See also <https://www.mobileread.com/forums/showthread.php?t=298302&page=5>
+    -- NOTE: It'd take some effort to actually start KOReader while in a LANDSCAPE orientation,
+    --       since they're only exposed inside the stock reader, and not the Home/KUAL Booklets.
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc and lipc then
+        local lipc_handle = lipc.init("com.github.koreader.screen")
+        if lipc_handle then
+            local orientation_code = lipc_handle:get_string_property(
+                "com.lab126.winmgr", "accelerometer")
+            local rotation_mode = 0
+            if orientation_code then
+                if orientation_code == "U" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT
+                elseif orientation_code == "R" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE
+                elseif orientation_code == "D" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT_ROTATED
+                elseif orientation_code == "L" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+                end
+            end
+
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+                self.screen.cur_rotation_mode = rotation_mode
+            end
+
+            lipc_handle:close()
+        end
+    end
+
+    Kindle.init(self)
+
+    self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
+
+    self.input.open(self.touch_dev)
+    self.input.open("/dev/input/by-path/platform-gpio-keys-event")
+
+    -- Get accelerometer device by looking for EV=d
+    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]\\{1,2\\}'", "r")
+    if std_out then
+        local rotation_dev = std_out:read("*line")
+        std_out:close()
+        if rotation_dev then
+            self.input.open("/dev/input/"..rotation_dev)
+        end
+    end
+
+    self.input.open("fake_events")
+end
 
 function KindleBasic2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
