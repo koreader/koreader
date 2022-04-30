@@ -53,8 +53,8 @@ function AutoSuspend:_enabledShutdown()
 end
 
 function AutoSuspend:_schedule(shutdown_only)
-    if not self:_enabled() and Device:canPowerOff() and not self:_enabledShutdown() then
-        logger.dbg("AutoSuspend:_schedule is disabled")
+    if not self:_enabled() and not self:_enabledShutdown() then
+        logger.dbg("AutoSuspend: suspend/shutdown timer is disabled")
         return
     end
 
