@@ -179,11 +179,11 @@ function DateTimeWidget:createLayout()
                 text = text,
                 callback = function()
                     if self.default_callback then
-                        self.default_callback(self.year, self.is_date and self.month_default or self.hour_default,
+                        self.default_callback(self.year_default, self.is_date and self.month_default or self.hour_default,
                             self.is_date and self.day_default or self.min_default)
                     end
                     if self.keep_shown_on_apply then
-                        self:update(self.year, self.is_date and self.month_default or self.hour_default,
+                        self:update(self.year_default, self.is_date and self.month_default or self.hour_default,
                             self.is_date and self.day_default or self.min_default)
                     else
                         self:onClose()
