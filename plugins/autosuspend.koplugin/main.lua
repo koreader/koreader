@@ -564,8 +564,6 @@ function AutoSuspend:AllowStandbyHandler()
     logger.dbg("AutoSuspend: onAllowStandby")
     -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
     -- see its own AllowStandby handler for more details.
-    logger.dbg("self:", tostring(self))
-    logger.dbg("self.leave_standby_task:", tostring(self.leave_standby_task))
 
     local wake_in
     -- Wake up before the next scheduled function executes (e.g. footer update, suspend ...)
