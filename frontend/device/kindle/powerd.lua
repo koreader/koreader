@@ -148,6 +148,15 @@ function KindlePowerD:isChargingHW()
     return is_charging == 1
 end
 
+function KindlePowerD:isChargedHW()
+    -- Older kernels don't necessarily have this...
+    if self.batt_status_file then
+        return self:read_str_file(self.batt_status_file) == "Full"
+    end
+
+    return false
+end
+
 function KindlePowerD:_readFLIntensity()
     return self:read_int_file(self.fl_intensity_file)
 end
