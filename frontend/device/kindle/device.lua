@@ -769,7 +769,6 @@ function KindleOasis2:init()
         }
     }
 
-
     --- @fixme When starting KOReader with the device upside down ("D"), touch input is registered wrong
     --        (i.e., probably upside down).
     --        If it's started upright ("U"), everything's okay, and turning it upside down after that works just fine.
