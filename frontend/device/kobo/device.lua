@@ -429,9 +429,9 @@ local KoboIo = Kobo:new{
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
-            self:toggleChargingLED(self.powerd:isAuxCharging())
+            self:toggleChargingLED(self.powerd:isAuxCharging() and not self.powerd:isAuxCharged())
         else
-            self:toggleChargingLED(self.powerd:isCharging())
+            self:toggleChargingLED(self.powerd:isCharging() and not self.powerd:isCharged())
         end
     end
 end
