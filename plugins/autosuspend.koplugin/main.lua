@@ -515,7 +515,9 @@ function AutoSuspend:addToMainMenu(menu_items)
 
 Standby can not be entered if Wi-Fi is on.
 
-Upon user input, the device needs a certain amount of time to wake up. Generally, the newer the device, the less noticeable this delay will be, but it can be fairly aggravating on slower devices.]])
+Upon user input, the device needs a certain amount of time to wake up. Generally, the newer the device, the less noticeable this delay will be, but it can be fairly aggravating on slower devices.
+
+This is experimental on most devices, except those running on a sunxi SoC (Kobo Elipsa & Sage), so much so that it might in fact hang some of the more broken kernels out there (Kobo Libra 2).]])
 
         menu_items.autostandby = {
             sorting_hint = "device",
@@ -553,6 +555,10 @@ function AutoSuspend:onAllowStandby()
     logger.dbg("AutoSuspend: onAllowStandby")
     -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
     -- see its own AllowStandby handler for more details.
+    -- NOTE: As such, this *will* trip regardless of whether we're actually enabled,
+    --       as we're not the only thing calling UIManager:allowStandby!
+    logger.dbg("self:", tostring(self))
+    logger.dbg("self.leave_standby_task:", tostring(self.leave_standby_task))
 
     local wake_in
     -- Wake up before the next scheduled function executes (e.g. footer update, suspend ...)
