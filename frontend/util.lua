@@ -228,7 +228,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, comp
             time_string = time_string:gsub("^00" .. _("h"), "") -- delete leading "00h"
             time_string = time_string:gsub("^00" .. _("'"), "") -- delete leading "00m"
             if time_string:find("^0%d") then
-                time_string = time_string:gsub("^0[^%d]", "") -- delete leading "0"
+                time_string = time_string:gsub("^0", "") -- delete leading "0"
             end
             return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
         end
