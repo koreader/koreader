@@ -191,13 +191,13 @@ local footerTextGeneratorMap = {
                 batt_lvl = main_batt_lvl + aux_batt_lvl
                 -- But average 'em to compute the icon...
                 if symbol_type == "icons" or symbol_type == "compact_items" then
-                    prefix = powerd:getBatterySymbol(is_charging, batt_lvl / 2)
+                    prefix = powerd:getBatterySymbol(powerd:isAuxCharged(), is_charging, batt_lvl / 2)
                 end
             else
                 is_charging = powerd:isCharging()
                 batt_lvl = main_batt_lvl
                 if symbol_type == "icons" or symbol_type == "compact_items" then
-                   prefix = powerd:getBatterySymbol(is_charging, main_batt_lvl)
+                   prefix = powerd:getBatterySymbol(powerd:isCharged(), is_charging, main_batt_lvl)
                 end
             end
         end
