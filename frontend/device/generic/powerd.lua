@@ -54,10 +54,12 @@ function BasePowerD:getAuxCapacityHW() return 0 end
 function BasePowerD:isAuxBatteryConnectedHW() return false end
 function BasePowerD:getDismissBatteryStatus() return self.battery_warning end
 function BasePowerD:setDismissBatteryStatus(status) self.battery_warning = status end
+--- @note: Should ideally return true as long as the device is plugged in, even once the battery is full...
 function BasePowerD:isChargingHW() return false end
-function BasePowerD:isChargedHW() return self:getCapacity() == 100 end
+--- @note: ...at which point this should start returning true (i.e., plugged in & fully charged).
+function BasePowerD:isChargedHW() return false end
 function BasePowerD:isAuxChargingHW() return false end
-function BasePowerD:isAuxChargedHW() return self:getAuxCapacity() == 100 end
+function BasePowerD:isAuxChargedHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
 function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
