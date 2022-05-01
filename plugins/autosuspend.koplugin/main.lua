@@ -158,6 +158,9 @@ function AutoSuspend:init()
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
     end
 
+    -- Make sure we only have an AllowStandby handler when we actually want one...
+    self:toggleStandbyHandler(self:_enabledStandby())
+
     self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
     self:_start()
     self:_start_standby()
@@ -400,6 +403,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             G_reader_settings:saveSetting(setting, self[setting])
             if is_standby then
                 self:_unschedule_standby()
+                self:toggleStandbyHandler(self:_enabledStandby())
                 self:_start_standby()
             else
                 self:_unschedule()
@@ -441,6 +445,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             G_reader_settings:saveSetting(setting, -1)
             if is_standby then
                 self:_unschedule_standby()
+                self:toggleStandbyHandler(false)
             else
                 self:_unschedule()
             end
@@ -511,6 +516,7 @@ function AutoSuspend:addToMainMenu(menu_items)
         }
     end
     if Device:canStandby() then
+        --- @fixme: Reword the final warning when we have more data on the hangs on some Kobo kernels (e.g., #9038).
         local standby_help = _([[Standby puts the device into a power-saving state in which the screen is on and user input can be performed.
 
 Standby can not be entered if Wi-Fi is on.
@@ -551,12 +557,13 @@ end
 
 -- KOReader is merely waiting for user input right now.
 -- UI signals us that standby is allowed at this very moment because nothing else goes on in the background.
-function AutoSuspend:onAllowStandby()
+-- NOTE: To make sure this will not even run when autostandby is disabled,
+--       this is only aliased as `onAllowStandby` when necessary.
+--       (Because the Event is generated regardless of us, as many things can call UIManager:allowStandby).
+function AutoSuspend:AllowStandbyHandler()
     logger.dbg("AutoSuspend: onAllowStandby")
     -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
     -- see its own AllowStandby handler for more details.
-    -- NOTE: As such, this *will* trip regardless of whether we're actually enabled,
-    --       as we're not the only thing calling UIManager:allowStandby!
     logger.dbg("self:", tostring(self))
     logger.dbg("self.leave_standby_task:", tostring(self.leave_standby_task))
 
@@ -586,6 +593,14 @@ function AutoSuspend:onAllowStandby()
         -- (This ensures we'll use an up to date last_action_tv, and that it only ever gets updated from *user* input).
         -- NOTE: UIManager consumes scheduled tasks before input events, which is why we can't use nextTick.
         UIManager:tickAfterNext(self.leave_standby_task)
+    end
+end
+
+function AutoSuspend:toggleStandbyHandler(toggle)
+    if toggle then
+        self.onAllowStandby = self.AllowStandbyHandler
+    else
+        self.onAllowStandby = nil
     end
 end
 
