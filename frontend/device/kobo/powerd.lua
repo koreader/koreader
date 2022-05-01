@@ -114,7 +114,7 @@ function KoboPowerD:init()
         end
 
         self.isAuxChargingHW = function(this)
-            -- 0 when not charging
+            -- 0 when discharging
             -- 3 when full
             -- 2 when charging via DCP
             return this:read_int_file(this.aux_batt_charging_file) ~= 0
