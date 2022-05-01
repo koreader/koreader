@@ -273,7 +273,7 @@ function KoboPowerD:getCapacityHW()
     return self:read_int_file(self.batt_capacity_file)
 end
 
--- NOTE: Match the behavior of the NXP ntx_io  _Is_USB_plugged ioctl!
+-- NOTE: Match the behavior of the NXP ntx_io _Is_USB_plugged ioctl!
 --       (Otherwise, a device that is fully charged, but still plugged in will no longer be flagged as charging).
 function KoboPowerD:isChargingHW()
     return self:read_str_file(self.is_charging_file) ~= "Discharging"
