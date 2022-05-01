@@ -43,17 +43,22 @@ local function checkStandby()
 end
 
 local function writeToSys(val, file)
-    local f = io.open(file, "we")
-    if not f then
-        logger.err("Cannot open:", file)
+    -- NOTE: We do things by hand via ffi, because io.write uses fwrite,
+    --       which isn't a great fit for procfs/sysfs (e.g., we lose failure cases like EBUSY,
+    --       as it only reports failures to write to the *stream*, not to the disk/file!).
+    local fd = C.open(file, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
+    if fd == -1 then
+        logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
         return
     end
-    local re, err_msg, err_code = f:write(val, "\n")
-    if not re then
-        logger.err("Error writing value to file:", val, file, err_msg, err_code)
+    local bytes = #val + 1 -- + LF
+    local nw = C.write(fd, val .. "\n", bytes)
+    if nw == -1 then
+        logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
     end
-    f:close()
-    return re
+    C.close(fd)
+    -- NOTE: Allows the caller to possibly handle short writes (not that these should ever happen here).
+    return nw == bytes
 end
 
 local Kobo = Generic:new{
@@ -424,9 +429,9 @@ local KoboIo = Kobo:new{
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
-            self:toggleChargingLED(self.powerd:isAuxCharging())
+            self:toggleChargingLED(self.powerd:isAuxCharging() and not self.powerd:isAuxCharged())
         else
-            self:toggleChargingLED(self.powerd:isCharging())
+            self:toggleChargingLED(self.powerd:isCharging() and not self.powerd:isCharged())
         end
     end
 end
@@ -618,7 +623,7 @@ function Kobo:setDateTime(year, month, day, hour, min, sec)
         command = string.format("date -s '%d:%d'",hour, min)
     end
     if os.execute(command) == 0 then
-        os.execute('hwclock -u -w')
+        os.execute("hwclock -u -w")
         return true
     else
         return false
@@ -727,7 +732,7 @@ function Kobo:initEventAdjustHooks()
     end
 end
 
-function Kobo:getCodeName()
+local function getCodeName()
     -- Try to get it from the env first
     local codename = os.getenv("PRODUCT")
     -- If that fails, run the script ourselves
@@ -776,23 +781,21 @@ end
 
 function Kobo:checkUnexpectedWakeup()
     local UIManager = require("ui/uimanager")
-    -- just in case other events like SleepCoverClosed also scheduled a suspend
-    UIManager:unschedule(Kobo.suspend)
+    -- Just in case another event like SleepCoverClosed also scheduled a suspend
+    UIManager:unschedule(self.suspend)
 
-    -- Do an initial validation to discriminate unscheduled wakeups happening *outside* of the alarm proximity window.
-    if WakeupMgr:isWakeupAlarmScheduled() and WakeupMgr:validateWakeupAlarmByProximity() then
-        logger.info("Kobo suspend: scheduled wakeup.")
-        local res = WakeupMgr:wakeupAction()
-        if not res then
-            logger.err("Kobo suspend: wakeup action failed.")
-        end
-        logger.info("Kobo suspend: putting device back to sleep.")
-        -- Most wakeup actions are linear, but we need some leeway for the
-        -- poweroff action to send out close events to all requisite widgets.
-        UIManager:scheduleIn(30, Kobo.suspend, self)
+    -- The proximity window is rather large, because we're scheduled to run 15 seconds after resuming,
+    -- so we're already guaranteed to be at least 15s away from the alarm ;).
+    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(30) then
+        -- Assume we want to go back to sleep after running the scheduled action
+        -- (Kobo:resume will unschedule this on an user-triggered resume).
+        logger.info("Kobo suspend: scheduled wakeup; the device will go back to sleep in 30s.")
+        -- We need significant leeway for the poweroff action to send out close events to all requisite widgets,
+        -- since we don't actually want to suspend behind its back ;).
+        UIManager:scheduleIn(30, self.suspend, self)
     else
-        logger.dbg("Kobo suspend: checking unexpected wakeup:",
-                   self.unexpected_wakeup_count)
+        -- We've hit an early resume, assume this is unexpected (as we only run if Kobo:resume hasn't already).
+        logger.dbg("Kobo suspend: checking unexpected wakeup number", self.unexpected_wakeup_count)
         if self.unexpected_wakeup_count == 0 or self.unexpected_wakeup_count > 20 then
             -- Don't put device back to sleep under the following two cases:
             --   1. a resume event triggered Kobo:resume() function
@@ -803,9 +806,8 @@ function Kobo:checkUnexpectedWakeup()
             return
         end
 
-        logger.err("Kobo suspend: putting device back to sleep. Unexpected wakeups:",
-                   self.unexpected_wakeup_count)
-        Kobo:suspend()
+        logger.err("Kobo suspend: putting device back to sleep after", self.unexpected_wakeup_count, "unexpected wakeups.")
+        self:suspend()
     end
 end
 
@@ -814,26 +816,43 @@ function Kobo:getUnexpectedWakeup() return self.unexpected_wakeup_count end
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
-    -- just for wake up, dummy function
-    local function dummy() end
+    -- We don't really have anything to schedule, we just need an alarm out of WakeupMgr ;).
+    local function standby_alarm()
+    end
 
     if max_duration then
-        self.wakeup_mgr:addTask(max_duration, dummy)
+        self.wakeup_mgr:addTask(max_duration, standby_alarm)
     end
 
     local TimeVal = require("ui/timeval")
+    logger.info("Kobo standby: asking to enter standby . . .")
     local standby_time_tv = TimeVal:boottime_or_realtime_coarse()
 
-    logger.info("Kobo suspend: asking to enter standby . . .")
     local ret = writeToSys("standby", "/sys/power/state")
 
     self.last_standby_tv = TimeVal:boottime_or_realtime_coarse() - standby_time_tv
     self.total_standby_tv = self.total_standby_tv + self.last_standby_tv
 
-    logger.info("Kobo suspend: zZz zZz zZz zZz? Write syscall returned: ", ret)
+    if ret then
+        logger.info("Kobo standby: zZz zZz zZz zZz... And woke up!")
+    else
+        logger.warn("Kobo standby: the kernel refused to enter standby!")
+    end
 
     if max_duration then
-        self.wakeup_mgr:removeTask(nil, nil, dummy)
+        -- NOTE: We don't actually care about discriminating exactly *why* we woke up,
+        --       and our scheduled wakeup action is a NOP anyway,
+        --       so we can just drop the task instead of doing things the right way like suspend ;).
+        --       This saves us some pointless RTC shenanigans, so, everybody wins.
+        --[[
+        -- There's no scheduling shenanigans like in suspend, so the proximity window can be much tighter...
+        if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(5) then
+            -- We tripped the standby alarm, UIManager will be able to run whatever was actually scheduled,
+            -- and AutoSuspend will handle going back to standby if necessary.
+            logger.dbg("Kobo standby: tripped rtc wake alarm")
+        end
+        --]]
+        self.wakeup_mgr:removeTasks(nil, standby_alarm)
     end
 end
 
@@ -841,7 +860,6 @@ function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.checkUnexpectedWakeup)
-    local f, re, err_msg, err_code
     -- NOTE: Sleep as little as possible here, sleeping has a tendency to make
     -- everything mysteriously hang...
 
@@ -854,6 +872,7 @@ function Kobo:suspend()
     -- So, unless that changes, unconditionally disable it.
 
     --[[
+    local f, re, err_msg, err_code
     local has_wakeup_count = false
     f = io.open("/sys/power/wakeup_count", "re")
     if f ~= nil then
@@ -873,10 +892,14 @@ function Kobo:suspend()
     -]]
 
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
-    -- kernel to suspend/resume various subsystems
-    -- c.f., state_extended_store @ kernel/power/main.c
+    --       kernel to suspend/resume various subsystems
+    --       c.f., state_extended_store @ kernel/power/main.c
     local ret = writeToSys("1", "/sys/power/state-extended")
-    logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", ret)
+    if ret then
+        logger.info("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
+    else
+        logger.warn("Kobo suspend: the kernel refused to flag subsystems for suspend!")
+    end
 
     util.sleep(2)
     logger.info("Kobo suspend: waited for 2s because of reasons...")
@@ -902,90 +925,82 @@ function Kobo:suspend()
     end
     --]]
 
-    logger.info("Kobo suspend: asking for a suspend to RAM . . .")
-    f = io.open("/sys/power/state", "we")
-    if not f then
-        -- Reset state-extended back to 0 since we are giving up.
-        local ext_fd = io.open("/sys/power/state-extended", "we")
-        if not ext_fd then
-            logger.err("cannot open /sys/power/state-extended for writing!")
-        else
-            ext_fd:write("0\n")
-            ext_fd:close()
-        end
-        return false
-    end
-
     local TimeVal = require("ui/timeval")
+    logger.info("Kobo suspend: asking for a suspend to RAM . . .")
     local suspend_time_tv = TimeVal:boottime_or_realtime_coarse()
 
-    re, err_msg, err_code = f:write("mem\n")
-    if not re then
-        logger.err("write error: ", err_msg, err_code)
-    end
-    f:close()
+    ret = writeToSys("mem", "/sys/power/state")
 
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
-    -- execution should only resume on wakeup...
-
+    --       execution should only resume on wakeup...
     self.last_suspend_tv = TimeVal:boottime_or_realtime_coarse() - suspend_time_tv
     self.total_suspend_tv = self.total_suspend_tv + self.last_suspend_tv
 
-    logger.info("Kobo suspend: ZzZ ZzZ ZzZ? Write syscall returned: ", re)
-    -- NOTE: Ideally, we'd need a way to warn the user that suspending
-    -- gloriously failed at this point...
-    -- We can safely assume that just from a non-zero return code, without
-    -- looking at the detailed stderr message
-    -- (most of the failures we'll see are -EBUSY anyway)
-    -- For reference, when that happens to nickel, it appears to keep retrying
-    -- to wakeup & sleep ad nauseam,
-    -- which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
-    -- cf. nickel_suspend_strace.txt for more details.
+    if ret then
+        logger.info("Kobo suspend: ZzZ ZzZ ZzZ... And woke up!")
+    else
+        logger.warn("Kobo suspend: the kernel refused to enter suspend!")
+        -- Reset state-extended back to 0 since we are giving up.
+        writeToSys("0", "/sys/power/state-extended")
+    end
 
-    logger.info("Kobo suspend: woke up!")
+    -- NOTE: Ideally, we'd need a way to warn the user that suspending
+    --       gloriously failed at this point...
+    --       We can safely assume that just from a non-zero return code, without
+    --       looking at the detailed stderr message
+    --       (most of the failures we'll see are -EBUSY anyway)
+    --       For reference, when that happens to nickel, it appears to keep retrying
+    --       to wakeup & sleep ad nauseam,
+    --       which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
+    --       cf. nickel_suspend_strace.txt for more details.
 
     --[[
-
     if has_wakeup_count then
         logger.info("wakeup count: $(cat /sys/power/wakeup_count)")
     end
 
     -- Print tke kernel log since our attempt to sleep...
     --dmesg -c
-
     --]]
 
     -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep
-    -- things tidy and easier to follow
+    --       things tidy and easier to follow
 
     -- Kobo:resume() will reset unexpected_wakeup_count = 0 to signal an
     -- expected wakeup, which gets checked in checkUnexpectedWakeup().
     self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
-    -- assuming Kobo:resume() will be called in 15 seconds
+    -- We're assuming Kobo:resume() will be called in the next 15 seconds in ordrer to cancel that check.
     logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
     UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
 end
 
 function Kobo:resume()
     logger.info("Kobo resume: clean up after wakeup")
-    -- reset unexpected_wakeup_count ASAP
+    -- Reset unexpected_wakeup_count ASAP
     self.unexpected_wakeup_count = 0
-    require("ui/uimanager"):unschedule(self.checkUnexpectedWakeup)
+    -- Unschedule the checkUnexpectedWakeup shenanigans.
+    local UIManager = require("ui/uimanager")
+    UIManager:unschedule(self.checkUnexpectedWakeup)
+    UIManager:unschedule(self.suspend)
 
     -- Now that we're up, unflag subsystems for suspend...
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
-    -- kernel to suspend/resume various subsystems
-    -- cf. kernel/power/main.c @ L#207
-
+    --       kernel to suspend/resume various subsystems
+    --       cf. kernel/power/main.c @ L#207
+    --       Among other things, this sets up the wakeup pins (e.g., resume on input).
     local ret = writeToSys("0", "/sys/power/state-extended")
-    logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", ret)
+    if ret then
+        logger.info("Kobo resume: successfully asked the kernel to resume subsystems")
+    else
+        logger.warn("Kobo resume: the kernel refused to flag subsystems for resume!")
+    end
 
     -- HACK: wait a bit (0.1 sec) for the kernel to catch up
     util.usleep(100000)
 
     if self.hasIRGrid then
         -- cf. #1862, I can reliably break IR touch input on resume...
-        -- cf. also #1943 for the rationale behind applying this workaorund in every case...
+        -- cf. also #1943 for the rationale behind applying this workaround in every case...
         writeToSys("a", "/sys/devices/virtual/input/input1/neocmd")
     end
 
@@ -1000,7 +1015,7 @@ end
 
 function Kobo:powerOff()
     -- Much like Nickel itself, disable the RTC alarm before powering down.
-    WakeupMgr:unsetWakeupAlarm()
+    self.wakeup_mgr:unsetWakeupAlarm()
 
     -- Then shut down without init's help
     os.execute("poweroff -f")
@@ -1141,7 +1156,7 @@ end
 
 -------------- device probe ------------
 
-local codename = Kobo:getCodeName()
+local codename = getCodeName()
 local product_id = getProductId()
 
 if codename == "dahlia" then

@@ -53,8 +53,8 @@ function AutoSuspend:_enabledShutdown()
 end
 
 function AutoSuspend:_schedule(shutdown_only)
-    if not self:_enabled() and Device:canPowerOff() and not self:_enabledShutdown() then
-        logger.dbg("AutoSuspend:_schedule is disabled")
+    if not self:_enabled() and not self:_enabledShutdown() then
+        logger.dbg("AutoSuspend: suspend/shutdown timer is disabled")
         return
     end
 
@@ -126,15 +126,14 @@ end
 
 function AutoSuspend:init()
     logger.dbg("AutoSuspend: init")
-    if Device:isPocketBook() and not Device:canSuspend() then return end
-
     self.autoshutdown_timeout_seconds = G_reader_settings:readSetting("autoshutdown_timeout_seconds",
         default_autoshutdown_timeout_seconds)
     self.auto_suspend_timeout_seconds = G_reader_settings:readSetting("auto_suspend_timeout_seconds",
         default_auto_suspend_timeout_seconds)
-
     -- Disabled, until the user opts in.
     self.auto_standby_timeout_seconds = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1)
+
+    if Device:isPocketBook() and not Device:canSuspend() then return end
 
     UIManager.event_hook:registerWidget("InputEvent", self)
     -- We need an instance-specific function reference to schedule, because in some rare cases,
@@ -159,6 +158,9 @@ function AutoSuspend:init()
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
     end
 
+    -- Make sure we only have an AllowStandby handler when we actually want one...
+    self:toggleStandbyHandler(self:_enabledStandby())
+
     self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
     self:_start()
     self:_start_standby()
@@ -168,7 +170,7 @@ function AutoSuspend:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
--- For event_hook automagic deregistration purposes
+-- NOTE: event_hook takes care of overloading this to unregister the hook, too.
 function AutoSuspend:onCloseWidget()
     logger.dbg("AutoSuspend: onCloseWidget")
     if Device:isPocketBook() and not Device:canSuspend() then return end
@@ -205,13 +207,13 @@ end
 function AutoSuspend:_schedule_standby()
     -- Start the long list of conditions in which we do *NOT* want to go into standby ;).
     if not Device:canStandby() then
-        -- NOTE: This partly duplicates what `_enabledStandby` does,
-        --       but it's here to avoid logging noise on devices that can't even standby ;).
         return
     end
 
     -- Don't even schedule standby if we haven't set a proper timeout yet.
-    if not self:_enabledStandby() then
+    -- NOTE: We've essentially split the _enabledStandby check in two branches,
+    --       simply to avoid logging noise on devices that can't even standby ;).
+    if self.auto_standby_timeout_seconds <= 0 then
         logger.dbg("AutoSuspend: No timeout set, no standby")
         return
     end
@@ -274,13 +276,6 @@ function AutoSuspend:allowStandby()
     -- Tell UIManager that we now allow standby.
     UIManager:allowStandby()
 
-    -- This is necessary for wakeup from standby, as the deadline for receiving input events
-    -- is calculated from the time to the next scheduled function.
-    -- Make sure this function comes soon, as the time for going to standby after a scheduled wakeup
-    -- is prolonged by the given time. Any time between 0.500 and 0.001 seconds should do.
-    -- Let's call it deadline_guard.
-    UIManager:scheduleIn(0.100, function() end)
-
     -- We've just run our course.
     self.is_standby_scheduled = false
 end
@@ -319,7 +314,7 @@ function AutoSuspend:onResume()
     self.going_to_suspend = false
 
     if self:_enabledShutdown() and Device.wakeup_mgr then
-        Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
+        Device.wakeup_mgr:removeTasks(nil, UIManager.poweroff_action)
     end
     -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
     self:_unschedule()
@@ -408,6 +403,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             G_reader_settings:saveSetting(setting, self[setting])
             if is_standby then
                 self:_unschedule_standby()
+                self:toggleStandbyHandler(self:_enabledStandby())
                 self:_start_standby()
             else
                 self:_unschedule()
@@ -449,6 +445,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             G_reader_settings:saveSetting(setting, -1)
             if is_standby then
                 self:_unschedule_standby()
+                self:toggleStandbyHandler(false)
             else
                 self:_unschedule()
             end
@@ -519,11 +516,14 @@ function AutoSuspend:addToMainMenu(menu_items)
         }
     end
     if Device:canStandby() then
+        --- @fixme: Reword the final warning when we have more data on the hangs on some Kobo kernels (e.g., #9038).
         local standby_help = _([[Standby puts the device into a power-saving state in which the screen is on and user input can be performed.
 
 Standby can not be entered if Wi-Fi is on.
 
-Upon user input, the device needs a certain amount of time to wake up. Generally, the newer the device, the less noticeable this delay will be, but it can be fairly aggravating on slower devices.]])
+Upon user input, the device needs a certain amount of time to wake up. Generally, the newer the device, the less noticeable this delay will be, but it can be fairly aggravating on slower devices.
+
+This is experimental on most devices, except those running on a sunxi SoC (Kobo Elipsa & Sage), so much so that it might in fact hang some of the more broken kernels out there (Kobo Libra 2).]])
 
         menu_items.autostandby = {
             sorting_hint = "device",
@@ -557,19 +557,23 @@ end
 
 -- KOReader is merely waiting for user input right now.
 -- UI signals us that standby is allowed at this very moment because nothing else goes on in the background.
-function AutoSuspend:onAllowStandby()
+-- NOTE: To make sure this will not even run when autostandby is disabled,
+--       this is only aliased as `onAllowStandby` when necessary.
+--       (Because the Event is generated regardless of us, as many things can call UIManager:allowStandby).
+function AutoSuspend:AllowStandbyHandler()
     logger.dbg("AutoSuspend: onAllowStandby")
     -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
     -- see its own AllowStandby handler for more details.
 
-    local wake_in = math.huge
-    -- The next scheduled function should be our deadline_guard (c.f., `AutoSuspend:allowStandby`).
-    -- Wake up before the second next scheduled function executes (e.g. footer update, suspend ...)
-    local scheduler_times = UIManager:getNextTaskTimes(2)
-    if #scheduler_times == 2 then
+    local wake_in
+    -- Wake up before the next scheduled function executes (e.g. footer update, suspend ...)
+    local next_task_time = UIManager:getNextTaskTime()
+    if next_task_time then
         -- Wake up slightly after the formerly scheduled event,
         -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
-        wake_in = math.floor(scheduler_times[2]:tonumber()) + 1
+        wake_in = math.floor(next_task_time:tonumber()) + 1
+    else
+        wake_in = math.huge
     end
 
     if wake_in >= 3 then -- don't go into standby, if scheduled wakeup is in less than 3 secs
@@ -585,9 +589,16 @@ function AutoSuspend:onAllowStandby()
         -- to make sure UIManager will consume the input events that woke us up first
         -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
         -- (This ensures we'll use an up to date last_action_tv, and that it only ever gets updated from *user* input).
-        -- NOTE: UIManager consumes scheduled tasks before input events, so make sure we delay by a significant amount,
-        --       especially given that this delay will likely be used as the next input polling loop timeout...
-        UIManager:scheduleIn(1, self.leave_standby_task)
+        -- NOTE: UIManager consumes scheduled tasks before input events, which is why we can't use nextTick.
+        UIManager:tickAfterNext(self.leave_standby_task)
+    end
+end
+
+function AutoSuspend:toggleStandbyHandler(toggle)
+    if toggle then
+        self.onAllowStandby = self.AllowStandbyHandler
+    else
+        self.onAllowStandby = nil
     end
 end
 

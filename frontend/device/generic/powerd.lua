@@ -54,8 +54,12 @@ function BasePowerD:getAuxCapacityHW() return 0 end
 function BasePowerD:isAuxBatteryConnectedHW() return false end
 function BasePowerD:getDismissBatteryStatus() return self.battery_warning end
 function BasePowerD:setDismissBatteryStatus(status) self.battery_warning = status end
+--- @note: Should ideally return true as long as the device is plugged in, even once the battery is full...
 function BasePowerD:isChargingHW() return false end
+--- @note: ...at which point this should start returning true (i.e., plugged in & fully charged).
+function BasePowerD:isChargedHW() return false end
 function BasePowerD:isAuxChargingHW() return false end
+function BasePowerD:isAuxChargedHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
 function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
@@ -231,6 +235,10 @@ function BasePowerD:isCharging()
     return self:isChargingHW()
 end
 
+function BasePowerD:isCharged()
+    return self:isChargedHW()
+end
+
 function BasePowerD:getAuxCapacity()
     local now_btv
 
@@ -261,6 +269,10 @@ function BasePowerD:isAuxCharging()
     return self:isAuxChargingHW()
 end
 
+function BasePowerD:isAuxCharged()
+    return self:isAuxChargedHW()
+end
+
 function BasePowerD:isAuxBatteryConnected()
     return self:isAuxBatteryConnectedHW()
 end
@@ -274,8 +286,10 @@ function BasePowerD:stateChanged()
 end
 
 -- Silly helper to avoid code duplication ;).
-function BasePowerD:getBatterySymbol(is_charging, capacity)
-    if is_charging then
+function BasePowerD:getBatterySymbol(is_charged, is_charging, capacity)
+    if is_charged then
+        return ""
+    elseif is_charging then
         return ""
     else
         if capacity >= 100 then

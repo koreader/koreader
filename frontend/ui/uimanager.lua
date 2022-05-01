@@ -123,20 +123,12 @@ function UIManager:init()
         -- suspend. So let's unschedule it when suspending, and restart it after
         -- resume. Done via the plugin's onSuspend/onResume handlers.
         self.event_handlers["Suspend"] = function()
-            -- Ignore the accelerometer (if that's not already the case) while we're alseep
-            if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
-                Device:toggleGSensor(false)
-            end
             self:_beforeSuspend()
             Device:onPowerEvent("Suspend")
         end
         self.event_handlers["Resume"] = function()
             Device:onPowerEvent("Resume")
             self:_afterResume()
-            -- Stop ignoring the accelerometer (unless requested) when we wakeup
-            if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
-                Device:toggleGSensor(true)
-            end
         end
         self.event_handlers["PowerPress"] = function()
             -- Always schedule power off.
@@ -1179,13 +1171,23 @@ function UIManager:broadcastEvent(event)
     end
 end
 
+--[[
 function UIManager:getNextTaskTimes(count)
     count = count or 1
     local times = {}
     for i = 1, math.min(count, #self._task_queue) do
-        times[i] = UIManager._task_queue[i].time - TimeVal:now()
+        times[i] = self._task_queue[i].time - TimeVal:now()
     end
     return times
+end
+--]]
+
+function UIManager:getNextTaskTime()
+    if #self._task_queue > 0 then
+        return self._task_queue[1].time - TimeVal:now()
+    else
+        return nil
+    end
 end
 
 function UIManager:_checkTasks()
@@ -1771,6 +1773,9 @@ function UIManager:_beforeSuspend()
     self:flushSettings()
     self:broadcastEvent(Event:new("Suspend"))
 
+    -- Block input events unrelated to power management
+    Input:inhibitInput(true)
+
     -- Disable key repeat to avoid useless chatter (especially where Sleep Covers are concerned...)
     Device:disableKeyRepeat()
 
@@ -1782,6 +1787,9 @@ end
 function UIManager:_afterResume()
     -- Restore key repeat
     Device:restoreKeyRepeat()
+
+    -- Restore full input handling
+    Input:inhibitInput(false)
 
     self:broadcastEvent(Event:new("Resume"))
 end
