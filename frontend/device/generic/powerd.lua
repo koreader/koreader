@@ -288,7 +288,7 @@ end
 -- Silly helper to avoid code duplication ;).
 function BasePowerD:getBatterySymbol(is_charged, is_charging, capacity)
     if is_charged then
-        return ""
+        return ""
     elseif is_charging then
         return ""
     else
