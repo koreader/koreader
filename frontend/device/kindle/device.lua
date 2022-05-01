@@ -833,6 +833,7 @@ function KindleOasis3:init()
         warmth_intensity_file = "/sys/class/backlight/lm3697-bl0/brightness",
         batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
+        batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
 
     self.input = require("device/input"):new{
@@ -846,13 +847,7 @@ function KindleOasis3:init()
     }
 
 
-    --- @fixme When starting KOReader with the device upside down ("D"), touch input is registered wrong
-    --        (i.e., probably upside down).
-    --        If it's started upright ("U"), everything's okay, and turning it upside down after that works just fine.
-    --        See #2206 & #2209 for the original KOA implementation, which obviously doesn't quite cut it here...
-    --        See also <https://www.mobileread.com/forums/showthread.php?t=298302&page=5>
-    -- NOTE: It'd take some effort to actually start KOReader while in a LANDSCAPE orientation,
-    --       since they're only exposed inside the stock reader, and not the Home/KUAL Booklets.
+    --- @fixme The same quirks as on the Oasis 2 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
         local lipc_handle = lipc.init("com.github.koreader.screen")
