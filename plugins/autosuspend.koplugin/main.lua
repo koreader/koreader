@@ -212,7 +212,7 @@ function AutoSuspend:_schedule_standby()
 
     -- Don't even schedule standby if we haven't set a proper timeout yet.
     -- NOTE: We've essentially split the _enabledStandby check in two branches,
-    --       simplfy to avoid logging noise on devices that can't even standby ;).
+    --       simply to avoid logging noise on devices that can't even standby ;).
     if self.auto_standby_timeout_seconds <= 0 then
         logger.dbg("AutoSuspend: No timeout set, no standby")
         return
