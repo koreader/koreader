@@ -52,6 +52,10 @@ I'm not sure if the distinction between maintenance and sync makes sense
 but it's wifi on vs. off.
 --]]
 function WakeupMgr:addTask(seconds_from_now, callback)
+    -- Make sure we passed valid input, so that stuff doesn't break in fun and interesting ways (especially in removeTasks).
+    assert(type(seconds_from_now) == "number", "delay is not a number")
+    assert(type(callback) == "function", "callback is not a function")
+
     local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
     logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now)
 
