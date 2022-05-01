@@ -760,6 +760,7 @@ function KindleOasis2:init()
         fl_intensity_file = "/sys/class/backlight/max77796-bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
+        batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
 
     self.input = require("device/input"):new{
@@ -837,6 +838,7 @@ function KindleBasic2:init()
         device = self,
         batt_capacity_file = "/sys/class/power_supply/bd7181x_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd7181x_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd7181x_bat/status",
     }
 
     Kindle.init(self)
@@ -852,6 +854,7 @@ function KindlePaperWhite4:init()
         fl_intensity_file = "/sys/class/backlight/bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
     }
 
     Kindle.init(self)
@@ -877,6 +880,7 @@ function KindleBasic3:init()
         fl_intensity_file = "/sys/class/backlight/bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
     }
 
     Kindle.init(self)
@@ -894,6 +898,7 @@ function KindlePaperWhite5:init()
         warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
     }
 
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
