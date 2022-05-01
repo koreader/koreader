@@ -55,7 +55,9 @@ function BasePowerD:isAuxBatteryConnectedHW() return false end
 function BasePowerD:getDismissBatteryStatus() return self.battery_warning end
 function BasePowerD:setDismissBatteryStatus(status) self.battery_warning = status end
 function BasePowerD:isChargingHW() return false end
+function BasePowerD:isChargedHW() return self:getCapacity() == 100 end
 function BasePowerD:isAuxChargingHW() return false end
+function BasePowerD:isAuxChargedHW() return self:getAuxCapacity() == 100 end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
 function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
@@ -231,6 +233,10 @@ function BasePowerD:isCharging()
     return self:isChargingHW()
 end
 
+function BasePowerD:isCharged()
+    return self:isChargedHW()
+end
+
 function BasePowerD:getAuxCapacity()
     local now_btv
 
@@ -259,6 +265,10 @@ end
 
 function BasePowerD:isAuxCharging()
     return self:isAuxChargingHW()
+end
+
+function BasePowerD:isAuxCharged()
+    return self:isAuxChargedHW()
 end
 
 function BasePowerD:isAuxBatteryConnected()
