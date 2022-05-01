@@ -67,9 +67,7 @@ function AutoTurn:_start()
 
         local text
         if self.autoturn_distance == 1 then
-            local duration_format = G_reader_settings:readSetting("duration_format", "classic")
-            local time_string = util.secondsToClockDuration(duration_format, self.autoturn_sec)
-            time_string = time_string:gsub("^00.", "") -- remove leading zero hours if necessary
+            local time_string = util.secondsToClockDuration("modern", self.autoturn_sec, false, true, true, true)
             text = T(_("Autoturn is now active and will automatically turn the page every %1."),
                 time_string)
         else
@@ -144,9 +142,7 @@ function AutoTurn:addToMainMenu(menu_items)
     menu_items.autoturn = {
         sorting_hint = "navi",
         text_func = function()
-            local duration_format = G_reader_settings:readSetting("duration_format", "classic")
-            local time_string = util.secondsToClockDuration(duration_format, self.autoturn_sec)
-            time_string = time_string:gsub("^00.", "") -- remove leading zero hours if necessary
+            local time_string = util.secondsToClockDuration("modern", self.autoturn_sec, false, true, true, true)
             return self:_enabled() and T(_("Autoturn: %1"), time_string) or _("Autoturn")
         end,
         checked_func = function() return self:_enabled() end,
@@ -177,8 +173,8 @@ function AutoTurn:addToMainMenu(menu_items)
                     self.onLeaveStandby = nil
                 end,
                 ok_always_enabled = true,
-                callback = function(time)
-                    self.autoturn_sec = time.hour * 60 + time.min
+                callback = function(t)
+                    self.autoturn_sec = t.min * 30 + t.sec
                     G_reader_settings:saveSetting("autoturn_timeout_seconds", self.autoturn_sec)
                     self.enabled = true
                     G_reader_settings:makeTrue("autoturn_enabled")
