@@ -89,7 +89,6 @@ function ItemShortCutIcon:init()
     }
 end
 
-
 -- We may find a better algorithm, or just a set of
 -- nice looking combinations of 3 sizes to iterate thru
 -- The rendering of the TextBoxWidget we're doing below
@@ -340,7 +339,6 @@ function FakeCover:init()
         vgroup,
     }
 end
-
 
 -- Based on menu.lua's MenuItem
 local MosaicMenuItem = InputContainer:new{
@@ -843,7 +841,6 @@ function MosaicMenuItem:onHoldSelect(arg, ges)
     self.menu:onMenuHold(self.entry)
     return true
 end
-
 
 -- Simple holder of methods that will replace those
 -- in the real Menu class or instance

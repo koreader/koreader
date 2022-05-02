@@ -55,7 +55,7 @@ end
 --@return unix timestamp if str can be parsed; nil, error otherwise.
 function dateparser.parse(str, date_format)
 	local success, res, err
-	if date_format then 
+	if date_format then
 		if not formats[date_format] then return 'unknown date format: ' .. tostring(date_format) end
 		success, res = pcall(formats[date_format], str)
 	else
@@ -68,12 +68,12 @@ function dateparser.parse(str, date_format)
 end
 
 dateparser.register_format('W3CDTF', function(rest)
-	
+
 	local year, day_of_year, month, day, week
 	local hour, minute, second, second_fraction, offset_hours
-	
+
 	local alt_rest
-	
+
 	year,  rest = rest:match("^(%d%d%d%d)%-?(.*)$")
 
 	day_of_year, alt_rest = rest:match("^(%d%d%d)%-?(.*)$")
@@ -89,10 +89,10 @@ dateparser.register_format('W3CDTF', function(rest)
 		minute, rest = rest:match("^([0-6][0-9]):?(.*)$")
 		second, rest = rest:match("^([0-6][0-9])(.*)$")
 		second_fraction, alt_rest = rest:match("^%.(%d+)(.*)$")
-		if second_fraction then 
-			rest=alt_rest 
+		if second_fraction then
+			rest=alt_rest
 		end
-		if rest=="Z" then 
+		if rest=="Z" then
 			rest=""
 			offset_hours=0
 		else
@@ -104,7 +104,7 @@ dateparser.register_format('W3CDTF', function(rest)
 		end
 		if #rest>0 then return nil end
 	end
-	
+
 	year = tonumber(year)
 	local d = {
 		year = year and (year > 100 and year or (year < 50 and (year + 2000) or (year + 1900))),
@@ -123,29 +123,28 @@ dateparser.register_format('W3CDTF', function(rest)
 	end
 end)
 
-
 do
 	local tz_table = { --taken from http://www.timeanddate.com/library/abbreviations/timezones/
-		A = 1, 	B = 2, C = 3, D = 4,  E=5, F = 6,	G = 7,	H = 8,	I = 9,	
-		K = 10,	L = 11,	M = 12, N = -1,	O = -2,	P = -3, Q = -4,	R = -5,	
-		S = -6,	T = -7,	U = -8,	V = -9,	W = -10, X = -11, Y = -12, 
+		A = 1, 	B = 2, C = 3, D = 4,  E=5, F = 6,	G = 7,	H = 8,	I = 9,
+		K = 10,	L = 11,	M = 12, N = -1,	O = -2,	P = -3, Q = -4,	R = -5,
+		S = -6,	T = -7,	U = -8,	V = -9,	W = -10, X = -11, Y = -12,
 		Z = 0,
-		
-		EST = -5, EDT = -4, CST = -6, CDT = -5, 
-		MST = -7, MDT = -6, PST = -8, PDT = -7,	
+
+		EST = -5, EDT = -4, CST = -6, CDT = -5,
+		MST = -7, MDT = -6, PST = -8, PDT = -7,
 
 		GMT = 0, UT = 0, UTC = 0
 	}
-	
+
 	local month_val = {Jan=1, Feb=2, Mar=3, Apr=4, May=5, Jun=6, Jul=7, Aug=8, Sep=9, Oct=10, Nov=11, Dec=12}
-	
+
 	dateparser.register_format('RFC2822', function(rest)
 
 		local year, month, day, day_of_year, week_of_year, weekday
 		local hour, minute, second, second_fraction, offset_hours
-		
+
 		local alt_rest
-		
+
 		weekday, alt_rest = rest:match("^(%w%w%w),%s+(.*)$")
 		if weekday then rest=alt_rest end
 		day, rest=rest:match("^(%d%d?)%s+(.*)$")
@@ -165,28 +164,27 @@ do
 			offset_sign, offset_h, offset_m, rest = rest:match("^%s+([+-])(%d%d)(%d%d)%s*(.*)$")
 			offset_hours = tonumber(offset_sign .. offset_h) + (tonumber(offset_m) or 0)/60
 		end
-		
-		if #rest>0 or not (year and day and month and hour and minute) then 
-			return nil 
+
+		if #rest>0 or not (year and day and month and hour and minute) then
+			return nil
 		end
-		
+
 		year = tonumber(year)
 		local d = {
 			year = year and ((year > 100) and year or (year < 50 and (year + 2000) or (year + 1900))),
 			month = month,
 			day = tonumber(day),
-			
+
 			hour= tonumber(hour) or 0,
 			min = tonumber(minute) or 0,
 			sec = tonumber(second) or 0,
 			isdst  = false
-		} 
-		return unix_timestamp(d, offset_hours * 3600) 
+		}
+		return unix_timestamp(d, offset_hours * 3600)
 	end)
 end
 
 dateparser.register_format('RFC822', formats.RFC2822) --2822 supercedes 822, but is not a strict superset. For our intents and purposes though, it's perfectly good enough
 dateparser.register_format('RFC3339', formats.W3CDTF) --RFC3339 is a subset of W3CDTF
-
 
 return dateparser

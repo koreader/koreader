@@ -91,7 +91,6 @@ end
 function JoplinClient:findNotebookByTitle(title)
     local url_base =  "http://"..self.server_ip..":"..self.server_port.."/folders?".."token="..self.auth_token.."&".."query="..title.."&page="
 
-
     local url
     local page = 1
     local has_more
@@ -122,7 +121,6 @@ function JoplinClient:createNotebook(title, created_time)
 
     return response.id
 end
-
 
 -- If successful returns id of created note.
 function JoplinClient:createNote(title, note, parent_id, created_time)

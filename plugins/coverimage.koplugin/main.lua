@@ -31,7 +31,6 @@ local _ = require("gettext")
 
 -- todo: please check the default paths directly on the depending Device:getDefaultCoverPath()
 
-
 local function isPathAllowed(path)
     -- don't allow a path that interferes with frontent cache-framework; quick and dirty check
 
@@ -420,7 +419,6 @@ function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, de
 end
 
 -------------- menus and longer texts -----------
-
 
 local about_text = _([[
 This plugin saves a book cover to a file. That file can then be used as a screensaver on certain devices.

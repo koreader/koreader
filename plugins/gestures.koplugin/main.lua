@@ -391,7 +391,6 @@ function Gestures:multiswipeRecorder(touchmenu_instance)
     UIManager:show(multiswipe_recorder)
 end
 
-
 function Gestures:genCustomMultiswipeSubmenu()
     local submenu = {
         {

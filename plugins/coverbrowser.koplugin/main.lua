@@ -558,7 +558,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
         FileChooser._do_hint_opened = true -- dogear at bottom
     end
 
-
     -- Replace this FileManager method with the one from CoverMenu
     -- (but first, make the original method saved here as local available
     -- to CoverMenu)
@@ -702,7 +701,6 @@ local function _FileManagerCollections_updateItemTable(self)
     -- And do now what the original does
     _FileManagerCollection_updateItemTable_orig(self)
 end
-
 
 function CoverBrowser:setupCollectionDisplayMode(display_mode)
     if not DISPLAY_MODES[display_mode] then

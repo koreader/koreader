@@ -75,7 +75,6 @@ function HistogramWidget:paintTo(bb, x, y)
     end
 end
 
-
 local CalendarDay = InputContainer:new{
     daynum = nil,
     ratio_per_hour = nil,
@@ -168,7 +167,6 @@ end
 function CalendarDay:onHold()
     return self:onTap()
 end
-
 
 local CalendarWeek = InputContainer:new{
     width = nil,

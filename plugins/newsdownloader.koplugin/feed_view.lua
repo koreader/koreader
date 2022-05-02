@@ -196,5 +196,4 @@ function FeedView:flattenArray(base_array, source_array)
     return base_array
 end
 
-
 return FeedView

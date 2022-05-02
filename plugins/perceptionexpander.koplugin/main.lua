@@ -212,7 +212,6 @@ function PerceptionExpander:onPageUpdate(pageno)
     end
 end
 
-
 function PerceptionExpander:saveSettings(fields)
     if fields then
         self.line_thickness = fields[1] ~= "" and tonumber(fields[1]) or self.line_thickness

@@ -422,7 +422,6 @@ function OPDSBrowser:getSearchTemplate(osd_url, username, password)
     end
 end
 
-
 function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, password)
     local item_table = {}
     if not catalog then

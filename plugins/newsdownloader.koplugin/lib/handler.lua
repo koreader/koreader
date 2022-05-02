@@ -175,7 +175,6 @@ local printHandler = function()
     return obj
 end
 
-
 --Obtém a primeira chave de uma tabela
 --@param Tabela de onde deverá ser obtido o primeiro elemento
 --@return Retorna a primeira chave da tabela

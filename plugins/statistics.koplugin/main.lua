@@ -2268,7 +2268,6 @@ function ReaderStatistics:deleteBooksByTotalDuration(max_total_duration_mn)
     })
 end
 
-
 function ReaderStatistics:onPosUpdate(pos, pageno)
     if self.curr_page ~= pageno then
         self:onPageUpdate(pageno)

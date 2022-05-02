@@ -35,7 +35,6 @@ local jsonStr = getmetatable("")
 jsonStr.__index["equals"] = isEqual
 jsonStr.__index["value"] = getValue
 
-
 local parser = {}
 
 -- read metadata from file, line by line, and keep just the data we need

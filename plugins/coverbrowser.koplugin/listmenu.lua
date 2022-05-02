@@ -92,7 +92,6 @@ function ItemShortCutIcon:init()
     }
 end
 
-
 -- Based on menu.lua's MenuItem
 local ListMenuItem = InputContainer:new{
     entry = {},
@@ -874,7 +873,6 @@ function ListMenuItem:onHoldSelect(arg, ges)
     self.menu:onMenuHold(self.entry)
     return true
 end
-
 
 -- Simple holder of methods that will replace those
 -- in the real Menu class or instance
