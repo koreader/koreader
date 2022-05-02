@@ -753,8 +753,14 @@ function ReaderToc:onShowToc()
     --       because we inflate the state Button's width on the left, mainly to give it a larger tap zone.
     --       This yields *slightly* better alignment between state & mandatory (in terms of effective margins).
     local button_size = self.expand_button:getSize()
+
+    -- Get book title if available, else use generic "Table of Contents"
+    local doc_info = self.ui.document:getProps()
+    local title = doc_info and doc_info.title ~= "" and doc_info.title or _("Table of Contents")
+    title = title:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
+
     local toc_menu = Menu:new{
-        title = _("Table of Contents"),
+        title = title,
         item_table = self.collapsed_toc,
         state_w = can_collapse and button_size.w or 0,
         ui = self.ui,
