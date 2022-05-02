@@ -123,8 +123,8 @@ function NetworkListener:_unscheduleActivityCheck()
     if self._last_tx_packets then
         self._last_tx_packets = nil
     end
-    if self._activity_check_delay then
-        self._activity_check_delay = nil
+    if self._activity_check_delay_seconds then
+        self._activity_check_delay_seconds = nil
     end
 end
 
@@ -135,8 +135,8 @@ function NetworkListener:_scheduleActivityCheck()
     local tx_packets = NetworkListener:_getTxPackets()
     if self._last_tx_packets and tx_packets then
         -- Compute noise threshold based on the current delay
-        local delay = self._activity_check_delay or default_network_timeout_seconds
-        local noise_threshold = delay / default_network_timeout_seconds * network_activity_noise_margin
+        local delay_seconds = self._activity_check_delay_seconds or default_network_timeout_seconds
+        local noise_threshold = delay_seconds / default_network_timeout_seconds * network_activity_noise_margin
         local delta = tx_packets - self._last_tx_packets
         -- If there was no meaningful activity (+/- a couple packets), kill the Wi-Fi
         if delta <= noise_threshold then
@@ -161,19 +161,19 @@ function NetworkListener:_scheduleActivityCheck()
     self._last_tx_packets = tx_packets
 
     -- If it's already been scheduled, increase the delay until we hit the ceiling
-    if self._activity_check_delay then
-        self._activity_check_delay = self._activity_check_delay + default_network_timeout_seconds
+    if self._activity_check_delay_seconds then
+        self._activity_check_delay_seconds = self._activity_check_delay_seconds + default_network_timeout_seconds
 
-        if self._activity_check_delay > max_network_timeout_seconds then
-            self._activity_check_delay = max_network_timeout_seconds
+        if self._activity_check_delay_seconds > max_network_timeout_seconds then
+            self._activity_check_delay_seconds = max_network_timeout_seconds
         end
     else
-        self._activity_check_delay = default_network_timeout_seconds
+        self._activity_check_delay_seconds = default_network_timeout_seconds
     end
 
-    UIManager:scheduleIn(self._activity_check_delay, self._scheduleActivityCheck, self)
+    UIManager:scheduleIn(self._activity_check_delay_seconds, self._scheduleActivityCheck, self)
     self._activity_check_scheduled = true
-    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay, "seconds")
+    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay_seconds, "seconds")
 end
 
 function NetworkListener:onNetworkConnected()
@@ -210,6 +210,5 @@ end
 function NetworkListener:onSuspend()
     self:onNetworkDisconnected()
 end
-
 
 return NetworkListener
