@@ -25,7 +25,6 @@ else
     return ReaderActivityIndicator
 end
 
-
 -- Okay, if we're here, it's basically because we're running on a Kindle on FW 5.x under KPV
 local EventListener = require("ui/widget/eventlistener")
 local util = require("ffi/util")

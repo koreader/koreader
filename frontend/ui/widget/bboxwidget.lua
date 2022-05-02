@@ -366,5 +366,4 @@ function BBoxWidget:onSelect()
     return true
 end
 
-
 return BBoxWidget

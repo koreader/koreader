@@ -84,7 +84,6 @@ local function tryOpenBook()
     end
 end
 
-
 -- A couple helper functions to compute/check aligned values...
 -- c.f., <linux/kernel.h>
 local function ALIGN(x, a)
@@ -590,7 +589,6 @@ local PocketBook741 = PocketBook:new{
     isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
 }
-
 
 function PocketBook741._fb_init(fb, finfo, vinfo)
     -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer

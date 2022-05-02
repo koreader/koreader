@@ -170,7 +170,6 @@ function ReaderDictionary:sortAvailableIfos()
     end)
 end
 
-
 function ReaderDictionary:updateSdcvDictNamesOptions()
     -- We cannot tell sdcv which dictionaries to ignore, but we
     -- can tell it which dictionaries to use, by using multiple

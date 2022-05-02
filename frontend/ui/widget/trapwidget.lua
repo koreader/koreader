@@ -6,7 +6,6 @@ Can optionally display a text message at bottom left of screen
 (ie: "Loading…")
 ]]
 
-
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")

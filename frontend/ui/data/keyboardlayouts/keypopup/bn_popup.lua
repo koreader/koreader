@@ -522,7 +522,6 @@ return {
   _9n = { "৯", north = "⁹", east = "⅑", south = "₉", }, -- numpad 9
   _9s = { "⁹", north = "৯", east = "⅑", south = "₉", }, -- superscript 9
 
-
   _0_ = { "০", north = ")", alt_label = ")", northwest = "”", west = "}", south = "]", southwest = "’", },
   _0p = { ")", north = "০", alt_label = "০", northwest = "”", west = "}", south = "]", southwest = "’", },
   _0n = { "০", north = "⁰", south = "₀", }, -- numpad 0

@@ -9,7 +9,6 @@ Example:
         -- width = math.floor(Screen:getWidth() * 2/3),
     }
     UIManager:show(Foo)
-
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
@@ -1326,7 +1325,6 @@ function TextBoxWidget:scrollToBottom()
     end
 end
 
-
 function TextBoxWidget:scrollToRatio(ratio, force_to_page)
     self.image_show_alt_text = nil
     local line_num
@@ -1357,7 +1355,6 @@ function TextBoxWidget:scrollToRatio(ratio, force_to_page)
         self:moveCursorToCharPos(self.vertical_string_list[ln].offset)
     end
 end
-
 
 --- Cursor management
 
@@ -1788,7 +1785,6 @@ function TextBoxWidget:moveCursorDown()
     local x, y = self:_getXYForCharPos()
     self:moveCursorToXY(x, y + self.line_height_px)
 end
-
 
 --- Text selection with Hold
 

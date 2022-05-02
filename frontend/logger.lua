@@ -72,7 +72,6 @@ local LVL_FUNCTIONS = {
     err = function(...) log('err', DEFAULT_DUMP_LVL, ...) end,
 }
 
-
 --[[--
 Set logging level. By default, level is set to info.
 

@@ -111,7 +111,6 @@ local adjustAbsEvt = function(self, ev)
     end
 end
 
-
 function Remarkable:init()
     local oxide_running = os.execute("systemctl is-active --quiet tarnish") == 0
     logger.info(string.format("Oxide running?: %s", oxide_running))

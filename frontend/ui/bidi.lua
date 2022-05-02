@@ -120,7 +120,6 @@ function Bidi.setup(lang)
     end
 end
 
-
 -- Use this function in widgets to check if UI elements mirroring
 -- is to be done
 function Bidi.mirroredUILayout()

@@ -653,7 +653,6 @@ local non_splittable_space_tailers = ":;,.!?)]}$%=-+*/|<>»”"
 -- Same if a space has some specific other punctuation mark before it
 local non_splittable_space_leaders = "([{$=-+*/|<>«“"
 
-
 -- Similar rules exist for CJK text. Taken from :
 -- https://en.wikipedia.org/wiki/Line_breaking_rules_in_East_Asian_languages
 
@@ -868,7 +867,6 @@ function util.diskUsage(dir)
     end
     return result
 end
-
 
 --- Replaces characters that are invalid filenames.
 --

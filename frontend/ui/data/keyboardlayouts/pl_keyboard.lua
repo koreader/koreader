@@ -24,7 +24,6 @@ keys[3][1][2].east, keys[3][1][2].south = keys[3][1][2].south, keys[3][1][2].eas
 keys[3][2][1].east, keys[3][2][1].northeast = keys[3][2][1].northeast, keys[3][2][1].east
 keys[3][2][2].east, keys[3][2][2].northeast = keys[3][2][2].northeast, keys[3][2][2].east
 
-
 -- keys[3][9][1].east = 'Ł'; keys[2][9][1].west = '+'
 -- keys[3][9][2].east = 'ł'; keys[2][9][2].west = '+'
 keys[3][9][1].east, keys[3][9][1].west = keys[3][9][1].west, keys[3][9][1].east

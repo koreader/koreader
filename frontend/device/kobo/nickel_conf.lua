@@ -23,7 +23,6 @@ local re_ColorSetting = "^" .. color_setting_str .. "%s*=%s*([0-9]+)%s*$"
 local re_PowerOptionsSection = "^%[PowerOptions%]%s*"
 local re_AnySection = "^%[.*%]%s*"
 
-
 function NickelConf._set_kobo_conf_path(new_path)
     kobo_conf_path = new_path
 end

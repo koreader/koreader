@@ -41,7 +41,6 @@ local function sandboxPluginEventHandlers(plugin)
     end
 end
 
-
 local PluginLoader = {
     show_info = true,
     enabled_plugins = nil,

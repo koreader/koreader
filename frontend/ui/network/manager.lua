@@ -340,7 +340,6 @@ function NetworkMgr:willRerunWhenConnected(callback)
     return false
 end
 
-
 function NetworkMgr:getWifiMenuTable()
     if Device:isAndroid() then
         return {
@@ -704,7 +703,6 @@ end
 if NETWORK_PROXY then
     NetworkMgr:setHTTPProxy(NETWORK_PROXY)
 end
-
 
 Device:initNetworkManager(NetworkMgr)
 NetworkMgr:init()

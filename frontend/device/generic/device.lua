@@ -353,7 +353,6 @@ function Device:install()
     })
 end
 
-
 -- Hardware specific method to track opened/closed books (nil on book close)
 function Device:notifyBookState(title, document) end
 

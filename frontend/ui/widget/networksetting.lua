@@ -30,7 +30,6 @@ Example:
             -- This one will fire unconditionally after a disconnect attempt.
         end,
     })
-
 ]]
 
 local BD = require("ui/bidi")
@@ -73,7 +72,6 @@ local function obtainIP()
     UIManager:close(info)
 end
 
-
 local MinimalPaginator = Widget:new{
     width = nil,
     height = nil,
@@ -98,7 +96,6 @@ function MinimalPaginator:paintTo(bb, x, y)
 end
 
 function MinimalPaginator:setProgress(progress) self.progress = progress end
-
 
 local NetworkItem = InputContainer:new{
     dimen = nil,
@@ -382,7 +379,6 @@ function NetworkItem:onTapSelect(arg, ges_ev)
     end
     return true
 end
-
 
 local NetworkSetting = InputContainer:new{
     width = nil,

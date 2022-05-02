@@ -55,5 +55,4 @@ function AlphaContainer:onCloseWidget()
     end
 end
 
-
 return AlphaContainer

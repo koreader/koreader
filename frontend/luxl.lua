@@ -21,7 +21,6 @@ local ffi = require "ffi"
 local bit = require "bit"
 local band = bit.band
 
-
 --[[
  Types of characters;
      0 is not valid
@@ -48,8 +47,6 @@ local char_type = ffi.new("const int[256]", {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 });
-
-
 
 -- Internal states that the parser can be in at any given time.
 local ST_START = 0;            -- starting base state; default state
@@ -239,7 +236,6 @@ local function next_char(ps, state, verbose)
     return state(ps, c, verbose)
 end
 
-
 local fsm_code = ''
 local function code(...)
     for i=1,select("#", ...) do
@@ -327,7 +323,6 @@ local state_funcs = assert(loadstring(fsm_code, "luxl FSM code"))
 state_funcs(STATE_FUNCS, next_char, char_type)
 fsm_code = nil
 
-
 local luxl = {
     EVENT_START = EVENT_START;         -- Start tag
     EVENT_END = EVENT_END;             -- End tag
@@ -384,7 +379,6 @@ end
 function luxl:SetMessageHandler(handler)
     self.MsgHandler = handler;
 end
-
 
 --[[
     GetNext is responsible for moving through the stream

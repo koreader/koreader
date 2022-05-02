@@ -603,7 +603,6 @@ function ReaderTypography:makeDefaultFloatingPunctuation()
     })
 end
 
-
 function ReaderTypography:getCurrentDefaultHyphDictLanguage()
     local hyph_dict_name = self.ui.document:getTextMainLangDefaultHyphDictionary()
     local dict_info = self.HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_dict_name]

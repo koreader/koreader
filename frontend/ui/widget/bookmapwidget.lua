@@ -1005,7 +1005,6 @@ function BookMapWidget:update()
     end)
 end
 
-
 function BookMapWidget:showHelp()
     UIManager:show(InfoMessage:new{
         text = _([[

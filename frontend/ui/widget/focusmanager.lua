@@ -92,7 +92,6 @@ function FocusManager:init()
     end
 end
 
-
 function FocusManager:_init()
     InputContainer._init(self)
     -- Make sure each FocusManager instance has its own selection field.

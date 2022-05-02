@@ -1020,7 +1020,6 @@ function Input:isEvKeyRelease(ev)
     return ev.value == EVENT_VALUE_KEY_RELEASE
 end
 
-
 --- Main event handling.
 -- `now` corresponds to UIManager:getTime() (a TimeVal), and it's just been updated by UIManager.
 -- `deadline` (a TimeVal) is the absolute deadline imposed by UIManager:handleInput() (a.k.a., our main event loop ^^):

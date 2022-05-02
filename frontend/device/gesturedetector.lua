@@ -25,7 +25,6 @@ Current detectable gestures:
 You change the state machine by feeding it touch events, i.e. calling
 @{GestureDetector:feedEvent|GestureDetector:feedEvent(tev)}.
 
-
 a touch event should have following format:
 
     tev = {

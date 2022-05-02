@@ -57,7 +57,6 @@ function CanvasContext:init(device)
     self.fb_bpp = device.screen.fb_bpp
 end
 
-
 function CanvasContext:setColorRenderingEnabled(val)
     self.is_color_rendering_enabled = val
 end

@@ -15,7 +15,6 @@ Example:
             -- etc
         }
     }
-
 --]]
 
 local BD = require("ui/bidi")
@@ -84,7 +83,6 @@ function FrameContainer:onUnfocus()
     end
     return false
 end
-
 
 function FrameContainer:paintTo(bb, x, y)
     local my_size = self:getSize()

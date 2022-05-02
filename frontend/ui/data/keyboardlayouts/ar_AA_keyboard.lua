@@ -47,7 +47,6 @@ local diacritic_tanween_damm = ar_popup.diacritic_tanween_damm
 local diacritic_tanween_kasr = ar_popup.diacritic_tanween_kasr
 local arabic_comma = ar_popup.arabic_comma
 
-
 return {
     min_layer = 1,
     max_layer = 4,

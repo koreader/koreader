@@ -49,7 +49,6 @@ local function spinWidgetSetRefresh(touchmenu_instance, refresh_rate_num)
     UIManager:show(items)
 end
 
-
 return {
     text = _("Full refresh rate"),
     separator = true,

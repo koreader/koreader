@@ -846,7 +846,6 @@ function KindleOasis3:init()
         }
     }
 
-
     --- @fixme The same quirks as on the Oasis 2 apply ;).
     local haslipc, lipc = pcall(require, "liblipclua")
     if haslipc and lipc then
@@ -1019,7 +1018,6 @@ end
 
 KindleDXG.exit = Kindle3.exit
 
-
 ----------------- device recognition: -------------------
 
 local function Set(list)
@@ -1027,7 +1025,6 @@ local function Set(list)
     for _, l in ipairs(list) do set[l] = true end
     return set
 end
-
 
 local kindle_sn_fd = io.open("/proc/usid", "r")
 if not kindle_sn_fd then return end

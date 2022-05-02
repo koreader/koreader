@@ -14,7 +14,6 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
-
 local function copyPageState(page_state)
     return {
         page = page_state.page,
@@ -26,7 +25,6 @@ local function copyPageState(page_state)
         page_area = page_state.page_area:copy(),
     }
 end
-
 
 local ReaderPaging = InputContainer:new{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui

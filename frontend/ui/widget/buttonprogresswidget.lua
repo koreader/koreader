@@ -38,7 +38,6 @@ function ButtonProgressWidget:init()
         dim = not self.enabled,
     }
 
-
     self.buttonprogress_content = HorizontalGroup:new{}
     self.horizontal_span_width = 0
     if self.fine_tune or self.more_options then

@@ -32,7 +32,6 @@ function RenderImage:renderImageFile(filename, want_frames, width, height)
     return RenderImage:renderImageData(data, #data, want_frames, width, height)
 end
 
-
 --- Renders image data as a BlitBuffer with the best renderer
 --
 -- @tparam data string or userdata (pointer) with image bytes

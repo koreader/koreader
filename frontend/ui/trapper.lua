@@ -8,7 +8,6 @@ or get trapped by UI (get interrupted).
 Mostly done with coroutines, but hides their usage for simplicity.
 ]]
 
-
 local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
 local TrapWidget = require("ui/widget/trapwidget")
@@ -244,7 +243,6 @@ function Trapper:setPausedText(text, abort_text, continue_text)
     end
 end
 
-
 --[[--
 Displays a ConfirmBox and gets user's choice.
 
@@ -298,7 +296,6 @@ function Trapper:confirm(text, cancel_text, ok_text)
     logger.dbg("ConfirmBox answers", ret)
     return ret
 end
-
 
 --[[--
 Dismissable wrapper for @{io.popen|io.popen(`cmd`)}.

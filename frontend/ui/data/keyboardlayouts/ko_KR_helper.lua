@@ -81,7 +81,6 @@ function HgSylbls:_create_inverse_tbl_impl(from_prefix, to_prefix, target_tbl)
     end
 end
 
-
 function HgSylbls:get_combined_char(initial, medial, final)
     -- utf8.char() (i.e., encode)
     return util.unicodeCodepointToUtf8(HgSylbls:_get_combined_charcode(initial, medial, final))
@@ -114,7 +113,6 @@ function HgSylbls:_final_idx(char)
     char = HgSylbls:_2elem_tbl_to_str(char)
     return HgSylbls.IDX_FINAL[char]
 end
-
 
 function HgSylbls:in_intial(char)
     -- double initial can be typed directly from 2-beolsik kbd, hence no table of two chars
@@ -175,7 +173,6 @@ end
 
 -- initialize HgSylbls inverse index table
 HgSylbls:create_inverse_tbl()
-
 
 ---------------
 -- UI interface mock; will be implemented
@@ -408,7 +405,6 @@ function HgFSM:_process_hg_char_borrow_initial_push_next_medial(curr_final, next
     HgFSM.do_not_del_in_medial = true -- previous character in edit has to be maintained
 end
 
-
 function HgFSM:_process_hg_char_update_ui(should_undo_in_initial)
     should_undo_in_initial = should_undo_in_initial or false
 
@@ -433,7 +429,6 @@ function HgFSM:_process_hg_char_update_ui(should_undo_in_initial)
 
     end
 end
-
 
 return {
     UIHandler = UIHandler,

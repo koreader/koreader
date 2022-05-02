@@ -576,7 +576,6 @@ function Wikipedia:prettifyText(text)
     return text
 end
 
-
 -- UTF8 of unicode geometrical shapes we'll prepend to wikipedia section headers,
 -- to help identifying hierarchy (othewise, the small font size differences helps).
 -- Best if identical to the ones used above for prettifying full plain text page.
@@ -1366,7 +1365,6 @@ table {
     collectgarbage()
     return true
 end
-
 
 -- Wrap Wikipedia:createEpub() with UI progress info, provided
 -- by Trapper module.

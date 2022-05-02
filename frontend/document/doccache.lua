@@ -15,7 +15,6 @@ local function calcCacheMemSize()
 end
 local cache_size = calcCacheMemSize()
 
-
 local function computeCacheSize()
     local mb_size = cache_size / 1024 / 1024
 

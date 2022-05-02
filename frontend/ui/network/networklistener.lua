@@ -211,5 +211,4 @@ function NetworkListener:onSuspend()
     self:onNetworkDisconnected()
 end
 
-
 return NetworkListener

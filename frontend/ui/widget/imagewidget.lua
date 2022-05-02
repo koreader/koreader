@@ -9,7 +9,6 @@ Show image from file example:
             -- alpha = true,
         })
 
-
 Show image from memory example:
 
         UIManager:show(ImageWidget:new{
@@ -17,7 +16,6 @@ Show image from memory example:
             -- uncompressed bitmap.
             image = bitmap_buffer,
         })
-
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")

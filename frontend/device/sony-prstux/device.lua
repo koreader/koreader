@@ -21,8 +21,6 @@ local SonyPRSTUX = Generic:new{
     home_dir = nil,
 }
 
-
-
 -- sony's driver does not inform of ID, so we overwrite the TOUCH_MAJOR
 -- event to fake an ID event. a width == 0 means the finger was lifted.
 -- after all events are received, we reset the counter
@@ -177,7 +175,6 @@ function SonyPRSTUX:initNetworkManager(NetworkMgr)
         return 0 == os.execute("wmiconfig -i wlan0 --wlan query | grep -q enabled")
     end
 end
-
 
 function SonyPRSTUX:getSoftwareVersion()
     return ffi.string("PRSTUX")

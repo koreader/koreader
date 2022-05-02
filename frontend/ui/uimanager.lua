@@ -1721,7 +1721,6 @@ function UIManager:handleInput()
     end
 end
 
-
 function UIManager:onRotation()
     self:setDirty("all", "full")
     self:forceRePaint()

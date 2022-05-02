@@ -16,7 +16,6 @@ Example:
         },
     }
     UIManager:show(Foo)
-
 ]]
 
 local BD = require("ui/bidi")
@@ -271,7 +270,6 @@ function KeyValueItem:onShowKeyValue()
     UIManager:show(textviewer)
     return true
 end
-
 
 local KeyValuePage = FocusManager:new{
     title = "",
