@@ -9,10 +9,10 @@ local dbg = require("dbg")
 local logger = require("logger")
 local ffiUtil = require("ffi/util")
 local util = require("util")
+local time = require("ui/time")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
-local time = require("ui/time")
 
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
@@ -1176,7 +1176,7 @@ function UIManager:getNextTaskTimes(count)
     count = math.min(count or 1, #self._task_queue)
     local times = {}
     for i = 1, count do
-        times[i] = UIManager._task_queue[i].time - time.now()
+        times[i] = self._task_queue[i].time - time.now()
     end
     return times
 end
@@ -1184,7 +1184,7 @@ end
 
 function UIManager:getNextTaskTime()
     if #self._task_queue > 0 then
-        return self._task_queue[1].time - TimeVal:now()
+        return self._task_queue[1].time - time:now()
     else
         return nil
     end

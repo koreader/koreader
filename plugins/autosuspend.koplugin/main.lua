@@ -58,7 +58,7 @@ function AutoSuspend:_schedule(shutdown_only)
         return
     end
 
-    local suspend_delay, shutdown_delay
+    local suspend_delay_seconds, shutdown_delay_seconds
     local is_charging
     -- On devices with an auxiliary battery, we only care about the auxiliary battery being charged...
     local powerd = Device:getPowerDevice()
@@ -68,29 +68,29 @@ function AutoSuspend:_schedule(shutdown_only)
         is_charging = powerd:isCharging()
     end
     if PluginShare.pause_auto_suspend or is_charging then
-        suspend_delay = self.auto_suspend_timeout_seconds
-        shutdown_delay = self.autoshutdown_timeout_seconds
+        suspend_delay_seconds = self.auto_suspend_timeout_seconds
+        shutdown_delay_seconds = self.autoshutdown_timeout_seconds
     else
         local now = UIManager:getElapsedTimeSinceBoot()
-        suspend_delay = self.auto_suspend_timeout_seconds - time.to_number(now - self.last_action_time)
-        shutdown_delay = self.autoshutdown_timeout_seconds - time.to_number(now - self.last_action_time)
+        suspend_delay_seconds = self.auto_suspend_timeout_seconds - time.to_number(now - self.last_action_time)
+        shutdown_delay_seconds = self.autoshutdown_timeout_seconds - time.to_number(now - self.last_action_time)
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
-    if self:_enabledShutdown() and shutdown_delay <= 0 then
+    if self:_enabledShutdown() and shutdown_delay_seconds <= 0 then
         logger.dbg("AutoSuspend: initiating shutdown")
         UIManager:poweroff_action()
-    elseif self:_enabled() and suspend_delay <= 0 and not shutdown_only then
+    elseif self:_enabled() and suspend_delay_seconds <= 0 and not shutdown_only then
         logger.dbg("AutoSuspend: will suspend the device")
         UIManager:suspend()
     else
         if self:_enabled() and not shutdown_only then
-            logger.dbg("AutoSuspend: scheduling next suspend check in", suspend_delay)
-            UIManager:scheduleIn(suspend_delay, self.task)
+            logger.dbg("AutoSuspend: scheduling next suspend check in", suspend_delay_seconds)
+            UIManager:scheduleIn(suspend_delay_seconds, self.task)
         end
         if self:_enabledShutdown() then
-            logger.dbg("AutoSuspend: scheduling next shutdown check in", shutdown_delay)
-            UIManager:scheduleIn(shutdown_delay, self.task)
+            logger.dbg("AutoSuspend: scheduling next shutdown check in", shutdown_delay_seconds)
+            UIManager:scheduleIn(shutdown_delay_seconds, self.task)
         end
     end
 end
@@ -158,14 +158,10 @@ function AutoSuspend:init()
         UIManager:broadcastEvent(Event:new("LeaveStandby"))
     end
 
-<<<<<<< HEAD
     -- Make sure we only have an AllowStandby handler when we actually want one...
     self:toggleStandbyHandler(self:_enabledStandby())
 
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
-=======
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
->>>>>>> dbaa24e2 (Changes due to rebase)
     self:_start()
     self:_start_standby()
 
@@ -223,41 +219,41 @@ function AutoSuspend:_schedule_standby()
     end
 
     -- When we're in a state where entering suspend is undesirable, we simply postpone the check by the full delay.
-    local standby_delay
+    local standby_delay_seconds
     if NetworkMgr:isWifiOn() then
         -- Don't enter standby if wifi is on, as this will break in fun and interesting ways (from Wi-Fi issues to kernel deadlocks).
         --logger.dbg("AutoSuspend: WiFi is on, delaying standby")
-        standby_delay = self.auto_standby_timeout_seconds
+        standby_delay_seconds = self.auto_standby_timeout_seconds
     elseif Device.powerd:isCharging() and not Device:canPowerSaveWhileCharging() then
         -- Don't enter standby when charging on devices where charging prevents entering low power states.
         -- NOTE: Minor simplification here, we currently don't do the hasAuxBattery dance like in _schedule,
         --       because all the hasAuxBattery devices can currently enter PM states while charging ;).
         --logger.dbg("AutoSuspend: charging, delaying standby")
-        standby_delay = self.auto_standby_timeout_seconds
+        standby_delay_seconds = self.auto_standby_timeout_seconds
     else
         local now = UIManager:getElapsedTimeSinceBoot()
-        standby_delay = self.auto_standby_timeout_seconds - time.to_number(now - self.last_action_time)
+        standby_delay_seconds = self.auto_standby_timeout_seconds - time.to_number(now - self.last_action_time)
 
         -- If we blow past the deadline on the first call of a scheduling cycle,
         -- make sure we don't go straight to allowStandby, as we haven't called preventStandby yet...
-        if not self.is_standby_scheduled and standby_delay <= 0 then
+        if not self.is_standby_scheduled and standby_delay_seconds <= 0 then
             -- If this happens, it means we hit LeaveStandby or Resume *before* consuming new input events,
             -- e.g., if there weren't any input events at all (woken up by an alarm),
             -- or if the only input events we consumed did not trigger an InputEvent event (woken up by gyro events),
             -- meaning self.last_action_time is further in the past than it ought to.
             -- Delay by the full amount to avoid further bad scheduling interactions.
-            standby_delay = self.auto_standby_timeout_seconds
+            standby_delay_seconds = self.auto_standby_timeout_seconds
         end
     end
 
-    if standby_delay <= 0 then
+    if standby_delay_seconds <= 0 then
         -- We blew the deadline, tell UIManager we're ready to enter standby
         self:allowStandby()
     else
         -- Reschedule standby for the full or remaining delay
         -- NOTE: This is fairly chatty, given the low delays, but really helpful nonetheless... :/
-        logger.dbg("AutoSuspend: scheduling next standby check in", standby_delay)
-        UIManager:scheduleIn(standby_delay, self.standby_task)
+        logger.dbg("AutoSuspend: scheduling next standby check in", standby_delay_seconds)
+        UIManager:scheduleIn(standby_delay_seconds, self.standby_task)
 
         -- Prevent standby until we actually blow the deadline
         if not self.is_standby_scheduled then
@@ -395,13 +391,13 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
         ok_text = _("Set timeout"),
         title_text = title,
         info_text = info,
-        callback = function(t)
+        callback = function(spinner)
             if time_scale == 2 then
-                self[setting] = (t.hour * 24 + t.min) * 3600
+                self[setting] = (spinner.hour * 24 + spinner.min) * 3600
             elseif time_scale == 1 then
-                self[setting] = t.hour * 3600 + t.min * 60
+                self[setting] = spinner.hour * 3600 + spinner.min * 60
             else
-                self[setting] = t.hour * 60 + t.min
+                self[setting] = spinner.hour * 60 + spinner.min
             end
             self[setting] = Math.clamp(self[setting], range[1], range[2])
             G_reader_settings:saveSetting(setting, self[setting])
@@ -575,7 +571,7 @@ function AutoSuspend:AllowStandbyHandler()
     if next_task_time then
         -- Wake up slightly after the formerly scheduled event,
         -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
-        wake_in = math.floor(next_task_time:tonumber()) + 1
+        wake_in = math.floor(time.tonumber(next_task_time)) + 1
     else
         wake_in = math.huge
     end
@@ -592,7 +588,7 @@ function AutoSuspend:AllowStandbyHandler()
         -- We delay the LeaveStandby event (our onLeaveStandby handler is responsible for rescheduling everything properly),
         -- to make sure UIManager will consume the input events that woke us up first
         -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
-        -- (This ensures we'll use an up to date last_action_tv, and that it only ever gets updated from *user* input).
+        -- (This ensures we'll use an up to date last_action_time, and that it only ever gets updated from *user* input).
         -- NOTE: UIManager consumes scheduled tasks before input events, which is why we can't use nextTick.
         UIManager:tickAfterNext(self.leave_standby_task)
     end

@@ -1020,7 +1020,7 @@ end
 
 --- Main event handling.
 -- `now` corresponds to UIManager:getTime() (an fts time), and it's just been updated by UIManager.
--- `deadline` (a fts time) is the absolute deadline imposed by UIManager:handleInput() (a.k.a., our main event loop ^^):
+-- `deadline` (an fts time) is the absolute deadline imposed by UIManager:handleInput() (a.k.a., our main event loop ^^):
 -- it's either nil (meaning block forever waiting for input), or the earliest UIManager deadline (in most cases, that's the next scheduled task,
 -- in much less common cases, that's the earliest of UIManager.INPUT_TIMEOUT (currently, only KOSync ever sets it) or UIManager.ZMQ_TIMEOUT if there are pending ZMQs).
 function Input:waitEvent(now, deadline)
