@@ -48,7 +48,7 @@ local DoubleSpinWidget = FocusManager:new{
     callback = nil,
     close_callback = nil,
     keep_shown_on_apply = false,
-    -- Set this to add upper default button that applies default values with callback(nil, nil)
+    -- Set this to add upper default button that applies default values with callback(left_default, right_default)
     default_values = false,
     default_text = nil,
     -- Optional extra button above ok/cancel buttons row
