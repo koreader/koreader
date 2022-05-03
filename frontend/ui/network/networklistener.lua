@@ -13,10 +13,11 @@ local NetworkListener = InputContainer:new{}
 
 function NetworkListener:onToggleWifi()
     if not NetworkMgr:isConnected() then
-        UIManager:show(InfoMessage:new{
+        local toggle_im = InfoMessage:new{
             text = _("Turning on Wi-Fi…"),
             timeout = 1, -- timeout value is necessary, the message will be deleted by next message
-        })
+        }
+        UIManager:show(toggle_im)
         UIManager:forceRePaint()
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
@@ -26,17 +27,22 @@ function NetworkListener:onToggleWifi()
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         end
         NetworkMgr:turnOnWifi(complete_callback)
+
+        UIManager:close(toggle_im)
     else
         local complete_callback = function()
             UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         end
-        UIManager:show(InfoMessage:new{
+        local toggle_im = InfoMessage:new{
             text = _("Turning off Wi-Fi…"),
             timeout = 1, -- timeout value is necessary, the message will be deleted by next message
-        })
+        }
+        UIManager:show(toggle_im)
         UIManager:forceRePaint()
 
         NetworkMgr:turnOffWifi(complete_callback)
+
+        UIManager:close(toggle_im)
 
         UIManager:show(InfoMessage:new{
             text = _("Wi-Fi off."),
