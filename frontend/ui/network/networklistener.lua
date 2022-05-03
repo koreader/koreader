@@ -14,7 +14,7 @@ local NetworkListener = InputContainer:new{}
 function NetworkListener:onToggleWifi()
     if not NetworkMgr:isConnected() then
         UIManager:show(InfoMessage:new{
-            text = _("Turning on Wi-Fi…"),
+            text = _("Turning on wifi…"),
             timeout = 1, -- timeout value is necessary, the message will be deleted by next message
         })
         UIManager:forceRePaint()
@@ -31,7 +31,7 @@ function NetworkListener:onToggleWifi()
             UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         end
         UIManager:show(InfoMessage:new{
-            text = _("Turning off Wi-Fi…"),
+            text = _("Turning off wifi…"),
             timeout = 1, -- timeout value is necessary, the message will be deleted by next message
         })
         UIManager:forceRePaint()
@@ -39,7 +39,7 @@ function NetworkListener:onToggleWifi()
         NetworkMgr:turnOffWifi(complete_callback)
 
         UIManager:show(InfoMessage:new{
-            text = _("Wi-Fi off."),
+            text = _("Wifi off."),
             timeout = 1,
         })
     end
@@ -53,7 +53,7 @@ function NetworkListener:onInfoWifiOff()
     NetworkMgr:turnOffWifi(complete_callback)
 
     UIManager:show(InfoMessage:new{
-        text = _("Wi-Fi off."),
+        text = _("Wifi off."),
         timeout = 1,
     })
 end
@@ -61,7 +61,7 @@ end
 function NetworkListener:onInfoWifiOn()
     if not NetworkMgr:isOnline() then
         UIManager:show(InfoMessage:new{
-            text = _("Enabling Wi-Fi…"),
+            text = _("Enabling wifi…"),
             timeout = 1,
         })
 
