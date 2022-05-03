@@ -53,8 +53,15 @@ function NetworkListener:onInfoWifiOff()
     local complete_callback = function()
         UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
     end
+    local toggle_im = InfoMessage:new{
+        text = _("Turning off Wi-Fi…"),
+    }
+    UIManager:show(toggle_im)
+    UIManager:forceRePaint()
+
     NetworkMgr:turnOffWifi(complete_callback)
 
+    UIManager:close(toggle_im)
     UIManager:show(InfoMessage:new{
         text = _("Wi-Fi off."),
         timeout = 1,
