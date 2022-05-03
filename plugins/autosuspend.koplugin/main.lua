@@ -571,7 +571,7 @@ function AutoSuspend:AllowStandbyHandler()
     if next_task_time then
         -- Wake up slightly after the formerly scheduled event,
         -- to avoid resheduling the same function after a fraction of a second again (e.g. don't draw footer twice).
-        wake_in = math.floor(time.tonumber(next_task_time)) + 1
+        wake_in = math.floor(time.to_number(next_task_time)) + 1
     else
         wake_in = math.huge
     end
