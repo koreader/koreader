@@ -756,8 +756,8 @@ function ReaderToc:onShowToc()
 
     -- Get book title if available, else use generic "Table of Contents"
     local doc_info = self.ui.document:getProps()
-    local title = doc_info and doc_info.title ~= "" and doc_info.title or _("Table of Contents")
-    title = title:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
+    local show_book_title = G_reader_settings:isTrue("toc_show_book_title")
+    local title = show_book_title and doc_info and doc_info.title ~= "" and doc_info.title or _("Table of Contents")
 
     local toc_menu = Menu:new{
         title = title,
@@ -1000,6 +1000,15 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
             end,
         }
     end
+    menu_items.toc_show_book_title = {
+        text = _("Show book title in table of contents"),
+        checked_func = function()
+            return G_reader_settings:isTrue("toc_show_book_title")
+        end,
+        callback = function()
+            G_reader_settings:toggle("toc_show_book_title")
+        end,
+    }
     -- Allow to have getTocTicksFlattened() get rid of all items at some depths, which
     -- might be useful to have the footer and SkimTo progress bar less crowded.
     -- This also affects the footer current chapter title, but leave the ToC itself unchanged.

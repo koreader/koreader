@@ -31,6 +31,7 @@ local order = {
     },
     navi_settings = {
         "toc_alt_toc",
+        "toc_show_book_title",
         "----------------------------",
         "toc_ticks_level_ignore",
         "----------------------------",
