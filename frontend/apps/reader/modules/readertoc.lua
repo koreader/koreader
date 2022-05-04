@@ -754,7 +754,7 @@ function ReaderToc:onShowToc()
     --       This yields *slightly* better alignment between state & mandatory (in terms of effective margins).
     local button_size = self.expand_button:getSize()
 
-    -- Get book title if available, else use generic "Table of Contents"
+    -- Get book title if available and the setting `toc_show_book_title` is true, else use generic "Table of Contents"
     local doc_info = self.ui.document:getProps()
     local show_book_title = G_reader_settings:isTrue("toc_show_book_title")
     local title = show_book_title and doc_info and doc_info.title ~= "" and doc_info.title or _("Table of Contents")
@@ -785,7 +785,7 @@ function ReaderToc:onShowToc()
                 },
                 direction = BD.flipDirectionIfMirroredUILayout("west")
             }
-        }
+        },
     }
 
     local menu_container = CenterContainer:new{
