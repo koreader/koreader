@@ -590,7 +590,7 @@ function AutoWarmth:getScheduleMenu()
                 end
                 UIManager:show(DateTimeWidget:new{
                     title_text = _("Set time"),
-                    info_text = _("Enter time in hours and minutes."),
+                    append_unit_info = true,
                     is_date = false,
                     hour = hh,
                     min = mm,

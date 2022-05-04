@@ -6,11 +6,12 @@ Example for input a time:
     local @{gettext|_} = require("gettext")
 
     local time_widget = DateTimeWidget:new{
-        is_date = false,
         hour = 10,
         min = 30,
         ok_text = _("Set time"),
         title_text = _("Set time"),
+        info_text = _("Some information"),
+        append_unit_info, -- to append information about the units used.
         callback = function(time)
             -- use time.hour and time.min here
         end
@@ -33,6 +34,21 @@ Example for input a date:
     }
     UIManager:show(date_widget)
 
+Example for input a duration with days, minutes and seconds:
+    local DateTimeWidget = require("ui/widget/datetimewidget")
+    local @{gettext|_} = require("gettext")
+
+    local date_widget = DateTimeWidget:new{
+        day = 5,
+        hour = 12,
+        min = 0,
+        ok_text = _("Set"),
+        title_text = _("Set duration"),
+        callback = function(time)
+            -- use time.day, time.hour, time.min here
+        end
+    }
+    UIManager:show(date_widget)
 --]]--
 
 local Blitbuffer = require("ffi/blitbuffer")
@@ -61,25 +77,40 @@ local DateTimeWidget = FocusManager:new{
     info_text = nil,
     width = nil,
     height = nil,
-    is_date = true,
-    day = 1,
-    month = 1,
-    year = 2021,
-    hour = 12,
-    min = 0,
     ok_text = _("Apply"),
     cancel_text = _("Close"),
     -- Optional extra button on bottom
     extra_text = nil,
     extra_callback = nil,
+    append_unit_info = nil, -- appends something like "\nEnter time in minutes and seconds."
 }
 
 function DateTimeWidget:init()
+    self.nb_pickers = 0
+    if self.year then
+        self.nb_pickers = self.nb_pickers + 1
+    end
+    if self.month then
+        self.nb_pickers = self.nb_pickers + 1
+    end
+    if self.day then
+        self.nb_pickers = self.nb_pickers + 1
+    end
+    if self.hour then
+        self.nb_pickers = self.nb_pickers + 1
+    end
+    if self.min then
+        self.nb_pickers = self.nb_pickers + 1
+    end
+    if self.sec then
+        self.nb_pickers = self.nb_pickers + 1
+    end
+
     self.layout = {}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) *
-        (self.is_date and 0.8 or 0.6))
+        (self.nb_pickers >= 3 and 0.8 or 0.6))
     if Device:hasKeys() then
         self.key_events.Close = { {Device.input.group.Back}, doc = "close date widget" }
     end
@@ -101,58 +132,177 @@ function DateTimeWidget:init()
     self:createLayout()
 end
 
-local year_widget, month_hour_widget, day_min_widget
+local year_widget, month_widget, day_widget, hour_widget, min_widget, sec_widget
 function DateTimeWidget:createLayout()
     year_widget = NumberPickerWidget:new{
         show_parent = self,
         value = self.year,
-        value_min = 2021,
-        value_max = 2041,
+        value_min = self.year_min or 2021,
+        value_max = self.year_max or 2525,
         value_step = 1,
         value_hold_step = self.year_hold_step or 4,
     }
-    if self.is_date then
-        self:mergeLayoutInHorizontal(year_widget)
-    end
-    month_hour_widget = NumberPickerWidget:new{
+    self:mergeLayoutInHorizontal(year_widget)
+    month_widget = NumberPickerWidget:new{
         show_parent = self,
-        value = self.is_date and self.month or self.hour,
-        value_min = self.hour_min or self.month_min or (self.is_date and 1 or 0),
-        value_max = self.hour_max or self.month_max or (self.is_date and 12 or 23),
+        value = self.month,
+        value_min = self.month_min or 1,
+        value_max = self.month_max or 12,
         value_step = 1,
-        value_hold_step = self.hour_hold_step or self.month_hold_step or 3,
+        value_hold_step = self.month_hold_step or 3,
     }
-    self:mergeLayoutInHorizontal(month_hour_widget)
-    day_min_widget = NumberPickerWidget:new{
+    self:mergeLayoutInHorizontal(month_widget)
+    day_widget = NumberPickerWidget:new{
         show_parent = self,
-        value = self.is_date and self.day or self.min,
-        value_min = self.min_min or self.day_min or (self.is_date and 1 or 0),
-        value_max = self.min_max or self.day_max or (self.is_date and 31 or 59),
+        value = self.day,
+        value_min = self.day_min or 1,
+        value_max = self.day_max or 31,
         value_step = 1,
-        value_hold_step = self.day_hold_step or self.min_hold_step or (self.is_date and 5 or 10),
-        date_month_hour = month_hour_widget,
-        date_year = year_widget,
+        value_hold_step = self.day_hold_step or 3,
     }
-    self:mergeLayoutInHorizontal(day_min_widget)
-    local separator_space = TextBoxWidget:new{
-        text = self.is_date and "–" or ":",
+    self:mergeLayoutInHorizontal(day_widget)
+
+    hour_widget = NumberPickerWidget:new{
+        show_parent = self,
+        value = self.hour,
+        value_min = self.hour_min or 0,
+        value_max = self.hour_max or 23,
+        value_step = 1,
+        value_hold_step = self.hour_hold_step or 4,
+    }
+    self:mergeLayoutInHorizontal(hour_widget)
+    min_widget = NumberPickerWidget:new{
+        show_parent = self,
+        value = self.min,
+        value_min = self.min_min or 0,
+        value_max = self.min_max or 59,
+        value_step = 1,
+        value_hold_step = self.min_hold_step or 10,
+    }
+    self:mergeLayoutInHorizontal(min_widget)
+    sec_widget = NumberPickerWidget:new{
+        show_parent = self,
+        value = self.sec,
+        value_min = self.sec_min or 0,
+        value_max = self.sec_max or 59,
+        value_step = 1,
+        value_hold_step = self.sec_hold_step or 10,
+    }
+    self:mergeLayoutInHorizontal(sec_widget)
+
+    local separator_date = TextBoxWidget:new{
+        text = "–",
         alignment = "center",
         face = self.title_face,
         bold = true,
-        width = math.floor(math.min(self.screen_width, self.screen_height) *
-            (self.is_date and 0.02 or 0.05)),
+        width = math.floor(math.min(self.screen_width, self.screen_height) * 0.02),
+    }
+    local separator_time = TextBoxWidget:new{
+        text = _(":"),
+        alignment = "center",
+        face = self.title_face,
+        bold = true,
+        width = math.floor(math.min(self.screen_width, self.screen_height) * 0.05),
+    }
+    local separator_date_time = TextBoxWidget:new{
+        text =  _("/"),
+        alignment = "center",
+        face = self.title_face,
+        bold = true,
+        width = math.floor(math.min(self.screen_width, self.screen_height) * 0.02),
     }
     local date_group = HorizontalGroup:new{
             align = "center",
-            year_widget,
-            separator_space,
-            month_hour_widget,
-            separator_space,
-            day_min_widget,
+            year_widget, -- 1
+            separator_date, -- 2
+            month_widget, -- 3
+            separator_date, -- 4
+            day_widget, -- 5
+            separator_date_time, -- 6
+            hour_widget, -- 7
+            separator_time, -- 8
+            min_widget, -- 9
+            separator_time, -- 10
+            sec_widget, -- 11
         }
-    if not self.is_date then
+
+    -- remove unused number pickers
+    if not self.sec then
+        table.remove(date_group, 11)
+        table.remove(date_group, 10)
+    end
+    if not self.min then
+        table.remove(date_group, 9)
+        table.remove(date_group, 8)
+    end
+    if not self.hour then
+        table.remove(date_group, 7)
+        table.remove(date_group, 6)
+    end
+    if not self.day then
+        table.remove(date_group, 5)
+        table.remove(date_group, 4)
+    end
+    if not self.month then
+        table.remove(date_group, 3)
         table.remove(date_group, 2)
+    end
+    if not self.year then
         table.remove(date_group, 1)
+    end
+
+    -- clean up leading separator
+    if date_group[1] == separator_date or date_group[1] == separator_date_time or date_group[1] == separator_time then
+        table.remove(date_group, 1)
+    end
+
+    -- clean up trailling separator
+    local n = #date_group
+    if date_group[n] == separator_date or date_group[n] == separator_date_time or date_group[n] == separator_time then
+        table.remove(date_group, n)
+    end
+
+    -- Enriche the `info_text` with a hint to the active units, if `self.append_unit_info` is set.
+    local function generateInfoText()
+        if not self.append_unit_info then return self.info_text end
+
+        local info_text = ""
+        if self.info_text then
+            info_text = self.info_text .."\n"
+        end
+        info_text = info_text .. ("Enter time in ")
+
+        local times = { _("years"), _("months"), _("days"), _("hours"), _("minutes"), _("seconds"), }
+
+        if self.year then
+            info_text = info_text .. ", " .. times[1]
+        end
+        if self.month then
+            info_text = info_text .. ", " .. times[2]
+        end
+        if self.day then
+            info_text = info_text .. ", " .. times[3]
+        end
+        if self.hour then
+            info_text = info_text .. ", " .. times[4]
+        end
+        if self.min then
+            info_text = info_text .. ", " .. times[5]
+        end
+        if self.sec then
+            info_text = info_text .. ", " .. times[6]
+        end
+
+        -- remove first comma and append a period.
+        info_text = info_text:gsub(" ,", "") .. "."
+
+        -- replace last comma with "and"
+        local pos_and = info_text:find(", %S*$") -- find last comma
+        if pos_and then
+            info_text = info_text:sub(1, pos_and-1) .. " " .. _("and") .. info_text:sub(pos_and+1)
+        end
+
+        return info_text
     end
 
     local title_bar = TitleBar:new{
@@ -161,7 +311,7 @@ function DateTimeWidget:createLayout()
         with_bottom_line = true,
         title = self.title_text,
         title_shrink_font_to_fit = true,
-        info_text = self.info_text,
+        info_text = generateInfoText(),
         show_parent = self,
     }
 
@@ -172,8 +322,14 @@ function DateTimeWidget:createLayout()
                 text = self.default_text or T(_("Default value: %1"), self.default_value),
                 callback = function()
                     if self.default_callback then
-                        self.default_callback(year_widget:getValue(), month_hour_widget:getValue(),
-                            day_min_widget:getValue())
+                        self.default_callback({
+                            year = year_widget:getValue(),
+                            month = month_widget:getValue(),
+                            day = day_widget:getValue(),
+                            hour = hour_widget:getValue(),
+                            minute =min_widget:getValue(),
+                            second = sec_widget:getValue()
+                        })
                     end
                     if not self.keep_shown_on_apply then -- assume extra wants it same as ok
                         self:onClose()
@@ -204,13 +360,11 @@ function DateTimeWidget:createLayout()
             callback = function()
                 if self.callback then
                     self.year = year_widget:getValue()
-                    if self.is_date then
-                        self.month = month_hour_widget:getValue()
-                        self.day = day_min_widget:getValue()
-                    else
-                        self.hour = month_hour_widget:getValue()
-                        self.min = day_min_widget:getValue()
-                    end
+                    self.month = month_widget:getValue()
+                    self.day = day_widget:getValue()
+                    self.hour = hour_widget:getValue()
+                    self.min = min_widget:getValue()
+                    self.sec = sec_widget:getValue()
                     self:callback(self)
                 end
                 self:onClose()
@@ -270,13 +424,19 @@ function DateTimeWidget:createLayout()
     end)
 end
 
-function DateTimeWidget:update(left, mid, right)
-    year_widget.value = left
+function DateTimeWidget:update(year, month, day, hour, min, sec)
+    year_widget.value = year
     year_widget:update()
-    month_hour_widget.value = mid
-    month_hour_widget:update()
-    day_min_widget.value = right
-    day_min_widget:update()
+    month_widget.value = month
+    month_widget:update()
+    day_widget.value = day
+    day_widget:update()
+    hour_widget.value = hour
+    hour_widget:update()
+    min_widget.value = min
+    min_widget:update()
+    sec_widget.value = sec
+    sec_widget:update()
 end
 
 function DateTimeWidget:onCloseWidget()
