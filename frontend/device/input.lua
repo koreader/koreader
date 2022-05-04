@@ -1334,4 +1334,37 @@ function Input:inhibitInput(toggle)
     end
 end
 
+--[[--
+Request all input events to be ignored for some duration.
+
+@param set_or_seconds either `true`, in which case a platform-specific delay is chosen, or a duration in seconds (***int***).
+]]
+function Input:inhibitInputUntil(set_or_seconds)
+    if not set_or_seconds then -- remove any previously set
+        self:inhibitInput(false)
+        return
+    end
+    local delay
+    if set_or_seconds == true then
+        -- Use an adequate delay to account for device refresh duration
+        -- so any events happening in this delay (ie. before a widget
+        -- is really painted on screen) are discarded.
+        if self.device:hasEinkScreen() then
+            -- A screen refresh can take a few 100ms,
+            -- sometimes > 500ms on some devices/temperatures.
+            -- So, block for 400ms (to have it displayed) + 400ms
+            -- for user reaction to it
+            delay = 0.8
+        else
+            -- On non-eInk screen, display is usually instantaneous
+            delay = 0.4
+        end
+    else -- we expect a number
+        delay = set_or_seconds
+    end
+    local UIManager = require("ui/uimanager")
+    UIManager:scheduleIn(delay, function() self:inhibitInputUntil() end)
+    self:inhibitInput(true)
+end
+
 return Input
