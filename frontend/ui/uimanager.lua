@@ -1131,7 +1131,7 @@ function UIManager:sendEvent(event)
         if checked_widgets[widget] == nil then
             checked_widgets[widget] = true
             -- Widget's active widgets have precedence to handle this event
-            -- NOTE: While FileManager only has a single (screenshotter), ReaderUI has many active_widgets (each ReaderUI module gets added to the list).
+            -- NOTE: While FileManager only has a single (screenshotter), ReaderUI has a few active_widgets.
             if widget.widget.active_widgets then
                 for _, active_widget in ipairs(widget.widget.active_widgets) do
                     if active_widget:handleEvent(event) then return end
