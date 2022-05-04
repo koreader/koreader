@@ -12,7 +12,7 @@ local T = require("ffi/util").template
 local NetworkListener = InputContainer:new{}
 
 function NetworkListener:onToggleWifi()
-    if not NetworkMgr:isConnected() then
+    if not NetworkMgr:isWifiOn() then
         UIManager:show(InfoMessage:new{
             text = _("Turning on Wi-Fi…"),
             timeout = 1,
