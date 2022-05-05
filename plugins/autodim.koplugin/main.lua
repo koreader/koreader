@@ -28,7 +28,7 @@ function AutoDim:init()
     self.autodim_duration_s = G_reader_settings:readSetting("autodim_duration_seconds", DEFAULT_AUTODIM_DURATION_S)
     self.autodim_endpercentage = G_reader_settings:readSetting("autodim_endpercentage", DEFAULT_AUTODIM_ENDPERCENTAGE)
 
-    self.last_action_tim = UIManager:getElapsedTimeSinceBoot()
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
 
     self.ui.menu:registerToMainMenu(self)
     UIManager.event_hook:registerWidget("InputEvent", self)
@@ -49,19 +49,20 @@ function AutoDim:getAutodimMenu()
             {
                 text_func = function()
                     return self.autodim_starttime_m <= 0 and _("Idle time for dimmer") or
-                    T(_("Idle time for dimmer: %1 minutes"), self.autodim_starttime_m)
+                    T(_("Idle time for dimmer: %1 min"), self.autodim_starttime_m)
                 end,
                 checked_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
                     local idle_dialog = SpinWidget:new{
                         title_text = _("Automatic dimmer idle time"),
-                        info_text = _("Start the dimmer after the designated period of inactivity. Time is in minutes."),
+                        info_text = _("Start the dimmer after the designated period of inactivity."),
                         value = self.autodim_starttime_m >=0 and self.autodim_starttime_m or 0.5,
                         default_value = DEFAULT_AUTODIM_STARTTIME_M,
                         value_min = 0.5,
                         value_max = 60,
                         value_step = 0.5,
                         value_hold_step = 5,
+                        unit = _("min"),
                         precision = "%0.1f",
                         ok_always_enabled = true,
                         callback = function(spin)
@@ -86,19 +87,21 @@ function AutoDim:getAutodimMenu()
             },
             {
                 text_func = function()
-                    return T(_("Dimmer duration: %1 seconds"), self.autodim_duration_s)
+                    return T(_("Dimmer duration: %1 s"), self.autodim_duration_s)
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
                     local dimmer_dialog = SpinWidget:new{
                         title_text = _("Automatic dimmer duration"),
-                        info_text = _("Enter the duration until reaching the final brightness. Time is in seconds."),
+                        info_text = _("Enter the duration until reaching the final brightness."),
                         value = self.autodim_duration_s,
                         default_value = DEFAULT_AUTODIM_DURATION_S,
                         value_min = 0,
                         value_max = 300,
                         value_step = 1,
                         value_hold_step = 10,
+                        precision = "%1d",
+                        unit = _("s"),
                         callback = function(spin)
                             if not spin then return end
                             self.autodim_duration_s = spin.value
@@ -114,7 +117,7 @@ function AutoDim:getAutodimMenu()
             },
             {
                 text_func = function()
-                    return T(_("Dim to: %1%"), self.autodim_endpercentage)
+                    return T(_("Dim to: %1 %"), self.autodim_endpercentage)
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
@@ -126,6 +129,7 @@ function AutoDim:getAutodimMenu()
                         value_min = 0,
                         value_max = 100,
                         value_hold_step = 10,
+                        unit = "%",
                         callback = function(spin)
                             self.autodim_endpercentage = spin.value
                             G_reader_settings:saveSetting("autodim_endpercentage", spin.value)
@@ -196,7 +200,7 @@ function AutoDim:autodim_task()
 
     local now = UIManager:getElapsedTimeSinceBoot()
     local idle_duration =  now - self.last_action_time
-    local check_delay = time.s(self.autodim_starttime_m) - idle_duration
+    local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_endpercentage / 100 + 0.5)
