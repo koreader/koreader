@@ -177,7 +177,7 @@ function NumberPickerWidget:init()
     end
 
     self.text_value = Button:new{
-        text = tostring(self.formatted_value) .. (self.unit and (" " .. self.unit) or ""),
+        text = tostring(self.formatted_value) .. (self.unit and ("\xE2\x80\xAF" .. self.unit) or ""), -- use Narrow No-Break Space (NNBSP) here
         bordersize = 0,
         padding = 0,
         text_font_face = self.spinner_face.font,

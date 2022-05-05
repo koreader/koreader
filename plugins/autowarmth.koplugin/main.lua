@@ -483,7 +483,7 @@ function AutoWarmth:getLocationMenu()
     },
     {
         text_func = function()
-            return T(_("Coordinates: (%1, %2)"), self.latitude, self.longitude)
+            return T(_("Coordinates: (%1°, %2°)"), self.latitude, self.longitude)
         end,
         callback = function(touchmenu_instance)
             local location_widget = DoubleSpinWidget:new{
@@ -503,6 +503,7 @@ function AutoWarmth:getLocationMenu()
                 right_step = 0.1,
                 right_hold_step = 5,
                 right_precision = "%0.2f",
+                unit = "°",
                 callback = function(lat, long)
                     self.latitude = lat
                     self.longitude = long
@@ -520,7 +521,7 @@ function AutoWarmth:getLocationMenu()
     },
     {
         text_func = function()
-            return T(_("Altitude: %1m"), self.altitude)
+            return T(_("Altitude: %1 m"), self.altitude)
         end,
         callback = function(touchmenu_instance)
             UIManager:show(SpinWidget:new{
@@ -532,6 +533,7 @@ function AutoWarmth:getLocationMenu()
                 wrap = false,
                 value_step = 10,
                 value_hold_step = 100,
+                unit = _("m"),
                 ok_text = _("Set"),
                 callback = function(spin)
                     self.altitude = spin.value
@@ -677,9 +679,9 @@ function AutoWarmth:getWarmthMenu()
             text_func = function()
                 if Device:hasNaturalLight() then
                     if self.warmth[num] <= 100 then
-                        return T(_("%1: %2%"), text, self.warmth[num])
+                        return T(_("%1: %2 %"), text, self.warmth[num])
                     else
-                        return T(_("%1: 100% + ☾"), text)
+                        return T(_("%1: 100 % + ☾"), text)
                     end
                 else
                     if self.warmth[num] <= 100 then
@@ -700,6 +702,7 @@ function AutoWarmth:getWarmthMenu()
                         wrap = false,
                         value_step = math.floor(100 / device_max_warmth),
                         value_hold_step = 10,
+                        unit = "%",
                         ok_text = _("Set"),
                         callback = function(spin)
                             self.warmth[num] = spin.value

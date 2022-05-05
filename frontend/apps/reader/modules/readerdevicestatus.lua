@@ -34,8 +34,8 @@ function ReaderDeviceStatus:init()
                         UIManager:close(self.battery_confirm_box)
                     end
                     self.battery_confirm_box = ConfirmBox:new {
-                        text = is_charging and T(_("High battery level: %1%\n\nDismiss battery level alert?"), battery_capacity)
-                                            or T(_("Low battery level: %1%\n\nDismiss battery level alert?"), battery_capacity),
+                        text = is_charging and T(_("High battery level: %1 %\n\nDismiss battery level alert?"), battery_capacity)
+                                            or T(_("Low battery level: %1 %\n\nDismiss battery level alert?"), battery_capacity),
                         ok_text = _("Dismiss"),
                         dismissable = false,
                         ok_callback = function()
@@ -148,6 +148,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                         value_min = 1,
                         value_max = 60,
                         default_value = 10,
+                        unit = _("min"),
                         value_hold_step = 5,
                         title_text = _("Battery check interval"),
                         callback = function(spin)
@@ -157,14 +158,13 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                             powerd:setDismissBatteryStatus(false)
                             UIManager:scheduleIn(self.battery_interval_m * 60, self.checkLowBatteryLevel)
                         end,
-                        unit = _("min"),
                     })
                 end,
             })
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
                 text_func = function()
-                    return T(_("Thresholds: %1% / %2%"), self.battery_threshold, self.battery_threshold_high)
+                    return T(_("Thresholds: %1 % / %2 %"), self.battery_threshold, self.battery_threshold_high)
                 end,
                 enabled_func = function()
                     return G_reader_settings:isTrue("device_status_battery_alarm")
@@ -237,6 +237,7 @@ High level threshold is checked when the device is charging.]]),
                         value_min = 1,
                         value_max = 60,
                         default_value = 5,
+                        unit = _("min"),
                         value_hold_step = 5,
                         title_text = _("Memory check interval"),
                         callback = function(spin)
@@ -263,6 +264,7 @@ High level threshold is checked when the device is charging.]]),
                         value_min = 20,
                         value_max = 500,
                         default_value = 100,
+                        unit = _("MB"),
                         value_step = 5,
                         value_hold_step = 10,
                         title_text = _("Memory alert threshold"),
