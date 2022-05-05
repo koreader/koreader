@@ -8,9 +8,9 @@ local Device = require("device")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local SpinWidget = require("ui/widget/spinwidget")
-local TimeVal = require("ui/timeval")   -- this will have to be changed to "ui/time", also the _tv will become _time
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local time = require("ui/time")
 local _ = require("gettext")
 local T = FFIUtil.template
 
@@ -28,7 +28,7 @@ function AutoDim:init()
     self.autodim_duration_s = G_reader_settings:readSetting("autodim_duration_seconds", DEFAULT_AUTODIM_DURATION_S)
     self.autodim_endpercentage = G_reader_settings:readSetting("autodim_endpercentage", DEFAULT_AUTODIM_ENDPERCENTAGE)
 
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+    self.last_action_tim = UIManager:getElapsedTimeSinceBoot()
 
     self.ui.menu:registerToMainMenu(self)
     UIManager.event_hook:registerWidget("InputEvent", self)
@@ -58,7 +58,7 @@ function AutoDim:getAutodimMenu()
                         info_text = _("Start the dimmer after the designated period of inactivity. Time is in minutes."),
                         value = self.autodim_starttime_m >=0 and self.autodim_starttime_m or 0.5,
                         default_value = DEFAULT_AUTODIM_STARTTIME_M,
-                        value_min = 0.1,
+                        value_min = 0.5,
                         value_max = 60,
                         value_step = 0.5,
                         value_hold_step = 5,
@@ -155,7 +155,7 @@ function AutoDim:_schedule_autodim_task(seconds)
 end
 
 function AutoDim:onInputEvent()
-    self.last_action_tv = UIManager:getElapsedTimeSinceBoot()
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
 
     if self.isCurrentlyDimming then
         Device.powerd:setIntensity(self.autodim_save_fl)
@@ -195,9 +195,9 @@ function AutoDim:autodim_task()
     if self.isCurrentlyDimming then return end
 
     local now = UIManager:getElapsedTimeSinceBoot()
-    local idle_duration =  now - self.last_action_tv
-    local check_delay = TimeVal:new{ sec = self.autodim_starttime_m * 60} - idle_duration
-    if check_delay:tonumber() <= 0 then
+    local idle_duration =  now - self.last_action_time
+    local check_delay = time.s(self.autodim_starttime_m) - idle_duration
+    if check_delay <= 0 then
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_endpercentage / 100 + 0.5)
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
@@ -211,7 +211,7 @@ function AutoDim:autodim_task()
         self:ramp_task() -- which schedules itself
         -- Don't schedule `autodim_task` here, as this is done on the next `onInputEvent`
     else
-        self:_schedule_autodim_task(check_delay:tonumber())
+        self:_schedule_autodim_task(time.to_s(check_delay))
     end
 end
 
