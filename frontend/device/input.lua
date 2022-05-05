@@ -258,6 +258,9 @@ function Input:init()
     if G_reader_settings:isTrue("backspace_as_back") then
         table.insert(self.group.Back, "Backspace")
     end
+
+    -- setup inhibitInputUntil scheduling function
+    self._inhibitInputUntil_func = function() self:inhibitInputUntil() end
 end
 
 --[[--
@@ -1339,6 +1342,8 @@ Request all input events to be ignored for some duration.
 @param set_or_seconds either `true`, in which case a platform-specific delay is chosen, or a duration in seconds (***int***).
 ]]
 function Input:inhibitInputUntil(set_or_seconds)
+    local UIManager = require("ui/uimanager")
+    UIManager:unschedule(self._inhibitInputUntil_func)
     if not set_or_seconds then -- remove any previously set
         self:inhibitInput(false)
         return
@@ -1361,8 +1366,7 @@ function Input:inhibitInputUntil(set_or_seconds)
     else -- we expect a number
         delay = set_or_seconds
     end
-    local UIManager = require("ui/uimanager")
-    UIManager:scheduleIn(delay, function() self:inhibitInputUntil() end)
+    UIManager:scheduleIn(delay, self._inhibitInputUntil_func)
     self:inhibitInput(true)
 end
 
