@@ -11,6 +11,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
@@ -54,6 +55,7 @@ local DoubleSpinWidget = FocusManager:new{
     -- Optional extra button above ok/cancel buttons row
     extra_text = nil,
     extra_callback = nil,
+    is_range = false, -- show a range separator in default button and between the spinners
 }
 
 function DoubleSpinWidget:init()
@@ -118,6 +120,13 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     right_widget.picker_updated_callback = function(value)
         self:update(left_widget:getValue(), value)
     end
+    local separator_widget = TextBoxWidget:new{
+        text = self.is_range and "–" or "",
+        alignment = "center",
+        face = self.title_face,
+        bold = true,
+        width = math.floor(math.min(self.screen_width, self.screen_height) * 0.02),
+    }
 
     local text_max_width = math.floor(0.95 * self.width / 2)
     local left_vertical_group = VerticalGroup:new{
@@ -129,6 +138,14 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         left_widget,
     }
+    local separator_vertical_group = VerticalGroup:new{
+        align = "center",
+        TextWidget:new{
+            text = "",
+            face = self.title_face,
+        },
+        separator_widget,
+    }
     local right_vertical_group = VerticalGroup:new{
         align = "center",
         TextWidget:new{
@@ -138,6 +155,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         right_widget,
     }
+
     local widget_group = HorizontalGroup:new{
         align = "center",
         CenterContainer:new{
@@ -145,15 +163,19 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
                 w = self.width / 2,
                 h = left_vertical_group:getSize().h,
             },
-            left_vertical_group
+            left_vertical_group,
+        },
+        CenterContainer:new{
+            dimen = Geom:new{},
+            separator_vertical_group,
         },
         CenterContainer:new{
             dimen = Geom:new{
                 w = self.width / 2,
                 h = right_vertical_group:getSize().h,
             },
-            right_vertical_group
-        }
+            right_vertical_group,
+        },
     }
 
     local title_bar = TitleBar:new{
@@ -184,7 +206,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     if self.default_values then
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Apply default values: %1 / %2"),
+                text = self.default_text or T(_("Apply default values: %1 " .. (self.is_range and "–" or "/") .. " %2"),
                     self.left_precision and string.format(self.left_precision, self.left_default) or self.left_default,
                     self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default),
                 callback = function()

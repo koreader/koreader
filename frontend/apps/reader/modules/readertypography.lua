@@ -349,7 +349,7 @@ When the book's language tag is not among our presets, no specific features will
             if G_reader_settings:has("hyph_left_hyphen_min") or
                         G_reader_settings:has("hyph_right_hyphen_min") then
                 -- @translators to RTL language translators: %1/left is the min length of the start of a hyphenated word, %2/right is the min length of the end of a hyphenated word (note that there is yet no support for hyphenation with RTL languages, so this will mostly apply to LTR documents)
-                return T(_("Left/right minimal sizes: %1 – %2"),
+                return T(_("Left/right minimal sizes: %1 / %2"),
                     G_reader_settings:readSetting("hyph_left_hyphen_min"),
                     G_reader_settings:readSetting("hyph_right_hyphen_min"))
             end
@@ -376,7 +376,6 @@ When the book's language tag is not among our presets, no specific features will
                 -- the hyphenation changes happening
                 width_factor = 0.6,
                 default_values = true,
-                default_text = T(_("Use language defaults: %1 – %2"), alg_left_hyphen_min, alg_right_hyphen_min),
                 title_text = _("Hyphenation limits"),
                 info_text = _([[
 Set minimum length before hyphenation occurs.
