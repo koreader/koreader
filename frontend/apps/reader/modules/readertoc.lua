@@ -756,7 +756,7 @@ function ReaderToc:onShowToc()
 
     -- Get book title if available and the setting `toc_show_book_title` is true, else use generic "Table of Contents"
     local doc_info = self.ui.document:getProps()
-    local show_book_title = G_reader_settings:isTrue("toc_show_book_title")
+    local show_book_title = self.ui.doc_settings:isTrue("toc_show_book_title")
     local title = show_book_title and doc_info and doc_info.title ~= "" and doc_info.title or _("Table of Contents")
 
     local toc_menu = Menu:new{
@@ -775,6 +775,7 @@ function ReaderToc:onShowToc()
         items_font_size = items_font_size,
         items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. Menu's default is twice that.
         line_color = Blitbuffer.COLOR_WHITE,
+        title_bar_left_icon = "info",  -- or use better icon here
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -793,6 +794,16 @@ function ReaderToc:onShowToc()
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         toc_menu,
     }
+
+    function toc_menu:onLeftButtonHold()
+        self.ui.doc_settings:toggle("toc_show_book_title")
+        self:onClose()
+        UIManager:broadcastEvent(Event:new("ShowToc"))
+    end
+
+    function toc_menu:onLeftButtonTap()
+        UIManager:broadcastEvent(Event:new("ShowBookInfo"))
+    end
 
     function toc_menu:onMenuSelect(item, pos)
         -- if toc item has expand/collapse state and tap select on the left side
@@ -1000,15 +1011,6 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
             end,
         }
     end
-    menu_items.toc_show_book_title = {
-        text = _("Show book title in table of contents"),
-        checked_func = function()
-            return G_reader_settings:isTrue("toc_show_book_title")
-        end,
-        callback = function()
-            G_reader_settings:toggle("toc_show_book_title")
-        end,
-    }
     -- Allow to have getTocTicksFlattened() get rid of all items at some depths, which
     -- might be useful to have the footer and SkimTo progress bar less crowded.
     -- This also affects the footer current chapter title, but leave the ToC itself unchanged.
