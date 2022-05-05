@@ -157,6 +157,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                             powerd:setDismissBatteryStatus(false)
                             UIManager:scheduleIn(self.battery_interval_m * 60, self.checkLowBatteryLevel)
                         end,
+                        unit = _("min"),
                     })
                 end,
             })

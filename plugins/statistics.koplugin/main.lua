@@ -958,6 +958,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 right_hold_step = 60,
                                 default_values = true,
                                 is_range = true,
+                                unit = _("s"),
                                 title_text = _("Read page duration limits"),
                                 info_text = _([[
 Set min and max time spent (in seconds) on a page for it to be counted as read in statistics.

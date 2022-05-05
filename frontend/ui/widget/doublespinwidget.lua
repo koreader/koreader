@@ -207,11 +207,11 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
 
     local buttons = {}
     if self.default_values then
-        local unit = self.unit and self.unit or ""
+        local unit = self.unit and (" " .. self.unit) or ""
         local separator = self.is_range and "–" or "/"
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Apply default values: %1 %3 %4 %2 %3"),
+                text = self.default_text or T(_("Apply default values: %1%3 %4 %2%3"),
                     self.left_precision and string.format(self.left_precision, self.left_default) or self.left_default,
                     self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default,
                     unit, separator),
