@@ -935,7 +935,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Read page duration limits: %1 s / %2 s"),
+                            return T(_("Read page duration limits: %1 s – %2 s"),
                                 self.settings.min_sec, self.settings.max_sec)
                         end,
                         callback = function(touchmenu_instance)
@@ -957,6 +957,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 right_step = 10,
                                 right_hold_step = 60,
                                 default_values = true,
+                                is_range = true,
                                 title_text = _("Read page duration limits"),
                                 info_text = _([[
 Set min and max time spent (in seconds) on a page for it to be counted as read in statistics.
