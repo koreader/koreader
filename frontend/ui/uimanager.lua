@@ -5,11 +5,11 @@ This module manages widgets.
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
-local TimeVal = require("ui/timeval")
 local dbg = require("dbg")
 local logger = require("logger")
 local ffiUtil = require("ffi/util")
 local util = require("util")
+local time = require("ui/time")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -30,7 +30,7 @@ local UIManager = {
     event_handlers = nil,
 
     _running = true,
-    _now = TimeVal:now(),
+    _now = time.now(),
     _window_stack = {},
     _task_queue = {},
     _task_queue_dirty = false,
@@ -523,14 +523,14 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
 end
 
 -- schedule an execution task, task queue is in ascendant order
-function UIManager:schedule(time, action, ...)
+function UIManager:schedule(sched_time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
         -- do a binary insert
         repeat
-            p = math.floor(s + (e - s) / 2)
+            p = math.floor((e + s) / 2) -- Not necessary to use (s + (e -s) / 2) here!
             local p_time = self._task_queue[p].time
-            if time > p_time then
+            if sched_time > p_time then
                 if s == e then
                     p = e + 1
                     break
@@ -539,11 +539,11 @@ function UIManager:schedule(time, action, ...)
                 else
                     s = p
                 end
-            elseif time < p_time then
-                e = p
-                if s == e then
+            elseif sched_time < p_time then
+                if s == p then
                     break
                 end
+                e = p
             else
                 -- for fairness, it's better to make p+1 is strictly less than
                 -- p might want to revisit here in the future
@@ -552,7 +552,7 @@ function UIManager:schedule(time, action, ...)
         until e < s
     end
     table.insert(self._task_queue, p, {
-        time = time,
+        time = sched_time,
         action = action,
         argc = select('#', ...),
         args = {...},
@@ -560,8 +560,8 @@ function UIManager:schedule(time, action, ...)
     self._task_queue_dirty = true
 end
 dbg:guard(UIManager, 'schedule',
-    function(self, time, action)
-        assert(time.sec >= 0, "Only positive time allowed")
+    function(self, sched_time, action)
+        assert(sched_time >= 0, "Only positive time allowed")
         assert(action ~= nil, "No action")
     end)
 
@@ -577,7 +577,7 @@ Schedules a task to be run a certain amount of seconds from now.
 function UIManager:scheduleIn(seconds, action, ...)
     -- We might run significantly late inside an UI frame, so we can't use the cached value here.
     -- It would also cause some bad interactions with the way nextTick & co behave.
-    local when = TimeVal:now() + TimeVal:fromnumber(seconds)
+    local when = time.now() + time.s(seconds)
     self:schedule(when, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
@@ -1065,15 +1065,15 @@ function UIManager:discardEvents(set_or_seconds)
             -- sometimes > 500ms on some devices/temperatures.
             -- So, block for 400ms (to have it displayed) + 400ms
             -- for user reaction to it
-            delay = TimeVal:new{ sec = 0, usec = 800000 }
+            delay = time.ms(800)
         else
             -- On non-eInk screen, display is usually instantaneous
-            delay = TimeVal:new{ sec = 0, usec = 400000 }
+            delay = time.ms(400)
         end
     else -- we expect a number
-        delay = TimeVal:new{ sec = set_or_seconds, usec = 0 }
+        delay = time.s(set_or_seconds)
     end
-    self._discard_events_till = TimeVal:now() + delay
+    self._discard_events_till = time.now() + delay
 end
 
 --[[--
@@ -1089,7 +1089,7 @@ function UIManager:sendEvent(event)
 
     -- Ensure discardEvents
     if self._discard_events_till then
-        if TimeVal:now() < self._discard_events_till then
+        if time.now() < self._discard_events_till then
             return
         else
             self._discard_events_till = nil
@@ -1173,10 +1173,10 @@ end
 
 --[[
 function UIManager:getNextTaskTimes(count)
-    count = count or 1
+    count = math.min(count or 1, #self._task_queue)
     local times = {}
-    for i = 1, math.min(count, #self._task_queue) do
-        times[i] = self._task_queue[i].time - TimeVal:now()
+    for i = 1, count do
+        times[i] = self._task_queue[i].time - time.now()
     end
     return times
 end
@@ -1184,14 +1184,14 @@ end
 
 function UIManager:getNextTaskTime()
     if #self._task_queue > 0 then
-        return self._task_queue[1].time - TimeVal:now()
+        return self._task_queue[1].time - time:now()
     else
         return nil
     end
 end
 
 function UIManager:_checkTasks()
-    self._now = TimeVal:now()
+    self._now = time.now()
     local wait_until = nil
 
     -- task.action may schedule other events
@@ -1202,8 +1202,8 @@ function UIManager:_checkTasks()
             break
         end
         local next_task = self._task_queue[1]
-        local task_tv = next_task.time or TimeVal.zero
-        if task_tv <= self._now then
+        local task_time = next_task.time or 0
+        if task_time <= self._now then
             -- remove from table
             local task = table.remove(self._task_queue, 1)
             -- task is pending to be executed right now. do it.
@@ -1213,7 +1213,7 @@ function UIManager:_checkTasks()
         else
             -- queue is sorted in ascendant order, safe to assume all items
             -- are future tasks for now
-            wait_until = next_task.time
+            wait_until = task_time
             break
         end
     end
@@ -1222,9 +1222,9 @@ function UIManager:_checkTasks()
 end
 
 --[[--
-Returns a TimeVal object corresponding to the last UI tick.
+Returns a time (fts) corresponding to the last tick.
 
-This is essentially a cached TimeVal:now(), computed at the top of every iteration of the main UI loop,
+This is essentially a cached time.now(), computed at the top of every iteration of the main UI loop,
 (right before checking/running scheduled tasks).
 This is mainly useful to compute/schedule stuff in the same time scale as the UI loop (i.e., MONOTONIC),
 without having to resort to a syscall.
@@ -1233,7 +1233,7 @@ unless you're blocking the UI for a significant amount of time in a single UI fr
 
 That is to say, its granularity is an UI frame.
 
-Prefer the appropriate TimeVal method for your needs if you require perfect accuracy or better granularity
+Prefer the appropriate time function for your needs if you require perfect accuracy or better granularity
 (e.g., when you're actually working on the event loop *itself* (UIManager, Input, GestureDetector),
 or if you're dealing with intra-frame timers).
 
@@ -1244,10 +1244,10 @@ function UIManager:getTime()
 end
 
 --[[--
-Returns a TimeVal object corresponding to the last UI tick plus the time in standby and suspend.
+Returns a time (fts) corresponding to the last UI tick plus the time in standby.
 ]]
 function UIManager:getElapsedTimeSinceBoot()
-    return self:getTime() + Device.total_standby_tv + Device.total_suspend_tv
+    return self:getTime() + Device.total_standby_time + Device.total_suspend_time
 end
 
 -- precedence of refresh modes:
@@ -1676,7 +1676,7 @@ function UIManager:handleInput()
 
     -- We pass that on as an absolute deadline, not a relative wait time.
     if wait_us then
-        deadline = now + TimeVal:new{ usec = wait_us }
+        deadline = now + time.us(wait_us)
     end
 
     -- If there's a scheduled task pending, that puts an upper bound on how long to wait.
@@ -1720,7 +1720,6 @@ function UIManager:handleInput()
         end)
     end
 end
-
 
 function UIManager:onRotation()
     self:setDirty("all", "full")

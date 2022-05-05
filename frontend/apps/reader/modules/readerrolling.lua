@@ -7,10 +7,10 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Size = require("ui/size")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
+local time = require("ui/time")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -112,7 +112,7 @@ function ReaderRolling:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
-    self.pan_interval = TimeVal:new{ usec = 1000000 / self.pan_rate }
+    self.pan_interval = time.s(1 / self.pan_rate)
 
     table.insert(self.ui.postInitCallback, function()
         self.rendering_hash = self.ui.document:getDocumentRenderingHash()
@@ -403,9 +403,9 @@ function ReaderRolling:getLastPercent()
     end
 end
 
-function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay)
+function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_ms)
     self.scroll_method = scroll_method
-    self.scroll_activation_delay = TimeVal:new{ usec = scroll_activation_delay * 1000 }
+    self.scroll_activation_delay = time.ms(scroll_activation_delay_ms)
     if inertial_scroll_enabled then
         self.ui.scrolling:setInertialScrollCallbacks(
             function(distance) -- do_scroll_callback
@@ -478,7 +478,7 @@ function ReaderRolling:onPan(_, ges)
                 self._pan_has_scrolled = false
                 self._pan_prev_relative_y = 0
                 self._pan_to_scroll_later = 0
-                self._pan_real_last_time = TimeVal.zero
+                self._pan_real_last_time = 0
                 if ges.mousewheel_direction then
                     self._pan_activation_time = false
                 else
@@ -1173,8 +1173,8 @@ function ReaderRolling:handleEngineCallback(ev, ...)
     -- ignore other events
 end
 
-local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2, usec = 0 }
-local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ sec = 0, usec = 500000 }
+local ENGINE_PROGRESS_INITIAL_DELAY = time.s(2)
+local ENGINE_PROGRESS_UPDATE_DELAY = time.ms(500)
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then
@@ -1186,7 +1186,7 @@ function ReaderRolling:showEngineProgress(percent)
     end
 
     if percent then
-        local now = TimeVal:now()
+        local now = time.now()
         if self.engine_progress_update_not_before and now < self.engine_progress_update_not_before then
             return
         end

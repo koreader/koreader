@@ -7,7 +7,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
-local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
@@ -15,6 +14,7 @@ local logger = require("logger")
 local util = require("util")
 local Size = require("ui/size")
 local ffiUtil = require("ffi/util")
+local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
@@ -51,7 +51,7 @@ function ReaderHighlight:init()
     self._start_indicator_highlight = false
     self._current_indicator_pos = nil
     self._previous_indicator_pos = nil
-    self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = TimeVal:now()}
+    self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
 
     if Device:hasDPad() then
         -- Used for text selection with dpad/keys
@@ -897,9 +897,9 @@ dbg:guard(ReaderHighlight, "onShowHighlightMenu",
 
 function ReaderHighlight:_resetHoldTimer(clear)
     if clear then
-        self.hold_last_tv = nil
+        self.hold_last_time = nil
     else
-        self.hold_last_tv = UIManager:getTime()
+        self.hold_last_time = UIManager:getTime()
     end
 end
 
@@ -1423,14 +1423,14 @@ function ReaderHighlight:onHoldRelease()
     end
 
     local long_final_hold = false
-    if self.hold_last_tv then
-        local hold_duration = TimeVal:now() - self.hold_last_tv
-        local long_hold_threshold = G_reader_settings:readSetting("highlight_long_hold_threshold", 3)
-        if hold_duration > TimeVal:new{ sec = long_hold_threshold, usec = 0 } then
+    if self.hold_last_time then
+        local hold_duration = time.now() - self.hold_last_time
+        local long_hold_threshold_s = G_reader_settings:readSetting("highlight_long_hold_threshold", 3) -- seconds
+        if hold_duration > time.s(long_hold_threshold_s) then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
         end
-        self.hold_last_tv = nil
+        self.hold_last_time = nil
     end
     if self.is_word_selection then -- single-word selection
         if long_final_hold or G_reader_settings:isTrue("highlight_action_on_single_word") then
@@ -1947,14 +1947,14 @@ function ReaderHighlight:onMoveHighlightIndicator(args)
             rect.x = rect.x + quick_move_distance_dx * dx
             rect.y = rect.y + quick_move_distance_dy * dy
         else
-            local now = TimeVal:now()
+            local now = time:now()
             if dx == self._last_indicator_move_args.dx and dy == self._last_indicator_move_args.dy then
                 local diff = now - self._last_indicator_move_args.time
                 -- if press same arrow key in 1 second, speed up
                 -- double press: 4 single move distances, usually move to next word or line
                 -- triple press: 16 single distances, usually skip several words or lines
                 -- quadruple press: 54 single distances, almost move to screen edge
-                if diff < TimeVal:new{ sec = 1, usec = 0 } then
+                if diff < time.s(1) then
                     move_distance = self._last_indicator_move_args.distance * 4
                 end
             end
@@ -1998,7 +1998,7 @@ function ReaderHighlight:_createHighlightGesture(gesture)
     return {
         ges = gesture,
         pos = point,
-        time = TimeVal:realtime(),
+        time = time.realtime(),
     }
 end
 

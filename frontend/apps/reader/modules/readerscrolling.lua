@@ -1,9 +1,9 @@
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local time = require("ui/time")
 local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
@@ -22,7 +22,7 @@ local ReaderScrolling = InputContainer:new{
     SCROLL_METHOD_ON_RELEASE = SCROLL_METHOD_ON_RELEASE,
 
     scroll_method = SCROLL_METHOD_CLASSIC,
-    scroll_activation_delay = 0, -- 0 ms
+    scroll_activation_delay_ms = 0, -- 0 ms
     inertial_scroll = false,
 
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
@@ -30,7 +30,7 @@ local ReaderScrolling = InputContainer:new{
     -- go at ending scrolling soon when we reach steps smaller than this
     end_scroll_dist = Screen:scaleBySize(10),
     -- no inertial scrolling if 300ms pause without any movement before release
-    pause_before_release_cancel_duration = TimeVal:new{ sec = 0, usec = 300000 },
+    pause_before_release_cancel_duration = time.ms(300),
 
     -- Callbacks to be updated by readerrolling or readerpaging
     _do_scroll_callback = function(distance) return false end,
@@ -66,14 +66,14 @@ function ReaderScrolling:init()
         -- we miss a first touch event.
         -- We can keep it obsolete, which will result in a long
         -- duration and a small/zero velocity that won't hurt.
-        self._last_manual_scroll_timev = TimeVal.zero
+        self._last_manual_scroll_timev = 0
         self:_setupAction()
     end
 
     self.ui.menu:registerToMainMenu(self)
 end
 
-function ReaderScrolling:getDefaultScrollActivationDelay()
+function ReaderScrolling:getDefaultScrollActivationDelay_ms()
     if (self.ui.gestures and self.ui.gestures.multiswipes_enabled)
                 or G_reader_settings:readSetting("activate_menu") ~= "tap" then
         -- If swipes to show menu or multiswipes are enabled, higher default
@@ -143,11 +143,11 @@ This is interesting on eInk if you only pan to better adjust page vertical posit
             },
             {
                 text_func = function()
-                    return T(_("Activation delay: %1 ms"), self.scroll_activation_delay)
+                    return T(_("Activation delay: %1 ms"), self.scroll_activation_delay_ms)
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
-                    local scroll_activation_delay_default = self:getDefaultScrollActivationDelay()
+                    local scroll_activation_delay_default_ms = self:getDefaultScrollActivationDelay_ms()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local widget = SpinWidget:new{
                         title_text = _("Scroll activation delay"),
@@ -155,17 +155,17 @@ This is interesting on eInk if you only pan to better adjust page vertical posit
 A delay can be used to avoid scrolling when swipes or multiswipes are intended.
 
 The delay value is in milliseconds and can range from 0 to 2000 (2 seconds).
-Default value: %1 ms]]), scroll_activation_delay_default),
+Default value: %1 ms]]), scroll_activation_delay_default_ms),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = self.scroll_activation_delay,
+                        value = self.scroll_activation_delay_ms,
                         value_min = 0,
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
                         ok_text = _("Set delay"),
-                        default_value = scroll_activation_delay_default,
+                        default_value = scroll_activation_delay_default_ms,
                         callback = function(spin)
-                            self.scroll_activation_delay = spin.value
+                            self.scroll_activation_delay_ms = spin.value
                             self:applyScrollSettings()
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
@@ -195,18 +195,18 @@ end
 
 function ReaderScrolling:onReaderReady()
     -- We don't know if the gestures plugin is loaded in :init(), but we know it here
-    self.scroll_activation_delay = G_reader_settings:readSetting("scroll_activation_delay")
-                                       or self:getDefaultScrollActivationDelay()
+    self.scroll_activation_delay_ms = G_reader_settings:readSetting("scroll_activation_delay")
+                                          or self:getDefaultScrollActivationDelay_ms()
     self:applyScrollSettings()
 end
 
 function ReaderScrolling:applyScrollSettings()
     G_reader_settings:saveSetting("scroll_method", self.scroll_method)
     G_reader_settings:saveSetting("inertial_scroll", self.inertial_scroll)
-    if self.scroll_activation_delay == self:getDefaultScrollActivationDelay() then
+    if self.scroll_activation_delay_ms == self:getDefaultScrollActivationDelay_ms() then
         G_reader_settings:delSetting("scroll_activation_delay")
     else
-        G_reader_settings:saveSetting("scroll_activation_delay", self.scroll_activation_delay)
+        G_reader_settings:saveSetting("scroll_activation_delay", self.scroll_activation_delay_ms)
     end
     if self.scroll_method == self.SCROLL_METHOD_CLASSIC then
         self._inertial_scroll_enabled = self.inertial_scroll
@@ -215,7 +215,7 @@ function ReaderScrolling:applyScrollSettings()
     end
     self:setupTouchZones()
     self.ui:handleEvent(Event:new("ScrollSettingsUpdated", self.scroll_method,
-                            self._inertial_scroll_enabled, self.scroll_activation_delay))
+                            self._inertial_scroll_enabled, self.scroll_activation_delay_ms))
 end
 
 function ReaderScrolling:setupTouchZones()
@@ -339,14 +339,14 @@ function ReaderScrolling:_setupAction()
                 self._last_manual_scroll_dy = 0
                 return false
             end
-            if self._last_manual_scroll_duration:isZero() or self._last_manual_scroll_dy == 0 then
+            if self._last_manual_scroll_duration == 0 or self._last_manual_scroll_dy == 0 then
                 return false
             end
 
             -- Initial velocity is the one of the last pan scroll given to accountManualScroll()
-            local delay = self._last_manual_scroll_duration:tousecs()
-            if delay < 1 then delay = 1 end -- safety check
-            self._velocity = self._last_manual_scroll_dy * 1000000 / delay
+            local delay_us = time.to_us(self._last_manual_scroll_duration)
+            if delay_us < 1 then delay_us = 1 end -- safety check
+            self._velocity = self._last_manual_scroll_dy * time.s(1 / delay_us)
             self._last_manual_scroll_dy = 0
 
             self._inertial_scroll_action_scheduled = true

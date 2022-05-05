@@ -10,16 +10,16 @@
 -- able to get there easily.
 --------
 
-local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util = require("util")
+local time = require("ui/time")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local K = require("frontend/ui/data/keyboardlayouts/ja_keyboard_keys")
 
-local DEFAULT_KEITAI_TAP_INTERVAL = 2
+local DEFAULT_KEITAI_TAP_INTERVAL_S = 2
 
 -- "Keitai input" is an input mode similar to T9 mobile input, where you tap a
 -- key to cycle through several candidate characters. The tap interval is how
@@ -28,16 +28,16 @@ local DEFAULT_KEITAI_TAP_INTERVAL = 2
 -- information.
 
 local function getKeitaiTapInterval()
-    return G_reader_settings:readSetting("keyboard_japanese_keitai_tap_interval") or DEFAULT_KEITAI_TAP_INTERVAL
+    return time.s(G_reader_settings:readSetting("keyboard_japanese_keitai_tap_interval", DEFAULT_KEITAI_TAP_INTERVAL_S))
 end
 
 local function setKeitaiTapInterval(interval)
-    G_reader_settings:saveSetting("keyboard_japanese_keitai_tap_interval", interval)
+    G_reader_settings:saveSetting("keyboard_japanese_keitai_tap_interval", time.to_s(interval))
 end
 
 local function exitKeitaiMode(inputbox)
     logger.dbg("ja_kbd: clearing keitai window last tap tv")
-    inputbox._ja_last_tap_tv = nil
+    inputbox._ja_last_tap_time = nil
 end
 
 local function wrappedAddChars(inputbox, char)
@@ -48,10 +48,10 @@ local function wrappedAddChars(inputbox, char)
     -- For keitai buttons, are we still in the tap interval?
     local within_tap_window
     if keitai_cycle then
-        if inputbox._ja_last_tap_tv then
-            within_tap_window = TimeVal:getDuration(inputbox._ja_last_tap_tv) < getKeitaiTapInterval()
+        if inputbox._ja_last_tap_time then
+            within_tap_window = time.since(inputbox._ja_last_tap_time) < getKeitaiTapInterval()
         end
-        inputbox._ja_last_tap_tv = TimeVal:now()
+        inputbox._ja_last_tap_time = time.now()
     else
         -- This is a non-keitai or non-tap key, so break out of keitai window.
         exitKeitaiMode(inputbox)
@@ -113,7 +113,7 @@ local function wrapInputBox(inputbox)
                 for _, wrapper in ipairs(wrappers) do
                     wrapper:revert()
                 end
-                inputbox._ja_last_tap_tv = nil
+                inputbox._ja_last_tap_time = nil
                 inputbox._ja_wrapped = nil
             end
         end
@@ -127,7 +127,7 @@ local function genMenuItems(self)
                 local interval = getKeitaiTapInterval()
                 if interval ~= 0 then
                     -- @translators Keitai input is a kind of Japanese keyboard input mode (similar to T9 keypad input). See <https://en.wikipedia.org/wiki/Japanese_input_method#Mobile_phones> for more information.
-                    return T(N_("Keitai tap interval: %1 second", "Keitai tap interval: %1 seconds", interval), interval)
+                    return T(N_("Keitai tap interval: %1 second", "Keitai tap interval: %1 seconds", time.to_s(interval)), time.to_s(interval))
                 else
                     -- @translators Flick and keitai are kinds of Japanese keyboard input modes. See <https://en.wikipedia.org/wiki/Japanese_input_method#Mobile_phones> for more information.
                     return _("Keitai input: disabled (flick-only input)")
@@ -146,14 +146,14 @@ How long to wait (in seconds) for the next tap when in keitai input mode before 
 
 If set to 0, keitai input is disabled entirely and only flick input can be used.]]),
                     width = math.floor(Screen:getWidth() * 0.75),
-                    value = getKeitaiTapInterval(),
+                    value = time.to_s(getKeitaiTapInterval()),
                     value_min = 0,
                     value_max = 10,
                     value_step = 1,
                     ok_text = _("Set interval"),
-                    default_value = DEFAULT_KEITAI_TAP_INTERVAL,
+                    default_value = DEFAULT_KEITAI_TAP_INTERVAL_S,
                     callback = function(spin)
-                        setKeitaiTapInterval(spin.value)
+                        setKeitaiTapInterval(time.s(spin.value))
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                 }

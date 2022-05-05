@@ -3,6 +3,7 @@ local Dispatcher = require("dispatcher")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 
@@ -48,11 +49,11 @@ function SystemStat:appendCounters()
             util.secondsToClockDuration("", os.difftime(os.time(), self.start_sec), false, true, true)})
     if Device:canSuspend() then
         self:put({"  " .. _("Time in suspend"),
-            util.secondsToClockDuration("", Device.total_suspend_tv:tonumber(), false, true, true)})
+            util.secondsToClockDuration("", time.to_number(Device.total_suspend_time), false, true, true)})
     end
     if Device:canStandby() then
         self:put({"  " .. _("Time in standby"),
-            util.secondsToClockDuration("", Device.total_standby_tv:tonumber(), false, true, true)})
+            util.secondsToClockDuration("", time.to_number(Device.total_standby_time), false, true, true)})
     end
     self:put({_("Counters"), ""})
     self:put({_("  wake-ups"), self.wakeup_count})

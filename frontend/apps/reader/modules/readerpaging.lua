@@ -5,15 +5,14 @@ local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
 local util = require("util")
+local time = require("ui/time")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
-
 
 local function copyPageState(page_state)
     return {
@@ -98,7 +97,7 @@ function ReaderPaging:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
-    self.pan_interval = TimeVal:new{ usec = 1000000 / self.pan_rate }
+    self.pan_interval = time.s(1 / self.pan_rate)
     self.number_of_pages = self.ui.document.info.number_of_pages
 end
 
@@ -321,9 +320,9 @@ function ReaderPaging:bookmarkFlipping(flipping_page, flipping_ges)
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
-function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay)
+function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay_ms)
     self.scroll_method = scroll_method
-    self.scroll_activation_delay = TimeVal:new{ usec = scroll_activation_delay * 1000 }
+    self.scroll_activation_delay = time.ms(scroll_activation_delay_ms)
     if inertial_scroll_enabled then
         self.ui.scrolling:setInertialScrollCallbacks(
             function(distance) -- do_scroll_callback
@@ -408,7 +407,7 @@ function ReaderPaging:onPan(_, ges)
                 self._pan_has_scrolled = false
                 self._pan_prev_relative_y = 0
                 self._pan_to_scroll_later = 0
-                self._pan_real_last_time = TimeVal.zero
+                self._pan_real_last_time = 0
                 if ges.mousewheel_direction then
                     self._pan_activation_time = false
                 else
