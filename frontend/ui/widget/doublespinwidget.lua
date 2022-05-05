@@ -56,6 +56,7 @@ local DoubleSpinWidget = FocusManager:new{
     extra_text = nil,
     extra_callback = nil,
     is_range = false, -- show a range separator in default button and between the spinners
+    unit = "",
 }
 
 function DoubleSpinWidget:init()
@@ -101,6 +102,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         value_hold_step = self.left_hold_step,
         precision = self.left_precision,
         wrap = self.left_wrap,
+        unit = self.unit,
     }
     self:mergeLayoutInHorizontal(left_widget)
     local right_widget = NumberPickerWidget:new{
@@ -112,6 +114,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         value_hold_step = self.right_hold_step,
         precision = self.right_precision,
         wrap = self.right_wrap,
+        unit = self.unit,
     }
     self:mergeLayoutInHorizontal(right_widget)
     left_widget.picker_updated_callback = function(value)
@@ -204,11 +207,14 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
 
     local buttons = {}
     if self.default_values then
+        local unit = self.unit and self.unit or ""
+        local separator = self.is_range and "–" or "/"
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Apply default values: %1 " .. (self.is_range and "–" or "/") .. " %2"),
+                text = self.default_text or T(_("Apply default values: %1 %3 %4 %2 %3"),
                     self.left_precision and string.format(self.left_precision, self.left_default) or self.left_default,
-                    self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default),
+                    self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default,
+                    unit, separator),
                 callback = function()
                     apply_callback(self.left_default, self.right_default)
                 end,
