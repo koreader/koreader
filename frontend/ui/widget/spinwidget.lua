@@ -123,7 +123,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
 
     local buttons = {}
     if self.default_value then
-        local unit = self.unit and (" " .. self.unit) or ""
+        local unit = self.unit and ("\xE2\x80\xAF" .. self.unit) or "" -- use Narrow No-Break Space (NNBSP) here
         table.insert(buttons, {
             {
                 text = self.default_text or T(_("Default value: %1%2"),

@@ -158,6 +158,11 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         right_widget,
     }
+    if self.left_text == "" and self.right_text == "" then
+        table.remove(left_vertical_group, 1)
+        table.remove(separator_vertical_group, 1)
+        table.remove(right_vertical_group, 1)
+    end
 
     local widget_group = HorizontalGroup:new{
         align = "center",
@@ -207,7 +212,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
 
     local buttons = {}
     if self.default_values then
-        local unit = self.unit and (" " .. self.unit) or ""
+        local unit = self.unit and ("\xE2\x80\xAF" .. self.unit) or "" -- use Narrow No-Break Space (NNBSP) here
         local separator = self.is_range and "–" or "/"
         table.insert(buttons, {
             {
