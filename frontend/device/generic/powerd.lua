@@ -220,7 +220,7 @@ function BasePowerD:getCapacity()
     if UIManager then
         now = UIManager:getElapsedTimeSinceBoot()
     else
-         -- Add time the device was in standby and suspend
+        -- Add time the device was in standby and suspend
         now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
     end
 
