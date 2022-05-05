@@ -266,11 +266,7 @@ function DateTimeWidget:createLayout()
     local function generateInfoText()
         if not self.append_unit_info then return self.info_text end
 
-        local info_text = ""
-        if self.info_text then
-            info_text = self.info_text .."\n"
-        end
-        info_text = info_text .. ("Enter time in ")
+        local info_text = (self.info_text and (self.info_text .. "\n") or "") .. ("Enter time in ")
 
         local times = { _("years"), _("months"), _("days"), _("hours"), _("minutes"), _("seconds"), }
 
