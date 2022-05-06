@@ -482,9 +482,9 @@ function Device:retrieveNetworkInfo()
             std_out:close()
         end
         if os.execute("ip r | grep -q default") == 0 then
-            -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
+            -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
             local pingok
-            if self:isKindle() and self:hasKeyboard() then
+            if self:isKindle() and self:hasDPad() then
                 pingok = os.execute("ping -q -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
             else
                 pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
