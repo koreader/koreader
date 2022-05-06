@@ -1287,6 +1287,14 @@ function CreDocument:buildAlternativeToc()
     self._document:buildAlternativeToc()
 end
 
+function CreDocument:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page)
+    self._document:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page or 1024)
+end
+
+function CreDocument:isPageMapSynthetic()
+    return self._document:isPageMapSynthetic()
+end
+
 function CreDocument:hasPageMap()
     return self._document:hasPageMap()
 end
