@@ -13,10 +13,11 @@ local NetworkListener = InputContainer:new{}
 
 function NetworkListener:onToggleWifi()
     if not NetworkMgr:isWifiOn() then
-        UIManager:show(InfoMessage:new{
+        local toggle_im = InfoMessage:new{
             text = _("Turning on Wi-Fi…"),
-            timeout = 1,
-        })
+        }
+        UIManager:show(toggle_im)
+        UIManager:forceRePaint()
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
@@ -25,12 +26,21 @@ function NetworkListener:onToggleWifi()
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         end
         NetworkMgr:turnOnWifi(complete_callback)
+
+        UIManager:close(toggle_im)
     else
         local complete_callback = function()
             UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         end
+        local toggle_im = InfoMessage:new{
+            text = _("Turning off Wi-Fi…"),
+        }
+        UIManager:show(toggle_im)
+        UIManager:forceRePaint()
+
         NetworkMgr:turnOffWifi(complete_callback)
 
+        UIManager:close(toggle_im)
         UIManager:show(InfoMessage:new{
             text = _("Wi-Fi off."),
             timeout = 1,
@@ -43,8 +53,15 @@ function NetworkListener:onInfoWifiOff()
     local complete_callback = function()
         UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
     end
+    local toggle_im = InfoMessage:new{
+        text = _("Turning off Wi-Fi…"),
+    }
+    UIManager:show(toggle_im)
+    UIManager:forceRePaint()
+
     NetworkMgr:turnOffWifi(complete_callback)
 
+    UIManager:close(toggle_im)
     UIManager:show(InfoMessage:new{
         text = _("Wi-Fi off."),
         timeout = 1,
@@ -53,10 +70,11 @@ end
 
 function NetworkListener:onInfoWifiOn()
     if not NetworkMgr:isOnline() then
-        UIManager:show(InfoMessage:new{
-            text = _("Enabling wifi…"),
-            timeout = 1,
-        })
+        local toggle_im = InfoMessage:new{
+            text = _("Enabling Wi-Fi…"),
+        }
+        UIManager:show(toggle_im)
+        UIManager:forceRePaint()
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
@@ -65,6 +83,8 @@ function NetworkListener:onInfoWifiOn()
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         end
         NetworkMgr:turnOnWifi(complete_callback)
+
+        UIManager:close(toggle_im)
     else
         local info_text
         local current_network = NetworkMgr:getCurrentNetwork()
@@ -209,6 +229,19 @@ end
 -- Also unschedule on suspend (and we happen to also kill Wi-Fi to do so, so resetting the stats is also relevant here)
 function NetworkListener:onSuspend()
     self:onNetworkDisconnected()
+end
+
+function NetworkListener:onShowNetworkInfo()
+    if Device.retrieveNetworkInfo then
+        UIManager:show(InfoMessage:new{
+            text = Device:retrieveNetworkInfo(),
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("Could not retrieve network info."),
+            timeout = 3,
+        })
+    end
 end
 
 return NetworkListener
