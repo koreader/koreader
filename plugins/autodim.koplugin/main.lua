@@ -28,7 +28,7 @@ function AutoDim:init()
     self.autodim_duration_s = G_reader_settings:readSetting("autodim_duration_seconds", DEFAULT_AUTODIM_DURATION_S)
     self.autodim_endpercentage = G_reader_settings:readSetting("autodim_endpercentage", DEFAULT_AUTODIM_ENDPERCENTAGE)
 
-    self.last_action_tim = UIManager:getElapsedTimeSinceBoot()
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
 
     self.ui.menu:registerToMainMenu(self)
     UIManager.event_hook:registerWidget("InputEvent", self)
@@ -100,6 +100,7 @@ function AutoDim:getAutodimMenu()
                         value_max = 300,
                         value_step = 1,
                         value_hold_step = 10,
+                        precision = "%1d",
                         unit = _("s"),
                         callback = function(spin)
                             if not spin then return end
@@ -116,7 +117,7 @@ function AutoDim:getAutodimMenu()
             },
             {
                 text_func = function()
-                    return T(_("Dim to: %1%"), self.autodim_endpercentage)
+                    return T(_("Dim to: %1 %"), self.autodim_endpercentage)
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
@@ -128,6 +129,7 @@ function AutoDim:getAutodimMenu()
                         value_min = 0,
                         value_max = 100,
                         value_hold_step = 10,
+                        unit = "%",
                         callback = function(spin)
                             self.autodim_endpercentage = spin.value
                             G_reader_settings:saveSetting("autodim_endpercentage", spin.value)
