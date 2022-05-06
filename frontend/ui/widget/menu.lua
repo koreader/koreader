@@ -1098,7 +1098,7 @@ function Menu:updateItems(select_number)
     if self.show_path then
         self.title_bar:setSubTitle(BD.directory(filemanagerutil.abbreviate(self.path)))
     end
-    self:mergeTitleBarLayout()
+    self:mergeTitleBarIntoLayout()
 
     UIManager:setDirty(self.show_parent, function()
         local refresh_dimen =
@@ -1109,7 +1109,7 @@ function Menu:updateItems(select_number)
 end
 
 -- merge TitleBar layout into self FocusManager layout
-function Menu:mergeTitleBarLayout()
+function Menu:mergeTitleBarIntoLayout()
     local menu_item_layout_start_row = 1
     local titlebars = {self.title_bar, self.outer_title_bar}
     for _, v in ipairs(titlebars) do
