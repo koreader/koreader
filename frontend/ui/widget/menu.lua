@@ -1098,7 +1098,7 @@ function Menu:updateItems(select_number)
     if self.show_path then
         self.title_bar:setSubTitle(BD.directory(filemanagerutil.abbreviate(self.path)))
     end
-    self:addTitleBarLayout()
+    self:mergeTitleBarLayout()
 
     UIManager:setDirty(self.show_parent, function()
         local refresh_dimen =
@@ -1109,12 +1109,12 @@ function Menu:updateItems(select_number)
 end
 
 -- merge TitleBar layout into self FocusManager layout
-function Menu:addTitleBarLayout()
+function Menu:mergeTitleBarLayout()
     local menu_item_layout_start_row = 1
     local titlebars = {self.title_bar, self.outer_title_bar}
     for _, v in ipairs(titlebars) do
-        -- Menu use right key for context menu trigger, there is no chances to move focus in horizontal directions
-        -- Add title bar buttons to layout in vertical directions
+        -- Menu uses the right key to trigger the context menu: we can't use it to move focus in horizontal directions.
+        -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
         local title_bar_layout = v:generateVerticalLayout()
         for _, row in ipairs(title_bar_layout) do
             table.insert(self.layout, menu_item_layout_start_row, row)
@@ -1122,7 +1122,7 @@ function Menu:addTitleBarLayout()
         end
     end
     if menu_item_layout_start_row > #self.layout then -- no menu items
-        menu_item_layout_start_row = #self.layout -- void index overflow
+        menu_item_layout_start_row = #self.layout -- avoid index overflow
     end
     self:moveFocusTo(1, menu_item_layout_start_row) -- move focus to first menu item if any, keep original behavior
 end

@@ -146,7 +146,7 @@ function FileManager:setupLayout()
         return_arrow_propagation = true,
         -- allow Menu widget to delegate handling of some gestures to GestureManager
         filemanager = self,
-        -- let Menu widget to merge TitleBar's FocusManager layout
+        -- let Menu widget merge our title_bar into its own TitleBar's FocusManager layout
         outer_title_bar = self.title_bar,
     }
     self.file_chooser = file_chooser

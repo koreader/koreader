@@ -409,7 +409,7 @@ function CoverMenu:updateItems(select_number)
             self.onFileHold_ours = self.onFileHold
         end)
     end
-    Menu.addTitleBarLayout(self)
+    Menu.mergeTitleBarLayout(self)
 end
 
 -- Similar to onFileHold setup just above, but for History,

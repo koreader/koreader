@@ -208,7 +208,7 @@ function FocusManager:onFocusMove(args)
     end
 
     if not self.layout[self.selected.y] or not self.layout[self.selected.y][self.selected.x] then
-        logger.dbg("FocusManager: Not found current selected widget")
+        logger.dbg("FocusManager: no currently selected widget found")
         return true
     end
     local current_item = self.layout[self.selected.y][self.selected.x]
