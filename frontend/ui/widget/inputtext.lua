@@ -337,9 +337,16 @@ function InputText:isTextEdited()
 end
 
 function InputText:init()
-    if self.text_type == "password" then
-        -- text_type changes from "password" to "text" when we toggle password
-        self.is_password_type = true
+    if Device:isTouchDevice() then
+        if self.text_type == "password" then
+            -- text_type changes from "password" to "text" when we toggle password
+            self.is_password_type = true
+        end
+    else
+        -- focus move does not work with textbox and show password checkbox
+        -- force show password for non-touch device
+        self.text_type = "text"
+        self.is_password_type = false
     end
     -- Beware other cases where implicit conversion to text may be done
     -- at some point, but checkTextEditability() would say "not editable".
