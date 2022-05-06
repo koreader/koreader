@@ -50,6 +50,7 @@ local NumberPickerWidget = FocusManager:new{
     date_year = nil,
     -- on update signal to the caller and pass updated value
     picker_updated_callback = nil,
+    unit = "",
 }
 
 function NumberPickerWidget:init()
@@ -180,7 +181,7 @@ function NumberPickerWidget:init()
     if self.unit then
         if self.unit == "°" then
             unit = self.unit
-        else
+        elseif self.unit ~= "" then
             unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
         end
     end

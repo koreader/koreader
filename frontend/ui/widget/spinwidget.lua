@@ -127,7 +127,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         if self.unit then
             if self.unit == "°" then
                 unit = self.unit
-            else
+            elseif self.unit ~= "" then
                 unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
             end
         end

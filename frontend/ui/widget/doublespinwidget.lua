@@ -56,7 +56,7 @@ local DoubleSpinWidget = FocusManager:new{
     extra_text = nil,
     extra_callback = nil,
     is_range = false, -- show a range separator in default button and between the spinners
-    unit = "",
+    unit = nil,
 }
 
 function DoubleSpinWidget:init()
@@ -196,20 +196,6 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         show_parent = self,
     }
 
-    -- helper for `OK` and `Default` buttons.
-    local function apply_callback(left_value, right_value)
-        self.left_value = left_value
-        self.right_value = right_value
-        if self.callback then
-            self.callback(left_value, right_value)
-        end
-        if self.keep_shown_on_apply then
-            self:update()
-        else
-            self:onClose()
-        end
-    end
-
     local buttons = {}
     if self.default_values then
         local separator = self.is_range and "–" or "/"
@@ -217,18 +203,21 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         if self.unit then
             if self.unit == "°" then
                 unit = self.unit
-            else
+            elseif self.unit ~= "" then
                 unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
             end
         end
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Apply default values: %1%3 %4 %2%3"),
+                text = self.default_text or T(_("Default values: %1%3 %4 %2%3"),
                     self.left_precision and string.format(self.left_precision, self.left_default) or self.left_default,
                     self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default,
                     unit, separator),
                 callback = function()
-                    apply_callback(self.left_default, self.right_default)
+                    left_widget.value  = self.left_default
+                    right_widget.value = self.right_default
+                    left_widget:update()
+                    right_widget:update()
                 end,
             }
         })
@@ -263,7 +252,16 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
             enabled = self.ok_always_enabled or self.left_value ~= left_widget:getValue()
                 or self.right_value ~= right_widget:getValue(),
             callback = function()
-                apply_callback(left_widget:getValue(), right_widget:getValue())
+                self.left_value = left_widget:getValue()
+                self.right_value = right_widget:getValue()
+                if self.callback then
+                    self.callback(self.left_value, self.right_value)
+                end
+                if self.keep_shown_on_apply then
+                    self:update()
+                else
+                    self:onClose()
+                end
             end,
         },
     })
