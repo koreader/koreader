@@ -137,7 +137,7 @@ function MarkdownExporter:export(t)
                 current_chapter = entry.chapter
                 file:write("## " .. current_chapter .. "\n")
             end
-            file:write("### " .. os.date("%d %B %Y %I:%M %p", entry.time) .. ", Page " .. entry.page .. "\n")
+            file:write("### Page" .. entry.page .. "@" .. os.date("%d %B %Y %I:%M %p", entry.time) .. "\n")
             if self.settings.highlight_formatting then
                 file:write(string.format(formatters[self.settings.formatting_options[entry.drawer]], entry.text) .."\n")
             else
