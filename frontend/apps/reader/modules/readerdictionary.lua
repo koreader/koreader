@@ -211,7 +211,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             return VocabularyBuilder.has_items
         end,
         callback = function()
-            VocabularyBuilder:showUI(function(word) self:onLookupWord(word, true) end)
+            VocabularyBuilder:showUI(function(item) self:onVocabularyBuilderLookupWord(item) end)
         end,
     }
     menu_items.dictionary_settings = {
@@ -375,6 +375,14 @@ function ReaderDictionary:addToMainMenu(menu_items)
             separator = true,
         })
     end
+end
+
+function ReaderDictionary:onVocabularyBuilderLookupWord(item)
+    local word = self:cleanSelection(item.word, true)
+    Trapper:wrap(function()
+        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, nil, nil, item.reviewable)
+    end)
+    return true
 end
 
 function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
@@ -858,7 +866,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     return results
 end
 
-function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link)
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, is_from_vocabulary_builder)
     if word == "" then
         return
     end
@@ -923,16 +931,22 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         return
     end
 
-    self:showDict(word, tidyMarkup(results), boxes, link)
+    self:showDict(word, tidyMarkup(results), boxes, link, is_from_vocabulary_builder)
 end
 
-function ReaderDictionary:showDict(word, results, boxes, link)
+function ReaderDictionary:showDict(word, results, boxes, link, is_from_vocabulary_builder)
     if results and results[1] then
         logger.dbg("showing quick lookup window", #self.dict_window_list+1, ":", word, results)
         self.dict_window = DictQuickLookup:new{
             window_list = self.dict_window_list,
             ui = self.ui,
             highlight = self.highlight,
+            got_it_callback = is_from_vocabulary_builder and 
+                function() VocabularyBuilder:gotItFromDict(word)
+                end or nil,
+            forgot_callback = is_from_vocabulary_builder and
+                function() VocabularyBuilder:forgotFromDict(word)
+                end or nil,
             dialog = self.dialog,
             -- original lookup word
             word = word,

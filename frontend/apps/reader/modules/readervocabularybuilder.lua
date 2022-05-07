@@ -145,7 +145,7 @@ function VocabularyBuilder:showUI(onSelect)
     conn:close()
     
 
-    local vocab_widget = VocabBuilderWidget:new{
+    self.vocab_widget = VocabBuilderWidget:new{
         title = _("Vocabulary Builder"),
         item_table = vocab_items,
         callback = function()
@@ -153,7 +153,7 @@ function VocabularyBuilder:showUI(onSelect)
             changed_callback()
         end
     }
-    UIManager:show(vocab_widget)
+    UIManager:show(self.vocab_widget)
 end
 
 
@@ -221,6 +221,14 @@ end
 function VocabularyBuilder:reset()
     local conn = SQ3.open(db_location)
     conn:exec("DELETE * FROM vocabulary;")
+end
+
+function VocabularyBuilder:gotItFromDict(word)
+    self.vocab_widget:gotItFromDict(word)
+end
+
+function VocabularyBuilder:forgotFromDict(word)
+    self.vocab_widget:forgotFromDict(word)
 end
 
 VocabularyBuilder:init()

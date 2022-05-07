@@ -63,7 +63,9 @@ local highlight_strings = {
 }
 
 function DictQuickLookup:canSearch()
-    if self.is_wiki then
+    if self.forgot_callback then
+        return true
+    elseif self.is_wiki then
         -- In the Wiki variant of this widget, the Search button is coopted to cycle between enabled languages.
         if #self.wiki_languages > 1 then
             return true
@@ -410,9 +412,13 @@ function DictQuickLookup:init()
                 {
                     id = "highlight",
                     text = self:getHighlightText(),
-                    enabled = not self:isDocless() and self.highlight ~= nil,
+                    enabled = self.got_it_callback or (not self:isDocless() and self.highlight ~= nil),
                     callback = function()
-                        if self:getHighlightText() == highlight_strings.highlight then
+                        if self.got_it_callback then
+                            self.got_it_callback()
+                            UIManager:close(self)
+                            return
+                        elseif self:getHighlightText() == highlight_strings.highlight then
                             self.ui:handleEvent(Event:new("Highlight"))
                         else
                             self.ui:handleEvent(Event:new("Unhighlight"))
@@ -462,13 +468,17 @@ function DictQuickLookup:init()
                     id = "search",
                     -- if more than one language, enable it and display "current lang > next lang"
                     -- otherwise, just display current lang
-                    text = self.is_wiki
+                    text = self.forgot_callback and _("Forgot") or self.is_wiki
                         and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
                                                         or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
                         or _("Search"),
                     enabled = self:canSearch(),
                     callback = function()
-                        if self.is_wiki then
+                        if self.forgot_callback then
+                            self.forgot_callback()
+                            UIManager:close(self)
+                            return
+                        elseif self.is_wiki then
                             -- We're rotating: forward this flag from the one we're closing so
                             -- that ReaderWikipedia can give it to the one we'll be showing
                             self.window_list.rotated_update_wiki_languages_on_close = self.update_wiki_languages_on_close
@@ -919,6 +929,9 @@ end
 function DictQuickLookup:getHighlightText()
     local item = self:getHighlightedItem()
     if not item then
+        if self.got_it_callback then
+            return _("Got it"), true
+        end
         return highlight_strings.highlight, false
     elseif self.ui.bookmark:isBookmarkAdded(item) then
         return highlight_strings.unhighlight, false
