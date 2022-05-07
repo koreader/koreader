@@ -23,7 +23,7 @@ local formatter_buttons = {
     {_("Underline (with <u></u> tags)"), "underline_u_tag"},
 }
 
-function MarkdownExporter:editFormatStyle(drawer_style, label)
+function MarkdownExporter:editFormatStyle(drawer_style, label, touchmenu_instance)
     local radio_buttons = {}
     for _idx, v in ipairs(formatter_buttons) do
         table.insert(radio_buttons, {
@@ -40,6 +40,7 @@ function MarkdownExporter:editFormatStyle(drawer_style, label)
         radio_buttons = radio_buttons,
         callback = function(radio)
             self.settings.formatting_options[drawer_style] = radio.provider
+            touchmenu_instance:updateItems()
         end,
     })
 end
@@ -89,8 +90,8 @@ function MarkdownExporter:getMenuTable()
                     return self:getFormatterLabel(_("Lighten"), "lighten")
                 end,
                 keep_menu_open = true,
-                callback = function()
-                    self:editFormatStyle("lighten", "Lighten")
+                callback = function(touchmenu_instance)
+                    self:editFormatStyle("lighten", "Lighten", touchmenu_instance)
                 end,
             },
             {
@@ -98,8 +99,8 @@ function MarkdownExporter:getMenuTable()
                     return self:getFormatterLabel(_("Strikeout"), "strikeout")
                 end,
                 keep_menu_open = true,
-                callback = function()
-                    self:editFormatStyle("strikeout", "Strikeout")
+                callback = function(touchmenu_instance)
+                    self:editFormatStyle("strikeout", "Strikeout", touchmenu_instance)
                 end,
             },
             {
@@ -107,8 +108,8 @@ function MarkdownExporter:getMenuTable()
                     return self:getFormatterLabel(_("Underline"), "underscore")
                 end,
                 keep_menu_open = true,
-                callback = function()
-                    self:editFormatStyle("underscore", "Underline")
+                callback = function(touchmenu_instance)
+                    self:editFormatStyle("underscore", "Underline", touchmenu_instance)
                 end,
             },
             {
@@ -116,8 +117,8 @@ function MarkdownExporter:getMenuTable()
                     return self:getFormatterLabel(_("Invert"), "invert")
                 end,
                 keep_menu_open = true,
-                callback = function()
-                    self:editFormatStyle("invert", "Invert")
+                callback = function(touchmenu_instance)
+                    self:editFormatStyle("invert", "Invert", touchmenu_instance)
                 end,
             },
         }
