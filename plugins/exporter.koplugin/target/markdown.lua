@@ -1,38 +1,11 @@
+
+local md = require("template/md")
 local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
 local T = util.template
 local _ = require("gettext")
 
-local formatters = {
-    none = {
-        formatter = "%s",
-        label = _("None")
-    },
-    bold = {
-        formatter = "**%s**",
-        label = _("Bold")
-    },
-    italic = {
-        formatter = "*%s*",
-        label = _("Italic")
-    },
-    bold_italic = {
-        formatter = "**_%s_**",
-        label = _("Bold Italic")
-    },
-    underline_markdownit = {
-        formatter = "++%s++",
-        label = _("Underline (Markdownit style, with ++)")
-    },
-    underline_u_tag = {
-        formatter = "<u>%s</u>",
-        label = _("Underline (with <u></u> tags)")
-    },
-    strikethrough = {
-        formatter = "~~%s~~",
-        label = _("Strikethrough")
-    },
-}
+
 
 -- markdown exporter
 local MarkdownExporter = require("base"):new {
@@ -92,7 +65,7 @@ function MarkdownExporter:populateSettings()
 end
 
 function MarkdownExporter:getFormatterLabel(header, drawer_style)
-    return T("%1: %2", header, formatters[self.settings.formatting_options[drawer_style]].label)
+    return T("%1: %2", header, md.formatters[self.settings.formatting_options[drawer_style]].label)
 end
 
 function MarkdownExporter:getMenuTable()
@@ -151,32 +124,15 @@ function MarkdownExporter:getMenuTable()
     }
 end
 
+
+
 function MarkdownExporter:export(t)
     self:populateSettings()
     local path = self:getFilePath(t)
     local file = io.open(path, "w")
     if not file then return false end
     for idx, book in ipairs(t) do
-        local current_chapter = nil
-        file:write("# " .. book.title .. "\n")
-        file:write("##### " .. book.author:gsub("\n", ", ") .. "\n\n")
-        for _, note in ipairs(book) do
-            local entry = note[1]
-            if entry.chapter ~= current_chapter then
-                current_chapter = entry.chapter
-                file:write("## " .. current_chapter .. "\n")
-            end
-            file:write("### Page " .. entry.page .. " @ " .. os.date("%d %B %Y %I:%M %p", entry.time) .. "\n")
-            if self.settings.highlight_formatting then
-                file:write(string.format(formatters[self.settings.formatting_options[entry.drawer]].formatter, entry.text) .."\n")
-            else
-                file:write(entry.text .. "\n")
-            end
-            if entry.note then
-                file:write("\n---\n" .. entry.note .. "\n")
-            end
-            file:write("\n")
-        end
+        file:write(md.prepareBookContent(book, self.settings.formatting_options, self.settings.highlight_formatting))
         if idx < #t then
             file:write("\n")
         end
