@@ -397,10 +397,12 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Long-press on text"),
         sub_item_table = {
             {
-                text = T(_("Highlight long-press interval: %1 s"),
-                    G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3)),
+                text_func = function()
+                    return T(_("Highlight long-press interval: %1 s"),
+                        G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
+                end,
                 keep_menu_open = true,
-                callback = function()
+                callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local items = SpinWidget:new{
                         title_text = _("Highlight long-press interval"),
@@ -415,10 +417,12 @@ The interval value is in seconds and can range from 3 to 20 seconds.]]),
                         value_step = 1,
                         value_hold_step = 5,
                         unit = _("s"),
+                        precision = "%1d",
                         ok_text = _("Set interval"),
                         default_value = 3,
                         callback = function(spin)
                             G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
                     }
                     UIManager:show(items)
