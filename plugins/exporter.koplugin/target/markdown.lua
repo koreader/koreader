@@ -32,7 +32,7 @@ local formatter_buttons = {
     {_("Underline (with <u></u> tags)"), "underline_u_tag"},
 }
 
-function MarkdownExporter:editFormatStyle(drawer_style)
+function MarkdownExporter:editFormatStyle(drawer_style, label)
     local radio_buttons = {}
     for _idx, v in ipairs(formatter_buttons) do
         table.insert(radio_buttons, {
@@ -44,7 +44,7 @@ function MarkdownExporter:editFormatStyle(drawer_style)
         })
     end
     UIManager:show(require("ui/widget/radiobuttonwidget"):new{
-        title_text = _("Formatting style for ")  .. drawer_style,
+        title_text = _("Formatting style for ")  .. _(label),
         width_factor = 0.8,
         keep_shown_on_apply = true,
         radio_buttons = radio_buttons,
@@ -94,28 +94,28 @@ function MarkdownExporter:getMenuTable()
                 text = _("Lighten"),
                 keep_menu_open = true,
                 callback = function()
-                    self:editFormatStyle("lighten")
+                    self:editFormatStyle("lighten", "Lighten")
                 end,
             },
             {
                 text = _("Strikeout"),
                 keep_menu_open = true,
                 callback = function()
-                    self:editFormatStyle("strikeout")
+                    self:editFormatStyle("strikeout", "Strikeout")
                 end,
             },
             {
                 text = _("Underline"),
                 keep_menu_open = true,
                 callback = function()
-                    self:editFormatStyle("underscore")
+                    self:editFormatStyle("underscore", "Underline")
                 end,
             },
             {
                 text = _("Invert"),
                 keep_menu_open = true,
                 callback = function()
-                    self:editFormatStyle("invert")
+                    self:editFormatStyle("invert", "Invert")
                 end,
             },
         }
