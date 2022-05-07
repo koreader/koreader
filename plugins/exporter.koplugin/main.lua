@@ -100,6 +100,7 @@ local Exporter = InputContainer:new {
         html = require("target/html"),
         joplin = require("target/joplin"),
         json = require("target/json"),
+        markdown = require("target/markdown"),
         readwise = require("target/readwise"),
         text = require("target/text"),
     },
