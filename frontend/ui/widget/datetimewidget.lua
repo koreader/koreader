@@ -63,7 +63,7 @@ local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
+local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -240,26 +240,20 @@ function DateTimeWidget:createLayout()
         unit_text = unit_text:sub(1, pos_and-1) .. " " .. _("and") .. unit_text:sub(pos_and+1)
     end
 
-    separator_date = TextBoxWidget:new{
+    separator_date = TextWidget:new{
         text = "–",
-        alignment = "center",
         face = self.title_face,
         bold = true,
-        width = math.floor(math.min(self.screen_width, self.screen_height) * 0.02),
     }
-    separator_time = TextBoxWidget:new{
+    separator_time = TextWidget:new{
         text = _(":"),
-        alignment = "center",
         face = self.title_face,
         bold = true,
-        width = math.floor(math.min(self.screen_width, self.screen_height) * 0.05),
     }
-    separator_date_time = TextBoxWidget:new{
+    separator_date_time = TextWidget:new{
         text =  _("/"),
-        alignment = "center",
         face = self.title_face,
         bold = true,
-        width = math.floor(math.min(self.screen_width, self.screen_height) * 0.02),
     }
     local date_group = HorizontalGroup:new{
         align = "center",
