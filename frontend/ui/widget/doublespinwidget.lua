@@ -11,7 +11,6 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
@@ -123,12 +122,10 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     right_widget.picker_updated_callback = function(value)
         self:update(left_widget:getValue(), value)
     end
-    local separator_widget = TextBoxWidget:new{
+    local separator_widget = TextWidget:new{
         text = self.is_range and "–" or "",
-        alignment = "center",
         face = self.title_face,
         bold = true,
-        width = math.floor(math.min(self.screen_width, self.screen_height) * 0.02),
     }
 
     local text_max_width = math.floor(0.95 * self.width / 2)
