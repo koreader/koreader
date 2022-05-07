@@ -4,13 +4,34 @@ local T = util.template
 local _ = require("gettext")
 
 local formatters = {
-    none = "%s",
-    bold = "**%s**",
-    italic = "*%s*",
-    bold_italic = "**_%s_**",
-    underline_markdownit = "++%s++",
-    underline_u_tag = "<u>%s</u>",
-    strikethrough = "~~%s~~",
+    none = {
+        formatter = "%s",
+        label = _("None")
+    },
+    bold = {
+        formatter = "**%s**",
+        label = _("Bold")
+    },
+    italic = {
+        formatter = "*%s*",
+        label = _("Italic")
+    },
+    bold_italic = {
+        formatter = "**_%s_**",
+        label = _("Bold Italic")
+    },
+    underline_markdownit = {
+        formatter = "++%s++",
+        label = _("Underline (Markdownit style, with ++)")
+    },
+    underline_u_tag = {
+        formatter = "<u>%s</u>",
+        label = _("Underline (with <u></u> tags)")
+    },
+    strikethrough = {
+        formatter = "~~%s~~",
+        label = _("Strikethrough")
+    },
 }
 
 -- markdown exporter
@@ -43,7 +64,6 @@ function MarkdownExporter:editFormatStyle(drawer_style, label)
     UIManager:show(require("ui/widget/radiobuttonwidget"):new{
         title_text = T(_("Formatting style for %1"), _(label)),
         width_factor = 0.8,
-        keep_shown_on_apply = true,
         radio_buttons = radio_buttons,
         callback = function(radio)
             self.settings.formatting_options[drawer_style] = radio.provider
@@ -71,6 +91,10 @@ function MarkdownExporter:populateSettings()
     end
 end
 
+function MarkdownExporter:getFormatterLabel(header, drawer_style)
+    return T("%1: %2", header, formatters[self.settings.formatting_options[drawer_style]].label)
+end
+
 function MarkdownExporter:getMenuTable()
     self:populateSettings()
     return {
@@ -88,28 +112,36 @@ function MarkdownExporter:getMenuTable()
                 callback = function() self.settings.highlight_formatting = not self.settings.highlight_formatting end,
             },
             {
-                text = _("Lighten"),
+                text_func = function ()
+                    return self:getFormatterLabel(_("Lighten"), "lighten")
+                end,
                 keep_menu_open = true,
                 callback = function()
                     self:editFormatStyle("lighten", "Lighten")
                 end,
             },
             {
-                text = _("Strikeout"),
+                text_func = function ()
+                    return self:getFormatterLabel(_("Strikeout"), "strikeout")
+                end,
                 keep_menu_open = true,
                 callback = function()
                     self:editFormatStyle("strikeout", "Strikeout")
                 end,
             },
             {
-                text = _("Underline"),
+                text_func = function ()
+                    return self:getFormatterLabel(_("Underline"), "underscore")
+                end,
                 keep_menu_open = true,
                 callback = function()
                     self:editFormatStyle("underscore", "Underline")
                 end,
             },
             {
-                text = _("Invert"),
+                text_func = function ()
+                    return self:getFormatterLabel(_("Invert"), "invert")
+                end,
                 keep_menu_open = true,
                 callback = function()
                     self:editFormatStyle("invert", "Invert")
@@ -136,7 +168,7 @@ function MarkdownExporter:export(t)
             end
             file:write("### Page " .. entry.page .. " @ " .. os.date("%d %B %Y %I:%M %p", entry.time) .. "\n")
             if self.settings.highlight_formatting then
-                file:write(string.format(formatters[self.settings.formatting_options[entry.drawer]], entry.text) .."\n")
+                file:write(string.format(formatters[self.settings.formatting_options[entry.drawer]].formatter, entry.text) .."\n")
             else
                 file:write(entry.text .. "\n")
             end
