@@ -105,7 +105,7 @@ function MarkdownExporter:getMenuTable()
                 end,
             },
             {
-                text = _("Underscore"),
+                text = _("Underline"),
                 keep_menu_open = true,
                 callback = function()
                     self:editFormatStyle("underscore")
