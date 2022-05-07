@@ -550,6 +550,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                         value_max = 30,
                         value_hold_step = 2,
                         default_value = 16,
+                        unit = _("kB"),
                         title_text = _("Terminal emulator buffer size (kB)"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("terminal_buffer_size", spin.value)
