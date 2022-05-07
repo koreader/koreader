@@ -397,7 +397,7 @@ if last_migration_date < 20220507 then
             G_reader_settings:delSetting(old)
         end
     end
-    migrateSettingsName("highlight_long_hold_threshold_s", "highlight_long_hold_threshold_s")
+    migrateSettingsName("highlight_long_hold_threshold", "highlight_long_hold_threshold_s")
 end
 
 -- We're done, store the current migration date
