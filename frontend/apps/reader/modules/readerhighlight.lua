@@ -397,7 +397,8 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Long-press on text"),
         sub_item_table = {
             {
-                text = _("Highlight long-press interval"),
+                text = T(_("Highlight long-press interval: %1 s"),
+                    G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3)),
                 keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
@@ -408,15 +409,16 @@ If a touch is not released in this interval, it is considered a long-press. On d
 
 The interval value is in seconds and can range from 3 to 20 seconds.]]),
                         width = math.floor(Screen:getWidth() * 0.75),
-                        value = G_reader_settings:readSetting("highlight_long_hold_threshold", 3),
+                        value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
                         value_min = 3,
                         value_max = 20,
                         value_step = 1,
                         value_hold_step = 5,
+                        unit = _("s"),
                         ok_text = _("Set interval"),
                         default_value = 3,
                         callback = function(spin)
-                            G_reader_settings:saveSetting("highlight_long_hold_threshold", spin.value)
+                            G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
                         end
                     }
                     UIManager:show(items)
@@ -1425,7 +1427,7 @@ function ReaderHighlight:onHoldRelease()
     local long_final_hold = false
     if self.hold_last_time then
         local hold_duration = time.now() - self.hold_last_time
-        local long_hold_threshold_s = G_reader_settings:readSetting("highlight_long_hold_threshold", 3) -- seconds
+        local long_hold_threshold_s = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3) -- seconds
         if hold_duration > time.s(long_hold_threshold_s) then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true

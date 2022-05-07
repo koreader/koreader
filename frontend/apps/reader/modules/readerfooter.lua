@@ -1295,7 +1295,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Book title: %1%"), self.settings.book_title_max_width_pct)
+                            return T(_("Book title: %1 %"), self.settings.book_title_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1305,6 +1305,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_step = 5,
                                 value_hold_step = 20,
                                 value_max = 100,
+                                unit = "%",
                                 title_text =  _("Maximum width"),
                                 info_text = _("Maximum book title width in percentage of screen width"),
                                 keep_shown_on_apply = true,
@@ -1320,7 +1321,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                     {
                         text_func = function()
-                            return T(_("Current chapter: %1%"), self.settings.book_chapter_max_width_pct)
+                            return T(_("Current chapter: %1 %"), self.settings.book_chapter_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1330,6 +1331,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_step = 5,
                                 value_hold_step = 20,
                                 value_max = 100,
+                                unit = "%",
                                 title_text =  _("Maximum width"),
                                 info_text = _("Maximum chapter width in percentage of screen width"),
                                 keep_shown_on_apply = true,
@@ -1908,7 +1910,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
             },
             {
                 text_func = function()
-                    return T(_("Minimal width: %1%"), self.settings.progress_bar_min_width_pct)
+                    return T(_("Minimal width: %1 %"), self.settings.progress_bar_min_width_pct)
                 end,
                 enabled_func = function()
                     return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
@@ -1922,6 +1924,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                         value_step = 5,
                         value_hold_step = 20,
                         value_max = 50,
+                        unit = "%",
                         title_text =  _("Minimal width"),
                         text = _("Minimal progress bar width in percentage of screen width"),
                         keep_shown_on_apply = true,

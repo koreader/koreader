@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220426
+local CURRENT_MIGRATION_DATE = 20220507
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -366,7 +366,7 @@ if last_migration_date < 20220205 then
     end
 end
 
--- Rename several time storing settings and shift their value to the new meaning
+-- Rename several time storing settings and shift their value to the new meaning see (#8999)
 if last_migration_date < 20220426 then
     local function migrateSettingsName(old, new, factor)
         factor = factor or 1
@@ -387,6 +387,18 @@ if last_migration_date < 20220426 then
     migrateSettingsName("device_status_memory_interval", "device_status_memory_interval_minutes")
 end
 
+-- Rename several time storing settings and shift their value to the new meaning follow up to (#8999)
+if last_migration_date < 20220507 then
+    local function migrateSettingsName(old, new, factor)
+        factor = factor or 1
+        if G_reader_settings:readSetting(old) then
+            local value = math.floor(G_reader_settings:readSetting(old) * factor)
+            G_reader_settings:saveSetting(new, value)
+            G_reader_settings:delSetting(old)
+        end
+    end
+    migrateSettingsName("highlight_long_hold_threshold_s", "highlight_long_hold_threshold_s")
+end
 
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
