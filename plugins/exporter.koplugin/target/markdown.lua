@@ -1,5 +1,7 @@
-local _ = require("gettext")
 local UIManager = require("ui/uimanager")
+local util = require("ffi/util")
+local T = util.template
+local _ = require("gettext")
 
 local formatters = {
     none = "%s",
@@ -44,7 +46,7 @@ function MarkdownExporter:editFormatStyle(drawer_style, label)
         })
     end
     UIManager:show(require("ui/widget/radiobuttonwidget"):new{
-        title_text = _("Formatting style for ") .. _(label),
+        title_text = T(_("Formatting style for %1"), _(label)),
         width_factor = 0.8,
         keep_shown_on_apply = true,
         radio_buttons = radio_buttons,
