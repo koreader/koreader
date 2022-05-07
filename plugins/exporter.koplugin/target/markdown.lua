@@ -19,11 +19,6 @@ local MarkdownExporter = require("base"):new {
     extension = "md",
 }
 
-function MarkdownExporter:loadSettings()
-    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
-    self.settings = plugin_settings[self.name] or {}
-end
-
 local formatter_buttons = {
     {_("None"), "none"},
     {_("Bold"), "bold"},
