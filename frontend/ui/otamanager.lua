@@ -464,6 +464,14 @@ function OTAManager:getOTAMenuTable()
             {
                 text = _("Check for updates"),
                 callback = function()
+                    local working_im = InfoMessage:new{
+                        alignment = "center",
+                        show_icon = false,
+                        text = "⌛",
+                        timeout = 1, -- timeout value is necessary, the message will be deleted by next message
+                    }
+                    UIManager:show(working_im)
+                    UIManager:forceRePaint()
                     local connect_callback = function()
                         OTAManager:fetchAndProcessUpdate()
                     end
