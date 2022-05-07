@@ -44,7 +44,7 @@ function MarkdownExporter:editFormatStyle(drawer_style, label)
         })
     end
     UIManager:show(require("ui/widget/radiobuttonwidget"):new{
-        title_text = _("Formatting style for ")  .. _(label),
+        title_text = _("Formatting style for ") .. _(label),
         width_factor = 0.8,
         keep_shown_on_apply = true,
         radio_buttons = radio_buttons,
