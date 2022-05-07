@@ -150,6 +150,7 @@ If set to 0, keitai input is disabled entirely and only flick input can be used.
                     value_min = 0,
                     value_max = 10,
                     value_step = 1,
+                    unit = _("s"),
                     ok_text = _("Set interval"),
                     default_value = DEFAULT_KEITAI_TAP_INTERVAL_S,
                     callback = function(spin)
