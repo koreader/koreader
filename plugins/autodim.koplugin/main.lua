@@ -200,7 +200,7 @@ function AutoDim:autodim_task()
 
     local now = UIManager:getElapsedTimeSinceBoot()
     local idle_duration =  now - self.last_action_time
-    local check_delay = time.s(self.autodim_starttime_m) - idle_duration
+    local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_endpercentage / 100 + 0.5)
