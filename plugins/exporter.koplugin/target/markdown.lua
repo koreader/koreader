@@ -1,7 +1,5 @@
-local util = require("ffi/util")
 local _ = require("gettext")
 local UIManager = require("ui/uimanager")
-local logger = require("logger")
 
 
 local formatters = {
