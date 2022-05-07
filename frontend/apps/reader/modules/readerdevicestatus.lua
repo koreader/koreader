@@ -46,7 +46,7 @@ function ReaderDeviceStatus:init()
                     UIManager:show(self.battery_confirm_box)
                 end
             end
-            local offset = sync and os.date("%S") or 0
+            local offset = sync and (os.date("%S") - 1) or 0
             UIManager:scheduleIn(self.battery_interval_m * 60 - offset, self.checkLowBatteryLevel)
         end
         self:startBatteryChecker()
@@ -106,7 +106,7 @@ function ReaderDeviceStatus:init()
                     end
                 end
             end
-            local offset = sync and os.date("%S") or 0
+            local offset = sync and (os.date("%S") - 1) or 0
             UIManager:scheduleIn(self.memory_interval_m * 60 - offset, self.checkHighMemoryUsage)
         end
         self:startMemoryChecker()
@@ -161,7 +161,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                             powerd:setDismissBatteryStatus(false)
                             self:stopBatteryChecker()
                             -- schedule first check on a full minute to reduce wakeups from standby)
-                            UIManager:scheduleIn(self.battery_interval_m * 60 - os.date("%S"),
+                            UIManager:scheduleIn(self.battery_interval_m * 60 - os.date("%S") + 1,
                                 self.checkLowBatteryLevel)
                         end,
                     })
@@ -255,7 +255,7 @@ High level threshold is checked when the device is charging.]]),
                             touchmenu_instance:updateItems()
                             self:stopMemoryChecker()
                             -- schedule first check on a full minute to reduce wakeups from standby)
-                            UIManager:scheduleIn(self.memory_interval_m * 60 - os.date("%S"),
+                            UIManager:scheduleIn(self.memory_interval_m * 60 - os.date("%S") + 1,
                                 self.checkHighMemoryUsage)
                         end,
                     })
