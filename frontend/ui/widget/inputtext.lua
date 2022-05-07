@@ -68,6 +68,11 @@ local InputText = InputContainer:new{
     is_keyboard_hidden = false, -- to be able to show the keyboard again when it was hidden
 }
 
+-- These may be (internally) overloaded as needed, depending on Device capabilities.
+function InputText:initEventListener() end
+function InputText:onFocus() end
+function InputText:onUnfocus() end
+
 -- only use PhysicalKeyboard if the device does not have touch screen
 if Device:isTouchDevice() or Device:hasDPad() then
     Keyboard = require("ui/widget/virtualkeyboard")
@@ -278,10 +283,6 @@ if Device:isTouchDevice() or Device:hasDPad() then
         end
     end
     if Device:hasDPad() then
-        if not InputText.initEventListener then
-            function InputText:initEventListener() end
-        end
-
         function InputText:onFocus()
             -- Event called by the focusmanager
             if self.parent.onSwitchFocus then
@@ -301,7 +302,6 @@ if Device:isTouchDevice() or Device:hasDPad() then
     end
 else
     Keyboard = require("ui/widget/physicalkeyboard")
-    function InputText:initEventListener() end
 end
 
 function InputText:checkTextEditability()
@@ -337,9 +337,16 @@ function InputText:isTextEdited()
 end
 
 function InputText:init()
-    if self.text_type == "password" then
-        -- text_type changes from "password" to "text" when we toggle password
-        self.is_password_type = true
+    if Device:isTouchDevice() then
+        if self.text_type == "password" then
+            -- text_type changes from "password" to "text" when we toggle password
+            self.is_password_type = true
+        end
+    else
+        -- focus move does not work with textbox and show password checkbox
+        -- force show password for non-touch device
+        self.text_type = "text"
+        self.is_password_type = false
     end
     -- Beware other cases where implicit conversion to text may be done
     -- at some point, but checkTextEditability() would say "not editable".

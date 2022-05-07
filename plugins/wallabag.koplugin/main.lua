@@ -51,10 +51,11 @@ function Wallabag:init()
     self.is_delete_read = false
     self.is_auto_delete = false
     self.is_sync_remote_delete = false
-    self.is_archiving_deleted = false
+    self.is_archiving_deleted = true
     self.send_review_as_tags = false
     self.filter_tag = ""
     self.ignore_tags = ""
+    self.auto_tags = ""
     self.articles_per_sync = 30
 
     self:onDispatcherRegisterActions()
@@ -89,6 +90,9 @@ function Wallabag:init()
     end
     if self.wb_settings.data.wallabag.ignore_tags then
         self.ignore_tags = self.wb_settings.data.wallabag.ignore_tags
+    end
+    if self.wb_settings.data.wallabag.auto_tags then
+        self.auto_tags = self.wb_settings.data.wallabag.auto_tags
     end
     if self.wb_settings.data.wallabag.articles_per_sync ~= nil then
         self.articles_per_sync = self.wb_settings.data.wallabag.articles_per_sync
@@ -210,7 +214,33 @@ function Wallabag:addToMainMenu(menu_items)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
-                            self:setIgnoreTags(touchmenu_instance)
+                            self:setTagsDialog(touchmenu_instance,
+                                _("Tags to ignore"),
+                                _("Enter a comma-separated list of tags to ignore."),
+                                self.ignore_tags,
+                                function(tags)
+                                    self.ignore_tags = tags
+                                end
+                            )
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            if not self.auto_tags or self.auto_tags == "" then
+                                return _("Automatic tags")
+                            end
+                            return T(_("Automatic tags (%1)"), self.auto_tags)
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            self:setTagsDialog(touchmenu_instance,
+                                _("Tags to automatically add"),
+                                _("Enter a comma-separated list of tags to automatically add to new articles."),
+                                self.auto_tags,
+                                function(tags)
+                                    self.auto_tags = tags
+                                end
+                            )
                         end,
                         separator = true,
                     },
@@ -428,12 +458,19 @@ function Wallabag:getArticleList()
                           .. "&page=" .. page
                           .. "&perPage=" .. self.articles_per_sync
                           .. filtering
-        local articles_json = self:callAPI("GET", articles_url, nil, "", "", true)
+        local articles_json, err, code = self:callAPI("GET", articles_url, nil, "", "", true)
 
-        if not articles_json then
+        if err == "http_error" and code == 404 then
             -- we may have hit the last page, there are no more articles
             logger.dbg("Wallabag: couldn't get page #", page)
             break -- exit while loop
+        elseif err then
+            -- another error has occured. Don't proceed with downloading
+            -- or deleting articles
+            logger.warn("Wallabag: download of page #", page, "failed with", err, code)
+            UIManager:show(InfoMessage:new{
+                text = _("Requesting article list failed."), })
+            return
         end
 
         -- We're only interested in the actual articles in the JSON
@@ -553,6 +590,8 @@ end
 -- headers: defaults to auth if given nil value, provide all headers necessary if in use
 -- body: empty string if not needed
 -- filepath: downloads the file if provided, returns JSON otherwise
+-- @treturn result or (nil, "network_error") or (nil, "json_error")
+-- or (nil, "http_error", code)
 ---- @todo separate call to internal API from the download on external server
 function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     local sink = {}
@@ -597,7 +636,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     -- raise error message when network is unavailable
     if resp_headers == nil then
         logger.dbg("Wallabag: Server error: ", code)
-        return false
+        return nil, "network_error"
     end
     if code == 200 then
         if filepath ~= "" then
@@ -619,6 +658,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
                 UIManager:show(InfoMessage:new{
                     text = _("Server response is not valid."), })
             end
+            return nil, "json_error"
         end
     else
         if filepath ~= "" then
@@ -631,7 +671,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
             UIManager:show(InfoMessage:new{
                 text = _("Communication with server failed."), })
         end
-        return false
+        return nil, "http_error", code
     end
 end
 
@@ -787,6 +827,7 @@ function Wallabag:addArticle(article_url)
 
     local body = {
         url = article_url,
+        tags = self.auto_tags,
     }
 
     local body_JSON = JSON.encode(body)
@@ -924,11 +965,11 @@ function Wallabag:setFilterTag(touchmenu_instance)
     self.tag_dialog:onShowKeyboard()
 end
 
-function Wallabag:setIgnoreTags(touchmenu_instance)
-   self.ignore_tags_dialog = InputDialog:new {
-        title =  _("Tags to ignore"),
-        description = _("Enter a comma-separated list of tags to ignore."),
-        input = self.ignore_tags,
+function Wallabag:setTagsDialog(touchmenu_instance, title, description, value, callback)
+   self.tags_dialog = InputDialog:new {
+        title =  title,
+        description = description,
+        input = value,
         input_type = "string",
         buttons = {
             {
@@ -936,24 +977,24 @@ function Wallabag:setIgnoreTags(touchmenu_instance)
                     text = _("Cancel"),
                     id = "close",
                     callback = function()
-                        UIManager:close(self.ignore_tags_dialog)
+                        UIManager:close(self.tags_dialog)
                     end,
                 },
                 {
                     text = _("Set tags"),
                     is_enter_default = true,
                     callback = function()
-                        self.ignore_tags = self.ignore_tags_dialog:getInputText()
+                        callback(self.tags_dialog:getInputText())
                         self:saveSettings()
                         touchmenu_instance:updateItems()
-                        UIManager:close(self.ignore_tags_dialog)
+                        UIManager:close(self.tags_dialog)
                     end,
                 }
             }
         },
     }
-    UIManager:show(self.ignore_tags_dialog)
-    self.ignore_tags_dialog:onShowKeyboard()
+    UIManager:show(self.tags_dialog)
+    self.tags_dialog:onShowKeyboard()
 end
 
 function Wallabag:editServerSettings()
@@ -1098,6 +1139,7 @@ function Wallabag:saveSettings()
         directory             = self.directory,
         filter_tag            = self.filter_tag,
         ignore_tags           = self.ignore_tags,
+        auto_tags             = self.auto_tags,
         is_delete_finished    = self.is_delete_finished,
         is_delete_read        = self.is_delete_read,
         is_archiving_deleted  = self.is_archiving_deleted,

@@ -66,6 +66,7 @@ local Device = Generic:new{
     hasEinkScreen = no,
     hasSystemFonts = yes,
     canSuspend = no,
+    canStandby = yes,
     startTextInput = SDL.startTextInput,
     stopTextInput = SDL.stopTextInput,
     canOpenLink = getLinkOpener,
@@ -167,7 +168,6 @@ function Device:init()
         event_map = require("device/sdl/event_map_sdl2"),
         handleSdlEv = function(device_input, ev)
             local Geom = require("ui/geometry")
-            local TimeVal = require("ui/timeval")
             local UIManager = require("ui/uimanager")
 
             -- SDL events can remain cdata but are almost completely transparent
@@ -190,8 +190,6 @@ function Device:init()
                     y = 0,
                     w = 0, h = 0,
                 }
-
-                setmetatable(ev.time, TimeVal)
 
                 local fake_ges = {
                     ges = "pan",

@@ -1098,6 +1098,7 @@ function Menu:updateItems(select_number)
     if self.show_path then
         self.title_bar:setSubTitle(BD.directory(filemanagerutil.abbreviate(self.path)))
     end
+    self:mergeTitleBarIntoLayout()
 
     UIManager:setDirty(self.show_parent, function()
         local refresh_dimen =
@@ -1106,6 +1107,26 @@ function Menu:updateItems(select_number)
         return "ui", refresh_dimen
     end)
 end
+
+-- merge TitleBar layout into self FocusManager layout
+function Menu:mergeTitleBarIntoLayout()
+    local menu_item_layout_start_row = 1
+    local titlebars = {self.title_bar, self.outer_title_bar}
+    for _, v in ipairs(titlebars) do
+        -- Menu uses the right key to trigger the context menu: we can't use it to move focus in horizontal directions.
+        -- So, add title bar buttons to FocusManager's layout in a vertical-only layout
+        local title_bar_layout = v:generateVerticalLayout()
+        for _, row in ipairs(title_bar_layout) do
+            table.insert(self.layout, menu_item_layout_start_row, row)
+            menu_item_layout_start_row = menu_item_layout_start_row + 1
+        end
+    end
+    if menu_item_layout_start_row > #self.layout then -- no menu items
+        menu_item_layout_start_row = #self.layout -- avoid index overflow
+    end
+    self:moveFocusTo(1, menu_item_layout_start_row) -- move focus to first menu item if any, keep original behavior
+end
+
 
 --[[
     the itemnumber paramter determines menu page number after switching item table
@@ -1146,6 +1167,9 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
     local max_pages = math.ceil(#new_item_table / self.perpage)
     if self.page > max_pages then
         self.page = max_pages
+    end
+    if self.page <= 0 then
+        self.page = 1
     end
 
     self.item_table = new_item_table

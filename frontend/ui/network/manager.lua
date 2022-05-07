@@ -113,16 +113,32 @@ function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
+    local toggle_im = InfoMessage:new{
+        text = _("Turning on Wi-Fi…"),
+    }
+    UIManager:show(toggle_im)
+    UIManager:forceRePaint()
+
     self.wifi_was_on = true
     G_reader_settings:makeTrue("wifi_was_on")
     self.wifi_toggle_long_press = long_press
     self:turnOnWifi(complete_callback)
+
+    UIManager:close(toggle_im)
 end
 
 function NetworkMgr:toggleWifiOff(complete_callback)
+    local toggle_im = InfoMessage:new{
+        text = _("Turning off Wi-Fi…"),
+    }
+    UIManager:show(toggle_im)
+    UIManager:forceRePaint()
+
     self.wifi_was_on = false
     G_reader_settings:makeFalse("wifi_was_on")
     self:turnOffWifi(complete_callback)
+
+    UIManager:close(toggle_im)
 end
 
 function NetworkMgr:promptWifiOn(complete_callback, long_press)
@@ -481,16 +497,7 @@ function NetworkMgr:getInfoMenuTable()
         keep_menu_open = true,
         enabled_func = function() return self:isNetworkInfoAvailable() end,
         callback = function()
-            if Device.retrieveNetworkInfo then
-                UIManager:show(InfoMessage:new{
-                    text = Device:retrieveNetworkInfo(),
-                })
-            else
-                UIManager:show(InfoMessage:new{
-                    text = _("Could not retrieve network info."),
-                    timeout = 3,
-                })
-            end
+            UIManager:broadcastEvent(Event:new("ShowNetworkInfo"))
         end
     }
 end

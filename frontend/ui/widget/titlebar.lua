@@ -101,15 +101,13 @@ function TitleBar:init()
     -- No button on non-touch device
     local left_icon_reserved_width = 0
     local right_icon_reserved_width = 0
-    if Device:isTouchDevice() then
-        if self.left_icon then
-            self.has_left_icon = true
-            left_icon_reserved_width = left_icon_size + self.button_padding
-        end
-        if self.right_icon then
-            self.has_right_icon = true
-            right_icon_reserved_width = right_icon_size + self.button_padding
-        end
+    if self.left_icon then
+        self.has_left_icon = true
+        left_icon_reserved_width = left_icon_size + self.button_padding
+    end
+    if self.right_icon then
+        self.has_right_icon = true
+        right_icon_reserved_width = right_icon_size + self.button_padding
     end
 
     if self.align == "center" then
@@ -456,5 +454,32 @@ function TitleBar:setRightIcon(icon)
         self.right_button:setIcon(icon)
         UIManager:setDirty(self.show_parent, "ui", self.dimen)
     end
+end
+
+-- layout for FocusManager
+function TitleBar:generateHorizontalLayout()
+    local row = {}
+    if self.left_button then
+        table.insert(row, self.left_button)
+    end
+    if self.right_button then
+        table.insert(row, self.right_button)
+    end
+    local layout = {}
+    if #row > 0 then
+        table.insert(layout, row)
+    end
+    return layout
+end
+
+function TitleBar:generateVerticalLayout()
+    local layout = {}
+    if self.left_button then
+        table.insert(layout, {self.left_button})
+    end
+    if self.right_button then
+        table.insert(layout, {self.right_button})
+    end
+    return layout
 end
 return TitleBar

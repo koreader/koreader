@@ -3,6 +3,7 @@ local Dispatcher = require("dispatcher")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 
@@ -44,8 +45,16 @@ function SystemStat:appendCounters()
     if self.resume_sec then
         self:put({_("  Last resume time"), os.date("%c", self.resume_sec)})
     end
-    self:put({_("  Up hours"),
-             string.format("%.2f", os.difftime(os.time(), self.start_sec) / 60 / 60)})
+    self:put({"  " .. _("Up time"),
+            util.secondsToClockDuration("", os.difftime(os.time(), self.start_sec), false, true, true)})
+    if Device:canSuspend() then
+        self:put({"  " .. _("Time in suspend"),
+            util.secondsToClockDuration("", time.to_number(Device.total_suspend_time), false, true, true)})
+    end
+    if Device:canStandby() then
+        self:put({"  " .. _("Time in standby"),
+            util.secondsToClockDuration("", time.to_number(Device.total_standby_time), false, true, true)})
+    end
     self:put({_("Counters"), ""})
     self:put({_("  wake-ups"), self.wakeup_count})
     -- @translators The number of "sleeps", that is the number of times the device has entered standby. This could also be translated as a rendition of a phrase like "entered sleep".

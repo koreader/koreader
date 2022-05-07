@@ -130,7 +130,7 @@ function ReaderCoptListener:rescheduleHeaderRefreshIfNeeded()
     end
 end
 
--- Schedule or stop scheluding on these events, as they may change what is shown:
+-- Schedule or stop scheduling on these events, as they may change what is shown:
 ReaderCoptListener.onSetStatusLine = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
     -- configurable.status_line is set before this event is triggered
 ReaderCoptListener.onSetViewMode = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
@@ -145,6 +145,12 @@ function ReaderCoptListener:onResume()
     end
 
     self:headerRefresh()
+    self:rescheduleHeaderRefreshIfNeeded()
+end
+
+function ReaderCoptListener:onLeaveStandby()
+    self:headerRefresh()
+    self:rescheduleHeaderRefreshIfNeeded()
 end
 
 function ReaderCoptListener:onOutOfScreenSaver()
@@ -154,11 +160,13 @@ function ReaderCoptListener:onOutOfScreenSaver()
 
     self._delayed_screensaver = nil
     self:headerRefresh()
+    self:rescheduleHeaderRefreshIfNeeded()
 end
 
 -- Unschedule on these events
 ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
 ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
+ReaderCoptListener.onEnterStandby = ReaderCoptListener.unscheduleHeaderRefresh
 
 function ReaderCoptListener:setAndSave(setting, property, value)
     self.ui.document._document:setIntProperty(property, value)

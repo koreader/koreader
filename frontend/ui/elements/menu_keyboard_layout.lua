@@ -47,7 +47,8 @@ local sub_item_table = {
     {
         text_func = function()
             local activated_keyboards, nb_keyboards = getActivatedKeyboards()
-            local item_text = T(_("Keyboard layouts: %1"), activated_keyboards)
+            local item_text = activated_keyboards and T(_("Keyboard layouts: %1"), activated_keyboards)
+                or _("Keyboard layouts")
 
             -- get width of text
             local tmp = TextWidget:new{

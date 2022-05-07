@@ -385,24 +385,22 @@ function MosaicMenuItem:init()
     self.percent_finished = nil
 
     -- we need this table per-instance, so we declare it here
-    if Device:isTouchDevice() then
-        self.ges_events = {
-            TapSelect = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                },
-                doc = "Select Menu Item",
+    self.ges_events = {
+        TapSelect = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
             },
-            HoldSelect = {
-                GestureRange:new{
-                    ges = "hold",
-                    range = self.dimen,
-                },
-                doc = "Hold Menu Item",
+            doc = "Select Menu Item",
+        },
+        HoldSelect = {
+            GestureRange:new{
+                ges = "hold",
+                range = self.dimen,
             },
-        }
-    end
+            doc = "Hold Menu Item",
+        },
+    }
 
     -- We now build the minimal widget container that won't change after udpate()
 

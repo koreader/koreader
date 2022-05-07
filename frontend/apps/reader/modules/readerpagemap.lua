@@ -137,12 +137,17 @@ function ReaderPageMap:updateVisibleLabels()
     local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
     local max_y = Screen:getHeight() - footer_height
     local last_label_bottom_y = 0
+    local on_second_page = false
     for _, page in ipairs(page_labels) do
         local in_left_margin = BD.mirroredUILayout()
         if self.ui.document:getVisiblePageCount() > 1 then
             -- Pages in 2-page mode are not mirrored, so we'll
             -- have to handle any mirroring tweak ourselves
             in_left_margin = page.screen_page == 1
+            if not on_second_page and page.screen_page == 2 then
+                on_second_page = true
+                last_label_bottom_y = 0 -- reset this
+            end
         end
         local max_label_width = in_left_margin and self.max_left_label_width or self.max_right_label_width
         if max_label_width < self.min_label_width then

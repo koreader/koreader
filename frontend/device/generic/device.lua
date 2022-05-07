@@ -53,6 +53,7 @@ local Device = {
     hasExternalSD = no, -- or other storage volume that cannot be accessed using the File Manager
     canHWDither = no,
     canHWInvert = no,
+    canDoSwipeAnimation = no,
     canModifyFBInfo = no, -- some NTX boards do wonky things with the rotate flag after a FBIOPUT_VSCREENINFO ioctl
     canUseCBB = yes, -- The C BB maintains a 1:1 feature parity with the Lua BB, except that is has NO support for BB4, and limited support for BBRGB24
     hasColorScreen = no,
@@ -67,6 +68,12 @@ local Device = {
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
     canSuspend = yes,
+    canStandby = no,
+    canPowerSaveWhileCharging = no,
+    total_standby_time = 0, -- total time spent in standby
+    last_standby_time = 0,
+    total_suspend_time = 0, -- total time spent in suspend
+    last_suspend_time = 0,
     canReboot = no,
     canPowerOff = no,
     canAssociateFileExtensions = no,
@@ -238,7 +245,7 @@ end
 function Device:rescheduleSuspend()
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
-    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
 end
 
 -- Only used on platforms where we handle suspend ourselves.
@@ -261,10 +268,6 @@ function Device:onPowerEvent(ev)
                     end
                 end
                 self:resume()
-                -- Restore to previous rotation mode, if need be.
-                if self.orig_rotation_mode then
-                    self.screen:setRotationMode(self.orig_rotation_mode)
-                end
                 Screensaver:close()
                 if self:needsScreenRefreshAfterResume() then
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
@@ -286,40 +289,7 @@ function Device:onPowerEvent(ev)
         logger.dbg("Suspending...")
         -- Add the current state of the SleepCover flag...
         logger.dbg("Sleep cover is", self.is_cover_closed and "closed" or "open")
-        -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
         Screensaver:setup()
-        -- Mostly always suspend in Portrait/Inverted Portrait mode...
-        -- ... except when we just show an InfoMessage or when the screensaver
-        -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
-        -- We also exclude full-screen widgets that work fine in Landscape mode,
-        -- like ReadingProgress and BookStatus (c.f., #5724)
-        if Screensaver:modeExpectsPortrait() then
-            self.orig_rotation_mode = self.screen:getRotationMode()
-            -- Leave Portrait & Inverted Portrait alone, that works just fine.
-            if bit.band(self.orig_rotation_mode, 1) == 1 then
-                -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
-                self.screen:setRotationMode(self.screen.ORIENTATION_PORTRAIT)
-            else
-                self.orig_rotation_mode = nil
-            end
-
-            -- On eInk, if we're using a screensaver mode that shows an image,
-            -- flash the screen to white first, to eliminate ghosting.
-            if self:hasEinkScreen() and Screensaver:modeIsImage() then
-                if Screensaver:withBackground() then
-                    self.screen:clear()
-                end
-                self.screen:refreshFull()
-
-                -- On Kobo, on sunxi SoCs with a recent kernel, wait a tiny bit more to avoid weird refresh glitches...
-                if self:isKobo() and self:isSunxi() then
-                    ffiUtil.usleep(150 * 1000)
-                end
-            end
-        else
-            -- nil it, in case user switched ScreenSaver modes during our lifetime.
-            self.orig_rotation_mode = nil
-        end
         Screensaver:show()
         -- NOTE: show() will return well before the refresh ioctl is even *sent*:
         --       the only thing it's done is *enqueued* the refresh in UIManager's stack.
@@ -430,6 +400,9 @@ function Device:saveSettings() end
 function Device:simulateSuspend() end
 function Device:simulateResume() end
 
+-- Put device into standby, input devices (buttons, touchscreen ...) stay enabled
+function Device:standby(max_duration) end
+
 --[[--
 Device specific method for performing haptic feedback.
 
@@ -475,6 +448,14 @@ function Device:setupChargingLED() end
 -- (Should only be implemented on embedded platforms where we can afford to control that without screwing with the system).
 function Device:enableCPUCores(amount) end
 
+-- NOTE: For this to work, all three must be implemented, and getKeyRepeat must be run on init (c.f., Kobo)!
+-- Device specific method to get the current key repeat setup
+function Device:getKeyRepeat() end
+-- Device specific method to disable key repeat
+function Device:disableKeyRepeat() end
+-- Device specific method to restore key repeat
+function Device:restoreKeyRepeat() end
+
 --[[
 prepare for application shutdown
 --]]
@@ -501,9 +482,9 @@ function Device:retrieveNetworkInfo()
             std_out:close()
         end
         if os.execute("ip r | grep -q default") == 0 then
-            -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
+            -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
             local pingok
-            if self:isKindle() and self:hasKeyboard() then
+            if self:isKindle() and self:hasDPad() then
                 pingok = os.execute("ping -q -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
             else
                 pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")

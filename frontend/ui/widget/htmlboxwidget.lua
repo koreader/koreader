@@ -9,9 +9,9 @@ local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Mupdf = require("ffi/mupdf")
 local Screen = Device.screen
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local time = require("ui/time")
 local util  = require("util")
 
 local HtmlBoxWidget = InputContainer:new{
@@ -21,7 +21,7 @@ local HtmlBoxWidget = InputContainer:new{
     page_count = 0,
     page_number = 1,
     hold_start_pos = nil,
-    hold_start_tv = nil,
+    hold_start_time = nil,
     html_link_tapped_callback = nil,
 }
 
@@ -166,7 +166,7 @@ function HtmlBoxWidget:onHoldStartText(_, ges)
         return false -- let event be processed by other widgets
     end
 
-    self.hold_start_tv = UIManager:getTime()
+    self.hold_start_time = UIManager:getTime()
 
     return true
 end
@@ -230,7 +230,7 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    local hold_duration = TimeVal.now() - self.hold_start_tv
+    local hold_duration = time.now() - self.hold_start_time
 
     local page = self.document:openPage(self.page_number)
     local lines = page:getPageText()

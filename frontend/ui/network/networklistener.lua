@@ -12,11 +12,12 @@ local T = require("ffi/util").template
 local NetworkListener = InputContainer:new{}
 
 function NetworkListener:onToggleWifi()
-    if not NetworkMgr:isConnected() then
-        UIManager:show(InfoMessage:new{
+    if not NetworkMgr:isWifiOn() then
+        local toggle_im = InfoMessage:new{
             text = _("Turning on Wi-Fi…"),
-            timeout = 1,
-        })
+        }
+        UIManager:show(toggle_im)
+        UIManager:forceRePaint()
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
@@ -25,12 +26,21 @@ function NetworkListener:onToggleWifi()
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         end
         NetworkMgr:turnOnWifi(complete_callback)
+
+        UIManager:close(toggle_im)
     else
         local complete_callback = function()
             UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         end
+        local toggle_im = InfoMessage:new{
+            text = _("Turning off Wi-Fi…"),
+        }
+        UIManager:show(toggle_im)
+        UIManager:forceRePaint()
+
         NetworkMgr:turnOffWifi(complete_callback)
 
+        UIManager:close(toggle_im)
         UIManager:show(InfoMessage:new{
             text = _("Wi-Fi off."),
             timeout = 1,
@@ -43,8 +53,15 @@ function NetworkListener:onInfoWifiOff()
     local complete_callback = function()
         UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
     end
+    local toggle_im = InfoMessage:new{
+        text = _("Turning off Wi-Fi…"),
+    }
+    UIManager:show(toggle_im)
+    UIManager:forceRePaint()
+
     NetworkMgr:turnOffWifi(complete_callback)
 
+    UIManager:close(toggle_im)
     UIManager:show(InfoMessage:new{
         text = _("Wi-Fi off."),
         timeout = 1,
@@ -53,10 +70,11 @@ end
 
 function NetworkListener:onInfoWifiOn()
     if not NetworkMgr:isOnline() then
-        UIManager:show(InfoMessage:new{
-            text = _("Enabling wifi…"),
-            timeout = 1,
-        })
+        local toggle_im = InfoMessage:new{
+            text = _("Enabling Wi-Fi…"),
+        }
+        UIManager:show(toggle_im)
+        UIManager:forceRePaint()
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
@@ -65,6 +83,8 @@ function NetworkListener:onInfoWifiOn()
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         end
         NetworkMgr:turnOnWifi(complete_callback)
+
+        UIManager:close(toggle_im)
     else
         local info_text
         local current_network = NetworkMgr:getCurrentNetwork()
@@ -84,6 +104,12 @@ end
 -- Everything below is to handle auto_disable_wifi ;).
 local default_network_timeout_seconds = 5*60
 local max_network_timeout_seconds = 30*60
+-- If autostandby is enabled, shorten the timeouts
+local auto_standby = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1)
+if auto_standby > 0 then
+    default_network_timeout_seconds = default_network_timeout_seconds / 2
+    max_network_timeout_seconds = max_network_timeout_seconds / 2
+end
 -- This should be more than enough to catch actual activity vs. noise spread over 5 minutes.
 local network_activity_noise_margin = 12 -- unscaled_size_check: ignore
 
@@ -117,8 +143,8 @@ function NetworkListener:_unscheduleActivityCheck()
     if self._last_tx_packets then
         self._last_tx_packets = nil
     end
-    if self._activity_check_delay then
-        self._activity_check_delay = nil
+    if self._activity_check_delay_seconds then
+        self._activity_check_delay_seconds = nil
     end
 end
 
@@ -129,8 +155,8 @@ function NetworkListener:_scheduleActivityCheck()
     local tx_packets = NetworkListener:_getTxPackets()
     if self._last_tx_packets and tx_packets then
         -- Compute noise threshold based on the current delay
-        local delay = self._activity_check_delay or default_network_timeout_seconds
-        local noise_threshold = delay / default_network_timeout_seconds * network_activity_noise_margin
+        local delay_seconds = self._activity_check_delay_seconds or default_network_timeout_seconds
+        local noise_threshold = delay_seconds / default_network_timeout_seconds * network_activity_noise_margin
         local delta = tx_packets - self._last_tx_packets
         -- If there was no meaningful activity (+/- a couple packets), kill the Wi-Fi
         if delta <= noise_threshold then
@@ -155,19 +181,19 @@ function NetworkListener:_scheduleActivityCheck()
     self._last_tx_packets = tx_packets
 
     -- If it's already been scheduled, increase the delay until we hit the ceiling
-    if self._activity_check_delay then
-        self._activity_check_delay = self._activity_check_delay + default_network_timeout_seconds
+    if self._activity_check_delay_seconds then
+        self._activity_check_delay_seconds = self._activity_check_delay_seconds + default_network_timeout_seconds
 
-        if self._activity_check_delay > max_network_timeout_seconds then
-            self._activity_check_delay = max_network_timeout_seconds
+        if self._activity_check_delay_seconds > max_network_timeout_seconds then
+            self._activity_check_delay_seconds = max_network_timeout_seconds
         end
     else
-        self._activity_check_delay = default_network_timeout_seconds
+        self._activity_check_delay_seconds = default_network_timeout_seconds
     end
 
-    UIManager:scheduleIn(self._activity_check_delay, self._scheduleActivityCheck, self)
+    UIManager:scheduleIn(self._activity_check_delay_seconds, self._scheduleActivityCheck, self)
     self._activity_check_scheduled = true
-    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay, "seconds")
+    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay_seconds, "seconds")
 end
 
 function NetworkListener:onNetworkConnected()
@@ -205,5 +231,17 @@ function NetworkListener:onSuspend()
     self:onNetworkDisconnected()
 end
 
+function NetworkListener:onShowNetworkInfo()
+    if Device.retrieveNetworkInfo then
+        UIManager:show(InfoMessage:new{
+            text = Device:retrieveNetworkInfo(),
+        })
+    else
+        UIManager:show(InfoMessage:new{
+            text = _("Could not retrieve network info."),
+            timeout = 3,
+        })
+    end
+end
 
 return NetworkListener

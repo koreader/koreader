@@ -1,7 +1,7 @@
 local UIManager -- will be updated when available
 local Math = require("optmath")
-local TimeVal = require("ui/timeval")
 local logger = require("logger")
+local time = require("ui/time")
 local BasePowerD = {
     fl_min = 0,                       -- min frontlight intensity
     fl_max = 10,                      -- max frontlight intensity
@@ -13,8 +13,8 @@ local BasePowerD = {
     aux_batt_capacity = 0,            -- auxiliary battery capacity
     device = nil,                     -- device object
 
-    last_capacity_pull_time = TimeVal:new{ sec = -61, usec = 0},      -- timestamp of last pull
-    last_aux_capacity_pull_time = TimeVal:new{ sec = -61, usec = 0},  -- timestamp of last pull
+    last_capacity_pull_time = time.s(-61),      -- timestamp of last pull
+    last_aux_capacity_pull_time = time.s(-61),  -- timestamp of last pull
 
     is_fl_on = false,                 -- whether the frontlight is on
 }
@@ -54,8 +54,12 @@ function BasePowerD:getAuxCapacityHW() return 0 end
 function BasePowerD:isAuxBatteryConnectedHW() return false end
 function BasePowerD:getDismissBatteryStatus() return self.battery_warning end
 function BasePowerD:setDismissBatteryStatus(status) self.battery_warning = status end
+--- @note: Should ideally return true as long as the device is plugged in, even once the battery is full...
 function BasePowerD:isChargingHW() return false end
+--- @note: ...at which point this should start returning true (i.e., plugged in & fully charged).
+function BasePowerD:isChargedHW() return false end
 function BasePowerD:isAuxChargingHW() return false end
+function BasePowerD:isAuxChargedHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
 function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
@@ -212,16 +216,17 @@ end
 function BasePowerD:getCapacity()
     -- BasePowerD is loaded before UIManager.
     -- Nothing *currently* calls this before UIManager is actually loaded, but future-proof this anyway.
-    local now_ts
+    local now
     if UIManager then
-        now_ts = UIManager:getTime()
+        now = UIManager:getElapsedTimeSinceBoot()
     else
-        now_ts = TimeVal:now()
+        -- Add time the device was in standby and suspend
+        now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
     end
 
-    if (now_ts - self.last_capacity_pull_time):tonumber() >= 60 then
+    if now - self.last_capacity_pull_time >= time.s(60) then
         self.batt_capacity = self:getCapacityHW()
-        self.last_capacity_pull_time = now_ts
+        self.last_capacity_pull_time = now
     end
     return self.batt_capacity
 end
@@ -230,32 +235,42 @@ function BasePowerD:isCharging()
     return self:isChargingHW()
 end
 
+function BasePowerD:isCharged()
+    return self:isChargedHW()
+end
+
 function BasePowerD:getAuxCapacity()
-    local now_ts
+    local now
+
     if UIManager then
-        now_ts = UIManager:getTime()
+        now = UIManager:getElapsedTimeSinceBoot()
     else
-        now_ts = TimeVal:now()
+        -- Add time the device was in standby and suspend
+        now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
     end
 
-    if (now_ts - self.last_aux_capacity_pull_time):tonumber() >= 60 then
+    if now - self.last_aux_capacity_pull_time >= time.s(60) then
         local aux_batt_capa = self:getAuxCapacityHW()
         -- If the read failed, don't update our cache, and retry next time.
         if aux_batt_capa then
             self.aux_batt_capacity = aux_batt_capa
-            self.last_aux_capacity_pull_time = now_ts
+            self.last_aux_capacity_pull_time = now
         end
     end
     return self.aux_batt_capacity
 end
 
 function BasePowerD:invalidateCapacityCache()
-    self.last_capacity_pull_time = TimeVal:new{ sec = -61, usec = 0}
-    self.last_aux_capacity_pull_time = TimeVal:new{ sec = -61, usec = 0}
+    self.last_capacity_pull_time = time.s(-61)
+    self.last_aux_capacity_pull_time = self.last_capacity_pull_time
 end
 
 function BasePowerD:isAuxCharging()
     return self:isAuxChargingHW()
+end
+
+function BasePowerD:isAuxCharged()
+    return self:isAuxChargedHW()
 end
 
 function BasePowerD:isAuxBatteryConnected()
@@ -271,8 +286,10 @@ function BasePowerD:stateChanged()
 end
 
 -- Silly helper to avoid code duplication ;).
-function BasePowerD:getBatterySymbol(is_charging, capacity)
-    if is_charging then
+function BasePowerD:getBatterySymbol(is_charged, is_charging, capacity)
+    if is_charged then
+        return ""
+    elseif is_charging then
         return ""
     else
         if capacity >= 100 then

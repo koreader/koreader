@@ -6,13 +6,13 @@ local FontList = require("fontlist")
 local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
-local TimeVal = require("ui/timeval")
 local buffer = require("string.buffer")
 local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local lru = require("ffi/lru")
+local time = require("ui/time")
 
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
@@ -694,16 +694,16 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- We also honor the current smooth scaling setting,
     -- as well as the global SW dithering setting.
 
-    --local start_tv = TimeVal:now()
+    --local start_time = time.now()
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
-    --local end_tv = TimeVal:now()
-    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_tv - start_tv):tomsecs()))
+    --local end_time = time.now()
+    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", time.to_ms(end_time - start_time))
 
-    --start_tv = TimeVal:now()
+    --start = time.now()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
-    --end_tv = TimeVal:now()
-    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (end_tv - start_tv):tomsecs()))
+    --end_time = time.now()
+    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", time.to_ms(end_time - start_time))
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
@@ -1287,6 +1287,14 @@ function CreDocument:buildAlternativeToc()
     self._document:buildAlternativeToc()
 end
 
+function CreDocument:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page)
+    self._document:buildSyntheticPageMapIfNoneDocumentProvided(chars_per_synthetic_page or 1024)
+end
+
+function CreDocument:isPageMapSynthetic()
+    return self._document:isPageMapSynthetic()
+end
+
 function CreDocument:hasPageMap()
     return self._document:hasPageMap()
 end
@@ -1457,10 +1465,10 @@ function CreDocument:setupCallCache()
         -- cache statistics
         self._call_cache_stats = {}
         now = function()
-            return TimeVal:now()
+            return time.now()
         end
         addStatMiss = function(name, starttime, not_cached)
-            local duration = TimeVal:getDuration(starttime)
+            local duration = time.since(starttime)
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {0, 0.0, 1, duration, not_cached}
             else
@@ -1470,7 +1478,7 @@ function CreDocument:setupCallCache()
             end
         end
         addStatHit = function(name, starttime)
-            local duration = TimeVal:getDuration(starttime)
+            local duration = time.since(starttime)
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {1, duration, 0, 0.0}
             else

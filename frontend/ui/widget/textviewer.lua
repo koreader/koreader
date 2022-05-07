@@ -118,7 +118,7 @@ function TextViewer:init()
                 {
                     text = _("Close"),
                     callback = function()
-                        UIManager:close(self)
+                        self:onClose()
                     end,
                 },
             },
@@ -217,6 +217,9 @@ end
 
 function TextViewer:onClose()
     UIManager:close(self)
+    if self.close_callback then
+        self.close_callback()
+    end
     return true
 end
 

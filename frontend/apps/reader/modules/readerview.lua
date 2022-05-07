@@ -14,12 +14,12 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
 local optionsutil = require("ui/data/optionsutil")
 local Size = require("ui/size")
+local time = require("ui/time")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -76,7 +76,7 @@ local ReaderView = OverlapGroup:extend{
     -- in flipping state
     flipping_visible = false,
     -- to ensure periodic flush of settings
-    settings_last_save_tv = nil,
+    settings_last_save_time = nil,
     -- might be directly updated by readerpaging/readerrolling when
     -- they handle some panning/scrolling, to request "fast" refreshes
     currently_scrolling = false,
@@ -889,6 +889,14 @@ function ReaderView:onRotationUpdate(rotation)
     self:recalculate()
 end
 
+function ReaderView:onPageChangeAnimation(forward)
+    if Device:canDoSwipeAnimation() and G_reader_settings:isTrue("swipe_animations") then
+        if self.inverse_reading_order then forward = not forward end
+        Screen:setSwipeAnimations(true)
+        Screen:setSwipeDirection(forward)
+    end
+end
+
 function ReaderView:onReaderFooterVisibilityChange()
     -- Don't bother ReaderRolling with this nonsense, the footer's height is NOT handled via visible_area there ;)
     if self.ui.paging and self.state.page then
@@ -1030,17 +1038,17 @@ end
 
 function ReaderView:onReaderReady()
     self.ui.doc_settings:delSetting("docsettings_reset_done")
-    self.settings_last_save_tv = UIManager:getTime()
+    self.settings_last_save_time = UIManager:getElapsedTimeSinceBoot()
 end
 
 function ReaderView:onResume()
     -- As settings were saved on suspend, reset this on resume,
     -- as there's no need for a possibly immediate save.
-    self.settings_last_save_tv = UIManager:getTime()
+    self.settings_last_save_time = UIManager:getElapsedTimeSinceBoot()
 end
 
 function ReaderView:checkAutoSaveSettings()
-    if not self.settings_last_save_tv then -- reader not yet ready
+    if not self.settings_last_save_time then -- reader not yet ready
         return
     end
     if G_reader_settings:nilOrFalse("auto_save_settings_interval_minutes") then
@@ -1048,11 +1056,11 @@ function ReaderView:checkAutoSaveSettings()
         return
     end
 
-    local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-    interval = TimeVal:new{ sec = interval*60, usec = 0 }
-    local now_tv = UIManager:getTime()
-    if now_tv - self.settings_last_save_tv >= interval then
-        self.settings_last_save_tv = now_tv
+    local interval_m = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
+    local interval = time.s(interval_m * 60)
+    local now = UIManager:getElapsedTimeSinceBoot()
+    if now - self.settings_last_save_time >= interval then
+        self.settings_last_save_time = now
         -- I/O, delay until after the pageturn
         UIManager:tickAfterNext(function()
             self.ui:saveSettings()

@@ -7,7 +7,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
-local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
@@ -15,6 +14,7 @@ local logger = require("logger")
 local util = require("util")
 local Size = require("ui/size")
 local ffiUtil = require("ffi/util")
+local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
@@ -51,6 +51,7 @@ function ReaderHighlight:init()
     self._start_indicator_highlight = false
     self._current_indicator_pos = nil
     self._previous_indicator_pos = nil
+    self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
 
     if Device:hasDPad() then
         -- Used for text selection with dpad/keys
@@ -63,10 +64,10 @@ function ReaderHighlight:init()
         self.key_events.RightHighlightIndicator = { {"Right"}, doc = "move indicator right", event = "MoveHighlightIndicator", args = {1, 0} }
         self.key_events.HighlightPress = { {"Press"}, doc = "highlight start or end" }
         if Device:hasKeys() then
-            self.key_events.QuicklyUpHighlightIndicator = { {"Shift", "Up"}, doc = "quick move indicator up", event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICTOR_MOVE} }
-            self.key_events.QuicklyDownHighlightIndicator = { {"Shift", "Down"}, doc = "quick move indicator down", event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICTOR_MOVE} }
-            self.key_events.QuicklyLeftHighlightIndicator = { {"Shift", "Left"}, doc = "quick move indicator left", event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICTOR_MOVE} }
-            self.key_events.QuicklyRightHighlightIndicator = { {"Shift", "Right"}, doc = "quick move indicator right", event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickUpHighlightIndicator = { {"Shift", "Up"}, doc = "quick move indicator up", event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickDownHighlightIndicator = { {"Shift", "Down"}, doc = "quick move indicator down", event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickLeftHighlightIndicator = { {"Shift", "Left"}, doc = "quick move indicator left", event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICTOR_MOVE} }
+            self.key_events.QuickRightHighlightIndicator = { {"Shift", "Right"}, doc = "quick move indicator right", event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICTOR_MOVE} }
             self.key_events.StartHighlightIndicator = { {"H"}, doc = "start non-touch highlight" }
         end
     end
@@ -896,9 +897,9 @@ dbg:guard(ReaderHighlight, "onShowHighlightMenu",
 
 function ReaderHighlight:_resetHoldTimer(clear)
     if clear then
-        self.hold_last_tv = nil
+        self.hold_last_time = nil
     else
-        self.hold_last_tv = UIManager:getTime()
+        self.hold_last_time = UIManager:getTime()
     end
 end
 
@@ -1422,14 +1423,14 @@ function ReaderHighlight:onHoldRelease()
     end
 
     local long_final_hold = false
-    if self.hold_last_tv then
-        local hold_duration = TimeVal:now() - self.hold_last_tv
-        local long_hold_threshold = G_reader_settings:readSetting("highlight_long_hold_threshold", 3)
-        if hold_duration > TimeVal:new{ sec = long_hold_threshold, usec = 0 } then
+    if self.hold_last_time then
+        local hold_duration = time.now() - self.hold_last_time
+        local long_hold_threshold_s = G_reader_settings:readSetting("highlight_long_hold_threshold", 3) -- seconds
+        if hold_duration > time.s(long_hold_threshold_s) then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
         end
-        self.hold_last_tv = nil
+        self.hold_last_time = nil
     end
     if self.is_word_selection then -- single-word selection
         if long_final_hold or G_reader_settings:isTrue("highlight_action_on_single_word") then
@@ -1452,7 +1453,6 @@ function ReaderHighlight:onHoldRelease()
                 self:onClose()
             elseif default_highlight_action == "translate" then
                 self:translate(self.selected_text)
-                self:onClose()
             elseif default_highlight_action == "wikipedia" then
                 self:lookupWikipedia()
                 self:onClose()
@@ -1938,18 +1938,33 @@ end
 function ReaderHighlight:onMoveHighlightIndicator(args)
     if self.view.visible_area and self._current_indicator_pos then
         local dx, dy, quick_move = unpack(args)
-        local step_distance = self.view.visible_area.w / 5 -- quick move distance: fifth of visible_area
-        local y_step_distance = self.view.visible_area.h / 5
-        if step_distance > y_step_distance then
-            -- take the smaller, make all direction move distance much predictable
-            step_distance = y_step_distance
-        end
-        if not quick_move then
-            step_distance = step_distance / 4 -- twentieth of visible_area
-        end
+        local quick_move_distance_dx = self.view.visible_area.w / 5 -- quick move distance: fifth of visible_area
+        local quick_move_distance_dy = self.view.visible_area.h / 5
+        -- single move distance, small and capable to move on word with small font size and narrow line height
+        local move_distance = Size.item.height_default / 4
         local rect = self._current_indicator_pos:copy()
-        rect.x = rect.x + step_distance * dx
-        rect.y = rect.y + step_distance * dy
+        if quick_move then
+            rect.x = rect.x + quick_move_distance_dx * dx
+            rect.y = rect.y + quick_move_distance_dy * dy
+        else
+            local now = time:now()
+            if dx == self._last_indicator_move_args.dx and dy == self._last_indicator_move_args.dy then
+                local diff = now - self._last_indicator_move_args.time
+                -- if press same arrow key in 1 second, speed up
+                -- double press: 4 single move distances, usually move to next word or line
+                -- triple press: 16 single distances, usually skip several words or lines
+                -- quadruple press: 54 single distances, almost move to screen edge
+                if diff < time.s(1) then
+                    move_distance = self._last_indicator_move_args.distance * 4
+                end
+            end
+            rect.x = rect.x + move_distance * dx
+            rect.y = rect.y + move_distance * dy
+            self._last_indicator_move_args.distance = move_distance
+            self._last_indicator_move_args.dx = dx
+            self._last_indicator_move_args.dy = dy
+            self._last_indicator_move_args.time = now
+        end
         if rect.x < 0 then
             rect.x = 0
         end
@@ -1983,7 +1998,7 @@ function ReaderHighlight:_createHighlightGesture(gesture)
     return {
         ges = gesture,
         pos = point,
-        time = TimeVal:realtime(),
+        time = time.realtime(),
     }
 end
 

@@ -228,36 +228,7 @@ function Kindle:intoScreenSaver()
         if self:supportsScreensaver() then
             -- NOTE: Meaning this is not a SO device ;)
             local Screensaver = require("ui/screensaver")
-            -- NOTE: Pilefered from Device:onPowerEvent @ frontend/device/generic/device.lua
-            -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
             Screensaver:setup()
-            -- Mostly always suspend in Portrait/Inverted Portrait mode...
-            -- ... except when we just show an InfoMessage or when the screensaver
-            -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
-            -- We also exclude full-screen widgets that work fine in Landscape mode,
-            -- like ReadingProgress and BookStatus (c.f., #5724)
-            if Screensaver:modeExpectsPortrait() then
-                self.orig_rotation_mode = self.screen:getRotationMode()
-                -- Leave Portrait & Inverted Portrait alone, that works just fine.
-                if bit.band(self.orig_rotation_mode, 1) == 1 then
-                    -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
-                    self.screen:setRotationMode(self.screen.ORIENTATION_PORTRAIT)
-                else
-                    self.orig_rotation_mode = nil
-                end
-
-                -- On eInk, if we're using a screensaver mode that shows an image,
-                -- flash the screen to white first, to eliminate ghosting.
-                if self:hasEinkScreen() and Screensaver:modeIsImage() then
-                    if Screensaver:withBackground() then
-                        self.screen:clear()
-                    end
-                    self.screen:refreshFull()
-                end
-            else
-                -- nil it, in case user switched ScreenSaver modes during our lifetime.
-                self.orig_rotation_mode = nil
-            end
             Screensaver:show()
         else
             -- Let the native system handle screensavers on SO devices...
@@ -276,10 +247,6 @@ function Kindle:outofScreenSaver()
     if self.screen_saver_mode == true then
         if self:supportsScreensaver() then
             local Screensaver = require("ui/screensaver")
-            -- Restore to previous rotation mode, if need be.
-            if self.orig_rotation_mode then
-                self.screen:setRotationMode(self.orig_rotation_mode)
-            end
             Screensaver:close()
             -- And redraw everything in case the framework managed to screw us over...
             local UIManager = require("ui/uimanager")
@@ -455,11 +422,8 @@ local KindleOasis3 = Kindle:new{
     isZelda = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
-    --- @fixme: Requires a proper KindleOasis3.init, notably with the right warmth_intensity_file entry.
-    --[[
     hasNaturalLight = yes,
     hasNaturalLightMixer = yes,
-    --]]
     hasKeys = yes,
     hasGSensor = yes,
     display_dpi = 300,
@@ -509,6 +473,7 @@ local KindlePaperWhite5 = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
     canHWDither = no,
+    canDoSwipeAnimation = yes,
 }
 
 function Kindle2:init()
@@ -793,6 +758,7 @@ function KindleOasis2:init()
         fl_intensity_file = "/sys/class/backlight/max77796-bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
         is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
+        batt_status_file = "/sys/class/power_supply/max77796-charger/status",
     }
 
     self.input = require("device/input"):new{
@@ -860,9 +826,76 @@ function KindleOasis2:init()
     self.input.open("fake_events")
 end
 
--- For now, assume that the KOA3 doesn't do anything differently than the KOA2.
---- @fixme: That means, possibly among other things, that frontlight warmth needs to be implemented.
-KindleOasis3.init = KindleOasis2.init
+function KindleOasis3:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/lm3697-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/lm3697-bl0/brightness",
+        batt_capacity_file = "/sys/class/power_supply/max77796-battery/capacity",
+        is_charging_file = "/sys/class/power_supply/max77796-charger/charging",
+        batt_status_file = "/sys/class/power_supply/max77796-charger/status",
+    }
+
+    self.input = require("device/input"):new{
+        device = self,
+
+        -- Top, Bottom (yes, it's the reverse than on non-Oasis devices)
+        event_map = {
+            [104] = "RPgFwd",
+            [109] = "RPgBack",
+        }
+    }
+
+
+    --- @fixme The same quirks as on the Oasis 2 apply ;).
+    local haslipc, lipc = pcall(require, "liblipclua")
+    if haslipc and lipc then
+        local lipc_handle = lipc.init("com.github.koreader.screen")
+        if lipc_handle then
+            local orientation_code = lipc_handle:get_string_property(
+                "com.lab126.winmgr", "accelerometer")
+            local rotation_mode = 0
+            if orientation_code then
+                if orientation_code == "U" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT
+                elseif orientation_code == "R" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE
+                elseif orientation_code == "D" then
+                    rotation_mode = self.screen.ORIENTATION_PORTRAIT_ROTATED
+                elseif orientation_code == "L" then
+                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+                end
+            end
+
+            if rotation_mode > 0 then
+                self.screen.native_rotation_mode = rotation_mode
+                self.screen.cur_rotation_mode = rotation_mode
+            end
+
+            lipc_handle:close()
+        end
+    end
+
+    Kindle.init(self)
+
+    self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
+
+    self.input.open(self.touch_dev)
+    self.input.open("/dev/input/by-path/platform-gpio-keys-event")
+
+    -- Get accelerometer device by looking for EV=d
+    local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]\\{1,2\\}'", "r")
+    if std_out then
+        local rotation_dev = std_out:read("*line")
+        std_out:close()
+        if rotation_dev then
+            self.input.open("/dev/input/"..rotation_dev)
+        end
+    end
+
+    self.input.open("fake_events")
+end
 
 function KindleBasic2:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
@@ -870,6 +903,7 @@ function KindleBasic2:init()
         device = self,
         batt_capacity_file = "/sys/class/power_supply/bd7181x_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd7181x_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd7181x_bat/status",
     }
 
     Kindle.init(self)
@@ -885,6 +919,7 @@ function KindlePaperWhite4:init()
         fl_intensity_file = "/sys/class/backlight/bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
     }
 
     Kindle.init(self)
@@ -910,6 +945,7 @@ function KindleBasic3:init()
         fl_intensity_file = "/sys/class/backlight/bl/brightness",
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
     }
 
     Kindle.init(self)
@@ -927,6 +963,7 @@ function KindlePaperWhite5:init()
         warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
         batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
         is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
     }
 
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.

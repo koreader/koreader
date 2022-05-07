@@ -114,11 +114,14 @@ function KoboPowerD:init()
         end
 
         self.isAuxChargingHW = function(this)
-            -- 0 when not charging
+            -- 0 when discharging
             -- 3 when full
             -- 2 when charging via DCP
-            local charge_status = this:read_int_file(this.aux_batt_charging_file)
-            return charge_status ~= 0 and charge_status ~= 3
+            return this:read_int_file(this.aux_batt_charging_file) ~= 0
+        end
+
+        self.isAuxChargedHW = function(this)
+            return this:read_int_file(this.aux_batt_charging_file) == 3
         end
     end
 
@@ -274,8 +277,24 @@ function KoboPowerD:getCapacityHW()
     return self:read_int_file(self.batt_capacity_file)
 end
 
+-- NOTE: Match the behavior of the ntx_io _Is_USB_plugged ioctl!
+--       (Otherwise, a device that is fully charged, but still plugged in will no longer be flagged as charging).
 function KoboPowerD:isChargingHW()
-    return self:read_str_file(self.is_charging_file) == "Charging"
+    return self:read_str_file(self.is_charging_file) ~= "Discharging"
+end
+
+function KoboPowerD:isChargedHW()
+    -- On sunxi, the proper "Full" status is reported, while older kernels (even Mk. 9) report "Not charging"
+    -- c.f., POWER_SUPPLY_PROP_STATUS in ricoh61x_batt_get_prop @ drivers/power/ricoh619-battery.c
+    --       (or drivers/power/supply/ricoh619-battery.c on newer kernels).
+    local status = self:read_str_file(self.is_charging_file)
+    if status == "Full" then
+        return true
+    elseif status == "Not charging" and self:getCapacity() == 100 then
+        return true
+    end
+
+    return false
 end
 
 function KoboPowerD:turnOffFrontlightHW()

@@ -52,7 +52,9 @@ I'm not sure if the distinction between maintenance and sync makes sense
 but it's wifi on vs. off.
 --]]
 function WakeupMgr:addTask(seconds_from_now, callback)
-    if not type(seconds_from_now) == "number" and not type(callback) == "function" then return end
+    -- Make sure we passed valid input, so that stuff doesn't break in fun and interesting ways (especially in removeTasks).
+    assert(type(seconds_from_now) == "number", "delay is not a number")
+    assert(type(callback) == "function", "callback is not a function")
 
     local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
     logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now)
@@ -68,36 +70,67 @@ function WakeupMgr:addTask(seconds_from_now, callback)
     table.sort(self._task_queue, function(a, b) return a.epoch < b.epoch end)
 
     local new_upcoming_task = self._task_queue[1].epoch
-
     if not old_upcoming_task or (new_upcoming_task < old_upcoming_task) then
-        self:setWakeupAlarm(self._task_queue[1].epoch)
+        self:setWakeupAlarm(new_upcoming_task)
     end
 end
 
 --[[--
-Remove task from queue.
+Remove task(s) from queue.
 
-This method removes a task by either index, scheduled time or callback.
+This method removes one or more tasks by either scheduled time or callback.
+If any tasks are left on exit, the upcoming one will automatically be scheduled (if necessary).
 
-@int idx Task queue index. Mainly useful within this module.
 @int epoch The epoch for when this task is scheduled to wake up.
 Normally the preferred method for outside callers.
 @int callback A scheduled callback function. Store a reference for use
 with anonymous functions.
+@treturn bool (true if one or more tasks were removed; false otherwise; nil if the task queue is empty).
 --]]
-function WakeupMgr:removeTask(idx, epoch, callback)
-    if not type(idx) == "number"
-        and not type(epoch) == "number"
-        and not type(callback) == "function" then return end
-
+function WakeupMgr:removeTasks(epoch, callback)
     if #self._task_queue < 1 then return end
 
-    for k, v in ipairs(self._task_queue) do
-        if k == idx or epoch == v.epoch or callback == v.callback then
+    local removed = false
+    local reschedule = false
+    for k = #self._task_queue, 1, -1 do
+        local v = self._task_queue[k]
+        if epoch == v.epoch or callback == v.callback then
             table.remove(self._task_queue, k)
-            return true
+            removed = true
+            -- If we've successfuly pop'ed the upcoming task, we need to schedule the next one (if any) on exit.
+            if k == 1 then
+                reschedule = true
+            end
         end
     end
+
+    -- Schedule the next wakeup action, if any (and if necessary).
+    if reschedule and self._task_queue[1] then
+        self:setWakeupAlarm(self._task_queue[1].epoch)
+    end
+
+    return removed
+end
+
+--[[--
+Variant of @{removeTasks} that will only remove a single task, identified by its task queue index.
+
+@int idx Task queue index. Mainly useful within this module.
+@treturn bool (true if a task was removed; false otherwise).
+--]]
+function WakeupMgr:removeTask(idx)
+    local removed = false
+    -- We don't want to keep the pop'ed entry around, we just want to know if we pop'ed something.
+    if table.remove(self._task_queue, idx) then
+        removed = true
+    end
+
+    -- Schedule the next wakeup action, if any (and if necessary).
+    if removed and idx == 1 and self._task_queue[1] then
+        self:setWakeupAlarm(self._task_queue[1].epoch)
+    end
+
+    return removed
 end
 
 --[[--
@@ -106,25 +139,28 @@ Execute wakeup action.
 This method should be called by the device resume logic in case of a scheduled wakeup.
 
 It checks if the wakeup was scheduled by us using @{validateWakeupAlarmByProximity},
-executes the task, and schedules the next wakeup if any.
+in which case the task is executed.
 
-@treturn bool
+If necessary, the next upcoming task (if any) is scheduled on exit.
+
+@int proximity Proximity window to the scheduled wakeup (passed to @{validateWakeupAlarmByProximity}).
+@treturn bool (true if we were truly woken up by the scheduled wakeup; false otherwise; nil if there weren't any tasks scheduled).
 --]]
-function WakeupMgr:wakeupAction()
+function WakeupMgr:wakeupAction(proximity)
     if #self._task_queue > 0 then
         local task = self._task_queue[1]
-        if self:validateWakeupAlarmByProximity(task.epoch) then
+        if self:validateWakeupAlarmByProximity(task.epoch, proximity) then
             task.callback()
+            -- NOTE: removeTask will take care of scheduling the next upcoming task, if necessary.
             self:removeTask(1)
-            if self._task_queue[1] then
-                -- Set next scheduled wakeup, if any.
-                self:setWakeupAlarm(self._task_queue[1].epoch)
-            end
+
             return true
-        else
-            return false
         end
+
+        return false
     end
+
+    return nil
 end
 
 --[[--

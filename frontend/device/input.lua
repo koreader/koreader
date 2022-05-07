@@ -7,10 +7,10 @@ local DEBUG = require("dbg")
 local Event = require("ui/event")
 local GestureDetector = require("device/gesturedetector")
 local Key = require("device/key")
-local TimeVal = require("ui/timeval")
 local framebuffer = require("ffi/framebuffer")
 local input = require("ffi/input")
 local logger = require("logger")
+local time = require("ui/time")
 local _ = require("gettext")
 
 -- We're going to need a few <linux/input.h> constants...
@@ -118,6 +118,11 @@ local linux_evdev_abs_code_map = {
 
 local linux_evdev_msc_code_map = {
     [C.MSC_RAW] = "MSC_RAW",
+}
+
+local linux_evdev_rep_code_map = {
+    [C.REP_DELAY] = "REP_DELAY",
+    [C.REP_PERIOD] = "REP_PERIOD",
 }
 -- luacheck: pop
 
@@ -263,7 +268,7 @@ Note that we adhere to the "." syntax here for compatibility.
 @todo Clean up separation FFI/this.
 --]]
 function Input.open(device, is_emu_events)
-    input.open(device, is_emu_events and 1 or 0)
+    return input.open(device, is_emu_events and 1 or 0)
 end
 
 --[[--
@@ -367,7 +372,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
     if input.setTimer then
         -- If GestureDetector's clock source probing was inconclusive, do this on the UI timescale instead.
         if clock_id == -1 then
-            deadline = TimeVal:now() + delay
+            deadline = time.now() + delay
             clock_id = C.CLOCK_MONOTONIC
         else
             deadline = origin + delay
@@ -375,7 +380,8 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         -- What this does is essentially to ask the kernel to wake us up when the timer expires,
         -- instead of ensuring that ourselves via a polling timeout.
         -- This ensures perfect accuracy, and allows it to be computed in the event's own timescale.
-        timerfd = input.setTimer(clock_id, deadline.sec, deadline.usec)
+        local sec, usec = time.split_s_us(deadline)
+        timerfd = input.setTimer(clock_id, sec, usec)
     end
     if timerfd then
             -- It worked, tweak the table a bit to make it clear the deadline will be handled by the kernel
@@ -390,7 +396,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         else
             -- Otherwise, fudge it by using a current timestamp in the UI's timescale (MONOTONIC).
             -- This isn't the end of the world in practice (c.f., #7415).
-            deadline = TimeVal:now() + delay
+            deadline = time.now() + delay
         end
         item.deadline = deadline
     end
@@ -573,6 +579,57 @@ function Input:handleKeyBoardEv(ev)
     end
 end
 
+-- Mangled variant of handleKeyBoardEv that will only handle power management related keys.
+-- (Used when blocking input during suspend via sleep cover).
+function Input:handlePowerManagementOnlyEv(ev)
+    local keycode = self.event_map[ev.code]
+    if not keycode then
+        -- Do not handle keypress for keys we don't know
+        return
+    end
+
+    -- We'll need to parse the synthetic event map, because SleepCover* events are synthetic.
+    if self.event_map_adapter[keycode] then
+        keycode = self.event_map_adapter[keycode](ev)
+    end
+
+    -- Power management synthetic events
+    if keycode == "SleepCoverClosed" or keycode == "SleepCoverOpened"
+    or keycode == "Suspend" or keycode == "Resume" then
+        return keycode
+    end
+
+    -- Fake events
+    if keycode == "IntoSS" or keycode == "OutOfSS"
+    or keycode == "UsbPlugIn" or keycode == "UsbPlugOut"
+    or keycode == "Charging" or keycode == "NotCharging" then
+        return keycode
+    end
+
+    if keycode == "Power" then
+        -- Kobo generates Power keycode only, we need to decide whether it's
+        -- power-on or power-off ourselves.
+        if ev.value == EVENT_VALUE_KEY_PRESS then
+            return "PowerPress"
+        elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+            return "PowerRelease"
+        end
+    end
+
+    -- Nothing to see, move along!
+    return
+end
+
+-- Empty event handler used to send input to the void
+function Input:voidEv(ev)
+    return
+end
+
+-- Generic event handler for unhandled input events
+function Input:handleGenericEv(ev)
+    return Event:new("GenericInput", ev)
+end
+
 function Input:handleMiscEv(ev)
     -- should be handled by a misc event protocol plugin
 end
@@ -653,10 +710,8 @@ function Input:handleTouchEv(ev)
         end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
-            -- Promote our event's time table to a real TimeVal
-            setmetatable(ev.time, TimeVal)
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", ev.time)
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
@@ -717,9 +772,8 @@ function Input:handleTouchEvPhoenix(ev)
         end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
-            setmetatable(ev.time, TimeVal)
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", ev.time)
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
@@ -753,9 +807,8 @@ function Input:handleTouchEvLegacy(ev)
         end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
-            setmetatable(ev.time, TimeVal)
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", ev.time)
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
 
             -- feed ev in all slots to state machine
@@ -887,13 +940,13 @@ function Input:toggleMiscEvNTX(toggle)
     elseif toggle == false then
         -- Ignore Gyro events
         if self.isNTXAccelHooked then
-            self.handleMiscEv = function() end
+            self.handleMiscEv = self.voidEv
             self.isNTXAccelHooked = false
         end
     else
         -- Toggle it
         if self.isNTXAccelHooked then
-            self.handleMiscEv = function() end
+            self.handleMiscEv = self.voidEv
         else
             self.handleMiscEv = self.handleMiscEvNTX
         end
@@ -966,8 +1019,8 @@ end
 
 
 --- Main event handling.
--- `now` corresponds to UIManager:getTime() (a TimeVal), and it's just been updated by UIManager.
--- `deadline` (a TimeVal) is the absolute deadline imposed by UIManager:handleInput() (a.k.a., our main event loop ^^):
+-- `now` corresponds to UIManager:getTime() (an fts time), and it's just been updated by UIManager.
+-- `deadline` (an fts time) is the absolute deadline imposed by UIManager:handleInput() (a.k.a., our main event loop ^^):
 -- it's either nil (meaning block forever waiting for input), or the earliest UIManager deadline (in most cases, that's the next scheduled task,
 -- in much less common cases, that's the earliest of UIManager.INPUT_TIMEOUT (currently, only KOSync ever sets it) or UIManager.ZMQ_TIMEOUT if there are pending ZMQs).
 function Input:waitEvent(now, deadline)
@@ -1017,18 +1070,19 @@ function Input:waitEvent(now, deadline)
                 if poll_deadline then
                     -- If we haven't hit that deadline yet, poll until it expires, otherwise,
                     -- have select return immediately so that we trip a timeout.
-                    now = now or TimeVal:now()
+                    now = now or time.now()
                     if poll_deadline > now then
                         -- Deadline hasn't been blown yet, honor it.
                         poll_timeout = poll_deadline - now
                     else
                         -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
-                        poll_timeout = TimeVal.zero
+                        poll_timeout = 0
                     end
                 end
 
                 local timerfd
-                ok, ev, timerfd = input.waitForEvent(poll_timeout and poll_timeout.sec, poll_timeout and poll_timeout.usec)
+                local sec, usec = time.split_s_us(poll_timeout)
+                ok, ev, timerfd = input.waitForEvent(sec, usec)
                 -- We got an actual input event, go and process it
                 if ok then break end
 
@@ -1046,7 +1100,7 @@ function Input:waitEvent(now, deadline)
                             -- We're only guaranteed to have blown the timer's deadline
                             -- when our actual select deadline *was* the timer's!
                             consume_callback = true
-                        elseif TimeVal:now() >= self.timer_callbacks[1].deadline then
+                        elseif time.now() >= self.timer_callbacks[1].deadline then
                             -- But if it was a task deadline instead, we to have to check the timer's against the current time,
                             -- to double-check whether we blew it or not.
                             consume_callback = true
@@ -1088,17 +1142,18 @@ function Input:waitEvent(now, deadline)
             -- If UIManager put us on deadline, enforce it, otherwise, block forever.
             if deadline then
                 -- Convert that absolute deadline to value relative to *now*, as we may loop multiple times between UI ticks.
-                now = now or TimeVal:now()
+                now = now or time.now()
                 if deadline > now then
                     -- Deadline hasn't been blown yet, honor it.
                     poll_timeout = deadline - now
                 else
                     -- Deadline has been blown: make select return immediately.
-                    poll_timeout = TimeVal.zero
+                    poll_timeout = 0
                 end
             end
 
-            ok, ev = input.waitForEvent(poll_timeout and poll_timeout.sec, poll_timeout and poll_timeout.usec)
+            local sec, usec = time.split_s_us(poll_timeout)
+            ok, ev = input.waitForEvent(sec, usec)
         end -- if #timer_callbacks > 0
 
         -- Handle errors
@@ -1158,6 +1213,11 @@ function Input:waitEvent(now, deadline)
                         "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
                         event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_msc_code_map[event.code], event.value,
                         event.time.sec, event.time.usec))
+                elseif event.type == C.EV_REP then
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_rep_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
                 else
                     logger.dbg(string.format(
                         "input event => type: %d (%s), code: %d, value: %s, time: %d.%06d",
@@ -1194,7 +1254,10 @@ function Input:waitEvent(now, deadline)
                 end
             else
                 -- Received some other kind of event that we do not know how to specifically handle yet
-                table.insert(handled, Event:new("GenericInput", event))
+                local handled_ev = self:handleGenericEv(event)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
             end
         end
         return handled
@@ -1207,6 +1270,66 @@ function Input:waitEvent(now, deadline)
         return {
             Event:new("InputError", "Catastrophic")
         }
+    end
+end
+
+-- Allow toggling the handling of most every kind of input, except for power management related events.
+function Input:inhibitInput(toggle)
+    if toggle then
+        -- Only handle power management events
+        if not self._key_ev_handler then
+            logger.info("Inhibiting user input")
+            self._key_ev_handler = self.handleKeyBoardEv
+            self.handleKeyBoardEv = self.handlePowerManagementOnlyEv
+        end
+        -- And send everything else to the void
+        if not self._oasis_ev_handler then
+            self._oasis_ev_handler = self.handleOasisOrientationEv
+            self.handleOasisOrientationEv = self.voidEv
+        end
+        if not self._abs_ev_handler then
+            self._abs_ev_handler = self.handleTouchEv
+            self.handleTouchEv = self.voidEv
+        end
+        if not self._msc_ev_handler then
+            self._msc_ev_handler = self.handleMiscEv
+            self.handleMiscEv = self.voidEv
+        end
+        if not self._sdl_ev_handler then
+            self._sdl_ev_handler = self.handleSdlEv
+            self.handleSdlEv = self.voidEv
+        end
+        if not self._generic_ev_handler then
+            self._generic_ev_handler = self.handleGenericEv
+            self.handleGenericEv = self.voidEv
+        end
+    else
+        -- Restore event handlers, if any
+        if self._key_ev_handler then
+            logger.info("Restoring user input handling")
+            self.handleKeyBoardEv = self._key_ev_handler
+            self._key_ev_handler = nil
+        end
+        if self._oasis_ev_handler then
+            self.handleOasisOrientationEv = self._oasis_ev_handler
+            self._oasis_ev_handler = nil
+        end
+        if self._abs_ev_handler then
+            self.handleTouchEv = self._abs_ev_handler
+            self._abs_ev_handler = nil
+        end
+        if self._msc_ev_handler then
+            self.handleMiscEv = self._msc_ev_handler
+            self._msc_ev_handler = nil
+        end
+        if self._sdl_ev_handler then
+            self.handleSdlEv = self._sdl_ev_handler
+            self._sdl_ev_handler = nil
+        end
+        if self._generic_ev_handler then
+            self.handleGenericEv = self._generic_ev_handler
+            self._generic_ev_handler = nil
+        end
     end
 end
 
