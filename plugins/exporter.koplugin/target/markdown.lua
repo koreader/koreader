@@ -1,7 +1,6 @@
 local _ = require("gettext")
 local UIManager = require("ui/uimanager")
 
-
 local formatters = {
     none = "%s",
     bold = "**%s**",
@@ -18,12 +17,10 @@ local MarkdownExporter = require("base"):new {
     extension = "md",
 }
 
-
 function MarkdownExporter:loadSettings()
     local plugin_settings = G_reader_settings:readSetting("exporter") or {}
     self.settings = plugin_settings[self.name] or {}
 end
-
 
 local formatter_buttons = {
     {_("None"), "none"},
@@ -37,7 +34,7 @@ local formatter_buttons = {
 
 function MarkdownExporter:editFormatStyle(drawer_style)
     local radio_buttons = {}
-    for _, v in ipairs(formatter_buttons) do
+    for _idx, v in ipairs(formatter_buttons) do
         table.insert(radio_buttons, {
             {
                 text = v[1],
@@ -108,7 +105,7 @@ function MarkdownExporter:getMenuTable()
                 end,
             },
             {
-                text = _("underscore"),
+                text = _("Underscore"),
                 keep_menu_open = true,
                 callback = function()
                     self:editFormatStyle("underscore")
