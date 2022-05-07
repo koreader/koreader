@@ -9,6 +9,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
+local VocabularyBuilder = require("apps/reader/modules/readervocabularybuilder")
 local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
@@ -151,9 +152,6 @@ function ReaderDictionary:init()
     -- Prepare the -u options to give to sdcv the dictionary order and if some are disabled
     self:updateSdcvDictNamesOptions()
 
-    if not lookup_history then
-        lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
-    end
 end
 
 function ReaderDictionary:sortAvailableIfos()
@@ -208,34 +206,12 @@ function ReaderDictionary:addToMainMenu(menu_items)
         end,
     }
     menu_items.dictionary_lookup_history = {
-        text = _("Dictionary lookup history"),
+        text = _("Vocabulary Builder"),
         enabled_func = function()
-            return lookup_history:has("lookup_history")
+            return VocabularyBuilder.has_items
         end,
         callback = function()
-            local lookup_history_table = lookup_history:readSetting("lookup_history")
-            local kv_pairs = {}
-            local previous_title
-            for i = #lookup_history_table, 1, -1 do
-                local value = lookup_history_table[i]
-                if value.book_title ~= previous_title then
-                    table.insert(kv_pairs, { value.book_title..":", "" })
-                end
-                previous_title = value.book_title
-                table.insert(kv_pairs, {
-                    os.date("%Y-%m-%d %H:%M:%S", value.time),
-                    value.word,
-                    callback = function()
-                        -- Word had been cleaned before being added to history
-                        self:onLookupWord(value.word, true)
-                    end
-                })
-            end
-            UIManager:show(KeyValuePage:new{
-                title = _("Dictionary lookup history"),
-                value_overflow_align = "right",
-                kv_pairs = kv_pairs,
-            })
+            VocabularyBuilder:showUI(function(word) self:onLookupWord(word, true) end)
         end,
     }
     menu_items.dictionary_settings = {
@@ -290,7 +266,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             {
                 text = _("Clean dictionary lookup history"),
                 enabled_func = function()
-                    return lookup_history:has("lookup_history")
+                    return VocabularyBuilder.has_items
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
@@ -299,7 +275,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
                         ok_text = _("Clean"),
                         ok_callback = function()
                             -- empty data table to replace current one
-                            lookup_history:reset{}
+                            VocabularyBuilder:reset() 
                             touchmenu_instance:updateItems()
                         end,
                     })
@@ -895,11 +871,13 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
                 book_title = util.splitFileNameSuffix(filename)
             end
         end
-        lookup_history:addTableItem("lookup_history", {
-            book_title = book_title,
-            time = os.time(),
-            word = word,
-        })
+        if self.highlight then
+            VocabularyBuilder:insertOrUpdate({
+                book_title = book_title,
+                time = os.time(),
+                word = word
+            })
+        end
     end
 
     if Device:canExternalDictLookup() and G_reader_settings:isTrue("external_dict_lookup") then
