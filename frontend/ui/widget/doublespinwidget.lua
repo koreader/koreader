@@ -84,6 +84,11 @@ function DoubleSpinWidget:init()
         }
     end
 
+    if self.unit and self.unit ~= "" then
+        self.left_precision = self.left_precision and self.left_precision or "%1d"
+        self.right_precision = self.right_precision and self.right_precision or "%1d"
+    end
+
     -- Actually the widget layout
     self:update()
 end

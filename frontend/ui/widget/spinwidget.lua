@@ -81,6 +81,9 @@ function SpinWidget:init()
          }
     end
 
+    if self.unit and self.unit ~= "" then
+        self.precision = self.precision and self.precision or "%1d"
+    end
     -- Actually the widget layout
     self:update()
 end
