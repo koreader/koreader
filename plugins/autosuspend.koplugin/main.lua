@@ -490,7 +490,7 @@ function AutoSuspend:addToMainMenu(menu_items)
         callback = function(touchmenu_instance)
             -- 60 sec (1') is the minimum and 24*3600 sec (1day) is the maximum suspend time.
             -- A suspend time of one day seems to be excessive.
-            -- But or battery testing it might give some sense.
+            -- But it might make sense for battery testing.
             self:pickTimeoutValue(touchmenu_instance,
                 _("Timeout for autosuspend"),
                 "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds,
