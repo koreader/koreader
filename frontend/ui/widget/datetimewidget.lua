@@ -34,7 +34,7 @@ Example for input a date:
     }
     UIManager:show(date_widget)
 
-Example for input a duration with days, minutes and seconds:
+Example to input a duration with days, minutes and seconds:
     local DateTimeWidget = require("ui/widget/datetimewidget")
     local @{gettext|_} = require("gettext")
 
@@ -289,7 +289,7 @@ function DateTimeWidget:createLayout()
         with_bottom_line = true,
         title = self.title_text,
         title_shrink_font_to_fit = true,
-        info_text = self.info_text and self.info_text or "" .. unit_text,
+        info_text = (self.info_text and self.info_text or "") .. unit_text,
         show_parent = self,
     }
 
