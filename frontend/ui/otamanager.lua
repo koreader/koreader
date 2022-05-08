@@ -468,13 +468,15 @@ function OTAManager:getOTAMenuTable()
                         alignment = "center",
                         show_icon = false,
                         text = "⌛",
-                        timeout = 1, -- timeout value is necessary, the message will be deleted by next message
                     }
                     UIManager:show(working_im)
                     UIManager:forceRePaint()
+
                     local connect_callback = function()
                         OTAManager:fetchAndProcessUpdate()
                     end
+
+                    UIManager:close(working_im)
                     NetworkMgr:runWhenOnline(connect_callback)
                 end
             },
