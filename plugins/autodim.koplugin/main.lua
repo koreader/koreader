@@ -117,13 +117,13 @@ function AutoDim:getAutodimMenu()
             },
             {
                 text_func = function()
-                    return T(_("Dim to %1 % of reading brightness"), self.autodim_endpercentage)
+                    return T(_("Fraction in %1 % of reading brightness"), self.autodim_endpercentage)
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
                     local percentage_dialog = SpinWidget:new{
-                        title_text = _("Percent of reading brightness"),
-                        info_text = _("A percentage of the normal reading brightness."),
+                        title_text = _("Fraction of normal brightness"),
+                        info_text = _("The fraction of normal brightness."),
                         value = self.autodim_endpercentage,
                         value_default = DEFAULT_AUTODIM_ENDPERCENTAGE,
                         value_min = 0,
