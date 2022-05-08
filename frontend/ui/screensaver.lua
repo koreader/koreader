@@ -393,7 +393,7 @@ function Screensaver:setStretchLimit(touchmenu_instance)
         value_max = 25,
         default_value = 8,
         unit = "%",
-        precission = "%1d",
+        precision = "%1d",
         title_text = _("Set maximum stretch limit"),
         ok_text = _("Set"),
         ok_always_enabled = true,
