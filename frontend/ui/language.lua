@@ -19,7 +19,6 @@ local Language = {
         he = "עִבְרִית",
         hr = "Hrvatski",
         hu = "Magyar",
-        ka = "ქართული",
         lt_LT = "Lietuvių",
         lv = "Latviešu",
         nl_NL = "Nederlands",
