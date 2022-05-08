@@ -19,7 +19,8 @@ function ReaderDeviceStatus:init()
         self.battery_interval_m = G_reader_settings:readSetting("device_status_battery_interval_minutes", 10)
         self.battery_threshold = G_reader_settings:readSetting("device_status_battery_threshold", 20)
         self.battery_threshold_high = G_reader_settings:readSetting("device_status_battery_threshold_high", 100)
-        -- If sync is true, schedule on a full minute (to reduce wakeups from suspend).
+        -- `checkLowBatteryLevel` and `checkHighMemoryUsage` are each supposed to start one second past the top of the minute,
+        -- as some other periodic activities do (e.g. footer). This means that the processor is woken up less often from standby.
         self.checkLowBatteryLevel = function(sync)
             local is_charging = powerd:isCharging()
             local battery_capacity = powerd:getCapacity()
@@ -55,7 +56,8 @@ function ReaderDeviceStatus:init()
     if not Device:isAndroid() then
         self.memory_interval_m = G_reader_settings:readSetting("device_status_memory_interval_minutes", 5)
         self.memory_threshold = G_reader_settings:readSetting("device_status_memory_threshold", 100)
-        -- If sync is true, schedule on a full minute (to reduce wakeups from suspend).
+        -- `checkLowBatteryLevel` and `checkHighMemoryUsage` are each supposed to start one second past the top of the minute,
+        -- as some other periodic activities do (e.g. footer). This means that the processor is woken up less often from standby.
         self.checkHighMemoryUsage = function(sync)
             local statm = io.open("/proc/self/statm", "r")
             if statm then
@@ -303,7 +305,8 @@ High level threshold is checked when the device is charging.]]),
     end
 end
 
--- If sync is true, the next schedule will be on a full minute (rounded down) to reduce wakeups from standby.
+-- `checkLowBatteryLevel` and `checkHighMemoryUsage` are each supposed to start one second past the top of the minute,
+-- as some other periodic activities do (e.g. footer). This means that the processor is woken up less often from standby.
 function ReaderDeviceStatus:startBatteryChecker(sync)
     if G_reader_settings:isTrue("device_status_battery_alarm") then
         self.checkLowBatteryLevel(sync)
@@ -316,7 +319,8 @@ function ReaderDeviceStatus:stopBatteryChecker()
     end
 end
 
--- If sync is true, the next schedule will be on a full minute (rounded down) to reduce wakeups from standby.
+-- `checkLowBatteryLevel` and `checkHighMemoryUsage` are each supposed to start one second past the top of the minute,
+-- as some other periodic activities do (e.g. footer). This means that the processor is woken up less often from standby.
 function ReaderDeviceStatus:startMemoryChecker(sync)
     if G_reader_settings:isTrue("device_status_memory_alarm") then
         self.checkHighMemoryUsage(sync)
