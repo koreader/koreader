@@ -16,7 +16,7 @@ local T = FFIUtil.template
 
 local DEFAULT_AUTODIM_STARTTIME_M = 5
 local DEFAULT_AUTODIM_DURATION_S = 20
-local DEFAULT_AUTODIM_ENDPERCENTAGE = 20
+local DEFAULT_AUTODIM_FRACTION = 20
 local AUTODIM_EVENT_FREQUENCY = 2 -- in Hz; Frequenzy for FrontlightChangedEvent on E-Ink devices
 
 local AutoDim = WidgetContainer:new{
@@ -26,7 +26,7 @@ local AutoDim = WidgetContainer:new{
 function AutoDim:init()
     self.autodim_starttime_m = G_reader_settings:readSetting("autodim_starttime_minutes", -1)
     self.autodim_duration_s = G_reader_settings:readSetting("autodim_duration_seconds", DEFAULT_AUTODIM_DURATION_S)
-    self.autodim_endpercentage = G_reader_settings:readSetting("autodim_endpercentage", DEFAULT_AUTODIM_ENDPERCENTAGE)
+    self.autodim_fraction = G_reader_settings:readSetting("autodim_fraction", DEFAULT_AUTODIM_FRACTION)
 
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
 
@@ -62,6 +62,7 @@ function AutoDim:getAutodimMenu()
                         value_max = 60,
                         value_step = 0.5,
                         value_hold_step = 5,
+                        -- @translators This is an abbreviation for minute.
                         unit = _("min"),
                         precision = "%0.1f",
                         ok_always_enabled = true,
@@ -93,7 +94,7 @@ function AutoDim:getAutodimMenu()
                 callback = function(touchmenu_instance)
                     local dimmer_dialog = SpinWidget:new{
                         title_text = _("Automatic dimmer duration"),
-                        info_text = _("Enter the duration until reaching the final brightness."),
+                        info_text = _("Delay to reach the lowest brightness."),
                         value = self.autodim_duration_s,
                         default_value = DEFAULT_AUTODIM_DURATION_S,
                         value_min = 0,
@@ -101,6 +102,7 @@ function AutoDim:getAutodimMenu()
                         value_step = 1,
                         value_hold_step = 10,
                         precision = "%1d",
+                        -- @translators This is the time unit for seconds.
                         unit = _("s"),
                         callback = function(spin)
                             if not spin then return end
@@ -117,22 +119,22 @@ function AutoDim:getAutodimMenu()
             },
             {
                 text_func = function()
-                    return T(_("Dim to: %1 %"), self.autodim_endpercentage)
+                    return T(_("Dim to %1 % of the regular brightness"), self.autodim_fraction)
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
                     local percentage_dialog = SpinWidget:new{
-                        title_text = _("Dimming percentage"),
-                        info_text = _("A percentage of the normal brightness."),
-                        value = self.autodim_endpercentage,
-                        value_default = DEFAULT_AUTODIM_ENDPERCENTAGE,
+                        title_text = _("Dim to percentage"),
+                        info_text = _("The lowest brightness as a percentage of the regular brightness."),
+                        value = self.autodim_fraction,
+                        value_default = DEFAULT_AUTODIM_FRACTION,
                         value_min = 0,
                         value_max = 100,
                         value_hold_step = 10,
                         unit = "%",
                         callback = function(spin)
-                            self.autodim_endpercentage = spin.value
-                            G_reader_settings:saveSetting("autodim_endpercentage", spin.value)
+                            self.autodim_fraction = spin.value
+                            G_reader_settings:saveSetting("autodim_fraction", spin.value)
                             self:_schedule_autodim_task()
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
@@ -203,7 +205,11 @@ function AutoDim:autodim_task()
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
-        self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_endpercentage / 100 + 0.5)
+        self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_fraction / 100 + 0.5)
+        -- Clamp `self.autodim_end_fl` to 1 if `self.autodim_fraction` ~= 0
+        if self.autodim_fraction ~= 0 and self.autodim_end_fl == 0 then
+            self.autodim_end_fl = 1
+        end
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         -- calculate time until the next decrease step
         self.autodim_step_time_s = math.max(self.autodim_duration_s / fl_diff, 0.001)
