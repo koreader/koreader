@@ -114,7 +114,6 @@ function Exporter:init()
     }
     for k, _ in pairs(self.targets) do
         self.targets[k].path = self.path
-        self.targets[k]:onInit()
     end
     self.ui.menu:registerToMainMenu(self)
 end
