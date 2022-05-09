@@ -133,7 +133,6 @@ function ReadTimer:addToMainMenu(menu_items)
                         end
                     end
                     local time_widget = DateTimeWidget:new{
-                        is_date = false,
                         hour = remain_hours or 0,
                         min = remain_minutes or 0,
                         hour_max = 17,

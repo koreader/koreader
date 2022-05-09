@@ -133,7 +133,6 @@ if Device:setDateTime() then
             local curr_hour = now_t.hour
             local curr_min = now_t.min
             local time_widget = DateTimeWidget:new{
-                is_date = false,
                 hour = curr_hour,
                 min = curr_min,
                 ok_text = _("Set time"),
