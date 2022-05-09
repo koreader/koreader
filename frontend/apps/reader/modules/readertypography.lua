@@ -367,11 +367,9 @@ When the book's language tag is not among our presets, no specific features will
                 left_value = G_reader_settings:readSetting("hyph_left_hyphen_min") or alg_left_hyphen_min,
                 left_min = 1,
                 left_max = 10,
-                left_precision = "%1d",
                 right_value = G_reader_settings:readSetting("hyph_right_hyphen_min") or alg_right_hyphen_min,
                 right_min = 1,
                 right_max = 10,
-                right_precision = "%1d",
                 left_default = alg_left_hyphen_min,
                 right_default = alg_right_hyphen_min,
                 -- let room on the widget sides so we can see

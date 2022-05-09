@@ -417,7 +417,6 @@ The interval value is in seconds and can range from 3 to 20 seconds.]]),
                         value_step = 1,
                         value_hold_step = 5,
                         unit = _("s"),
-                        precision = "%1d",
                         ok_text = _("Set interval"),
                         default_value = 3,
                         callback = function(spin)
