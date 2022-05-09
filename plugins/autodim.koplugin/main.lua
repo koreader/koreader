@@ -62,7 +62,7 @@ function AutoDim:getAutodimMenu()
                         value_max = 60,
                         value_step = 0.5,
                         value_hold_step = 5,
-                        unit = _("min"),
+                        unit = _("m"),
                         precision = "%0.1f",
                         ok_always_enabled = true,
                         callback = function(spin)
@@ -117,13 +117,13 @@ function AutoDim:getAutodimMenu()
             },
             {
                 text_func = function()
-                    return T(_("Fraction in %1 % of reading brightness"), self.autodim_fraction)
+                    return T(_("Final fraction of brightness: %1 %"), self.autodim_fraction)
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
                     local percentage_dialog = SpinWidget:new{
-                        title_text = _("Fraction of normal brightness"),
-                        info_text = _("The fraction of normal brightness."),
+                        title_text = _("Final Fraction of brightness"),
+                        info_text = _("The final fraction of brightness."),
                         value = self.autodim_fraction,
                         value_default = DEFAULT_AUTODIM_FRACTION,
                         value_min = 0,
