@@ -1,4 +1,3 @@
-
 local md = require("template/md")
 local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
@@ -9,16 +8,30 @@ local _ = require("gettext")
 local MarkdownExporter = require("base"):new {
     name = "markdown",
     extension = "md",
+    init_callback = function(self, settings)
+        local changed = false
+        if not settings.formatting_options or not settings.highlight_formatting then
+            settings.formatting_options = settings.formatting_options or {
+                lighten = "italic",
+                underscore = "underline_markdownit",
+                strikeout = "strikethrough",
+                invert = "bold",
+            }
+            settings.highlight_formatting = settings.highlight_formatting or true
+            changed = true
+        end
+        return changed, settings
+    end,
 }
 
 local formatter_buttons = {
-    {_("None"), "none"},
-    {_("Bold"), "bold"},
-    {_("Bold Italic"), "bold_italic"},
-    {_("Italic"), "italic"},
-    {_("Strikethrough"), "strikethrough"},
-    {_("Underline (Markdownit style, with ++)"), "underline_markdownit"},
-    {_("Underline (with <u></u> tags)"), "underline_u_tag"},
+    { _("None"), "none" },
+    { _("Bold"), "bold" },
+    { _("Bold Italic"), "bold_italic" },
+    { _("Italic"), "italic" },
+    { _("Strikethrough"), "strikethrough" },
+    { _("Underline (Markdownit style, with ++)"), "underline_markdownit" },
+    { _("Underline (with <u></u> tags)"), "underline_u_tag" },
 }
 
 function MarkdownExporter:editFormatStyle(drawer_style, label, touchmenu_instance)
@@ -32,7 +45,7 @@ function MarkdownExporter:editFormatStyle(drawer_style, label, touchmenu_instanc
             },
         })
     end
-    UIManager:show(require("ui/widget/radiobuttonwidget"):new{
+    UIManager:show(require("ui/widget/radiobuttonwidget"):new {
         title_text = T(_("Formatting style for %1"), label),
         width_factor = 0.8,
         radio_buttons = radio_buttons,
@@ -64,10 +77,10 @@ function MarkdownExporter:onInit()
 end
 
 local highlight_style = {
-    {_("Lighten"), "lighten"},
-    {_("Underline"), "underscore"},
-    {_("Strikeout"), "strikeout"},
-    {_("Invert"), "invert"},
+    { _("Lighten"), "lighten" },
+    { _("Underline"), "underscore" },
+    { _("Strikeout"), "strikeout" },
+    { _("Invert"), "invert" },
 }
 
 function MarkdownExporter:getMenuTable()
@@ -90,7 +103,7 @@ function MarkdownExporter:getMenuTable()
 
     for _idx, entry in ipairs(highlight_style) do
         table.insert(menu.sub_item_table, {
-            text_func = function ()
+            text_func = function()
                 return entry[1] .. ": " .. md.formatters[self.settings.formatting_options[entry[2]]].label
             end,
             enabled_func = function()
@@ -104,8 +117,6 @@ function MarkdownExporter:getMenuTable()
     end
     return menu
 end
-
-
 
 function MarkdownExporter:export(t)
     local path = self:getFilePath(t)
