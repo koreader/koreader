@@ -62,7 +62,8 @@ function AutoDim:getAutodimMenu()
                         value_max = 60,
                         value_step = 0.5,
                         value_hold_step = 5,
-                        unit = _("m"),
+                        -- @translators This is an abbreviation for minute.
+                        unit = _("min"),
                         precision = "%0.1f",
                         ok_always_enabled = true,
                         callback = function(spin)
@@ -101,6 +102,7 @@ function AutoDim:getAutodimMenu()
                         value_step = 1,
                         value_hold_step = 10,
                         precision = "%1d",
+                        -- @translators This is the time unit for seconds.
                         unit = _("s"),
                         callback = function(spin)
                             if not spin then return end
@@ -117,13 +119,13 @@ function AutoDim:getAutodimMenu()
             },
             {
                 text_func = function()
-                    return T(_("Lowest fraction of brightness: %1 %"), self.autodim_fraction)
+                    return T(_("Dim to %1 % of the regular brightness"), self.autodim_fraction)
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
                     local percentage_dialog = SpinWidget:new{
-                        title_text = _("Lowest Fraction of brightness"),
-                        info_text = _("The lowest fraction of brightness."),
+                        title_text = _("Dim to percentage"),
+                        info_text = _("This value indicates the percentage of the lowest brightness in relation to the regular brightness."),
                         value = self.autodim_fraction,
                         value_default = DEFAULT_AUTODIM_FRACTION,
                         value_min = 0,
