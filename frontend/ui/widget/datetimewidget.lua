@@ -109,8 +109,15 @@ function DateTimeWidget:init()
     self.layout = {}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) *
-        (self.nb_pickers >= 3 and 0.8 or 0.6))
+    local width_scale_factor = 0.6
+    if self.nb_pickers == 3 then
+        width_scale_factor = 0.8
+    elseif self.nb_pickers == 4 then
+        width_scale_factor = 0.85
+    else
+        width_scale_factor = 0.95
+    end
+    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * width_scale_factor)
     if Device:hasKeys() then
         self.key_events.Close = { {Device.input.group.Back}, doc = "close date widget" }
     end
@@ -145,6 +152,12 @@ function DateTimeWidget:createLayout()
     local times = { _("years"), _("months"), _("days"), _("hours"), _("minutes"), _("seconds"), }
     local unit_text = (self.info_text and "\n" or "") .. _("Time is in") .. " "
 
+    -- the following calculation is stolen from NumberPickerWidget
+    local number_picker_widgets_width = math.floor(math.min(self.screen_width, self.screen_height) * 0.2)
+    if self.nb_pickers > 3 then
+       number_picker_widgets_width = number_picker_widgets_width * 3 / self.nb_pickers
+    end
+
     if self.year then
         year_widget = NumberPickerWidget:new{
             show_parent = self,
@@ -153,6 +166,7 @@ function DateTimeWidget:createLayout()
             value_max = self.year_max or 2525,
             value_step = 1,
             value_hold_step = self.year_hold_step or 4,
+            width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(year_widget)
         unit_text = unit_text .. ", " .. times[1]
@@ -167,6 +181,7 @@ function DateTimeWidget:createLayout()
             value_max = self.month_max or 12,
             value_step = 1,
             value_hold_step = self.month_hold_step or 3,
+            width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(month_widget)
         unit_text = unit_text .. ", " .. times[2]
@@ -181,6 +196,7 @@ function DateTimeWidget:createLayout()
             value_max = self.day_max or 31,
             value_step = 1,
             value_hold_step = self.day_hold_step or 3,
+            width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(day_widget)
         unit_text = unit_text .. ", " .. times[3]
@@ -196,6 +212,7 @@ function DateTimeWidget:createLayout()
             value_max = self.hour_max or 23,
             value_step = 1,
             value_hold_step = self.hour_hold_step or 4,
+            width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(hour_widget)
         unit_text = unit_text .. ", " .. times[4]
@@ -210,6 +227,7 @@ function DateTimeWidget:createLayout()
             value_max = self.min_max or 59,
             value_step = 1,
             value_hold_step = self.min_hold_step or 10,
+            width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(min_widget)
         unit_text = unit_text .. ", " .. times[5]
@@ -224,6 +242,7 @@ function DateTimeWidget:createLayout()
             value_max = self.sec_max or 59,
             value_step = 1,
             value_hold_step = self.sec_hold_step or 10,
+            width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(sec_widget)
         unit_text = unit_text .. ", " .. times[6]
