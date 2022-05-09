@@ -89,6 +89,7 @@ function ReadTimer:addToMainMenu(menu_items)
                     local time_widget = DateTimeWidget:new{
                         hour = curr_hour,
                         min = curr_min,
+                        append_unit_info = true,
                         ok_text = _("Set alarm"),
                         title_text =  _("New alarm"),
                         callback = function(time)

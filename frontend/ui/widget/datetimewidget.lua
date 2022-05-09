@@ -82,7 +82,7 @@ local DateTimeWidget = FocusManager:new{
     -- Optional extra button on bottom
     extra_text = nil,
     extra_callback = nil,
-    append_unit_info = nil, -- appends something like "\nEnter time in minutes and seconds."
+    append_unit_info = nil, -- appends something like "\nTime is in minutes and seconds."
 }
 
 function DateTimeWidget:init()
@@ -143,7 +143,7 @@ local separator_date, separator_date_time, separator_time
 
 function DateTimeWidget:createLayout()
     local times = { _("years"), _("months"), _("days"), _("hours"), _("minutes"), _("seconds"), }
-    local unit_text = (self.info_text and "\n" or "") .. _("Enter time in ")
+    local unit_text = (self.info_text and "\n" or "") .. _("Time is in") .. " "
 
     if self.year then
         year_widget = NumberPickerWidget:new{
@@ -283,13 +283,17 @@ function DateTimeWidget:createLayout()
         table.remove(date_group, 1)
     end
 
+    local info_text = info_text
+    if self.append_unit_info then
+        info_text = (info_text and info_text or "") .. unit_text
+    end
     local title_bar = TitleBar:new{
         width = self.width,
         align = "left",
         with_bottom_line = true,
         title = self.title_text,
         title_shrink_font_to_fit = true,
-        info_text = (self.info_text and self.info_text or "") .. unit_text,
+        info_text = info_text,
         show_parent = self,
     }
 
