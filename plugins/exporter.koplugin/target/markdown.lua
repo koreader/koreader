@@ -9,6 +9,20 @@ local _ = require("gettext")
 local MarkdownExporter = require("base"):new {
     name = "markdown",
     extension = "md",
+    init_callback = function(self, settings)
+        local changed = false
+        if not settings.formatting_options or not settings.highlight_formatting then
+            settings.formatting_options = settings.formatting_options or {
+                lighten = "italic",
+                underscore = "underline_markdownit",
+                strikeout = "strikethrough",
+                invert = "bold",
+            }
+            settings.highlight_formatting = settings.highlight_formatting or true
+            changed = true
+        end
+        return changed, settings
+    end,
 }
 
 local formatter_buttons = {
@@ -41,26 +55,6 @@ function MarkdownExporter:editFormatStyle(drawer_style, label, touchmenu_instanc
             touchmenu_instance:updateItems()
         end,
     })
-end
-
-function MarkdownExporter:onInit()
-    local changed = false
-    if self.settings.formatting_options == nil then
-        self.settings.formatting_options = {
-            lighten = "italic",
-            underscore = "underline_markdownit",
-            strikeout = "strikethrough",
-            invert = "bold",
-        }
-        changed = true
-    end
-    if self.settings.highlight_formatting == nil then
-        self.settings.highlight_formatting = true
-        changed = true
-    end
-    if changed then
-        self:saveSettings()
-    end
 end
 
 local highlight_style = {
@@ -104,8 +98,6 @@ function MarkdownExporter:getMenuTable()
     end
     return menu
 end
-
-
 
 function MarkdownExporter:export(t)
     local path = self:getFilePath(t)

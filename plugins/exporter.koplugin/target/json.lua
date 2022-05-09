@@ -5,7 +5,6 @@ local JsonExporter = require("base"):new {
     name = "json",
 }
 
-
 local function format(booknotes)
     local t = {
         title = booknotes.title,
