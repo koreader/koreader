@@ -56,7 +56,6 @@ local function migrateSettings()
         new_settings["joplin"].port = settings.joplin_port
         new_settings["joplin"].token = settings.joplin_token
         new_settings["readwise"].token = settings.readwise_token
-        logger.dbg(new_settings)
         G_reader_settings:saveSetting("exporter", new_settings)
     end
 end
