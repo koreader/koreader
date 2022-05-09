@@ -63,10 +63,6 @@ function MarkdownExporter:onInit()
     end
 end
 
-function MarkdownExporter:getFormatterLabel(header, drawer_style)
-    return T("%1: %2", header, md.formatters[self.settings.formatting_options[drawer_style]].label)
-end
-
 local highlight_style = {
     {_("Lighten"), "lighten"},
     {_("Underline"), "underscore"},
@@ -95,7 +91,7 @@ function MarkdownExporter:getMenuTable()
     for _idx, entry in ipairs(highlight_style) do
         table.insert(menu.sub_item_table, {
             text_func = function ()
-                return self:getFormatterLabel(entry[1], entry[2])
+                return entry[1] .. ": " .. md.formatters[self.settings.formatting_options[entry[2]]].label
             end,
             enabled_func = function()
                 return self.settings.highlight_formatting
