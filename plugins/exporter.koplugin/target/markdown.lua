@@ -33,7 +33,7 @@ function MarkdownExporter:editFormatStyle(drawer_style, label, touchmenu_instanc
         })
     end
     UIManager:show(require("ui/widget/radiobuttonwidget"):new{
-        title_text = T(_("Formatting style for %1"), _(label)),
+        title_text = T(_("Formatting style for %1"), label),
         width_factor = 0.8,
         radio_buttons = radio_buttons,
         callback = function(radio)
@@ -67,8 +67,15 @@ function MarkdownExporter:getFormatterLabel(header, drawer_style)
     return T("%1: %2", header, md.formatters[self.settings.formatting_options[drawer_style]].label)
 end
 
+local highlight_style = {
+    {_("Lighten"), "lighten"},
+    {_("Underline"), "underscore"},
+    {_("Strikeout"), "strikeout"},
+    {_("Invert"), "invert"},
+}
+
 function MarkdownExporter:getMenuTable()
-    return {
+    local menu = {
         text = _("Markdown"),
         checked_func = function() return self:isEnabled() end,
         sub_item_table = {
@@ -82,44 +89,24 @@ function MarkdownExporter:getMenuTable()
                 checked_func = function() return self.settings.highlight_formatting end,
                 callback = function() self.settings.highlight_formatting = not self.settings.highlight_formatting end,
             },
-            {
-                text_func = function ()
-                    return self:getFormatterLabel(_("Lighten"), "lighten")
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    self:editFormatStyle("lighten", "Lighten", touchmenu_instance)
-                end,
-            },
-            {
-                text_func = function ()
-                    return self:getFormatterLabel(_("Strikeout"), "strikeout")
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    self:editFormatStyle("strikeout", "Strikeout", touchmenu_instance)
-                end,
-            },
-            {
-                text_func = function ()
-                    return self:getFormatterLabel(_("Underline"), "underscore")
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    self:editFormatStyle("underscore", "Underline", touchmenu_instance)
-                end,
-            },
-            {
-                text_func = function ()
-                    return self:getFormatterLabel(_("Invert"), "invert")
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    self:editFormatStyle("invert", "Invert", touchmenu_instance)
-                end,
-            },
         }
     }
+
+    for _idx, entry in ipairs(highlight_style) do
+        table.insert(menu.sub_item_table, {
+            text_func = function ()
+                return self:getFormatterLabel(entry[1], entry[2])
+            end,
+            enabled_func = function()
+                return self.settings.highlight_formatting
+            end,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                self:editFormatStyle(entry[2], entry[1], touchmenu_instance)
+            end,
+        })
+    end
+    return menu
 end
 
 
