@@ -138,7 +138,6 @@ function ReadTimer:addToMainMenu(menu_items)
                         hour_max = 17,
                         ok_text = _("Set timer"),
                         title_text =  _("Set reader timer"),
-                        info_text = _("Enter a time in hours and minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()
