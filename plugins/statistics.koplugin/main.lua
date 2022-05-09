@@ -958,6 +958,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 right_hold_step = 60,
                                 default_values = true,
                                 is_range = true,
+                                -- @translators This is the time unit for seconds.
                                 unit = _("s"),
                                 title_text = _("Read page duration limits"),
                                 info_text = _([[
