@@ -93,7 +93,7 @@ function AutoDim:getAutodimMenu()
                 callback = function(touchmenu_instance)
                     local dimmer_dialog = SpinWidget:new{
                         title_text = _("Automatic dimmer duration"),
-                        info_text = _("Delay to reach the final brightness."),
+                        info_text = _("Delay to reach the lowest brightness."),
                         value = self.autodim_duration_s,
                         default_value = DEFAULT_AUTODIM_DURATION_S,
                         value_min = 0,
@@ -117,13 +117,13 @@ function AutoDim:getAutodimMenu()
             },
             {
                 text_func = function()
-                    return T(_("Final fraction of brightness: %1 %"), self.autodim_fraction)
+                    return T(_("Lowest fraction of brightness: %1 %"), self.autodim_fraction)
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
                     local percentage_dialog = SpinWidget:new{
-                        title_text = _("Final Fraction of brightness"),
-                        info_text = _("The final fraction of brightness."),
+                        title_text = _("Lowest Fraction of brightness"),
+                        info_text = _("The lowest fraction of brightness."),
                         value = self.autodim_fraction,
                         value_default = DEFAULT_AUTODIM_FRACTION,
                         value_min = 0,
