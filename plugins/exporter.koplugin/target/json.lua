@@ -1,9 +1,11 @@
 local json = require("json")
+local logger = require("logger")
 
 -- json exporter
 local JsonExporter = require("base"):new {
     name = "json",
 }
+
 
 local function format(booknotes)
     local t = {

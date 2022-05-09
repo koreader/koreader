@@ -27,6 +27,14 @@ function BaseExporter:_init()
 end
 
 --[[--
+Called after loading the exporter and its settings.
+
+You can use it if the exporter requires some tweaks before it is able to show their own UI settings
+]]
+function BaseExporter:onInit()
+end
+
+--[[--
 Export timestamp
 
 @treturn string timestamp
