@@ -17,9 +17,7 @@ local MarkdownExporter = require("base"):new {
                 strikeout = "strikethrough",
                 invert = "bold",
             }
-            if settings.highlight_formatting == nil then
-                settings.highlight_formatting = true
-            end
+            settings.highlight_formatting = settings.highlight_formatting or true
             changed = true
         end
         return changed, settings
