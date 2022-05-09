@@ -25,6 +25,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local FrontLightWidget = FocusManager:new{
+    name = "FrontLightWidget",
     width = nil,
     height = nil,
     -- This should stay active during natural light configuration

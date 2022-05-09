@@ -2473,8 +2473,12 @@ function ReaderFooter:maybeUpdateFooter()
 end
 
 function ReaderFooter:onFrontlightStateChanged()
-    if self.settings.frontlight then
-        self:maybeUpdateFooter()
+    -- Custom variant of maybeUpdateFooter that *also* whitelists the FL widget...
+    local top_wg = UIManager:getTopWidget()
+    if top_wg == "ReaderUI" or top_wg == "FrontLightWidget" then
+        self:onUpdateFooter(self.view.footer_visible)
+    else
+        self:onUpdateFooter()
     end
 end
 
