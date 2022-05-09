@@ -93,7 +93,7 @@ function AutoDim:getAutodimMenu()
                 callback = function(touchmenu_instance)
                     local dimmer_dialog = SpinWidget:new{
                         title_text = _("Automatic dimmer duration"),
-                        info_text = _("Enter the duration until reaching the final brightness."),
+                        info_text = _("Delay to reach the final brightness."),
                         value = self.autodim_duration_s,
                         default_value = DEFAULT_AUTODIM_DURATION_S,
                         value_min = 0,
