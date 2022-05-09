@@ -164,7 +164,6 @@ Default value: %1 ms]]), scroll_activation_delay_default_ms),
                         value_hold_step = 500,
                         unit = _("ms"),
                         ok_text = _("Set delay"),
-                        precision = "%1d",
                         default_value = scroll_activation_delay_default_ms,
                         callback = function(spin)
                             self.scroll_activation_delay_ms = spin.value
