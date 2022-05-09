@@ -5,8 +5,6 @@ local util = require("ffi/util")
 local T = util.template
 local _ = require("gettext")
 
-
-
 -- markdown exporter
 local MarkdownExporter = require("base"):new {
     name = "markdown",
@@ -45,7 +43,7 @@ function MarkdownExporter:editFormatStyle(drawer_style, label, touchmenu_instanc
     })
 end
 
-function MarkdownExporter:populateSettings()
+function MarkdownExporter:onInit()
     local changed = false
     if self.settings.formatting_options == nil then
         self.settings.formatting_options = {
@@ -70,7 +68,6 @@ function MarkdownExporter:getFormatterLabel(header, drawer_style)
 end
 
 function MarkdownExporter:getMenuTable()
-    self:populateSettings()
     return {
         text = _("Markdown"),
         checked_func = function() return self:isEnabled() end,
@@ -128,7 +125,6 @@ end
 
 
 function MarkdownExporter:export(t)
-    self:populateSettings()
     local path = self:getFilePath(t)
     local file = io.open(path, "w")
     if not file then return false end
