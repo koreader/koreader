@@ -10,17 +10,24 @@ local MarkdownExporter = require("base"):new {
     extension = "md",
     init_callback = function(self, settings)
         local changed = false
-        if not settings.formatting_options or not settings.highlight_formatting then
-            settings.formatting_options = settings.formatting_options or {
-                lighten = "italic",
-                underscore = "underline_markdownit",
-                strikeout = "strikethrough",
-                invert = "bold",
-            }
-            settings.highlight_formatting = settings.highlight_formatting or true
-            changed = true
-        end
-        return changed, settings
+    if self.settings.formatting_options == nil then
+        self.settings.formatting_options = {
+            lighten = "italic",
+            underscore = "underline_markdownit",
+            strikeout = "strikethrough",
+            invert = "bold",
+        }
+        changed = true
+    end
+    -- highlight_formatting can be false and we wouldn't change that if it is.
+    -- We will only set a value if it is not set.
+    if self.settings.highlight_formatting == nil then
+        self.settings.highlight_formatting = true
+        changed = true
+    end
+    if changed then
+        self:saveSettings()
+    end
     end,
 }
 
