@@ -593,7 +593,6 @@ function AutoWarmth:getScheduleMenu()
                     append_unit_info = true,
                     hour = hh,
                     min = mm,
-                    append_unit_info = true,
                     ok_text = _("Set time"),
                     callback = function(time)
                         local new_time = time.hour + time.min / 60

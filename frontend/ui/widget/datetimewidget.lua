@@ -283,7 +283,7 @@ function DateTimeWidget:createLayout()
         table.remove(date_group, 1)
     end
 
-    local info_text = info_text
+    local info_text = self.info_text
     if self.append_unit_info then
         info_text = (info_text and info_text or "") .. unit_text
     end
