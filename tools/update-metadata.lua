@@ -1,15 +1,20 @@
 #!/usr/bin/env luajit
 
--- utility to generate fastlane metadata for each translation
+-- tool to generate localized metadata
+--
+-- metadata is fetched by F-Droid on each tagged release and used to update
+-- https://f-droid.org/packages/org.koreader.launcher.fdroid/
+--
 -- usage: ./tools/update_metadata.lua
+--
+-- NOTE: title and screenshots are not translated. These resources are located in metadata/en-US
 
 package.path = "frontend/?.lua;" .. package.path
-
 local _ = require("gettext")
 
-local fastlane_short_description = _("Ebook reader with support for many formats like PDF, DjVu, EPUB, FB2, CBZ.")
-
-local fastlane_full_description = _([[* portable: runs on embedded devices (Cervantes, Kindle, Kobo, PocketBook), Android and Linux computers. Developers can run a KOReader emulator in Linux and MacOS.
+local metadata = {
+    ["short_description.txt"] = _("Ebook reader with support for many formats like PDF, DjVu, EPUB, FB2, CBZ."),
+    ["full_description.txt"] = _([[* portable: runs on embedded devices (Cervantes, Kindle, Kobo, PocketBook), Android and Linux computers. Developers can run a KOReader emulator in Linux and MacOS.
 
 * multi-format documents: supports fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT). Scanned PDF/DjVu documents can also be reflowed with the built->
 
@@ -22,11 +27,7 @@ local fastlane_full_description = _([[* portable: runs on embedded devices (Cerv
 * extensible via plugins
 
 * and much more: look up words with StarDict dictionaries / Wikipedia, add your own online OPDS catalogs and RSS feeds, online over-the-air software updates, an FTP client, an SSH server, …
-]])
-
-local metadata = {
-    ["short_description.txt"] = fastlane_short_description,
-    ["full_description.txt"] = fastlane_full_description,
+]]),
 }
 
 local function isFile(str)
@@ -67,23 +68,24 @@ local function getLocales()
     return locales
 end
 
-local function updateMetadata(str, path)
-    local locales = getLocales()
+----------------------------------------------------------------
+print("updating metadata for " .. #getLocales() .. " languages")
+for file, str in pairs(metadata) do
     local count = { new = 0, updated = 0, not_translated = 0 }
 
-    -- update english metadata first
+    -- update english
     _.changeLang("en")
     local source = _(str)
-    local metadata_file = "metadata/en-US" .. "/" .. path
+    local metadata_file = "metadata/en-US/" .. file
     writeFile(source, metadata_file)
 
-    -- update metadata for other languages if they're already translated.
-    for __, lang in ipairs(locales) do
+    -- update translations
+    for __, lang in ipairs(getLocales()) do
         _.changeLang(lang)
         local translation = _(str)
         if source ~= translation then
             local metadata_dir = "metadata/" .. lang
-            metadata_file = metadata_dir .. "/" .. path
+            metadata_file = metadata_dir .. "/" .. file
             os.execute('mkdir -p ' .. metadata_dir)
             if isFile(metadata_file) then
                 count.updated = count.updated + 1
@@ -95,10 +97,6 @@ local function updateMetadata(str, path)
             count.not_translated = count.not_translated + 1
         end
     end
-    print(path, "new", count.new, "updated", count.updated, "not translated", count.not_translated)
-end
-
-print("updating metadata for " .. #getLocales() .. " languages")
-for file, str in pairs(metadata) do
-    updateMetadata(str, file)
+    print(string.format("%s: %d new | %d updated | %d not translated",
+        file, count.new, count.updated, count.not_translated))
 end
