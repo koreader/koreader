@@ -75,7 +75,7 @@ end
 function Calibre:addToMainMenu(menu_items)
     menu_items.calibre = {
         -- its name is "calibre", but all our top menu items are uppercase.
-        text = _("Calibre"),
+        text = "Calibre", -- don't translate
         sub_item_table = {
             {
                 text_func = function()

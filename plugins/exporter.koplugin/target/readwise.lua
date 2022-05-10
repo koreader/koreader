@@ -49,7 +49,7 @@ end
 
 function ReadwiseExporter:getMenuTable()
     return {
-        text = _("Readwise"),
+        text = "Readwise", -- don't translate
         checked_func = function() return self:isEnabled() end,
         sub_item_table = {
             {

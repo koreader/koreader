@@ -116,7 +116,7 @@ end
 
 function Wallabag:addToMainMenu(menu_items)
     menu_items.wallabag = {
-        text = _("Wallabag"),
+        text = "Wallabag", -- don't translate
         sub_item_table = {
             {
                 text = _("Retrieve new articles from server"),

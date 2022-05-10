@@ -212,7 +212,7 @@ end
 
 function JoplinExporter:getMenuTable()
     return {
-        text = _("Joplin"),
+        text = "Joplin", --don't translate
         checked_func = function() return self:isEnabled() end,
         sub_item_table = {
             {
