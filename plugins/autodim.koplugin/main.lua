@@ -125,7 +125,7 @@ function AutoDim:getAutodimMenu()
                 callback = function(touchmenu_instance)
                     local percentage_dialog = SpinWidget:new{
                         title_text = _("Dim to percentage"),
-                        info_text = _("This value indicates the percentage of the lowest brightness in relation to the regular brightness."),
+                        info_text = _("The lowest brightness as a percentage of the regular brightness."),
                         value = self.autodim_fraction,
                         value_default = DEFAULT_AUTODIM_FRACTION,
                         value_min = 0,
