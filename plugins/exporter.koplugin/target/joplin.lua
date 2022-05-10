@@ -1,4 +1,3 @@
-local BD = require("ui/bidi")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
@@ -284,29 +283,14 @@ function JoplinExporter:getMenuTable()
                 callback = function() self:toggleEnabled() end,
             },
             {
-                text = _("Markdown Formatting Help"),
-                keep_menu_open = true,
-                callback = function()
-                    UIManager:show(InfoMessage:new {
-                        text = T(_([[You can configure markdown formatting by navigating to Export Highlights > Choose Formats and Services > Markdown.]]))
-                    })
-                end
-            },
-            {
                 text = _("Help"),
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new {
-                        text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the exporter.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
+                        text = T(_([[You can configure markdown formatting by navigating to:
+        Export Highlights > Choose Formats and Services > Markdown
 
-To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
-
-For Windows: netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=41185 connectaddress=localhost connectport=41184
-
-For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
-
-For more information, please visit https://github.com/koreader/koreader/wiki/Highlight-export.]])
-                            , BD.dirpath("example"))
+For joplin setup instructions please visit https://github.com/koreader/koreader/wiki/Highlight-export#joplin.]]))
                     })
                 end
             }
