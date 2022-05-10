@@ -22,6 +22,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = FFIUtil.template
 local Screen = require("device").screen
 local util = require("util")
@@ -534,7 +535,7 @@ function AutoWarmth:getLocationMenu()
                 value_step = 10,
                 value_hold_step = 100,
                 -- @translators This is the unit of length in meters.
-                unit = _("m"),
+                unit = C_("Length", "m"),
                 ok_text = _("Set"),
                 callback = function(spin)
                     self.altitude = spin.value
