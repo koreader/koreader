@@ -208,7 +208,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
     menu_items.dictionary_lookup_history = {
         text = _("Vocabulary Builder"),
         enabled_func = function()
-            return VocabularyBuilder.has_items
+            return VocabularyBuilder:hasItems()
         end,
         callback = function()
             VocabularyBuilder:showUI(function(item) self:onVocabularyBuilderLookupWord(item) end)
@@ -266,7 +266,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             {
                 text = _("Clean dictionary lookup history"),
                 enabled_func = function()
-                    return VocabularyBuilder.has_items
+                    return VocabularyBuilder:hasItems()
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)

@@ -48,7 +48,6 @@ local WordInfoDialog = InputContainer:new{
     dates = nil,
     padding = Size.padding.large,
     margin = Size.margin.title,
-    button = nil,
     tap_close_callback = nil,
     dismissable = true, -- set to false if any button callback is required
 }
@@ -146,7 +145,7 @@ end
 
 function WordInfoDialog:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self[1][1].dimen
+        return "flashui", self[1][1].dimen
     end)
 end
 
@@ -180,11 +179,11 @@ local ellipsis_button_width = Screen:scaleBySize(22)
 local star_width = Screen:scaleBySize(24)
 
 local VocabItemWidget = InputContainer:new{
-    item = nil,
     face = Font:getFace("smallinfofont"),
     width = nil,
     height = nil,
     show_parent = nil,
+    item = nil
 }
 
 -- [[
@@ -231,7 +230,7 @@ function VocabItemWidget:init()
     }
 
     self.v_spacer = VerticalSpan:new{width = (self.height - word_height - subtitle_height)/2}
-    self.point_v_spacer = VerticalSpan:new{width = (self.v_spacer.width + word_height/2) - point_widget_height/2 + Screen:scaleBySize(2) }
+    self.point_v_spacer = VerticalSpan:new{width = (self.v_spacer.width + word_height/2) - point_widget_height/2 + Screen:scaleBySize(1) }
     self.margin_span = HorizontalSpan:new{ width = Size.padding.large }
     self:initItemWidget()
 end
@@ -239,9 +238,9 @@ end
 function VocabItemWidget:initItemWidget()
 
     local more_button
-    if self.item.review_count < 5 then
+    if self .item.review_count < 5 then
         more_button = Button:new{
-            text = "···",--"", --ellipsis nerd font
+            text = "",--"···",--"", --ellipsis nerd font
             face = nerd_face,
             callback = function() self:showMore() end,
             width = ellipsis_button_width,
@@ -257,7 +256,7 @@ function VocabItemWidget:initItemWidget()
             radius = 0,
             margin = 0,
             callback = function() 
-                self:remove()
+                self:remover()
             end
         }
         more_button.label_widget.alpha = true
@@ -266,7 +265,7 @@ function VocabItemWidget:initItemWidget()
     
     local right_side_width
     local right_widget
-    if self.item.reviewable then
+    if self .item.reviewable then
         right_side_width = review_button_width * 2 + Size.padding.large * 4 + ellipsis_button_width
         
         local forgot_button = Button:new{
@@ -304,9 +303,9 @@ function VocabItemWidget:initItemWidget()
             more_button,
         }
     else
-        right_side_width =  Size.padding.large * 3 + self.item.review_count * star_width
+        right_side_width =  Size.padding.large * 3 + self .item.review_count * star_width
 
-        if self.item.review_count > 0 then
+        if self .item.review_count > 0 then
             local star = Button:new{
                 icon = "star.full",
                 icon_width = star_width,
@@ -321,7 +320,7 @@ function VocabItemWidget:initItemWidget()
             right_widget = HorizontalGroup:new {
                 dimen = Geom:new{w=0, h = self.height},
             }
-            for i=1, self.item.review_count, 1 do
+            for i=1, self .item.review_count, 1 do
                 table.insert(right_widget, star)
             end
         else
@@ -335,8 +334,6 @@ function VocabItemWidget:initItemWidget()
     end
 
     local text_max_width = self.width - Size.padding.default - point_widget_width - right_side_width
-
-    logger.err("rstarstarst", self.item)
 
     self[1] = FrameContainer:new{
         padding = 0,
@@ -368,7 +365,7 @@ function VocabItemWidget:initItemWidget()
                     LeftContainer:new{
                         dimen = Geom:new{w = text_max_width, h = word_height},
                         TextWidget:new{
-                            text = self.item.word,
+                            text = self .item.word,
                             face = word_face,
                             bold = true
                         }
@@ -379,13 +376,13 @@ function VocabItemWidget:initItemWidget()
 
                         
                         TextWidget:new{
-                            text = self.item.elapse_time .. "From " ,-- .. self.item.book_title,
+                            text = self .item.elapse_time .. "From " ,-- .. self .item.book_title,
                             face = subtitle_face,
                             max_width = text_max_width,
                             fgcolor = Blitbuffer.Color8(0x88)
                         },
                         TextWidget:new{
-                            text = self.item.book_title,
+                            text = self .item.book_title,
                             face = subtitle_italic_face,
                             max_width = text_max_width,
                             fgcolor = Blitbuffer.Color8(0x88)
@@ -405,34 +402,42 @@ function VocabItemWidget:initItemWidget()
     self[1].invert = self.invert
 end
 
-function VocabItemWidget:remove()
-    self.item.remove_callback(self.item)
+function VocabItemWidget:remover()
+    self .item.remove_callback(self .item)
     self.show_parent:removeAt(self.index)
 end
 
+function VocabItemWidget:removeAndClose()
+    self:remover()
+    UIManager:close(self.dialogue)
+end
+
 function VocabItemWidget:showMore()
-    self.dialogue = WordInfoDialog:new{
-        title = self.item.word,
-        book_title = self.item.book_title,
-        dates =
-        "Lookup date: " .. os.date("%Y-%m-%d", self.item.create_time) .. " | " ..
-        "Review date: " .. os.date("%Y-%m-%d", self.item.review_time),
+    local dialogue = WordInfoDialog:new{
+        title = self .item.word,
+        book_title = self .item.book_title,
+        dates = "Lookup date: " .. os.date("%Y-%m-%d", self .item.create_time) .. " | " ..
+        "Review date: " .. os.date("%Y-%m-%d", self .item.review_time),
         button = Button:new {
             text = _("Remove Word"),
-            callback = function() 
-                UIManager:close(self.dialogue)
-                self:remove() 
-            end,
-            bordersize = 0
+            bordersize = 0,
+            show_parent = dialogue
         }
     }
 
-    UIManager:show(self.dialogue)
+    
+
+    dialogue.button.callback = function() 
+        self:remover()
+        UIManager:close(dialogue)
+    end,
+
+    UIManager:show(dialogue)
 end
 
 function VocabItemWidget:onTap(_, ges)
-    if self.item.callback then
-        self.item.callback(self.item)
+    if self .item.callback then
+        self .item.callback(self .item)
     elseif self.show_parent.marked == self.index then
         self.show_parent.marked = 0
     else
@@ -443,27 +448,27 @@ function VocabItemWidget:onTap(_, ges)
 end
 
 function VocabItemWidget:onHold()
-    if self.item.callback then
-        self.item.callback(self.item)
+    if self .item.callback then
+        self .item.callback(self .item)
         -- self.show_parent:_populateItems()
     end
     return true
 end
 
 function VocabItemWidget:onGotIt()
-    self.item.got_it_callback(self.item)
+    self .item.got_it_callback(self .item)
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
     return "ui", self[1].dimen end) 
 end
 
 function VocabItemWidget:onForgot()
-    self.item.forgot_callback(self.item)
+    self .item.forgot_callback(self .item)
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self[1].dimen end) 
-    if self.item.callback then
-        self.item.callback(self.item.word) 
+    if self .item.callback then
+        self .item.callback(self .item.word) 
     end
 end
 ------- 
@@ -482,6 +487,8 @@ local VocabularyBuilderWidget = FocusManager:new{
 
 function VocabularyBuilderWidget:init()
     self.layout = {}
+    -- no item is selected on start
+    self.marked = 0
 
     self.dimen = Geom:new{
         w = self.width or Screen:getWidth(),
@@ -505,7 +512,7 @@ function VocabularyBuilderWidget:init()
     self.item_width = self.dimen.w - 2 * padding
     self.footer_center_width = math.floor(self.width_widget * 32 / 100)
     self.footer_button_width = math.floor(self.width_widget * 12 / 100)
-    self.item_height = Screen:scaleBySize(80)
+    self.item_height = Screen:scaleBySize(72)
     -- group for footer
     local chevron_left = "chevron.left"
     local chevron_right = "chevron.right"
@@ -609,7 +616,7 @@ function VocabularyBuilderWidget:init()
     self.title_bar = TitleBar:new{
         width = self.dimen.w,
         align = "center",
-        title_face = Font:getFace("x_smalltfont"),
+        title_face = Font:getFace("x_smallinfofont"),
         bottom_line_color = Blitbuffer.COLOR_LIGHT_GRAY,
         with_bottom_line = true,
         bottom_line_h_padding = padding,
@@ -617,7 +624,7 @@ function VocabularyBuilderWidget:init()
         close_callback = function() self:onClose() end,
         show_parent = self,
     }
-    self.title_bar.title_widget.fgcolor = Blitbuffer.Color8(0x61)
+    -- self.title_bar.title_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
     -- setup main content
     self.item_margin = math.floor(self.item_height / 8)
     local line_height = self.item_height + self.item_margin
@@ -685,7 +692,19 @@ function VocabularyBuilderWidget:goToPage(page)
     self:_populateItems()
 end
 
+function VocabularyBuilderWidget:moveItem(diff)
+    local move_to = self.marked + diff
+    if move_to > 0 and move_to <= #self.item_table then
+
+        table.insert(self.item_table, move_to, table.remove(self.item_table, self.marked))
+        self.show_page = math.ceil(move_to / self.items_per_page)
+        self.marked = move_to
+        self:_populateItems()
+    end
+end
+
 function VocabularyBuilderWidget:removeAt(index)
+    logger.err("------------- index", index, self.item_table)
     if index > #self.item_table then return end
     table.remove(self.item_table, index)
     self.show_page = math.ceil(math.min(index, #self.item_table) / self.items_per_page)
@@ -703,12 +722,18 @@ function VocabularyBuilderWidget:_populateItems()
     else
         page_last = #self.item_table
     end
+
+    if self.select_items_callback then
+        self.select_items_callback(self.item_table ,idx_offset, page_last)
+    end
+
     for idx = idx_offset + 1, page_last do
         table.insert(self.main_content, VerticalSpan:new{ width = self.item_margin })
         local invert_status = false
         if idx == self.marked then
             invert_status = true
         end
+        if #self.item_table == 0 or not self.item_table[idx].word then break end
         local item = VocabItemWidget:new{
             height = self.item_height,
             width = self.item_width,
@@ -810,6 +835,8 @@ function VocabularyBuilderWidget:onClose()
 end
 
 function VocabularyBuilderWidget:onCancel()
+    self.marked = 0
+
     self:goToPage(self.show_page)
     return true
 end
@@ -821,6 +848,12 @@ function VocabularyBuilderWidget:onReturn()
         self:callback()
     end
 
+    -- If we're not in the middle of moving stuff around, just exit.
+    if self.marked == 0 then
+        return self:onClose()
+    end
+
+    self.marked = 0
     self:goToPage(self.show_page)
     return true
 end

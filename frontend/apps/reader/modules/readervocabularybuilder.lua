@@ -18,10 +18,10 @@ local VOCABULARY_DB_SCHEMA = [[
     CREATE TABLE IF NOT EXISTS "vocabulary" (
         "word"	        TEXT NOT NULL UNIQUE,
         "book_title"	TEXT,
-        "create_time"	REAL NOT NULL,
-        "review_time"	REAL,
-        "due_time"      REAL NOT NULL,
-        "review_count"	REAL NOT NULL DEFAULT 0,
+        "create_time"	INTEGER NOT NULL,
+        "review_time"	INTEGER,
+        "due_time"      INTEGER NOT NULL,
+        "review_count"	INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY("word")
     );
     
@@ -29,16 +29,27 @@ local VOCABULARY_DB_SCHEMA = [[
 ]]
 -- CREATE INDEX IF NOT EXISTS create_time_index ON vocabulary(create_time);
 -- CREATE INDEX IF NOT EXISTS review_time_index ON vocabulary(review_time);
-
-local VocabularyBuilder = {}
+local VocabularyBuilder = {
+    cursor = 0,
+    count = 0,
+    vocab_widget = nil
+}
 
 function VocabularyBuilder:init()
     VocabularyBuilder:createDB()
-    local conn = SQ3.open(db_location)
-    local count = conn:rowexec("SELECT count(0) FROM vocabulary;")
-    self["has_items"] = count > 0
+    
 end
 
+function VocabularyBuilder:hasItems()
+    if self.count > 0 then
+        return true
+    end
+    local conn = SQ3.open(db_location)
+    self.count = tonumber(conn:rowexec("SELECT count(0) FROM vocabulary;"))
+    conn:close()
+    return self.count > 0
+end
+    
 function VocabularyBuilder:createDB()
     local db_conn = SQ3.open(db_location)
     -- Make it WAL, if possible
@@ -113,36 +124,14 @@ function VocabularyBuilder:getDuration(seconds)
 end
 
 function VocabularyBuilder:showUI(onSelect)
-    local conn = SQ3.open(db_location)
-
-    local results = conn:exec("SELECT * FROM vocabulary ORDER BY due_time;")
-    local current_time = os.time()
 
     local vocab_items = {}
-    for i = 1, #results.word, 1 do
-        local reviewable = results.due_time[i] < current_time
-
+    for i = 1, self.count do
         table.insert(vocab_items, {
-            word = results.word[i],
-            reviewable = reviewable,
-            review_count = results.review_count[i],
-            book_title = results.book_title[i],
-            create_time = results.create_time[i],
-            review_time = results.review_time[i],
-            elapse_time = results.review_count[i] < 8 and self:getDuration(current_time - results.due_time[i]) .. " | " or "",
-            got_it_callback = function(item)
-                VocabularyBuilder:gotOrForgot(item, true)
-            end,
-            forgot_callback = function(item)
-                VocabularyBuilder:gotOrForgot(item, false)
-            end,
-            remove_callback = function(item)
-                VocabularyBuilder:remove(item)
-            end,
             callback = onSelect
         })
     end
-    conn:close()
+
     
 
     self.vocab_widget = VocabBuilderWidget:new{
@@ -151,9 +140,67 @@ function VocabularyBuilder:showUI(onSelect)
         callback = function()
             UIManager:setDirty(nil, "ui")
             changed_callback()
+        end,
+        select_items_callback = function(items, start_idx, end_idx)
+            self:select_items(items, start_idx, end_idx)
         end
     }
     UIManager:show(self.vocab_widget)
+end
+
+function VocabularyBuilder:_select_items(items, start_idx)
+
+    local conn = SQ3.open(db_location)
+    local sql = string.format("SELECT * FROM vocabulary ORDER BY due_time limit %d OFFSET %d;",32, start_idx-1)
+
+    local results = conn:exec(sql)
+    conn:close()
+    if not results then return end
+
+    local current_time = os.time()
+    
+    for i = 1, #results.word do
+        local reviewable = results.due_time[i] < current_time
+        item = items[start_idx+i-1]
+
+        item.word = results.word[i]
+         item.reviewable = reviewable
+         item.review_count = tonumber(results.review_count[i])
+         item.book_title = results.book_title[i]
+         item.create_time = tonumber( results.create_time[i])
+         item.review_time = tonumber( results.review_time[i])
+         item.elapse_time = results.review_count[i] < 8 and self:getDuration(current_time - tonumber(results.due_time[i])) .. " | " or ""
+         item.got_it_callback = function(item)
+                VocabularyBuilder:gotOrForgot(item, true)
+            end
+            item.forgot_callback = function(item)
+                VocabularyBuilder:gotOrForgot(item, false)
+            end
+            item.remove_callback = function(item)
+                VocabularyBuilder:remove(item)
+            end
+        
+    end
+    
+
+end
+
+function VocabularyBuilder:select_items(items, start_idx, end_idx)
+
+    local start_cursor
+    if #items == 0 then
+        start_cursor = 0
+    else
+        for i = start_idx+1, end_idx do
+            if not items[i].word then
+                start_cursor = i
+                break
+            end
+        end
+    end
+
+    if not start_cursor then return end
+    self:_select_items(items, start_cursor)
 end
 
 
@@ -214,8 +261,10 @@ function VocabularyBuilder:insertOrUpdate(entry)
 end
 
 function VocabularyBuilder:remove(item)
+    logger.err("------------- remove ", item.word)
     local conn = SQ3.open(db_location)
     conn:exec(string.format("DELETE FROM vocabulary WHERE word = '%s' ;", item.word))
+    self.count = self.count - 1
 end
 
 function VocabularyBuilder:reset()
