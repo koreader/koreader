@@ -1292,8 +1292,12 @@ function Input:inhibitInput(toggle)
             self.handleTouchEv = self.voidEv
         end
         if not self._msc_ev_handler then
-            self._msc_ev_handler = self.handleMiscEv
-            self.handleMiscEv = self.voidEv
+            if not self.device:isPocketBook() then
+                -- NOTE: PocketBook is a special snowflake, synthetic Power events are sent as EV_MSC.
+                --       Thankfully, that's all that EV_MSC is used for on that platform.
+                self._msc_ev_handler = self.handleMiscEv
+                self.handleMiscEv = self.voidEv
+            end
         end
         if not self._sdl_ev_handler then
             self._sdl_ev_handler = self.handleSdlEv
