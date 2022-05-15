@@ -38,6 +38,7 @@ local word_face = Font:getFace("x_smallinfofont")
 local subtitle_face = Font:getFace("cfont", 12)
 local subtitle_italic_face = Font:getFace("NotoSans-Italic.ttf", 12)
 local nerd_face = Font:getFace("smallinfofont")
+local subtitle_color = Blitbuffer.Color8(0x88)
 -- More Info
 
 function getDialogWidth()
@@ -100,7 +101,7 @@ function WordInfoDialog:init()
                                 text = self.book_title,
                                 width = width,
                                 face = subtitle_italic_face,
-                                fgcolor = Blitbuffer.Color8(0x88),
+                                fgcolor = subtitle_color,
                                 alignment = self.title_align or "left",
                             },
                             VerticalSpan:new{width= Size.padding.default},
@@ -265,7 +266,7 @@ function VocabItemWidget:initItemWidget()
     local right_widget
     if self .item.reviewable then
         right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
-        
+
         local forgot_button = Button:new{
             text = _("Forgot"),
             callback = nil,
@@ -300,20 +301,18 @@ function VocabItemWidget:initItemWidget()
             more_button,
         }
     else
-        right_side_width =  Size.padding.large * 3 + self .item.review_count * star_width
+        local star = Button:new{
+            icon = "check",
+            icon_width = star_width,
+            icon_height = star_width,
+            bordersize = 0,
+            radius = 0,
+            margin = 0,
+            enabled = false,
+        }
+        right_side_width =  Size.padding.large * 3 + self .item.review_count * (star:getSize().w)
 
         if self .item.review_count > 0 then
-            local star = Button:new{
-                icon = "check",
-                icon_width = star_width,
-                icon_height = star_width,
-                bordersize = 0,
-                radius = 0,
-                margin = 0,
-                enabled = false,
-            }
-            
-
             right_widget = HorizontalGroup:new {
                 dimen = Geom:new{w=0, h = self.height}
             }
@@ -321,6 +320,7 @@ function VocabItemWidget:initItemWidget()
                 table.insert(right_widget, star)
             end
         else
+            star:close()
             right_widget = HorizontalGroup:new{
                 dimen = Geom:new{w=0, h = self.height},
                  HorizontalSpan:new {width = Size.padding.default }
@@ -331,6 +331,12 @@ function VocabItemWidget:initItemWidget()
     end
 
     local text_max_width = self.width - point_widget_width - right_side_width
+
+    local subtitle_prefix = TextWidget:new{
+        text = self:getTimeSinceDue() .. "From " ,
+        face = subtitle_face,
+        fgcolor = subtitle_color
+    }
 
     self[1] = FrameContainer:new{
         padding = 0,
@@ -371,17 +377,12 @@ function VocabItemWidget:initItemWidget()
                     LeftContainer:new{
                         dimen = Geom:new{w = text_max_width, h = self.height - word_height - self.v_spacer.width*2.2},
                         HorizontalGroup:new{
-                            TextWidget:new{
-                                text = self:getTimeSinceDue() .. "From " ,
-                                face = subtitle_face,
-                                max_width = text_max_width,
-                                fgcolor = Blitbuffer.Color8(0x88)
-                            },
+                            subtitle_prefix,
                             TextWidget:new{
                                 text = self .item.book_title,
                                 face = subtitle_italic_face,
-                                max_width = text_max_width,
-                                fgcolor = Blitbuffer.Color8(0x88)
+                                max_width = text_max_width - subtitle_prefix:getSize().w - Size.padding.fullscreen,
+                                fgcolor = subtitle_color
                             }
                         }
                     },
