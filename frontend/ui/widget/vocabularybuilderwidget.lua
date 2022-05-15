@@ -34,13 +34,15 @@ local _ = require("gettext")
 
 --------
 
-local word_face = Font:getFace("cfont", 20)
+local word_face = Font:getFace("x_smallinfofont")
 local subtitle_face = Font:getFace("cfont", 12)
 local subtitle_italic_face = Font:getFace("NotoSans-Italic.ttf", 12)
 local nerd_face = Font:getFace("smallinfofont")
-
 -- More Info
 
+function getDialogWidth()
+    return math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.61)
+end
 
 local WordInfoDialog = InputContainer:new{
     title = nil,
@@ -74,7 +76,7 @@ function WordInfoDialog:init()
             }
         end
     end
-    local width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8)
+    local width = getDialogWidth()
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         MovableContainer:new{
@@ -111,12 +113,7 @@ function WordInfoDialog:init()
                         }
                         
                     },
-                    VerticalSpan:new{ width = Size.span.vertical_default },
-                    -- ButtonTable:new{
-                    --     buttons = self.buttons,
-                    --     zero_sep = true,
-                    --     show_parent = self,
-                    -- },
+                    -- VerticalSpan:new{ width = Size.padding.default },
                     LineWidget:new{
                         background = Blitbuffer.COLOR_GRAY,
                         dimen = Geom:new{
@@ -175,8 +172,8 @@ end
 
 
 local review_button_width = Screen:scaleBySize(95)
-local ellipsis_button_width = Screen:scaleBySize(22)
-local star_width = Screen:scaleBySize(24)
+local ellipsis_button_width = Screen:scaleBySize(34)
+local star_width = Screen:scaleBySize(25)
 
 local VocabItemWidget = InputContainer:new{
     face = Font:getFace("smallinfofont"),
@@ -195,9 +192,10 @@ local VocabItemWidget = InputContainer:new{
     --     book_title: TEXT
     --     create_time: Integer
     --     review_time: Integer
-    --     elapse_time: TEXT,
+    --     due_time: Integer,
     --     got_it_callback: function
     --     remove_callback: function
+    --     is_dim: BOOL
     -- } 
 --]]
 
@@ -205,7 +203,7 @@ local point_widget = TextWidget:new{
     text = " • ",
     bold = true,
     face = Font:getFace("cfont", 24),
-    fgcolor = Blitbuffer.Color8(0x6f)
+    fgcolor = Blitbuffer.Color8(0x66)
 }
 
 local point_widget_height = point_widget:getSize().h
@@ -240,13 +238,13 @@ function VocabItemWidget:initItemWidget()
     local more_button
     if self .item.review_count < 5 then
         more_button = Button:new{
-            text = "",--"···",--"", --ellipsis nerd font
-            face = nerd_face,
+            text = "⋮",
+            padding = Size.padding.button,
             callback = function() self:showMore() end,
             width = ellipsis_button_width,
             bordersize = 0
         } 
-        more_button.label_widget.fgcolor = Blitbuffer.Color8(0x6D)
+        -- more_button.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
     else 
         more_button = Button:new{
             icon = "exit",
@@ -254,24 +252,24 @@ function VocabItemWidget:initItemWidget()
             icon_height = star_width,
             bordersize = 0,
             radius = 0,
-            margin = 0,
+            padding = (ellipsis_button_width - star_width)/2,
             callback = function() 
                 self:remover()
             end
         }
-        more_button.label_widget.alpha = true
+        -- more_button.label_widget.alpha = true
     end
     
     
     local right_side_width
     local right_widget
     if self .item.reviewable then
-        right_side_width = review_button_width * 2 + Size.padding.large * 4 + ellipsis_button_width
+        right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
         
         local forgot_button = Button:new{
             text = _("Forgot"),
             callback = nil,
-            background = Blitbuffer.Color8(0xF7),
+            background = Blitbuffer.COLOR_DARK_GRAY,
             radius = 5,
             width = review_button_width,
             bordersize = 0,
@@ -279,19 +277,19 @@ function VocabItemWidget:initItemWidget()
                 self:onForgot()
             end,
         }
-        forgot_button.label_widget.fgcolor = Blitbuffer.Color8(0x6D)
+        forgot_button.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
     
         local got_it_button = Button:new{
             text = _("Got it"),
             callback = function() 
                 self:onGotIt()
             end,
-            background = Blitbuffer.Color8(0xF7),
+            background = Blitbuffer.COLOR_DARK_GRAY,
             radius = 5,
             width = review_button_width,
             bordersize = 0
         }
-        got_it_button.label_widget.fgcolor = Blitbuffer.Color8(0x6D)
+        got_it_button.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
 
         right_widget = HorizontalGroup:new{
             dimen = Geom:new{ w = 0, h = self.height },
@@ -299,7 +297,6 @@ function VocabItemWidget:initItemWidget()
             forgot_button,
             self.margin_span,
             got_it_button,
-            self.margin_span,
             more_button,
         }
     else
@@ -307,7 +304,7 @@ function VocabItemWidget:initItemWidget()
 
         if self .item.review_count > 0 then
             local star = Button:new{
-                icon = "star.full",
+                icon = "check",
                 icon_width = star_width,
                 icon_height = star_width,
                 bordersize = 0,
@@ -318,7 +315,7 @@ function VocabItemWidget:initItemWidget()
             
 
             right_widget = HorizontalGroup:new {
-                dimen = Geom:new{w=0, h = self.height},
+                dimen = Geom:new{w=0, h = self.height}
             }
             for i=1, self .item.review_count, 1 do
                 table.insert(right_widget, star)
@@ -333,7 +330,7 @@ function VocabItemWidget:initItemWidget()
         table.insert(right_widget, more_button)
     end
 
-    local text_max_width = self.width - Size.padding.default - point_widget_width - right_side_width
+    local text_max_width = self.width - point_widget_width - right_side_width
 
     self[1] = FrameContainer:new{
         padding = 0,
@@ -347,7 +344,7 @@ function VocabItemWidget:initItemWidget()
             },
             HorizontalGroup:new{
                 dimen = Geom:new{
-                    w = self.width - Size.padding.default - right_side_width,
+                    w = self.width - right_side_width,
                     h = self.height,
                 },
                 VerticalGroup:new{
@@ -367,39 +364,61 @@ function VocabItemWidget:initItemWidget()
                         TextWidget:new{
                             text = self .item.word,
                             face = word_face,
-                            bold = true
+                            bold = true,
+                            fgcolor = self .item.is_dim and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
                         }
                     },
                     LeftContainer:new{
                         dimen = Geom:new{w = text_max_width, h = self.height - word_height - self.v_spacer.width*2.2},
                         HorizontalGroup:new{
-
-                        
-                        TextWidget:new{
-                            text = self .item.elapse_time .. "From " ,-- .. self .item.book_title,
-                            face = subtitle_face,
-                            max_width = text_max_width,
-                            fgcolor = Blitbuffer.Color8(0x88)
-                        },
-                        TextWidget:new{
-                            text = self .item.book_title,
-                            face = subtitle_italic_face,
-                            max_width = text_max_width,
-                            fgcolor = Blitbuffer.Color8(0x88)
+                            TextWidget:new{
+                                text = self:getTimeSinceDue() .. "From " ,
+                                face = subtitle_face,
+                                max_width = text_max_width,
+                                fgcolor = Blitbuffer.Color8(0x88)
+                            },
+                            TextWidget:new{
+                                text = self .item.book_title,
+                                face = subtitle_italic_face,
+                                max_width = text_max_width,
+                                fgcolor = Blitbuffer.Color8(0x88)
+                            }
                         }
-                    }
                     },
                     self.v_spacer
                 }
 
             },
             RightContainer:new{
-                dimen = Geom:new{ w = right_side_width, h = self.height},
+                dimen = Geom:new{ w = right_side_width+Size.padding.default, h = self.height},
                 right_widget
             }
         },
     }
     self[1].invert = self.invert
+end
+
+function VocabItemWidget:getTimeSinceDue()
+    if self .item.review_count >= 8 then return "" end
+
+    local elapsed = os.time() - self .item.due_time
+    local abs = math.abs(elapsed)
+    local readable_time
+    if abs < 60 then
+        readable_time = "1m"
+    elseif abs < 3600 then
+        readable_time = string.format("%dm", math.ceil(abs/60))
+    elseif abs < 3600 * 24 then
+        readable_time = string.format("%dh", math.ceil(abs/3600))
+    else
+        readable_time = string.format("%dd", math.ceil(abs/3600/24))
+    end
+
+    if elapsed < 0 then
+        return " " .. readable_time .. " | " --hourglass
+    else
+        return readable_time .. " | "
+    end
 end
 
 function VocabItemWidget:remover()
@@ -416,12 +435,14 @@ function VocabItemWidget:showMore()
     local dialogue = WordInfoDialog:new{
         title = self .item.word,
         book_title = self .item.book_title,
-        dates = "Lookup date: " .. os.date("%Y-%m-%d", self .item.create_time) .. " | " ..
-        "Review date: " .. os.date("%Y-%m-%d", self .item.review_time),
-        button = Button:new {
+        dates = _("Added on ") .. os.date("%Y-%m-%d", self .item.create_time) .. " | " ..
+        _("Review scheduled at ") .. os.date("%Y-%m-%d %H:%M", self .item.due_time),
+        button = Button:new{
             text = _("Remove Word"),
             bordersize = 0,
-            show_parent = dialogue
+            show_parent = dialogue,
+            width = getDialogWidth(),
+            padding = Size.padding.default
         }
     }
 
@@ -457,6 +478,7 @@ end
 
 function VocabItemWidget:onGotIt()
     self .item.got_it_callback(self .item)
+    self .item.is_dim = true
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
     return "ui", self[1].dimen end) 
@@ -464,6 +486,7 @@ end
 
 function VocabItemWidget:onForgot()
     self .item.forgot_callback(self .item)
+    self .item.is_dim = false
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self[1].dimen end) 
@@ -616,7 +639,7 @@ function VocabularyBuilderWidget:init()
     self.title_bar = TitleBar:new{
         width = self.dimen.w,
         align = "center",
-        title_face = Font:getFace("x_smallinfofont"),
+        title_face = Font:getFace("smallinfofontbold"),
         bottom_line_color = Blitbuffer.COLOR_LIGHT_GRAY,
         with_bottom_line = true,
         bottom_line_h_padding = padding,

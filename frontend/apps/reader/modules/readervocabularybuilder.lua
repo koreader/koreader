@@ -103,26 +103,6 @@ function VocabularyBuilder:insertLookupData(db_conn)
     end
 end
 
-function VocabularyBuilder:getDuration(seconds)
-    local abs = math.abs(seconds)
-    local readable_time
-    if abs < 60 then
-        readable_time = "0m"
-    elseif abs < 3600 then
-        readable_time = string.format("%dm", abs/60)
-    elseif abs < 3600 * 24 then
-        readable_time = string.format("%dh", abs/3600)
-    else
-        readable_time = string.format("%dd", abs/3600/24)
-    end
-
-    if seconds < 0 then
-        return " " .. readable_time
-    else
-        return readable_time
-    end
-end
-
 function VocabularyBuilder:showUI(onSelect)
 
     local vocab_items = {}
@@ -158,19 +138,20 @@ function VocabularyBuilder:_select_items(items, start_idx)
     if not results then return end
 
     local current_time = os.time()
-    
+
     for i = 1, #results.word do
         local reviewable = results.due_time[i] < current_time
         item = items[start_idx+i-1]
-
-        item.word = results.word[i]
-         item.reviewable = reviewable
-         item.review_count = tonumber(results.review_count[i])
-         item.book_title = results.book_title[i]
-         item.create_time = tonumber( results.create_time[i])
-         item.review_time = tonumber( results.review_time[i])
-         item.elapse_time = results.review_count[i] < 8 and self:getDuration(current_time - tonumber(results.due_time[i])) .. " | " or ""
-         item.got_it_callback = function(item)
+        if item then
+            item.word = results.word[i]
+            item.reviewable = reviewable
+            item.review_count = tonumber(results.review_count[i])
+            item.book_title = results.book_title[i]
+            item.create_time = tonumber( results.create_time[i])
+            item.review_time = tonumber( results.review_time[i])
+            item.due_time = tonumber(results.due_time[i])
+            item.is_dim = tonumber(results.due_time[i]) > current_time
+            item.got_it_callback = function(item)
                 VocabularyBuilder:gotOrForgot(item, true)
             end
             item.forgot_callback = function(item)
@@ -179,7 +160,7 @@ function VocabularyBuilder:_select_items(items, start_idx)
             item.remove_callback = function(item)
                 VocabularyBuilder:remove(item)
             end
-        
+        end
     end
     
 
@@ -241,7 +222,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     if x == nil then
         item.review_count = target_count
         item.reviewable = false
-        item.elapse_time = target_count < 8 and self:getDuration(current_time - due_time) .. " | " or ""
+        item.due_time = due_time
     end
     conn:close()
 end
@@ -258,6 +239,7 @@ function VocabularyBuilder:insertOrUpdate(entry)
                         due_time = %d;
               ]], entry.word, entry.book_title, entry.time, entry.time+300, entry.time+300))
     conn:close()
+    self.count = self.count + 1
 end
 
 function VocabularyBuilder:remove(item)
