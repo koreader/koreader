@@ -89,15 +89,16 @@ function ReadTimer:addToMainMenu(menu_items)
                     local time_widget = DateTimeWidget:new{
                         hour = curr_hour,
                         min = curr_min,
-                        append_unit_info = true,
                         ok_text = _("Set alarm"),
                         title_text =  _("New alarm"),
+                        info_text = _("Enter a time in hours and minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()
                             local then_t = now_t
                             then_t.hour = time.hour
                             then_t.min = time.min
+                            then_t.sec = 0
                             local seconds = os.difftime(os.time(then_t), os.time())
                             if seconds > 0 then
                                 self:rescheduleIn(seconds)
@@ -139,6 +140,7 @@ function ReadTimer:addToMainMenu(menu_items)
                         hour_max = 17,
                         ok_text = _("Set timer"),
                         title_text =  _("Set reader timer"),
+                        info_text = _("Enter a time in hours and minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()
