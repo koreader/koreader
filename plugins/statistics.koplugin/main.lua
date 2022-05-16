@@ -20,6 +20,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local N_ = _.ngettext
 local T = FFIUtil.template
 
@@ -959,7 +960,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 default_values = true,
                                 is_range = true,
                                 -- @translators This is the time unit for seconds.
-                                unit = _("s"),
+                                unit = C_("Time", "s"),
                                 title_text = _("Read page duration limits"),
                                 info_text = _([[
 Set min and max time spent (in seconds) on a page for it to be counted as read in statistics.

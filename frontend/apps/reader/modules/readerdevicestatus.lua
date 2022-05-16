@@ -7,6 +7,7 @@ local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local powerd = Device:getPowerDevice()
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 
 local ReaderDeviceStatus = InputContainer:new{
@@ -154,7 +155,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                         value_min = 1,
                         value_max = 60,
                         default_value = 10,
-                        unit = _("min"),
+                        unit = C_("Time", "min"),
                         value_hold_step = 5,
                         title_text = _("Battery check interval"),
                         callback = function(spin)
@@ -246,7 +247,7 @@ High level threshold is checked when the device is charging.]]),
                         value_min = 1,
                         value_max = 60,
                         default_value = 5,
-                        unit = _("min"),
+                        unit = C_("Time", "min"),
                         value_hold_step = 5,
                         title_text = _("Memory check interval"),
                         callback = function(spin)
