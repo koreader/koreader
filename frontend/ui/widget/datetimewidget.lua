@@ -293,19 +293,13 @@ function DateTimeWidget:createLayout()
     }
 
     local buttons = {}
-    if (self.year_default and self.month_default and self.day_default) or
-        (self.hour_default and self.min_default) then
-        local text
-        if self.year_default and self.month_default and self.day_default then
-            text = T(_("Default value: %1 - %2 - %3"), self.year_default, self.month_default, self.day_default)
-        else
-            text = T(_("Default value: %1:%2"), self.hour_default, self.min_default)
-        end
+    if self.default_value then
         table.insert(buttons, {
             {
-                text = text,
+                text = self.default_text or T(_("Default value: %1"), self.default_value),
                 callback = function()
                     if self.default_callback then
+<<<<<<< HEAD
                         self.default_callback({
                             year = year_widget:getValue(),
                             month = month_widget:getValue(),
@@ -314,11 +308,12 @@ function DateTimeWidget:createLayout()
                             minute = min_widget:getValue(),
                             second = sec_widget:getValue(),
                         })
+=======
+                        self.default_callback(year_widget:getValue(), month_hour_widget:getValue(),
+                            day_min_widget:getValue())
+>>>>>>> 3b2c9f26 (prepare for new DTW)
                     end
-                    if self.keep_shown_on_apply then
-                        self:update(self.year_default, self.is_date and self.month_default or self.hour_default,
-                            self.is_date and self.day_default or self.min_default)
-                    else
+                    if not self.keep_shown_on_apply then -- assume extra wants it same as ok
                         self:onClose()
                     end
                 end,
@@ -339,9 +334,6 @@ function DateTimeWidget:createLayout()
         {
             text = self.cancel_text,
             callback = function()
-                if self.cancel_callback then
-                    self.cancel_callback(self)
-                end
                 self:onClose()
             end,
         },

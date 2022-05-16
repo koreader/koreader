@@ -68,8 +68,7 @@ function AutoTurn:_start()
         local text
         if self.autoturn_distance == 1 then
             local time_string = util.secondsToClockDuration("modern", self.autoturn_sec, false, true, true, true)
-            text = T(_("Autoturn is now active and will automatically turn the page every %1."),
-                time_string)
+            text = T(_("Autoturn is now active and will automatically turn the page every %1."), time_string)
         else
             text = T(_("Autoturn is now active and will automatically scroll %1 % of the page every %2 seconds."),
                 self.autoturn_distance * 100,
@@ -152,15 +151,14 @@ function AutoTurn:addToMainMenu(menu_items)
             local autoturn_minutes = math.floor(autoturn_seconds / 60)
             autoturn_seconds = autoturn_seconds % 60
             local autoturn_spin = DateTimeWidget:new {
-                is_date = false,
                 title_text = _("Autoturn time"),
                 info_text = _("Enter time in minutes and seconds."),
                 -- We use hour for minutes and minutes for seconds
-                hour = autoturn_minutes,
-                hour_max = 60 * 24, -- maximum one day
-                hour_default = 0,
-                min = autoturn_seconds,
-                min_default = 30,
+                min = autoturn_minutes,
+                min_max = 60 * 24, -- maximum one day
+                min_default = 0,
+                sec = autoturn_seconds,
+                sec_default = 30,
                 keep_shown_on_apply = true,
                 ok_text = _("Set timeout"),
                 cancel_text = _("Disable"),
@@ -174,7 +172,7 @@ function AutoTurn:addToMainMenu(menu_items)
                 end,
                 ok_always_enabled = true,
                 callback = function(t)
-                    self.autoturn_sec = t.min * 30 + t.sec
+                    self.autoturn_sec = t.min * 60 + t.sec
                     G_reader_settings:saveSetting("autoturn_timeout_seconds", self.autoturn_sec)
                     self.enabled = true
                     G_reader_settings:makeTrue("autoturn_enabled")
