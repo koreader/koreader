@@ -11,7 +11,6 @@ Example for input a time:
         ok_text = _("Set time"),
         title_text = _("Set time"),
         info_text = _("Some information"),
-        append_unit_info, -- to append information about the units used.
         callback = function(time)
             -- use time.hour and time.min here
         end
@@ -34,7 +33,7 @@ Example for input a date:
     }
     UIManager:show(date_widget)
 
-Example to input a duration in days, minutes and seconds:
+Example to input a duration in days, hours and minutes:
     local DateTimeWidget = require("ui/widget/datetimewidget")
     local @{gettext|_} = require("gettext")
 
@@ -82,7 +81,6 @@ local DateTimeWidget = FocusManager:new{
     -- Optional extra button on bottom
     extra_text = nil,
     extra_callback = nil,
-    append_unit_info = nil, -- appends something like "\nTime is in minutes and seconds."
 }
 
 function DateTimeWidget:init()
@@ -149,9 +147,6 @@ local year_widget, month_widget, day_widget, hour_widget, min_widget, sec_widget
 local separator_date, separator_date_time, separator_time
 
 function DateTimeWidget:createLayout()
-    local times = { _("years"), _("months"), _("days"), _("hours"), _("minutes"), _("seconds"), }
-    local unit_text = (self.info_text and "\n" or "") .. _("Time is in") .. " "
-
     -- the following calculation is stolen from NumberPickerWidget
     local number_picker_widgets_width = math.floor(math.min(self.screen_width, self.screen_height) * 0.2)
     if self.nb_pickers > 3 then
@@ -169,7 +164,6 @@ function DateTimeWidget:createLayout()
             width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(year_widget)
-        unit_text = unit_text .. ", " .. times[1]
     else
         year_widget = dummy_widget
     end
@@ -184,7 +178,6 @@ function DateTimeWidget:createLayout()
             width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(month_widget)
-        unit_text = unit_text .. ", " .. times[2]
     else
         month_widget = dummy_widget
     end
@@ -199,7 +192,6 @@ function DateTimeWidget:createLayout()
             width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(day_widget)
-        unit_text = unit_text .. ", " .. times[3]
     else
         day_widget = dummy_widget
     end
@@ -215,7 +207,6 @@ function DateTimeWidget:createLayout()
             width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(hour_widget)
-        unit_text = unit_text .. ", " .. times[4]
     else
         hour_widget = dummy_widget
     end
@@ -230,7 +221,6 @@ function DateTimeWidget:createLayout()
             width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(min_widget)
-        unit_text = unit_text .. ", " .. times[5]
     else
         min_widget = dummy_widget
     end
@@ -245,18 +235,8 @@ function DateTimeWidget:createLayout()
             width = number_picker_widgets_width,
         }
         self:mergeLayoutInHorizontal(sec_widget)
-        unit_text = unit_text .. ", " .. times[6]
     else
         sec_widget = dummy_widget
-    end
-
-    -- remove first comma and append a period.
-    unit_text = unit_text:gsub(" ,", "") .. "."
-
-    -- replace last comma with "and"
-    local pos_and = unit_text:find(", %S*$") -- find last comma
-    if pos_and then
-        unit_text = unit_text:sub(1, pos_and-1) .. " " .. _("and") .. unit_text:sub(pos_and+1)
     end
 
     separator_date = TextWidget:new{
@@ -302,17 +282,13 @@ function DateTimeWidget:createLayout()
         table.remove(date_group, 1)
     end
 
-    local info_text = self.info_text
-    if self.append_unit_info then
-        info_text = (info_text and info_text or "") .. unit_text
-    end
     local title_bar = TitleBar:new{
         width = self.width,
         align = "left",
         with_bottom_line = true,
         title = self.title_text,
         title_shrink_font_to_fit = true,
-        info_text = info_text,
+        info_text = self.info_text,
         show_parent = self,
     }
 

@@ -348,7 +348,7 @@ end
 -- 2 ... display day:hour
 -- 1 ... display hour:min
 -- else ... display min:sec
-function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, setting,
+function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
         default_value, range, time_scale)
     -- NOTE: if is_day_hour then time.hour stands for days and time.min for hours
 
@@ -361,33 +361,24 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, setting,
     local is_standby = setting == "auto_standby_timeout_seconds"
 
     local day, hour, minute, second
-    if time_scale == 2 then
-        day = math.floor(setting_val / (24*3600))
-    elseif time_scale == 1 then
-        hour = math.floor(setting_val / 3600)
-    else
-        minute = math.floor(setting_val / 60)
-    end
-
-    if time_scale == 2 then
-        hour = math.floor(setting_val / 3600) % 24
-    elseif time_scale == 1 then
-        minute = math.floor(setting_val / 60) % 60
-    else
-        second = math.floor(setting_val) % 60
-    end
-
     local day_max, hour_max, min_max, sec_max
     if time_scale == 2 then
+        day = math.floor(setting_val / (24*3600))
+        hour = math.floor(setting_val / 3600) % 24
         day_max = math.floor(range[2] / (24*3600)) - 1
         hour_max = 23
     elseif time_scale == 1 then
+        hour = math.floor(setting_val / 3600)
+        minute = math.floor(setting_val / 60) % 60
         hour_max = math.floor(range[2] / 3600) - 1
         min_max = 59
     else
+        minute = math.floor(setting_val / 60)
+        second = math.floor(setting_val) % 60
         min_max =  math.floor(range[2] / 60) - 1
         sec_max = 59
     end
+
     local time_spinner
     time_spinner = DateTimeWidget:new {
         day = day,
@@ -404,7 +395,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, setting,
         sec_max = sec_max,
         ok_text = _("Set timeout"),
         title_text = title,
-        append_unit_info = true,
+        info_text = info,
         callback = function(t)
             self[setting] = (((t.day or 0) * 24 +
                              (t.hour or 0)) * 60 +
@@ -435,19 +426,15 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, setting,
             local day, hour, min, sec -- luacheck: ignore 431
             if time_scale == 2 then
                 day = math.floor(default_value / (24*3600))
-            elseif time_scale == 1 then
-                hour = math.floor(default_value / 3600)
-            else
-                min = math.floor(default_value / 60)
-            end
-            if time_scale == 2 then
                 hour = math.floor(default_value / 3600) % 24
             elseif time_scale == 1 then
+                hour = math.floor(default_value / 3600)
                 min = math.floor(default_value / 60) % 60
             else
+                min = math.floor(default_value / 60)
                 sec = math.floor(default_value % 60)
             end
-            time_spinner:update(nil, nil, day, hour, min, sec)
+            time_spinner:update(nil, nil, day, hour, min, sec) -- It is ok to pass nils here.
         end,
         extra_text = _("Disable"),
         extra_callback = function(this)
@@ -492,7 +479,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             -- A suspend time of one day seems to be excessive.
             -- But it might make sense for battery testing.
             self:pickTimeoutValue(touchmenu_instance,
-                _("Timeout for autosuspend"),
+                _("Timeout for autosuspend"), _("Enter time in hours and minutes."),
                 "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds,
                 {60, 24*3600}, 1)
         end,
@@ -519,7 +506,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                 -- Maximum more than four weeks seems a bit excessive if you want to enable authoshutdown,
                 -- even if the battery can last up to three months.
                 self:pickTimeoutValue(touchmenu_instance,
-                    _("Timeout for autoshutdown"),
+                    _("Timeout for autoshutdown"), _("Enter time in days and hours."),
                     "autoshutdown_timeout_seconds", default_autoshutdown_timeout_seconds,
                     {5*60, 28*24*3600}, 2)
             end,
@@ -557,7 +544,7 @@ This is experimental on most devices, except those running on a sunxi SoC (Kobo 
                 -- A standby time of 15 min seem excessive.
                 -- But or battery testing it might give some sense.
                 self:pickTimeoutValue(touchmenu_instance,
-                    _("Timeout for autostandby"),
+                    _("Timeout for autostandby"), _("Enter time in minutes and seconds."),
                     "auto_standby_timeout_seconds", default_auto_standby_timeout_seconds,
                     {3, 15*60}, 0)
             end,
