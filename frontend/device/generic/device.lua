@@ -527,6 +527,12 @@ function Device:canExecuteScript(file)
     end
 end
 
+--- Returns true if the device may execute user patches
+--- Basically a helper method to check if code modification is allowed
+function Device:canApplyPatches()
+    return true
+end
+
 function Device:isValidPath(path)
     return util.pathExists(path)
 end

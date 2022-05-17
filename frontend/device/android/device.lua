@@ -401,9 +401,13 @@ end
 
 function Device:canExecuteScript(file)
     local file_ext = string.lower(util.getFileNameSuffix(file))
-    if android.prop.flavor ~= "fdroid" and file_ext == "sh"  then
+    if android.prop.flavor ~= "fdroid" and file_ext == "sh" then
         return true
     end
+end
+
+function Device:canApplyPatches()
+    return android.prop.flavor ~= "fdroid" and true or false
 end
 
 function Device:isValidPath(path)
