@@ -67,7 +67,7 @@ function AutoWarmth:init()
     self.timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0
     self.scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times")
         or {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0}
-    self.warmth =   G_reader_settings:readSetting("autowarmth_warmth")
+    self.warmth = G_reader_settings:readSetting("autowarmth_warmth")
         or { 90, 90, 80, 60, 20, 20, 20, 60, 80, 90, 90}
 
     -- schedule recalculation shortly afer midnight
@@ -178,7 +178,7 @@ function AutoWarmth:scheduleMidnightUpdate()
         if warmth_diff ~= 0 then
             local time_diff = SunTime:getTimeInSec(time2) - time
             local delta_t = time_diff / math.abs(warmth_diff) -- can be inf, no problem
-            local delta_w =  warmth_diff > 0 and 1 or -1
+            local delta_w = warmth_diff > 0 and 1 or -1
             for i = 1, math.abs(warmth_diff)-1 do
                 local next_warmth = math.min(self.warmth[index1], 100) + delta_w * i
                 -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
@@ -609,7 +609,7 @@ function AutoWarmth:getScheduleMenu()
                         end
                         if num > 1 and new_time < get_valid_time(num, -1) then
                             UIManager:show(ConfirmBox:new{
-                                text =  _("This time is before the previous time.\nAdjust the previous time?"),
+                                text = _("This time is before the previous time.\nAdjust the previous time?"),
                                 ok_callback = function()
                                     for i = num-1, 1, -1 do
                                         if self.scheduler_times[i] then
@@ -625,9 +625,9 @@ function AutoWarmth:getScheduleMenu()
                             })
                         elseif num < 10 and new_time > get_valid_time(num, 1) then
                             UIManager:show(ConfirmBox:new{
-                                text =  _("This time is after the subsequent time.\nAdjust the subsequent time?"),
+                                text = _("This time is after the subsequent time.\nAdjust the subsequent time?"),
                                 ok_callback = function()
-                                    for i = num + 1, midnight_index - 1  do
+                                    for i = num + 1, midnight_index - 1 do
                                         if self.scheduler_times[i] then
                                             if new_time > self.scheduler_times[i] then
                                                 self.scheduler_times[i] = new_time
