@@ -27,7 +27,6 @@ local Device = {
     screen_dpi_override = nil,
     input = nil,
     home_dir = nil,
-    package_dir = nil,
     -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
     -- fail and the battery will be drained while we are in screensaver mode
     suspend_wait_timeout = 15,
@@ -526,12 +525,6 @@ function Device:canExecuteScript(file)
     if file_ext == "sh" or file_ext == "py"  then
         return true
     end
-end
-
---- Returns true if the device may execute user patches
---- Basically a helper method to check if code modification is allowed
-function Device:canApplyPatches()
-    return true
 end
 
 function Device:isValidPath(path)

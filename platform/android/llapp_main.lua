@@ -16,6 +16,12 @@ end
 -- path to primary external storage partition
 local path = android.getExternalStoragePath()
 
+--[[-- commented out if favor or `livepatch.lua`
+if android.prop.runtimeChanges then
+    pcall(dofile, path.."/koreader/patch.lua")
+end
+]]
+
 -- set TESSDATA_PREFIX env var
 C.setenv("TESSDATA_PREFIX", path.."/koreader/data", 1)
 
