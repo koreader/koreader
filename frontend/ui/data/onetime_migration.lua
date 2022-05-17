@@ -8,10 +8,14 @@ local logger = require("logger")
 
 -- Date at which the last migration snippet was added
 <<<<<<< HEAD
+<<<<<<< HEAD
 local CURRENT_MIGRATION_DATE = 20220523
 =======
 local CURRENT_MIGRATION_DATE = 20220519
 >>>>>>> d1462a2f (Merge startups scripts with liveupdate)
+=======
+local CURRENT_MIGRATION_DATE = 20220426
+>>>>>>> 9b98434c (Staged livepatch 1st try)
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
