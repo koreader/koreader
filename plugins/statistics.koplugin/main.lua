@@ -943,14 +943,14 @@ function ReaderStatistics:addToMainMenu(menu_items)
                             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
                             local durations_widget
                             durations_widget = DoubleSpinWidget:new{
-                                left_text = _("Min"),
+                                left_text = C_("Extrema", "Min"),
                                 left_value = self.settings.min_sec,
                                 left_default = DEFAULT_MIN_READ_SEC,
                                 left_min = 0,
                                 left_max = 120,
                                 left_step = 1,
                                 left_hold_step = 10,
-                                right_text = _("Max"),
+                                right_text = C_("Extrema", "Max"),
                                 right_value = self.settings.max_sec,
                                 right_default = DEFAULT_MAX_READ_SEC,
                                 right_min = 10,

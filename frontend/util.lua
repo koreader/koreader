@@ -4,6 +4,7 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 
 local BaseUtil = require("ffi/util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = BaseUtil.template
 
 local lshift = bit.lshift
@@ -203,18 +204,18 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays)
         end
         if hmsFormat then
             -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
-            time_string = time_string:gsub(":", _("h"), 1)
+            time_string = time_string:gsub(":", C_("Time", "h"), 1)
             -- @translators This is the 'm' for minute, like in 1h30m30s. This is a duration.
-            time_string = time_string:gsub(":", _("m"), 1)
-            time_string = time_string:gsub("^00" .. _("h"), "") -- delete leading "00h"
+            time_string = time_string:gsub(":", C_("Time", "m"), 1)
+            time_string = time_string:gsub("^00" .. C_("Time", "h"), "") -- delete leading "00h"
             time_string = time_string:gsub("^0", "") -- delete leading "0"
             -- @translators This is the 's' for second, like in 1h30m30s. This is a duration.
-            return withoutSeconds and time_string or (time_string .. _("s"))
+            return withoutSeconds and time_string or (time_string .. C_("Time", "s"))
         else
             -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
-            time_string = time_string:gsub(":", _("h"), 1)
+            time_string = time_string:gsub(":", C_("Time", "h"), 1)
             time_string = time_string:gsub(":", "'", 1)
-            time_string = time_string:gsub("^00" .. _("h"), "") -- delete leading "00h"
+            time_string = time_string:gsub("^00" .. C_("Time", "h"), "") -- delete leading "00h"
             time_string = time_string:gsub("^0", "") -- delete leading "0"
             return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
         end

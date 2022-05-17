@@ -459,7 +459,7 @@ Higher values mean faster screen updates, but also use more CPU.]]),
                         value_step = 1,
                         value_hold_step = 15,
                          -- @translators This is the frequency unit Hertz.
-                        unit = _("Hz"),
+                        unit = C_("Frequency", "Hz"),
                         ok_text = _("Set rate"),
                         default_value = default_value,
                         callback = function(spin)
