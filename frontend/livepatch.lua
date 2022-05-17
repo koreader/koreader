@@ -61,13 +61,9 @@ if Device:canApplyPatches() then -- check if not FDroid flavor
     if lfs.attributes(run_once_scripts, "mode") == "directory" then
         local afterupdate_marker = package_dir .. "/afterupdate.marker"
         if lfs.attributes(afterupdate_marker, "mode") ~= nil then
-            if lfs.attributes(run_once_scripts .. "/migrate", "mode") ~= nil then
-                logger.info("after-update: running migration")
-                runLiveUpdateTasks(run_once_scripts, true)
-            else
-                logger.info("after-update: running shell scripts")
-                runLiveUpdateTasks(run_once_scripts)
-            end
+            local migrate = lfs.attributes(run_once_scripts .. "/migrate", "mode") ~= nil
+            logger.info("after-update: running", migrate and "migration" or "shell scripts")
+            runLiveUpdateTasks(run_once_scripts, migrate)
             util.execute("rm", afterupdate_marker)
         end
     end
@@ -77,7 +73,7 @@ if Device:canApplyPatches() then -- check if not FDroid flavor
     if lfs.attributes(run_always_scripts, "mode") == "directory" then
         runLiveUpdateTasks(run_always_scripts)
     end
-    -- patches applied at every start of koreader, no miration here
+    -- patches applied at every start of koreader, no migration here
     local patch_dir = home_dir .. "/koreader/patches"
     if lfs.attributes(patch_dir, "mode") == "directory" then
         runLiveUpdateTasks(patch_dir)
