@@ -169,7 +169,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, comp
             end
         else
             if hmsFormat then
-                return T(_("%1s"), "0")
+                return T(C_("Time", "%1s"), "0")
             else
                 return "0" .. SECONDS_SYMBOL
             end
@@ -178,14 +178,14 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, comp
         if withoutSeconds and seconds < 30 then
             if hmsFormat then
                 -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
-                return T(_("%1m"), "0")
+                return T(C_("Time", "%1m"), "0")
             else
                 return "0'"
             end
         elseif withoutSeconds and seconds >= 30 then
             if hmsFormat then
                 -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
-                return T(_("%1m"), "1")
+                return T(C_("Time", "%1m"), "1")
             else
                 return "1'"
             end
@@ -193,9 +193,9 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, comp
             if hmsFormat then
                 -- @translators This is the 'm' for minute and 's' for seconds, like in 30m30s. This is a duration.
                 if compact then
-                    return T(_("%1s"), string.format("%2d", seconds))
+                    return T(C_("Time", "%1s"), string.format("%2d", seconds))
                 else
-                    return T(_("%1m%2s"), "0", string.format("%02d", seconds))
+                    return T(C_("Time", "%1m%2s"), "0", string.format("%02d", seconds))
                 end
             else
                 if compact then
@@ -212,19 +212,19 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, comp
         end
         if hmsFormat then
             time_string = time_string:gsub(":", C_("Time", "h"), 1)
+            -- @translators This is the 'm' for minute, like in 1h30m30s. This is a duration.
             time_string = time_string:gsub(":", C_("Time", "m"), 1)
             time_string = time_string:gsub("^00" .. C_("Time", "h"), "") -- delete leading "00h"
             time_string = time_string:gsub("^00" .. C_("Time", "m"), "") -- delete leading "00m"
             if time_string:find("^0%d") then
                 time_string = time_string:gsub("^0", "") -- delete leading "0"
             end
-            -- @translators This is the 's' for second, like in 1h30m30s. This is a duration.
             return withoutSeconds and time_string or (time_string .. C_("Time", "s"))
         else
             time_string = time_string:gsub(":", C_("Time", "h"), 1)
             time_string = time_string:gsub(":", "'", 1)
             time_string = time_string:gsub("^00" .. C_("Time", "h"), "") -- delete leading "00h"
-            time_string = time_string:gsub("^00" .. _("'"), "") -- delete leading "00m"
+            time_string = time_string:gsub("^00" .. C_("Time", "'"), "") -- delete leading "00m"
             if time_string:find("^0%d") then
                 time_string = time_string:gsub("^0", "") -- delete leading "0"
             end
