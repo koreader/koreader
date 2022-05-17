@@ -12,6 +12,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local time = require("ui/time")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = FFIUtil.template
 
 local DEFAULT_AUTODIM_STARTTIME_M = 5
@@ -62,8 +63,7 @@ function AutoDim:getAutodimMenu()
                         value_max = 60,
                         value_step = 0.5,
                         value_hold_step = 5,
-                        -- @translators This is an abbreviation for minute.
-                        unit = _("min"),
+                        unit = C_("Time", "min"),
                         precision = "%0.1f",
                         ok_always_enabled = true,
                         callback = function(spin)
@@ -102,8 +102,7 @@ function AutoDim:getAutodimMenu()
                         value_step = 1,
                         value_hold_step = 10,
                         precision = "%1d",
-                        -- @translators This is the time unit for seconds.
-                        unit = _("s"),
+                        unit = C_("Time", "s"),
                         callback = function(spin)
                             if not spin then return end
                             self.autodim_duration_s = spin.value
@@ -201,7 +200,7 @@ function AutoDim:autodim_task()
     if self.isCurrentlyDimming then return end
 
     local now = UIManager:getElapsedTimeSinceBoot()
-    local idle_duration =  now - self.last_action_time
+    local idle_duration = now - self.last_action_time
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
