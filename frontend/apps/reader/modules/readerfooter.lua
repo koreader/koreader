@@ -630,14 +630,14 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
         title = "Enter a custom text",
         fields = {
             {
-                text =  self.custom_text or "",
+                text = self.custom_text or "",
                 description = _("Custom string:"),
                 input_type = "string",
             },
             {
                 text = self.custom_text_repetitions,
                 description =_("Number of repetitions:"),
-                input_type =  "number",
+                input_type = "number",
             },
         },
         buttons = {
@@ -1198,7 +1198,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_max = 36,
                                 default_value = 14,
                                 ok_text = _("Set size"),
-                                title_text =  _("Footer font size"),
+                                title_text = _("Footer font size"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.text_font_size = spin.value
@@ -1251,7 +1251,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         value_max = 98,
                         default_value = DMINIBAR_CONTAINER_HEIGHT,
                         ok_text = _("Set height"),
-                        title_text =  _("Container height"),
+                        title_text = _("Container height"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
                             self.settings.container_height = spin.value
@@ -1277,7 +1277,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         value_max = 49,
                         default_value = 1,
                         ok_text = _("Set margin"),
-                        title_text =  _("Container bottom margin"),
+                        title_text = _("Container bottom margin"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
                             self.settings.container_bottom_padding = spin.value
@@ -1306,7 +1306,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text =  _("Maximum width"),
+                                title_text = _("Maximum width"),
                                 info_text = _("Maximum book title width in percentage of screen width"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1332,7 +1332,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_hold_step = 20,
                                 value_max = 100,
                                 unit = "%",
-                                title_text =  _("Maximum width"),
+                                title_text = _("Maximum width"),
                                 info_text = _("Maximum chapter width in percentage of screen width"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1595,7 +1595,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                     default_value = Device:hasAuxBattery() and 200 or 100,
                     unit = "%",
                     value_hold_step = 10,
-                    title_text =  _("Hide battery threshold"),
+                    title_text = _("Hide battery threshold"),
                     callback = function(spin)
                         self.settings.battery_hide_threshold = spin.value
                         self:refreshFooter(true, true)
@@ -1750,7 +1750,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                                 value_hold_step = 2,
                                 value_max = value_max,
                                 default_value = default_value,
-                                title_text =  _("Progress bar size"),
+                                title_text = _("Progress bar size"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     if self.settings.progress_style_thin then
@@ -1925,7 +1925,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                         value_hold_step = 20,
                         value_max = 50,
                         unit = "%",
-                        title_text =  _("Minimal width"),
+                        title_text = _("Minimal width"),
                         text = _("Minimal progress bar width in percentage of screen width"),
                         keep_shown_on_apply = true,
                         callback = function(spin)

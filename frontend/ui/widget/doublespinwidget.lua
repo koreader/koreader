@@ -216,7 +216,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
                     self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default,
                     unit, separator),
                 callback = function()
-                    left_widget.value  = self.left_default
+                    left_widget.value = self.left_default
                     right_widget.value = self.right_default
                     left_widget:update()
                     right_widget:update()
