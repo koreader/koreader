@@ -329,6 +329,9 @@ function DateTimeWidget:createLayout()
         {
             text = self.cancel_text,
             callback = function()
+                if self.cancel_callback then
+                    self.cancel_callback(self)
+                end
                 self:onClose()
             end,
         },
