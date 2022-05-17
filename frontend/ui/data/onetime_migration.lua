@@ -7,7 +7,11 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
+<<<<<<< HEAD
 local CURRENT_MIGRATION_DATE = 20220523
+=======
+local CURRENT_MIGRATION_DATE = 20220519
+>>>>>>> d1462a2f (Merge startups scripts with liveupdate)
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -398,6 +402,15 @@ if last_migration_date < 20220523 then
         end
     end
     migrateSettingsName("highlight_long_hold_threshold", "highlight_long_hold_threshold_s")
+end
+
+-- Move /koreader/patch.lua to /koreader/patches directory (see #9104)
+if last_migration_date < 20220519 then
+    local Device = require("device")
+    local util = require("util")
+    if lfs.attributes(Device.home_dir .. "/koreader/patch.lua", "mode") == "file" then
+        util.execute("mv", Device.home_dir .. "/koreader/patch.lua", Device.home_dir .. "/koreader/patches/patch.lua")
+    end
 end
 
 -- We're done, store the current migration date

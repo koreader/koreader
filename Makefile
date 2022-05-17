@@ -100,12 +100,10 @@ endif
 	for f in $(INSTALL_FILES); do \
 		ln -sf ../../$$f $(INSTALL_DIR)/koreader/; \
 	done
-ifdef ANDROID
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
 	@echo "[*] Install afterupdate marker"
-	@echo "# If this file is here, there are no afterupdate scripts in /sdcard/koreader/scripts/afterupdate." > $(INSTALL_DIR)/koreader/afterupdate.marker
-endif
+	@echo "# This file indicates, that KOReader has not been started after an update." > $(INSTALL_DIR)/koreader/afterupdate.marker
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
