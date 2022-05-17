@@ -81,6 +81,7 @@ local Device = Generic:new{
     canSuspend = no,
     firmware_rev = android.app.activity.sdkVersion,
     home_dir = android.getExternalStoragePath(),
+    package_dir = android.dir,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     isHapticFeedbackEnabled = yes,
     hasClipboard = yes,
