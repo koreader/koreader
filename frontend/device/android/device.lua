@@ -81,7 +81,6 @@ local Device = Generic:new{
     canSuspend = no,
     firmware_rev = android.app.activity.sdkVersion,
     home_dir = android.getExternalStoragePath(),
-    package_dir = android.dir,
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     isHapticFeedbackEnabled = yes,
     hasClipboard = yes,
@@ -405,10 +404,6 @@ function Device:canExecuteScript(file)
     if android.prop.flavor ~= "fdroid" and file_ext == "sh" then
         return true
     end
-end
-
-function Device:canApplyPatches()
-    return android.prop.flavor ~= "fdroid" and true or false
 end
 
 function Device:isValidPath(path)

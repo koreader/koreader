@@ -989,15 +989,6 @@ function util.getScriptType(file)
     end
 end
 
---- A wrapper to os.execute
-function util.execute(...)
-    local command = ""
-    for i,v in ipairs({...}) do
-        command = command .. "\"" .. tostring(v) .. "\" "
-    end
-    os.execute(command)
-end
-
 --- Gets human friendly size as string
 ---- @int size (bytes)
 ---- @bool right_align (by padding with spaces on the left)

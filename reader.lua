@@ -13,6 +13,13 @@ io.stdout:write([[
  [*] Current time: ]], os.date("%x-%X"), "\n")
 io.stdout:flush()
 
+-- Set up ffi search paths
+require("setupkopaths")
+
+-- Apply `patches/patch.lua` and execute startup user scripts and perform user data migration
+local livepatch = require("livepatch")
+livepatch.executeScriptsAndMigrate()
+
 -- Load default settings
 require("defaults")
 local DataStorage = require("datastorage")
@@ -206,7 +213,7 @@ end
 local UIManager = require("ui/uimanager")
 
 -- Apply developer patches
-require("livepatch")
+livepatch.applyPatches()
 
 -- Inform once about color rendering on newly supported devices
 -- (there are some android devices that may not have a color screen,

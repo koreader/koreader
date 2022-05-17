@@ -1,9 +1,7 @@
 local Event = require("ui/event")
 local Generic = require("device/generic/device")
-local lfs = require("libs/libkoreader-lfs")
 local SDL = require("ffi/SDL2_0")
 local logger = require("logger")
-local util = require("util")
 
 local function yes() return true end
 local function no() return false end
@@ -295,8 +293,6 @@ function Device:init()
             self.screen:getScreenWidth()
         )
     end
-
-    self.package_dir = util.splitFilePathName(lfs.currentdir()) .. "koreader"
 
     Generic.init(self)
 end
