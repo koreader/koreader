@@ -51,7 +51,7 @@ function FileManagerShortcuts:updateItemTable(select_callback)
     -- try to stay on current page
     local select_number
 
-    if self.fm_bookmark.page and self.fm_bookmark.perpage then
+    if self.fm_bookmark.page and self.fm_bookmark.perpage and self.fm_bookmark.page > 0 then
         select_number = (self.fm_bookmark.page - 1) * self.fm_bookmark.perpage + 1
     end
 
