@@ -18,7 +18,8 @@ require("setupkopaths")
 
 -- Apply `patches/patch.lua` and execute startup user scripts and perform user data migration
 local livepatch = require("livepatch")
-livepatch.executeScriptsAndMigrate()
+livepatch.applyPatches(livepatch.early_afterupdate)
+livepatch.applyPatches(livepatch.early)
 
 -- Load default settings
 require("defaults")
@@ -213,7 +214,7 @@ end
 local UIManager = require("ui/uimanager")
 
 -- Apply developer patches
-livepatch.applyPatches()
+livepatch.applyPatches(livepatch.late)
 
 -- Inform once about color rendering on newly supported devices
 -- (there are some android devices that may not have a color screen,

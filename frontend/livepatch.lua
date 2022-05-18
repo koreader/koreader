@@ -1,19 +1,20 @@
 --[[--
 Allows to apply developer patches, shell scripts an file migration during KOReader startup.
 
-Process the contents of `koreader/scripts.always` (and `koreader/scripts.afterupdate` after an update) and apply
-`koreader/scripts.late/early-patch.lua` on calling `livepatch.eecuteScriptsAndMigrate()`.
-
-The contents in `koreader/scripts.late` are applied on calling `livepatch.applyPatches()`.
+The contents in `koreader/userpatches/` are applied on calling `livepatch.applyPatches(priority)`.
 --]]--
 
 local isAndroid, android = pcall(require, "android")
 
-local livepatch = {}
+local livepatch =
+    {   -- priorities for user patches
+        early_afterupdate = "0",
+        early = "1",
+        late = "2",
+    }
 
 -- The following functins will be overwritten, if the device allows it.
 function livepatch.applyPatches() end
-function livepatch.executeScriptsAndMigrate() end
 
 if isAndroid and android.prop.flavor == "fdroid" then
     return livepatch
@@ -50,96 +51,83 @@ local function execute(...)
     os.execute(command)
 end
 
--- Run user shell scripts or recursive migration of user data.
--- Skip the special files `migrate` and `early-patch.lua`.
+-- Run user shell scripts or lua patches
 -- string directory ... to scan through
--- bool bare ... don't use UIManager and Co.
--- bool migration ... migrate directory contents
+-- char priority ... only files starting with that char will be processed
 -- string parent ... parent directory
-local function runLiveUpdateTasks(dir, bare, migration, parent)
-    if not parent then
-        logger.info("Live update directory found:", dir)
-    end
+local function runLiveUpdateTasks(dir, priority)
+    local patches = {}
     for entry in lfs.dir(dir) do
-        if entry and entry ~= "." and entry ~= ".." then
-            local fullpath = dir .. "/" .. entry
-            local mode = lfs.attributes(fullpath).mode
-            if mode == "file" and migration then -- copy any file except `migrate` and shell scripts
-                if entry ~= "migrate" and not fullpath:match("%.sh$") then
-                    local destdir = parent and package_dir .. "/" .. parent or package_dir
-                    -- we cannot create new directories on asset storage.
-                    -- trying to do that crashes the VM with error=13, Permission Denied
-                    execute("cp", fullpath, destdir .. "/" .. entry)
+        local mode = lfs.attributes(dir .. "/" .. entry, "mode")
+        if entry and mode == "file" and entry:match("^" .. priority .. "%d*%-") then
+            table.insert(patches, entry)
+        end
+    end
+
+    -- adapted from: http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua
+    local function addLeadingZeroes(d)
+        local dec, n = string.match(d, "(%.?)0*(.+)")
+        return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
+    end
+    local sorting = function(a, b)
+        return tostring(a):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b)
+            < tostring(b):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#a)
+    end
+
+    table.sort(patches, sorting)
+
+    for i, entry in ipairs(patches) do
+        local fullpath = dir .. "/" .. entry
+        local mode = lfs.attributes(fullpath).mode
+        if mode == "file" and fullpath:match("%.sh$") then -- execute shell scripts
+            execute("sh", fullpath, home_dir .. "/koreader", package_dir)
+        elseif mode == "file" and fullpath:match("%.lua$")
+            and not fullpath:match("early%-patch%.lua$") then -- execute patch-files
+            local ok, err = pcall(dofile, fullpath)
+            if not ok then
+                logger.warn("Live update", err)
+                if priority > livepatch.early then -- Only show InfoMessage, when late during startup.
+                    -- Only developers (advanced users) will use this mechanism.
+                    -- A warning on a patch failure after an OTA update will simplify troubleshooting.
+                    local UIManager = require("ui/uimanager")
+                    local _ = require("gettext")
+                    local T = require("ffi/util").template
+                    local InfoMessage = require("ui/widget/infomessage")
+                    UIManager:show(InfoMessage:new{text = T(_("Error loading patch:\n%1"), fullpath)})
                 end
-            elseif mode == "file" and fullpath:match("%.sh$") then -- execute shell scripts
-                execute("sh", fullpath, home_dir .. "/koreader", package_dir)
-            elseif mode == "file" and fullpath:match("%.lua$")
-                and not fullpath:match("early%-patch%.lua$") then -- execute patch-files
-                local ok, err = pcall(dofile, fullpath)
-                if not ok then
-                    logger.warn("Live update", err)
-                    if not bare then -- Only show InfoMessage, when late during startup.
-                        -- Only developers (advanced users) will use this mechanism.
-                        -- A warning on a patch failure after an OTA update will simplify troubleshooting.
-                        local UIManager = require("ui/uimanager")
-                        local _ = require("gettext")
-                        local baseUtil = require("ffi/util")
-                        local T = baseUtil.template
-                        local InfoMessage = require("ui/widget/infomessage")
-                        UIManager:show(InfoMessage:new{text = T(_("Error loading patch:\n%1"), fullpath)})
-                    end
-                else
-                    logger.info("Live update applied:", fullpath)
-                end
-            elseif mode == "directory" then -- recurse deeper
-                -- recurse into next directory
-                runLiveUpdateTasks(fullpath, bare, migration, parent and parent .. "/" .. entry or entry)
+            else
+                logger.info("Live update applied:", fullpath)
             end
         end
     end
 end
 
 --- This function works on the contents of `home_dir/koreader/scripts.late` (except `early-patch.lua`)
-function livepatch.applyPatches()
-    -- patches, scripts and migration get applied at every start of koreader, no migration here
-    local patch_dir = home_dir .. "/koreader/scripts.late"
-    if lfs.attributes(patch_dir, "mode") == "directory" then
-        runLiveUpdateTasks(patch_dir, false)
-    end
-end
+function livepatch.applyPatches(priority)
+    -- patches and scripts get applied at every start of koreader, no migration here
+    local patch_dir = home_dir .. "/koreader/userpatches"
 
---- This function migrates user files, executes shell scripts and patch files (except `early-patch.lua`) in
--- `home_dir/koreader/[scripts.afterupdate|scripts.always`.
--- If an older `patch.lua` is found it is moved to `scripts.always/early-patch.lua`. This has to be done here,
--- as onetime_migration gets called to late.
-function livepatch.executeScriptsAndMigrate()
-    local run_once_scripts = home_dir .. "/koreader/scripts.afterupdate"
-    if lfs.attributes(run_once_scripts, "mode") == "directory" then
-        local afterupdate_marker = package_dir .. "/koreader/afterupdate.marker"
-        if lfs.attributes(afterupdate_marker, "mode") == "file" then
-            local migrate = lfs.attributes(run_once_scripts .. "/migrate", "mode") ~= nil
-            logger.info("after-update: running", migrate and "migration" or "shell scripts")
-            runLiveUpdateTasks(run_once_scripts, true, migrate)
-            os.remove(afterupdate_marker) -- Prevent another execution on a further starts.
-        end
-    end
-
-    -- Move an existing `koreader/patch.lua` to `koreader/scipts.always/early-patch.lua`
-    if lfs.attributes(home_dir .. "/koreader/patch.lua", "mode") == "file" then
-        if lfs.attributes(home_dir .. "/koreader/scripts.always/", "mode") == nil then
-            if not lfs.mkdir(home_dir .. "/koreader/scripts.always/", "mode") then
-                logger.err("Live update error creating directory", home_dir .. "/koreader/scripts.always/")
+    if priority == livepatch.early then
+        -- Move an existing `koreader/patch.lua` to `koreader/userpatches/0000-patch.lua`
+        if lfs.attributes(home_dir .. "/koreader/patch.lua", "mode") == "file" then
+            if lfs.attributes(patch_dir, "mode") == nil then
+                if not lfs.mkdir(patch_dir, "mode") then
+                    logger.err("Live update error creating directory", patch_dir)
+                end
             end
+            os.rename(home_dir .. "/koreader/patch.lua", patch_dir .. "/0000-patch.lua")
         end
-        or.rename(home_dir .. "/koreader/patch.lua", home_dir .. "/koreader/scripts.always/early-patch.lua")
     end
-    -- run `koreader/scripts.always/early-patch.lua`
-    pcall(dofile, home_dir .. "/koreader/scripts.always/early-patch.lua")
 
-    -- scripts and patches executed every start of koreader, no migration here
-    local run_always_scripts = home_dir .. "/koreader/scripts.always"
-    if lfs.attributes(run_always_scripts, "mode") == "directory" then
-        runLiveUpdateTasks(run_always_scripts, true)
+    local first_start_after_update
+    local afterupdate_marker = package_dir .. "/koreader/afterupdate.marker"
+    if lfs.attributes(afterupdate_marker, "mode") == "file" then
+        os.remove(afterupdate_marker) -- Prevent another execution on a further starts.
+        first_start_after_update = true
+    end
+
+    if priority >= livepatch.early or first_start_after_update then
+        runLiveUpdateTasks(patch_dir, priority)
     end
 end
 
