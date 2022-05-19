@@ -16,7 +16,7 @@ local C_ = _.pgettext
 local T = FFIUtil.template
 
 local DEFAULT_AUTODIM_STARTTIME_M = 5
-local DEFAULT_AUTODIM_DURATION_S = 20
+local DEFAULT_AUTODIM_DURATION_S = 5
 local DEFAULT_AUTODIM_FRACTION = 20
 local AUTODIM_EVENT_FREQUENCY = 2 -- in Hz; Frequenzy for FrontlightChangedEvent on E-Ink devices
 
