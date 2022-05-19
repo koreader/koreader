@@ -17,9 +17,9 @@ io.stdout:flush()
 require("setupkopaths")
 
 -- Apply startup user patches and execute startup user scripts
-local livepatch = require("livepatch")
-livepatch.applyPatches(livepatch.early_afterupdate)
-livepatch.applyPatches(livepatch.early)
+local userpatch = require("userpatch")
+userpatch.applyPatches(userpatch.early_afterupdate)
+userpatch.applyPatches(userpatch.early)
 
 -- Load default settings
 require("defaults")
@@ -214,7 +214,7 @@ end
 local UIManager = require("ui/uimanager")
 
 -- Apply developer patches
-livepatch.applyPatches(livepatch.late)
+userpatch.applyPatches(userpatch.late)
 
 -- Inform once about color rendering on newly supported devices
 -- (there are some android devices that may not have a color screen,
@@ -375,12 +375,12 @@ local function exitReader()
 end
 
 -- Apply before_exit patches and execute user scripts
-livepatch.applyPatches(livepatch.before_exit)
+userpatch.applyPatches(userpatch.before_exit)
 
 local reader_retval = exitReader()
 
 -- Apply exit user patches and execute user scripts
-livepatch.applyPatches(livepatch.on_exit)
+userpatch.applyPatches(userpatch.on_exit)
 
 -- Close the Lua state on exit
 os.exit(reader_retval, true)

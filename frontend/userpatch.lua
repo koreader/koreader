@@ -1,12 +1,12 @@
 --[[--
 Allows applying developer patches and shell scripts while running KOReader.
 
-The contents in `koreader/userpatches/` are applied on calling `livepatch.applyPatches(priority)`.
+The contents in `koreader/userpatches/` are applied on calling `userpatch.applyPatches(priority)`.
 --]]--
 
 local isAndroid, android = pcall(require, "android")
 
-local livepatch =
+local userpatch =
     {   -- priorities for user patches,
         early_afterupdate = "0", -- to be started early on startup (once after an update)
         early = "1",             -- to be started early on startup (always, but after an `early_afterupdate`)
@@ -19,7 +19,7 @@ local livepatch =
     }
 
 if isAndroid and android.prop.flavor == "fdroid" then
-    return livepatch
+    return userpatch
 end
 
 ------------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ local home_dir = removeTrailingSlash(isAndroid and android.getExternalStoragePat
     os.getenv("XDG_DOCUMENTS_DIR") or package_dir)
 
 if home_dir == nil or package_dir == nil then
-    return livepatch -- live patching is not supported
+    return userpatch -- live patching is not supported
 end
 
 logger.info("Live update using package_dir:", package_dir, "; home_dir:", home_dir)
@@ -96,7 +96,7 @@ local function runLiveUpdateTasks(dir, priority)
                 local ok, err = pcall(dofile, fullpath)
                 if not ok then
                     logger.warn("Live update", err)
-                    if priority >= livepatch.late then -- Only show InfoMessage, when late during startup.
+                    if priority >= userpatch.late then -- Only show InfoMessage, when late during startup.
                         -- Only developers (advanced users) will use this mechanism.
                         -- A warning on a patch failure after an OTA update will simplify troubleshooting.
                         local UIManager = require("ui/uimanager")
@@ -113,11 +113,11 @@ end
 
 --- This function executes sripts and applies lua patches from `/koreader/userscripts`
 ---- @string priority ... one of "early\_afterupdate", "early", "late", "before\_exit", "on\_exit"
-function livepatch.applyPatches(priority)
+function userpatch.applyPatches(priority)
     -- patches and scripts get applied at every start of koreader, no migration here
     local patch_dir = home_dir .. "/koreader/userpatches"
 
-    if priority == livepatch.early then
+    if priority == userpatch.early then
         -- Move an existing `koreader/patch.lua` to `koreader/userpatches/0000-patch.lua` (->will be excuted in early_afterupdate)
         if lfs.attributes(home_dir .. "/koreader/patch.lua", "mode") == "file" then
             if lfs.attributes(patch_dir, "mode") == nil then
@@ -136,9 +136,9 @@ function livepatch.applyPatches(priority)
         os.remove(afterupdate_marker) -- Prevent another execution on a further starts.
     end
 
-    if priority >= livepatch.early or first_start_after_update then
+    if priority >= userpatch.early or first_start_after_update then
         runLiveUpdateTasks(patch_dir, priority)
     end
 end
 
-return livepatch
+return userpatch
