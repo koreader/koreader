@@ -16,7 +16,7 @@ io.stdout:flush()
 -- Set up ffi search paths
 require("setupkopaths")
 
--- Apply `patches/patch.lua` and execute startup user scripts and perform user data migration
+-- Apply startup user patches and execute startup user scripts
 local livepatch = require("livepatch")
 livepatch.applyPatches(livepatch.early_afterupdate)
 livepatch.applyPatches(livepatch.early)
@@ -374,6 +374,13 @@ local function exitReader()
     end
 end
 
-local ret = exitReader()
+-- Apply before_exit patches and execute user scripts
+livepatch.applyPatches(livepatch.before_exit)
+
+local reader_retval = exitReader()
+
+-- Apply exit user patches and execute user scripts
+livepatch.applyPatches(livepatch.on_exit)
+
 -- Close the Lua state on exit
-os.exit(ret, true)
+os.exit(reader_retval, true)
