@@ -19,9 +19,8 @@ else
     ZSYNC_MESSAGE="Computing zsync delta"
 fi
 
-./fbink --clear
 # Small zsync wrapper so we can print its output while it works...
-./fbink -q -y -7 -pmh "${ZSYNC_MESSAGE} . . ."
+./fbink -q -c -y -7 -pmh "${ZSYNC_MESSAGE} . . ."
 # Clear any potential leftover from the local OTA tarball creation.
 ./fbink -q -y -6 -pm ' '
 
