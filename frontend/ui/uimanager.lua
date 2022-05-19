@@ -1160,8 +1160,7 @@ function UIManager:_checkTasks()
             -- Nothing to do!
             break
         end
-        local next_task = self._task_queue[1]
-        local task_time = next_task.time or 0
+        local task_time = self._task_queue[1].time or 0
         if task_time <= self._now then
             -- remove from table
             local task = table.remove(self._task_queue, 1)
