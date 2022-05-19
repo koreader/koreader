@@ -13,6 +13,7 @@ local LineWidget = require("ui/widget/linewidget")
 local ProgressWidget = require("ui/widget/progresswidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -391,63 +392,38 @@ function ReaderProgress:genSummaryWeek(width)
         align = "center",
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
-            TextWidget:new{
-                padding = Size.padding.default,
-                text = _("Total"),
+            TextBoxWidget:new{
+                alignment = "center",
+                text = _("Total\nPages"),
                 face = self.small_font_face,
+                width = tile_width * 0.95,
             },
         },
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
-            TextWidget:new{
-                text = _("Total"),
+            TextBoxWidget:new{
+                alignment = "center",
+                text = _("Total\nTime"),
                 face = self.small_font_face,
+                width = tile_width * 0.95,
             },
         },
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
-            TextWidget:new{
-                text = _("Average"),
+            TextBoxWidget:new{
+                alignment = "center",
+                text = _("Average\nPages"),
                 face = self.small_font_face,
+                width = tile_width * 0.95,
             }
         },
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
-            TextWidget:new{
-                text = _("Average"),
+            TextBoxWidget:new{
+                alignment = "center",
+                text = _("Average\nTime"),
                 face = self.small_font_face,
-            }
-        }
-    }
-
-    local titles_group = HorizontalGroup:new{
-        align = "center",
-        CenterContainer:new{
-            dimen = Geom:new{ w = tile_width, h = tile_height },
-            TextWidget:new{
-                text = _("Pages"),
-                face = self.small_font_face,
-            },
-        },
-        CenterContainer:new{
-            dimen = Geom:new{ w = tile_width, h = tile_height },
-            TextWidget:new{
-                text = _("Time"),
-                face = self.small_font_face,
-            },
-        },
-        CenterContainer:new{
-            dimen = Geom:new{ w = tile_width, h = tile_height },
-            TextWidget:new{
-                text = _("Pages"),
-                face = self.small_font_face,
-            }
-        },
-        CenterContainer:new{
-            dimen = Geom:new{ w = tile_width, h = tile_height },
-            TextWidget:new{
-                text = _("Time"),
-                face = self.small_font_face,
+                width = tile_width * 0.95,
             }
         }
     }
@@ -493,7 +469,6 @@ function ReaderProgress:genSummaryWeek(width)
         }
     }
     table.insert(statistics_group, total_group)
-    table.insert(statistics_group, titles_group)
     table.insert(statistics_group, span_group)
     table.insert(statistics_group, data_group)
     table.insert(statistics_container, statistics_group)
