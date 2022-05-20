@@ -1166,7 +1166,9 @@ function UIManager:_checkTasks()
             -- Pop the upcoming task, as it is due for execution...
             local task = table.remove(self._task_queue, 1)
             -- ...so do it now.
-            -- NOTE: Said task's action might modify _task_queue. Be wary of race conditions. (?)
+            -- NOTE: Said task's action might modify _task_queue.
+            --       To avoid race conditions, we only ever check the head of the queue (c.f., #1758).
+            -- FIXME: Switch to a less confusing reverse for #len loop?
             task.action(unpack(task.args, 1, task.argc))
         else
             -- As the queue is sorted in ascending order, it's safe to assume all items are currently future tasks.
