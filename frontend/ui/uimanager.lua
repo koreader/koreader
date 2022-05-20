@@ -521,11 +521,11 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
 end
 
--- schedule an execution task, task queue is in ascendant order
+-- Schedule an execution task, task queue is in ascending order
 function UIManager:schedule(sched_time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
-        -- do a binary insert
+        -- Do a binary insert.
         repeat
             p = math.floor((e + s) / 2) -- Not necessary to use (s + (e -s) / 2) here!
             local p_time = self._task_queue[p].time
@@ -544,8 +544,8 @@ function UIManager:schedule(sched_time, action, ...)
                 end
                 e = p
             else
-                -- for fairness, it's better to make p+1 is strictly less than
-                -- p might want to revisit here in the future
+                -- For fairness, it's better to make sure p+1 is strictly less than p.
+                -- Might want to revisit that in the future.
                 break
             end
         until e < s
