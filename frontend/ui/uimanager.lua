@@ -523,6 +523,8 @@ end
 
 -- Schedule an execution task, task queue is in ascending order
 function UIManager:schedule(sched_time, action, ...)
+    logger.dbg("UIManager:schedule:", sched_time, action)
+    logger.dbg(debug.traceback())
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
         -- Do a binary insert.
@@ -550,13 +552,18 @@ function UIManager:schedule(sched_time, action, ...)
             end
         until e < s
     end
+    local caller = debug.getinfo(2, "S")
     table.insert(self._task_queue, p, {
         time = sched_time,
         action = action,
         argc = select('#', ...),
         args = {...},
+        source = caller.source,
+        line = caller.linedefined,
     })
     self._task_queue_dirty = true
+    logger.dbg("UIManager:schedule: Inserted task", tostring(self._task_queue[p]), "at index", p)
+    logger.dbg(self._task_queue[p])
 end
 dbg:guard(UIManager, 'schedule',
     function(self, sched_time, action)
@@ -1158,7 +1165,10 @@ function UIManager:_checkTasks()
     self._task_queue_dirty = false
     while self._task_queue[1] do
         local task_time = self._task_queue[1].time
+        logger.dbg("UIManager:_checkTasks checking task", tostring(self._task_queue[1]))
+        logger.dbg(self._task_queue[1])
         if task_time <= self._now then
+            logger.dbg("It's due, execute it")
             -- Pop the upcoming task, as it is due for execution...
             local task = table.remove(self._task_queue, 1)
             -- ...so do it now.
