@@ -1142,7 +1142,7 @@ end
 --]]
 
 function UIManager:getNextTaskTime()
-    if #self._task_queue > 0 then
+    if self._task_queue[1] then
         return self._task_queue[1].time - time:now()
     else
         return nil
@@ -1156,10 +1156,12 @@ function UIManager:_checkTasks()
     -- task.action may schedule other events
     self._task_queue_dirty = false
     while true do
-        if #self._task_queue == 0 then
+        if not self._task_queue[1] then
             -- Nothing to do!
             break
         end
+        -- FIXME: Err, the or makes no sense, UIManager:schedule should ensure time & action fields are sane?
+        --        Either check nothing, or check both time *and* action (which should *never* be nil, unless Greminls, c.f., #9112)
         local task_time = self._task_queue[1].time or 0
         if task_time <= self._now then
             -- remove from table
