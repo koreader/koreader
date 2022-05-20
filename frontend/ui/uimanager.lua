@@ -552,7 +552,7 @@ function UIManager:schedule(sched_time, action, ...)
             end
         until e < s
     end
-    local caller = debug.getinfo(2, "S")
+    local caller = debug.getinfo(5, "S")
     table.insert(self._task_queue, p, {
         time = sched_time,
         action = action,
