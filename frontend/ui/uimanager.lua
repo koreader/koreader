@@ -1153,26 +1153,23 @@ function UIManager:_checkTasks()
     self._now = time.now()
     local wait_until = nil
 
-    -- task.action may schedule other events
+    -- Tasks due for execution might themselves schedule more tasks (that might also be immediately due for execution ;)).
+    -- Flipping this switch ensures we'll consume all such tasks *before* yielding to input polling.
     self._task_queue_dirty = false
     while true do
         if not self._task_queue[1] then
             -- Nothing to do!
             break
         end
-        -- FIXME: Err, the or makes no sense, UIManager:schedule should ensure time & action fields are sane?
-        --        Either check nothing, or check both time *and* action (which should *never* be nil, unless Greminls, c.f., #9112)
-        local task_time = self._task_queue[1].time or 0
+        local task_time = self._task_queue[1].time
         if task_time <= self._now then
-            -- remove from table
+            -- Pop the upcoming task, as it is due for execution...
             local task = table.remove(self._task_queue, 1)
-            -- task is pending to be executed right now. do it.
-            -- NOTE: be careful that task.action() might modify
-            -- _task_queue here. So need to avoid race condition
+            -- ...so do it now.
+            -- NOTE: Said task's action might modify _task_queue. Be wary of race conditions. (?)
             task.action(unpack(task.args, 1, task.argc))
         else
-            -- queue is sorted in ascendant order, safe to assume all items
-            -- are future tasks for now
+            -- As the queue is sorted in ascending order, it's safe to assume all items are currently future tasks.
             wait_until = task_time
             break
         end
