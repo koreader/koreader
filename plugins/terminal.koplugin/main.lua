@@ -350,9 +350,7 @@ function Terminal:generateInputDialog()
             {
             text = "⎚", --clear
             callback = function()
-                self.history = ""
-                self.input = {}
-                self.input_dialog:setInputText("$ ")
+                self:transmit("clear\n") -- this could happen during a running program (e.g. top)
             end,
             },
             {
