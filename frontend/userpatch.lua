@@ -65,6 +65,9 @@ end
 -- string parent ... parent directory
 local function runLiveUpdateTasks(dir, priority)
     local patches = {}
+    if lfs.attributes(dir, "mode") ~= "directory" then
+        return
+    end
     for entry in lfs.dir(dir) do
         local mode = lfs.attributes(dir .. "/" .. entry, "mode")
         if entry and mode == "file" and entry:match("^" .. priority .. "%d*%-") then
