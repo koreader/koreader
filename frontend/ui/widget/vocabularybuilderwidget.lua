@@ -320,7 +320,7 @@ function VocabItemWidget:initItemWidget()
                 table.insert(right_widget, star)
             end
         else
-            star:close()
+            star:free()
             right_widget = HorizontalGroup:new{
                 dimen = Geom:new{w=0, h = self.height},
                  HorizontalSpan:new {width = Size.padding.default }
@@ -728,7 +728,6 @@ function VocabularyBuilderWidget:moveItem(diff)
 end
 
 function VocabularyBuilderWidget:removeAt(index)
-    logger.err("------------- index", index, self.item_table)
     if index > #self.item_table then return end
     table.remove(self.item_table, index)
     self.show_page = math.ceil(math.min(index, #self.item_table) / self.items_per_page)
