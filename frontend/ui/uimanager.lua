@@ -554,17 +554,12 @@ function UIManager:schedule(sched_time, action, ...)
     end
 
     local level
-    -- Find the actual public cheduling function in the stack (hairier in debug mode because of how debug guards are implemented).
+    -- Find the actual public cheduling function in the stack...
     for l = 10, 2, -1 do
-        local info = debug.getinfo(l, "Sn")
+        local info = debug.getinfo(l, "n")
         if info then
             if info.name == "scheduleIn" or info.name == "nextTick" or info.name == "tickAfterNext" then
-                if info.source == "@frontend/dbg.lua" then
-                    -- Debug guard shenanigans...
-                    level = l + 1
-                else
-                    level = l
-                end
+                level = l + 1
                 break
             end
         end
