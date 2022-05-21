@@ -27,7 +27,6 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local Screen = Device.screen
-local logger = require("logger")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -39,6 +38,7 @@ local subtitle_face = Font:getFace("cfont", 12)
 local subtitle_italic_face = Font:getFace("NotoSans-Italic.ttf", 12)
 local nerd_face = Font:getFace("smallinfofont")
 local subtitle_color = Blitbuffer.Color8(0x88)
+local dim_color = Blitbuffer.Color8(0x55)
 -- More Info
 
 function getDialogWidth()
@@ -204,7 +204,7 @@ local point_widget = TextWidget:new{
     text = " • ",
     bold = true,
     face = Font:getFace("cfont", 24),
-    fgcolor = Blitbuffer.Color8(0x66)
+    fgcolor = dim_color
 }
 
 local point_widget_height = point_widget:getSize().h
@@ -269,28 +269,19 @@ function VocabItemWidget:initItemWidget()
 
         local forgot_button = Button:new{
             text = _("Forgot"),
-            callback = nil,
-            background = Blitbuffer.COLOR_DARK_GRAY,
-            radius = 5,
             width = review_button_width,
-            bordersize = 0,
             callback = function() 
                 self:onForgot()
             end,
         }
-        forgot_button.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
     
         local got_it_button = Button:new{
             text = _("Got it"),
             callback = function() 
                 self:onGotIt()
             end,
-            background = Blitbuffer.COLOR_DARK_GRAY,
-            radius = 5,
             width = review_button_width,
-            bordersize = 0
         }
-        got_it_button.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
 
         right_widget = HorizontalGroup:new{
             dimen = Geom:new{ w = 0, h = self.height },
@@ -371,7 +362,7 @@ function VocabItemWidget:initItemWidget()
                             text = self .item.word,
                             face = word_face,
                             bold = true,
-                            fgcolor = self .item.is_dim and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
+                            fgcolor = self .item.is_dim and dim_color or Blitbuffer.COLOR_BLACK
                         }
                     },
                     LeftContainer:new{
@@ -648,21 +639,19 @@ function VocabularyBuilderWidget:init()
         close_callback = function() self:onClose() end,
         show_parent = self,
     }
-    -- self.title_bar.title_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
+
     -- setup main content
     self.item_margin = math.floor(self.item_height / 8)
     local line_height = self.item_height + self.item_margin
     local content_height = self.dimen.h - self.title_bar:getHeight() - vertical_footer:getSize().h - padding
     self.items_per_page = math.floor(content_height / line_height)
+    self.item_margin = self.item_margin + math.floor((content_height - self.items_per_page * line_height ) / self.items_per_page)
+    line_height = self.item_height + self.item_margin
     self.pages = math.ceil(#self.item_table / self.items_per_page)
     self.main_content = VerticalGroup:new{}
 
     self:_populateItems()
 
-    local padding_below_title = 0
-    if self.pages > 1 then -- center content vertically
-        padding_below_title = (content_height - self.items_per_page * line_height) / 2
-    end
     local frame_content = FrameContainer:new{
         height = self.dimen.h,
         padding = 0,
@@ -670,7 +659,6 @@ function VocabularyBuilderWidget:init()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             self.title_bar,
-            VerticalSpan:new{ width = padding_below_title },
             self.main_content,
         },
     }
@@ -725,7 +713,7 @@ function VocabularyBuilderWidget:moveItem(diff)
         self.marked = move_to
         self:_populateItems()
     end
-end
+end 
 
 function VocabularyBuilderWidget:removeAt(index)
     if index > #self.item_table then return end
