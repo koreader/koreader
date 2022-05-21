@@ -18,7 +18,7 @@ require("setupkopaths")
 
 -- Apply startup user patches and execute startup user scripts
 local userpatch = require("userpatch")
-userpatch.applyPatches(userpatch.early_afterupdate)
+userpatch.applyPatches(userpatch.early_once)
 userpatch.applyPatches(userpatch.early)
 
 -- Load default settings

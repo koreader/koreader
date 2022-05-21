@@ -8,12 +8,12 @@ local isAndroid, android = pcall(require, "android")
 
 local userpatch =
     {   -- priorities for user patches,
-        early_afterupdate = "0", -- to be started early on startup (once after an update)
-        early = "1",             -- to be started early on startup (always, but after an `early_afterupdate`)
-        late = "2",              -- to be started after UIManager is ready (always)
-                                 -- 3-7 are reserved for later use
-        before_exit = "8",       -- to be started a bit before exit before settings are saved (always)
-        on_exit = "9",           -- to be started right before exit (always)
+        early_once = "0",  -- to be started early on startup (once after an update)
+        early = "1",       -- to be started early on startup (always, but after an `early_afterupdate`)
+        late = "2",        -- to be started after UIManager is ready (always)
+                           -- 3-7 are reserved for later use
+        before_exit = "8", -- to be started a bit before exit before settings are saved (always)
+        on_exit = "9",     -- to be started right before exit (always)
 
         applyPatches = function(priority) end, -- to be overwritten, if the device allows it.
     }
@@ -115,20 +115,20 @@ local function runLiveUpdateTasks(dir, priority)
 end
 
 --- This function executes sripts and applies lua patches from `/koreader/userscripts`
----- @string priority ... one of "early\_afterupdate", "early", "late", "before\_exit", "on\_exit"
+---- @string priority ... one of "early\_once", "early", "late", "before\_exit", "on\_exit"
 function userpatch.applyPatches(priority)
     -- patches and scripts get applied at every start of koreader, no migration here
     local patch_dir = home_dir .. "/koreader/userpatches"
 
     if priority == userpatch.early then
-        -- Move an existing `koreader/patch.lua` to `koreader/userpatches/0000-patch.lua` (->will be excuted in early_afterupdate)
+        -- Move an existing `koreader/patch.lua` to `koreader/userpatches/1000-patch.lua` (->will be excuted in early_once)
         if lfs.attributes(home_dir .. "/koreader/patch.lua", "mode") == "file" then
             if lfs.attributes(patch_dir, "mode") == nil then
                 if not lfs.mkdir(patch_dir, "mode") then
                     logger.err("Live update error creating directory", patch_dir)
                 end
             end
-            os.rename(home_dir .. "/koreader/patch.lua", patch_dir .. "/0000-patch.lua")
+            os.rename(home_dir .. "/koreader/patch.lua", patch_dir .. "/" .. userpatch.early .. "000-patch.lua")
         end
     end
 
