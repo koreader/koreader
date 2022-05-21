@@ -552,14 +552,33 @@ function UIManager:schedule(sched_time, action, ...)
             end
         until e < s
     end
-    local caller = debug.getinfo(5, "S")
+
+    local level
+    -- Find the actual public cheduling function in the stack (hairier in debug mode because of how debug guards are implemented).
+    for l = 10, 2, -1 do
+        local info = debug.getinfo(l, "n")
+        if info then
+            if info.name == "scheduleIn" or info.name == "nextTick" or info.name == "tickAfterNext" then
+                level = l
+                break
+            end
+        end
+    end
+
+    local caller
+    if level then
+        local info = debug.getinfo(level, "Sl")
+        caller = string.format("%s:%d:%d", info.source, info.linedefined, info.currentline)
+    else
+        caller = "N/A"
+    end
+
     table.insert(self._task_queue, p, {
         time = sched_time,
         action = action,
         argc = select('#', ...),
         args = {...},
-        source = caller.source,
-        line = caller.linedefined,
+        source = caller,
     })
     self._task_queue_dirty = true
     logger.dbg("UIManager:schedule: Inserted task", tostring(self._task_queue[p]), "at index", p)
