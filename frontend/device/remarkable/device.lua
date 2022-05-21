@@ -95,9 +95,7 @@ function Remarkable2:adjustTouchEvent(ev, by)
     -- Inject CLOCK_MONOTONIC timestamps at the end of every input frame in order to have consistent gesture detection across input devices.
     -- c.f., #7536
     if ev.type == C.EV_SYN and ev.code == C.SYN_REPORT then
-        now = time.now()
-        sec = math.floor(time.to_s(now))
-        usec = now - time.s(sec)
+        local sec, usec = time.split_s_us(time.now())
         ev.time = {
             sec = sec,
             usec = usec
