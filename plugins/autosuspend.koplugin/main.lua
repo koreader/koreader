@@ -33,11 +33,11 @@ local AutoSuspend = WidgetContainer:new{
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
     last_action_time = 0,
-    is_standby_scheduled = false,
+    is_standby_scheduled = nil,
     task = nil,
     standby_task = nil,
     leave_standby_task = nil,
-    going_to_suspend = false,
+    going_to_suspend = nil,
 }
 
 function AutoSuspend:_enabledStandby()
@@ -134,6 +134,10 @@ function AutoSuspend:init()
     self.auto_standby_timeout_seconds = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1)
 
     if Device:isPocketBook() and not Device:canSuspend() then return end
+
+    -- We only want those to exist as *instance* members
+    self.is_standby_scheduled = false
+    self.going_to_suspend = false
 
     UIManager.event_hook:registerWidget("InputEvent", self)
     -- We need an instance-specific function reference to schedule, because in some rare cases,
