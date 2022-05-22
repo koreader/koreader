@@ -581,8 +581,10 @@ function UIManager:schedule(sched_time, action, ...)
         source = caller,
     })
     self._task_queue_dirty = true
-    logger.dbg("UIManager:schedule: Inserted task", tostring(self._task_queue[p]), "at index", p)
-    logger.dbg(self._task_queue[p])
+    logger.dbg("UIManager:schedule: Inserted task", tostring(self._task_queue[p]), "at index", p, "of", #self._task_queue)
+    logger.dbg("source =", self._task_queue[p].source or "nil")
+    logger.dbg("action =", self._task_queue[p].action or "nil")
+    logger.dbg("time =", self._task_queue[p].time or "nil")
 end
 dbg:guard(UIManager, 'schedule',
     function(self, sched_time, action)
@@ -1177,6 +1179,7 @@ end
 
 function UIManager:_checkTasks()
     self._now = time.now()
+    logger.dbg("UIManager:_checkTasks @", self._now)
     local wait_until = nil
 
     -- Tasks due for execution might themselves schedule more tasks (that might also be immediately due for execution ;)).
@@ -1185,7 +1188,9 @@ function UIManager:_checkTasks()
     while self._task_queue[1] do
         local task_time = self._task_queue[1].time
         logger.dbg("UIManager:_checkTasks checking task", tostring(self._task_queue[1]))
-        logger.dbg(self._task_queue[1])
+        logger.dbg("source =", self._task_queue[1].source or "nil")
+        logger.dbg("action =", self._task_queue[1].action or "nil")
+        logger.dbg("time =", self._task_queue[1].time or "nil")
         if task_time <= self._now then
             logger.dbg("It's due, execute it")
             -- Pop the upcoming task, as it is due for execution...
