@@ -185,7 +185,6 @@ function AutoSuspend:onCloseWidget()
 
     self:_unschedule_standby()
     self.standby_task = nil
-    self.wrapped_leave_standby_task = nil
     self.leave_standby_task = nil
 end
 
@@ -208,6 +207,7 @@ function AutoSuspend:_unschedule_standby()
     if self.wrapped_leave_standby_task then
         logger.dbg("AutoSuspend: unschedule leave standby task wrapper")
         UIManager:unschedule(self.wrapped_leave_standby_task)
+        self.wrapped_leave_standby_task = nil
     end
 
     if self.leave_standby_task then
