@@ -1,6 +1,6 @@
 local md = require("template/md")
-local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
+local UIManager = require("ui/uimanager")
 local T = util.template
 local _ = require("gettext")
 
@@ -94,7 +94,7 @@ function MarkdownExporter:getMenuTable()
                 callback = function() self:toggleEnabled() end,
             },
             {
-                text = _("Format Highlights based on style"),
+                text = _("Format highlights based on style"),
                 checked_func = function() return self.settings.highlight_formatting end,
                 callback = function() self.settings.highlight_formatting = not self.settings.highlight_formatting end,
             },

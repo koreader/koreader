@@ -287,10 +287,10 @@ function JoplinExporter:getMenuTable()
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new {
-                        text = T(_([[You can configure markdown formatting by navigating to:
-        Export Highlights > Choose Formats and Services > Markdown
+                        text = T(_([[Markdown formatting can be configured in:
+Export highlights > Choose formats and services > Markdown
 
-For joplin setup instructions please visit https://github.com/koreader/koreader/wiki/Highlight-export#joplin.]]))
+For Joplin setup instructions, see https://github.com/koreader/koreader/wiki/Highlight-export#joplin.]]))
                     })
                 end
             }
@@ -306,7 +306,7 @@ function JoplinExporter:export(t)
         return false
     end
     local existing_notebook = self:notebookExist(self.notebook_name)
-    if not existing_notebook then
+    if not self:notebookExist(self.notebook_name) then
         local notebook = self:createNotebook(self.notebook_name)
         if notebook then
             logger.info("Joplin: created new notebook",
