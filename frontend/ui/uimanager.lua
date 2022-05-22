@@ -661,6 +661,7 @@ UIManager:scheduleIn(10.5, self.anonymousFunction)
 UIManager:unschedule(self.anonymousFunction)
 ]]
 function UIManager:unschedule(action)
+    logger.dbg("UIManager:unschedule:", tostring(action))
     local removed = false
     for i = #self._task_queue, 1, -1 do
         if self._task_queue[i].action == action then
@@ -668,6 +669,7 @@ function UIManager:unschedule(action)
             removed = true
         end
     end
+    logger.dbg(removed)
     return removed
 end
 dbg:guard(UIManager, 'unschedule',
