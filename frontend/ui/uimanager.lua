@@ -630,6 +630,9 @@ Useful to run UI callbacks ASAP without skipping repaints.
 
 @func action reference to the task to be scheduled (may be anonymous)
 @param ... optional arguments passed to action
+
+@return A reference to the initial nextTick wrapper function,
+necessary if the caller wants to unschedule action *before* it actually gets inserted in the task queue by nextTick.
 @see nextTick
 ]]
 function UIManager:tickAfterNext(action, ...)
@@ -637,7 +640,14 @@ function UIManager:tickAfterNext(action, ...)
     -- c.f., http://lua-users.org/wiki/VarargTheSecondClassCitizen
     local n = select('#', ...)
     local va = {...}
-    return self:nextTick(function() self:nextTick(action, unpack(va, 1, n)) end)
+    -- We need to keep a reference to this anonymous function, as it is *NOT* quite `action`,
+    -- and the caller might want to unschedule it early...
+    local delayed_action = function()
+        self:nextTick(action, unpack(va, 1, n))
+    end
+    self:nextTick(delayed_action)
+
+    return delayed_action
 end
 --[[
 -- NOTE: This appears to work *nearly* just as well, but does sometimes go too fast (might depend on kernel HZ & NO_HZ settings?)

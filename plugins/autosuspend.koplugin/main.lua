@@ -37,6 +37,7 @@ local AutoSuspend = WidgetContainer:new{
     task = nil,
     standby_task = nil,
     leave_standby_task = nil,
+    wrapped_leave_standby_task = nil,
     going_to_suspend = nil,
 }
 
@@ -184,6 +185,7 @@ function AutoSuspend:onCloseWidget()
 
     self:_unschedule_standby()
     self.standby_task = nil
+    self.wrapped_leave_standby_task = nil
     self.leave_standby_task = nil
 end
 
@@ -203,7 +205,13 @@ function AutoSuspend:_unschedule_standby()
     end
 
     -- Make sure we don't trigger a ghost LeaveStandby event...
+    if self.wrapped_leave_standby_task then
+        logger.dbg("AutoSuspend: unschedule leave standby task wrapper")
+        UIManager:unschedule(self.wrapped_leave_standby_task)
+    end
+
     if self.leave_standby_task then
+        logger.dbg("AutoSuspend: unschedule leave standby task")
         UIManager:unschedule(self.leave_standby_task)
     end
 end
@@ -330,6 +338,8 @@ end
 
 function AutoSuspend:onLeaveStandby()
     logger.dbg("AutoSuspend: onLeaveStandby")
+    -- If the Event got through, tickAfterNext did its thing, clear the reference to the initial nextTick wrapper...
+    self.wrapped_leave_standby_task = nil
     -- Unschedule suspend and shutdown, as the realtime clock has ticked
     self:_unschedule()
     -- Reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
@@ -594,7 +604,7 @@ function AutoSuspend:AllowStandbyHandler()
         -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
         -- (This ensures we'll use an up to date last_action_time, and that it only ever gets updated from *user* input).
         -- NOTE: UIManager consumes scheduled tasks before input events, which is why we can't use nextTick.
-        UIManager:tickAfterNext(self.leave_standby_task)
+        self.wrapped_leave_standby_task = UIManager:tickAfterNext(self.leave_standby_task)
     end
 end
 
