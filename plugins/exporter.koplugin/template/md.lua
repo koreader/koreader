@@ -15,7 +15,7 @@ local formatters = {
     },
     bold_italic = {
         formatter = "**_%s_**",
-        label = _("Bold Italic")
+        label = _("Bold italic")
     },
     underline_markdownit = {
         formatter = "++%s++",

@@ -1,7 +1,6 @@
-
 local md = require("template/md")
-local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
+local UIManager = require("ui/uimanager")
 local T = util.template
 local _ = require("gettext")
 
@@ -28,7 +27,7 @@ local MarkdownExporter = require("base"):new {
 local formatter_buttons = {
     {_("None"), "none"},
     {_("Bold"), "bold"},
-    {_("Bold Italic"), "bold_italic"},
+    {_("Bold italic"), "bold_italic"},
     {_("Italic"), "italic"},
     {_("Strikethrough"), "strikethrough"},
     {_("Underline (Markdownit style, with ++)"), "underline_markdownit"},
@@ -75,7 +74,7 @@ function MarkdownExporter:getMenuTable()
                 callback = function() self:toggleEnabled() end,
             },
             {
-                text = _("Format Highlights based on style"),
+                text = _("Format highlights based on style"),
                 checked_func = function() return self.settings.highlight_formatting end,
                 callback = function() self.settings.highlight_formatting = not self.settings.highlight_formatting end,
             },
