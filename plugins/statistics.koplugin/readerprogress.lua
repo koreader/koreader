@@ -394,7 +394,7 @@ function ReaderProgress:genSummaryWeek(width)
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextBoxWidget:new{
                 alignment = "center",
-                text = _("Total\nPages"),
+                text = _("Total\npages"),
                 face = self.small_font_face,
                 width = tile_width * 0.95,
             },
@@ -403,7 +403,7 @@ function ReaderProgress:genSummaryWeek(width)
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextBoxWidget:new{
                 alignment = "center",
-                text = _("Total\nTime"),
+                text = _("Total\ntime"),
                 face = self.small_font_face,
                 width = tile_width * 0.95,
             },
@@ -412,7 +412,7 @@ function ReaderProgress:genSummaryWeek(width)
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextBoxWidget:new{
                 alignment = "center",
-                text = _("Average\nPages"),
+                text = _("Average\npages"),
                 face = self.small_font_face,
                 width = tile_width * 0.95,
             }
@@ -421,7 +421,7 @@ function ReaderProgress:genSummaryWeek(width)
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextBoxWidget:new{
                 alignment = "center",
-                text = _("Average\nTime"),
+                text = _("Average\ntime"),
                 face = self.small_font_face,
                 width = tile_width * 0.95,
             }
