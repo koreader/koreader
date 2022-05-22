@@ -9,7 +9,7 @@ local isAndroid, android = pcall(require, "android")
 local userpatch =
     {   -- priorities for user patches,
         early_once = "0",  -- to be started early on startup (once after an update)
-        early = "1",       -- to be started early on startup (always, but after an `early_afterupdate`)
+        early = "1",       -- to be started early on startup (always, but after an `early_once`)
         late = "2",        -- to be started after UIManager is ready (always)
                            -- 3-7 are reserved for later use
         before_exit = "8", -- to be started a bit before exit before settings are saved (always)
@@ -63,16 +63,21 @@ end
 -- string directory ... to scan through
 -- string priority ... only files starting with `priority` followed by digits and a '-' will be processed.
 -- string parent ... parent directory
-local function runLiveUpdateTasks(dir, priority)
+local function runLiveUpdateTasks(dir, priority, update_once_pending, update_once_marker)
     local patches = {}
     if lfs.attributes(dir, "mode") ~= "directory" then
         return
     end
+
     for entry in lfs.dir(dir) do
         local mode = lfs.attributes(dir .. "/" .. entry, "mode")
         if entry and mode == "file" and entry:match("^" .. priority .. "%d*%-") then
             table.insert(patches, entry)
         end
+    end
+
+    if #patches == 0 then
+        return -- nothing to do
     end
 
     local function addLeadingZeroes(d)
@@ -112,6 +117,12 @@ local function runLiveUpdateTasks(dir, priority)
             end
         end
     end
+
+    -- Only delete update once marker if `early_once` updates have been applied.
+    if priority == userpatch.early_once and update_once_pending then
+        os.remove(update_once_marker) -- Prevent another execution on a further starts.
+    end
+
 end
 
 --- This function executes sripts and applies lua patches from `/koreader/userscripts`
@@ -132,15 +143,11 @@ function userpatch.applyPatches(priority)
         end
     end
 
-    local first_start_after_update
-    local afterupdate_marker = package_dir .. "/koreader/afterupdate.marker"
-    if lfs.attributes(afterupdate_marker, "mode") == "file" then
-        first_start_after_update = true
-        os.remove(afterupdate_marker) -- Prevent another execution on a further starts.
-    end
+    local update_once_marker = package_dir .. "/koreader/update_once.marker"
+    local update_once_pending = lfs.attributes(update_once_marker, "mode") == "file"
 
-    if priority >= userpatch.early or first_start_after_update then
-        runLiveUpdateTasks(patch_dir, priority)
+    if priority >= userpatch.early or update_once_pending then
+        runLiveUpdateTasks(patch_dir, priority, update_once_pending, update_once_marker)
     end
 end
 

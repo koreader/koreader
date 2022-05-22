@@ -104,8 +104,8 @@ ifdef ANDROID
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
 endif
-	@echo "[*] Install afterupdate marker"
-	@echo "# This file indicates, that KOReader has not been started after an update." > $(INSTALL_DIR)/koreader/afterupdate.marker
+	@echo "[*] Install update once marker"
+	@echo "# This file indicates, that onetime update once patches have not been applied." > $(INSTALL_DIR)/koreader/update_once.marker
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
