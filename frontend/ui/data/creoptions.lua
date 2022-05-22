@@ -408,23 +408,33 @@ Note that your selected font size is not affected by this setting.]]),
             {
                 name = "font_size",
                 alt_name_text = _("Font Size"),
-                item_text = tableOfNumbersToTableOfStrings(DCREREADER_CONFIG_FONT_SIZES),
                 item_align_center = 1.0,
                 spacing = 15,
+                item_use_alt_func = function() return G_reader_settings:isTrue("current_font_scale_in_pt") end,
+                item_text = tableOfNumbersToTableOfStrings(DCREREADER_CONFIG_FONT_SIZES),
+                item_text_alt = tableOfNumbersToTableOfStrings(DCREREADER_CONFIG_FONT_SIZES_PT),
                 item_font_size = DCREREADER_CONFIG_FONT_SIZES,
+                item_font_size_alt = DCREREADER_CONFIG_FONT_SIZES_PT,
+                item_font_scale_func = function()
+                    return G_reader_settings:isTrue("current_font_scale_in_pt") and Screen.scaleByPt or Screen.scaleBySize
+                end,
                 values = DCREREADER_CONFIG_FONT_SIZES,
-                default_value = DCREREADER_CONFIG_DEFAULT_FONT_SIZE,
+                values_alt = DCREREADER_CONFIG_FONT_SIZES_PT,
                 args = DCREREADER_CONFIG_FONT_SIZES,
+                args_alt = DCREREADER_CONFIG_FONT_SIZES_PT,
+                default_value = DCREREADER_CONFIG_DEFAULT_FONT_SIZE,
                 event = "SetFontSize",
             },
             {
                 name = "font_fine_tune",
-                name_text = _("Font Size"),
+                name_text_func = function()
+                    return G_reader_settings:isTrue("current_font_scale_in_pt") and _("Font Size: pt") or _("Font Size")
+                end,
                 toggle = Device:isTouchDevice() and {_("decrease"), _("increase")} or nil,
                 item_text = not Device:isTouchDevice() and {_("decrease"), _("increase")} or nil,
                 more_options = true,
                 more_options_param = {
-                    value_min = 12,
+                    value_min = 4,
                     value_max = 255,
                     value_step = 0.5,
                     precision = "%.1f",

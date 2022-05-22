@@ -120,6 +120,7 @@ DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE = "eng"          -- that have filenames
 -- crereader font sizes
 -- feel free to add more entries in this list
 DCREREADER_CONFIG_FONT_SIZES = {12, 16, 20, 22, 24, 26, 28, 30, 34, 38, 44}  -- option range from 12 to 44
+DCREREADER_CONFIG_FONT_SIZES_PT = {4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 22}  -- alternate option range for sizes in pt
 DCREREADER_CONFIG_DEFAULT_FONT_SIZE = 22    -- default font size
 
 -- crereader margin sizes

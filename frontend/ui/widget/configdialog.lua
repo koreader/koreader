@@ -259,12 +259,23 @@ function ConfigOption:init()
             show = self.options[c].show_func(self.config.configurable, self.config.document)
         end
         if show ~= false and show_default then
+            local values = self.options[c].values
+            local args = self.options[c].args
             local name_align = self.options[c].name_align_right and self.options[c].name_align_right or default_name_align_right
             local item_align = self.options[c].item_align_center and self.options[c].item_align_center or default_item_align_center
+            local item_text = self.options[c].item_text and self.options[c].item_text or default_item_text
             local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
             local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
             local item_font_face = self.options[c].item_font_face and self.options[c].item_font_face or "cfont"
             local item_font_size = self.options[c].item_font_size and self.options[c].item_font_size or default_item_font_size
+            local item_use_alt_func = self.options[c].item_use_alt_func
+            if item_use_alt_func and item_use_alt_func() then
+                item_text = self.options[c].item_text_alt or item_text
+                item_font_size = self.options[c].item_font_size_alt or font_size
+                values = self.options[c].values_alt or values
+                args = self.options[c].args_alt or args
+            end
+            local item_font_scale_func = self.options[c].item_font_scale_func
             local option_height = Screen:scaleBySize(self.options[c].height and self.options[c].height or
                     default_option_height + (self.options[c].height or 30) * ((self.options[c].row_count or 1) -1))
             local item_spacing_width = Screen:scaleBySize(self.options[c].spacing and self.options[c].spacing or default_items_spacing)
@@ -332,7 +343,7 @@ function ConfigOption:init()
             local option_items_group = HorizontalGroup:new{}
             local option_items_fixed = false
             local option_items = {}
-            if type(self.options[c].item_font_size) == "table" then
+            if type(item_font_size) == "table" then
                 option_items_group.align = "bottom"
                 option_items_fixed = true
             end
@@ -351,19 +362,19 @@ function ConfigOption:init()
                 end
             end
             if self.options[c].name then
-                if self.options[c].values then
+                if values then
                     -- check if current value is stored in configurable or calculated in runtime
                     local val = self.options[c].current_func and self.options[c].current_func()
                                 or self.config.configurable[self.options[c].name]
                     local min_diff
                     if type(val) == "table" then
-                        min_diff = value_diff(val[1], self.options[c].values[1][1])
+                        min_diff = value_diff(val[1], values[1][1])
                     else
-                        min_diff = value_diff(val, self.options[c].values[1])
+                        min_diff = value_diff(val, values[1])
                     end
 
                     local diff
-                    for index, val_ in pairs(self.options[c].values) do
+                    for index, val_ in pairs(values) do
                         if type(val) == "table" then
                             diff = value_diff(val[1], val_[1])
                         else
@@ -381,13 +392,13 @@ function ConfigOption:init()
                     -- If we want to have the ⋮ toggle selected when the value
                     -- is different from the predefined values:
                     -- if diff ~= 0 and self.options[c].alternate ~= false and self.options[c].more_options_param then
-                    --     current_item = #self.options[c].values + 1
+                    --     current_item = #values + 1
                     -- end
-                elseif self.options[c].args then
+                elseif args then
                     -- check if current arg is stored in configurable or calculated in runtime
                     local arg = self.options[c].current_func and self.options[c].current_func()
                                 or self.config.configurable[self.options[c].name]
-                    for idx, arg_ in pairs(self.options[c].args) do
+                    for idx, arg_ in pairs(args) do
                         if arg_ == arg then
                             current_item = idx
                             break
@@ -396,17 +407,17 @@ function ConfigOption:init()
                 end
                 local default_option_name = self.config.config_options.prefix.."_"..self.options[c].name
                 local default_value = G_reader_settings:readSetting(default_option_name)
-                if default_value and self.options[c].values then
+                if default_value and values then
                     local val = default_value
                     local min_diff
                     if type(val) == "table" then
-                        min_diff = value_diff(val[1], self.options[c].values[1][1])
+                        min_diff = value_diff(val[1], values[1][1])
                     else
-                        min_diff = value_diff(val, self.options[c].values[1])
+                        min_diff = value_diff(val, values[1])
                     end
 
                     local diff
-                    for index, val_ in pairs(self.options[c].values) do
+                    for index, val_ in pairs(values) do
                         if type(val) == "table" then
                             diff = value_diff(val[1], val_[1])
                         else
@@ -427,16 +438,18 @@ function ConfigOption:init()
             -- Deal with the various kind of config widgets
 
             -- Plain letters (ex: font sizes)
-            if self.options[c].item_text then
-                local items_count = #self.options[c].item_text
+            if item_text then
+                local items_count = #item_text
                 local items_width = 0
-                for d = 1, #self.options[c].item_text do
+                for d = 1, items_count do
                     local item = OptionTextItem:new{
                         TextWidget:new{
-                            text = self.options[c].item_text[d],
+                            text = item_text[d],
                             face = Font:getFace(item_font_face,
-                            option_items_fixed and item_font_size[d]
-                            or item_font_size),
+                            option_items_fixed and item_font_scale_func()(Screen,item_font_size[d])
+                            or item_font_size,
+                            nil,
+                            true), -- we have scaled the font size by the item_font_scale_func
                         }
                     }
                     items_width = items_width + item:getSize().w
@@ -448,23 +461,25 @@ function ConfigOption:init()
                 end
                 local horizontal_half_padding = width / 2
                 local max_item_text_width = (option_widget_width - items_count * width) / items_count
-                for d = 1, #self.options[c].item_text do
+                for d = 1, #item_text do
                     local option_item
                     if option_items_fixed then
                         option_item = OptionTextItem:new{
                             FixedTextWidget:new{
-                                text = self.options[c].item_text[d],
-                                face = Font:getFace(item_font_face, item_font_size[d]),
+                                text = item_text[d],
+                                face = Font:getFace(item_font_face, item_font_scale_func()(Screen, item_font_size[d]),
+                                    nil,
+                                    true), -- we have scaled the font size by the item_font_scale_func
                                 fgcolor = enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
                             },
                             underline_padding = padding_button,
                             padding_left = d > 1 and horizontal_half_padding,
-                            padding_right = d < #self.options[c].item_text and horizontal_half_padding,
+                            padding_right = d < #item_text and horizontal_half_padding,
                             color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
                     else
-                        local text = self.options[c].item_text[d]
+                        local text = item_text[d]
                         local face = Font:getFace(item_font_face, item_font_size)
                         option_item = OptionTextItem:new{
                             TextWidget:new{
@@ -475,7 +490,7 @@ function ConfigOption:init()
                             },
                             underline_padding = -padding_button,
                             padding_left = d > 1 and horizontal_half_padding,
-                            padding_right = d < #self.options[c].item_text and horizontal_half_padding,
+                            padding_right = d < #item_text and horizontal_half_padding,
                             color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
                             enabled = enabled,
                         }
@@ -484,9 +499,9 @@ function ConfigOption:init()
                     option_item.items = option_items
                     option_item.name = self.options[c].name
                     option_item.name_text = name_text or self.options[c].alt_name_text
-                    option_item.item_text = self.options[c].item_text
-                    option_item.values = self.options[c].values
-                    option_item.args = self.options[c].args
+                    option_item.item_text = item_text
+                    option_item.values = values
+                    option_item.args = args
                     option_item.event = self.options[c].event
                     option_item.current_item = d
                     option_item.hide_on_apply = self.options[c].hide_on_apply
@@ -529,9 +544,9 @@ function ConfigOption:init()
                     option_item.items = option_items
                     option_item.name = self.options[c].name
                     option_item.name_text = name_text or self.options[c].alt_name_text
-                    option_item.values = self.options[c].values
+                    option_item.values = values
                     option_item.labels = self.options[c].labels
-                    option_item.args = self.options[c].args
+                    option_item.args = args
                     option_item.event = self.options[c].event
                     option_item.current_item = d
                     option_item.hide_on_apply = self.options[c].hide_on_apply
@@ -550,7 +565,7 @@ function ConfigOption:init()
                                                          or 30 * row_count)
                 if self.options[c].more_options then
                     table.insert(self.options[c].toggle, "⋮")
-                    table.insert(self.options[c].args, "⋮")
+                    table.insert(args, "⋮")
                     self.options[c].more_options = false
                 end
                 local switch = ToggleSwitch:new{
@@ -562,8 +577,8 @@ function ConfigOption:init()
                     name_text = name_text,
                     toggle = self.options[c].toggle,
                     alternate = self.options[c].alternate,
-                    values = self.options[c].values,
-                    args = self.options[c].args,
+                    values = values,
+                    args = args,
                     event = self.options[c].event,
                     hide_on_apply = self.options[c].hide_on_apply,
                     config = self.config,
@@ -575,7 +590,7 @@ function ConfigOption:init()
                                 self.options[c].more_options_param.show_true_value_func = self.options[c].show_true_value_func
                             end
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
-                            self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
+                            self.config:onConfigMoreChoose(values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                             UIManager:tickAfterNext(function()
                                 Notification:resetNotifySource()
@@ -602,23 +617,23 @@ function ConfigOption:init()
                     font_face = item_font_face,
                     font_size = item_font_size,
                     name = self.options[c].name,
-                    num_buttons = #self.options[c].values,
+                    num_buttons = #values,
                     position = self.options[c].default_pos,
                     callback = function(arg)
 
                         if arg == "-" or arg == "+" then
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_FINE)
-                            self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, arg, self.options[c].hide_on_apply,
+                            self.config:onConfigFineTuneChoose(values, self.options[c].name,
+                                self.options[c].event, args, arg, self.options[c].hide_on_apply,
                                 self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
-                            self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
+                            self.config:onConfigMoreChoose(values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                         else
                                 Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
-                            self.config:onConfigChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, arg, self.options[c].hide_on_apply)
+                            self.config:onConfigChoose(values, self.options[c].name,
+                                self.options[c].event, args, arg, self.options[c].hide_on_apply)
                         end
 
                         UIManager:setDirty(self.config, function()
@@ -630,11 +645,11 @@ function ConfigOption:init()
                     end,
                     hold_callback = function(arg)
                         if arg == "-" or arg == "+" then
-                            self.config:onMakeFineTuneDefault(self.options[c].name, name_text, self.options[c].values,
-                                self.options[c].labels or self.options[c].args, arg)
+                            self.config:onMakeFineTuneDefault(self.options[c].name, name_text, values,
+                                self.options[c].labels or args, arg)
                         elseif arg ~= "⋮" then
-                            self.config:onMakeDefault(self.options[c].name, name_text, self.options[c].values,
-                                self.options[c].labels or self.options[c].args, arg)
+                            self.config:onMakeDefault(self.options[c].name, name_text, values,
+                                self.options[c].labels or args, arg)
                         end
                     end,
                     show_parent = self.config,

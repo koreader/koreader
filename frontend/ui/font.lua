@@ -232,15 +232,19 @@ end
 -- @string font
 -- @int size optional size
 -- @int faceindex optional index of font face in font file
+-- @bool don't scale size
 -- @treturn table @{FontFaceObj}
-function Font:getFace(font, size, faceindex)
+function Font:getFace(font, size, faceindex, dont_scale)
     -- default to content font
     if not font then font = self.cfont end
 
     if not size then size = self.sizemap[font] end
     -- original size before scaling by screen DPI
     local orig_size = size
-    size = Screen:scaleBySize(size)
+
+    if not dont_scale then
+        size = Screen:scaleBySize(size)
+    end
 
     local realname = self.fontmap[font]
     if not realname then

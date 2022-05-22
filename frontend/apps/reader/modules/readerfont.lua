@@ -118,7 +118,20 @@ function ReaderFont:onReadSettings(config)
                   or G_reader_settings:readSetting("copt_font_size")
                   or DCREREADER_CONFIG_DEFAULT_FONT_SIZE
                   or 22
-    self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
+
+    if self.ui.doc_settings:isTrue("font_scale_in_pt") then
+        G_reader_settings:makeTrue("current_font_scale_in_pt")
+        self.ui.document:setFontSize(Screen:scaleByPt(self.font_size))
+    elseif self.ui.doc_settings:isFalse("font_scale_in_pt") then
+        G_reader_settings:makeFalse("current_font_scale_in_pt")
+        self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
+    elseif G_reader_settings:readSetting("font_scale_in_pt") then -- if no document setting use default
+        G_reader_settings:makeTrue("current_font_scale_in_pt")
+        self:onSetFontScale()
+    else
+        G_reader_settings:makeFalse("current_font_scale_in_pt")
+        self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
+    end
 
     self.font_base_weight = config:readSetting("font_base_weight")
                       or G_reader_settings:readSetting("copt_font_base_weight")
@@ -202,14 +215,27 @@ function ReaderFont:onChangeSize(delta)
     return true
 end
 
+function ReaderFont:onSetFontScale()
+    local scale = G_reader_settings:isTrue("current_font_scale_in_pt") and Screen:scalePt2Size() or Screen:scaleSize2Pt()
+    self.font_size = self.font_size * scale
+    print("xxx new font size", self.font_size)
+    self.ui:handleEvent(Event:new("SetFontSize", self.font_size))
+    return true
+end
+
 function ReaderFont:onSetFontSize(new_size)
     if new_size > 255 then new_size = 255 end
-    if new_size < 12 then new_size = 12 end
+    if new_size < 6 then new_size = 6 end
 
     self.font_size = new_size
-    self.ui.document:setFontSize(Screen:scaleBySize(new_size))
+
+    if G_reader_settings:isTrue("current_font_scale_in_pt") then
+        self.ui.document:setFontSize(Screen:scaleByPt(new_size))
+    else
+        self.ui.document:setFontSize(Screen:scaleBySize(new_size))
+    end
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font size set to: %1."), self.font_size))
+    Notification:notify(T(_("Font size set to: %1."), string.format("%0.1f", self.font_size)))
     return true
 end
 
@@ -281,6 +307,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("word_expansion", self.word_expansion)
     self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
+    -- xxx todo
 end
 
 function ReaderFont:onSetFont(face)
@@ -322,6 +349,32 @@ function ReaderFont:addToMainMenu(menu_items)
             return T(_("Font: %1"), BD.wrap(self.font_face))
         end,
         sub_item_table = self.face_table,
+    }
+    menu_items.change_font_scale = {
+        text_func = function()
+            return G_reader_settings:isTrue("current_font_scale_in_pt") and _("Font size: pt") or _("Font size: KOScale™")
+        end,
+        callback = function(touchmenu_instance)
+            G_reader_settings:toggle("current_font_scale_in_pt")
+            self:onSetFontScale()
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+        end,
+        checked_func = function() return true end,
+        hold_callback = function(touchmenu_instance)
+            UIManager:show(MultiConfirmBox:new{
+                text = T(_("Use %1 for this or all books?"),
+                    G_reader_settings:isTrue("current_font_scale_in_pt") and "(pt)" or _("KOScale™")),
+                choice1_text = _("this"),
+                choice1_callback = function()
+                    self.ui.doc_settings:saveSetting("font_scale_in_pt", G_reader_settings:isTrue("current_font_scale_in_pt"))
+                end,
+                choice2_text = _("all"),
+                choice2_callback = function()
+                    G_reader_settings:saveSetting("font_scale_in_pt", G_reader_settings:isTrue("current_font_scale_in_pt"))
+                end,
+            })
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+        end,
     }
 end
 
