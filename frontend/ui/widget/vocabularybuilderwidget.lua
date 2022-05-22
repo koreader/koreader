@@ -52,6 +52,7 @@ local WordInfoDialog = InputContainer:new{
     padding = Size.padding.large,
     margin = Size.margin.title,
     tap_close_callback = nil,
+    button_callback = nil,
     dismissable = true, -- set to false if any button callback is required
 }
 
@@ -78,6 +79,26 @@ function WordInfoDialog:init()
         end
     end
     local width = getDialogWidth()
+    local remove_button = Button:new{
+        text = _("Remove Word"),
+        bordersize = 0,
+        show_parent = self,
+        width = width,
+        padding = Size.padding.default,
+        callback = function() 
+            self.button_callback()
+            UIManager:close(self)
+        end
+    } 
+    local focus_button = FocusManager:new{
+        [1] = FrameContainer:new {
+            padding = 0,
+            bordersize = 0,
+            height = remove_button:getSize().h,
+            remove_button,
+        },
+        layout = {[1] = remove_button}
+    }
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         MovableContainer:new{
@@ -114,7 +135,6 @@ function WordInfoDialog:init()
                         }
                         
                     },
-                    -- VerticalSpan:new{ width = Size.padding.default },
                     LineWidget:new{
                         background = Blitbuffer.COLOR_GRAY,
                         dimen = Geom:new{
@@ -122,16 +142,17 @@ function WordInfoDialog:init()
                             h = Screen:scaleBySize(2),
                         }
                     },
-                    self.button,
+                    focus_button
                 },
                 background = Blitbuffer.COLOR_WHITE,
                 bordersize = Size.border.window,
                 radius = Size.radius.window,
                 padding = Size.padding.button,
-                padding_bottom = 0, -- no padding below buttontable
+                padding_bottom = 0, 
             }
         }
     }
+
 end
 
 function WordInfoDialog:setTitle(title)
@@ -278,6 +299,7 @@ function VocabItemWidget:initItemWidget()
     
     local right_side_width
     local right_widget
+    self .item.reviewable = self. item.due_time < os.time()
     if self .item.reviewable then
         right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
 
@@ -450,21 +472,11 @@ function VocabItemWidget:showMore()
         book_title = self .item.book_title,
         dates = _("Added on ") .. os.date("%Y-%m-%d", self .item.create_time) .. " | " ..
         _("Review scheduled at ") .. os.date("%Y-%m-%d %H:%M", self .item.due_time),
-        button = Button:new{
-            text = _("Remove Word"),
-            bordersize = 0,
-            show_parent = dialogue,
-            width = getDialogWidth(),
-            padding = Size.padding.default
-        }
+        button_callback = function() 
+            self:remover()
+        end
+
     }
-
-    
-
-    dialogue.button.callback = function() 
-        self:remover()
-        UIManager:close(dialogue)
-    end,
 
     UIManager:show(dialogue)
 end
@@ -515,7 +527,7 @@ local VocabularyBuilderWidget = FocusManager:new{
     height = nil,
     -- index for the first item to show
     show_page = 1,
-    -- table of items to sort
+    -- table of items
     item_table = nil, -- mandatory (array)
     callback = nil,
 }
@@ -745,7 +757,7 @@ end
 -- make sure self.item_margin and self.item_height are set before calling this
 function VocabularyBuilderWidget:_populateItems()
     self.main_content:clear()
-    self.layout = { self.layout[#self.layout] } -- keep footer
+    self.layout = {} 
     local idx_offset = (self.show_page - 1) * self.items_per_page
     local page_last
     if idx_offset + self.items_per_page <= #self.item_table then

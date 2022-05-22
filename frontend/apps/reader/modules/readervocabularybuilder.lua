@@ -140,11 +140,9 @@ function VocabularyBuilder:_select_items(items, start_idx)
     local current_time = os.time()
 
     for i = 1, #results.word do
-        local reviewable = results.due_time[i] < current_time
         item = items[start_idx+i-1]
         if item then
             item.word = results.word[i]
-            item.reviewable = reviewable
             item.review_count = tonumber(results.review_count[i])
             item.book_title = results.book_title[i]
             item.create_time = tonumber( results.create_time[i])
@@ -251,7 +249,8 @@ end
 
 function VocabularyBuilder:reset()
     local conn = SQ3.open(db_location)
-    conn:exec("DELETE * FROM vocabulary;")
+    conn:exec("DELETE FROM vocabulary;")
+    self.count = 0
 end
 
 function VocabularyBuilder:gotItFromDict(word)
