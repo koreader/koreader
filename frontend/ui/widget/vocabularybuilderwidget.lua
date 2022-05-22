@@ -181,9 +181,12 @@ local VocabItemWidget = InputContainer:new{
     width = nil,
     height = nil,
     show_parent = nil,
-    item = nil
+    item = nil,
+    forgot_button = nil,
+    got_it_button = nil,
+    more_button = nil,
+    layout = nil
 }
-
 -- [[
     -- item: {
     --     reviewable: BOOL,
@@ -214,6 +217,7 @@ local subtitle_height = TextWidget:new{text = " ", face = subtitle_face}:getSize
 
 
 function VocabItemWidget:init()
+    self.layout = {}
     self.dimen = Geom:new{w = self.width, h = self.height}
     self.ges_events.Tap = {
         GestureRange:new{
@@ -235,19 +239,30 @@ function VocabItemWidget:init()
 end
 
 function VocabItemWidget:initItemWidget()
+    for i = 1, #self.layout do self.layout[i] = nil end
 
-    local more_button
+    local word_widget = Button:new{
+        text = self .item.word,
+        bordersize = 0,
+        callback = function() self:onTap() end
+    }
+    if self .item.is_dim then
+        word_widget.label_widget.fgcolor = dim_color
+    end
+
+    table.insert(self.layout, word_widget)
+
     if self .item.review_count < 5 then
-        more_button = Button:new{
+        self.more_button = Button:new{
             text = "⋮",
             padding = Size.padding.button,
             callback = function() self:showMore() end,
             width = ellipsis_button_width,
-            bordersize = 0
+            bordersize = 0,
+            show_parent = self
         } 
-        -- more_button.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
     else 
-        more_button = Button:new{
+        self.more_button = Button:new{
             icon = "exit",
             icon_width = star_width,
             icon_height = star_width,
@@ -256,9 +271,8 @@ function VocabItemWidget:initItemWidget()
             padding = (ellipsis_button_width - star_width)/2,
             callback = function() 
                 self:remover()
-            end
+            end,
         }
-        -- more_button.label_widget.alpha = true
     end
     
     
@@ -267,30 +281,39 @@ function VocabItemWidget:initItemWidget()
     if self .item.reviewable then
         right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
 
-        local forgot_button = Button:new{
+        self.forgot_button = Button:new{
             text = _("Forgot"),
             width = review_button_width,
+            radius = Size.radius.button,
             callback = function() 
                 self:onForgot()
             end,
+            show_parent = self,
+            -- no_focus = true
         }
     
-        local got_it_button = Button:new{
+        self.got_it_button = Button:new{
             text = _("Got it"),
+            radius = Size.radius.button,
             callback = function() 
                 self:onGotIt()
             end,
             width = review_button_width,
+            show_parent = self,
+            -- no_focus = true
         }
 
         right_widget = HorizontalGroup:new{
             dimen = Geom:new{ w = 0, h = self.height },
             self.margin_span,
-            forgot_button,
+            self.forgot_button,
             self.margin_span,
-            got_it_button,
-            more_button,
+            self.got_it_button,
+            self.more_button,
         }
+        table.insert(self.layout, self.forgot_button)
+        table.insert(self.layout, self.got_it_button)
+        table.insert(self.layout, self.more_button)
     else
         local star = Button:new{
             icon = "check",
@@ -299,7 +322,9 @@ function VocabItemWidget:initItemWidget()
             bordersize = 0,
             radius = 0,
             margin = 0,
+            show_parent = self,
             enabled = false,
+            no_focus = true,
         }
         right_side_width =  Size.padding.large * 3 + self .item.review_count * (star:getSize().w)
 
@@ -318,7 +343,8 @@ function VocabItemWidget:initItemWidget()
             }
         end
         table.insert(right_widget, self.margin_span)
-        table.insert(right_widget, more_button)
+        table.insert(right_widget, self.more_button)
+        table.insert(self.layout, self.more_button)
     end
 
     local text_max_width = self.width - point_widget_width - right_side_width
@@ -332,8 +358,8 @@ function VocabItemWidget:initItemWidget()
     self[1] = FrameContainer:new{
         padding = 0,
         bordersize = 0,
-        focusable = true,
-        focus_border_size = Size.border.thin,
+        -- focusable = true,
+        -- focus_border_size = Size.border.thin,
         HorizontalGroup:new{
             dimen = Geom:new{
                 w = self.width,
@@ -358,12 +384,7 @@ function VocabItemWidget:initItemWidget()
                     self.v_spacer,
                     LeftContainer:new{
                         dimen = Geom:new{w = text_max_width, h = word_height},
-                        TextWidget:new{
-                            text = self .item.word,
-                            face = word_face,
-                            bold = true,
-                            fgcolor = self .item.is_dim and dim_color or Blitbuffer.COLOR_BLACK
-                        }
+                        word_widget
                     },
                     LeftContainer:new{
                         dimen = Geom:new{w = text_max_width, h = self.height - word_height - self.v_spacer.width*2.2},
@@ -456,14 +477,13 @@ function VocabItemWidget:onTap(_, ges)
     else
         self.show_parent.marked = self.index
     end
-    -- self.show_parent:_populateItems()
+
     return true
 end
 
 function VocabItemWidget:onHold()
     if self .item.callback then
         self .item.callback(self .item)
-        -- self.show_parent:_populateItems()
     end
     return true
 end
@@ -753,7 +773,7 @@ function VocabularyBuilderWidget:_populateItems()
             index = idx,
             show_parent = self,
         }
-        table.insert(self.layout, #self.layout, {item})
+        table.insert(self.layout, #self.layout, item.layout)
         table.insert(
             self.main_content,
             item
