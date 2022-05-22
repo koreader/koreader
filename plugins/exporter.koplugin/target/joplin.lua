@@ -15,6 +15,7 @@ local JoplinExporter = require("base"):new {
     name = "joplin",
     is_remote = true,
     notebook_name = _("KOReader Notes"),
+    version = "2.0.0",
 }
 
 local function makeRequest(url, method, request_body)
