@@ -136,37 +136,32 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     local text_max_width = math.floor(0.95 * self.width / 2)
     local left_vertical_group = VerticalGroup:new{
         align = "center",
-        TextWidget:new{
-            text = self.left_text,
-            face = self.title_face,
-            max_width = text_max_width,
-        },
         left_widget,
     }
     local separator_vertical_group = VerticalGroup:new{
         align = "center",
-        TextWidget:new{
-            text = "",
-            face = self.title_face,
-        },
         separator_widget,
     }
     local right_vertical_group = VerticalGroup:new{
         align = "center",
-        TextWidget:new{
+        right_widget,
+    }
+
+    if self.left_text ~= "" or self.right_text ~= "" then
+        table.insert(left_vertical_group, 1, TextWidget:new{
+            text = self.left_text,
+            face = self.title_face,
+            max_width = text_max_width,
+        })
+        table.insert(separator_vertical_group, 1, TextWidget:new{
+            text = "",
+            face = self.title_face,
+        })
+        table.insert(right_vertical_group, 1, TextWidget:new{
             text = self.right_text,
             face = self.title_face,
             max_width = text_max_width,
-        },
-        right_widget,
-    }
-    if self.left_text == "" and self.right_text == "" then
-        left_vertical_group[1]:free()
-        separator_vertical_group[1]:free()
-        right_vertical_group[1]:free()
-        table.remove(left_vertical_group, 1)
-        table.remove(separator_vertical_group, 1)
-        table.remove(right_vertical_group, 1)
+        })
     end
 
     local widget_group = HorizontalGroup:new{
