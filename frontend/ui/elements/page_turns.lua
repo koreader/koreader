@@ -148,7 +148,7 @@ if Device:canDoSwipeAnimation() then
             return G_reader_settings:isTrue("swipe_animations")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("swipe_animations")
+            UIManager:broadcastEvent(Event:new("TogglePageChangeAnimation"))
         end,
         separator = true,
     })

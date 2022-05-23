@@ -897,6 +897,10 @@ function ReaderView:onPageChangeAnimation(forward)
     end
 end
 
+function ReaderView:onTogglePageChangeAnimation()
+    G_reader_settings:flipNilOrFalse("swipe_animations")
+end
+
 function ReaderView:onReaderFooterVisibilityChange()
     -- Don't bother ReaderRolling with this nonsense, the footer's height is NOT handled via visible_area there ;)
     if self.ui.paging and self.state.page then
