@@ -161,6 +161,9 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         right_widget,
     }
     if self.left_text == "" and self.right_text == "" then
+        left_vertical_group[1]:free()
+        separator_vertical_group[1]:free()
+        right_vertical_group[1]:free()
         table.remove(left_vertical_group, 1)
         table.remove(separator_vertical_group, 1)
         table.remove(right_vertical_group, 1)
