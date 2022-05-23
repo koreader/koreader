@@ -22,8 +22,6 @@ if isAndroid and android.prop.flavor == "fdroid" then
     return userpatch -- allows to use applyPatches as a no-op on F-Droid flavor
 end
 
-------------------------------------------------------------------------------------
-
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local DataStorage = require("datastorage")
@@ -52,8 +50,7 @@ end
 -- (see http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua)
 -- string directory ... to scan through (flat no recursion)
 -- string priority ... only files starting with `priority` followed by digits and a '-' will be processed.
--- bool update_once_pending ... if true the onetime update has not been executed
--- string update_once_marker ... remove this file, if onetime update gets applied the first time
+-- return true if scripts or task were executed
 local function runLiveUpdateTasks(dir, priority, update_once_pending, update_once_marker)
     if lfs.attributes(dir, "mode") ~= "directory" then
         return
@@ -75,7 +72,7 @@ local function runLiveUpdateTasks(dir, priority, update_once_pending, update_onc
         local dec, n = string.match(d, "(%.?)0*(.+)")
         return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
     end
-    local sorting = function(a, b)
+    local function sorting(a, b)
         return tostring(a):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b)
             < tostring(b):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#a)
     end
@@ -104,10 +101,7 @@ local function runLiveUpdateTasks(dir, priority, update_once_pending, update_onc
         end
     end
 
-    -- Only delete update once marker if `early_once` updates have been applied.
-    if priority == userpatch.early_once and update_once_pending then
-        os.remove(update_once_marker) -- Prevent another execution on a further starts.
-    end
+    return true
 end
 
 --- This function executes sripts and applies lua patches from `/koreader/userscripts`
@@ -131,7 +125,11 @@ function userpatch.applyPatches(priority)
     local update_once_pending = lfs.attributes(update_once_marker, "mode") == "file"
 
     if priority >= userpatch.early or update_once_pending then
-        runLiveUpdateTasks(patch_dir, priority, update_once_pending, update_once_marker)
+        local executed_something = runLiveUpdateTasks(patch_dir, priority)
+        if executed_something and update_once_pending then
+            -- Only delete update once marker if `early_once` updates have been applied.
+            os.remove(update_once_marker) -- Prevent another execution on a further starts.
+        end
     end
 end
 
