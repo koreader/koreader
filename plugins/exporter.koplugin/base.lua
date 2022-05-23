@@ -7,7 +7,7 @@ Each target should inherit from this class and implement *at least* an `export` 
 ]]
 
 local BaseExporter = {
-    clipping_dir = require("datastorage"):getDataDir() .. "/clipboard"
+    clipping_dir = require("datastorage"):getFullDataDir() .. "/clipboard"
 }
 
 function BaseExporter:new(o)
@@ -40,7 +40,7 @@ Export timestamp
 ]]
 function BaseExporter:getTimeStamp()
     local ts = self.timestamp or os.time()
-    return os.date("%Y-%m-%d %H:%M:%S", ts)
+    return os.date("%Y-%m-%d-%H-%M-%S", ts)
 end
 
 --[[--
@@ -90,7 +90,8 @@ function BaseExporter:getFilePath(t)
             self.clipping_dir,
             self:getTimeStamp(),
             #t == 1 and t[1].title or "all-books",
-            self.extension)
+            self.extension):gsub(":", "-")
+            -- Apparently, kindle doesn't like colons in filenames.
     end
 end
 
