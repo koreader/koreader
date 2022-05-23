@@ -150,7 +150,7 @@ function DateTimeWidget:createLayout()
     -- the following calculation is stolen from NumberPickerWidget
     local number_picker_widgets_width = math.floor(math.min(self.screen_width, self.screen_height) * 0.2)
     if self.nb_pickers > 3 then
-       number_picker_widgets_width = number_picker_widgets_width * 3 / self.nb_pickers
+       number_picker_widgets_width = math.floor(number_picker_widgets_width * 3 / self.nb_pickers)
     end
 
     if self.year then
