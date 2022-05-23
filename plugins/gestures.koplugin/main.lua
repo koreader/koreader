@@ -458,7 +458,6 @@ Higher values mean faster screen updates, but also use more CPU.]]),
                         value_max = 60.0,
                         value_step = 1,
                         value_hold_step = 15,
-                         -- @translators This is the frequency unit Hertz.
                         unit = C_("Frequency", "Hz"),
                         ok_text = _("Set rate"),
                         default_value = default_value,
@@ -487,7 +486,6 @@ The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (
                         value_max = 2000,
                         value_step = 50,
                         value_hold_step = 200,
-                        -- @translators This is the time unit for milliseconds.
                         unit = C_("Time", "ms"),
                         ok_text = _("Set interval"),
                         default_value = GestureDetector.TAP_INTERVAL_MS,
@@ -515,7 +513,6 @@ The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (
                         value_max = 2000,
                         value_step = 50,
                         value_hold_step = 200,
-                        -- @translators This is the time unit for milliseconds.
                         unit = C_("Time", "ms"),
                         ok_text = _("Set interval"),
                         default_value = 0,
@@ -542,7 +539,6 @@ The interval value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
-                        -- @translators This is the time unit for milliseconds.
                         unit = C_("Time", "ms"),
                         ok_text = _("Set interval"),
                         default_value = GestureDetector.DOUBLE_TAP_INTERVAL_MS,
@@ -570,7 +566,6 @@ The duration value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
-                        -- @translators This is the time unit for milliseconds.
                         unit = C_("Time", "ms"),
                         ok_text = _("Set duration"),
                         default_value = GestureDetector.TWO_FINGER_TAP_DURATION_MS,
@@ -598,7 +593,6 @@ The interval value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
-                        -- @translators This is the time unit for milliseconds.
                         unit = C_("Time", "ms"),
                         ok_text = _("Set interval"),
                         default_value = GestureDetector.HOLD_INTERVAL_MS,
@@ -625,7 +619,6 @@ The interval value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
-                        -- @translators This is the time unit for milliseconds.
                         unit = C_("Time", "ms"),
                         value_hold_step = 500,
                         ok_text = _("Set interval"),
