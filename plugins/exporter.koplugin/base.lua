@@ -7,7 +7,7 @@ Each target should inherit from this class and implement *at least* an `export` 
 ]]
 
 local BaseExporter = {
-    clipping_dir = require("datastorage"):getFullDataDir() .. "/clipboard"
+    clipping_dir = require("datastorage"):getDataDir() .. "/clipboard"
 }
 
 function BaseExporter:new(o)
