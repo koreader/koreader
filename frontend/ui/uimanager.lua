@@ -527,7 +527,7 @@ function UIManager:schedule(sched_time, action, ...)
     if e ~= 0 then
         -- Do a binary insert.
         repeat
-            p = math.floor((e + s) / 2) -- Not necessary to use (s + (e -s) / 2) here!
+            p = bit.rshift(e + s, 1) -- Not necessary to use (s + (e -s) / 2) here!
             local p_time = self._task_queue[p].time
             if sched_time > p_time then
                 if s == e then
