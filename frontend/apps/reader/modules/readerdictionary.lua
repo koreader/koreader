@@ -996,7 +996,7 @@ function ReaderDictionary:showDict(word, results, boxes, link)
         if not results.lookup_cancelled and self._lookup_start_time
             and (time.now() - self._lookup_start_time) > self.quick_dismiss_before_delay then
             -- If the search took more than a few seconds to be done, discard
-            -- queued and coming up input events to avoid a voluntary dismissal
+            -- queued and upcoming input events to avoid a voluntary dismissal
             -- (because the user felt the result would not come) to kill the
             -- result that finally came and is about to be displayed
             Input:inhibitInputUntil(true)
