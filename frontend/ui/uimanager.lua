@@ -615,12 +615,12 @@ function UIManager:tickAfterNext(action, ...)
     local va = {...}
     -- We need to keep a reference to this anonymous function, as it is *NOT* quite `action` yet,
     -- and the caller might want to unschedule it early...
-    local delayed_action = function()
+    local action_wrapper = function()
         self:nextTick(action, unpack(va, 1, n))
     end
-    self:nextTick(delayed_action)
+    self:nextTick(action_wrapper)
 
-    return delayed_action
+    return action_wrapper
 end
 --[[
 -- NOTE: This appears to work *nearly* just as well, but does sometimes go too fast (might depend on kernel HZ & NO_HZ settings?)
