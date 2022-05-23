@@ -133,11 +133,11 @@ if Device:setDateTime() then
             local curr_hour = now_t.hour
             local curr_min = now_t.min
             local time_widget = DateTimeWidget:new{
-                is_date = false,
                 hour = curr_hour,
                 min = curr_min,
                 ok_text = _("Set time"),
                 title_text = _("Set time"),
+                info_text =_("Time is in hours and minutes."),
                 callback = function(time)
                     if Device:setDateTime(nil, nil, nil, time.hour, time.min) then
                         now_t = os.date("*t")
@@ -169,6 +169,7 @@ if Device:setDateTime() then
                 day = curr_day,
                 ok_text = _("Set date"),
                 title_text = _("Set date"),
+                info_text = _("Date is in years, months and days."),
                 callback = function(time)
                     now_t = os.date("*t")
                     if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then

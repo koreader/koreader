@@ -360,45 +360,47 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
     -- Standby uses a different scheduled task than suspend/shutdown
     local is_standby = setting == "auto_standby_timeout_seconds"
 
-    local left_val
+    local day, hour, minute, second
+    local day_max, hour_max, min_max, sec_max
     if time_scale == 2 then
-        left_val = math.floor(setting_val / (24*3600))
+        day = math.floor(setting_val / (24*3600))
+        hour = math.floor(setting_val / 3600) % 24
+        day_max = math.floor(range[2] / (24*3600)) - 1
+        hour_max = 23
     elseif time_scale == 1 then
-        left_val = math.floor(setting_val / 3600)
+        hour = math.floor(setting_val / 3600)
+        minute = math.floor(setting_val / 60) % 60
+        hour_max = math.floor(range[2] / 3600) - 1
+        min_max = 59
     else
-        left_val = math.floor(setting_val / 60)
+        minute = math.floor(setting_val / 60)
+        second = math.floor(setting_val) % 60
+        min_max =  math.floor(range[2] / 60) - 1
+        sec_max = 59
     end
 
-    local right_val
-    if time_scale == 2 then
-        right_val = math.floor(setting_val / 3600) % 24
-    elseif time_scale == 1 then
-        right_val = math.floor(setting_val / 60) % 60
-    else
-        right_val = math.floor(setting_val) % 60
-    end
     local time_spinner
     time_spinner = DateTimeWidget:new {
-        is_date = false,
-        hour = left_val,
-        min = right_val,
+        day = day,
+        hour = hour,
+        min = minute,
+        sec = second,
+        day_hold_step = 5,
         hour_hold_step = 5,
         min_hold_step = 10,
-        hour_max = (time_scale == 2 and math.floor(range[2] / (24*3600)))
-            or (time_scale == 1 and math.floor(range[2] / 3600))
-            or math.floor(range[2] / 60),
-        min_max = (time_scale == 2 and 23) or 59,
+        sec_hold_step = 10,
+        day_max = day_max,
+        hour_max = hour_max,
+        min_max = min_max,
+        sec_max = sec_max,
         ok_text = _("Set timeout"),
         title_text = title,
         info_text = info,
-        callback = function(spinner)
-            if time_scale == 2 then
-                self[setting] = (spinner.hour * 24 + spinner.min) * 3600
-            elseif time_scale == 1 then
-                self[setting] = spinner.hour * 3600 + spinner.min * 60
-            else
-                self[setting] = spinner.hour * 60 + spinner.min
-            end
+        callback = function(t)
+            self[setting] = (((t.day or 0) * 24 +
+                             (t.hour or 0)) * 60 +
+                             (t.min or 0)) * 60 +
+                             (t.sec or 0)
             self[setting] = Math.clamp(self[setting], range[1], range[2])
             G_reader_settings:saveSetting(setting, self[setting])
             if is_standby then
@@ -421,23 +423,18 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
         default_value = util.secondsToClockDuration("modern", default_value,
             time_scale == 2 or time_scale == 1, true, true):gsub("00m$", ""):gsub("^00m:", ""),
         default_callback = function()
-            local hour
+            local day, hour, min, sec -- luacheck: ignore 431
             if time_scale == 2 then
-                hour = math.floor(default_value / (24*3600))
+                day = math.floor(default_value / (24*3600))
+                hour = math.floor(default_value / 3600) % 24
             elseif time_scale == 1 then
                 hour = math.floor(default_value / 3600)
-            else
-                hour = math.floor(default_value / 60)
-            end
-            local min
-            if time_scale == 2 then
-                min = math.floor(default_value / 3600) % 24
-            elseif time_scale == 1 then
                 min = math.floor(default_value / 60) % 60
             else
-                min = math.floor(default_value % 60)
+                min = math.floor(default_value / 60)
+                sec = math.floor(default_value % 60)
             end
-            time_spinner:update(nil, hour, min)
+            time_spinner:update(nil, nil, day, hour, min, sec) -- It is ok to pass nils here.
         end,
         extra_text = _("Disable"),
         extra_callback = function(this)
@@ -480,7 +477,7 @@ function AutoSuspend:addToMainMenu(menu_items)
         callback = function(touchmenu_instance)
             -- 60 sec (1') is the minimum and 24*3600 sec (1day) is the maximum suspend time.
             -- A suspend time of one day seems to be excessive.
-            -- But or battery testing it might give some sense.
+            -- But it might make sense for battery testing.
             self:pickTimeoutValue(touchmenu_instance,
                 _("Timeout for autosuspend"), _("Enter time in hours and minutes."),
                 "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds,
@@ -509,7 +506,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                 -- Maximum more than four weeks seems a bit excessive if you want to enable authoshutdown,
                 -- even if the battery can last up to three months.
                 self:pickTimeoutValue(touchmenu_instance,
-                    _("Timeout for autoshutdown"),  _("Enter time in days and hours."),
+                    _("Timeout for autoshutdown"), _("Enter time in days and hours."),
                     "autoshutdown_timeout_seconds", default_autoshutdown_timeout_seconds,
                     {5*60, 28*24*3600}, 2)
             end,
