@@ -534,7 +534,6 @@ function AutoWarmth:getLocationMenu()
                 wrap = false,
                 value_step = 10,
                 value_hold_step = 100,
-                -- @translators This is the unit of length in meters.
                 unit = C_("Length", "m"),
                 ok_text = _("Set"),
                 callback = function(spin)
