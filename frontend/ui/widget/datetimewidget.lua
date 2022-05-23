@@ -299,7 +299,6 @@ function DateTimeWidget:createLayout()
                 text = self.default_text or T(_("Default value: %1"), self.default_value),
                 callback = function()
                     if self.default_callback then
-<<<<<<< HEAD
                         self.default_callback({
                             year = year_widget:getValue(),
                             month = month_widget:getValue(),
@@ -308,10 +307,6 @@ function DateTimeWidget:createLayout()
                             minute = min_widget:getValue(),
                             second = sec_widget:getValue(),
                         })
-=======
-                        self.default_callback(year_widget:getValue(), month_hour_widget:getValue(),
-                            day_min_widget:getValue())
->>>>>>> 3b2c9f26 (prepare for new DTW)
                     end
                     if not self.keep_shown_on_apply then -- assume extra wants it same as ok
                         self:onClose()
@@ -334,6 +329,9 @@ function DateTimeWidget:createLayout()
         {
             text = self.cancel_text,
             callback = function()
+                if self.cancel_callback then
+                    self.cancel_callback(self)
+                end
                 self:onClose()
             end,
         },

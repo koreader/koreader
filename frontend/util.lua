@@ -177,21 +177,18 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, comp
     elseif seconds < 60 then
         if withoutSeconds and seconds < 30 then
             if hmsFormat then
-                -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
                 return T(C_("Time", "%1m"), "0")
             else
                 return "0'"
             end
         elseif withoutSeconds and seconds >= 30 then
             if hmsFormat then
-                -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
                 return T(C_("Time", "%1m"), "1")
             else
                 return "1'"
             end
         else
             if hmsFormat then
-                -- @translators This is the 'm' for minute and 's' for seconds, like in 30m30s. This is a duration.
                 if compact then
                     return T(C_("Time", "%1s"), string.format("%2d", seconds))
                 else
@@ -212,7 +209,6 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, comp
         end
         if hmsFormat then
             time_string = time_string:gsub(":", C_("Time", "h"), 1)
-            -- @translators This is the 'm' for minute, like in 1h30m30s. This is a duration.
             time_string = time_string:gsub(":", C_("Time", "m"), 1)
             time_string = time_string:gsub("^00" .. C_("Time", "h"), "") -- delete leading "00h"
             time_string = time_string:gsub("^00" .. C_("Time", "m"), "") -- delete leading "00m"
@@ -1004,19 +1000,15 @@ function util.getFriendlySize(size, right_align)
     size = tonumber(size)
     if not size or type(size) ~= "number" then return end
     if size > 1000*1000*1000 then
-        -- @translators This is an abbreviation for the gigabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 GB"), string.format(frac_format, size/1000/1000/1000))
+        return T(C_("Data storage size", "%1 GB"), string.format(frac_format, size/1000/1000/1000))
     end
     if size > 1000*1000 then
-        -- @translators This is an abbreviation for the megabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 MB"), string.format(frac_format, size/1000/1000))
+        return T(C_("Data storage size", "%1 MB"), string.format(frac_format, size/1000/1000))
     end
     if size > 1000 then
-        -- @translators This is an abbreviation for the kilobyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 kB"), string.format(frac_format, size/1000))
+        return T(C_("Data storage size", "%1 kB"), string.format(frac_format, size/1000))
     else
-        -- @translators This is an abbreviation for the byte, a unit of computer memory or data storage capacity.
-        return T(_("%1 B"), string.format(deci_format, size))
+        return T(C_("Data storage size", "%1 B"), string.format(deci_format, size))
     end
 end
 
