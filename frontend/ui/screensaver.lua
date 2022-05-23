@@ -391,7 +391,8 @@ function Screensaver:setStretchLimit(touchmenu_instance)
         value = G_reader_settings:readSetting("screensaver_stretch_limit_percentage", 8),
         value_min = 0,
         value_max = 25,
-        default_value = 8, -- percent
+        default_value = 8,
+        unit = "%",
         title_text = _("Set maximum stretch limit"),
         ok_text = _("Set"),
         ok_always_enabled = true,

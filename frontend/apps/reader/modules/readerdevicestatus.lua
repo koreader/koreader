@@ -7,6 +7,7 @@ local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local powerd = Device:getPowerDevice()
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 
 local ReaderDeviceStatus = InputContainer:new{
@@ -36,8 +37,8 @@ function ReaderDeviceStatus:init()
                         UIManager:close(self.battery_confirm_box)
                     end
                     self.battery_confirm_box = ConfirmBox:new {
-                        text = is_charging and T(_("High battery level: %1%\n\nDismiss battery level alert?"), battery_capacity)
-                                            or T(_("Low battery level: %1%\n\nDismiss battery level alert?"), battery_capacity),
+                        text = is_charging and T(_("High battery level: %1 %\n\nDismiss battery level alert?"), battery_capacity)
+                                            or T(_("Low battery level: %1 %\n\nDismiss battery level alert?"), battery_capacity),
                         ok_text = _("Dismiss"),
                         dismissable = false,
                         ok_callback = function()
@@ -154,6 +155,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                         value_min = 1,
                         value_max = 60,
                         default_value = 10,
+                        unit = C_("Time", "min"),
                         value_hold_step = 5,
                         title_text = _("Battery check interval"),
                         callback = function(spin)
@@ -172,7 +174,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
                 text_func = function()
-                    return T(_("Thresholds: %1% – %2%"), self.battery_threshold, self.battery_threshold_high)
+                    return T(_("Thresholds: %1 % / %2 %"), self.battery_threshold, self.battery_threshold_high)
                 end,
                 enabled_func = function()
                     return G_reader_settings:isTrue("device_status_battery_alarm")
@@ -199,16 +201,12 @@ High level threshold is checked when the device is charging.]]),
                         right_default = 100,
                         right_hold_step = 5,
                         default_values = true,
+                        unit = "%",
                         callback = function(left_value, right_value)
-                            if not left_value then -- "Default" button pressed
-                                left_value = 20
-                                right_value = 100
-                            end
                             self.battery_threshold = left_value
                             self.battery_threshold_high = right_value
                             G_reader_settings:saveSetting("device_status_battery_threshold", self.battery_threshold)
                             G_reader_settings:saveSetting("device_status_battery_threshold_high", self.battery_threshold_high)
-                            UIManager:close(thresholds_widget)
                             touchmenu_instance:updateItems()
                             powerd:setDismissBatteryStatus(false)
                         end,
@@ -249,6 +247,7 @@ High level threshold is checked when the device is charging.]]),
                         value_min = 1,
                         value_max = 60,
                         default_value = 5,
+                        unit = C_("Time", "min"),
                         value_hold_step = 5,
                         title_text = _("Memory check interval"),
                         callback = function(spin)
@@ -278,6 +277,7 @@ High level threshold is checked when the device is charging.]]),
                         value_min = 20,
                         value_max = 500,
                         default_value = 100,
+                        unit = C_("Data storage size", "MB"),
                         value_step = 5,
                         value_hold_step = 10,
                         title_text = _("Memory alert threshold"),

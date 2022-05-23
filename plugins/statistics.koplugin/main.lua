@@ -20,6 +20,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local N_ = _.ngettext
 local T = FFIUtil.template
 
@@ -935,21 +936,21 @@ function ReaderStatistics:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Read page duration limits: %1 s / %2 s"),
+                            return T(_("Read page duration limits: %1 s – %2 s"),
                                 self.settings.min_sec, self.settings.max_sec)
                         end,
                         callback = function(touchmenu_instance)
                             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
                             local durations_widget
                             durations_widget = DoubleSpinWidget:new{
-                                left_text = _("Min"),
+                                left_text = C_("Extrema", "Min"),
                                 left_value = self.settings.min_sec,
                                 left_default = DEFAULT_MIN_READ_SEC,
                                 left_min = 0,
                                 left_max = 120,
                                 left_step = 1,
                                 left_hold_step = 10,
-                                right_text = _("Max"),
+                                right_text = C_("Extrema", "Max"),
                                 right_value = self.settings.max_sec,
                                 right_default = DEFAULT_MAX_READ_SEC,
                                 right_min = 10,
@@ -957,19 +958,17 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 right_step = 10,
                                 right_hold_step = 60,
                                 default_values = true,
+                                is_range = true,
+                                -- @translators This is the time unit for seconds.
+                                unit = C_("Time", "s"),
                                 title_text = _("Read page duration limits"),
                                 info_text = _([[
 Set min and max time spent (in seconds) on a page for it to be counted as read in statistics.
 The min value ensures pages you quickly browse and skip are not included.
 The max value ensures a page you stay on for a long time (because you fell asleep or went away) will be included, but with a duration capped to this specified max value.]]),
                                 callback = function(min, max)
-                                    if not min then -- "Default" button pressed
-                                        min = DEFAULT_MIN_READ_SEC
-                                        max = DEFAULT_MAX_READ_SEC
-                                    end
                                     self.settings.min_sec = min
                                     self.settings.max_sec = max
-                                    UIManager:close(durations_widget)
                                     touchmenu_instance:updateItems()
                                 end,
                             }

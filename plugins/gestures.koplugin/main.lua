@@ -19,6 +19,7 @@ local util = require("util")
 local T = FFIUtil.template
 local time = require("ui/time")
 local _ = require("gettext")
+local C_ = _.pgettext
 local logger = require("logger")
 
 if not Device:isTouchDevice() then
@@ -457,6 +458,7 @@ Higher values mean faster screen updates, but also use more CPU.]]),
                         value_max = 60.0,
                         value_step = 1,
                         value_hold_step = 15,
+                        unit = C_("Frequency", "Hz"),
                         ok_text = _("Set rate"),
                         default_value = default_value,
                         callback = function(spin)
@@ -484,6 +486,7 @@ The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (
                         value_max = 2000,
                         value_step = 50,
                         value_hold_step = 200,
+                        unit = C_("Time", "ms"),
                         ok_text = _("Set interval"),
                         default_value = GestureDetector.TAP_INTERVAL_MS,
                         callback = function(spin)
@@ -510,6 +513,7 @@ The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (
                         value_max = 2000,
                         value_step = 50,
                         value_hold_step = 200,
+                        unit = C_("Time", "ms"),
                         ok_text = _("Set interval"),
                         default_value = 0,
                         callback = function(spin)
@@ -535,6 +539,7 @@ The interval value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
+                        unit = C_("Time", "ms"),
                         ok_text = _("Set interval"),
                         default_value = GestureDetector.DOUBLE_TAP_INTERVAL_MS,
                         callback = function(spin)
@@ -561,6 +566,7 @@ The duration value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
+                        unit = C_("Time", "ms"),
                         ok_text = _("Set duration"),
                         default_value = GestureDetector.TWO_FINGER_TAP_DURATION_MS,
                         callback = function(spin)
@@ -587,6 +593,7 @@ The interval value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
+                        unit = C_("Time", "ms"),
                         ok_text = _("Set interval"),
                         default_value = GestureDetector.HOLD_INTERVAL_MS,
                         callback = function(spin)
@@ -612,6 +619,7 @@ The interval value is in milliseconds and can range from 100 (0.1 seconds) to 20
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
+                        unit = C_("Time", "ms"),
                         value_hold_step = 500,
                         ok_text = _("Set interval"),
                         default_value = GestureDetector.SWIPE_INTERVAL_MS,

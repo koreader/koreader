@@ -349,7 +349,7 @@ When the book's language tag is not among our presets, no specific features will
             if G_reader_settings:has("hyph_left_hyphen_min") or
                         G_reader_settings:has("hyph_right_hyphen_min") then
                 -- @translators to RTL language translators: %1/left is the min length of the start of a hyphenated word, %2/right is the min length of the end of a hyphenated word (note that there is yet no support for hyphenation with RTL languages, so this will mostly apply to LTR documents)
-                return T(_("Left/right minimal sizes: %1 - %2"),
+                return T(_("Left/right minimal sizes: %1 / %2"),
                     G_reader_settings:readSetting("hyph_left_hyphen_min"),
                     G_reader_settings:readSetting("hyph_right_hyphen_min"))
             end
@@ -376,7 +376,7 @@ When the book's language tag is not among our presets, no specific features will
                 -- the hyphenation changes happening
                 width_factor = 0.6,
                 default_values = true,
-                default_text = _("Use language defaults"),
+                default_text = T(_("Language defaults: %1 / %2"), alg_left_hyphen_min, alg_right_hyphen_min),
                 title_text = _("Hyphenation limits"),
                 info_text = _([[
 Set minimum length before hyphenation occurs.
@@ -384,6 +384,9 @@ These settings will apply to all books with any hyphenation dictionary.
 'Use language defaults' resets them.]]),
                 keep_shown_on_apply = true,
                 callback = function(left_hyphen_min, right_hyphen_min)
+                    if left_hyphen_min == alg_left_hyphen_min and right_hyphen_min == alg_right_hyphen_min then
+                        left_hyphen_min, right_hyphen_min = nil, nil -- don't store default values
+                    end
                     G_reader_settings:saveSetting("hyph_left_hyphen_min", left_hyphen_min)
                     G_reader_settings:saveSetting("hyph_right_hyphen_min", right_hyphen_min)
                     self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or 0)

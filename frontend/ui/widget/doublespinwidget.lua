@@ -43,16 +43,19 @@ local DoubleSpinWidget = FocusManager:new{
     right_wrap = false,
     cancel_text = _("Close"),
     ok_text = _("Apply"),
+    ok_always_enabled = false, -- set to true to enable OK button for unchanged values
     cancel_callback = nil,
     callback = nil,
     close_callback = nil,
     keep_shown_on_apply = false,
-    -- Set this to add upper default button that applies default values with callback(nil, nil)
+    -- Set this to add upper default button that applies default values with callback(left_default, right_default)
     default_values = false,
     default_text = nil,
     -- Optional extra button above ok/cancel buttons row
     extra_text = nil,
     extra_callback = nil,
+    is_range = false, -- show a range separator in default button and between the spinners
+    unit = nil,
 }
 
 function DoubleSpinWidget:init()
@@ -81,6 +84,11 @@ function DoubleSpinWidget:init()
         }
     end
 
+    if self.unit and self.unit ~= "" then
+        self.left_precision = self.left_precision and self.left_precision or "%1d"
+        self.right_precision = self.right_precision and self.right_precision or "%1d"
+    end
+
     -- Actually the widget layout
     self:update()
 end
@@ -98,6 +106,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         value_hold_step = self.left_hold_step,
         precision = self.left_precision,
         wrap = self.left_wrap,
+        unit = self.unit,
     }
     self:mergeLayoutInHorizontal(left_widget)
     local right_widget = NumberPickerWidget:new{
@@ -109,6 +118,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         value_hold_step = self.right_hold_step,
         precision = self.right_precision,
         wrap = self.right_wrap,
+        unit = self.unit,
     }
     self:mergeLayoutInHorizontal(right_widget)
     left_widget.picker_updated_callback = function(value)
@@ -117,26 +127,43 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     right_widget.picker_updated_callback = function(value)
         self:update(left_widget:getValue(), value)
     end
+    local separator_widget = TextWidget:new{
+        text = self.is_range and "–" or "",
+        face = self.title_face,
+        bold = true,
+    }
 
     local text_max_width = math.floor(0.95 * self.width / 2)
     local left_vertical_group = VerticalGroup:new{
         align = "center",
-        TextWidget:new{
-            text = self.left_text,
-            face = self.title_face,
-            max_width = text_max_width,
-        },
         left_widget,
+    }
+    local separator_vertical_group = VerticalGroup:new{
+        align = "center",
+        separator_widget,
     }
     local right_vertical_group = VerticalGroup:new{
         align = "center",
-        TextWidget:new{
+        right_widget,
+    }
+
+    if self.left_text ~= "" or self.right_text ~= "" then
+        table.insert(left_vertical_group, 1, TextWidget:new{
+            text = self.left_text,
+            face = self.title_face,
+            max_width = text_max_width,
+        })
+        table.insert(separator_vertical_group, 1, TextWidget:new{
+            text = "",
+            face = self.title_face,
+        })
+        table.insert(right_vertical_group, 1, TextWidget:new{
             text = self.right_text,
             face = self.title_face,
             max_width = text_max_width,
-        },
-        right_widget,
-    }
+        })
+    end
+
     local widget_group = HorizontalGroup:new{
         align = "center",
         CenterContainer:new{
@@ -144,15 +171,19 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
                 w = self.width / 2,
                 h = left_vertical_group:getSize().h,
             },
-            left_vertical_group
+            left_vertical_group,
+        },
+        CenterContainer:new{
+            dimen = Geom:new{},
+            separator_vertical_group,
         },
         CenterContainer:new{
             dimen = Geom:new{
                 w = self.width / 2,
                 h = right_vertical_group:getSize().h,
             },
-            right_vertical_group
-        }
+            right_vertical_group,
+        },
     }
 
     local title_bar = TitleBar:new{
@@ -167,17 +198,26 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
 
     local buttons = {}
     if self.default_values then
+        local separator = self.is_range and "–" or "/"
+        local unit = ""
+        if self.unit then
+            if self.unit == "°" then
+                unit = self.unit
+            elseif self.unit ~= "" then
+                unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
+            end
+        end
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Apply default values: %1 / %2"),
+                text = self.default_text or T(_("Default values: %1%3 %4 %2%3"),
                     self.left_precision and string.format(self.left_precision, self.left_default) or self.left_default,
-                    self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default),
+                    self.right_precision and string.format(self.right_precision, self.right_default) or self.right_default,
+                    unit, separator),
                 callback = function()
                     left_widget.value = self.left_default
                     right_widget.value = self.right_default
                     left_widget:update()
                     right_widget:update()
-                    self.callback(nil, nil)
                 end,
             }
         })
@@ -209,7 +249,8 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
         },
         {
             text = self.ok_text,
-            enabled = self.left_value ~= left_widget:getValue() or self.right_value ~= right_widget:getValue(),
+            enabled = self.ok_always_enabled or self.left_value ~= left_widget:getValue()
+                or self.right_value ~= right_widget:getValue(),
             callback = function()
                 self.left_value = left_widget:getValue()
                 self.right_value = right_widget:getValue()

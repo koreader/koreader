@@ -50,6 +50,7 @@ local NumberPickerWidget = FocusManager:new{
     date_year = nil,
     -- on update signal to the caller and pass updated value
     picker_updated_callback = nil,
+    unit = "",
 }
 
 function NumberPickerWidget:init()
@@ -176,8 +177,16 @@ function NumberPickerWidget:init()
         end
     end
 
+    local unit = ""
+    if self.unit then
+        if self.unit == "°" then
+            unit = self.unit
+        elseif self.unit ~= "" then
+            unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
+        end
+    end
     self.text_value = Button:new{
-        text = tostring(self.formatted_value),
+        text = tostring(self.formatted_value) .. unit,
         bordersize = 0,
         padding = 0,
         text_font_face = self.spinner_face.font,
