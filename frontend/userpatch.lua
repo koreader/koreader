@@ -19,32 +19,19 @@ local userpatch =
     }
 
 if isAndroid and android.prop.flavor == "fdroid" then
-    return userpatch
+    return userpatch -- allows to use applyPatches as a no-op on F-Droid flavor
 end
 
 ------------------------------------------------------------------------------------
 
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local DataStorage = require("datastorage")
 
--- We can not use util.lua so early during startup.
-local function removeTrailingSlash(str)
-    if str:sub(-1, -1) == "/" then
-        return str:sub(1, -2)
-    end
-    return str
-end
 -- the directory KOReader is installed in (and runs from)
-local package_dir = removeTrailingSlash(lfs.currentdir():match("^.*/"))
+local package_dir = lfs.currentdir()
 -- the directory where KOReader stores user data (on SDL we may set `XDG_DOCUMENTS_DIR=~/koreader/`)
-local home_dir = removeTrailingSlash(isAndroid and android.getExternalStoragePath() or
-    os.getenv("XDG_DOCUMENTS_DIR") or package_dir)
-
-if home_dir == nil or package_dir == nil then
-    return userpatch -- live patching is not supported
-end
-
-logger.info("Live update using package_dir:", package_dir, "; home_dir:", home_dir)
+local data_dir = os.getenv("XDG_DOCUMENTS_DIR") or DataStorage:getDataDir() or package_dir
 
 -- A wrapper for os.execute, can not use ffi/util early before setupkoenv.
 local function execute(...)
@@ -54,21 +41,25 @@ local function execute(...)
         table.insert(command, tostring(v))
         table.insert(command, "' ")
     end
-    return os.execute(table.concat(command))
+    local cmd = table.concat(command)
+    logger.info("Live update apply:", cmd)
+    local retval =  os.execute(cmd)
+    logger.info("Live update script returned:", retval)
 end
 
 --- Run user shell scripts or lua patches
--- Execution order order is alphanum-sort for humans version 4:
--- http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua
--- string directory ... to scan through
+-- Execution order order is alphanum-sort for humans version 4: `1-patch.lua` is executed before `10-patch.lua`
+-- (see http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua)
+-- string directory ... to scan through (flat no recursion)
 -- string priority ... only files starting with `priority` followed by digits and a '-' will be processed.
--- string parent ... parent directory
+-- bool update_once_pending ... if true the onetime update has not been executed
+-- string update_once_marker ... remove this file, if onetime update gets applied the first time
 local function runLiveUpdateTasks(dir, priority, update_once_pending, update_once_marker)
-    local patches = {}
     if lfs.attributes(dir, "mode") ~= "directory" then
         return
     end
 
+    local patches = {}
     for entry in lfs.dir(dir) do
         local mode = lfs.attributes(dir .. "/" .. entry, "mode")
         if entry and mode == "file" and entry:match("^" .. priority .. "%d*%-") then
@@ -93,13 +84,8 @@ local function runLiveUpdateTasks(dir, priority, update_once_pending, update_onc
 
     for i, entry in ipairs(patches) do
         local fullpath = dir .. "/" .. entry
-        local mode = lfs.attributes(fullpath, "mode")
-        if mode == "file" then
-            if fullpath:match("%.sh$") then -- execute shell scripts
-                logger.info("Live update apply:", fullpath)
-                local retval = execute("sh", fullpath, home_dir .. "/koreader", package_dir)
-                logger.info("Live update script returned:", retval)
-            elseif fullpath:match("%.lua$") then -- execute patch-files
+        if lfs.attributes(fullpath, "mode") == "file" then
+            if fullpath:match("%.lua$") then -- execute patch-files first
                 logger.info("Live update apply:", fullpath)
                 local ok, err = pcall(dofile, fullpath)
                 if not ok then
@@ -108,12 +94,12 @@ local function runLiveUpdateTasks(dir, priority, update_once_pending, update_onc
                         -- Only developers (advanced users) will use this mechanism.
                         -- A warning on a patch failure after an OTA update will simplify troubleshooting.
                         local UIManager = require("ui/uimanager")
-                        local _ = require("gettext")
-                        local T = require("ffi/util").template
                         local InfoMessage = require("ui/widget/infomessage")
-                        UIManager:show(InfoMessage:new{text = T(_("Error loading patch:\n%1"), fullpath)})
+                        UIManager:show(InfoMessage:new{text = "Error loading patch:\n" .. fullpath}) -- no translate
                     end
                 end
+            elseif fullpath:match("%.sh$") then -- execute shell scripts secont
+                execute("sh", fullpath, data_dir, package_dir)
             end
         end
     end
@@ -122,28 +108,26 @@ local function runLiveUpdateTasks(dir, priority, update_once_pending, update_onc
     if priority == userpatch.early_once and update_once_pending then
         os.remove(update_once_marker) -- Prevent another execution on a further starts.
     end
-
 end
 
 --- This function executes sripts and applies lua patches from `/koreader/userscripts`
 ---- @string priority ... one of "early\_once", "early", "late", "before\_exit", "on\_exit"
 function userpatch.applyPatches(priority)
-    -- patches and scripts get applied at every start of koreader, no migration here
-    local patch_dir = home_dir .. "/koreader/userpatches"
+    local patch_dir = data_dir .. "/userpatches"
 
     if priority == userpatch.early then
-        -- Move an existing `koreader/patch.lua` to `koreader/userpatches/1000-patch.lua` (->will be excuted in early_once)
-        if lfs.attributes(home_dir .. "/koreader/patch.lua", "mode") == "file" then
+        -- Move an existing `koreader/patch.lua` to `koreader/userpatches/1-patch.lua` (-> will be excuted in `early`)
+        if lfs.attributes(data_dir .. "/patch.lua", "mode") == "file" then
             if lfs.attributes(patch_dir, "mode") == nil then
                 if not lfs.mkdir(patch_dir, "mode") then
                     logger.err("Live update error creating directory", patch_dir)
                 end
             end
-            os.rename(home_dir .. "/koreader/patch.lua", patch_dir .. "/" .. userpatch.early .. "000-patch.lua")
+            os.rename(data_dir .. "/patch.lua", patch_dir .. "/" .. userpatch.early .. "-patch.lua")
         end
     end
 
-    local update_once_marker = package_dir .. "/koreader/update_once.marker"
+    local update_once_marker = package_dir .. "/update_once.marker"
     local update_once_pending = lfs.attributes(update_once_marker, "mode") == "file"
 
     if priority >= userpatch.early or update_once_pending then
