@@ -42,7 +42,6 @@ local UIManager = {
     _exit_code = nil,
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
-    _discard_events_till = nil,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -1046,37 +1045,6 @@ function UIManager:quit()
 end
 
 --[[--
-Request all @{ui.event.Event|Event}s to be ignored for some duration.
-
-@param set_or_seconds either `true`, in which case a platform-specific delay is chosen, or a duration in seconds (***int***).
-]]
-function UIManager:discardEvents(set_or_seconds)
-    if not set_or_seconds then -- remove any previously set
-        self._discard_events_till = nil
-        return
-    end
-    local delay
-    if set_or_seconds == true then
-        -- Use an adequate delay to account for device refresh duration
-        -- so any events happening in this delay (ie. before a widget
-        -- is really painted on screen) are discarded.
-        if Device:hasEinkScreen() then
-            -- A screen refresh can take a few 100ms,
-            -- sometimes > 500ms on some devices/temperatures.
-            -- So, block for 400ms (to have it displayed) + 400ms
-            -- for user reaction to it
-            delay = time.ms(800)
-        else
-            -- On non-eInk screen, display is usually instantaneous
-            delay = time.ms(400)
-        end
-    else -- we expect a number
-        delay = time.s(set_or_seconds)
-    end
-    self._discard_events_till = time.now() + delay
-end
-
---[[--
 Transmits an @{ui.event.Event|Event} to active widgets, top to bottom.
 Stops at the first handler that returns `true`.
 Note that most complex widgets are based on @{ui.widget.container.WidgetContainer|WidgetContainer},
@@ -1086,15 +1054,6 @@ which itself will take care of propagating an event to its members.
 ]]
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
-
-    -- Ensure discardEvents
-    if self._discard_events_till then
-        if time.now() < self._discard_events_till then
-            return
-        else
-            self._discard_events_till = nil
-        end
-    end
 
     -- The top widget gets to be the first to get the event
     local top_widget = self._window_stack[#self._window_stack]
@@ -1131,7 +1090,7 @@ function UIManager:sendEvent(event)
         if checked_widgets[widget] == nil then
             checked_widgets[widget] = true
             -- Widget's active widgets have precedence to handle this event
-            -- NOTE: While FileManager only has a single (screenshotter), ReaderUI has many active_widgets (each ReaderUI module gets added to the list).
+            -- NOTE: While FileManager only has a single (screenshotter), ReaderUI has a few active_widgets.
             if widget.widget.active_widgets then
                 for _, active_widget in ipairs(widget.widget.active_widgets) do
                     if active_widget:handleEvent(event) then return end

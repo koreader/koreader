@@ -36,6 +36,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
+local Input = Device.input
 local Screen = Device.screen
 
 local ConfirmBox = InputContainer:new{
@@ -185,8 +186,8 @@ function ConfirmBox:onShow()
         return "ui", self[1][1].dimen
     end)
     if self.flush_events_on_show then
-        -- Discard queued and coming up events to avoid accidental dismissal
-        UIManager:discardEvents(true)
+        -- Discard queued and coming up input events to avoid accidental dismissal
+        Input:inhibitInputUntil(true)
     end
 end
 

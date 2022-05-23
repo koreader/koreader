@@ -258,6 +258,9 @@ function Input:init()
     if G_reader_settings:isTrue("backspace_as_back") then
         table.insert(self.group.Back, "Backspace")
     end
+
+    -- setup inhibitInputUntil scheduling function
+    self._inhibitInputUntil_func = function() self:inhibitInputUntil() end
 end
 
 --[[--
@@ -1335,6 +1338,40 @@ function Input:inhibitInput(toggle)
             self._generic_ev_handler = nil
         end
     end
+end
+
+--[[--
+Request all input events to be ignored for some duration.
+
+@param set_or_seconds either `true`, in which case a platform-specific delay is chosen, or a duration in seconds (***int***).
+]]
+function Input:inhibitInputUntil(set_or_seconds)
+    local UIManager = require("ui/uimanager")
+    UIManager:unschedule(self._inhibitInputUntil_func)
+    if not set_or_seconds then -- remove any previously set
+        self:inhibitInput(false)
+        return
+    end
+    local delay_s
+    if set_or_seconds == true then
+        -- Use an adequate delay to account for device refresh duration
+        -- so any events happening in this delay (ie. before a widget
+        -- is really painted on screen) are discarded.
+        if self.device:hasEinkScreen() then
+            -- A screen refresh can take a few 100ms,
+            -- sometimes > 500ms on some devices/temperatures.
+            -- So, block for 400ms (to have it displayed) + 400ms
+            -- for user reaction to it
+            delay_s = 0.8
+        else
+            -- On non-eInk screen, display is usually instantaneous
+            delay_s = 0.4
+        end
+    else -- we expect a number
+        delay_s = set_or_seconds
+    end
+    UIManager:scheduleIn(delay_s, self._inhibitInputUntil_func)
+    self:inhibitInput(true)
 end
 
 return Input

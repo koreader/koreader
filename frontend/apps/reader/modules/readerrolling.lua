@@ -12,6 +12,7 @@ local bit = require("bit")
 local logger = require("logger")
 local time = require("ui/time")
 local _ = require("gettext")
+local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -868,7 +869,7 @@ function ReaderRolling:onUpdatePos()
         return true
     end
 
-    UIManager:discardEvents(math.huge) -- Discard any past and upcoming input events for the next hour.
+    Input:inhibitInput(true) -- Inhibit any past and upcoming input events.
     Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
 
     -- Calling this now ensures the re-rendering is done by crengine
@@ -884,7 +885,7 @@ function ReaderRolling:onUpdatePos()
     self:updatePos()
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
-    UIManager:discardEvents(0.2) -- Discard events, which might have occurred (double tap).
+    Input:inhibitInputUntil(0.2) -- Discard input events, which might have occurred (double tap).
     -- We can use a smaller duration than the default (quite large to avoid accidental dismissals),
     -- to allow for quicker setting changes and rendering comparisons.
 end

@@ -20,6 +20,7 @@ local logger = require("logger")
 local time = require("ui/time")
 local util  = require("util")
 local _ = require("gettext")
+local Input = Device.input
 local T = ffiUtil.template
 
 -- We'll store the list of available dictionaries as a module local
@@ -995,10 +996,10 @@ function ReaderDictionary:showDict(word, results, boxes, link)
         if not results.lookup_cancelled and self._lookup_start_time
             and (time.now() - self._lookup_start_time) > self.quick_dismiss_before_delay then
             -- If the search took more than a few seconds to be done, discard
-            -- queued and coming up events to avoid a voluntary dismissal
+            -- queued and coming up input events to avoid a voluntary dismissal
             -- (because the user felt the result would not come) to kill the
             -- result that finally came and is about to be displayed
-            UIManager:discardEvents(true)
+            Input:inhibitInputUntil(true)
         end
     end
 end
