@@ -9,6 +9,7 @@ local logger = require("logger")
 -- Date at which the last migration snippet was added
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 local CURRENT_MIGRATION_DATE = 20220523
 =======
 local CURRENT_MIGRATION_DATE = 20220519
@@ -16,6 +17,9 @@ local CURRENT_MIGRATION_DATE = 20220519
 =======
 local CURRENT_MIGRATION_DATE = 20220426
 >>>>>>> 9b98434c (Staged livepatch 1st try)
+=======
+local CURRENT_MIGRATION_DATE = 20220523
+>>>>>>> 86cb8544 (Honor poirez's review)
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -415,6 +419,8 @@ if last_migration_date < 20220519 then
     if lfs.attributes(Device.home_dir .. "/koreader/patch.lua", "mode") == "file" then
         util.execute("mv", Device.home_dir .. "/koreader/patch.lua", Device.home_dir .. "/koreader/patches/patch.lua")
     end
+if last_migration_date < 20220523 then
+    os.remove("afterupdate.marker")
 end
 
 -- We're done, store the current migration date
