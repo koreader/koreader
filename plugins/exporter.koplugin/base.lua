@@ -6,6 +6,7 @@ Each target should inherit from this class and implement *at least* an `export` 
 @module baseexporter
 ]]
 
+local getSafeFilename = require("util").getSafeFilename
 local BaseExporter = {
     clipping_dir = require("datastorage"):getDataDir() .. "/clipboard"
 }
@@ -33,7 +34,7 @@ Export timestamp
 ]]
 function BaseExporter:getTimeStamp()
     local ts = self.timestamp or os.time()
-    return os.date("%Y-%m-%d %H:%M:%S", ts)
+    return os.date("%Y-%m-%d-%H-%M-%S", ts)
 end
 
 --[[--
@@ -79,11 +80,11 @@ File path where the exporter writes its output
 ]]
 function BaseExporter:getFilePath(t)
     if not self.is_remote then
-        return string.format("%s/%s-%s.%s",
-            self.clipping_dir,
+        local filename = string.format("%s-%s.%s",
             self:getTimeStamp(),
             #t == 1 and t[1].title or "all-books",
             self.extension)
+        return self.clipping_dir .. "/" .. getSafeFilename(filename)
     end
 end
 
