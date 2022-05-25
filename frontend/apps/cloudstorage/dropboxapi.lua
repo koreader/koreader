@@ -13,6 +13,7 @@ local _ = require("gettext")
 local DropBoxApi = {
 }
 
+local API_TOKEN_ENDPOINT = "https://api.dropbox.com/oauth2/token"
 local API_URL_INFO = "https://api.dropboxapi.com/2/users/get_current_account"
 local API_LIST_FOLDER = "https://api.dropboxapi.com/2/files/list_folder"
 local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
@@ -20,7 +21,54 @@ local API_UPLOAD_FILE = "https://content.dropboxapi.com/2/files/upload"
 local API_CREATE_FOLDER = "https://api.dropboxapi.com/2/files/create_folder_v2"
 local API_LIST_ADD_FOLDER = "https://api.dropboxapi.com/2/files/list_folder/continue"
 
-function DropBoxApi:fetchInfo(token)
+--should probably cache and wait for timeout instead of getting a new token for each request
+function DropBoxApi:getAccessTokenFromRefreshToken(refresh_token_and_auth)
+    local lines = {}
+    for s in refresh_token_and_auth:gmatch("[^\n]+") do
+        table.insert(lines, s)
+    end
+
+    local refresh_token = lines[1]
+    local app_key_colon_secret_b64 = lines[2]
+    if refresh_token == nil or app_key_colon_secret_b64 == nil then
+        return nil
+    end
+
+    local data = "grant_type=refresh_token&refresh_token=" .. refresh_token
+
+    local sink = {}
+    socketutil:set_timeout()
+    local request = {
+        url     = API_TOKEN_ENDPOINT,
+        method  = "POST",
+        headers = {
+            ["Authorization"] = "Basic " .. app_key_colon_secret_b64,
+            ["Content-Type"] = "application/x-www-form-urlencoded",
+            ["content-length"] = string.len(data),
+        },
+        sink    = ltn12.sink.table(sink),
+        source = ltn12.source.string(data),
+    }
+    local headers_request = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
+    local result_response = table.concat(sink)
+    if headers_request == nil then
+        return nil
+    end
+    if result_response ~= "" then
+        local _, result = pcall(JSON.decode, result_response)
+        return result["access_token"]
+    else
+        return nil
+    end
+end
+
+function DropBoxApi:fetchInfo(refresh_token_and_auth)
+    local token = DropBoxApi:getAccessTokenFromRefreshToken(refresh_token_and_auth)
+    if token == nil then
+        return nil
+    end
+
     local sink = {}
     socketutil:set_timeout()
     local request = {
@@ -45,7 +93,12 @@ function DropBoxApi:fetchInfo(token)
     end
 end
 
-function DropBoxApi:fetchListFolders(path, token)
+function DropBoxApi:fetchListFolders(path, refresh_token_and_auth)
+    local token = DropBoxApi:getAccessTokenFromRefreshToken(refresh_token_and_auth)
+    if token == nil then
+        return nil
+    end
+
     if path == nil or path == "/" then path = "" end
     local data = "{\"path\": \"" .. path .. "\",\"recursive\": false,\"include_media_info\": false,"..
         "\"include_deleted\": false,\"include_has_explicit_shared_members\": false}"
@@ -74,7 +127,7 @@ function DropBoxApi:fetchListFolders(path, token)
             -- Check if more results, and then get them
             if result.has_more then
               logger.dbg("Found additional files")
-              result = self:fetchAdditionalFolders(result, token)
+              result = self:fetchAdditionalFolders(result, refresh_token_and_auth)
             end
 
             return result
@@ -86,7 +139,12 @@ function DropBoxApi:fetchListFolders(path, token)
     end
 end
 
-function DropBoxApi:downloadFile(path, token, local_path)
+function DropBoxApi:downloadFile(path, refresh_token_and_auth, local_path)
+    local token = DropBoxApi:getAccessTokenFromRefreshToken(refresh_token_and_auth)
+    if token == nil then
+        return nil
+    end
+
     local data1 = "{\"path\": \"" .. path .. "\"}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, _, status = socket.skip(1, http.request{
@@ -105,7 +163,12 @@ function DropBoxApi:downloadFile(path, token, local_path)
     return code
 end
 
-function DropBoxApi:uploadFile(path, token, file_path)
+function DropBoxApi:uploadFile(path, refresh_token_and_auth, file_path)
+    local token = DropBoxApi:getAccessTokenFromRefreshToken(refresh_token_and_auth)
+    if token == nil then
+        return nil
+    end
+
     local data = "{\"path\": \"" .. path .. "/" .. BaseUtil.basename(file_path) ..
         "\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
@@ -127,7 +190,12 @@ function DropBoxApi:uploadFile(path, token, file_path)
     return code
 end
 
-function DropBoxApi:createFolder(path, token, folder_name)
+function DropBoxApi:createFolder(path, refresh_token_and_auth, folder_name)
+    local token = DropBoxApi:getAccessTokenFromRefreshToken(refresh_token_and_auth)
+    if token == nil then
+        return nil
+    end
+
     local data = "{\"path\": \"" .. path .. "/" .. folder_name .. "\",\"autorename\": false}"
     socketutil:set_timeout()
     local code, _, status = socket.skip(1, http.request{
@@ -149,11 +217,16 @@ end
 
 -- folder_mode - set to true when we want to see only folder.
 -- We see also extra folder "Long-press to select current directory" at the beginning.
-function DropBoxApi:listFolder(path, token, folder_mode)
+function DropBoxApi:listFolder(path, refresh_token_and_auth, folder_mode)
+    local token = DropBoxApi:getAccessTokenFromRefreshToken(refresh_token_and_auth)
+    if token == nil then
+        return nil
+    end
+
     local dropbox_list = {}
     local dropbox_file = {}
     local tag, text
-    local ls_dropbox = self:fetchListFolders(path, token)
+    local ls_dropbox = self:fetchListFolders(path, refresh_token_and_auth)
     if ls_dropbox == nil or ls_dropbox.entries == nil then return false end
     for _, files in ipairs(ls_dropbox.entries) do
         text = files.name
@@ -203,10 +276,15 @@ function DropBoxApi:listFolder(path, token, folder_mode)
     return dropbox_list
 end
 
-function DropBoxApi:showFiles(path, token)
+function DropBoxApi:showFiles(path, refresh_token_and_auth)
+    local token = DropBoxApi:getAccessTokenFromRefreshToken(refresh_token_and_auth)
+    if token == nil then
+        return nil
+    end
+
     local dropbox_files = {}
     local tag, text
-    local ls_dropbox = self:fetchListFolders(path, token)
+    local ls_dropbox = self:fetchListFolders(path, refresh_token_and_auth)
     if ls_dropbox == nil or ls_dropbox.entries == nil then return false end
     for _, files in ipairs(ls_dropbox.entries) do
         text = files.name
@@ -222,7 +300,12 @@ function DropBoxApi:showFiles(path, token)
     return dropbox_files
 end
 
-function DropBoxApi:fetchAdditionalFolders(response, token)
+function DropBoxApi:fetchAdditionalFolders(response, refresh_token_and_auth)
+    local token = DropBoxApi:getAccessTokenFromRefreshToken(refresh_token_and_auth)
+    if token == nil then
+        return nil
+    end
+
   local out = response
   local cursor = response.cursor
 
