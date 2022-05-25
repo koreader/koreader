@@ -98,8 +98,6 @@ function VocabularyBuilder:insertLookupData(db_conn)
             end
         end
         
-
-        -- os.remove(file_path)
     end
 end
 
@@ -251,6 +249,8 @@ function VocabularyBuilder:reset()
     local conn = SQ3.open(db_location)
     conn:exec("DELETE FROM vocabulary;")
     self.count = 0
+
+    os.remove(DataStorage:getSettingsDir() .. "/lookup_history.lua")
 end
 
 function VocabularyBuilder:gotItFromDict(word)

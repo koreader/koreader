@@ -254,7 +254,7 @@ function VocabItemWidget:init()
     }
 
     self.v_spacer = VerticalSpan:new{width = (self.height - word_height - subtitle_height)/2}
-    self.point_v_spacer = VerticalSpan:new{width = (self.v_spacer.width + word_height/2) - point_widget_height/2 + Screen:scaleBySize(1) }
+    self.point_v_spacer = VerticalSpan:new{width = (self.v_spacer.width + word_height/2) - point_widget_height/2 }
     self.margin_span = HorizontalSpan:new{ width = Size.padding.large }
     self:initItemWidget()
 end
@@ -771,7 +771,7 @@ function VocabularyBuilderWidget:_populateItems()
     end
 
     for idx = idx_offset + 1, page_last do
-        table.insert(self.main_content, VerticalSpan:new{ width = self.item_margin })
+        table.insert(self.main_content, VerticalSpan:new{ width = self.item_margin / (idx == idx_offset+1 and 2 or 1) })
         local invert_status = false
         if idx == self.marked then
             invert_status = true
