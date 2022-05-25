@@ -153,7 +153,6 @@ function AutoTurn:addToMainMenu(menu_items)
             local autoturn_spin = DateTimeWidget:new {
                 title_text = _("Autoturn time"),
                 info_text = _("Enter time in minutes and seconds."),
-                -- We use hour for minutes and minutes for seconds
                 min = autoturn_minutes,
                 min_max = 60 * 24, -- maximum one day
                 min_default = 0,
