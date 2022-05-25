@@ -351,7 +351,10 @@ Note that your selected font size is not affected by this setting.]]),
                 name_text_hold_callback = optionsutil.showValues,
                 name_text_true_values = true,
                 show_true_value_func = function(val) -- add "dpi"
-                    return val ~= 0 and string.format("%d dpi", val) or _("off")
+                    if val == 96 then
+                        val = "96¹’¹"
+                    end
+                    return val ~= 0 and string.format("%s dpi", val) or _("off")
                 end,
 
             },
