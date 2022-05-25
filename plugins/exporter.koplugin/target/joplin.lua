@@ -288,10 +288,10 @@ function JoplinExporter:getMenuTable()
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new {
-                        text = T(_([[For Joplin setup instructions, see https://github.com/koreader/koreader/wiki/Joplin.
+                        text = T(_([[For Joplin setup instructions, see %1
 
 Markdown formatting can be configured in:
-Export highlights > Choose formats and services > Markdown.]]))
+Export highlights > Choose formats and services > Markdown.]]), "https://github.com/koreader/koreader/wiki/Joplin")
                     })
                 end
             }
