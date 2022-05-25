@@ -10,7 +10,7 @@ local FFIUtil = require("ffi/util")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local DiscardNextInput = require("ui/widget/discardnextinput")
+local TrapWidget = require("ui/widget/trapwidget")
 local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -35,6 +35,10 @@ function AutoDim:init()
 
     self:_schedule_autodim_task()
     self.isCurrentlyDimming = false -- true during or after the dimming ramp
+
+    self.trap_widget = TrapWidget:new{
+        dismiss_callback = function() self:restoreFrontlight() end,
+    }
 end
 
 function AutoDim:addToMainMenu(menu_items)
@@ -158,15 +162,15 @@ function AutoDim:_schedule_autodim_task(seconds)
     UIManager:scheduleIn(seconds, self.autodim_task, self)
 end
 
+function AutoDim:restoreFrontlight()
+    Device.powerd:setIntensity(self.autodim_save_fl)
+    UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
+    self:_unschedule_ramp_task()
+    self:_schedule_autodim_task()
+end
+
 function AutoDim:onInputEvent()
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
-
-    if self.isCurrentlyDimming then
-        Device.powerd:setIntensity(self.autodim_save_fl)
-
-        self:_unschedule_ramp_task()
-        self:_schedule_autodim_task()
-    end
 end
 
 function AutoDim:_unschedule_autodim_task()
@@ -177,8 +181,11 @@ function AutoDim:_unschedule_autodim_task()
 end
 
 function AutoDim:onResume()
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     if self.isCurrentlyDimming then
-        Device.powerd:setIntensity(self.autodim_save_fl)
+        UIManager:close(self.trap_widget)
+--        Device.powerd:setIntensity(self.autodim_save_fl)
+--        UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
         self:_schedule_autodim_task()
     end
 end
@@ -187,6 +194,7 @@ function AutoDim:onSuspend()
     if self.isCurrentlyDimming then
         self:_unschedule_autodim_task()
         self:_unschedule_ramp_task()
+        Device.powerd:setIntensity(self.autodim_save_fl)
         self.isCurrentlyDimming = true -- message to self:onResume to go on with restoring
     end
 end
@@ -198,7 +206,7 @@ function AutoDim:autodim_task()
     local idle_duration = now - self.last_action_time
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
-        UIManager:show(DiscardNextInput:new{}) -- supress taps during dimming
+        UIManager:show(self.trap_widget) -- supress taps during dimming
 
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_fraction / 100 + 0.5)
@@ -224,7 +232,7 @@ function AutoDim:ramp_task()
     self.isCurrentlyDimming = true -- this will disable rescheduling of the `autodim_task`
     local fl_level = Device.powerd:frontlightIntensity()
     if fl_level > self.autodim_end_fl then
-        Device.powerd:setIntensity(fl_level - 1, Device:hasEinkScreen()) -- don't generate event if eink-screen is present
+        Device.powerd:setIntensity(fl_level - 1) -- don't generate event if eink-screen is present
         self.ramp_event_countdown = self.ramp_event_countdown - 1
         if Device:hasEinkScreen() and self.ramp_event_countdown <= 0 then
             -- Update footer on every self.ramp_event_countdown calls
