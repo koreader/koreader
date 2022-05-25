@@ -10,6 +10,7 @@ local FFIUtil = require("ffi/util")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local DiscardNextInput = require("ui/widget/discardnextinput")
 local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -20,9 +21,7 @@ local DEFAULT_AUTODIM_DURATION_S = 5
 local DEFAULT_AUTODIM_FRACTION = 20
 local AUTODIM_EVENT_FREQUENCY = 2 -- in Hz; Frequenzy for FrontlightChangedEvent on E-Ink devices
 
-local AutoDim = WidgetContainer:new{
-    name = "autodim",
-}
+local AutoDim = WidgetContainer:new{ name = "autodim" }
 
 function AutoDim:init()
     self.autodim_starttime_m = G_reader_settings:readSetting("autodim_starttime_minutes", -1)
@@ -167,8 +166,6 @@ function AutoDim:onInputEvent()
 
         self:_unschedule_ramp_task()
         self:_schedule_autodim_task()
-
-        UIManager:discardEvents(1) -- stop discarding events
     end
 end
 
@@ -183,7 +180,6 @@ function AutoDim:onResume()
     if self.isCurrentlyDimming then
         Device.powerd:setIntensity(self.autodim_save_fl)
         self:_schedule_autodim_task()
-        UIManager:discardEvents(1) -- stop discarding events
     end
 end
 
@@ -191,7 +187,6 @@ function AutoDim:onSuspend()
     if self.isCurrentlyDimming then
         self:_unschedule_autodim_task()
         self:_unschedule_ramp_task()
-        UIManager:discardEvents(1) -- stop discarding events
         self.isCurrentlyDimming = true -- message to self:onResume to go on with restoring
     end
 end
@@ -203,6 +198,8 @@ function AutoDim:autodim_task()
     local idle_duration = now - self.last_action_time
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
+        UIManager:show(DiscardNextInput:new{}) -- supress taps during dimming
+
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_fraction / 100 + 0.5)
         -- Clamp `self.autodim_end_fl` to 1 if `self.autodim_fraction` ~= 0
@@ -216,7 +213,6 @@ function AutoDim:autodim_task()
             math.floor((1/AUTODIM_EVENT_FREQUENCY) / self.autodim_step_time_s + 0.5) or 0
         self.ramp_event_countdown = self.ramp_event_countdown_startvalue
 
-        UIManager:discardEvents(math.huge)
         self:ramp_task() -- which schedules itself
         -- Don't schedule `autodim_task` here, as this is done on the next `onInputEvent`
     else
@@ -231,16 +227,16 @@ function AutoDim:ramp_task()
         Device.powerd:setIntensity(fl_level - 1, Device:hasEinkScreen()) -- don't generate event if eink-screen is present
         self.ramp_event_countdown = self.ramp_event_countdown - 1
         if Device:hasEinkScreen() and self.ramp_event_countdown <= 0 then
-            -- generate event on every self.ramp_event_countdown calls
-            UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+            -- Update footer on every self.ramp_event_countdown calls
+            UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
             self.ramp_event_countdown = self.ramp_event_countdown_startvalue
         end
         self:_schedule_ramp_task() -- Reschedule only if not ready
         -- `isCurrentlyDimming` stays true, to flag we have a dimmed FL.
     end
     if Device:hasEinkScreen() and fl_level == self.autodim_end_fl then
-        -- generate event on the end of the ramp
-        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+        -- Update footer at the end of the ramp.
+        UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
     end
 end
 
