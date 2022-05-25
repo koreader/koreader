@@ -521,13 +521,13 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
 end
 
--- schedule an execution task, task queue is in ascendant order
+-- Schedule an execution task; task queue is in ascending order
 function UIManager:schedule(sched_time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
-        -- do a binary insert
+        -- Do a binary insert.
         repeat
-            p = math.floor((e + s) / 2) -- Not necessary to use (s + (e -s) / 2) here!
+            p = bit.rshift(e + s, 1) -- Not necessary to use (s + (e -s) / 2) here!
             local p_time = self._task_queue[p].time
             if sched_time > p_time then
                 if s == e then
@@ -544,12 +544,13 @@ function UIManager:schedule(sched_time, action, ...)
                 end
                 e = p
             else
-                -- for fairness, it's better to make p+1 is strictly less than
-                -- p might want to revisit here in the future
+                -- For fairness, it's better to make sure p+1 is strictly less than p.
+                -- Might want to revisit that in the future.
                 break
             end
         until e < s
     end
+
     table.insert(self._task_queue, p, {
         time = sched_time,
         action = action,
@@ -602,6 +603,9 @@ Useful to run UI callbacks ASAP without skipping repaints.
 
 @func action reference to the task to be scheduled (may be anonymous)
 @param ... optional arguments passed to action
+
+@return A reference to the initial nextTick wrapper function,
+necessary if the caller wants to unschedule action *before* it actually gets inserted in the task queue by nextTick.
 @see nextTick
 ]]
 function UIManager:tickAfterNext(action, ...)
@@ -609,7 +613,14 @@ function UIManager:tickAfterNext(action, ...)
     -- c.f., http://lua-users.org/wiki/VarargTheSecondClassCitizen
     local n = select('#', ...)
     local va = {...}
-    return self:nextTick(function() self:nextTick(action, unpack(va, 1, n)) end)
+    -- We need to keep a reference to this anonymous function, as it is *NOT* quite `action` yet,
+    -- and the caller might want to unschedule it early...
+    local action_wrapper = function()
+        self:nextTick(action, unpack(va, 1, n))
+    end
+    self:nextTick(action_wrapper)
+
+    return action_wrapper
 end
 --[[
 -- NOTE: This appears to work *nearly* just as well, but does sometimes go too fast (might depend on kernel HZ & NO_HZ settings?)
@@ -1142,7 +1153,7 @@ end
 --]]
 
 function UIManager:getNextTaskTime()
-    if #self._task_queue > 0 then
+    if self._task_queue[1] then
         return self._task_queue[1].time - time:now()
     else
         return nil
@@ -1153,25 +1164,21 @@ function UIManager:_checkTasks()
     self._now = time.now()
     local wait_until = nil
 
-    -- task.action may schedule other events
+    -- Tasks due for execution might themselves schedule more tasks (that might also be immediately due for execution ;)).
+    -- Flipping this switch ensures we'll consume all such tasks *before* yielding to input polling.
     self._task_queue_dirty = false
-    while true do
-        if #self._task_queue == 0 then
-            -- Nothing to do!
-            break
-        end
-        local next_task = self._task_queue[1]
-        local task_time = next_task.time or 0
+    while self._task_queue[1] do
+        local task_time = self._task_queue[1].time
         if task_time <= self._now then
-            -- remove from table
+            -- Pop the upcoming task, as it is due for execution...
             local task = table.remove(self._task_queue, 1)
-            -- task is pending to be executed right now. do it.
-            -- NOTE: be careful that task.action() might modify
-            -- _task_queue here. So need to avoid race condition
+            -- ...so do it now.
+            -- NOTE: Said task's action might modify _task_queue.
+            --       To avoid race conditions and catch new upcoming tasks during this call,
+            --       we repeatedly check the head of the queue (c.f., #1758).
             task.action(unpack(task.args, 1, task.argc))
         else
-            -- queue is sorted in ascendant order, safe to assume all items
-            -- are future tasks for now
+            -- As the queue is sorted in ascending order, it's safe to assume all items are currently future tasks.
             wait_until = task_time
             break
         end

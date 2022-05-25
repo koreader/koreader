@@ -88,7 +88,7 @@ with anonymous functions.
 @treturn bool (true if one or more tasks were removed; false otherwise; nil if the task queue is empty).
 --]]
 function WakeupMgr:removeTasks(epoch, callback)
-    if #self._task_queue < 1 then return end
+    if #self._task_queue == 0 then return end
 
     local removed = false
     local reschedule = false
@@ -147,7 +147,7 @@ If necessary, the next upcoming task (if any) is scheduled on exit.
 @treturn bool (true if we were truly woken up by the scheduled wakeup; false otherwise; nil if there weren't any tasks scheduled).
 --]]
 function WakeupMgr:wakeupAction(proximity)
-    if #self._task_queue > 0 then
+    if self._task_queue[1] then
         local task = self._task_queue[1]
         if self:validateWakeupAlarmByProximity(task.epoch, proximity) then
             task.callback()

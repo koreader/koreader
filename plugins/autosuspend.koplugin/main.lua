@@ -33,11 +33,12 @@ local AutoSuspend = WidgetContainer:new{
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
     last_action_time = 0,
-    is_standby_scheduled = false,
+    is_standby_scheduled = nil,
     task = nil,
     standby_task = nil,
     leave_standby_task = nil,
-    going_to_suspend = false,
+    wrapped_leave_standby_task = nil,
+    going_to_suspend = nil,
 }
 
 function AutoSuspend:_enabledStandby()
@@ -135,6 +136,10 @@ function AutoSuspend:init()
 
     if Device:isPocketBook() and not Device:canSuspend() then return end
 
+    -- We only want those to exist as *instance* members
+    self.is_standby_scheduled = false
+    self.going_to_suspend = false
+
     UIManager.event_hook:registerWidget("InputEvent", self)
     -- We need an instance-specific function reference to schedule, because in some rare cases,
     -- we may instantiate a new plugin instance *before* tearing down the old one.
@@ -199,7 +204,14 @@ function AutoSuspend:_unschedule_standby()
     end
 
     -- Make sure we don't trigger a ghost LeaveStandby event...
+    if self.wrapped_leave_standby_task then
+        logger.dbg("AutoSuspend: unschedule leave standby task wrapper")
+        UIManager:unschedule(self.wrapped_leave_standby_task)
+        self.wrapped_leave_standby_task = nil
+    end
+
     if self.leave_standby_task then
+        logger.dbg("AutoSuspend: unschedule leave standby task")
         UIManager:unschedule(self.leave_standby_task)
     end
 end
@@ -326,6 +338,8 @@ end
 
 function AutoSuspend:onLeaveStandby()
     logger.dbg("AutoSuspend: onLeaveStandby")
+    -- If the Event got through, tickAfterNext did its thing, clear the reference to the initial nextTick wrapper...
+    self.wrapped_leave_standby_task = nil
     -- Unschedule suspend and shutdown, as the realtime clock has ticked
     self:_unschedule()
     -- Reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
@@ -587,7 +601,7 @@ function AutoSuspend:AllowStandbyHandler()
         -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
         -- (This ensures we'll use an up to date last_action_time, and that it only ever gets updated from *user* input).
         -- NOTE: UIManager consumes scheduled tasks before input events, which is why we can't use nextTick.
-        UIManager:tickAfterNext(self.leave_standby_task)
+        self.wrapped_leave_standby_task = UIManager:tickAfterNext(self.leave_standby_task)
     end
 end
 

@@ -234,7 +234,7 @@ function InfoMessage:onShow()
         return "ui", self[1][1].dimen
     end)
     if self.flush_events_on_show then
-        -- Discard queued and coming up input events to avoid accidental dismissal
+        -- Discard queued and upcoming input events to avoid accidental dismissal
         Input:inhibitInputUntil(true)
     end
     -- schedule us to close ourself if timeout provided
