@@ -3,7 +3,6 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
 local Font = require("ui/font")
 local FocusManager = require("ui/widget/focusmanager")
@@ -15,7 +14,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -27,7 +25,6 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local Screen = Device.screen
-local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -36,14 +33,9 @@ local _ = require("gettext")
 local word_face = Font:getFace("x_smallinfofont")
 local subtitle_face = Font:getFace("cfont", 12)
 local subtitle_italic_face = Font:getFace("NotoSans-Italic.ttf", 12)
-local nerd_face = Font:getFace("smallinfofont")
 local subtitle_color = Blitbuffer.Color8(0x88)
 local dim_color = Blitbuffer.Color8(0x55)
--- More Info
 
-function getDialogWidth()
-    return math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.61)
-end
 
 local WordInfoDialog = InputContainer:new{
     title = nil,
@@ -78,18 +70,19 @@ function WordInfoDialog:init()
             }
         end
     end
-    local width = getDialogWidth()
+
+    local width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.61)
     local remove_button = Button:new{
         text = _("Remove Word"),
         bordersize = 0,
         show_parent = self,
         width = width,
         padding = Size.padding.default,
-        callback = function() 
+        callback = function()
             self.button_callback()
             UIManager:close(self)
         end
-    } 
+    }
     local focus_button = FocusManager:new{
         [1] = FrameContainer:new {
             padding = 0,
@@ -133,7 +126,7 @@ function WordInfoDialog:init()
                                 alignment = self.title_align or "left",
                             },
                         }
-                        
+
                     },
                     LineWidget:new{
                         background = Blitbuffer.COLOR_GRAY,
@@ -148,7 +141,7 @@ function WordInfoDialog:init()
                 bordersize = Size.border.window,
                 radius = Size.radius.window,
                 padding = Size.padding.button,
-                padding_bottom = 0, 
+                padding_bottom = 0,
             }
         }
     }
@@ -221,7 +214,7 @@ local VocabItemWidget = InputContainer:new{
     --     got_it_callback: function
     --     remove_callback: function
     --     is_dim: BOOL
-    -- } 
+    -- }
 --]]
 
 local point_widget = TextWidget:new{
@@ -281,8 +274,8 @@ function VocabItemWidget:initItemWidget()
             width = ellipsis_button_width,
             bordersize = 0,
             show_parent = self
-        } 
-    else 
+        }
+    else
         self.more_button = Button:new{
             icon = "exit",
             icon_width = star_width,
@@ -290,13 +283,13 @@ function VocabItemWidget:initItemWidget()
             bordersize = 0,
             radius = 0,
             padding = (ellipsis_button_width - star_width)/2,
-            callback = function() 
+            callback = function()
                 self:remover()
             end,
         }
     end
-    
-    
+
+
     local right_side_width
     local right_widget
     self .item.reviewable = self. item.due_time < os.time()
@@ -307,17 +300,17 @@ function VocabItemWidget:initItemWidget()
             text = _("Forgot"),
             width = review_button_width,
             radius = Size.radius.button,
-            callback = function() 
+            callback = function()
                 self:onForgot()
             end,
             show_parent = self,
             -- no_focus = true
         }
-    
+
         self.got_it_button = Button:new{
             text = _("Got it"),
             radius = Size.radius.button,
-            callback = function() 
+            callback = function()
                 self:onGotIt()
             end,
             width = review_button_width,
@@ -472,7 +465,7 @@ function VocabItemWidget:showMore()
         book_title = self .item.book_title,
         dates = _("Added on ") .. os.date("%Y-%m-%d", self .item.create_time) .. " | " ..
         _("Review scheduled at ") .. os.date("%Y-%m-%d %H:%M", self .item.due_time),
-        button_callback = function() 
+        button_callback = function()
             self:remover()
         end
 
@@ -505,7 +498,7 @@ function VocabItemWidget:onGotIt()
     self .item.is_dim = true
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
-    return "ui", self[1].dimen end) 
+    return "ui", self[1].dimen end)
 end
 
 function VocabItemWidget:onForgot()
@@ -513,12 +506,12 @@ function VocabItemWidget:onForgot()
     self .item.is_dim = false
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
-        return "ui", self[1].dimen end) 
+        return "ui", self[1].dimen end)
     if self .item.callback then
-        self .item.callback(self .item.word) 
+        self .item.callback(self .item.word)
     end
 end
-------- 
+-------
 
 
 local VocabularyBuilderWidget = FocusManager:new{
@@ -678,7 +671,6 @@ function VocabularyBuilderWidget:init()
     local content_height = self.dimen.h - self.title_bar:getHeight() - vertical_footer:getSize().h - padding
     self.items_per_page = math.floor(content_height / line_height)
     self.item_margin = self.item_margin + math.floor((content_height - self.items_per_page * line_height ) / self.items_per_page)
-    line_height = self.item_height + self.item_margin
     self.pages = math.ceil(#self.item_table / self.items_per_page)
     self.main_content = VerticalGroup:new{}
 
@@ -745,7 +737,7 @@ function VocabularyBuilderWidget:moveItem(diff)
         self.marked = move_to
         self:_populateItems()
     end
-end 
+end
 
 function VocabularyBuilderWidget:removeAt(index)
     if index > #self.item_table then return end
@@ -757,7 +749,7 @@ end
 -- make sure self.item_margin and self.item_height are set before calling this
 function VocabularyBuilderWidget:_populateItems()
     self.main_content:clear()
-    self.layout = {} 
+    self.layout = {}
     local idx_offset = (self.show_page - 1) * self.items_per_page
     local page_last
     if idx_offset + self.items_per_page <= #self.item_table then
@@ -822,7 +814,7 @@ function VocabularyBuilderWidget:_populateItems()
     end)
 end
 
-function VocabularyBuilderWidget:gotItFromDict(word) 
+function VocabularyBuilderWidget:gotItFromDict(word)
     for i = 1, #self.main_content, 1 do
         if self.main_content[i].item and self.main_content[i].item.word == word then
             self.main_content[i]:onGotIt()

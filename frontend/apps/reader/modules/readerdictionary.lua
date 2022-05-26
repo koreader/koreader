@@ -10,7 +10,6 @@ local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local VocabularyBuilder = require("apps/reader/modules/readervocabularybuilder")
-local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
 local SortWidget = require("ui/widget/sortwidget")
@@ -27,7 +26,6 @@ local T = ffiUtil.template
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()
 local available_ifos = nil
-local lookup_history = nil
 
 local function getIfosInDir(path)
     -- Get all the .ifo under directory path.
@@ -275,7 +273,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
                         ok_text = _("Clean"),
                         ok_callback = function()
                             -- empty data table to replace current one
-                            VocabularyBuilder:reset() 
+                            VocabularyBuilder:reset()
                             touchmenu_instance:updateItems()
                         end,
                     })
@@ -941,7 +939,7 @@ function ReaderDictionary:showDict(word, results, boxes, link, is_from_vocabular
             window_list = self.dict_window_list,
             ui = self.ui,
             highlight = self.highlight,
-            got_it_callback = is_from_vocabulary_builder and 
+            got_it_callback = is_from_vocabulary_builder and
                 function() VocabularyBuilder:gotItFromDict(word)
                 end or nil,
             forgot_callback = is_from_vocabulary_builder and

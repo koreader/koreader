@@ -16,19 +16,17 @@ local DB_SCHEMA_VERSION = 20220522
 local VOCABULARY_DB_SCHEMA = [[
     -- To store looked up words
     CREATE TABLE IF NOT EXISTS "vocabulary" (
-        "word"	        TEXT NOT NULL UNIQUE,
-        "book_title"	TEXT,
-        "create_time"	INTEGER NOT NULL,
-        "review_time"	INTEGER,
+        "word"          TEXT NOT NULL UNIQUE,
+        "book_title"    TEXT,
+        "create_time"   INTEGER NOT NULL,
+        "review_time"   INTEGER,
         "due_time"      INTEGER NOT NULL,
-        "review_count"	INTEGER NOT NULL DEFAULT 0,
+        "review_count"  INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY("word")
     );
-    
     CREATE INDEX IF NOT EXISTS due_time_index ON vocabulary(due_time);
 ]]
--- CREATE INDEX IF NOT EXISTS create_time_index ON vocabulary(create_time);
--- CREATE INDEX IF NOT EXISTS review_time_index ON vocabulary(review_time);
+
 local VocabularyBuilder = {
     cursor = 0,
     count = 0,
@@ -37,7 +35,6 @@ local VocabularyBuilder = {
 
 function VocabularyBuilder:init()
     VocabularyBuilder:createDB()
-    
 end
 
 function VocabularyBuilder:hasItems()
@@ -49,7 +46,7 @@ function VocabularyBuilder:hasItems()
     conn:close()
     return self.count > 0
 end
-    
+
 function VocabularyBuilder:createDB()
     local db_conn = SQ3.open(db_location)
     -- Make it WAL, if possible
@@ -61,7 +58,7 @@ function VocabularyBuilder:createDB()
     -- Create db
     db_conn:exec(VOCABULARY_DB_SCHEMA)
     -- Check version
-    local db_version = tonumber(db_conn:rowexec("PRAGMA user_version;"))        
+    local db_version = tonumber(db_conn:rowexec("PRAGMA user_version;"))
     if db_version < DB_SCHEMA_VERSION then
         if db_version == 0 then
             self:insertLookupData(db_conn)
@@ -97,7 +94,7 @@ function VocabularyBuilder:insertLookupData(db_conn)
                 words[value.word] = true
             end
         end
-        
+
     end
 end
 
@@ -110,14 +107,11 @@ function VocabularyBuilder:showUI(onSelect)
         })
     end
 
-    
-
     self.vocab_widget = VocabBuilderWidget:new{
         title = _("Vocabulary Builder"),
         item_table = vocab_items,
         callback = function()
             UIManager:setDirty(nil, "ui")
-            changed_callback()
         end,
         select_items_callback = function(items, start_idx, end_idx)
             self:select_items(items, start_idx, end_idx)
@@ -138,7 +132,7 @@ function VocabularyBuilder:_select_items(items, start_idx)
     local current_time = os.time()
 
     for i = 1, #results.word do
-        item = items[start_idx+i-1]
+        local item = items[start_idx+i-1]
         if item then
             item.word = results.word[i]
             item.review_count = tonumber(results.review_count[i])
@@ -147,18 +141,18 @@ function VocabularyBuilder:_select_items(items, start_idx)
             item.review_time = tonumber( results.review_time[i])
             item.due_time = tonumber(results.due_time[i])
             item.is_dim = tonumber(results.due_time[i]) > current_time
-            item.got_it_callback = function(item)
-                VocabularyBuilder:gotOrForgot(item, true)
+            item.got_it_callback = function(item_input)
+                VocabularyBuilder:gotOrForgot(item_input, true)
             end
-            item.forgot_callback = function(item)
-                VocabularyBuilder:gotOrForgot(item, false)
+            item.forgot_callback = function(item_input)
+                VocabularyBuilder:gotOrForgot(item_input, false)
             end
-            item.remove_callback = function(item)
-                VocabularyBuilder:remove(item)
+            item.remove_callback = function(item_input)
+                VocabularyBuilder:remove(item_input)
             end
         end
     end
-    
+
 
 end
 
@@ -181,7 +175,7 @@ function VocabularyBuilder:select_items(items, start_idx, end_idx)
 end
 
 
-function VocabularyBuilder:gotOrForgot(item, isGot) 
+function VocabularyBuilder:gotOrForgot(item, isGot)
     local conn = SQ3.open(db_location)
     local current_time = os.time()
 
@@ -206,8 +200,8 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     else
         due_time = current_time + 25 * 30 * 3600
     end
-    
-    local sql = string.format([[UPDATE vocabulary 
+
+    local sql = string.format([[UPDATE vocabulary
     SET review_count = %d,
         review_time = %d,
         due_time = %d
@@ -223,11 +217,10 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     conn:close()
 end
 
-function VocabularyBuilder:insertOrUpdate(entry) 
+function VocabularyBuilder:insertOrUpdate(entry)
     local conn = SQ3.open(db_location)
-    local current_time = os.time()
 
-    conn:exec(string.format([[INSERT INTO vocabulary (word, book_title, create_time, due_time) 
+    conn:exec(string.format([[INSERT INTO vocabulary (word, book_title, create_time, due_time)
                     VALUES ('%s', '%s', %d, %d)
                     ON CONFLICT(word) DO UPDATE SET book_title = excluded.book_title,
                         create_time = excluded.create_time,
