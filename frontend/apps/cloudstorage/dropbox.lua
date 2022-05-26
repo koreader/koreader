@@ -92,15 +92,15 @@ function DropBox:createFolder(url, password, folder_name, callback_close)
 end
 
 function DropBox:config(item, callback)
-    local text_info = "How to link your Dropbox account:\n"..
-        "1. Open the following URL in your Browser, and log in using your account: https://www.dropbox.com/developers/apps.\n"..
-        "2. Click on >>Create App<<, then select >>Dropbox API app<<.\n"..
-        "3. Now go on with the configuration, choosing the app permissions and access restrictions to your DropBox folder.\n"..
-        "4. Enter the >>App Name<< that you prefer (e.g. KOReader).\n"..
-        "5. Now, click on the >>Create App<< button.\n" ..
-        "6. Generate a refresh token by following the instructions in https://dropbox.tech/developers/migrating-app-permissions-and-access-tokens\n"..
-        "7. Enter the refresh token in the Dropbox refresh token field.\n" ..
-        "8. On a new line, enter the app's key, a colon and the app's secret encoded with base64 in the Dropbox refresh token field."
+    local text_info = _([[How to link your Dropbox account:
+1. Open the following URL in your Browser, and log in using your account: https://www.dropbox.com/developers/apps.
+2. Click on >>Create App<<, then select >>Dropbox API app<<.
+3. Now go on with the configuration, choosing the app permissions and access restrictions to your DropBox folder.
+4. Enter the >>App Name<< that you prefer (e.g. KOReader).
+5. Now, click on the >>Create App<< button.
+6. Generate a refresh token by following the instructions in https://dropbox.tech/developers/migrating-app-permissions-and-access-tokens.
+7. Enter the refresh token in the Dropbox refresh token field.
+8. On a new line, enter the app's key, a colon and the app's secret encoded with base64 in the Dropbox refresh token field.]])
     local hint_top = _("Your Dropbox name")
     local text_top = ""
     local hint_bottom = _("Dropbox refresh token \\n\nApp Key:App Secret in base64 encoding\n\n\n\n")
