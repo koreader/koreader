@@ -962,6 +962,13 @@ function VocabularyBuilderWidget:_populateItems()
     else
         self.footer_page:disableWithoutDimming()
     end
+    if self.pages == 0 then
+        self.footer_page:setText(_("No items"), self.footer_center_width)
+        self.footer_first_up:hide()
+        self.footer_last_down:hide()
+        self.footer_left:hide()
+        self.footer_right:hide()
+    end
     local chevron_first = "chevron.first"
     local chevron_last = "chevron.last"
     if BD.mirroredUILayout() then
@@ -1011,8 +1018,9 @@ end
 function VocabularyBuilderWidget:showMenu()
     UIManager:show(MenuDialog:new{
         clean_callback = function()
-            UIManager:close(self)
-            UIManager:setDirty(self, "ui")
+            self.item_table = {}
+            self.pages = 0
+            self:_populateItems()
         end,
         reset_callback = function()
             self:resetItems()
