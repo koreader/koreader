@@ -1101,34 +1101,50 @@ function VocabBuilder:addToMainMenu(menu_items)
                 table.insert(vocab_items, {
                     callback = function(item)
                         -- custom button table
-                        local custom_buttons = item.due_time < os.time() and {
-                            {
-                                "prev_dict",
-                                {
-                                    id = "got_it",
-                                    text = _("Got it"),
-                                    callback = function()
-                                        self.builder_widget:gotItFromDict(item.word)
-                                        UIManager:sendEvent(Event:new("Close"))
+                        local tweak_buttons_func
+                        if item.due_time < os.time() then
+                            tweak_buttons_func = function(buttons)
+                                local tweaked_button_count = 0
+                                local early_break
+                                for j = 1, #buttons do
+                                    for k = 1, #buttons[j] do
+                                        if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
+                                            buttons[j][k] = {
+                                                id = "got_it",
+                                                text = _("Got it"),
+                                                callback = function()
+                                                    self.builder_widget:gotItFromDict(item.word)
+                                                    UIManager:sendEvent(Event:new("Close"))
+                                                end
+                                            }
+                                            if tweaked_button_count == 1 then
+                                                early_break = true
+                                                break
+                                            end
+                                            tweaked_button_count = tweaked_button_count + 1
+                                        elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
+                                            buttons[j][k] = {
+                                                id = "forgot",
+                                                text = _("Forgot"),
+                                                callback = function()
+                                                    self.builder_widget:forgotFromDict(item.word)
+                                                    UIManager:sendEvent(Event:new("Close"))
+                                                end
+                                            }
+                                            if tweaked_button_count == 1 then
+                                                early_break = true
+                                                break
+                                            end
+                                            tweaked_button_count = tweaked_button_count + 1
+                                        end
                                     end
-                                },
-                                "next_dict"
-                            },
-                            {
-                                "wikipedia",
-                                {
-                                    id = "forgot",
-                                    text = _("Forgot"),
-                                    callback = function()
-                                        self.builder_widget:forgotFromDict(item.word)
-                                        UIManager:sendEvent(Event:new("Close"))
-                                    end
-                                },
-                                "close"
-                            }
-                        } or nil
+                                    if early_break then break end
+                                end
+                            end
+                        end
+
                         self.builder_widget.current_lookup_word = item.word
-                        self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, custom_buttons))
+                        self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, tweak_buttons_func))
                     end
                 })
             end

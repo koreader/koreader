@@ -57,66 +57,6 @@ local DictQuickLookup = InputContainer:new{
     html_dictionary_link_tapped_callback = nil,
 }
 
--- buttons available when generating custom button table
-function DictQuickLookup:stockButton(key)
-    if key == "prev_dict" then
-        return {
-            id = "prev_dict",
-            text = BD.mirroredUILayout() and "▷▷" or "◁◁",
-            vsync = true,
-            enabled = self:isPrevDictAvaiable(),
-            callback = function()
-                self:changeToPrevDict()
-            end,
-            hold_callback = function()
-                self:changeToFirstDict()
-            end,
-        }
-    elseif key == "next_dict" then
-        return {
-            id = "next_dict",
-            text = BD.mirroredUILayout() and "◁◁" or "▷▷",
-            vsync = true,
-            enabled = self:isNextDictAvaiable(),
-            callback = function()
-                self:changeToNextDict()
-            end,
-            hold_callback = function()
-                self:changeToLastDict()
-            end,
-        }
-    elseif key == "wikipedia" then
-        return {
-            id = "wikipedia",
-            -- if dictionary result, do the same search on wikipedia
-            -- if already wiki, get the full page for the current result
-            text_func = function()
-                if self.is_wiki then
-                    -- @translators Full Wikipedia article.
-                    return C_("Button", "Wikipedia full")
-                else
-                    return _("Wikipedia")
-                end
-            end,
-            callback = function()
-                UIManager:scheduleIn(0.1, function()
-                    self:lookupWikipedia(self.is_wiki) -- will get_fullpage if is_wiki
-                end)
-            end,
-        }
-    elseif key == "close" then
-        return {
-            id = "close",
-            text = _("Close"),
-            callback = function()
-                self:onClose()
-            end,
-        }
-    else
-        return nil
-    end
-end
-
 local highlight_strings = {
     highlight =_("Highlight"),
     unhighlight = _("Unhighlight"),
@@ -363,23 +303,7 @@ function DictQuickLookup:init()
 
     -- Different sets of buttons whether fullpage or not
     local buttons
-    if self.custom_buttons then
-        -- custom_buttons can use in-house buttons by their key
-        -- because their callbacks can not be set outside self scope
-        buttons = {}
-        for i, row in ipairs(self.custom_buttons) do
-            table.insert(buttons, {})
-            for _, button in ipairs(row) do
-                -- button could be key such as "prev_dict"
-                local stock_button = self:stockButton(button)
-                if stock_button then
-                    table.insert(buttons[i], stock_button)
-                else
-                    table.insert(buttons[i], button)
-                end
-            end
-        end
-    elseif self.is_wiki_fullpage then
+    if self.is_wiki_fullpage then
         -- A save and a close button
         buttons = {
             {
@@ -454,13 +378,35 @@ function DictQuickLookup:init()
                         })
                     end,
                 },
-                self:stockButton("close"),
+                {
+                    id = "close",
+                    text = _("Close"),
+                    callback = function()
+                        self:onClose()
+                    end,
+                },
             },
         }
     else
+        local prev_dict_text = "◁◁"
+        local next_dict_text = "▷▷"
+        if BD.mirroredUILayout() then
+            prev_dict_text, next_dict_text = next_dict_text, prev_dict_text
+        end
         buttons = {
             {
-                self:stockButton("prev_dict"),
+                {
+                    id = "prev_dict",
+                    text = prev_dict_text,
+                    vsync = true,
+                    enabled = self:isPrevDictAvaiable(),
+                    callback = function()
+                        self:changeToPrevDict()
+                    end,
+                    hold_callback = function()
+                        self:changeToFirstDict()
+                    end,
+                },
                 {
                     id = "highlight",
                     text = self:getHighlightText(),
@@ -479,10 +425,38 @@ function DictQuickLookup:init()
                         this:refresh()
                     end,
                 },
-                self:stockButton("next_dict"),
+                {
+                    id = "next_dict",
+                    text = next_dict_text,
+                    vsync = true,
+                    enabled = self:isNextDictAvaiable(),
+                    callback = function()
+                        self:changeToNextDict()
+                    end,
+                    hold_callback = function()
+                        self:changeToLastDict()
+                    end,
+                },
             },
             {
-                self:stockButton("wikipedia"),
+                {
+                    id = "wikipedia",
+                    -- if dictionary result, do the same search on wikipedia
+                    -- if already wiki, get the full page for the current result
+                    text_func = function()
+                        if self.is_wiki then
+                            -- @translators Full Wikipedia article.
+                            return C_("Button", "Wikipedia full")
+                        else
+                            return _("Wikipedia")
+                        end
+                    end,
+                    callback = function()
+                        UIManager:scheduleIn(0.1, function()
+                            self:lookupWikipedia(self.is_wiki) -- will get_fullpage if is_wiki
+                        end)
+                    end,
+                },
                 -- Rotate thru available wikipedia languages, or Search in book if dict window
                 {
                     id = "search",
@@ -506,7 +480,13 @@ function DictQuickLookup:init()
                         end
                     end,
                 },
-                self:stockButton("close"),
+                {
+                    id = "close",
+                    text = _("Close"),
+                    callback = function()
+                        self:onClose()
+                    end,
+                },
             },
         }
         if not self.is_wiki and self.selected_link ~= nil then
@@ -525,7 +505,9 @@ function DictQuickLookup:init()
             })
         end
     end
-
+    if self.tweak_buttons_func then
+        self.tweak_buttons_func(buttons)
+    end
     -- Bottom buttons get a bit less padding so their line separators
     -- reach out from the content to the borders a bit more
     local buttons_padding = Size.padding.default
