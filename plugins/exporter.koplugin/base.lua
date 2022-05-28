@@ -24,6 +24,13 @@ function BaseExporter:_init()
     self.is_remote = self.is_remote or false
     self.version = self.version or "1.0.0"
     self:loadSettings()
+    if type(self.init_callback) == "function" then
+        local changed, settings = self:init_callback(self.settings)
+        if changed then
+            self.settings = settings
+            self:saveSettings()
+        end
+    end
     return self
 end
 

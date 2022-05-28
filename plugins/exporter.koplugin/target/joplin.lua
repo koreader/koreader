@@ -1,4 +1,3 @@
-local BD = require("ui/bidi")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
@@ -6,6 +5,7 @@ local http = require("socket.http")
 local json = require("json")
 local logger = require("logger")
 local ltn12 = require("ltn12")
+local md = require("template/md")
 local socketutil = require("socketutil")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -15,6 +15,7 @@ local JoplinExporter = require("base"):new {
     name = "joplin",
     is_remote = true,
     notebook_name = _("KOReader Notes"),
+    version = "1.1.0",
 }
 
 local function makeRequest(url, method, request_body)
@@ -62,24 +63,6 @@ local function ping(ip, port)
     else
         return false
     end
-end
-
-local function prepareNote(booknotes)
-    local note = ""
-    for _, clipping in ipairs(booknotes) do
-        local entry = clipping[1]
-        if entry.chapter then
-            note = note .. "\n\t*" .. entry.chapter .. "*\n\n * * *"
-        end
-
-        note = note .. os.date("%Y-%m-%d %H:%M:%S \n", entry.time)
-        note = note .. entry.text
-        if entry.note then
-            note = note .. "\n---\n" .. entry.note
-        end
-        note = note .. "\n * * *\n"
-    end
-    return note
 end
 
 -- If successful returns id of found note.
@@ -148,7 +131,7 @@ function JoplinExporter:notebookExist(title)
     end
 
     for i, notebook in ipairs(response.items) do
-        if notebook.title == title then return true end
+        if notebook.title == title then return notebook.id end
     end
     return false
 end
@@ -305,16 +288,10 @@ function JoplinExporter:getMenuTable()
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new {
-                        text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the exporter.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
+                        text = T(_([[For Joplin setup instructions, see %1
 
-To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
-
-For Windows: netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=41185 connectaddress=localhost connectport=41184
-
-For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
-
-For more information, please visit https://github.com/koreader/koreader/wiki/Highlight-export.]])
-                            , BD.dirpath("example"))
+Markdown formatting can be configured in:
+Export highlights > Choose formats and services > Markdown.]]), "https://github.com/koreader/koreader/wiki/Joplin")
                     })
                 end
             }
@@ -329,7 +306,7 @@ function JoplinExporter:export(t)
         logger.warn("Cannot reach Joplin server")
         return false
     end
-
+    local existing_notebook = self:notebookExist(self.notebook_name)
     if not self:notebookExist(self.notebook_name) then
         local notebook = self:createNotebook(self.notebook_name)
         if notebook then
@@ -341,12 +318,19 @@ function JoplinExporter:export(t)
             logger.warn("Joplin: unable to create new notebook")
             return false
         end
+    else
+        if not self.settings.notebook_guid then
+            self.settings.notebook_guid = existing_notebook
+            self:saveSettings()
+        end
     end
-
+    local plugin_settings = G_reader_settings:readSetting("exporter") or {}
+    local markdown_settings = plugin_settings.markdown
     local notebook_id = self.settings.notebook_guid
     for _, booknotes in pairs(t) do
-        local note = prepareNote(booknotes)
+        local note = md.prepareBookContent(booknotes, markdown_settings.formatting_options, markdown_settings.highlight_formatting)
         local note_id = self:findNoteByTitle(booknotes.title, notebook_id)
+
         local response
         if note_id then
             response = self:updateNote(note, note_id)
