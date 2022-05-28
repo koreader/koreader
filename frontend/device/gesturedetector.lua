@@ -347,7 +347,7 @@ function GestureDetector:probeClockSource(timev)
     -- clock-threshold <= timev <= clock+threshold
     if timev >= realtime - threshold and timev <= realtime + threshold then
         self.clock_id = C.CLOCK_REALTIME
-        logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_REALTIME")
+        logger.dbg("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_REALTIME")
         return
     end
 
@@ -355,7 +355,7 @@ function GestureDetector:probeClockSource(timev)
     local monotonic = time.monotonic_coarse()
     if timev >= monotonic - threshold and timev <= monotonic + threshold then
         self.clock_id = C.CLOCK_MONOTONIC
-        logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_MONOTONIC")
+        logger.dbg("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_MONOTONIC")
         return
     end
 
@@ -364,13 +364,13 @@ function GestureDetector:probeClockSource(timev)
     -- NOTE: It was implemented in Linux 2.6.39, so, reject 0, which would mean it's unsupported...
     if not boottime == 0 and timev >= boottime - threshold and timev <= boottime + threshold then
         self.clock_id = C.CLOCK_BOOTTIME
-        logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_BOOTTIME")
+        logger.dbg("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_BOOTTIME")
         return
     end
 
     -- If we're here, the detection was inconclusive :/
     self.clock_id = -1
-    logger.info("GestureDetector:probeClockSource: Touch event clock source detection was inconclusive")
+    logger.dbg("GestureDetector:probeClockSource: Touch event clock source detection was inconclusive")
     -- Print all all the gory details in debug mode when this happens...
     logger.dbg("Input frame    :", time.format_time(timev))
     logger.dbg("CLOCK_REALTIME :", time.format_time(realtime))
