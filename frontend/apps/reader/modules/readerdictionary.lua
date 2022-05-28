@@ -3,13 +3,14 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
+local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
-local VocabularyBuilder = require("apps/reader/modules/readervocabularybuilder")
+local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
 local SortWidget = require("ui/widget/sortwidget")
@@ -26,6 +27,7 @@ local T = ffiUtil.template
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()
 local available_ifos = nil
+local lookup_history = nil
 
 local function getIfosInDir(path)
     -- Get all the .ifo under directory path.
@@ -150,6 +152,9 @@ function ReaderDictionary:init()
     -- Prepare the -u options to give to sdcv the dictionary order and if some are disabled
     self:updateSdcvDictNamesOptions()
 
+    if not lookup_history then
+        lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
+    end
 end
 
 function ReaderDictionary:sortAvailableIfos()
@@ -204,12 +209,34 @@ function ReaderDictionary:addToMainMenu(menu_items)
         end,
     }
     menu_items.dictionary_lookup_history = {
-        text = _("Vocabulary Builder"),
+        text = _("Dictionary lookup history"),
         enabled_func = function()
-            return VocabularyBuilder:hasItems()
+            return lookup_history:has("lookup_history")
         end,
         callback = function()
-            VocabularyBuilder:showUI(function(item) self:onVocabularyBuilderLookupWord(item) end)
+            local lookup_history_table = lookup_history:readSetting("lookup_history")
+            local kv_pairs = {}
+            local previous_title
+            for i = #lookup_history_table, 1, -1 do
+                local value = lookup_history_table[i]
+                if value.book_title ~= previous_title then
+                    table.insert(kv_pairs, { value.book_title..":", "" })
+                end
+                previous_title = value.book_title
+                table.insert(kv_pairs, {
+                    os.date("%Y-%m-%d %H:%M:%S", value.time),
+                    value.word,
+                    callback = function()
+                        -- Word had been cleaned before being added to history
+                        self:onLookupWord(value.word, true)
+                    end
+                })
+            end
+            UIManager:show(KeyValuePage:new{
+                title = _("Dictionary lookup history"),
+                value_overflow_align = "right",
+                kv_pairs = kv_pairs,
+            })
         end,
     }
     menu_items.dictionary_settings = {
@@ -264,7 +291,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             {
                 text = _("Clean dictionary lookup history"),
                 enabled_func = function()
-                    return VocabularyBuilder:hasItems()
+                    return lookup_history:has("lookup_history")
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
@@ -273,7 +300,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
                         ok_text = _("Clean"),
                         ok_callback = function()
                             -- empty data table to replace current one
-                            VocabularyBuilder:reset()
+                            lookup_history:reset{}
                             touchmenu_instance:updateItems()
                         end,
                     })
@@ -375,15 +402,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:onVocabularyBuilderLookupWord(item)
-    local word = self:cleanSelection(item.word, true)
-    Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, nil, nil, item.reviewable)
-    end)
-    return true
-end
-
-function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
+function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, custom_buttons)
     logger.dbg("dict lookup word:", word, boxes)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
@@ -393,7 +412,7 @@ function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link)
+        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link, custom_buttons)
     end)
     return true
 end
@@ -864,12 +883,11 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     return results
 end
 
-function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, is_from_vocabulary_builder)
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, custom_buttons)
     if word == "" then
         return
     end
 
-    if not self.disable_lookup_history then
         local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
         if book_title == "" then -- no or empty metadata title
             if self.ui.document and self.ui.document.file then
@@ -877,13 +895,15 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
                 book_title = util.splitFileNameSuffix(filename)
             end
         end
-        if self.highlight then
-            VocabularyBuilder:insertOrUpdate({
-                book_title = book_title,
-                time = os.time(),
-                word = word
-            })
-        end
+
+    -- Event for plugin to catch lookup with book title
+    self.ui:handleEvent(Event:new("LookupWordWithBookTitle", word, book_title))
+    if not self.disable_lookup_history then
+        lookup_history:addTableItem("lookup_history", {
+            book_title = book_title,
+            time = os.time(),
+            word = word,
+        })
     end
 
     if Device:canExternalDictLookup() and G_reader_settings:isTrue("external_dict_lookup") then
@@ -929,22 +949,17 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         return
     end
 
-    self:showDict(word, tidyMarkup(results), boxes, link, is_from_vocabulary_builder)
+    self:showDict(word, tidyMarkup(results), boxes, link, custom_buttons)
 end
 
-function ReaderDictionary:showDict(word, results, boxes, link, is_from_vocabulary_builder)
+function ReaderDictionary:showDict(word, results, boxes, link, custom_buttons)
     if results and results[1] then
         logger.dbg("showing quick lookup window", #self.dict_window_list+1, ":", word, results)
         self.dict_window = DictQuickLookup:new{
             window_list = self.dict_window_list,
             ui = self.ui,
             highlight = self.highlight,
-            got_it_callback = is_from_vocabulary_builder and
-                function() VocabularyBuilder:gotItFromDict(word)
-                end or nil,
-            forgot_callback = is_from_vocabulary_builder and
-                function() VocabularyBuilder:forgotFromDict(word)
-                end or nil,
+            custom_buttons = custom_buttons,
             dialog = self.dialog,
             -- original lookup word
             word = word,

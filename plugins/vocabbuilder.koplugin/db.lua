@@ -1,14 +1,7 @@
-
 local DataStorage = require("datastorage")
 local Device = require("device")
--- local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local SQ3 = require("lua-ljsqlite3/init")
-local logger = require("logger")
 local LuaData = require("luadata")
-local VocabBuilderWidget = require("frontend/ui/widget/vocabularybuilderwidget")
-local UIManager = require("ui/uimanager")
-local _ = require("gettext")
-
 
 local db_location = DataStorage:getSettingsDir() .. "/vocabulary_builder.sqlite3"
 
@@ -17,7 +10,7 @@ local VOCABULARY_DB_SCHEMA = [[
     -- To store looked up words
     CREATE TABLE IF NOT EXISTS "vocabulary" (
         "word"          TEXT NOT NULL UNIQUE,
-        "book_title"    TEXT,
+        "book_title"    TEXT DEFAULT '',
         "create_time"   INTEGER NOT NULL,
         "review_time"   INTEGER,
         "due_time"      INTEGER NOT NULL,
@@ -28,9 +21,7 @@ local VOCABULARY_DB_SCHEMA = [[
 ]]
 
 local VocabularyBuilder = {
-    cursor = 0,
     count = 0,
-    vocab_widget = nil
 }
 
 function VocabularyBuilder:init()
@@ -41,10 +32,19 @@ function VocabularyBuilder:hasItems()
     if self.count > 0 then
         return true
     end
-    local conn = SQ3.open(db_location)
-    self.count = tonumber(conn:rowexec("SELECT count(0) FROM vocabulary;"))
-    conn:close()
+    self.count = self:selectCount()
     return self.count > 0
+end
+
+function VocabularyBuilder:selectCount(conn)
+    if conn then
+        return tonumber(conn:rowexec("SELECT count(0) FROM vocabulary;"))
+    else
+        local db_conn = SQ3.open(db_location)
+        local count = tonumber(db_conn:rowexec("SELECT count(0) FROM vocabulary;"))
+        db_conn:close()
+        return count
+    end
 end
 
 function VocabularyBuilder:createDB()
@@ -77,7 +77,7 @@ function VocabularyBuilder:insertLookupData(db_conn)
     if lookup_history:has("lookup_history") then
         local lookup_history_table = lookup_history:readSetting("lookup_history")
         local words = {}
-        -- if not lookup_history_table return
+
         for i = #lookup_history_table, 1, -1 do
             local value = lookup_history_table[i]
             if not words[value.word] then
@@ -87,7 +87,7 @@ function VocabularyBuilder:insertLookupData(db_conn)
                             ]]
                 local stmt = db_conn:prepare(insert_sql)
 
-                stmt:bind(value.word, value.book_title, value.time, value.time + 5*60)
+                stmt:bind(value.word, value.book_title or "", value.time, value.time + 5*60)
                 stmt:step()
                 stmt:clearbind():reset()
 
@@ -96,28 +96,6 @@ function VocabularyBuilder:insertLookupData(db_conn)
         end
 
     end
-end
-
-function VocabularyBuilder:showUI(onSelect)
-
-    local vocab_items = {}
-    for i = 1, self.count do
-        table.insert(vocab_items, {
-            callback = onSelect
-        })
-    end
-
-    self.vocab_widget = VocabBuilderWidget:new{
-        title = _("Vocabulary Builder"),
-        item_table = vocab_items,
-        callback = function()
-            UIManager:setDirty(nil, "ui")
-        end,
-        select_items_callback = function(items, start_idx, end_idx)
-            self:select_items(items, start_idx, end_idx)
-        end
-    }
-    UIManager:show(self.vocab_widget)
 end
 
 function VocabularyBuilder:_select_items(items, start_idx)
@@ -135,8 +113,8 @@ function VocabularyBuilder:_select_items(items, start_idx)
         local item = items[start_idx+i-1]
         if item then
             item.word = results.word[i]
-            item.review_count = tonumber(results.review_count[i])
-            item.book_title = results.book_title[i]
+            item.review_count = math.max(0, math.min(8, tonumber(results.review_count[i])))
+            item.book_title = results.book_title[i] or ""
             item.create_time = tonumber( results.create_time[i])
             item.review_time = tonumber( results.review_time[i])
             item.due_time = tonumber(results.due_time[i])
@@ -227,31 +205,36 @@ function VocabularyBuilder:insertOrUpdate(entry)
                         review_count = MAX(review_count-1, 0),
                         due_time = %d;
               ]], entry.word, entry.book_title, entry.time, entry.time+300, entry.time+300))
+    self.count = tonumber(conn:rowexec("SELECT count(0) from vocabulary;"))
     conn:close()
-    self.count = self.count + 1
 end
 
 function VocabularyBuilder:remove(item)
-    logger.err("------------- remove ", item.word)
     local conn = SQ3.open(db_location)
     conn:exec(string.format("DELETE FROM vocabulary WHERE word = '%s' ;", item.word))
     self.count = self.count - 1
+    conn:close()
 end
 
-function VocabularyBuilder:reset()
+function VocabularyBuilder:resetProgress()
+    local conn = SQ3.open(db_location)
+    local due_time = os.time()
+    conn:exec(string.format("UPDATE vocabulary SET review_count = 0, due_time = %d;", due_time))
+    conn:close()
+end
+
+function VocabularyBuilder:resetWordProgress(word)
+    local conn = SQ3.open(db_location)
+    local due_time = os.time()
+    conn:exec(string.format("UPDATE vocabulary SET review_count = 0, due_time = %d WHERE word = '%s';", due_time, word))
+    conn:close()
+end
+
+function VocabularyBuilder:purge()
     local conn = SQ3.open(db_location)
     conn:exec("DELETE FROM vocabulary;")
     self.count = 0
-
-    os.remove(DataStorage:getSettingsDir() .. "/lookup_history.lua")
-end
-
-function VocabularyBuilder:gotItFromDict(word)
-    self.vocab_widget:gotItFromDict(word)
-end
-
-function VocabularyBuilder:forgotFromDict(word)
-    self.vocab_widget:forgotFromDict(word)
+    conn:close()
 end
 
 VocabularyBuilder:init()
