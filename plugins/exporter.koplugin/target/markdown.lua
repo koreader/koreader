@@ -26,7 +26,7 @@ local MarkdownExporter = require("base"):new {
 local formatter_buttons = {
     { _("None"), "none" },
     { _("Bold"), "bold" },
-    { _("Bold Italic"), "bold_italic" },
+    { _("Bold italic"), "bold_italic" },
     { _("Italic"), "italic" },
     { _("Strikethrough"), "strikethrough" },
     { _("Underline (Markdownit style, with ++)"), "underline_markdownit" },
