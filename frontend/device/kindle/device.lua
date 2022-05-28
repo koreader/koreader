@@ -441,6 +441,7 @@ local KindlePaperWhite4 = Kindle:new{
     isRex = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
+    hasGSensor = yes,
     display_dpi = 300,
     -- NOTE: LTE devices once again have a mysterious extra SX9310 proximity sensor...
     --       Except this time, we can't rely on by-path, because there's no entry for the TS :/.
