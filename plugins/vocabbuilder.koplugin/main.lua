@@ -370,7 +370,7 @@ end
 
 
 -- values useful for item cells
-local review_button_width = Screen:scaleBySize(95)
+local review_button_width = math.ceil(math.min(Screen:scaleBySize(95), Screen:getWidth()/6))
 local ellipsis_button_width = Screen:scaleBySize(34)
 local star_width = Screen:scaleBySize(25)
 
@@ -441,17 +441,17 @@ function VocabItemWidget:initItemWidget()
     for i = 1, #self.layout do self.layout[i] = nil end
 
     local word_widget = Button:new{
-        text = self .item.word,
+        text = self.item.word,
         bordersize = 0,
         callback = function() self:onTap() end
     }
-    if self .item.is_dim then
+    if self.item.is_dim then
         word_widget.label_widget.fgcolor = dim_color
     end
 
     table.insert(self.layout, word_widget)
 
-    if self .item.review_count < 5 then
+    if self.item.review_count < 5 then
         self.more_button = Button:new{
             text = "⋮",
             padding = Size.padding.button,
@@ -477,12 +477,13 @@ function VocabItemWidget:initItemWidget()
 
     local right_side_width
     local right_widget
-    if self .item.due_time < os.time() then
+    if self.item.due_time < os.time() then
         right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
 
         self.forgot_button = Button:new{
             text = _("Forgot"),
             width = review_button_width,
+            max_width = review_button_width,
             radius = Size.radius.button,
             callback = function()
                 self:onForgot()
@@ -498,6 +499,7 @@ function VocabItemWidget:initItemWidget()
                 self:onGotIt()
             end,
             width = review_button_width,
+            max_width = review_button_width,
             show_parent = self,
             -- no_focus = true
         }
@@ -525,13 +527,13 @@ function VocabItemWidget:initItemWidget()
             enabled = false,
             no_focus = true,
         }
-        right_side_width =  Size.padding.large * 3 + self .item.review_count * (star:getSize().w)
+        right_side_width =  Size.padding.large * 3 + self.item.review_count * (star:getSize().w)
 
-        if self .item.review_count > 0 then
+        if self.item.review_count > 0 then
             right_widget = HorizontalGroup:new {
                 dimen = Geom:new{w=0, h = self.height}
             }
-            for i=1, self .item.review_count, 1 do
+            for i=1, self.item.review_count, 1 do
                 table.insert(right_widget, star)
             end
         else
@@ -588,9 +590,9 @@ function VocabItemWidget:initItemWidget()
                         HorizontalGroup:new{
                             subtitle_prefix,
                             TextWidget:new{
-                                text = self .item.book_title,
+                                text = self.item.book_title,
                                 face = subtitle_italic_face,
-                                max_width = text_max_width - subtitle_prefix:getSize().w - Size.padding.fullscreen,
+                                max_width = math.ceil(math.max(5,text_max_width - subtitle_prefix:getSize().w - Size.padding.fullscreen)),
                                 fgcolor = subtitle_color
                             }
                         }
@@ -608,9 +610,9 @@ function VocabItemWidget:initItemWidget()
 end
 
 function VocabItemWidget:getTimeSinceDue()
-    if self .item.review_count >= 8 then return "" end
+    if self.item.review_count >= 8 then return "" end
 
-    local elapsed = os.time() - self .item.due_time
+    local elapsed = os.time() - self.item.due_time
     local abs = math.abs(elapsed)
     local readable_time
 
@@ -633,14 +635,14 @@ function VocabItemWidget:getTimeSinceDue()
 end
 
 function VocabItemWidget:remover()
-    self .item.remove_callback(self .item)
+    self.item.remove_callback(self.item)
     self.show_parent:removeAt(self.index)
 end
 
 function VocabItemWidget:resetProgress()
-    self .item.review_count = 0
-    self .item.due_time = os.time() - 1
-    DB:resetWordProgress(self .item.word)
+    self.item.review_count = 0
+    self.item.due_time = os.time() - 1
+    DB:resetWordProgress(self.item.word)
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self[1].dimen end)
@@ -653,10 +655,10 @@ end
 
 function VocabItemWidget:showMore()
     local dialogue = WordInfoDialog:new{
-        title = self .item.word,
-        book_title = self .item.book_title,
-        dates = _("Added on ") .. os.date("%Y-%m-%d", self .item.create_time) .. " | " ..
-        _("Review scheduled at ") .. os.date("%Y-%m-%d %H:%M", self .item.due_time),
+        title = self.item.word,
+        book_title = self.item.book_title,
+        dates = _("Added on ") .. os.date("%Y-%m-%d", self.item.create_time) .. " | " ..
+        _("Review scheduled at ") .. os.date("%Y-%m-%d %H:%M", self.item.due_time),
         remove_callback = function()
             self:remover()
         end,
@@ -670,36 +672,36 @@ function VocabItemWidget:showMore()
 end
 
 function VocabItemWidget:onTap(_, ges)
-    if self .item.callback then
-        self .item.callback(self .item)
+    if self.item.callback then
+        self.item.callback(self.item)
     end
 
     return true
 end
 
 function VocabItemWidget:onHold()
-    if self .item.callback then
-        self .item.callback(self .item)
+    if self.item.callback then
+        self.item.callback(self.item)
     end
     return true
 end
 
 function VocabItemWidget:onGotIt()
-    self .item.got_it_callback(self .item)
-    self .item.is_dim = true
+    self.item.got_it_callback(self.item)
+    self.item.is_dim = true
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
     return "ui", self[1].dimen end)
 end
 
 function VocabItemWidget:onForgot(no_lookup)
-    self .item.forgot_callback(self .item)
-    self .item.is_dim = false
+    self.item.forgot_callback(self.item)
+    self.item.is_dim = false
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self[1].dimen end)
-    if not no_lookup and  self .item.callback then
-        self .item.callback(self .item)
+    if not no_lookup and  self.item.callback then
+        self.item.callback(self.item)
     end
 end
 
