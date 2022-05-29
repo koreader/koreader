@@ -788,7 +788,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
                 end,
             },
             {
-                text = _("…"),
+                text = "…",
                 callback = function()
                     self.selected_text = self.view.highlight.saved[page][index]
                     self:onShowHighlightMenu(page, index)
