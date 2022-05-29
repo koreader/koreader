@@ -39,6 +39,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local C_ = _.pgettext
 
 -------- shared values
 local word_face = Font:getFace("x_smallinfofont")
@@ -617,13 +618,13 @@ function VocabItemWidget:getTimeSinceDue()
 
     local rounding = elapsed > 0 and math.floor or math.ceil
     if abs < 60 then
-        readable_time = abs .. "s"
+        readable_time = abs .. C_("Time", "s")
     elseif abs < 3600 then
-        readable_time = string.format("%dm", rounding(abs/60))
+        readable_time = string.format("%d"..C_("Time", "m"), rounding(abs/60))
     elseif abs < 3600 * 24 then
-        readable_time = string.format("%dh", rounding(abs/3600))
+        readable_time = string.format("%d"..C_("Time", "h"), rounding(abs/3600))
     else
-        readable_time = string.format("%dd", rounding(abs/3600/24))
+        readable_time = string.format("%d"..C_("Time", "d"), rounding(abs/3600/24))
     end
 
     if elapsed < 0 then

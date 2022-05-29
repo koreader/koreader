@@ -176,7 +176,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     elseif target_count == 7 then
         due_time = current_time + 24 * 15 * 3600
     else
-        due_time = current_time + 25 * 30 * 3600
+        due_time = current_time + 24 * 30 * 3600
     end
 
     local sql = string.format([[UPDATE vocabulary
