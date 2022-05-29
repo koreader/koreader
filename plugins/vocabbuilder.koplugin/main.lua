@@ -1,7 +1,7 @@
 --[[--
 This plugin processes dictionary word lookups and uses spaced repetition to help you remember new words.
 
-@module koplugin.vocabulary_builder
+@module koplugin.vocabbuilder
 --]]--
 
 local BD = require("ui/bidi")
@@ -139,6 +139,7 @@ function MenuDialog:init()
     self:mergeLayoutInVertical(buttons)
 
     self.covers_fullscreen = true
+    local switch_guide_width = math.ceil(math.max(5, width * (1-switch_ratio) - Size.padding.fullscreen))
     self[1] = CenterContainer:new{
         dimen = size,
         FrameContainer:new{
@@ -150,10 +151,11 @@ function MenuDialog:init()
             VerticalGroup:new{
                 HorizontalGroup:new{
                     RightContainer:new{
-                        dimen = Geom:new{w = width * (1-switch_ratio) - Size.padding.fullscreen, h = switch:getSize().h },
+                        dimen = Geom:new{w = switch_guide_width, h = switch:getSize().h },
                         TextWidget:new{
                             text = _("Accept new words"),
-                            face = Font:getFace("xx_smallinfofont")
+                            face = Font:getFace("xx_smallinfofont"),
+                            max_width = switch_guide_width
                         }
                     },
                     HorizontalSpan:new{width = Size.padding.fullscreen},
@@ -215,9 +217,6 @@ function MenuDialog:onConfigChoose(values, name, event, args, position)
 end
 
 
-
-
-
 --[[--
 Individual word info dialogue wedget
 --]]--
@@ -255,14 +254,14 @@ function WordInfoDialog:init()
 
     local width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.61)
     local reset_button = {
-        text = _("Reset Progress"),
+        text = _("Reset progress"),
         callback = function()
             self.reset_callback()
             UIManager:close(self)
         end
     }
     local remove_button = {
-        text = _("Remove Word"),
+        text = _("Remove word"),
         callback = function()
             self.remove_callback()
             UIManager:close(self)
@@ -657,8 +656,8 @@ function VocabItemWidget:showMore()
     local dialogue = WordInfoDialog:new{
         title = self.item.word,
         book_title = self.item.book_title,
-        dates = _("Added on ") .. os.date("%Y-%m-%d", self.item.create_time) .. " | " ..
-        _("Review scheduled at ") .. os.date("%Y-%m-%d %H:%M", self.item.due_time),
+        dates = _("Added on") .. " " .. os.date("%Y-%m-%d", self.item.create_time) .. " | " ..
+        _("Review scheduled at") .. " " .. os.date("%Y-%m-%d %H:%M", self.item.due_time),
         remove_callback = function()
             self:remover()
         end,
@@ -1095,7 +1094,7 @@ end
 
 function VocabBuilder:addToMainMenu(menu_items)
     menu_items.vocabulary_builder = {
-        text = _("Vocabulary Builder"),
+        text = _("Vocabulary builder"),
         keep_menu_open = true,
         callback = function()
             local vocab_items = {}
@@ -1152,7 +1151,7 @@ function VocabBuilder:addToMainMenu(menu_items)
             end
 
             self.builder_widget = VocabularyBuilderWidget:new{
-                title = _("Vocabulary Builder"),
+                title = _("Vocabulary builder"),
                 item_table = vocab_items,
                 select_items_callback = function(items, start_idx, end_idx)
                     DB:select_items(items, start_idx, end_idx)
@@ -1164,8 +1163,8 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
--- Event sent by readerdictionary "LookupWordWithBookTitle"
-function VocabBuilder:onLookupWordWithBookTitle(word, title)
+-- Event sent by readerdictionary "WordLookedUp"
+function VocabBuilder:onWordLookedUp(word, title)
     if not settings.enabled then return end
     if self.builder_widget and self.builder_widget.current_lookup_word == word then return true end
 
