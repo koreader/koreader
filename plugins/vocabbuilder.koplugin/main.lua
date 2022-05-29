@@ -80,9 +80,9 @@ function MenuDialog:init()
 
     local switch_ratio = 0.61
     local size = Screen:getSize()
-    local width = size.w * 0.8
+    local width = math.floor(size.w * 0.8)
     local switch = ToggleSwitch:new{
-        width = width * switch_ratio,
+        width = math.floor(width * switch_ratio),
         default_value = 2,
         name = "vocabulary_builder",
         name_text = nil, --_("Accept new words"),
@@ -219,7 +219,7 @@ end
 
 
 --[[--
-Individual word info dialogue wedget
+Individual word info dialogue widget
 --]]--
 local WordInfoDialog = InputContainer:new{
     title = nil,
@@ -431,7 +431,7 @@ function VocabItemWidget:init()
             range = self.dimen,
         }
     }
-    self.v_spacer = VerticalSpan:new{width = (self.height - word_height - subtitle_height)/2}
+    self.v_spacer = VerticalSpan:new{width = math.floor((self.height - word_height - subtitle_height)/2)}
     self.point_v_spacer = VerticalSpan:new{width = (self.v_spacer.width + word_height/2) - point_widget_height/2 }
     self.margin_span = HorizontalSpan:new{ width = Size.padding.large }
     self:initItemWidget()
@@ -477,7 +477,7 @@ function VocabItemWidget:initItemWidget()
 
     local right_side_width
     local right_widget
-    if self.item.due_time < os.time() then
+    if self.item.due_time <= os.time() then
         right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
 
         self.forgot_button = Button:new{
@@ -586,7 +586,7 @@ function VocabItemWidget:initItemWidget()
                         word_widget
                     },
                     LeftContainer:new{
-                        dimen = Geom:new{w = text_max_width, h = self.height - word_height - self.v_spacer.width*2.2},
+                        dimen = Geom:new{w = text_max_width, h = math.floor(self.height - word_height - self.v_spacer.width*2.2)},
                         HorizontalGroup:new{
                             subtitle_prefix,
                             TextWidget:new{
@@ -641,8 +641,8 @@ end
 
 function VocabItemWidget:resetProgress()
     self.item.review_count = 0
-    self.item.due_time = os.time() - 1
-    DB:resetWordProgress(self.item.word)
+    self.item.due_time = os.time()
+    self.item.review_time = self.item.due_time
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self[1].dimen end)
@@ -1007,11 +1007,11 @@ function VocabularyBuilderWidget:forgotFromDict(word)
 end
 
 function VocabularyBuilderWidget:resetItems()
-    local current_time = os.time() - 1
     for i, item in ipairs(self.item_table) do
         if self.item_table[i].word then -- selected from DB
-            self.item_table[i].review_count = 0
-            self.item_table[i].due_time = current_time
+            self.item_table[i] = {
+                callback = self.item_table[i].callback
+            }
         end
     end
     self:_populateItems()
@@ -1066,6 +1066,7 @@ function VocabularyBuilderWidget:onSwipe(arg, ges_ev)
 end
 
 function VocabularyBuilderWidget:onClose()
+    DB:batchUpdateItems(self.item_table)
     UIManager:close(self)
     -- UIManager:setDirty(self, "ui")
     return true
@@ -1104,7 +1105,7 @@ function VocabBuilder:addToMainMenu(menu_items)
                     callback = function(item)
                         -- custom button table
                         local tweak_buttons_func
-                        if item.due_time < os.time() then
+                        if item.due_time <= os.time() then
                             tweak_buttons_func = function(buttons)
                                 local tweaked_button_count = 0
                                 local early_break
