@@ -245,12 +245,12 @@ function DateTimeWidget:createLayout()
         bold = true,
     }
     separator_time = TextWidget:new{
-        text = _(":"),
+        text = ":",
         face = self.title_face,
         bold = true,
     }
     separator_date_time = TextWidget:new{
-        text =  _("/"),
+        text =  "/",
         face = self.title_face,
         bold = true,
     }
