@@ -560,6 +560,7 @@ local PocketBook632 = PocketBook:extend{
 local PocketBook633 = PocketBook:extend{
     model = "PBColor",
     display_dpi = 300,
+    color_vibrance = 2.0,
     hasColorScreen = yes,
     canUseCBB = no, -- 24bpp
     isAlwaysPortrait = yes,
@@ -624,6 +625,7 @@ local PocketBook740_2 = PocketBook:extend{
 local PocketBook741 = PocketBook:extend{
     model = "PBInkPadColor",
     display_dpi = 300,
+    color_vibrance = 2.0,
     hasColorScreen = yes,
     canUseCBB = no, -- 24bpp
     isAlwaysPortrait = yes,
@@ -639,6 +641,7 @@ end
 local PocketBookColorLux = PocketBook:extend{
     model = "PBColorLux",
     display_dpi = 125,
+    color_vibrance = 2.0,
     hasColorScreen = yes,
     canUseCBB = no, -- 24bpp
 }
