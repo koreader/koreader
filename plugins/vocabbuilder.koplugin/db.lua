@@ -99,9 +99,8 @@ function VocabularyBuilder:insertLookupData(db_conn)
 end
 
 function VocabularyBuilder:_select_items(items, start_idx)
-
     local conn = SQ3.open(db_location)
-    local sql = string.format("SELECT * FROM vocabulary ORDER BY due_time limit %d OFFSET %d;",32, start_idx-1)
+    local sql = string.format("SELECT * FROM vocabulary ORDER BY due_time limit %d OFFSET %d;", 32, start_idx-1)
 
     local results = conn:exec(sql)
     conn:close()
@@ -116,7 +115,7 @@ function VocabularyBuilder:_select_items(items, start_idx)
             item.review_count = math.max(0, math.min(8, tonumber(results.review_count[i])))
             item.book_title = results.book_title[i] or ""
             item.create_time = tonumber( results.create_time[i])
-            item.review_time = tonumber( results.review_time[i])
+            item.review_time = nil --use this field to plag change
             item.due_time = tonumber(results.due_time[i])
             item.is_dim = tonumber(results.due_time[i]) > current_time
             item.got_it_callback = function(item_input)
@@ -135,7 +134,6 @@ function VocabularyBuilder:_select_items(items, start_idx)
 end
 
 function VocabularyBuilder:select_items(items, start_idx, end_idx)
-
     local start_cursor
     if #items == 0 then
         start_cursor = 0
@@ -154,7 +152,6 @@ end
 
 
 function VocabularyBuilder:gotOrForgot(item, isGot)
-    local conn = SQ3.open(db_location)
     local current_time = os.time()
 
     local due_time
@@ -179,18 +176,27 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
         due_time = current_time + 24 * 30 * 3600
     end
 
-    local sql = string.format([[UPDATE vocabulary
-    SET review_count = %d,
-        review_time = %d,
-        due_time = %d
-    WHERE word = '%s';]], target_count, current_time, due_time, item.word)
+    item.review_count = target_count
+    item.review_time = current_time
+    item.due_time = due_time
+end
 
-    local x = conn:exec(sql)
+function VocabularyBuilder:batchUpdateItems(items)
+    local sql = [[UPDATE vocabulary
+                SET review_count = ?,
+                    review_time = ?,
+                        due_time = ?
+                    WHERE word = ?;]]
 
-    if x == nil then
-        item.review_count = target_count
-        item.reviewable = false
-        item.due_time = due_time
+    local conn = SQ3.open(db_location)
+    local stmt = conn:prepare(sql)
+
+    for _, item in ipairs(items) do
+        if item.review_time then
+            stmt:bind(item.review_count, item.review_time, item.due_time, item.word)
+            stmt:step()
+            stmt:clearbind():reset()
+        end
     end
     conn:close()
 end
