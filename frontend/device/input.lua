@@ -1310,6 +1310,9 @@ function Input:inhibitInput(toggle)
             self._generic_ev_handler = self.handleGenericEv
             self.handleGenericEv = self.voidEv
         end
+
+        -- Reset gesture detection state to a blank slate, to avoid bogus gesture detection on restore.
+        self:resetState()
     else
         -- Restore event handlers, if any
         if self._key_ev_handler then

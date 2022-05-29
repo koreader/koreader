@@ -1743,9 +1743,6 @@ function UIManager:_beforeSuspend()
 
     -- Disable key repeat to avoid useless chatter (especially where Sleep Covers are concerned...)
     Device:disableKeyRepeat()
-
-    -- Reset gesture detection state to a blank slate (anything power-management related emits KEY events, which don't need gesture detection).
-    Input:resetState()
 end
 
 -- The common operations that should be performed after resuming the device.
