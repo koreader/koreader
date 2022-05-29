@@ -207,23 +207,21 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, comp
         if withoutSeconds then
             time_string = time_string .. ":"
         end
+        time_string = time_string:gsub(":", C_("Time", "h"), 1)
+        time_string = time_string:gsub(":", C_("Time", "m"), 1)
+        time_string = time_string:gsub("^00" .. C_("Time", "h"), "") -- delete leading "00h"
+        time_string = time_string:gsub("^00" .. C_("Time", "m"), "") -- delete leading "00m"
+        if time_string:find("^0%d") then
+            time_string = time_string:gsub("^0", "") -- delete leading "0"
+        end
+        if withoutSeconds and time_string == "" then
+            time_string = "0" .. C_("Time", "m")
+        end
+
         if hmsFormat then
-            time_string = time_string:gsub(":", C_("Time", "h"), 1)
-            time_string = time_string:gsub(":", C_("Time", "m"), 1)
-            time_string = time_string:gsub("^00" .. C_("Time", "h"), "") -- delete leading "00h"
-            time_string = time_string:gsub("^00" .. C_("Time", "m"), "") -- delete leading "00m"
-            if time_string:find("^0%d") then
-                time_string = time_string:gsub("^0", "") -- delete leading "0"
-            end
             return withoutSeconds and time_string or (time_string .. C_("Time", "s"))
         else
-            time_string = time_string:gsub(":", C_("Time", "h"), 1)
-            time_string = time_string:gsub(":", "'", 1)
-            time_string = time_string:gsub("^00" .. C_("Time", "h"), "") -- delete leading "00h"
-            time_string = time_string:gsub("^00" .. C_("Time", "'"), "") -- delete leading "00m"
-            if time_string:find("^0%d") then
-                time_string = time_string:gsub("^0", "") -- delete leading "0"
-            end
+            time_string = time_string:gsub(C_("Time", "m"), "'") -- replace m with '
             return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
         end
     end
@@ -238,6 +236,7 @@ end
 ---- @bool compact, if set removes all leading zeros (incl. units if necessary)
 ---- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h30m, 1h30m10s
 function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat, withDays, compact)
+    print("xxx")
     if format == "modern" then
         return util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, compact)
     else
