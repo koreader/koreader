@@ -146,7 +146,49 @@ function NumberPickerWidget:init()
                             text = _("OK"),
                             is_enter_default = true,
                             callback = function()
-                                local input_value = tonumber(input_dialog:getInputText())
+                                local input_text = input_dialog:getInputText()
+                                local input_value = tonumber(input_text)
+                                local turn_off_checks = false
+
+                                -- if the first character of the input string is ":" turn of min-max checks
+                                if input_text:match("^:") and G_reader_settings:isTrue("debug_verbose") then
+                                    turn_off_checks = true -- turn off checks
+                                    input_text = input_text:gsub("^:", "") -- shorten input
+                                    input_value = tonumber(input_text) -- try to get value
+                                end
+
+                                -- if the input text starts with `=` try to evaluate the expression
+                                -- only allow `math.*` and no other functions to be safe here.
+                                if input_text:match("^=") then
+                                    input_text = input_text:gsub("^=", "return ")
+                                    -- run code under environment
+                                    local function run_lua_protected_string(code)
+                                        -- make environment
+                                        local env = {math = math}
+                                        local func, message = loadstring(code)
+                                        if func then
+                                            setfenv(func, env)
+                                            return pcall(func)
+                                        end
+                                    end
+                                    local dummy
+                                    dummy, input_value = run_lua_protected_string(input_text)
+                                    input_value = tonumber(input_value)
+                                end
+
+                                if turn_off_checks then
+                                    if not input_value then return end
+                                    if input_value < self.value_min or input_value > self.value_max then
+                                        UIManager:show(InfoMessage:new{
+                                            text = T(_("ATTENTION:\nYou turned of sanity checks!\nThis value should be in the range %1 - %2\nUndefined behavior is possible.\n"), self.value_min, self.value_max),
+                                        })
+                                    end
+                                    self.value = input_value
+                                    self:update()
+                                    UIManager:close(input_dialog)
+                                    return
+                                end
+
                                 if input_value and input_value >= self.value_min and input_value <= self.value_max then
                                     self.value = input_value
                                     self:update()
