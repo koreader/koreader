@@ -115,7 +115,7 @@ function VocabularyBuilder:_select_items(items, start_idx)
             item.review_count = math.max(0, math.min(8, tonumber(results.review_count[i])))
             item.book_title = results.book_title[i] or ""
             item.create_time = tonumber( results.create_time[i])
-            item.review_time = nil --use this field to plag change
+            item.review_time = nil --use this field to flag change
             item.due_time = tonumber(results.due_time[i])
             item.is_dim = tonumber(results.due_time[i]) > current_time
             item.got_it_callback = function(item_input)
