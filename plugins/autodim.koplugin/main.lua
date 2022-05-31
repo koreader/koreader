@@ -36,6 +36,7 @@ function AutoDim:init()
 
     self:_schedule_autodim_task()
     self.isCurrentlyDimming = false -- true during or after the dimming ramp
+    self.trap_widget = nil
 end
 
 function AutoDim:addToMainMenu(menu_items)
@@ -182,7 +183,10 @@ end
 function AutoDim:onResume()
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     if self.isCurrentlyDimming then
-        UIManager:close(self.trap_widget)
+        if self.trap_widget then
+            UIManager:close(self.trap_widget)
+            self.trap_widget = nil
+        end
         UIManager:scheduleIn(1, function()
             Device.powerd:setIntensity(self.autodim_save_fl)
             UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
@@ -208,7 +212,10 @@ function AutoDim:autodim_task()
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
         self.trap_widget = TrapWidget:new{
-            dismiss_callback = function() self:restoreFrontlight() end
+            dismiss_callback = function()
+                self:restoreFrontlight()
+                self.trap_widget = nil
+            end
         }
 
         UIManager:show(self.trap_widget) -- suppress taps during dimming
