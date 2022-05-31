@@ -36,10 +36,6 @@ function AutoDim:init()
 
     self:_schedule_autodim_task()
     self.isCurrentlyDimming = false -- true during or after the dimming ramp
-
-    self.trap_widget = TrapWidget:new{
-        dismiss_callback = function() self:restoreFrontlight() end,
-    }
 end
 
 function AutoDim:addToMainMenu(menu_items)
@@ -211,6 +207,10 @@ function AutoDim:autodim_task()
     local idle_duration = now - self.last_action_time
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
+        self.trap_widget = TrapWidget:new{
+            dismiss_callback = function() self:restoreFrontlight() end
+        }
+
         UIManager:show(self.trap_widget) -- suppress taps during dimming
 
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
