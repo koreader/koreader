@@ -190,13 +190,13 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, comp
         else
             if hmsFormat then
                 if compact then
-                    return T(C_("Time", "%1s"), string.format("%2d", seconds))
+                    return T(C_("Time", "%1s"), string.format("%d", seconds))
                 else
                     return T(C_("Time", "%1m%2s"), "0", string.format("%02d", seconds))
                 end
             else
                 if compact then
-                    return string.format("%2d", seconds) .. SECONDS_SYMBOL
+                    return string.format("%d", seconds) .. SECONDS_SYMBOL
                 else
                     return "0'" .. string.format("%02d", seconds) .. SECONDS_SYMBOL
                 end
@@ -236,7 +236,6 @@ end
 ---- @bool compact, if set removes all leading zeros (incl. units if necessary)
 ---- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h30m, 1h30m10s
 function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat, withDays, compact)
-    print("xxx")
     if format == "modern" then
         return util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, compact)
     else
