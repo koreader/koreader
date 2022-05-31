@@ -239,6 +239,7 @@ function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat,
     if format == "modern" then
         return util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, compact)
     else
+         -- Assume "classic" to give safe default
         return util.secondsToClock(seconds, withoutSeconds, withDays)
     end
 end
