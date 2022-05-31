@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
+local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -401,7 +402,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
+function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, tweak_buttons_func)
     logger.dbg("dict lookup word:", word, boxes)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
@@ -411,7 +412,7 @@ function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link)
+        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link, tweak_buttons_func)
     end)
     return true
 end
@@ -882,12 +883,11 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     return results
 end
 
-function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link)
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, tweak_buttons_func)
     if word == "" then
         return
     end
 
-    if not self.disable_lookup_history then
         local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
         if book_title == "" then -- no or empty metadata title
             if self.ui.document and self.ui.document.file then
@@ -895,6 +895,10 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
                 book_title = util.splitFileNameSuffix(filename)
             end
         end
+
+    -- Event for plugin to catch lookup with book title
+    self.ui:handleEvent(Event:new("WordLookedUp", word, book_title))
+    if not self.disable_lookup_history then
         lookup_history:addTableItem("lookup_history", {
             book_title = book_title,
             time = os.time(),
@@ -945,16 +949,17 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         return
     end
 
-    self:showDict(word, tidyMarkup(results), boxes, link)
+    self:showDict(word, tidyMarkup(results), boxes, link, tweak_buttons_func)
 end
 
-function ReaderDictionary:showDict(word, results, boxes, link)
+function ReaderDictionary:showDict(word, results, boxes, link, tweak_buttons_func)
     if results and results[1] then
         logger.dbg("showing quick lookup window", #self.dict_window_list+1, ":", word, results)
         self.dict_window = DictQuickLookup:new{
             window_list = self.dict_window_list,
             ui = self.ui,
             highlight = self.highlight,
+            tweak_buttons_func = tweak_buttons_func,
             dialog = self.dialog,
             -- original lookup word
             word = word,
