@@ -85,12 +85,12 @@ local order = {
     },
     screen = {
         "screensaver",
+        "autodim",
         "----------------------------",
         "screen_rotation",
         "----------------------------",
         "screen_dpi",
         "screen_eink_opt",
-        "autodim",
         "autowarmth",
         "color_rendering",
         "----------------------------",
