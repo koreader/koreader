@@ -348,12 +348,6 @@ function Terminal:generateInputDialog()
                 end,
             },
             {
-            text = "⎚", --clear
-            callback = function()
-                self:transmit("clear\n") -- this could happen during a running program (e.g. top)
-            end,
-            },
-            {
             text = "⇧",
             callback = function()
                 self.input_widget:upLine()
