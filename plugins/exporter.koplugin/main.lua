@@ -210,7 +210,7 @@ function Exporter:addToMainMenu(menu_items)
                 end
 
                 if #document > 0 then
-                    logger.warn(document)
+                    v.timestamp = os.time()
                     v:share(document)
                 end
             end
