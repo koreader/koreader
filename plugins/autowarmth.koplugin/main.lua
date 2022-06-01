@@ -65,9 +65,9 @@ function AutoWarmth:init()
     self.longitude = G_reader_settings:readSetting("autowarmth_longitude") or -20.30
     self.altitude = G_reader_settings:readSetting("autowarmth_altitude") or 200
     self.timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0
-    self.scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times") or
-        {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0}
-    self.warmth =   G_reader_settings:readSetting("autowarmth_warmth")
+    self.scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times")
+        or {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0}
+    self.warmth = G_reader_settings:readSetting("autowarmth_warmth")
         or { 90, 90, 80, 60, 20, 20, 20, 60, 80, 90, 90}
 
     -- schedule recalculation shortly afer midnight
@@ -178,7 +178,7 @@ function AutoWarmth:scheduleMidnightUpdate()
         if warmth_diff ~= 0 then
             local time_diff = SunTime:getTimeInSec(time2) - time
             local delta_t = time_diff / math.abs(warmth_diff) -- can be inf, no problem
-            local delta_w =  warmth_diff > 0 and 1 or -1
+            local delta_w = warmth_diff > 0 and 1 or -1
             for i = 1, math.abs(warmth_diff)-1 do
                 local next_warmth = math.min(self.warmth[index1], 100) + delta_w * i
                 -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
@@ -354,7 +354,7 @@ function AutoWarmth:getSubMenuItems()
             callback = function()
                 UIManager:show(InfoMessage:new{
                     text = about_text,
-                     width = math.floor(Screen:getWidth() * 0.9),
+                    width = math.floor(Screen:getWidth() * 0.9),
                 })
             end,
             keep_menu_open = true,
@@ -475,8 +475,9 @@ function AutoWarmth:getLocationMenu()
                                 if touchmenu_instance then touchmenu_instance:updateItems() end
                             end,
                         },
-                    }}
-                }
+                    }
+                },
+            }
             UIManager:show(location_name_dialog)
             location_name_dialog:onShowKeyboard()
         end,
@@ -560,8 +561,7 @@ function AutoWarmth:getScheduleMenu()
         self.scheduler_times[num] = new_time
         if num == 1 then
             if new_time then
-                self.scheduler_times[midnight_index]
-                    = new_time + 24 -- next day
+                self.scheduler_times[midnight_index] = new_time + 24 -- next day
             else
                 self.scheduler_times[midnight_index] = nil
             end
@@ -609,7 +609,7 @@ function AutoWarmth:getScheduleMenu()
                         end
                         if num > 1 and new_time < get_valid_time(num, -1) then
                             UIManager:show(ConfirmBox:new{
-                                text =  _("This time is before the previous time.\nAdjust the previous time?"),
+                                text = _("This time is before the previous time.\nAdjust the previous time?"),
                                 ok_callback = function()
                                     for i = num-1, 1, -1 do
                                         if self.scheduler_times[i] then
@@ -625,9 +625,9 @@ function AutoWarmth:getScheduleMenu()
                             })
                         elseif num < 10 and new_time > get_valid_time(num, 1) then
                             UIManager:show(ConfirmBox:new{
-                                text =  _("This time is after the subsequent time.\nAdjust the subsequent time?"),
+                                text = _("This time is after the subsequent time.\nAdjust the subsequent time?"),
                                 ok_callback = function()
-                                    for i = num + 1, midnight_index - 1  do
+                                    for i = num + 1, midnight_index - 1 do
                                         if self.scheduler_times[i] then
                                             if new_time > self.scheduler_times[i] then
                                                 self.scheduler_times[i] = new_time
@@ -744,7 +744,6 @@ function AutoWarmth:getWarmthMenu()
                                 text = _("Cancel"),
                             }
                         }},
-
                     })
                 end
             end,
@@ -859,7 +858,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     UIManager:show(InfoMessage:new{
         face = face,
         width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
-            text = title .. location_string .. ":\n\n" ..
+        text = title .. location_string .. ":\n\n" ..
             info_line(0, _("Solar midnight:"), times, 1, face, request_easy) ..
             add_line(_("Dawn"), request_easy) ..
             info_line(4, _("Astronomic:"), times, 2, face, request_easy) ..
