@@ -543,7 +543,7 @@ This is experimental on most devices, except those running on a sunxi SoC (Kobo 
             text_func = function()
                 if self.auto_standby_timeout_seconds and self.auto_standby_timeout_seconds > 0 then
                     local time_string = util.secondsToClockDuration("modern", self.auto_standby_timeout_seconds,
-                        false, true, true)
+                        false, true, true, true)
                     return T(_("Autostandby timeout: %1"), time_string)
                 else
                     return _("Autostandby timeout")
