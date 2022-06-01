@@ -142,8 +142,12 @@ function Exporter:requiresNetwork()
     end
 end
 
+function Exporter:getDocumentClippings()
+    return self.parser:parseCurrentDoc(self.view) or {}
+end
+
 function Exporter:exportCurrentNotes()
-    local clippings = self.parser:parseCurrentDoc(self.view)
+    local clippings = self:getDocumentClippings()
     self:exportClippings(clippings)
 end
 
@@ -192,27 +196,22 @@ function Exporter:exportClippings(clippings)
     end
 end
 
-function Exporter:getShareableClippings()
-    local clippings = self.parser:parseCurrentDoc(self.view)
-    if type(clippings) ~= "table" then return end
-    local book = {}
-    for _title, notes in pairs(clippings) do
-        book = notes
-    end
-    return book
-end
-
 function Exporter:addToMainMenu(menu_items)
-    local is_android = util.isAndroid();
     local submenu = {}
     local sharemenu = {}
     for k, v in pairs(self.targets) do
         submenu[#submenu + 1] = v:getMenuTable()
         if v.shareable then
             sharemenu[#sharemenu + 1] = { text = _("Share as " .. v.name), callback = function()
-                local book = self:getShareableClippings()
-                if book then
-                    v:share(book)
+                local clippings = self:getDocumentClippings()
+                local document
+                for k, v in pairs(clippings) do
+                    document = v or {}
+                end
+
+                if #document > 0 then
+                    logger.warn(document)
+                    v:share(document)
                 end
             end
             }
@@ -241,7 +240,7 @@ function Exporter:addToMainMenu(menu_items)
                 callback = function()
                     self:exportAllNotes()
                 end,
-                separator = is_android and #sharemenu == 0,
+                separator = #sharemenu == 0,
             },
             {
                 text = _("Choose formats and services"),
@@ -250,12 +249,15 @@ function Exporter:addToMainMenu(menu_items)
             },
         }
     }
-    if is_android and #sharemenu > 0 then
+    if #sharemenu > 0 then
         table.sort(sharemenu, function(v1, v2)
             return v1.text < v2.text
         end)
         table.insert(menu.sub_item_table, 3, {
             text = _("Share all notes in this book"),
+            enabled_func = function()
+                return self:isDocReady()
+            end,
             sub_item_table = sharemenu,
             separator = true,
         })
