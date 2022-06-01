@@ -32,6 +32,7 @@ local MyClipping = require("clip")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local util = require("ffi/util")
 local _ = require("gettext")
 
 
@@ -191,16 +192,36 @@ function Exporter:exportClippings(clippings)
     end
 end
 
+function Exporter:getShareableClippings()
+    local clippings = self.parser:parseCurrentDoc(self.view)
+    if type(clippings) ~= "table" then return end
+    local book = {}
+    for _title, notes in pairs(clippings) do
+        book = notes
+    end
+    return book
+end
+
 function Exporter:addToMainMenu(menu_items)
+    local is_android = util.isAndroid();
     local submenu = {}
+    local sharemenu = {}
     for k, v in pairs(self.targets) do
         submenu[#submenu + 1] = v:getMenuTable()
+        if v.shareable then
+            sharemenu[#sharemenu + 1] = { text = _("Share as " .. v.name), callback = function()
+                local book = self:getShareableClippings()
+                if book then
+                    v:share(book)
+                end
+            end
+            }
+        end
     end
     table.sort(submenu, function(v1, v2)
         return v1.text < v2.text
     end)
-
-    menu_items.exporter = {
+    local menu = {
         text = _("Export highlights"),
         sub_item_table = {
             {
@@ -220,7 +241,7 @@ function Exporter:addToMainMenu(menu_items)
                 callback = function()
                     self:exportAllNotes()
                 end,
-                separator = true,
+                separator = is_android and #sharemenu == 0,
             },
             {
                 text = _("Choose formats and services"),
@@ -229,6 +250,17 @@ function Exporter:addToMainMenu(menu_items)
             },
         }
     }
+    if is_android and #sharemenu > 0 then
+        table.sort(sharemenu, function(v1, v2)
+            return v1.text < v2.text
+        end)
+        table.insert(menu.sub_item_table, 3, {
+            text = _("Share all notes in this book"),
+            sub_item_table = sharemenu,
+            separator = true,
+        })
+    end
+    menu_items.exporter = menu
 end
 
 return Exporter
