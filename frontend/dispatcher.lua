@@ -129,7 +129,7 @@ local settingsList = {
     book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true, separator=true},
     show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
     toggle_bookmark = {category="none", event="ToggleBookmark", title=_("Toggle bookmark"), reader=true},
-    toggle_page_change_Animation = {category="none", event="TogglePageChangeAnimation", title=_("Toggle page turn animations"), reader=true, condition=Device:canDoSwipeAnimation()},
+    toggle_page_change_animation = {category="none", event="TogglePageChangeAnimation", title=_("Toggle page turn animations"), reader=true, condition=Device:canDoSwipeAnimation()},
     toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, separator=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true},
@@ -307,6 +307,7 @@ local dispatcher_menu_order = {
     "font_kerning",
 
     "toggle_bookmark",
+    "toggle_page_change_animation"
     "toggle_page_flipping",
     "toggle_reflow",
     "toggle_inverse_reading_order",
