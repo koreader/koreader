@@ -307,7 +307,7 @@ local dispatcher_menu_order = {
     "font_kerning",
 
     "toggle_bookmark",
-    "toggle_page_change_animation"
+    "toggle_page_change_animation",
     "toggle_page_flipping",
     "toggle_reflow",
     "toggle_inverse_reading_order",
