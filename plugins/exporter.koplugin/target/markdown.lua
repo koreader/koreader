@@ -3,7 +3,6 @@ local Device = require("device")
 local md = require("template/md")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local logger = require("logger")
 
 -- markdown exporter
 local MarkdownExporter = require("base"):new {
