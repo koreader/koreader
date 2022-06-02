@@ -32,7 +32,6 @@ local MyClipping = require("clip")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util = require("ffi/util")
 local _ = require("gettext")
 
 
@@ -208,8 +207,8 @@ function Exporter:addToMainMenu(menu_items)
             sharemenu[#sharemenu + 1] = { text = _("Share as " .. v.name), callback = function()
                 local clippings = self:getDocumentClippings()
                 local document
-                for k, v in pairs(clippings) do
-                    document = v or {}
+                for _, notes in pairs(clippings) do
+                    document = notes or {}
                 end
 
                 if #document > 0 then
