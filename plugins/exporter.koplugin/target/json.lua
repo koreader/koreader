@@ -1,8 +1,9 @@
 local json = require("json")
-
+local Device = require("device")
 -- json exporter
 local JsonExporter = require("base"):new {
     name = "json",
+    shareable = Device:canShareText(),
 }
 
 local function format(booknotes)
@@ -44,6 +45,13 @@ function JsonExporter:export(t)
     file:write("\n")
     file:close()
     return true
+end
+
+function JsonExporter:share(t)
+    local content = format(t)
+    content.created_on = self.timestamp or os.time()
+    content.version = self:getVersion()
+    Device:doShareText(content)
 end
 
 return JsonExporter
