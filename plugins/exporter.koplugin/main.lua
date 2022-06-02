@@ -127,9 +127,12 @@ function Exporter:isReady()
     return false
 end
 
+function Exporter:isUIReady()
+    return not (self.ui == nil or self.ui.document == nil or self.view == nil)
+end
+
 function Exporter:isDocReady()
-    local docless = self.ui == nil or self.ui.document == nil or self.view == nil
-    return not docless and self:isReady()
+    return self:isUIReady() and self:isReady()
 end
 
 function Exporter:requiresNetwork()
@@ -256,7 +259,7 @@ function Exporter:addToMainMenu(menu_items)
         table.insert(menu.sub_item_table, 3, {
             text = _("Share all notes in this book"),
             enabled_func = function()
-                return self:isDocReady()
+                return self:isUIReady()
             end,
             sub_item_table = sharemenu,
             separator = true,
