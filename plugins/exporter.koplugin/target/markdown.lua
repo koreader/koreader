@@ -135,7 +135,7 @@ function MarkdownExporter:export(t)
 end
 
 function MarkdownExporter:share(t)
-    local content = md.prepareBookContent(t, self.settings.formatting_options, self.settings.highlight_formatting)
+    local content = md.prepareBookContent(t, self.settings.formatting_options, self.settings.highlight_formatting) .. "\n\n_Generated at: " .. self:getTimeStamp() .. "_"
     Device:doShareText(content)
 end
 

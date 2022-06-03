@@ -126,12 +126,12 @@ function Exporter:isReady()
     return false
 end
 
-function Exporter:isUIReady()
+function Exporter:isDocReady()
     return not (self.ui == nil or self.ui.document == nil or self.view == nil)
 end
 
-function Exporter:isDocReady()
-    return self:isUIReady() and self:isReady()
+function Exporter:isReadyToExport()
+    return self:isDocReady() and self:isReady()
 end
 
 function Exporter:requiresNetwork()
@@ -212,7 +212,6 @@ function Exporter:addToMainMenu(menu_items)
                 end
 
                 if #document > 0 then
-                    v.timestamp = os.time()
                     v:share(document)
                 end
             end
@@ -228,7 +227,7 @@ function Exporter:addToMainMenu(menu_items)
             {
                 text = _("Export all notes in this book"),
                 enabled_func = function()
-                    return self:isDocReady()
+                    return self:isReadyToExport()
                 end,
                 callback = function()
                     self:exportCurrentNotes()
@@ -258,7 +257,7 @@ function Exporter:addToMainMenu(menu_items)
         table.insert(menu.sub_item_table, 3, {
             text = _("Share all notes in this book"),
             enabled_func = function()
-                return self:isUIReady()
+                return self:isDocReady()
             end,
             sub_item_table = sharemenu,
             separator = true,
