@@ -127,7 +127,7 @@ function Exporter:isReady()
 end
 
 function Exporter:isDocReady()
-    return not (self.ui == nil or self.ui.document == nil or self.view == nil)
+    return self.ui and self.ui.document and self.view
 end
 
 function Exporter:isReadyToExport()
