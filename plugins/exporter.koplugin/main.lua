@@ -127,8 +127,11 @@ function Exporter:isReady()
 end
 
 function Exporter:isDocReady()
-    local docless = self.ui == nil or self.ui.document == nil or self.view == nil
-    return not docless and self:isReady()
+    return self.ui and self.ui.document and self.view
+end
+
+function Exporter:isReadyToExport()
+    return self:isDocReady() and self:isReady()
 end
 
 function Exporter:requiresNetwork()
@@ -141,8 +144,12 @@ function Exporter:requiresNetwork()
     end
 end
 
+function Exporter:getDocumentClippings()
+    return self.parser:parseCurrentDoc(self.view) or {}
+end
+
 function Exporter:exportCurrentNotes()
-    local clippings = self.parser:parseCurrentDoc(self.view)
+    local clippings = self:getDocumentClippings()
     self:exportClippings(clippings)
 end
 
@@ -193,20 +200,34 @@ end
 
 function Exporter:addToMainMenu(menu_items)
     local submenu = {}
+    local sharemenu = {}
     for k, v in pairs(self.targets) do
         submenu[#submenu + 1] = v:getMenuTable()
+        if v.shareable then
+            sharemenu[#sharemenu + 1] = { text = _("Share as " .. v.name), callback = function()
+                local clippings = self:getDocumentClippings()
+                local document
+                for _, notes in pairs(clippings) do
+                    document = notes or {}
+                end
+
+                if #document > 0 then
+                    v:share(document)
+                end
+            end
+            }
+        end
     end
     table.sort(submenu, function(v1, v2)
         return v1.text < v2.text
     end)
-
-    menu_items.exporter = {
+    local menu = {
         text = _("Export highlights"),
         sub_item_table = {
             {
                 text = _("Export all notes in this book"),
                 enabled_func = function()
-                    return self:isDocReady()
+                    return self:isReadyToExport()
                 end,
                 callback = function()
                     self:exportCurrentNotes()
@@ -220,7 +241,7 @@ function Exporter:addToMainMenu(menu_items)
                 callback = function()
                     self:exportAllNotes()
                 end,
-                separator = true,
+                separator = #sharemenu == 0,
             },
             {
                 text = _("Choose formats and services"),
@@ -229,6 +250,20 @@ function Exporter:addToMainMenu(menu_items)
             },
         }
     }
+    if #sharemenu > 0 then
+        table.sort(sharemenu, function(v1, v2)
+            return v1.text < v2.text
+        end)
+        table.insert(menu.sub_item_table, 3, {
+            text = _("Share all notes in this book"),
+            enabled_func = function()
+                return self:isDocReady()
+            end,
+            sub_item_table = sharemenu,
+            separator = true,
+        })
+    end
+    menu_items.exporter = menu
 end
 
 return Exporter
