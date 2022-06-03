@@ -607,6 +607,8 @@ function AutoSuspend:AllowStandbyHandler()
             -- NOTE: Warning: magic number, YMMV!
             UIManager:setPMInputTimeout(2)
         end
+
+        -- FIXME: Just recompute input timeout based on standby time :?
     end
 end
 
