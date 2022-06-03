@@ -601,6 +601,14 @@ function AutoSuspend:AllowStandbyHandler()
         -- (This ensures we'll use an up to date last_action_time, and that it only ever gets updated from *user* input).
         -- NOTE: UIManager consumes scheduled tasks before input events, which is why we can't use nextTick.
         self.wrapped_leave_standby_task = UIManager:tickAfterNext(self.leave_standby_task)
+
+        -- If we don't have a scheduled task soon, we may not actually get two UI frames,
+        -- we might just go to a potentially long wait on input polling right away.
+        -- To ensure we do get a LeaveStandby in those edge-cases,
+        -- make sure we'll actually return from input polling in the next second by inserting a NOP in the task queue.
+        if not next_task_time or next_task_time > 1 then
+            UIManager:scheduleIn(1, function() end)
+        end
     end
 end
 

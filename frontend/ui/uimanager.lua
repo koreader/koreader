@@ -523,6 +523,8 @@ end
 
 -- Schedule an execution task; task queue is in ascending order
 function UIManager:schedule(sched_time, action, ...)
+    logger.dbg("UIManager:schedule:", sched_time, action)
+    logger.dbg(debug.traceback())
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
         -- Do a binary insert.
@@ -551,13 +553,38 @@ function UIManager:schedule(sched_time, action, ...)
         until e < s
     end
 
+    local level
+    -- Find the actual public cheduling function in the stack...
+    for l = 10, 2, -1 do
+        local info = debug.getinfo(l, "n")
+        if info then
+            if info.name == "scheduleIn" or info.name == "nextTick" or info.name == "tickAfterNext" then
+                level = l + 1
+                break
+            end
+        end
+    end
+
+    local caller
+    if level then
+        local info = debug.getinfo(level, "Sln")
+        caller = string.format("%s %s:%d declared line %d", info.name, info.source, info.currentline, info.linedefined)
+    else
+        caller = "N/A"
+    end
+
     table.insert(self._task_queue, p, {
         time = sched_time,
         action = action,
         argc = select('#', ...),
         args = {...},
+        source = caller,
     })
     self._task_queue_dirty = true
+    logger.dbg("UIManager:schedule: Inserted task", tostring(self._task_queue[p]), "at index", p, "of", #self._task_queue)
+    logger.dbg("\tsource =", self._task_queue[p].source or "nil")
+    logger.dbg("\taction =", self._task_queue[p].action or "nil")
+    logger.dbg("\ttime =", self._task_queue[p].time or "nil")
 end
 dbg:guard(UIManager, 'schedule',
     function(self, sched_time, action)
@@ -644,6 +671,7 @@ UIManager:scheduleIn(10.5, self.anonymousFunction)
 UIManager:unschedule(self.anonymousFunction)
 ]]
 function UIManager:unschedule(action)
+    logger.dbg("UIManager:unschedule:", tostring(action))
     local removed = false
     for i = #self._task_queue, 1, -1 do
         if self._task_queue[i].action == action then
@@ -651,6 +679,7 @@ function UIManager:unschedule(action)
             removed = true
         end
     end
+    logger.dbg(removed)
     return removed
 end
 dbg:guard(UIManager, 'unschedule',
@@ -1162,6 +1191,7 @@ end
 
 function UIManager:_checkTasks()
     self._now = time.now()
+    logger.dbg("UIManager:_checkTasks @", self._now)
     local wait_until = nil
 
     -- Tasks due for execution might themselves schedule more tasks (that might also be immediately due for execution ;)).
@@ -1169,7 +1199,12 @@ function UIManager:_checkTasks()
     self._task_queue_dirty = false
     while self._task_queue[1] do
         local task_time = self._task_queue[1].time
+        logger.dbg("UIManager:_checkTasks checking task", tostring(self._task_queue[1]))
+        logger.dbg("\tsource =", self._task_queue[1].source or "nil")
+        logger.dbg("\taction =", self._task_queue[1].action or "nil")
+        logger.dbg("\ttime =", self._task_queue[1].time or "nil")
         if task_time <= self._now then
+            logger.dbg("It's due, execute it")
             -- Pop the upcoming task, as it is due for execution...
             local task = table.remove(self._task_queue, 1)
             -- ...so do it now.
@@ -1184,6 +1219,7 @@ function UIManager:_checkTasks()
         end
     end
 
+    logger.dbg("UIManager:_checkTasks @", self._now, "asked input polling to wait until", wait_until)
     return wait_until, self._now
 end
 
