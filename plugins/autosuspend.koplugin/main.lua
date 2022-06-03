@@ -602,10 +602,10 @@ function AutoSuspend:AllowStandbyHandler()
         -- if we don't have a scheduled task soon, we might just be waiting on input polling for a while.
         -- To ensure we get a LeaveStandby event in a timely fashion, even when there isn't actually any user input happening,
         -- tell UIManager to return early from input polling, so we get a chance to run through the task queue soon.
-        if not next_task_time or next_task_time > 1 then
-            -- 1s shouldn't skew things too much ;).
-            -- FIXME: But it might actually be slightly too early in some cases?
-            UIManager:setPMInputTimeout(1)
+        if not next_task_time or next_task_time > 2 then
+            -- 2s shouldn't skew things too much, while ensuring we still have time to consume late input events ;).
+            -- NOTE: Warning: magic number, YMMV!
+            UIManager:setPMInputTimeout(2)
         end
     end
 end
