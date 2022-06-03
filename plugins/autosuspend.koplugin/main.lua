@@ -606,7 +606,7 @@ function AutoSuspend:AllowStandbyHandler()
         --        Double-check how bad this might be ;).
         if not next_task_time or next_task_time > 1 then
             -- 1s shouldn't skew things too much ;).
-            UIManager:setPMInputTimeout(1000)
+            UIManager:setPMInputTimeout(1000000)
         end
     end
 end
