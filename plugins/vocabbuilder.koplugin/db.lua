@@ -110,7 +110,7 @@ function VocabularyBuilder:_select_items(items, start_idx)
 
     for i = 1, #results.word do
         local item = items[start_idx+i-1]
-        if item then
+        if item and not item.word then
             item.word = results.word[i]
             item.review_count = math.max(0, math.min(8, tonumber(results.review_count[i])))
             item.book_title = results.book_title[i] or ""
