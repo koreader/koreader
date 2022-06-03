@@ -604,6 +604,7 @@ function AutoSuspend:AllowStandbyHandler()
         -- tell UIManager to return early from input polling, so we get a chance to run through the task queue soon.
         if not next_task_time or next_task_time > 1 then
             -- 1s shouldn't skew things too much ;).
+            -- FIXME: But it might actually be slightly too early in some cases?
             UIManager:setPMInputTimeout(1000000)
         end
     end
