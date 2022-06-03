@@ -609,6 +609,9 @@ function AutoSuspend:AllowStandbyHandler()
         end
 
         -- FIXME: Just recompute input timeout based on Device.last_standby_time :?
+        --        I was going to say now is also outdated after suspend, but, err, no,
+        --        MONOTONIC doesn't tick during low power states, you dummy.
+        --        TL;DR: I need a working brain, see you in three days.
     end
 end
 
