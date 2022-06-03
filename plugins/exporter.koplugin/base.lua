@@ -23,7 +23,6 @@ function BaseExporter:_init()
     self.extension = self.extension or self.name
     self.is_remote = self.is_remote or false
     self.version = self.version or "1.0.0"
-    self.sharable = self.sharable or false
     self:loadSettings()
     if type(self.init_callback) == "function" then
         local changed, settings = self:init_callback(self.settings)
