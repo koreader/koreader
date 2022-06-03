@@ -1,4 +1,5 @@
 local UIManager = require("ui/uimanager")
+local Device = require("device")
 local md = require("template/md")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -7,6 +8,7 @@ local T = require("ffi/util").template
 local MarkdownExporter = require("base"):new {
     name = "markdown",
     extension = "md",
+    shareable = Device:canShareText(),
     init_callback = function(self, settings)
         local changed = false
         if not settings.formatting_options or settings.highlight_formatting == nil then
@@ -130,6 +132,11 @@ function MarkdownExporter:export(t)
     file:write("\n\n_Generated at: " .. self:getTimeStamp() .. "_")
     file:close()
     return true
+end
+
+function MarkdownExporter:share(t)
+    local content = md.prepareBookContent(t, self.settings.formatting_options, self.settings.highlight_formatting) .. "\n\n_Generated at: " .. self:getTimeStamp() .. "_"
+    Device:doShareText(content)
 end
 
 return MarkdownExporter
