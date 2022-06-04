@@ -335,19 +335,28 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 more_options = true,
                 more_options_param = {
                     value_hold_step = 20,
+                    unit = C_("Resolution", "dpi"),
                 },
                 toggle = {_("off"), "48", "96¹’¹", "167", "212", "300"},
                 values = {0, 48, 96, 167, 212, 300},
                 default_value = 96,
                 args = {0, 48, 96, 167, 212, 300},
                 event = "SetRenderDPI",
-                name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Sets the DPI used to scale absolute CSS units and images:
 - off: ignore absolute units (old engine behavior).
 - 96¹’¹: at 96 DPI, 1 CSS pixel = 1 screen pixel and images are rendered at their original dimensions.
 - other values scale CSS absolute units and images by a factor (300 DPI = x3, 48 DPI = x0.5)
 Using your device's actual DPI will ensure 1 cm in CSS actually translates to 1 cm on screen.
 Note that your selected font size is not affected by this setting.]]),
+                name_text_hold_callback = optionsutil.showValues,
+                name_text_true_values = true,
+                show_true_value_func = function(val) -- add "dpi"
+                    if val == 96 then
+                        val = "96¹’¹"
+                    end
+                    return val ~= 0 and string.format("%s dpi", val) or _("off")
+                end,
+
             },
             {
                 name = "line_spacing",
@@ -376,6 +385,7 @@ Note that your selected font size is not affected by this setting.]]),
                   value_max = 300,
                   value_step = 1,
                   value_hold_step = 5,
+                  unit = "%",
                 },
                 event = "SetLineSpace",
                 args = {
@@ -394,10 +404,8 @@ Note that your selected font size is not affected by this setting.]]),
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_XX_LARGE,
                 },
                 name_text_hold_callback = optionsutil.showValues,
-                -- used by showValues
-                name_text_true_values = true,
                 show_true_value_func = function(val) -- add "%"
-                    return string.format("%d%%", val)
+                    return string.format("%d\xE2\x80\xAF%%", val) -- use Narrow No-Break space here
                 end,
             },
         }
@@ -424,7 +432,7 @@ Note that your selected font size is not affected by this setting.]]),
                 item_text = not Device:isTouchDevice() and {_("decrease"), _("increase")} or nil,
                 more_options = true,
                 more_options_param = {
-                    value_min = 12,
+                    value_min = 7,
                     value_max = 255,
                     value_step = 0.5,
                     precision = "%.1f",
@@ -455,16 +463,17 @@ Note that your selected font size is not affected by this setting.]]),
                     info_text = _([[Set word spacing percentages:
 - how much to scale the width of each space character from its regular width,
 - by how much some of them can then be reduced to make more words fit on a line.]]),
-                    left_text = _("Scaling %"),
+                    left_text = _("Scaling"),
                     left_min = 10,
                     left_max = 500,
                     left_step = 1,
                     left_hold_step = 10,
-                    right_text = _("Reduction %"),
+                    right_text = _("Reduction"),
                     right_min = 25,
                     right_max = 100,
                     right_step = 1,
                     right_hold_step = 10,
+                    unit = "%",
                     event = "SetWordSpacing",
                 },
                 toggle = {C_("Word spacing", "small"), C_("Word spacing", "medium"), C_("Word spacing", "large")},
@@ -484,7 +493,7 @@ Note that your selected font size is not affected by this setting.]]),
                 name_text_hold_callback = optionsutil.showValues,
                 name_text_true_values = true,
                 show_true_value_func = function(val)
-                    return string.format("%d%%, %d%%", val[1], val[2])
+                    return string.format("%d\xE2\x80\xAF%%, %d\xE2\x80\xAF%%", val[1], val[2]) -- use Narrow Now-Break space here
                 end,
             },
             {
@@ -496,9 +505,10 @@ Note that your selected font size is not affected by this setting.]]),
                     value_max = 20,
                     value_step = 1,
                     value_hold_step = 4,
+                    unit = "%",
                     name = "word_expansion",
                     name_text = _("Max word expansion"),
-                    info_text = _([[Set max word expansion as a % of the font size.]]),
+                    info_text = _([[Set max word expansion as a percentage of the font size.]]),
                     event = "SetWordExpansion",
                 },
                 toggle = {C_("Word expansion", "none"), C_("Word expansion", "some"), C_("Word expansion", "more")},
@@ -518,7 +528,7 @@ Note that your selected font size is not affected by this setting.]]),
                 name_text_hold_callback = optionsutil.showValues,
                 name_text_true_values = true,
                 show_true_value_func = function(val)
-                    return string.format("%d%%", val)
+                    return string.format("%d\xE2\x80\xAF%%", val) -- use Narrow No-Break space here
                 end,
             },
         }

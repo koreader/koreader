@@ -106,9 +106,13 @@ function optionsutil.showValues(configurable, option, prefix, document)
     local text
     local name_text = option.name_text_func
                       and option.name_text_func(configurable)
-                       or option.name_text
+                      or option.name_text
     if option.name_text_true_values and option.toggle and option.values then
-        if value_default then
+        local nb_current, nb_default = tonumber(current), tonumber(default)
+        if nb_current == nil or nb_default == nil then
+            text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text,
+                                            value_current or current, value_default or default)
+        elseif value_default then
             text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5 (%6)"), name_text, help_text,
                                             current, value_current, default, value_default)
         else
