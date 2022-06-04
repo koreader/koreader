@@ -1171,6 +1171,8 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     right_step = more_options_param.right_step,
                     right_hold_step = more_options_param.right_hold_step,
                     keep_shown_on_apply = true,
+                    unit = more_options_param.unit,
+                    precision = more_options_param.precision,
                     close_callback = function()
                         if when_applied_callback then
                             when_applied_callback()
@@ -1264,7 +1266,8 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     value_step = more_options_param.value_step or 1,
                     value_hold_step = value_hold_step,
                     value_max = more_options_param.value_max or values[#values],
-                    precision = more_options_param.precision or "%02d",
+                    unit = more_options_param.unit,
+                    precision = more_options_param.precision,
                     keep_shown_on_apply = true,
                     close_callback = function()
                         if when_applied_callback then
