@@ -54,6 +54,8 @@ Menu dialogue widget
 --]]--
 local MenuDialog = FocusManager:new{
     padding = Size.padding.fullscreen,
+    is_edit_mode = false,
+    edit_callback = nil,
     tap_close_callback = nil,
     clean_callback = nil,
     reset_callback = nil,
@@ -99,6 +101,14 @@ function MenuDialog:init()
     switch:setPosition(settings.enabled and 2 or 1)
     self:mergeLayoutInVertical(switch)
 
+    local edit_button = {
+        text = self.is_edit_mode and _("Resume") or _("Quick deletion"),
+        callback = function()
+            self:onClose()
+            self.edit_callback()
+        end
+    }
+
     local reset_button = {
         text = _("Reset all progress"),
         callback = function()
@@ -132,6 +142,7 @@ function MenuDialog:init()
     local buttons = ButtonTable:new{
         width = width,
         buttons = {
+            {edit_button},
             {reset_button},
             {clean_button}
         },
@@ -451,7 +462,7 @@ function VocabItemWidget:initItemWidget()
 
     table.insert(self.layout, word_widget)
 
-    if self.item.review_count < 5 then
+    if not self.show_parent.is_edit_mode and self.item.review_count < 5 then
         self.more_button = Button:new{
             text = "⋮",
             padding = Size.padding.button,
@@ -477,7 +488,7 @@ function VocabItemWidget:initItemWidget()
 
     local right_side_width
     local right_widget
-    if self.item.due_time <= os.time() then
+    if not self.show_parent.is_edit_mode and self.item.due_time <= os.time() then
         right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
 
         self.forgot_button = Button:new{
@@ -690,6 +701,9 @@ function VocabItemWidget:onGotIt()
     self.item.got_it_callback(self.item)
     self.item.is_dim = true
     self:initItemWidget()
+    if self.show_parent.selected.x == 3 then
+        self.show_parent.selected.x = 1
+    end
     UIManager:setDirty(self.show_parent, function()
     return "ui", self[1].dimen end)
 end
@@ -718,6 +732,7 @@ local VocabularyBuilderWidget = FocusManager:new{
     show_page = 1,
     -- table of items
     item_table = nil, -- mandatory (array)
+    is_edit_mode = false,
     callback = nil,
 }
 
@@ -746,7 +761,6 @@ function VocabularyBuilderWidget:init()
     self.item_width = self.dimen.w - 2 * padding
     self.footer_center_width = math.floor(self.width_widget * 32 / 100)
     self.footer_button_width = math.floor(self.width_widget * 12 / 100)
-    self.item_height = Screen:scaleBySize(72)
     -- group for footer
     local chevron_left = "chevron.left"
     local chevron_right = "chevron.right"
@@ -834,6 +848,7 @@ function VocabularyBuilderWidget:init()
         bottom_line,
         self.page_info,
     }
+    self.footer_height = vertical_footer:getSize().h
     local footer = BottomContainer:new{
         dimen = self.dimen:copy(),
         vertical_footer,
@@ -853,13 +868,7 @@ function VocabularyBuilderWidget:init()
         show_parent = self,
     }
 
-    -- setup main content
-    self.item_margin = math.floor(self.item_height / 8)
-    local line_height = self.item_height + self.item_margin
-    local content_height = self.dimen.h - self.title_bar:getHeight() - vertical_footer:getSize().h - padding
-    self.items_per_page = math.floor(content_height / line_height)
-    self.item_margin = self.item_margin + math.floor((content_height - self.items_per_page * line_height ) / self.items_per_page )
-    self.pages = math.ceil(DB:selectCount() / self.items_per_page)
+    self:setupItemHeight()
     self.main_content = VerticalGroup:new{}
 
     self:_populateItems()
@@ -887,6 +896,17 @@ function VocabularyBuilderWidget:init()
         background = Blitbuffer.COLOR_WHITE,
         content
     }
+end
+
+function VocabularyBuilderWidget:setupItemHeight()
+    local item_height = Screen:scaleBySize(self.is_edit_mode and 54 or 72)
+    self.item_height = item_height
+    self.item_margin = math.floor(self.item_height / 8)
+    local line_height = self.item_height + self.item_margin
+    local content_height = self.dimen.h - self.title_bar:getHeight() - self.footer_height - Size.padding.large
+    self.items_per_page = math.floor(content_height / line_height)
+    self.item_margin = self.item_margin + math.floor((content_height - self.items_per_page * line_height ) / self.items_per_page )
+    self.pages = math.ceil(DB:selectCount() / self.items_per_page)
 end
 
 function VocabularyBuilderWidget:nextPage()
@@ -983,6 +1003,9 @@ function VocabularyBuilderWidget:_populateItems()
     self.footer_right:enableDisable(self.show_page < self.pages)
     self.footer_first_up:enableDisable(self.show_page > 1)
     self.footer_last_down:enableDisable(self.show_page < self.pages)
+    if not self.layout[self.selected.y] or not self.layout[self.selected.y][self.selected.x] then
+        self.selected = {x=1, y=1}
+    end
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -1019,6 +1042,12 @@ end
 
 function VocabularyBuilderWidget:showMenu()
     UIManager:show(MenuDialog:new{
+        is_edit_mode = self.is_edit_mode,
+        edit_callback = function()
+            self.is_edit_mode = not self.is_edit_mode
+            self:setupItemHeight()
+            self:_populateItems()
+        end,
         clean_callback = function()
             self.item_table = {}
             self.pages = 0

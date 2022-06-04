@@ -203,21 +203,26 @@ end
 
 function VocabularyBuilder:insertOrUpdate(entry)
     local conn = SQ3.open(db_location)
-
-    conn:exec(string.format([[INSERT INTO vocabulary (word, book_title, create_time, due_time)
-                    VALUES ('%s', '%s', %d, %d)
+    local stmt = conn:prepare([[INSERT INTO vocabulary (word, book_title, create_time, due_time)
+                    VALUES (?, ?, ?, ?)
                     ON CONFLICT(word) DO UPDATE SET book_title = excluded.book_title,
                         create_time = excluded.create_time,
                         review_count = MAX(review_count-1, 0),
-                        due_time = %d;
-              ]], entry.word, entry.book_title, entry.time, entry.time+300, entry.time+300))
+                        due_time = ?;]])
+    stmt:bind(entry.word, entry.book_title, entry.time, entry.time+300, entry.time+300)
+    stmt:step()
+    stmt:clearbind():reset()
     self.count = tonumber(conn:rowexec("SELECT count(0) from vocabulary;"))
     conn:close()
 end
 
 function VocabularyBuilder:remove(item)
     local conn = SQ3.open(db_location)
-    conn:exec(string.format("DELETE FROM vocabulary WHERE word = '%s' ;", item.word))
+    local stmt = conn:prepare("DELETE FROM vocabulary WHERE word = ? ;")
+    stmt:bind(item.word)
+    stmt:step()
+    stmt:clearbind():reset()
+
     self.count = self.count - 1
     conn:close()
 end
@@ -226,13 +231,6 @@ function VocabularyBuilder:resetProgress()
     local conn = SQ3.open(db_location)
     local due_time = os.time()
     conn:exec(string.format("UPDATE vocabulary SET review_count = 0, due_time = %d;", due_time))
-    conn:close()
-end
-
-function VocabularyBuilder:resetWordProgress(word)
-    local conn = SQ3.open(db_location)
-    local due_time = os.time()
-    conn:exec(string.format("UPDATE vocabulary SET review_count = 0, due_time = %d WHERE word = '%s';", due_time, word))
     conn:close()
 end
 
