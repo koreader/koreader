@@ -183,7 +183,11 @@ function Exporter:exportClippings(clippings)
                     v.timestamp = timestamp
                     local status = v:export(exportables)
                     if status then
-                        table.insert(statuses, _(v.name .. ": Exported to " ) .. v:getFilePath(exportables))
+                        if v.is_remote then
+                            table.insert(statuses, _(v.name .. ": Exported successfully."))
+                        else
+                            table.insert(statuses, _(v.name .. ": Exported to " ) .. v:getFilePath(exportables))
+                        end
                     else
                         table.insert(statuses, _(v.name .. ": Failed to export."))
                     end
