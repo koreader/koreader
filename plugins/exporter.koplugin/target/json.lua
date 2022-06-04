@@ -1,5 +1,7 @@
-local json = require("json")
 local Device = require("device")
+local rapidjson = require("rapidjson")
+local _ = require("gettext")
+
 -- json exporter
 local JsonExporter = require("base"):new {
     name = "json",
@@ -18,6 +20,25 @@ local function format(booknotes)
         table.insert(t.entries, entry[1])
     end
     return t
+end
+
+function JsonExporter:getMenuTable()
+    return {
+        text = _("JSON"),
+        checked_func = function() return self:isEnabled() end,
+        sub_item_table = {
+            {
+                text = _("Export to JSON"),
+                checked_func = function() return self:isEnabled() end,
+                callback = function() self:toggleEnabled() end,
+            },
+            {
+                text = _("Prettify"),
+                checked_func = function() return self.settings.prettify end,
+                callback = function() self.settings.prettify = not self.settings.prettify end,
+            },
+        }
+    }
 end
 
 function JsonExporter:export(t)
@@ -41,7 +62,7 @@ function JsonExporter:export(t)
     end
     local file = io.open(path, "w")
     if not file then return false end
-    file:write(json.encode(exportable))
+    file:write(rapidjson.encode(exportable, {pretty = self.settings.prettify}))
     file:write("\n")
     file:close()
     return true
@@ -51,7 +72,7 @@ function JsonExporter:share(t)
     local content = format(t)
     content.created_on = self.timestamp or os.time()
     content.version = self:getVersion()
-    Device:doShareText(content)
+    Device:doShareText(rapidjson.encode(content, {pretty = self.settings.prettify}))
 end
 
 return JsonExporter
