@@ -177,13 +177,23 @@ function Exporter:exportClippings(clippings)
     local export_callback = function()
         UIManager:nextTick(function()
             local timestamp = os.time()
+            local statuses = {}
             for k, v in pairs(self.targets) do
                 if v:isEnabled() then
                     v.timestamp = timestamp
-                    v:export(exportables)
+                    local status = v:export(exportables)
+                    if status then
+                        table.insert(statuses, _(v.name .. ": Exported to " ) .. v:getFilePath(exportables))
+                    else
+                        table.insert(statuses, _(v.name .. ": Failed to export."))
+                    end
                     v.timestamp = nil
                 end
             end
+            UIManager:show(InfoMessage:new{
+                text = table.concat(statuses, "\n"),
+                timeout = 3,
+            })
         end)
 
         UIManager:show(InfoMessage:new {
