@@ -102,7 +102,7 @@ function MenuDialog:init()
     self:mergeLayoutInVertical(switch)
 
     local edit_button = {
-        text = self.is_edit_mode and _("Leave edit mode") or _("Enter edit mode"),
+        text = self.is_edit_mode and _("Resume") or _("Quick deletion"),
         callback = function()
             self:onClose()
             self.edit_callback()
