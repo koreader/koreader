@@ -1,6 +1,5 @@
 local Device = require("device")
 local rapidjson = require("rapidjson")
-local _ = require("gettext")
 
 -- json exporter
 local JsonExporter = require("base"):new {
