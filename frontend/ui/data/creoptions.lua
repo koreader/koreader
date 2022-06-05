@@ -510,6 +510,10 @@ Note that your selected font size is not affected by this setting.]]),
                     name_text = _("Max word expansion"),
                     info_text = _([[Set max word expansion as a percentage of the font size.]]),
                     event = "SetWordExpansion",
+                    other_button = { -- allow fine tuning the hidden cjk_width_scaling option (defined below)
+                        text = _("CJK scaling"),
+                        other_option = "cjk_width_scaling",
+                    }
                 },
                 toggle = {C_("Word expansion", "none"), C_("Word expansion", "some"), C_("Word expansion", "more")},
                 values = {
@@ -530,6 +534,33 @@ Note that your selected font size is not affected by this setting.]]),
                 show_true_value_func = function(val)
                     return string.format("%d\xE2\x80\xAF%%", val) -- use Narrow No-Break space here
                 end,
+            },
+            {
+                -- This option is not shown in the bottom menu, but its fine tuning is made
+                -- available via the other_button in Word Expansion's fine tuning widget.
+                -- We still need to define it as an option here for it to be known and
+                -- handled as any other one - we just make it hidden.
+                show = false,
+                name = "cjk_width_scaling",
+                default_value = 100,
+                values = { 100, 105, 110 }, -- (not shown)
+                event = "SetCJKWidthScaling",
+                more_options = true,
+                more_options_param = {
+                    value_min = 100,
+                    value_max = 150,
+                    value_step = 1,
+                    value_hold_step = 5,
+                    unit = "%",
+                    name = "cjk_width_scaling",
+                    name_text = _("CJK width scaling"),
+                    info_text = _([[Increase the width of all CJK (Chinese, Japanese, Korean) chararacters by this percentage. This has the effect of adding space between these glyphs, and might make them easier to distinguish to some readers.]]),
+                    event = "SetCJKWidthScaling",
+                    other_button = {
+                        text = _("Word expansion"),
+                        other_option = "word_expansion",
+                    }
+                },
             },
         }
     },
