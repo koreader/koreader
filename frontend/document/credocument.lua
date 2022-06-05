@@ -1124,6 +1124,11 @@ function CreDocument:setWordExpansion(value)
     self._document:setIntProperty("crengine.style.max.added.letter.spacing.percent", value or 0)
 end
 
+function CreDocument:setCJKWidthScaling(value)
+    logger.dbg("CreDocument: set cjk width scaling", value)
+    self._document:setIntProperty("crengine.style.cjk.width.scale.percent", value or 100)
+end
+
 function CreDocument:setStyleSheet(new_css_file, appended_css_content )
     logger.dbg("CreDocument: set style sheet:",
         new_css_file and new_css_file or "no file",

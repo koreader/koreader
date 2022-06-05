@@ -145,6 +145,11 @@ function ReaderFont:onReadSettings(config)
                        or 0
     self.ui.document:setWordExpansion(self.word_expansion)
 
+    self.cjk_width_scaling = config:readSetting("cjk_width_scaling")
+                       or G_reader_settings:readSetting("copt_cjk_width_scaling")
+                       or 100
+    self.ui.document:setCJKWidthScaling(self.cjk_width_scaling)
+
     self.line_space_percent = config:readSetting("line_space_percent")
                            or G_reader_settings:readSetting("copt_line_spacing")
                            or DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM
@@ -261,6 +266,14 @@ function ReaderFont:onSetWordExpansion(value)
     return true
 end
 
+function ReaderFont:onSetCJKWidthScaling(value)
+    self.cjk_width_scaling = value
+    self.ui.document:setCJKWidthScaling(value)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+    Notification:notify(T(_("CJK width scaling set to: %1%."), value))
+    return true
+end
+
 function ReaderFont:onSetFontGamma(gamma)
     self.gamma_index = gamma
     self.ui.document:setGammaIndex(self.gamma_index)
@@ -279,6 +292,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
     self.ui.doc_settings:saveSetting("word_spacing", self.word_spacing)
     self.ui.doc_settings:saveSetting("word_expansion", self.word_expansion)
+    self.ui.doc_settings:saveSetting("cjk_width_scaling", self.cjk_width_scaling)
     self.ui.doc_settings:saveSetting("line_space_percent", self.line_space_percent)
     self.ui.doc_settings:saveSetting("gamma_index", self.gamma_index)
 end
