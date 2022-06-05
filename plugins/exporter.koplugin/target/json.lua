@@ -22,25 +22,6 @@ local function format(booknotes)
     return t
 end
 
-function JsonExporter:getMenuTable()
-    return {
-        text = _("JSON"),
-        checked_func = function() return self:isEnabled() end,
-        sub_item_table = {
-            {
-                text = _("Export to JSON"),
-                checked_func = function() return self:isEnabled() end,
-                callback = function() self:toggleEnabled() end,
-            },
-            {
-                text = _("Prettify"),
-                checked_func = function() return self.settings.prettify end,
-                callback = function() self.settings.prettify = not self.settings.prettify end,
-            },
-        }
-    }
-end
-
 function JsonExporter:export(t)
     local exportable
     local timestamp = self.timestamp or os.time()
@@ -62,7 +43,7 @@ function JsonExporter:export(t)
     end
     local file = io.open(path, "w")
     if not file then return false end
-    file:write(rapidjson.encode(exportable, {pretty = self.settings.prettify}))
+    file:write(rapidjson.encode(exportable, {pretty = true}))
     file:write("\n")
     file:close()
     return true
@@ -72,7 +53,7 @@ function JsonExporter:share(t)
     local content = format(t)
     content.created_on = self.timestamp or os.time()
     content.version = self:getVersion()
-    Device:doShareText(rapidjson.encode(content, {pretty = self.settings.prettify}))
+    Device:doShareText(rapidjson.encode(content, {pretty = true}))
 end
 
 return JsonExporter
