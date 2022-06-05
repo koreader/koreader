@@ -430,6 +430,13 @@ p {
     margin-bottom: 1em;
 }
             ]],
+        },
+        {
+            id = "cjk_tailored";
+            title = _("Tailor widths and text-indent for CJK"),
+            description = _([[
+Adjust paragraph width and text-indent to be an integer multiple of the font size, so that lines of Chinese and Japanese characters don't need space added between glyphs for text justification.]]),
+            css = [[ body { -cr-hint: cjk-tailored; }]], -- This hint is inherited
             separator = true,
         },
         {
