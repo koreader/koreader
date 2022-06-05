@@ -428,14 +428,13 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             if touchmenu_instance then touchmenu_instance:updateItems() end
             local time_string = util.secondsToClockDuration("modern", self[setting],
                 time_scale == 2 or time_scale == 1, true, true)
-            time_string = time_string:gsub("00m$", ""):gsub("^0+m", ""):gsub("^0", "")
             UIManager:show(InfoMessage:new{
                 text = T(_("%1: %2"), title, time_string),
                 timeout = 3,
             })
         end,
         default_value = util.secondsToClockDuration("modern", default_value,
-            time_scale == 2 or time_scale == 1, true, true):gsub("00m$", ""):gsub("^00m:", ""),
+            time_scale == 2 or time_scale == 1, true, true),
         default_callback = function()
             local day, hour, min, sec -- luacheck: ignore 431
             if time_scale == 2 then
@@ -481,7 +480,7 @@ function AutoSuspend:addToMainMenu(menu_items)
         text_func = function()
             if self.auto_suspend_timeout_seconds and self.auto_suspend_timeout_seconds > 0 then
                 local time_string = util.secondsToClockDuration("modern",
-                    self.auto_suspend_timeout_seconds, true, true, true):gsub("00m$", ""):gsub("^00m:", "")
+                    self.auto_suspend_timeout_seconds, true, true, true)
                 return T(_("Autosuspend timeout: %1"), time_string)
             else
                 return _("Autosuspend timeout")
@@ -507,7 +506,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             text_func = function()
                 if self.autoshutdown_timeout_seconds and self.autoshutdown_timeout_seconds > 0 then
                     local time_string = util.secondsToClockDuration("modern", self.autoshutdown_timeout_seconds,
-                        true, true, true):gsub("00m$", ""):gsub("^00m:", "")
+                        true, true, true)
                     return T(_("Autoshutdown timeout: %1"), time_string)
                 else
                     return _("Autoshutdown timeout")
@@ -544,7 +543,7 @@ This is experimental on most devices, except those running on a sunxi SoC (Kobo 
             text_func = function()
                 if self.auto_standby_timeout_seconds and self.auto_standby_timeout_seconds > 0 then
                     local time_string = util.secondsToClockDuration("modern", self.auto_standby_timeout_seconds,
-                        false, true, true):gsub("00m$", ""):gsub("^0+m", ""):gsub("^0", "")
+                        false, true, true, true)
                     return T(_("Autostandby timeout: %1"), time_string)
                 else
                     return _("Autostandby timeout")
