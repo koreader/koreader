@@ -1337,6 +1337,13 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             end,
                         })
                     end,
+                    option_text =  more_options_param.other_button and more_options_param.other_button.text,
+                    option_callback =  more_options_param.other_button and function()
+                        when_applied_callback = nil -- prevent bottom menu from being shown (before being hidden again)
+                        widget:onClose()
+                        local option = self:findOptionByName(more_options_param.other_button.other_option)
+                        self:onConfigMoreChoose(option.values, option.name, option.event, nil, option.name_text, option.more_options_param)
+                    end,
                 }
             end
             UIManager:show(widget)
@@ -1419,6 +1426,23 @@ function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, dir
             end)
         end,
     })
+end
+
+function ConfigDialog:findOptionByName(name)
+    local option
+    for i=1, #self.config_options do
+        local options = self.config_options[i].options
+        for j=1, #options do
+            if options[j].name == name then
+                option = options[j]
+                break
+            end
+        end
+        if option then
+            break
+        end
+    end
+    return option
 end
 
 function ConfigDialog:closeDialog()
