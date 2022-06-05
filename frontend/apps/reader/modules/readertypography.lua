@@ -234,8 +234,11 @@ When the book's language tag is not among our presets, no specific features will
                 return text
             end,
             callback = function()
+                -- We use an InfoMessage because the text might be too long for a Notification.
+                -- Use a small timeout (but long enough to read) as this might be bothering.
                 UIManager:show(InfoMessage:new{
                     text = T(_("Changed language for typography rules to %1."), BD.wrap(lang_name)),
+                    timeout = 2,
                 })
                 self.text_lang_tag = lang_tag
                 self.ui.document:setTextMainLang(lang_tag)
@@ -783,6 +786,7 @@ function ReaderTypography:onPreRenderDocument(config)
         callback = function()
             UIManager:show(InfoMessage:new{
                 text = T(_("Changed language for typography rules to book language: %1."), BD.wrap(self.book_lang_tag)),
+                timeout = 2,
             })
             self.text_lang_tag = self.book_lang_tag
             self.ui.doc_settings:saveSetting("text_lang", self.text_lang_tag)
