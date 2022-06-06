@@ -672,6 +672,7 @@ UIManager:unschedule(self.anonymousFunction)
 ]]
 function UIManager:unschedule(action)
     logger.dbg("UIManager:unschedule:", tostring(action))
+    logger.dbg(debug.traceback())
     local removed = false
     for i = #self._task_queue, 1, -1 do
         if self._task_queue[i].action == action then
