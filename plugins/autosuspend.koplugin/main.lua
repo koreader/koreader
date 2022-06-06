@@ -204,12 +204,6 @@ function AutoSuspend:_unschedule_standby()
     end
 
     -- Make sure we don't trigger a ghost LeaveStandby event...
-    if self.wrapped_leave_standby_task then
-        logger.dbg("AutoSuspend: unschedule leave standby task wrapper")
-        UIManager:unschedule(self.wrapped_leave_standby_task)
-        self.wrapped_leave_standby_task = nil
-    end
-
     if self.leave_standby_task then
         logger.dbg("AutoSuspend: unschedule leave standby task")
         UIManager:unschedule(self.leave_standby_task)
@@ -338,8 +332,6 @@ end
 
 function AutoSuspend:onLeaveStandby()
     logger.dbg("AutoSuspend: onLeaveStandby")
-    -- If the Event got through, tickAfterNext did its thing, clear the reference to the initial nextTick wrapper...
-    self.wrapped_leave_standby_task = nil
     -- Unschedule suspend and shutdown, as the realtime clock has ticked
     self:_unschedule()
     -- Reschedule suspend and shutdown (we'll recompute the delay based on the last user input, *not* the current time).
@@ -599,8 +591,21 @@ function AutoSuspend:AllowStandbyHandler()
         -- to make sure UIManager will consume the input events that woke us up first
         -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
         -- (This ensures we'll use an up to date last_action_time, and that it only ever gets updated from *user* input).
-        -- NOTE: UIManager consumes scheduled tasks before input events, which is why we can't use nextTick.
-        self.wrapped_leave_standby_task = UIManager:tickAfterNext(self.leave_standby_task)
+        -- NOTE: While UIManager consumes scheduled tasks before input events, we do *NOT* have to rely on tickAfterNext,
+        --       solely because of where we run inside an UI frame (via UIManager:_standbyTransition):
+        --       we're neither a scheduled task nor an input event, we run *between* scheduled tasks and input polling.
+        --       That means we go straight to input polling when returning, *without* a trip through the task queue
+        --       (c.f., UIManager:_checkTasks in UIManager:handleInput).
+        UIManager:nextTick(self.leave_standby_task)
+
+        -- Since we go straight to input polling, and that our time spent in standby won't have affected the already computed
+        -- input polling deadline (because MONOTONIC doesn't tick during standby/suspend),
+        -- tweak said deadline to make sure poll will return immediately, so we get a chance to run through the task queue ASAP.
+        -- This ensures we get a LeaveStandby event in a timely fashion,
+        -- even when there isn't actually any user input happening (e.g., woken up by the rtc alarm).
+        -- This shouldn't prevent us from actually consuming any pending input events first,
+        -- because if we were woken up by user input, those events should already be in the evdev queue...
+        UIManager:setPMInputTimeout(0)
     end
 end
 
