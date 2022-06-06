@@ -1694,7 +1694,7 @@ function UIManager:handleInput()
     -- If allowed, entering standby (from which we can wake by input) must trigger in response to event
     -- this function emits (plugin), or within waitEvent() right after (hardware).
     -- Anywhere else breaks preventStandby/allowStandby invariants used by background jobs while UI is left running.
-    self:_standbyTransition()
+    self:_standbyTransition(deadline)
     if self.PM_INPUT_TIMEOUT then
         -- If the PM state transition requires an early return from input polling, honor that.
         -- c.f., UIManager:setPMInputTimeout (and AutoSuspend:AllowStandbyHandler).
@@ -1868,17 +1868,17 @@ end
 
 -- The allow/prevent calls above can interminently allow standbys, but we're not interested until
 -- the state change crosses UI tick boundary, which is what self._prev_prevent_standby_count is tracking.
-function UIManager:_standbyTransition()
+function UIManager:_standbyTransition(input_deadline)
     if self._prevent_standby_count == 0 and self._prev_prevent_standby_count > 0 then
         -- edge prevent->allow
         logger.dbg("allow standby")
         Device:setAutoStandby(true)
-        self:broadcastEvent(Event:new("AllowStandby"))
+        self:broadcastEvent(Event:new("AllowStandby", input_deadline))
     elseif self._prevent_standby_count > 0 and self._prev_prevent_standby_count == 0 then
         -- edge allow->prevent
         logger.dbg("prevent standby")
         Device:setAutoStandby(false)
-        self:broadcastEvent(Event:new("PreventStandby"))
+        self:broadcastEvent(Event:new("PreventStandby", input_deadline))
     end
     self._prev_prevent_standby_count = self._prevent_standby_count
 end

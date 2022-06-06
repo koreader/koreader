@@ -562,7 +562,7 @@ end
 -- NOTE: To make sure this will not even run when autostandby is disabled,
 --       this is only aliased as `onAllowStandby` when necessary.
 --       (Because the Event is generated regardless of us, as many things can call UIManager:allowStandby).
-function AutoSuspend:AllowStandbyHandler()
+function AutoSuspend:AllowStandbyHandler(input_deadline)
     logger.dbg("AutoSuspend: onAllowStandby")
     -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
     -- see its own AllowStandby handler for more details.
@@ -598,20 +598,18 @@ function AutoSuspend:AllowStandbyHandler()
         --       (c.f., UIManager:_checkTasks in UIManager:handleInput).
         UIManager:nextTick(self.leave_standby_task)
 
-        -- Since we go straight to input polling, with the timeout already computed,
-        -- if we don't have a scheduled task soon, we might just be waiting on input polling for a while.
-        -- To ensure we get a LeaveStandby event in a timely fashion, even when there isn't actually any user input happening,
-        -- tell UIManager to return early from input polling, so we get a chance to run through the task queue soon.
-        if not next_task_time or next_task_time > 2 then
-            -- 2s shouldn't skew things too much, while ensuring we still have time to consume late input events ;).
-            -- NOTE: Warning: magic number, YMMV!
-            UIManager:setPMInputTimeout(2)
+        -- Since we go straight to input polling, and that UI frames & input are using the MONOTIC clock,
+        -- which doesn't tick during suspend/standby, lower the next input timeout by the amount of time we spent in standby.
+        -- This should roughly emulate what would have happened if we had not slept.
+        if input_deadline then
+            UIManager:setPMInputTimeout(input_deadline - UIManager:getTime() - Device.last_standby_time)
+        else
+            -- In case we were set to poll forever, make sure poll will return immediately instead,
+            -- so we get a chance to run through the task queue ASAP.
+            -- This ensures we get a LeaveStandby event in a timely fashion,
+            -- even when there isn't actually any user input happening.
+            UIManager:setPMInputTimeout(0)
         end
-
-        -- FIXME: Just recompute input timeout based on Device.last_standby_time :?
-        --        I was going to say now is also outdated after suspend, but, err, no,
-        --        MONOTONIC doesn't tick during low power states, you dummy.
-        --        TL;DR: I need a working brain, see you in three days.
     end
 end
 
