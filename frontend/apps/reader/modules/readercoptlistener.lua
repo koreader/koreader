@@ -145,12 +145,10 @@ function ReaderCoptListener:onResume()
     end
 
     self:headerRefresh()
-    self:rescheduleHeaderRefreshIfNeeded()
 end
 
 function ReaderCoptListener:onLeaveStandby()
     self:headerRefresh()
-    self:rescheduleHeaderRefreshIfNeeded()
 end
 
 function ReaderCoptListener:onOutOfScreenSaver()
@@ -160,7 +158,6 @@ function ReaderCoptListener:onOutOfScreenSaver()
 
     self._delayed_screensaver = nil
     self:headerRefresh()
-    self:rescheduleHeaderRefreshIfNeeded()
 end
 
 -- Unschedule on these events
