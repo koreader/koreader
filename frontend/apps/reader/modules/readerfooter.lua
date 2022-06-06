@@ -766,8 +766,9 @@ end
 
 function ReaderFooter:unscheduleFooterAutoRefresh()
     if not self.autoRefreshFooter then return end -- not yet set up
+    -- Slightly different wording than in rescheduleFooterAutoRefreshIfNeeded because it might not actually be scheduled at all
+    logger.dbg("ReaderFooter: unschedule autoRefreshFooter")
     UIManager:unschedule(self.autoRefreshFooter)
-    logger.dbg("ReaderFooter.autoRefreshFooter unscheduled")
 end
 
 function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
@@ -808,12 +809,12 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
     if schedule then
         UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
         if not unscheduled then
-            logger.dbg("ReaderFooter.autoRefreshFooter scheduled")
+            logger.dbg("ReaderFooter: scheduled autoRefreshFooter")
         else
-            logger.dbg("ReaderFooter.autoRefreshFooter rescheduled")
+            logger.dbg("ReaderFooter: rescheduled autoRefreshFooter")
         end
     elseif unscheduled then
-        logger.dbg("ReaderFooter.autoRefreshFooter unscheduled")
+        logger.dbg("ReaderFooter: unscheduled autoRefreshFooter")
     end
 end
 
