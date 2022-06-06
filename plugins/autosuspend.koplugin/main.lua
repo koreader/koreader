@@ -604,9 +604,7 @@ function AutoSuspend:AllowStandbyHandler()
         -- This ensures we get a LeaveStandby event in a timely fashion,
         -- even when there isn't actually any user input happening (e.g., woken up by the rtc alarm).
         -- This shouldn't prevent us from actually consuming any pending input events first,
-        -- because if we were woken up by user input, those events should already be in the evdev queue
-        -- (i.e., select will return immediately, sure,
-        -- but it'll have flagged the proper input device's fd as needing to be read).
+        -- because if we were woken up by user input, those events should already be in the evdev queue...
         UIManager:setPMInputTimeout(0)
     end
 end
