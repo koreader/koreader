@@ -170,7 +170,7 @@ Set frontlight level.
 @int new_intensity
 --]]
 function NickelConf.frontLightLevel.set(new_intensity)
-    if type(new_intensity) ~= "number" or (not (new_intensity >= 0) and (not new_intensity <= 100)) then return end
+    if type(new_intensity) ~= "number" or (new_intensity < 0 or new_intensity > 100) then return end
     return NickelConf._write_kobo_conf(re_FrontLightLevel,
                                        front_light_level_str,
                                        new_intensity)

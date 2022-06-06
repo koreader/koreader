@@ -75,79 +75,79 @@ function ReaderHighlight:init()
     self._highlight_buttons = {
         -- highlight and add_note are for the document itself,
         -- so we put them first.
-        ["01_select"] = function(_self)
+        ["01_select"] = function(this)
             return {
                 text = _("Select"),
-                enabled = _self.hold_pos ~= nil,
+                enabled = this.hold_pos ~= nil,
                 callback = function()
-                    _self:startSelection()
-                    _self:onClose()
+                    this:startSelection()
+                    this:onClose()
                 end,
             }
         end,
-        ["02_highlight"] = function(_self)
+        ["02_highlight"] = function(this)
             return {
                 text = _("Highlight"),
                 callback = function()
-                    _self:saveHighlight()
-                    _self:onClose()
+                    this:saveHighlight()
+                    this:onClose()
                 end,
-                enabled = _self.hold_pos ~= nil,
+                enabled = this.hold_pos ~= nil,
             }
         end,
-        ["03_copy"] = function(_self)
+        ["03_copy"] = function(this)
             return {
                 text = C_("Text", "Copy"),
                 enabled = Device:hasClipboard(),
                 callback = function()
-                    Device.input.setClipboardText(cleanupSelectedText(_self.selected_text.text))
-                    _self:onClose()
+                    Device.input.setClipboardText(cleanupSelectedText(this.selected_text.text))
+                    this:onClose()
                     UIManager:show(Notification:new{
                         text = _("Selection copied to clipboard."),
                     })
                 end,
             }
         end,
-        ["04_add_note"] = function(_self)
+        ["04_add_note"] = function(this)
             return {
                 text = _("Add Note"),
                 callback = function()
-                    _self:addNote()
-                    _self:onClose()
+                    this:addNote()
+                    this:onClose()
                 end,
-                enabled = _self.hold_pos ~= nil,
+                enabled = this.hold_pos ~= nil,
             }
         end,
         -- then information lookup functions, putting on the left those that
         -- depend on an internet connection.
-        ["05_wikipedia"] = function(_self)
+        ["05_wikipedia"] = function(this)
             return {
                 text = _("Wikipedia"),
                 callback = function()
                     UIManager:scheduleIn(0.1, function()
-                        _self:lookupWikipedia()
-                        -- We don't call _self:onClose(), we need the highlight
+                        this:lookupWikipedia()
+                        -- We don't call this:onClose(), we need the highlight
                         -- to still be there, as we may Highlight it from the
                         -- dict lookup widget.
                     end)
                 end,
             }
         end,
-        ["06_dictionary"] = function(_self)
+        ["06_dictionary"] = function(this)
             return {
                 text = _("Dictionary"),
                 callback = function()
-                    _self:onHighlightDictLookup()
-                    -- We don't call _self:onClose(), same reason as above
+                    this:onHighlightDictLookup()
+                    -- We don't call this:onClose(), same reason as above
                 end,
             }
         end,
-        ["07_translate"] = function(_self, page, index)
+        ["07_translate"] = function(this, page, index)
             return {
                 text = _("Translate"),
                 callback = function()
-                    _self:translate(_self.selected_text, page, index)
-                    -- We don't call _self:onClose(), so one can still see
+                    this:translate(this.selected_text, page, index)
+                    -- We don't call this:onClose(), so one can still see
                     -- the highlighted text when moving the translated
                     -- text window, and also if NetworkMgr:promptWifiOn()
                     -- is needed, so the user can just tap again on this
@@ -157,12 +157,12 @@ function ReaderHighlight:init()
         end,
         -- buttons 08-11 are conditional ones, so the number of buttons can be even or odd
         -- let the Search button be the last, occasionally narrow or wide, less confusing
-        ["12_search"] = function(_self)
+        ["12_search"] = function(this)
             return {
                 text = _("Search"),
                 callback = function()
-                    _self:onHighlightSearch()
-                    -- We don't call _self:onClose(), crengine will highlight
+                    this:onHighlightSearch()
+                    -- We don't call this:onClose(), crengine will highlight
                     -- search matches on the current page, and self:clear()
                     -- would redraw and remove crengine native highlights
                 end,
@@ -173,13 +173,13 @@ function ReaderHighlight:init()
     -- Android devices
     if Device:canShareText() then
         local action = _("Share Text")
-        self:addToHighlightDialog("08_share_text", function(_self)
+        self:addToHighlightDialog("08_share_text", function(this)
             return {
                 text = action,
                 callback = function()
-                    local text = cleanupSelectedText(_self.selected_text.text)
+                    local text = cleanupSelectedText(this.selected_text.text)
                     -- call self:onClose() before calling the android framework
-                    _self:onClose()
+                    this:onClose()
                     Device:doShareText(text, action)
                 end,
             }
@@ -188,42 +188,42 @@ function ReaderHighlight:init()
 
     -- cre documents only
     if not self.document.info.has_pages then
-        self:addToHighlightDialog("09_view_html", function(_self)
+        self:addToHighlightDialog("09_view_html", function(this)
             return {
                 text = _("View HTML"),
                 callback = function()
-                    _self:viewSelectionHTML()
+                    this:viewSelectionHTML()
                 end,
             }
         end)
     end
 
     -- User hyphenation dict
-    self:addToHighlightDialog("10_user_dict", function(_self)
+    self:addToHighlightDialog("10_user_dict", function(this)
         return {
             text= _("Hyphenate"),
             show_in_highlight_dialog_func = function()
-                return _self.ui.userhyph and _self.ui.userhyph:isAvailable()
-                    and not _self.selected_text.text:find("[ ,;-%.\n]")
+                return this.ui.userhyph and this.ui.userhyph:isAvailable()
+                    and not this.selected_text.text:find("[ ,;-%.\n]")
             end,
             callback = function()
-                _self.ui.userhyph:modifyUserEntry(_self.selected_text.text)
-                _self:onClose()
+                this.ui.userhyph:modifyUserEntry(this.selected_text.text)
+                this:onClose()
             end,
         }
     end)
 
     -- Links
-    self:addToHighlightDialog("11_follow_link", function(_self)
+    self:addToHighlightDialog("11_follow_link", function(this)
         return {
             text = _("Follow Link"),
             show_in_highlight_dialog_func = function()
-                return _self.selected_link ~= nil
+                return this.selected_link ~= nil
             end,
             callback = function()
-                local link = _self.selected_link.link or _self.selected_link
-                _self.ui.link:onGotoLink(link)
-                _self:onClose()
+                local link = this.selected_link.link or this.selected_link
+                this.ui.link:onGotoLink(link)
+                this:onClose()
             end,
         }
     end)
