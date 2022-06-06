@@ -562,7 +562,7 @@ end
 -- NOTE: To make sure this will not even run when autostandby is disabled,
 --       this is only aliased as `onAllowStandby` when necessary.
 --       (Because the Event is generated regardless of us, as many things can call UIManager:allowStandby).
-function AutoSuspend:AllowStandbyHandler(input_deadline)
+function AutoSuspend:AllowStandbyHandler()
     logger.dbg("AutoSuspend: onAllowStandby")
     -- This piggy-backs minimally on the UI framework implemented for the PocketBook autostandby plugin,
     -- see its own AllowStandby handler for more details.
@@ -598,18 +598,13 @@ function AutoSuspend:AllowStandbyHandler(input_deadline)
         --       (c.f., UIManager:_checkTasks in UIManager:handleInput).
         UIManager:nextTick(self.leave_standby_task)
 
-        -- Since we go straight to input polling, and that UI frames & input are using the MONOTIC clock,
-        -- which doesn't tick during suspend/standby, lower the next input timeout by the amount of time we spent in standby.
-        -- This should roughly emulate what would have happened if we had not slept.
-        if input_deadline then
-            UIManager:setPMInputTimeout(input_deadline - UIManager:getTime() - Device.last_standby_time)
-        else
-            -- In case we were set to poll forever, make sure poll will return immediately instead,
-            -- so we get a chance to run through the task queue ASAP.
-            -- This ensures we get a LeaveStandby event in a timely fashion,
-            -- even when there isn't actually any user input happening.
-            UIManager:setPMInputTimeout(0)
-        end
+        -- Since we go straight to input polling, and that our time spent in standby won't have affected the already computed
+        -- input polling deadline (because MONOTONIC doesn't tick during standby/suspend),
+        -- tweak said deadline to make sure poll will return immediately, so we get a chance to run through the task queue ASAP.
+        -- This ensures we get a LeaveStandby event in a timely fashion,
+        -- even when there isn't actually any user input happening.
+        -- This should, hopefully, not prevent us from actually consuming any pending input events first, though...
+        UIManager:setPMInputTimeout(0)
     end
 end
 
