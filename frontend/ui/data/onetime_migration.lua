@@ -400,14 +400,7 @@ if last_migration_date < 20220523 then
     migrateSettingsName("highlight_long_hold_threshold", "highlight_long_hold_threshold_s")
 end
 
--- Move /koreader/patch.lua to /koreader/patches directory (see #9104)
-if last_migration_date < 20220519 then
-    local Device = require("device")
-    local util = require("util")
-    if lfs.attributes(Device.home_dir .. "/koreader/patch.lua", "mode") == "file" then
-        util.execute("mv", Device.home_dir .. "/koreader/patch.lua", Device.home_dir .. "/koreader/patches/patch.lua")
-    end
-
+-- #9104
 if last_migration_date < 20220607 then
     os.remove("afterupdate.marker")
 end
