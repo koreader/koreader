@@ -348,14 +348,6 @@ function Terminal:generateInputDialog()
                 end,
             },
             {
-            text = "⎚", --clear
-            callback = function()
-                self.history = ""
-                self.input = {}
-                self.input_dialog:setInputText("$ ")
-            end,
-            },
-            {
             text = "⇧",
             callback = function()
                 self.input_widget:upLine()
