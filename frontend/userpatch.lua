@@ -36,7 +36,7 @@ local data_dir = os.getenv("XDG_DOCUMENTS_DIR") or DataStorage:getDataDir() or p
 -- (see http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua)
 -- string directory ... to scan through (flat no recursion)
 -- string priority ... only files starting with `priority` followed by digits and a '-' will be processed.
--- return true if scripts or task were executed
+-- return true if a patch was executed
 local function runLiveUpdateTasks(dir, priority, update_once_pending, update_once_marker)
     if lfs.attributes(dir, "mode") ~= "directory" then
         return
@@ -87,7 +87,7 @@ local function runLiveUpdateTasks(dir, priority, update_once_pending, update_onc
     return true
 end
 
---- This function executes sripts and applies lua patches from `/koreader/userscripts`
+--- This function applies lua patches from `/koreader/userpatches`
 ---- @string priority ... one of "early\_once", "early", "late", "before\_exit", "on\_exit"
 function userpatch.applyPatches(priority)
     local patch_dir = data_dir .. "/userpatches"

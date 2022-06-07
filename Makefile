@@ -74,7 +74,7 @@ APPIMAGETOOL_URL=https://github.com/AppImage/AppImageKit/releases/download/12/ap
 DOCKER:=$(shell grep -q docker /proc/1/cgroup 2>/dev/null && echo 1)
 
 # files to link from main directory
-INSTALL_FILES=reader.lua setupkoenv.lua setupkopaths.lua frontend resources defaults.lua datastorage.lua \
+INSTALL_FILES=reader.lua setupkoenv.lua frontend resources defaults.lua datastorage.lua \
 		l10n tools README.md COPYING
 
 all: $(if $(ANDROID),,$(KOR_BASE)/$(OUTPUT_DIR)/luajit)
@@ -105,7 +105,7 @@ ifdef ANDROID
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
 endif
 	@echo "[*] Install update once marker"
-	@echo "# This file indicates, that onetime update once patches have not been applied." > $(INSTALL_DIR)/koreader/update_once.marker
+	@echo "# This file indicates, that update once patches have not been applied yet." > $(INSTALL_DIR)/koreader/update_once.marker
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
