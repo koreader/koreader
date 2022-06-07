@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220525
+local CURRENT_MIGRATION_DATE = 20220607
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -408,7 +408,7 @@ if last_migration_date < 20220519 then
         util.execute("mv", Device.home_dir .. "/koreader/patch.lua", Device.home_dir .. "/koreader/patches/patch.lua")
     end
 
-if last_migration_date < 20220523 then
+if last_migration_date < 20220607 then
     os.remove("afterupdate.marker")
 end
 
