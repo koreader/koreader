@@ -28,8 +28,8 @@ local DataStorage = require("datastorage")
 
 -- the directory KOReader is installed in (and runs from)
 local package_dir = lfs.currentdir()
--- the directory where KOReader stores user data (on SDL we may set `XDG_DOCUMENTS_DIR=~/koreader/`)
-local data_dir = os.getenv("XDG_DOCUMENTS_DIR") or DataStorage:getDataDir() or package_dir
+-- the directory where KOReader stores user data
+local data_dir = DataStorage:getDataDir() or package_dir
 
 --- Run lua patches
 -- Execution order order is alphanum-sort for humans version 4: `1-patch.lua` is executed before `10-patch.lua`
@@ -37,7 +37,7 @@ local data_dir = os.getenv("XDG_DOCUMENTS_DIR") or DataStorage:getDataDir() or p
 -- string directory ... to scan through (flat no recursion)
 -- string priority ... only files starting with `priority` followed by digits and a '-' will be processed.
 -- return true if a patch was executed
-local function runLiveUpdateTasks(dir, priority, update_once_pending, update_once_marker)
+local function runUserPatchTasks(dir, priority)
     if lfs.attributes(dir, "mode") ~= "directory" then
         return
     end
@@ -69,16 +69,17 @@ local function runLiveUpdateTasks(dir, priority, update_once_pending, update_onc
         local fullpath = dir .. "/" .. entry
         if lfs.attributes(fullpath, "mode") == "file" then
             if fullpath:match("%.lua$") then -- execute patch-files first
-                logger.info("Live update apply:", fullpath)
+                logger.info("User patch apply:", fullpath)
                 local ok, err = pcall(dofile, fullpath)
                 if not ok then
-                    logger.warn("Live update", err)
-                    if priority >= userpatch.late then -- Only show InfoMessage, when late during startup.
+                    logger.warn("User patch error applying patch:", fullpath, err)
+                    -- Only show InfoMessage, when UIManager is working
+                    if priority >= userpatch.late and priority < userpatch.before_exit then
                         -- Only developers (advanced users) will use this mechanism.
                         -- A warning on a patch failure after an OTA update will simplify troubleshooting.
                         local UIManager = require("ui/uimanager")
                         local InfoMessage = require("ui/widget/infomessage")
-                        UIManager:show(InfoMessage:new{text = "Error loading patch:\n" .. fullpath}) -- no translate
+                        UIManager:show(InfoMessage:new{text = "Error applying patch:\n" .. fullpath}) -- no translate
                     end
                 end
             end
@@ -97,7 +98,7 @@ function userpatch.applyPatches(priority)
         if lfs.attributes(data_dir .. "/patch.lua", "mode") == "file" then
             if lfs.attributes(patch_dir, "mode") == nil then
                 if not lfs.mkdir(patch_dir, "mode") then
-                    logger.err("Live update error creating directory", patch_dir)
+                    logger.err("User patch error creating directory", patch_dir)
                 end
             end
             os.rename(data_dir .. "/patch.lua", patch_dir .. "/" .. userpatch.early .. "-patch.lua")
@@ -108,7 +109,7 @@ function userpatch.applyPatches(priority)
     local update_once_pending = lfs.attributes(update_once_marker, "mode") == "file"
 
     if priority >= userpatch.early or update_once_pending then
-        local executed_something = runLiveUpdateTasks(patch_dir, priority)
+        local executed_something = runUserPatchTasks(patch_dir, priority)
         if executed_something and update_once_pending then
             -- Only delete update once marker if `early_once` updates have been applied.
             os.remove(update_once_marker) -- Prevent another execution on a further starts.
