@@ -13,8 +13,8 @@ io.stdout:write([[
  [*] Current time: ]], os.date("%x-%X"), "\n")
 io.stdout:flush()
 
--- Set up ffi search paths
-require("setupkopaths")
+-- Set up Lua and ffi search paths
+require("setupkoenv")
 
 -- Apply startup user patches and execute startup user scripts
 local userpatch = require("userpatch")
@@ -26,8 +26,6 @@ require("defaults")
 local DataStorage = require("datastorage")
 pcall(dofile, DataStorage:getDataDir() .. "/defaults.persistent.lua")
 
--- Set up Lua and ffi search paths
-require("setupkoenv")
 
 io.stdout:write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
 io.stdout:flush()
