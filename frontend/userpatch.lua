@@ -1,5 +1,5 @@
 --[[--
-Allows applying developer patches and shell scripts while running KOReader.
+Allows applying developer patches while running KOReader.
 
 The contents in `koreader/userpatches/` are applied on calling `userpatch.applyPatches(priority)`.
 --]]--
@@ -31,21 +31,7 @@ local package_dir = lfs.currentdir()
 -- the directory where KOReader stores user data (on SDL we may set `XDG_DOCUMENTS_DIR=~/koreader/`)
 local data_dir = os.getenv("XDG_DOCUMENTS_DIR") or DataStorage:getDataDir() or package_dir
 
--- A wrapper for os.execute, can not use ffi/util early before setupkoenv.
-local function execute(...)
-    local command = {}
-    for i, v in ipairs({...}) do
-        table.insert(command, "'")
-        table.insert(command, tostring(v))
-        table.insert(command, "' ")
-    end
-    local cmd = table.concat(command)
-    logger.info("Live update apply:", cmd)
-    local retval =  os.execute(cmd)
-    logger.info("Live update script returned:", retval)
-end
-
---- Run user shell scripts or lua patches
+--- Run lua patches
 -- Execution order order is alphanum-sort for humans version 4: `1-patch.lua` is executed before `10-patch.lua`
 -- (see http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua)
 -- string directory ... to scan through (flat no recursion)
@@ -95,12 +81,9 @@ local function runLiveUpdateTasks(dir, priority, update_once_pending, update_onc
                         UIManager:show(InfoMessage:new{text = "Error loading patch:\n" .. fullpath}) -- no translate
                     end
                 end
-            elseif fullpath:match("%.sh$") then -- execute shell scripts secont
-                execute("sh", fullpath, data_dir, package_dir)
             end
         end
     end
-
     return true
 end
 
