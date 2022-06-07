@@ -165,7 +165,7 @@ function NumberPickerWidget:init()
                                     local function run_lua_protected_string(code)
                                         -- make environment
                                         local env = {math = math}
-                                        local func, message = loadstring(code)
+                                        local func, dummy = loadstring(code)
                                         if func then
                                             setfenv(func, env)
                                             return pcall(func)
