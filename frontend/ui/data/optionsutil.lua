@@ -2,11 +2,13 @@
 This module contains miscellaneous helper functions for the creoptions and koptoptions.
 ]]
 
+local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local T = require("ffi/util").template
 local logger = require("logger")
+local Screen = Device.screen
 
 local optionsutil = {}
 
@@ -14,7 +16,17 @@ function optionsutil.enableIfEquals(configurable, option, value)
     return configurable[option] == value
 end
 
-function optionsutil.showValues(configurable, option, prefix, document)
+local function real_size_string(ko_size, is_size)
+    if not ko_size or not is_size then return "" end
+    ko_size = tonumber(ko_size)
+    if ko_size then
+        return string.format(" (%.2f pt)", ko_size * Screen:getSize2PtFactor())
+    else
+        return ""
+    end
+end
+
+function optionsutil.showValues(configurable, option, prefix, document, is_size)
     local default = G_reader_settings:readSetting(prefix.."_"..option.name)
     local current = configurable[option.name]
     local value_default, value_current
@@ -123,7 +135,9 @@ function optionsutil.showValues(configurable, option, prefix, document)
                                             current, value_current, default)
         end
     else
-        text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text, current, default)
+        text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
+                                            current, real_size_string(current, is_size),
+                                            default, real_size_string(default, is_size))
     end
     UIManager:show(InfoMessage:new{ text=text })
 end
@@ -135,22 +149,25 @@ function optionsutil.showValuesHMargins(configurable, option)
         UIManager:show(InfoMessage:new{
             text = T(_([[
 Current margins:
-  left:  %1
-  right: %2
+  left:  %1%2
+  right: %3%4
 Default margins: not set]]),
-                current[1], current[2])
+                current[1], real_size_string(current[1], true),
+                current[2], real_size_string(current[2], true))
         })
     else
         UIManager:show(InfoMessage:new{
             text = T(_([[
 Current margins:
-  left:  %1
-  right: %2
+  left:  %1%2
+  right: %3%4
 Default margins:
-  left:  %3
-  right: %4]]),
-                current[1], current[2],
-                default[1], default[2])
+  left:  %5%6
+  right: %7%8]]),
+                current[1], real_size_string(current[1], true),
+                current[2], real_size_string(current[2], true),
+                default[1], real_size_string(default[1], true),
+                default[2], real_size_string(default[2], true))
         })
     end
 end
