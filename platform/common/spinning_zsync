@@ -20,7 +20,7 @@ else
 fi
 
 # Clear screen before start
-./fbink -c
+./fbink --cls
 # Small zsync wrapper so we can print its output while it works...
 ./fbink -q -y -7 -pmh "${ZSYNC_MESSAGE} . . ."
 # Clear any potential leftover from the local OTA tarball creation.
