@@ -172,14 +172,15 @@ function ReaderHighlight:init()
 
     -- Android devices
     if Device:canShareText() then
+        local action = _("Share Text")
         self:addToHighlightDialog("08_share_text", function(_self)
             return {
-                text = _("Share Text"),
+                text = action,
                 callback = function()
                     local text = cleanupSelectedText(_self.selected_text.text)
                     -- call self:onClose() before calling the android framework
                     _self:onClose()
-                    Device.doShareText(text)
+                    Device:doShareText(text, action)
                 end,
             }
         end)

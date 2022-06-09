@@ -97,7 +97,9 @@ local Device = Generic:new{
     hasExternalSD = function() return android.getExternalSdPath() end,
     importFile = function(path) android.importFile(path) end,
     canShareText = yes,
-    doShareText = function(text) android.sendText(text) end,
+    doShareText = function(self, text, reason, title, mimetype)
+        android.sendText(text, reason, title, mimetype)
+    end,
 
     canExternalDictLookup = yes,
     getExternalDictLookupList = function() return external.dicts end,
