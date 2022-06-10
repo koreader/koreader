@@ -6,17 +6,18 @@ The contents in `koreader/userpatches/` are applied on calling `userpatch.applyP
 
 local isAndroid, android = pcall(require, "android")
 
-local userpatch =
-    {   -- priorities for user patches,
-        early_once = "0",  -- to be started early on startup (once after an update)
-        early = "1",       -- to be started early on startup (always, but after an `early_once`)
-        late = "2",        -- to be started after UIManager is ready (always)
-                           -- 3-7 are reserved for later use
-        before_exit = "8", -- to be started a bit before exit before settings are saved (always)
-        on_exit = "9",     -- to be started right before exit (always)
+local userpatch = {
+    -- priorities for user patches,
+    early_once = "0",  -- to be started early on startup (once after an update)
+    early = "1",       -- to be started early on startup (always, but after an `early_once`)
+    late = "2",        -- to be started after UIManager is ready (always)
+                       -- 3-7 are reserved for later use
+    before_exit = "8", -- to be started a bit before exit before settings are saved (always)
+    on_exit = "9",     -- to be started right before exit (always)
 
-        applyPatches = function(priority) end, -- to be overwritten, if the device allows it.
-    }
+    -- the patch function itself
+    applyPatches = function(priority) end, -- to be overwritten, if the device allows it.
+}
 
 if isAndroid and android.prop.flavor == "fdroid" then
     return userpatch -- allows to use applyPatches as a no-op on F-Droid flavor
