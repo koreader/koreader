@@ -105,7 +105,7 @@ ifdef ANDROID
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
 endif
 	@echo "[*] Install update once marker"
-	@echo "# This file indicates, that update once patches have not been applied yet." > $(INSTALL_DIR)/koreader/update_once.marker
+	@echo "# This file indicates that update once patches have not been applied yet." > $(INSTALL_DIR)/koreader/update_once.marker
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
