@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220607
+local CURRENT_MIGRATION_DATE = 20220523
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -398,11 +398,6 @@ if last_migration_date < 20220523 then
         end
     end
     migrateSettingsName("highlight_long_hold_threshold", "highlight_long_hold_threshold_s")
-end
-
--- #9104
-if last_migration_date < 20220607 then
-    os.remove("afterupdate.marker")
 end
 
 -- We're done, store the current migration date
