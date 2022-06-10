@@ -8,6 +8,7 @@ local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 
 local ScreenSaverWidget = InputContainer:new{
+    name = "Screensaver",
     widget = nil,
     background = nil,
 }

@@ -37,6 +37,8 @@ function AutoDim:init()
     self:_schedule_autodim_task()
     self.isCurrentlyDimming = false -- true during or after the dimming ramp
     self.trap_widget = nil
+
+    self.top_widget_before_dim = nil
 end
 
 function AutoDim:addToMainMenu(menu_items)
@@ -164,7 +166,7 @@ end
 
 function AutoDim:restoreFrontlight()
     Device.powerd:setIntensity(self.autodim_save_fl)
-    UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
+    self:updateFooter(true)
     self:_unschedule_ramp_task()
     self:_schedule_autodim_task()
 end
@@ -186,10 +188,11 @@ function AutoDim:onResume()
         if self.trap_widget then
             UIManager:close(self.trap_widget)
             self.trap_widget = nil
+            self.widget_before_dim = nil
         end
         UIManager:scheduleIn(1, function()
             Device.powerd:setIntensity(self.autodim_save_fl)
-            UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
+            self:updateFooter(true)
         end)
         self.isCurrentlyDimming = false
     end
@@ -201,6 +204,19 @@ function AutoDim:onSuspend()
         self:_unschedule_autodim_task()
         self:_unschedule_ramp_task()
         self.isCurrentlyDimming = true -- message to self:onResume to go on with restoring
+    end
+end
+
+function AutoDim:updateFooter(clear)
+    -- update footer only if it is not covered by another widget
+    if self.top_widget_before_dim == "ReaderUI" or
+        (self.top_widget_before_dim ~= "ConfigDialog" and self.top_widget_before_dim ~= "Screensaver"
+        and self.top_widget_before_dim ~= "VirtualKeyboard") then
+
+        UIManager:broadcastEvent(Event:new("UpdateFooter", self.view and self.view.footer_visible or true))
+    end
+    if clear then
+        self.top_widget_before_dim = nil
     end
 end
 
@@ -217,6 +233,9 @@ function AutoDim:autodim_task()
                 self.trap_widget = nil
             end
         }
+
+        -- This is the active widget before showing self.trap_widget
+        self.top_widget_before_dim = UIManager:getTopWidget()
 
         UIManager:show(self.trap_widget) -- suppress taps during dimming
 
@@ -248,7 +267,7 @@ function AutoDim:ramp_task()
         self.ramp_event_countdown = self.ramp_event_countdown - 1
         if self.ramp_event_countdown <= 0 then
             -- Update footer on every self.ramp_event_countdown call
-            UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
+            self:updateFooter()
             self.ramp_event_countdown = self.ramp_event_countdown_startvalue
         end
         self:_schedule_ramp_task() -- Reschedule only if not ready
@@ -256,7 +275,7 @@ function AutoDim:ramp_task()
     end
     if fl_level == self.autodim_end_fl and self.ramp_event_countdown_startvalue > 0 then
         -- Update footer at the end of the ramp.
-        UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
+        self:updateFooter()
     end
 end
 
