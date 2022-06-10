@@ -6,7 +6,10 @@ Each target should inherit from this class and implement *at least* an `export` 
 @module baseexporter
 ]]
 
+local Device = require("device")
 local getSafeFilename = require("util").getSafeFilename
+local _ = require("gettext")
+
 local BaseExporter = {
     clipping_dir = require("datastorage"):getDataDir() .. "/clipboard"
 }
@@ -23,6 +26,7 @@ function BaseExporter:_init()
     self.extension = self.extension or self.name
     self.is_remote = self.is_remote or false
     self.version = self.version or "1.0.0"
+    self.shareable = self.is_remote and nil or Device:canShareText()
     self:loadSettings()
     if type(self.init_callback) == "function" then
         local changed, settings = self:init_callback(self.settings)
@@ -138,6 +142,16 @@ function BaseExporter:toggleEnabled()
         self.settings.enabled = not self.settings.enabled
         self:saveSettings()
     end
+end
+
+--[[--
+Shares text with other apps
+]]
+function BaseExporter:shareText(text, title)
+    local msg_reason = _("Share") .. " " .. self.name
+    local msg_text = type(text) == "string" and text
+    local msg_title = type(title) == "string" and title
+    Device:doShareText(msg_text, msg_reason, msg_title, self.mimetype)
 end
 
 return BaseExporter
