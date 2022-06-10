@@ -1,4 +1,3 @@
-local Device = require("device")
 local util = require("ffi/util")
 local T = util.template
 local _ = require("gettext")
@@ -7,7 +6,7 @@ local _ = require("gettext")
 local TextExporter = require("base"):new {
     name = "text",
     extension = "txt",
-    shareable = Device:canShareText(),
+    mimetype = "text/plain",
 }
 
 local function format(booknotes)
@@ -55,7 +54,7 @@ end
 
 function TextExporter:share(t)
     local content = format(t)
-    Device:doShareText(content)
+    self:shareText(content)
 end
 
 return TextExporter
