@@ -1,4 +1,3 @@
-local Device = require("device")
 local rapidjson = require("rapidjson")
 local md5 = require("ffi/MD5")
 local _ = require("gettext")
@@ -6,7 +5,7 @@ local _ = require("gettext")
 -- json exporter
 local JsonExporter = require("base"):new {
     name = "json",
-    shareable = Device:canShareText(),
+    mimetype = "application/json",
 }
 
 function JsonExporter:getMenuTable()
@@ -78,7 +77,7 @@ function JsonExporter:share(t)
     local content = format(t)
     content.created_on = self.timestamp or os.time()
     content.version = self:getVersion()
-    Device:doShareText(rapidjson.encode(content, {pretty = true}))
+    self:shareText(rapidjson.encode(content, {pretty = true}))
 end
 
 return JsonExporter
