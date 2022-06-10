@@ -30,7 +30,7 @@ local DataStorage = require("datastorage")
 -- the directory KOReader is installed in (and runs from)
 local package_dir = lfs.currentdir()
 -- the directory where KOReader stores user data
-local data_dir = DataStorage:getDataDir() or package_dir
+local data_dir = DataStorage:getDataDir()
 
 --- Run lua patches
 -- Execution order order is alphanum-sort for humans version 4: `1-patch.lua` is executed before `10-patch.lua`
