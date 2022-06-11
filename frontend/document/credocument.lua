@@ -1743,13 +1743,13 @@ function CreDocument:setupCallCache()
         end
     end
     -- We override a bit more specifically the one responsible for drawing page
-    self.drawCurrentView = function(_self, target, x, y, rect, pos)
+    self.drawCurrentView = function(this, target, x, y, rect, pos)
         local do_draw = false
-        local current_tag = _self._callCacheGetCurrentTag()
-        local current_buffer_tag = _self._callCacheGet("current_buffer_tag")
-        if _self.buffer and (_self.buffer.w ~= rect.w or _self.buffer.h ~= rect.h) then
+        local current_tag = this._callCacheGetCurrentTag()
+        local current_buffer_tag = this._callCacheGet("current_buffer_tag")
+        if this.buffer and (this.buffer.w ~= rect.w or this.buffer.h ~= rect.h) then
             do_draw = true
-        elseif not _self.buffer then
+        elseif not this.buffer then
             do_draw = true
         elseif not current_buffer_tag then
             do_draw = true
@@ -1759,20 +1759,20 @@ function CreDocument:setupCallCache()
         local starttime = now()
         if do_draw then
             if do_log then logger.dbg("callCache: ########## drawCurrentView: full draw") end
-            CreDocument.drawCurrentView(_self, target, x, y, rect, pos)
+            CreDocument.drawCurrentView(this, target, x, y, rect, pos)
             addStatMiss("drawCurrentView", starttime)
-            _self._callCacheSet("current_buffer_tag", current_tag)
+            this._callCacheSet("current_buffer_tag", current_tag)
         else
             if do_log then logger.dbg("callCache: ---------- drawCurrentView: light draw") end
-            target:blitFrom(_self.buffer, x, y, 0, 0, rect.w, rect.h)
+            target:blitFrom(this.buffer, x, y, 0, 0, rect.w, rect.h)
             addStatHit("drawCurrentView", starttime)
         end
     end
     -- Dump statistics on close
     if do_stats then
-        self.close = function(_self)
+        self.close = function(this)
             dumpStats()
-            CreDocument.close(_self)
+            CreDocument.close(this)
         end
     end
 end

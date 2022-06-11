@@ -115,7 +115,7 @@ function KOSync:onReaderReady()
     self.kosync_custom_server = settings.custom_server
     self.kosync_username = settings.username
     self.kosync_userkey = settings.userkey
-    self.kosync_auto_sync = not (settings.auto_sync == false)
+    self.kosync_auto_sync = settings.auto_sync ~= false
     self.kosync_pages_before_update = settings.pages_before_update
     self.kosync_whisper_forward = settings.whisper_forward or SYNC_STRATEGY.DEFAULT_FORWARD
     self.kosync_whisper_backward = settings.whisper_backward or SYNC_STRATEGY.DEFAULT_BACKWARD

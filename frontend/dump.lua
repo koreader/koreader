@@ -6,7 +6,7 @@ local isUbuntuTouch = os.getenv("UBUNTU_APPLICATION_ISOLATION") ~= nil
 local insert = table.insert
 local indent_prefix = "    "
 
-local function _serialize(what, outt, indent, max_lv, history, _pairs)
+local function _serialize(what, outt, indent, max_lv, history, pairs_func)
     if not max_lv then
         max_lv = math.huge
     end
@@ -28,13 +28,13 @@ local function _serialize(what, outt, indent, max_lv, history, _pairs)
         local new_history = { what, unpack(history) }
         local didrun = false
         insert(outt, "{")
-        for k, v in _pairs(what) do
+        for k, v in pairs_func(what) do
             insert(outt, "\n")
             insert(outt, string.rep(indent_prefix, indent+1))
             insert(outt, "[")
-            _serialize(k, outt, indent+1, max_lv, new_history, _pairs)
+            _serialize(k, outt, indent+1, max_lv, new_history, pairs_func)
             insert(outt, "] = ")
-            _serialize(v, outt, indent+1, max_lv, new_history, _pairs)
+            _serialize(v, outt, indent+1, max_lv, new_history, pairs_func)
             insert(outt, ",")
             didrun = true
         end
@@ -73,8 +73,8 @@ You can optionally specify a maximum recursion depth in `max_lv`.
 --]]
 local function dump(data, max_lv, ordered)
     local out = {}
-    local _pairs = ordered and require("ffi/util").orderedPairs or pairs
-    _serialize(data, out, 0, max_lv, nil, _pairs)
+    local pairs_func = ordered and require("ffi/util").orderedPairs or pairs
+    _serialize(data, out, 0, max_lv, nil, pairs_func)
     return table.concat(out)
 end
 

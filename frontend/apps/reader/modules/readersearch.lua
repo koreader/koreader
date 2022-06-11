@@ -171,10 +171,10 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
         end
         return false
     end
-    local do_search = function(search_func, _text, param)
+    local do_search = function(search_func, search_term, param)
         return function()
             local no_results = true -- for notification
-            local res = search_func(self, _text, param, regex, case_insensitive)
+            local res = search_func(self, search_term, param, regex, case_insensitive)
             if res then
                 if self.ui.document.info.has_pages then
                     no_results = false
