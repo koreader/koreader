@@ -89,7 +89,7 @@ function ReaderHighlight:init()
             return {
                 text = _("Highlight"),
                 callback = function()
-                    this:saveHighlight()
+                    this:saveHighlight(true)
                     this:onClose()
                 end,
                 enabled = this.hold_pos ~= nil,
@@ -1371,6 +1371,14 @@ function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
 end
 
 function ReaderHighlight:translate(selected_text, page, index)
+    if self.ui.rolling then
+        -- Extend the selected text to include any punctuation at start or end,
+        -- which may give a better translation with the added context.
+        local extended_text = self.ui.document:extendXPointersToSentenceSegment(selected_text.pos0, selected_text.pos1)
+        if extended_text then
+            selected_text = extended_text
+        end
+    end
     if selected_text.text ~= "" then
         self:onTranslateText(selected_text.text, page, index)
     -- or we will do OCR
@@ -1418,7 +1426,7 @@ function ReaderHighlight:onHoldRelease()
                 self.select_mode = false
                 self:extendSelection()
                 if default_highlight_action == "select" then
-                    self:saveHighlight()
+                    self:saveHighlight(true)
                     self:clear()
                 else
                     self:onShowHighlightMenu()
@@ -1452,7 +1460,7 @@ function ReaderHighlight:onHoldRelease()
                 -- bypass default action and show popup if long final hold
                 self:onShowHighlightMenu()
             elseif default_highlight_action == "highlight" then
-                self:saveHighlight()
+                self:saveHighlight(true)
                 self:onClose()
             elseif default_highlight_action == "select" then
                 self:startSelection()
@@ -1616,10 +1624,16 @@ function ReaderHighlight:getHighlightBookmarkItem()
     end
 end
 
-function ReaderHighlight:saveHighlight()
+function ReaderHighlight:saveHighlight(extend_to_sentence)
     self.ui:handleEvent(Event:new("AddHighlight"))
     logger.dbg("save highlight")
     if self.hold_pos and self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
+        if extend_to_sentence and self.ui.rolling then
+            local extended_text = self.ui.document:extendXPointersToSentenceSegment(self.selected_text.pos0, self.selected_text.pos1)
+            if extended_text then
+                self.selected_text = extended_text
+            end
+        end
         local page = self.hold_pos.page
         if not self.view.highlight.saved[page] then
             self.view.highlight.saved[page] = {}
@@ -1668,7 +1682,7 @@ If you wish your highlights to be saved in the document, just move it to a writa
 end
 
 function ReaderHighlight:addNote(text)
-    local page, index = self:saveHighlight()
+    local page, index = self:saveHighlight(true)
     if text then self:clear() end
     self:editHighlight(page, index, true, text)
     UIManager:close(self.edit_highlight_dialog)
