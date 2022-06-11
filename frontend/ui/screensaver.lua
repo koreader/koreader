@@ -18,12 +18,13 @@ local SpinWidget = require("ui/widget/spinwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
-local ffiUtil = require("ffi/util")
-local T = ffiUtil.template
 local Screen = Device.screen
+local T = ffiUtil.template
 
 -- Default settings
 if G_reader_settings:hasNot("screensaver_show_message") then
@@ -77,12 +78,13 @@ function Screensaver:_getRandomImage(dir)
     math.randomseed(os.time())
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if ok then
-        for entry in iter, dir_obj do
-            if lfs.attributes(dir .. entry, "mode") == "file" then
-                local extension = string.lower(string.match(entry, ".+%.([^.]+)") or "")
+        for f in iter, dir_obj do
+            -- Always ignore macOS resource forks, too.
+            if lfs.attributes(dir .. f, "mode") == "file" and not util.stringStartsWith(f, "._") then
+                local extension = string.lower(string.match(f, ".+%.([^.]+)") or "")
                 if self.screensaver_provider[extension] then
                     i = i + 1
-                    pics[i] = entry
+                    pics[i] = f
                 end
             end
         end
@@ -106,7 +108,6 @@ function Screensaver:_calcAverageTimeForPages(pages)
 
     -- Compare average_time_per_page against itself to make sure it's not nan
     if average_time_per_page and average_time_per_page == average_time_per_page and pages then
-        local util = require("util")
         local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
         sec = util.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
     end
@@ -277,7 +278,6 @@ function Screensaver:chooseFile(document_cover)
             text = text,
             callback = function()
                 UIManager:close(self.choose_dialog)
-                local util = require("util")
                 local PathChooser = require("ui/widget/pathchooser")
                 local path_chooser = PathChooser:new{
                     select_directory = false,
