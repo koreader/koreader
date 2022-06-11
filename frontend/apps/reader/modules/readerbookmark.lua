@@ -453,7 +453,7 @@ end
 function ReaderBookmark:onShowBookmark(match_table)
     self.select_mode = false
     self.filtered_mode = match_table and true or false
-    self:updateHighlightsIfNeeded()
+    -- self:updateHighlightsIfNeeded()
     -- build up item_table
     local item_table = {}
     local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
@@ -907,9 +907,11 @@ function ReaderBookmark:addBookmark(item)
             _start, direction = _middle + 1, 1
         end
     end
-    table.insert(self.bookmarks, _middle + direction, item)
+    local index = _middle + direction
+    table.insert(self.bookmarks, index, item)
     self.ui:handleEvent(Event:new("BookmarkAdded", item))
     self.view.footer:onUpdateFooter(self.view.footer_visible)
+    return index
 end
 
 -- binary search of sorted bookmarks
@@ -1002,6 +1004,25 @@ function ReaderBookmark:updateBookmark(item)
             self.bookmarks[i].notes = item.updated_highlight.text
             self.bookmarks[i].datetime = item.updated_highlight.datetime
             self.bookmarks[i].chapter = item.updated_highlight.chapter
+            if is_auto_text then
+                self.bookmarks[i].text = self:getBookmarkAutoText(self.bookmarks[i])
+            end
+            self.ui:handleEvent(Event:new("BookmarkUpdated", self.bookmarks[i], bookmark_before))
+            self:onSaveSettings()
+            break
+        end
+    end
+end
+
+
+function ReaderBookmark:patchBookmark(item)
+    for i=1, #self.bookmarks do
+        if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
+            local bookmark_before = util.tableDeepCopy(self.bookmarks[i])
+            local is_auto_text = self:isBookmarkAutoText(self.bookmarks[i])
+            for key, val in pairs(item.updated_highlight) do
+                self.bookmarks[i][key] = val
+            end
             if is_auto_text then
                 self.bookmarks[i].text = self:getBookmarkAutoText(self.bookmarks[i])
             end
