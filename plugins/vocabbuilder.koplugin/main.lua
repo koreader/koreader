@@ -454,7 +454,6 @@ end
 
 
 -- values useful for item cells
-local review_button_width = math.ceil(math.min(Screen:scaleBySize(95), Screen:getWidth()/6))
 local ellipsis_button_width = Screen:scaleBySize(34)
 local star_width = Screen:scaleBySize(25)
 
@@ -550,8 +549,15 @@ function VocabItemWidget:initItemWidget()
     local right_side_width
     local right_widget
     if not self.show_parent.is_edit_mode and self.item.due_time <= os.time() then
+        local temp_button = Button:new{
+            text = _("Got it"),
+            padding_h = Size.padding.large
+        }
+        local review_button_width = temp_button:getSize().w
+        temp_button:setText(_("Forgot"))
+        review_button_width = math.min(math.max(review_button_width, temp_button:getSize().w), Screen:getWidth()/4)
+        temp_button:free()
         right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
-
         self.forgot_button = Button:new{
             text = _("Forgot"),
             width = review_button_width,
