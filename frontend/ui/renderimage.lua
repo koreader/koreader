@@ -184,7 +184,7 @@ function RenderImage:scaleBlitBuffer(bb, width, height, free_orig_bb)
         if not Mupdf then Mupdf = require("ffi/mupdf") end
         scaled_bb = Mupdf.scaleBlitBuffer(bb, width, height)
     end
-    if not free_orig_bb == false then
+    if free_orig_bb ~= false then
         bb:free()
     end
     return scaled_bb

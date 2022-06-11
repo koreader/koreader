@@ -103,7 +103,7 @@ local function getPluralFunc(pl_tests, nplurals, plural_default)
             local pl_test = pl_tests[i]
             pl_test = logicalCtoLua(pl_test)
 
-            if i > 1 and not (tonumber(pl_test) ~= nil) then
+            if i > 1 and tonumber(pl_test) == nil then
                 pl_test = " elseif "..pl_test
             end
             if tonumber(pl_test) ~= nil then

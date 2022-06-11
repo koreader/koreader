@@ -1095,9 +1095,9 @@ end
 Get link from position in screen page.
 ]]--
 function KoptInterface:getLinkFromPosition(doc, pageno, pos)
-    local function _inside_box(_pos, box)
-        if _pos then
-            local x, y = _pos.x, _pos.y
+    local function _inside_box(coords, box)
+        if coords then
+            local x, y = coords.x, coords.y
             if box.x <= x and box.y <= y
                 and box.x + box.w >= x
                 and box.y + box.h >= y then

@@ -205,8 +205,8 @@ describe("Readerrolling module", function()
         it("should emit PageUpdate event after book is rendered", function()
             local ReaderView = require("apps/reader/modules/readerview")
             local saved_handler = ReaderView.onPageUpdate
-            ReaderView.onPageUpdate = function(_self)
-                assert.are.same(6, _self.ui.document:getPageCount())
+            ReaderView.onPageUpdate = function(this)
+                assert.are.same(6, this.ui.document:getPageCount())
             end
             local test_book = "spec/front/unit/data/sample.txt"
             require("docsettings"):open(test_book):purge()
