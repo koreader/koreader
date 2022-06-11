@@ -80,11 +80,24 @@ function MenuDialog:init()
         }
     end
 
-    local switch_ratio = 0.61
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.8)
+
+    -- Switch text translations could be long
+    local temp_text_widget = TextWidget:new{
+        text = _("Accept new words"),
+        face = Font:getFace("xx_smallinfofont")
+    }
+    local switch_guide_width = temp_text_widget:getSize().w
+    temp_text_widget:setText(_("Save context"))
+    switch_guide_width = math.max(switch_guide_width, temp_text_widget:getSize().w)
+    switch_guide_width = math.min(math.max(switch_guide_width, math.ceil(width*0.39)), math.ceil(width*0.61))
+    temp_text_widget:free()
+
+    local switch_width = width - switch_guide_width - Size.padding.fullscreen
+
     local switch = ToggleSwitch:new{
-        width = math.floor(width * switch_ratio),
+        width = switch_width,
         default_value = 2,
         name = "vocabulary_builder",
         name_text = nil, --_("Accept new words"),
@@ -100,6 +113,23 @@ function MenuDialog:init()
     }
     switch:setPosition(settings.enabled and 2 or 1)
     self:mergeLayoutInVertical(switch)
+
+    self.context_switch = ToggleSwitch:new{
+        width = switch_width,
+        default_value = 1,
+        name_text = nil,
+        event = "ChangeContextStatus",
+        args = {"off", "on"},
+        default_arg = "off",
+        toggle = { _("off"), _("on") },
+        values = {1, 2},
+        alternate = false,
+        enabled = settings.enabled,
+        config = self,
+        readonly = self.readonly,
+    }
+    self.context_switch:setPosition(settings.with_context and 2 or 1)
+    self:mergeLayoutInVertical(self.context_switch)
 
     local edit_button = {
         text = self.is_edit_mode and _("Resume") or _("Quick deletion"),
@@ -151,7 +181,6 @@ function MenuDialog:init()
     self:mergeLayoutInVertical(buttons)
 
     self.covers_fullscreen = true
-    local switch_guide_width = math.ceil(math.max(5, width * (1-switch_ratio) - Size.padding.fullscreen))
     self[1] = CenterContainer:new{
         dimen = size,
         FrameContainer:new{
@@ -172,6 +201,19 @@ function MenuDialog:init()
                     },
                     HorizontalSpan:new{width = Size.padding.fullscreen},
                     switch,
+                },
+                VerticalSpan:new{ width = Size.padding.default},
+                HorizontalGroup:new{
+                    RightContainer:new{
+                        dimen = Geom:new{w = switch_guide_width, h = switch:getSize().h},
+                        TextWidget:new{
+                            text = _("Save context"),
+                            face = Font:getFace("xx_smallinfofont"),
+                            max_width = switch_guide_width
+                        }
+                    },
+                    HorizontalSpan:new{width = Size.padding.fullscreen},
+                    self.context_switch,
                 },
                 VerticalSpan:new{ width = Size.padding.large},
                 LineWidget:new{
@@ -214,15 +256,25 @@ function MenuDialog:onClose()
     return true
 end
 
+function MenuDialog:onChangeContextStatus(args, position)
+    settings.with_context = position == 2
+    G_reader_settings:saveSetting("vocabulary_builder", settings)
+end
+
 function MenuDialog:onChangeEnableStatus(args, position)
     settings.enabled = position == 2
+    self.context_switch.enabled = position == 2
     G_reader_settings:saveSetting("vocabulary_builder", settings)
 end
 
 function MenuDialog:onConfigChoose(values, name, event, args, position)
     UIManager:tickAfterNext(function()
         if values then
-            self:onChangeEnableStatus(args, position)
+            if event == "ChangeEnableStatus" then
+                self:onChangeEnableStatus(args, position)
+            elseif event == "ChangeContextStatus" then
+                self:onChangeContextStatus(args, position)
+            end
         end
         UIManager:setDirty(nil, "ui", nil, true)
     end)
@@ -285,6 +337,13 @@ function WordInfoDialog:init()
         buttons = {{reset_button, remove_button}},
         show_parent = self
     }
+
+    local copy_button = Button:new{
+        text = "", -- copy in nerdfont,
+        callback = function() Device.input.setClipboardText(self.title) end,
+        bordersize = 0,
+    }
+    local has_context = self.prev_context or self.next_context
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         MovableContainer:new{
@@ -297,12 +356,16 @@ function WordInfoDialog:init()
                         bordersize = 0,
                         VerticalGroup:new {
                             align = "left",
-                            TextWidget:new{
-                                text = self.title,
-                                width = width,
-                                face = word_face,
-                                bold = true,
-                                alignment = self.title_align or "left",
+                            HorizontalGroup:new{
+                                TextWidget:new{
+                                    text = self.title,
+                                    max_width = width - copy_button:getSize().w - Size.padding.default,
+                                    face = word_face,
+                                    bold = true,
+                                    alignment = self.title_align or "left",
+                                },
+                                HorizontalSpan:new{ width=Size.padding.default },
+                                copy_button,
                             },
                             TextBoxWidget:new{
                                 text = self.book_title,
@@ -312,11 +375,21 @@ function WordInfoDialog:init()
                                 alignment = self.title_align or "left",
                             },
                             VerticalSpan:new{width= Size.padding.default},
+                            has_context and
+                            TextBoxWidget:new{
+                                text = "..." .. self.prev_context:gsub("\n", " ") .. "~" .. self.next_context:gsub("\n", " ") .. "...",
+                                width = width,
+                                face = Font:getFace("smallffont"),
+                                alignment = self.title_align or "left",
+                            }
+                            or VerticalSpan:new{ width = Size.padding.default },
+                            VerticalSpan:new{ width = has_context and Size.padding.default or 0},
                             TextBoxWidget:new{
                                 text = self.dates,
                                 width = width,
                                 face = subtitle_face,
                                 alignment = self.title_align or "left",
+                                fgcolor = dim_color
                             },
                         }
 
@@ -450,21 +523,9 @@ end
 
 function VocabItemWidget:initItemWidget()
     for i = 1, #self.layout do self.layout[i] = nil end
-
-    local word_widget = Button:new{
-        text = self.item.word,
-        bordersize = 0,
-        callback = function() self:onTap() end
-    }
-    if self.item.is_dim then
-        word_widget.label_widget.fgcolor = dim_color
-    end
-
-    table.insert(self.layout, word_widget)
-
     if not self.show_parent.is_edit_mode and self.item.review_count < 5 then
         self.more_button = Button:new{
-            text = "⋮",
+            text = (self.item.prev_context or self.item.next_context) and "⋯" or "⋮",
             padding = Size.padding.button,
             callback = function() self:showMore() end,
             width = ellipsis_button_width,
@@ -478,7 +539,7 @@ function VocabItemWidget:initItemWidget()
             icon_height = star_width,
             bordersize = 0,
             radius = 0,
-            padding = (ellipsis_button_width - star_width)/2,
+            padding = math.floor((ellipsis_button_width - star_width)/2) + Size.padding.button,
             callback = function()
                 self:remover()
             end,
@@ -566,6 +627,19 @@ function VocabItemWidget:initItemWidget()
         face = subtitle_face,
         fgcolor = subtitle_color
     }
+
+    local word_widget = Button:new{
+        text = self.item.word,
+        bordersize = 0,
+        callback = function() self.item.callback(self.item) end,
+        max_width = math.ceil(math.max(5,text_max_width - Size.padding.fullscreen))
+    }
+
+    if self.item.is_dim then
+        word_widget.label_widget.fgcolor = dim_color
+    end
+
+    table.insert(self.layout, 1, word_widget)
 
     self[1] = FrameContainer:new{
         padding = 0,
@@ -670,6 +744,8 @@ function VocabItemWidget:showMore()
         book_title = self.item.book_title,
         dates = _("Added on") .. " " .. os.date("%Y-%m-%d", self.item.create_time) .. " | " ..
         _("Review scheduled at") .. " " .. os.date("%Y-%m-%d %H:%M", self.item.due_time),
+        prev_context = self.item.prev_context,
+        next_context = self.item.next_context,
         remove_callback = function()
             self:remover()
         end,
@@ -1194,15 +1270,44 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
+function VocabBuilder:getWordContext(pos)
+    if not pos then return end
+    local pos_start = pos[1]
+    local pos_end = pos[2]
+    local maximum_span = 15
+    for i=0, maximum_span do
+        local ok, start = pcall(self.ui.document.getPrevVisibleWordStart, self.ui.document, pos_start)
+        if ok then pos_start = start
+        else break end
+    end
+
+    for i=0, maximum_span do
+        local ok, ending = pcall(self.ui.document.getNextVisibleWordEnd, self.ui.document, pos_end)
+        if ok then pos_end = ending
+        else break end
+    end
+
+    local ok_prev, prev = pcall(self.ui.document.getTextFromXPointers, self.ui.document, pos_start, pos[1])
+    local ok_next, next = pcall(self.ui.document.getTextFromXPointers, self.ui.document, pos[2], pos_end)
+
+    return ok_prev and prev, ok_next and next
+end
+
 -- Event sent by readerdictionary "WordLookedUp"
-function VocabBuilder:onWordLookedUp(word, title)
+function VocabBuilder:onWordLookedUp(word, title, pos)
     if not settings.enabled then return end
     if self.builder_widget and self.builder_widget.current_lookup_word == word then return true end
-
+    local prev_context
+    local next_context
+    if settings.with_context then
+        prev_context, next_context = self:getWordContext(pos)
+    end
     DB:insertOrUpdate({
         book_title = title,
         time = os.time(),
-        word = word
+        word = word,
+        prev_context = prev_context,
+        next_context = next_context
     })
     return true
 end
