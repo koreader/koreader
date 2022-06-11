@@ -1659,11 +1659,11 @@ function UIManager:handleInput()
     -- this function emits (plugin), or within waitEvent() right after (hardware).
     -- Anywhere else breaks preventStandby/allowStandby invariants used by background jobs while UI is left running.
     self:_standbyTransition()
-    if self.PM_INPUT_TIMEOUT then
+    if self._pm_consume_input_early then
         -- If the PM state transition requires an early return from input polling, honor that.
         -- c.f., UIManager:setPMInputTimeout (and AutoSuspend:AllowStandbyHandler).
-        deadline = now + time.s(self.PM_INPUT_TIMEOUT)
-        self.PM_INPUT_TIMEOUT = nil
+        deadline = now
+        self._pm_consume_input_early = false
     end
 
     -- wait for next batch of events
@@ -1847,10 +1847,10 @@ function UIManager:_standbyTransition()
     self._prev_prevent_standby_count = self._prevent_standby_count
 end
 
--- Used by a PM transition event handler to request an early return from input polling (value in s).
+-- Used by a PM transition event handler to request an early return from input polling.
 -- NOTE: We can't re-use setInputTimeout to avoid interactions with ZMQ...
-function UIManager:setPMInputTimeout(timeout)
-    self.PM_INPUT_TIMEOUT = timeout
+function UIManager:consumeInputEarlyAfterPM(toggle)
+    self._pm_consume_input_early = toggle
 end
 
 --- Broadcasts a `FlushSettings` Event to *all* widgets.
