@@ -797,6 +797,10 @@ function CreDocument:getFontFace()
     return self._document:getFontFace()
 end
 
+function CreDocument:getEmbeddedFontList()
+    return self._document:getEmbeddedFontList()
+end
+
 function CreDocument:getCurrentPos()
     return self._document:getCurrentPos()
 end

@@ -101,7 +101,10 @@ function optionsutil.showValues(configurable, option, prefix, document)
     end
     if option.help_text_func then
         -- Allow for concatenating a dynamic help_text_func to a static help_text
-        help_text = T("%1\n%2\n", help_text, option.help_text_func(configurable, document))
+        local more_text = option.help_text_func(configurable, document)
+        if more_text and more_text ~= "" then
+            help_text = T("%1\n%2\n", help_text, more_text)
+        end
     end
     local text
     local name_text = option.name_text_func
