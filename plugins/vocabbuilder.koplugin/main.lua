@@ -1270,37 +1270,14 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
-function VocabBuilder:getWordContext(pos)
-    if not pos then return end
-    local pos_start = pos[1]
-    local pos_end = pos[2]
-    local maximum_span = 15
-    for i=0, maximum_span do
-        local ok, start = pcall(self.ui.document.getPrevVisibleWordStart, self.ui.document, pos_start)
-        if ok then pos_start = start
-        else break end
-    end
-
-    for i=0, maximum_span do
-        local ok, ending = pcall(self.ui.document.getNextVisibleWordEnd, self.ui.document, pos_end)
-        if ok then pos_end = ending
-        else break end
-    end
-
-    local ok_prev, prev = pcall(self.ui.document.getTextFromXPointers, self.ui.document, pos_start, pos[1])
-    local ok_next, next = pcall(self.ui.document.getTextFromXPointers, self.ui.document, pos[2], pos_end)
-
-    return ok_prev and prev, ok_next and next
-end
-
 -- Event sent by readerdictionary "WordLookedUp"
-function VocabBuilder:onWordLookedUp(word, title, pos)
+function VocabBuilder:onWordLookedUp(word, title)
     if not settings.enabled then return end
     if self.builder_widget and self.builder_widget.current_lookup_word == word then return true end
     local prev_context
     local next_context
     if settings.with_context then
-        prev_context, next_context = self:getWordContext(pos)
+        prev_context, next_context = self.ui.highlight:getSelectedWordContext(15)
     end
     DB:insertOrUpdate({
         book_title = title,

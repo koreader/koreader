@@ -1196,7 +1196,7 @@ function ReaderHighlight:lookup(selected_text, selected_link)
 
     -- if we extracted text directly
     if selected_text.text and self.hold_pos then
-        self.ui:handleEvent(Event:new("LookupWord", selected_text.text, false, word_boxes, self, selected_link, nil, {selected_text.pos0, selected_text.pos1}))
+        self.ui:handleEvent(Event:new("LookupWord", selected_text.text, false, word_boxes, self, selected_link))
     -- or we will do OCR
     elseif selected_text.sboxes and self.hold_pos then
         local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text.sboxes)
@@ -1229,6 +1229,29 @@ dbg:guard(ReaderHighlight, "lookup",
         assert(selected_text ~= nil,
             "lookup must not be called with nil selected_text!")
     end)
+
+function ReaderHighlight:getSelectedWordContext(nb_words)
+    if not self.ui.rolling or not self.selected_text then return nil end
+    local pos_start = self.selected_text.pos0
+    local pos_end = self.selected_text.pos1
+
+    for i=0, nb_words do
+        local ok, start = pcall(self.ui.document.getPrevVisibleWordStart, self.ui.document, pos_start)
+        if ok then pos_start = start
+        else break end
+    end
+
+    for i=0, nb_words do
+        local ok, ending = pcall(self.ui.document.getNextVisibleWordEnd, self.ui.document, pos_end)
+        if ok then pos_end = ending
+        else break end
+    end
+
+    local ok_prev, prev = pcall(self.ui.document.getTextFromXPointers, self.ui.document, pos_start, self.selected_text.pos0)
+    local ok_next, next = pcall(self.ui.document.getTextFromXPointers, self.ui.document, self.selected_text.pos1, pos_end)
+
+    return ok_prev and prev, ok_next and next
+end
 
 function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
     if self.ui.document.info.has_pages then

@@ -402,7 +402,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, tweak_buttons_func, pos)
+function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, tweak_buttons_func)
     logger.dbg("dict lookup word:", word, boxes)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
@@ -412,7 +412,7 @@ function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, tw
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link, tweak_buttons_func, pos)
+        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link, tweak_buttons_func)
     end)
     return true
 end
@@ -883,7 +883,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     return results
 end
 
-function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, tweak_buttons_func, pos)
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, tweak_buttons_func)
     if word == "" then
         return
     end
@@ -897,7 +897,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         end
 
     -- Event for plugin to catch lookup with book title
-    self.ui:handleEvent(Event:new("WordLookedUp", word, book_title, pos))
+    self.ui:handleEvent(Event:new("WordLookedUp", word, book_title))
     if not self.disable_lookup_history then
         lookup_history:addTableItem("lookup_history", {
             book_title = book_title,
