@@ -258,8 +258,6 @@ function ReaderView:screenToPageTransform(pos)
         end
     else
         pos.page = self.document:getCurrentPage()
-        -- local last_y = self.document:getCurrentPos()
-        logger.dbg("document has no pages at", pos)
         return pos
     end
 end
