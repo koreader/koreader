@@ -1,9 +1,10 @@
 local Device = require("device")
 local Screen = Device.screen
+local ffiUtil = require("ffi/util")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 local C_ = _.pgettext
-local T = require("ffi/util").template
+local T = ffiUtil.template
 
 -- Get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
@@ -700,12 +701,24 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 args = {false, true},
                 default_arg = nil,
                 event = "ToggleEmbeddedFonts",
-                enabled_func = function(configurable)
+                enabled_func = function(configurable, document)
                     return optionsutil.enableIfEquals(configurable, "embedded_css", 1)
+                            and next(document:getEmbeddedFontList()) ~= nil
                 end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Enable or disable the use of the fonts embedded in the book.
 (Disabling the fonts specified in the publisher stylesheets can also be achieved via Style Tweaks in the main menu.)]]),
+                help_text_func = function(configurable, document)
+                    local font_list = document:getEmbeddedFontList()
+                    if next(font_list) then
+                        local font_details = {}
+                        table.insert(font_details, _("Embedded fonts provided by the current book:"))
+                        for name in ffiUtil.orderedPairs(font_list) do
+                            table.insert(font_details, name .. (font_list[name] and "" or T("  (%1)", _("not used"))))
+                        end
+                        return table.concat(font_details, "\n")
+                    end
+                end,
             },
             {
                 name = "smooth_scaling",
