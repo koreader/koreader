@@ -213,7 +213,7 @@ function AutoDim:updateFooter(clear)
         (self.top_widget_before_dim ~= "ConfigDialog" and self.top_widget_before_dim ~= "ScreenSaver"
         and self.top_widget_before_dim ~= "VirtualKeyboard") then
 
-        UIManager:broadcastEvent(Event:new("UpdateFooter", self.view and self.view.footer_visible or true))
+        UIManager:broadcastEvent(Event:new("UpdateFooter", self.view and self.view.footer_visible or false))
     end
     if clear then
         self.top_widget_before_dim = nil
