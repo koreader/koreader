@@ -295,7 +295,7 @@ local WordInfoDialog = InputContainer:new{
     reset_callback = nil,
     dismissable = true, -- set to false if any button callback is required
 }
-
+local word_info_dialog_width
 function WordInfoDialog:init()
     if self.dismissable then
         if Device:hasKeys() then
@@ -316,7 +316,18 @@ function WordInfoDialog:init()
         end
     end
 
-    local width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.61)
+    if not word_info_dialog_width then
+        local temp_text = TextWidget:new{
+            text = self.dates,
+            padding = Size.padding.fullscreen,
+            face = subtitle_face
+        }
+        local dates_width = temp_text:getSize().w
+        temp_text:free()
+        local screen_width = math.min(Screen:getWidth(), Screen:getHeight())
+        word_info_dialog_width = math.floor(math.max(screen_width * 0.6, math.min(screen_width * 0.8, dates_width)))
+    end
+    local width = word_info_dialog_width
     local reset_button = {
         text = _("Reset progress"),
         callback = function()
@@ -520,6 +531,7 @@ function VocabItemWidget:init()
     self:initItemWidget()
 end
 
+local review_button_width
 function VocabItemWidget:initItemWidget()
     for i = 1, #self.layout do self.layout[i] = nil end
     if not self.show_parent.is_edit_mode and self.item.review_count < 5 then
@@ -549,14 +561,16 @@ function VocabItemWidget:initItemWidget()
     local right_side_width
     local right_widget
     if not self.show_parent.is_edit_mode and self.item.due_time <= os.time() then
-        local temp_button = Button:new{
-            text = _("Got it"),
-            padding_h = Size.padding.large
-        }
-        local review_button_width = temp_button:getSize().w
-        temp_button:setText(_("Forgot"))
-        review_button_width = math.min(math.max(review_button_width, temp_button:getSize().w), Screen:getWidth()/4)
-        temp_button:free()
+        if not review_button_width then
+            local temp_button = Button:new{
+                text = _("Got it"),
+                padding_h = Size.padding.large
+            }
+            review_button_width = temp_button:getSize().w
+            temp_button:setText(_("Forgot"))
+            review_button_width = math.min(math.max(review_button_width, temp_button:getSize().w), Screen:getWidth()/4)
+            temp_button:free()
+        end
         right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
         self.forgot_button = Button:new{
             text = _("Forgot"),
