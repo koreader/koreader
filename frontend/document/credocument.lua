@@ -835,6 +835,10 @@ function CreDocument:getTextFromXPointers(pos0, pos1, draw_selection)
     return self._document:getTextFromXPointers(pos0, pos1, draw_selection, draw_segmented_selection)
 end
 
+function CreDocument:extendXPointersToSentenceSegment(pos0, pos1)
+    return self._document:extendXPointersToSentenceSegment(pos0, pos1)
+end
+
 function CreDocument:getHTMLFromXPointer(xp, flags, from_final_parent)
     if xp then
         return self._document:getHTMLFromXPointer(xp, flags, from_final_parent)
