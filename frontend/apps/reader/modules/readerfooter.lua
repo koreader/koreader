@@ -2495,7 +2495,7 @@ end
 
 function ReaderFooter:onNetworkDisconnected()
     if self.settings.wifi_status then
-        self:maybeUpdateFooter()
+        self:onUpdateFooter(self.view.footer_visible)
     end
 end
 
