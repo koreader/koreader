@@ -650,18 +650,23 @@ function VocabItemWidget:initItemWidget()
             padding_bottom = 0,
             allow_flash = false,
         }
+        local button_v_spacer = VerticalSpan:new{width = Screen:scaleBySize(1)}
         right_widget = HorizontalGroup:new{
             dimen = Geom:new{ w = 0, h = self.height },
             self.margin_span,
             VerticalGroup:new{
                 forgot_span_top,
+                button_v_spacer,
                 self.forgot_button,
+                button_v_spacer,
                 forgot_span_bottom,
             },
             self.margin_span,
             VerticalGroup:new{
                 got_it_span_top,
+                button_v_spacer,
                 self.got_it_button,
+                button_v_spacer,
                 got_it_span_bottom,
             },
             self.more_button,
