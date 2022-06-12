@@ -722,6 +722,7 @@ function OPDSBrowser:streamPages(item, remote_url, count)
 
             if code == 200 then
                 local page_bb = RenderImage:renderImageData(data, #data, false)
+                             or RenderImage:renderImageFile("resources/koreader.png", false)
                 return page_bb
             else
                 local error_bb = RenderImage:renderImageFile("resources/koreader.png", false)
