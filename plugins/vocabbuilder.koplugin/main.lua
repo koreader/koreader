@@ -365,7 +365,7 @@ function WordInfoDialog:init()
                     align = "center",
                     FrameContainer:new{
                         padding = self.padding,
-                        padding_top = Size.padding.small,
+                        padding_top = Size.padding.buttontable,
                         padding_bottom = Size.padding.buttontable,
                         margin = self.margin,
                         bordersize = 0,
