@@ -124,6 +124,7 @@ function JoplinExporter:notebookExist(title)
     local response, err = makeRequest(url, "GET")
     if not response then
         logger.warn("Joplin notebookExist error", err)
+        return false
     end
 
     if not response.items or type(response.items) ~= "table" then
