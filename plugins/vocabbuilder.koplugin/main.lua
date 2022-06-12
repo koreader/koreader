@@ -21,6 +21,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconButton = require("ui/widget/iconbutton")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
@@ -53,7 +54,7 @@ local settings = G_reader_settings:readSetting("vocabulary_builder", {enabled = 
 Menu dialogue widget
 --]]--
 local MenuDialog = FocusManager:new{
-    padding = Size.padding.fullscreen,
+    padding = Size.padding.large,
     is_edit_mode = false,
     edit_callback = nil,
     tap_close_callback = nil,
@@ -94,7 +95,7 @@ function MenuDialog:init()
     switch_guide_width = math.min(math.max(switch_guide_width, math.ceil(width*0.39)), math.ceil(width*0.61))
     temp_text_widget:free()
 
-    local switch_width = width - switch_guide_width - Size.padding.fullscreen
+    local switch_width = width - switch_guide_width - Size.padding.fullscreen - Size.padding.default
 
     local switch = ToggleSwitch:new{
         width = switch_width,
@@ -184,11 +185,12 @@ function MenuDialog:init()
     self[1] = CenterContainer:new{
         dimen = size,
         FrameContainer:new{
-            padding = self.padding,
+            padding = Size.padding.default,
+            padding_top = Size.padding.large,
+            padding_bottom = 0,
             background = Blitbuffer.COLOR_WHITE,
             bordersize = Size.border.window,
             radius = Size.radius.window,
-            padding_bottom = Size.padding.button,
             VerticalGroup:new{
                 HorizontalGroup:new{
                     RightContainer:new{
@@ -320,7 +322,7 @@ function WordInfoDialog:init()
         local temp_text = TextWidget:new{
             text = self.dates,
             padding = Size.padding.fullscreen,
-            face = subtitle_face
+            face = Font:getFace("cfont", 14)
         }
         local dates_width = temp_text:getSize().w
         temp_text:free()
@@ -362,7 +364,9 @@ function WordInfoDialog:init()
                 VerticalGroup:new{
                     align = "center",
                     FrameContainer:new{
-                        padding =self.padding,
+                        padding = self.padding,
+                        padding_top = Size.padding.small,
+                        padding_bottom = Size.padding.buttontable,
                         margin = self.margin,
                         bordersize = 0,
                         VerticalGroup:new {
@@ -381,8 +385,7 @@ function WordInfoDialog:init()
                             TextBoxWidget:new{
                                 text = self.book_title,
                                 width = width,
-                                face = subtitle_italic_face,
-                                fgcolor = subtitle_color,
+                                face = Font:getFace("NotoSans-Italic.ttf", 15),
                                 alignment = self.title_align or "left",
                             },
                             VerticalSpan:new{width= Size.padding.default},
@@ -398,7 +401,7 @@ function WordInfoDialog:init()
                             TextBoxWidget:new{
                                 text = self.dates,
                                 width = width,
-                                face = subtitle_face,
+                                face = Font:getFace("cfont", 14),
                                 alignment = self.title_align or "left",
                                 fgcolor = dim_color
                             },
@@ -409,7 +412,7 @@ function WordInfoDialog:init()
                         background = Blitbuffer.COLOR_GRAY,
                         dimen = Geom:new{
                             w = width + self.padding + self.margin,
-                            h = Screen:scaleBySize(2),
+                            h = Screen:scaleBySize(1),
                         }
                     },
                     focus_button
@@ -417,8 +420,7 @@ function WordInfoDialog:init()
                 background = Blitbuffer.COLOR_WHITE,
                 bordersize = Size.border.window,
                 radius = Size.radius.window,
-                padding = Size.padding.button,
-                padding_bottom = 0,
+                padding = 0
             }
         }
     }
@@ -532,25 +534,39 @@ function VocabItemWidget:init()
 end
 
 local review_button_width
+local review_span_height
+local more_button_height
 function VocabItemWidget:initItemWidget()
     for i = 1, #self.layout do self.layout[i] = nil end
     if not self.show_parent.is_edit_mode and self.item.review_count < 5 then
+        if not more_button_height then
+            local temp_button = Button:new{
+                text = " ",
+                padding = 0
+            }
+            more_button_height = temp_button:getSize().h
+            temp_button:free()
+        end
         self.more_button = Button:new{
             text = (self.item.prev_context or self.item.next_context) and "⋯" or "⋮",
             padding = Size.padding.button,
+            padding_v = math.floor((self.height - more_button_height)/2),
             callback = function() self:showMore() end,
             width = ellipsis_button_width,
             bordersize = 0,
             show_parent = self
         }
     else
-        self.more_button = Button:new{
+        local align_padding = math.floor((ellipsis_button_width - star_width)/2) + Size.padding.button
+        local extra_padding = self.show_parent.is_edit_mode and star_width*2 or align_padding
+        self.more_button = IconButton:new{
             icon = "exit",
-            icon_width = star_width,
-            icon_height = star_width,
-            bordersize = 0,
-            radius = 0,
-            padding = math.floor((ellipsis_button_width - star_width)/2) + Size.padding.button,
+            width = star_width,
+            height = star_width,
+            padding_right = align_padding,
+            padding_top = math.floor((self.height-star_width)/2),
+            padding_bottom = math.floor((self.height-star_width)/2),
+            padding_left = extra_padding,
             callback = function()
                 self:remover()
             end,
@@ -569,6 +585,7 @@ function VocabItemWidget:initItemWidget()
             review_button_width = temp_button:getSize().w
             temp_button:setText(_("Forgot"))
             review_button_width = math.min(math.max(review_button_width, temp_button:getSize().w), Screen:getWidth()/4)
+            review_span_height = math.floor((self.height-temp_button:getSize().h)/2)
             temp_button:free()
         end
         right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
@@ -581,7 +598,6 @@ function VocabItemWidget:initItemWidget()
                 self:onForgot()
             end,
             show_parent = self,
-            -- no_focus = true
         }
 
         self.got_it_button = Button:new{
@@ -593,15 +609,61 @@ function VocabItemWidget:initItemWidget()
             width = review_button_width,
             max_width = review_button_width,
             show_parent = self,
-            -- no_focus = true
         }
-
+        local forgot_span_top = IconButton:new{
+            icon = "empty",
+            callback = function() self:onForgot() end,
+            width = review_span_height,
+            height = review_span_height,
+            padding = math.floor((review_button_width - review_span_height)/2),
+            padding_top = 0,
+            padding_bottom = 0,
+            allow_flash = false,
+        }
+        local forgot_span_bottom = IconButton:new{
+            icon = "empty",
+            callback = function() self:onForgot() end,
+            width = review_span_height,
+            height = review_span_height,
+            padding = math.floor((review_button_width - review_span_height)/2),
+            padding_top = 0,
+            padding_bottom = 0,
+            allow_flash = false,
+        }
+        local got_it_span_top = IconButton:new{
+            icon = "empty",
+            callback = function() self:onGotIt() end,
+            width = review_span_height,
+            height = review_span_height,
+            padding = math.floor((review_button_width - review_span_height)/2),
+            padding_top = 0,
+            padding_bottom = 0,
+            allow_flash = false,
+        }
+        local got_it_span_bottom = IconButton:new{
+            icon = "empty",
+            callback = function() self:onGotIt() end,
+            width = review_span_height,
+            height = review_span_height,
+            padding = math.floor((review_button_width - review_span_height)/2),
+            padding_top = 0,
+            padding_bottom = 0,
+            allow_flash = false,
+        }
         right_widget = HorizontalGroup:new{
             dimen = Geom:new{ w = 0, h = self.height },
             self.margin_span,
-            self.forgot_button,
+            VerticalGroup:new{
+                forgot_span_top,
+                self.forgot_button,
+                forgot_span_bottom,
+            },
             self.margin_span,
-            self.got_it_button,
+            VerticalGroup:new{
+                got_it_span_top,
+                self.got_it_button,
+                got_it_span_bottom,
+            },
             self.more_button,
         }
         table.insert(self.layout, self.forgot_button)
@@ -849,6 +911,12 @@ function VocabularyBuilderWidget:init()
             GestureRange:new{
                 ges = "swipe",
                 range = self.dimen,
+            }
+        }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
+                range = function() return self.dimen end,
             }
         }
     end
@@ -1190,6 +1258,14 @@ function VocabularyBuilderWidget:onSwipe(arg, ges_ev)
     end
 end
 
+function VocabularyBuilderWidget:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
+    return true
+end
+
 function VocabularyBuilderWidget:onClose()
     DB:batchUpdateItems(self.item_table)
     UIManager:close(self)
@@ -1220,7 +1296,7 @@ function VocabBuilder:init()
 end
 
 function VocabBuilder:addToMainMenu(menu_items)
-    menu_items.vocabulary_builder = {
+    menu_items.vocabbuilder = {
         text = _("Vocabulary builder"),
         keep_menu_open = true,
         callback = function()
