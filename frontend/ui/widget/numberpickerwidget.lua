@@ -160,20 +160,22 @@ function NumberPickerWidget:init()
                                 -- if the input text starts with `=` try to evaluate the expression
                                 -- only allow `math.*` and no other functions to be safe here.
                                 if input_text:match("^=") then
-                                    input_text = input_text:gsub("^=", "return ")
-                                    -- run code under environment
-                                    local function run_lua_protected_string(code)
-                                        -- make environment
-                                        local env = {math = math}
-                                        local func, dummy = loadstring(code)
+                                    local function evaluate_string(code)
+                                        -- only execute if there a no chars (except math.xxx) and {[]} in the user input
+                                        local check_code = code:gsub("math%.%a*", "")
+                                        if check_code:find("[%a%[%]%{%}]") then
+                                            return nil
+                                        end
+                                        code = code:gsub("^=", "return ")
+                                        local env = {math = math} -- restrict to only math functions
+                                        local func, dummy = load(code, "user_sandbox", nil, env)
                                         if func then
-                                            setfenv(func, env)
                                             return pcall(func)
                                         end
                                     end
                                     local dummy
-                                    dummy, input_value = run_lua_protected_string(input_text)
-                                    input_value = tonumber(input_value)
+                                    dummy, input_value = evaluate_string(input_text)
+                                    input_value = dummy and tonumber(input_value)
                                 end
 
                                 if turn_off_checks then
