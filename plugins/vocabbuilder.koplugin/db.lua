@@ -189,7 +189,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
 
     local due_time
     local target_count = math.min(math.max(item.review_count + (isGot and 1 or -1), 0), 8)
-    if target_count == 0 then
+    if not isGot or target_count == 0 then
         due_time = current_time + 5 * 60
     elseif target_count == 1 then
         due_time = current_time + 30 * 60

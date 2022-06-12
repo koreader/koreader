@@ -1071,6 +1071,7 @@ function VocabularyBuilderWidget:setupItemHeight()
     self.items_per_page = math.floor(content_height / line_height)
     self.item_margin = self.item_margin + math.floor((content_height - self.items_per_page * line_height ) / self.items_per_page )
     self.pages = math.ceil(DB:selectCount() / self.items_per_page)
+    self.show_page = math.min(self.pages, self.show_page)
 end
 
 function VocabularyBuilderWidget:nextPage()
