@@ -170,8 +170,22 @@ function ImageWidget:_loadfile()
                 -- and paintTo() must use alphablitFrom() instead of pmulalphablitFrom() (which is
                 -- fine for everything MuPDF renders out)
                 self._bb, self._is_straight_alpha = RenderImage:renderSVGImageFile(self.file, width, height, zoom)
+
+                -- Ensure we always return a BB, even on failure
+                if not self._bb then
+                    logger.warn("ImageWidget: Failed to render SVG image file:", self.file)
+                    self._bb = RenderImage:renderCheckerboard(width, height, Screen.bb:getType())
+                    self._is_straight_alpha = false
+                end
             else
                 self._bb = RenderImage:renderImageFile(self.file, false, width, height)
+
+                if not self._bb then
+                    logger.warn("ImageWidget: Failed to render image file:", self.file)
+                    self._bb = RenderImage:renderCheckerboard(width, height, Screen.bb:getType())
+                    self._is_straight_alpha = false
+                end
+
                 if scale_for_dpi_here then
                     local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
                     self._bb = RenderImage:scaleBlitBuffer(self._bb, math.floor(bb_w * DPI_SCALE), math.floor(bb_h * DPI_SCALE))
