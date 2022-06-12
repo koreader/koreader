@@ -3,7 +3,6 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
-local DataStorage = require("datastorage")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
@@ -94,6 +93,7 @@ function Screensaver:_getRandomImage(dir)
     else
         return nil
     end
+
     return dir .. pics[math.random(i)]
 end
 
@@ -262,7 +262,7 @@ function Screensaver:chooseFolder()
         }
     })
     local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
-                         or DataStorage:getDataDir() .. "/screenshots/"
+                         or _("N/A")
     self.choose_dialog = ButtonDialogTitle:new{
         title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
@@ -321,8 +321,9 @@ function Screensaver:chooseFile(document_cover)
         }
     })
     local screensaver_image = G_reader_settings:readSetting("screensaver_image")
-                           or DataStorage:getDataDir() .. "/resources/koreader.png"
+                           or _("N/A")
     local screensaver_document_cover = G_reader_settings:readSetting("screensaver_document_cover")
+                                    or _("N/A")
     local title = document_cover and T(_("Current screensaver document cover:\n%1"), BD.filepath(screensaver_document_cover))
         or T(_("Current screensaver image:\n%1"), BD.filepath(screensaver_image))
     self.choose_dialog = ButtonDialogTitle:new{
