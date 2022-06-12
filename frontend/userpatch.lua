@@ -1,7 +1,7 @@
 --[[--
 Allows applying developer patches while running KOReader.
 
-The contents in `koreader/userpatches/` are applied on calling `userpatch.applyPatches(priority)`.
+The contents in `koreader/patches/` are applied on calling `userpatch.applyPatches(priority)`.
 --]]--
 
 local isAndroid, android = pcall(require, "android")
@@ -70,10 +70,10 @@ local function runUserPatchTasks(dir, priority)
         local fullpath = dir .. "/" .. entry
         if lfs.attributes(fullpath, "mode") == "file" then
             if fullpath:match("%.lua$") then -- execute patch-files first
-                logger.info("User patch apply:", fullpath)
+                logger.info("Applying patch:", fullpath)
                 local ok, err = pcall(dofile, fullpath)
                 if not ok then
-                    logger.warn("User patch error applying patch:", fullpath, err)
+                    logger.warn("Patching failed:", err)
                     -- Only show InfoMessage, when UIManager is working
                     if priority >= userpatch.late and priority < userpatch.before_exit then
                         -- Only developers (advanced users) will use this mechanism.
@@ -89,23 +89,10 @@ local function runUserPatchTasks(dir, priority)
     return true
 end
 
---- This function applies lua patches from `/koreader/userpatches`
----- @string priority ... one of "early\_once", "early", "late", "before\_exit", "on\_exit"
+--- This function applies lua patches from `/koreader/patches`
+---- @string priority ... one of the defined priorities in the userpatch hashtable
 function userpatch.applyPatches(priority)
-    local patch_dir = data_dir .. "/userpatches"
-
-    if priority == userpatch.early then
-        -- Move an existing `koreader/patch.lua` to `koreader/userpatches/1-patch.lua` (-> will be excuted in `early`)
-        if lfs.attributes(data_dir .. "/patch.lua", "mode") == "file" then
-            if lfs.attributes(patch_dir, "mode") == nil then
-                if not lfs.mkdir(patch_dir, "mode") then
-                    logger.err("User patch error creating directory", patch_dir)
-                end
-            end
-            os.rename(data_dir .. "/patch.lua", patch_dir .. "/" .. userpatch.early .. "-patch.lua")
-        end
-    end
-
+    local patch_dir = data_dir .. "/patches"
     local update_once_marker = package_dir .. "/update_once.marker"
     local update_once_pending = lfs.attributes(update_once_marker, "mode") == "file"
 
