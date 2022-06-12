@@ -484,6 +484,7 @@ local VocabItemWidget = InputContainer:new{
     face = Font:getFace("smallinfofont"),
     width = nil,
     height = nil,
+    review_button_width = nil,
     show_parent = nil,
     item = nil,
     forgot_button = nil,
@@ -533,40 +534,23 @@ function VocabItemWidget:init()
     self:initItemWidget()
 end
 
-local review_button_width
-local review_span_height
-local more_button_height
 function VocabItemWidget:initItemWidget()
     for i = 1, #self.layout do self.layout[i] = nil end
-    if not self.show_parent.is_edit_mode and self.item.review_count < 5 then
-        if not more_button_height then
-            local temp_button = Button:new{
-                text = " ",
-                padding = 0
-            }
-            more_button_height = temp_button:getSize().h
-            temp_button:free()
-        end
+    if not self.show_parent.is_edit_mode and self.item.review_count < 6 then
         self.more_button = Button:new{
             text = (self.item.prev_context or self.item.next_context) and "⋯" or "⋮",
             padding = Size.padding.button,
-            padding_v = math.floor((self.height - more_button_height)/2),
             callback = function() self:showMore() end,
             width = ellipsis_button_width,
             bordersize = 0,
             show_parent = self
         }
     else
-        local align_padding = math.floor((ellipsis_button_width - star_width)/2) + Size.padding.button
-        local extra_padding = self.show_parent.is_edit_mode and star_width*2 or align_padding
         self.more_button = IconButton:new{
             icon = "exit",
             width = star_width,
             height = star_width,
-            padding_right = align_padding,
-            padding_top = math.floor((self.height-star_width)/2),
-            padding_bottom = math.floor((self.height-star_width)/2),
-            padding_left = extra_padding,
+            padding = math.floor((ellipsis_button_width - star_width)/2) + Size.padding.button,
             callback = function()
                 self:remover()
             end,
@@ -577,22 +561,12 @@ function VocabItemWidget:initItemWidget()
     local right_side_width
     local right_widget
     if not self.show_parent.is_edit_mode and self.item.due_time <= os.time() then
-        if not review_button_width then
-            local temp_button = Button:new{
-                text = _("Got it"),
-                padding_h = Size.padding.large
-            }
-            review_button_width = temp_button:getSize().w
-            temp_button:setText(_("Forgot"))
-            review_button_width = math.min(math.max(review_button_width, temp_button:getSize().w), Screen:getWidth()/4)
-            review_span_height = math.floor((self.height-temp_button:getSize().h)/2)
-            temp_button:free()
-        end
-        right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
+        self.has_review_buttons = true
+        right_side_width = self.review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
         self.forgot_button = Button:new{
             text = _("Forgot"),
-            width = review_button_width,
-            max_width = review_button_width,
+            width = self.review_button_width,
+            max_width = self.review_button_width,
             radius = Size.radius.button,
             callback = function()
                 self:onForgot()
@@ -606,75 +580,23 @@ function VocabItemWidget:initItemWidget()
             callback = function()
                 self:onGotIt()
             end,
-            width = review_button_width,
-            max_width = review_button_width,
+            width = self.review_button_width,
+            max_width = self.review_button_width,
             show_parent = self,
         }
-        local forgot_span_top = IconButton:new{
-            icon = "empty",
-            callback = function() self:onForgot() end,
-            width = review_span_height,
-            height = review_span_height,
-            padding = math.floor((review_button_width - review_span_height)/2),
-            padding_top = 0,
-            padding_bottom = 0,
-            allow_flash = false,
-        }
-        local forgot_span_bottom = IconButton:new{
-            icon = "empty",
-            callback = function() self:onForgot() end,
-            width = review_span_height,
-            height = review_span_height,
-            padding = math.floor((review_button_width - review_span_height)/2),
-            padding_top = 0,
-            padding_bottom = 0,
-            allow_flash = false,
-        }
-        local got_it_span_top = IconButton:new{
-            icon = "empty",
-            callback = function() self:onGotIt() end,
-            width = review_span_height,
-            height = review_span_height,
-            padding = math.floor((review_button_width - review_span_height)/2),
-            padding_top = 0,
-            padding_bottom = 0,
-            allow_flash = false,
-        }
-        local got_it_span_bottom = IconButton:new{
-            icon = "empty",
-            callback = function() self:onGotIt() end,
-            width = review_span_height,
-            height = review_span_height,
-            padding = math.floor((review_button_width - review_span_height)/2),
-            padding_top = 0,
-            padding_bottom = 0,
-            allow_flash = false,
-        }
-        local button_v_spacer = VerticalSpan:new{width = Screen:scaleBySize(1)}
         right_widget = HorizontalGroup:new{
             dimen = Geom:new{ w = 0, h = self.height },
             self.margin_span,
-            VerticalGroup:new{
-                forgot_span_top,
-                button_v_spacer,
-                self.forgot_button,
-                button_v_spacer,
-                forgot_span_bottom,
-            },
+            self.forgot_button,
             self.margin_span,
-            VerticalGroup:new{
-                got_it_span_top,
-                button_v_spacer,
-                self.got_it_button,
-                button_v_spacer,
-                got_it_span_bottom,
-            },
+            self.got_it_button,
             self.more_button,
         }
         table.insert(self.layout, self.forgot_button)
         table.insert(self.layout, self.got_it_button)
         table.insert(self.layout, self.more_button)
     else
+        self.has_review_buttons = false
         local star = Button:new{
             icon = "check",
             icon_width = star_width,
@@ -719,6 +641,7 @@ function VocabItemWidget:initItemWidget()
         text = self.item.word,
         bordersize = 0,
         callback = function() self.item.callback(self.item) end,
+        padding = 0,
         max_width = math.ceil(math.max(5,text_max_width - Size.padding.fullscreen))
     }
 
@@ -846,10 +769,43 @@ function VocabItemWidget:showMore()
 end
 
 function VocabItemWidget:onTap(_, ges)
-    if self.item.callback then
-        self.item.callback(self.item)
+    if self.has_review_buttons then
+        if ges.pos.x > self.forgot_button.dimen.x and ges.pos.x < self.forgot_button.dimen.x + self.forgot_button.dimen.w then
+            self:onForgot()
+        elseif ges.pos.x > self.got_it_button.dimen.x and ges.pos.x < self.got_it_button.dimen.x + self.got_it_button.dimen.w then
+            self:onGotIt()
+        elseif ges.pos.x > self.more_button.dimen.x and ges.pos.x < self.more_button.dimen.x + self.more_button.dimen.w then
+            if self.item.review_count < 6 then
+                self:showMore()
+            else
+                self:remover()
+            end
+        elseif self.item.callback then
+            self.item.callback(self.item)
+        end
+    else
+        if BD.mirroredUILayout() then
+            if ges.pos.x > self.more_button.dimen.x and ges.pos.x < self.more_button.dimen.x + self.more_button.dimen.w * 2 then
+                if self.show_parent.is_edit_mode or self.item.review_count >= 6 then
+                    self:remover()
+                else
+                    self:showMore()
+                end
+            elseif self.item.callback then
+                self.item.callback(self.item)
+            end
+        else
+            if ges.pos.x > self.more_button.dimen.x - self.more_button.dimen.w and ges.pos.x < self.more_button.dimen.x + self.more_button.dimen.w then
+                if self.show_parent.is_edit_mode or self.item.review_count >= 6 then
+                    self:remover()
+                else
+                    self:showMore()
+                end
+            elseif self.item.callback then
+                self.item.callback(self.item)
+            end
+        end
     end
-
     return true
 end
 
@@ -1040,6 +996,16 @@ function VocabularyBuilderWidget:init()
     self:setupItemHeight()
     self.main_content = VerticalGroup:new{}
 
+    -- calculate item's review button width once
+    local temp_button = Button:new{
+        text = _("Got it"),
+        padding_h = Size.padding.large
+    }
+    self.review_button_width = temp_button:getSize().w
+    temp_button:setText(_("Forgot"))
+    self.review_button_width = math.min(math.max(self.review_button_width, temp_button:getSize().w), Screen:getWidth()/4)
+    temp_button:free()
+
     self:_populateItems()
 
     local frame_content = FrameContainer:new{
@@ -1138,6 +1104,7 @@ function VocabularyBuilderWidget:_populateItems()
         local item = VocabItemWidget:new{
             height = self.item_height,
             width = self.item_width,
+            review_button_width = self.review_button_width,
             item = self.item_table[idx],
             index = idx,
             show_parent = self,
