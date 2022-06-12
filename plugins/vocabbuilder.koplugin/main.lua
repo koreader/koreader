@@ -21,10 +21,13 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconButton = require("ui/widget/iconbutton")
+local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
+local Notification = require("ui/widget/notification")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Screen = Device.screen
@@ -53,7 +56,7 @@ local settings = G_reader_settings:readSetting("vocabulary_builder", {enabled = 
 Menu dialogue widget
 --]]--
 local MenuDialog = FocusManager:new{
-    padding = Size.padding.fullscreen,
+    padding = Size.padding.large,
     is_edit_mode = false,
     edit_callback = nil,
     tap_close_callback = nil,
@@ -67,7 +70,7 @@ function MenuDialog:init()
         self.key_events.Close = { { Device.input.group.Back }, doc = "close dialog" }
     end
     if Device:isTouchDevice() then
-        self.ges_events.TapClose = {
+        self.ges_events.Tap = {
             GestureRange:new {
                 ges = "tap",
                 range = Geom:new {
@@ -80,11 +83,24 @@ function MenuDialog:init()
         }
     end
 
-    local switch_ratio = 0.61
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.8)
+
+    -- Switch text translations could be long
+    local temp_text_widget = TextWidget:new{
+        text = _("Accept new words"),
+        face = Font:getFace("xx_smallinfofont")
+    }
+    local switch_guide_width = temp_text_widget:getSize().w
+    temp_text_widget:setText(_("Save context"))
+    switch_guide_width = math.max(switch_guide_width, temp_text_widget:getSize().w)
+    switch_guide_width = math.min(math.max(switch_guide_width, math.ceil(width*0.39)), math.ceil(width*0.61))
+    temp_text_widget:free()
+
+    local switch_width = width - switch_guide_width - Size.padding.fullscreen - Size.padding.default
+
     local switch = ToggleSwitch:new{
-        width = math.floor(width * switch_ratio),
+        width = switch_width,
         default_value = 2,
         name = "vocabulary_builder",
         name_text = nil, --_("Accept new words"),
@@ -100,6 +116,23 @@ function MenuDialog:init()
     }
     switch:setPosition(settings.enabled and 2 or 1)
     self:mergeLayoutInVertical(switch)
+
+    self.context_switch = ToggleSwitch:new{
+        width = switch_width,
+        default_value = 1,
+        name_text = nil,
+        event = "ChangeContextStatus",
+        args = {"off", "on"},
+        default_arg = "off",
+        toggle = { _("off"), _("on") },
+        values = {1, 2},
+        alternate = false,
+        enabled = settings.enabled,
+        config = self,
+        readonly = self.readonly,
+    }
+    self.context_switch:setPosition(settings.with_context and 2 or 1)
+    self:mergeLayoutInVertical(self.context_switch)
 
     local edit_button = {
         text = self.is_edit_mode and _("Resume") or _("Quick deletion"),
@@ -151,15 +184,15 @@ function MenuDialog:init()
     self:mergeLayoutInVertical(buttons)
 
     self.covers_fullscreen = true
-    local switch_guide_width = math.ceil(math.max(5, width * (1-switch_ratio) - Size.padding.fullscreen))
     self[1] = CenterContainer:new{
         dimen = size,
         FrameContainer:new{
-            padding = self.padding,
+            padding = Size.padding.default,
+            padding_top = Size.padding.large,
+            padding_bottom = 0,
             background = Blitbuffer.COLOR_WHITE,
             bordersize = Size.border.window,
             radius = Size.radius.window,
-            padding_bottom = Size.padding.button,
             VerticalGroup:new{
                 HorizontalGroup:new{
                     RightContainer:new{
@@ -172,6 +205,19 @@ function MenuDialog:init()
                     },
                     HorizontalSpan:new{width = Size.padding.fullscreen},
                     switch,
+                },
+                VerticalSpan:new{ width = Size.padding.default},
+                HorizontalGroup:new{
+                    RightContainer:new{
+                        dimen = Geom:new{w = switch_guide_width, h = switch:getSize().h},
+                        TextWidget:new{
+                            text = _("Save context"),
+                            face = Font:getFace("xx_smallinfofont"),
+                            max_width = switch_guide_width
+                        }
+                    },
+                    HorizontalSpan:new{width = Size.padding.fullscreen},
+                    self.context_switch,
                 },
                 VerticalSpan:new{ width = Size.padding.large},
                 LineWidget:new{
@@ -201,7 +247,15 @@ function MenuDialog:onCloseWidget()
     end)
 end
 
-function MenuDialog:onTapClose()
+function MenuDialog:onTap(_, ges)
+    if ges.pos:notIntersectWith(self[1][1].dimen) then
+        -- Tap outside closes widget
+        self:onClose()
+        return true
+    end
+end
+
+function MenuDialog:onClose()
     UIManager:close(self)
     if self.tap_close_callback then
         self.tap_close_callback()
@@ -209,20 +263,25 @@ function MenuDialog:onTapClose()
     return true
 end
 
-function MenuDialog:onClose()
-    self:onTapClose()
-    return true
+function MenuDialog:onChangeContextStatus(args, position)
+    settings.with_context = position == 2
+    G_reader_settings:saveSetting("vocabulary_builder", settings)
 end
 
 function MenuDialog:onChangeEnableStatus(args, position)
     settings.enabled = position == 2
+    self.context_switch.enabled = position == 2
     G_reader_settings:saveSetting("vocabulary_builder", settings)
 end
 
 function MenuDialog:onConfigChoose(values, name, event, args, position)
     UIManager:tickAfterNext(function()
         if values then
-            self:onChangeEnableStatus(args, position)
+            if event == "ChangeEnableStatus" then
+                self:onChangeEnableStatus(args, position)
+            elseif event == "ChangeContextStatus" then
+                self:onChangeContextStatus(args, position)
+            end
         end
         UIManager:setDirty(nil, "ui", nil, true)
     end)
@@ -243,14 +302,14 @@ local WordInfoDialog = InputContainer:new{
     reset_callback = nil,
     dismissable = true, -- set to false if any button callback is required
 }
-
+local word_info_dialog_width
 function WordInfoDialog:init()
     if self.dismissable then
         if Device:hasKeys() then
             self.key_events.Close = { { Device.input.group.Back }, doc = "close dialog" }
         end
         if Device:isTouchDevice() then
-            self.ges_events.TapClose = {
+            self.ges_events.Tap = {
                 GestureRange:new {
                     ges = "tap",
                     range = Geom:new {
@@ -264,7 +323,18 @@ function WordInfoDialog:init()
         end
     end
 
-    local width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.61)
+    if not word_info_dialog_width then
+        local temp_text = TextWidget:new{
+            text = self.dates,
+            padding = Size.padding.fullscreen,
+            face = Font:getFace("cfont", 14)
+        }
+        local dates_width = temp_text:getSize().w
+        temp_text:free()
+        local screen_width = math.min(Screen:getWidth(), Screen:getHeight())
+        word_info_dialog_width = math.floor(math.max(screen_width * 0.6, math.min(screen_width * 0.8, dates_width)))
+    end
+    local width = word_info_dialog_width
     local reset_button = {
         text = _("Reset progress"),
         callback = function()
@@ -285,6 +355,18 @@ function WordInfoDialog:init()
         buttons = {{reset_button, remove_button}},
         show_parent = self
     }
+
+    local copy_button = Button:new{
+        text = "", -- copy in nerdfont,
+        callback = function()
+            Device.input.setClipboardText(self.title)
+            UIManager:show(Notification:new{
+                text = _("Word copied to clipboard."),
+            })
+        end,
+        bordersize = 0,
+    }
+    local has_context = self.prev_context or self.next_context
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         MovableContainer:new{
@@ -292,31 +374,46 @@ function WordInfoDialog:init()
                 VerticalGroup:new{
                     align = "center",
                     FrameContainer:new{
-                        padding =self.padding,
+                        padding = self.padding,
+                        padding_top = Size.padding.buttontable,
+                        padding_bottom = Size.padding.buttontable,
                         margin = self.margin,
                         bordersize = 0,
                         VerticalGroup:new {
                             align = "left",
-                            TextWidget:new{
-                                text = self.title,
-                                width = width,
-                                face = word_face,
-                                bold = true,
-                                alignment = self.title_align or "left",
+                            HorizontalGroup:new{
+                                TextWidget:new{
+                                    text = self.title,
+                                    max_width = width - copy_button:getSize().w - Size.padding.default,
+                                    face = word_face,
+                                    bold = true,
+                                    alignment = self.title_align or "left",
+                                },
+                                HorizontalSpan:new{ width=Size.padding.default },
+                                copy_button,
                             },
                             TextBoxWidget:new{
                                 text = self.book_title,
                                 width = width,
-                                face = subtitle_italic_face,
-                                fgcolor = subtitle_color,
+                                face = Font:getFace("NotoSans-Italic.ttf", 15),
                                 alignment = self.title_align or "left",
                             },
                             VerticalSpan:new{width= Size.padding.default},
+                            has_context and
+                            TextBoxWidget:new{
+                                text = "..." .. self.prev_context:gsub("\n", " ") .. "【" ..self.title.."】" .. self.next_context:gsub("\n", " ") .. "...",
+                                width = width,
+                                face = Font:getFace("smallffont"),
+                                alignment = self.title_align or "left",
+                            }
+                            or VerticalSpan:new{ width = Size.padding.default },
+                            VerticalSpan:new{ width = has_context and Size.padding.default or 0},
                             TextBoxWidget:new{
                                 text = self.dates,
                                 width = width,
-                                face = subtitle_face,
+                                face = Font:getFace("cfont", 14),
                                 alignment = self.title_align or "left",
+                                fgcolor = dim_color
                             },
                         }
 
@@ -325,7 +422,7 @@ function WordInfoDialog:init()
                         background = Blitbuffer.COLOR_GRAY,
                         dimen = Geom:new{
                             w = width + self.padding + self.margin,
-                            h = Screen:scaleBySize(2),
+                            h = Screen:scaleBySize(1),
                         }
                     },
                     focus_button
@@ -333,8 +430,7 @@ function WordInfoDialog:init()
                 background = Blitbuffer.COLOR_WHITE,
                 bordersize = Size.border.window,
                 radius = Size.radius.window,
-                padding = Size.padding.button,
-                padding_bottom = 0,
+                padding = 0
             }
         }
     }
@@ -360,7 +456,7 @@ function WordInfoDialog:onCloseWidget()
     end)
 end
 
-function WordInfoDialog:onTapClose()
+function WordInfoDialog:onClose()
     UIManager:close(self)
     if self.tap_close_callback then
         self.tap_close_callback()
@@ -368,9 +464,12 @@ function WordInfoDialog:onTapClose()
     return true
 end
 
-function WordInfoDialog:onClose()
-    self:onTapClose()
-    return true
+function WordInfoDialog:onTap(_, ges)
+    if ges.pos:notIntersectWith(self[1][1].dimen) then
+        -- Tap outside closes widget
+        self:onClose()
+        return true
+    end
 end
 
 function WordInfoDialog:paintTo(...)
@@ -381,7 +480,6 @@ end
 
 
 -- values useful for item cells
-local review_button_width = math.ceil(math.min(Screen:scaleBySize(95), Screen:getWidth()/6))
 local ellipsis_button_width = Screen:scaleBySize(34)
 local star_width = Screen:scaleBySize(25)
 
@@ -399,6 +497,7 @@ local VocabItemWidget = InputContainer:new{
     face = Font:getFace("smallinfofont"),
     width = nil,
     height = nil,
+    review_button_width = nil,
     show_parent = nil,
     item = nil,
     forgot_button = nil,
@@ -450,21 +549,9 @@ end
 
 function VocabItemWidget:initItemWidget()
     for i = 1, #self.layout do self.layout[i] = nil end
-
-    local word_widget = Button:new{
-        text = self.item.word,
-        bordersize = 0,
-        callback = function() self:onTap() end
-    }
-    if self.item.is_dim then
-        word_widget.label_widget.fgcolor = dim_color
-    end
-
-    table.insert(self.layout, word_widget)
-
-    if not self.show_parent.is_edit_mode and self.item.review_count < 5 then
+    if not self.show_parent.is_edit_mode and self.item.review_count < 6 then
         self.more_button = Button:new{
-            text = "⋮",
+            text = (self.item.prev_context or self.item.next_context) and "⋯" or "⋮",
             padding = Size.padding.button,
             callback = function() self:showMore() end,
             width = ellipsis_button_width,
@@ -472,13 +559,11 @@ function VocabItemWidget:initItemWidget()
             show_parent = self
         }
     else
-        self.more_button = Button:new{
+        self.more_button = IconButton:new{
             icon = "exit",
-            icon_width = star_width,
-            icon_height = star_width,
-            bordersize = 0,
-            radius = 0,
-            padding = (ellipsis_button_width - star_width)/2,
+            width = star_width,
+            height = star_width,
+            padding = math.floor((ellipsis_button_width - star_width)/2) + Size.padding.button,
             callback = function()
                 self:remover()
             end,
@@ -489,18 +574,17 @@ function VocabItemWidget:initItemWidget()
     local right_side_width
     local right_widget
     if not self.show_parent.is_edit_mode and self.item.due_time <= os.time() then
-        right_side_width = review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
-
+        self.has_review_buttons = true
+        right_side_width = self.review_button_width * 2 + Size.padding.large * 2 + ellipsis_button_width
         self.forgot_button = Button:new{
             text = _("Forgot"),
-            width = review_button_width,
-            max_width = review_button_width,
+            width = self.review_button_width,
+            max_width = self.review_button_width,
             radius = Size.radius.button,
             callback = function()
                 self:onForgot()
             end,
             show_parent = self,
-            -- no_focus = true
         }
 
         self.got_it_button = Button:new{
@@ -509,12 +593,10 @@ function VocabItemWidget:initItemWidget()
             callback = function()
                 self:onGotIt()
             end,
-            width = review_button_width,
-            max_width = review_button_width,
+            width = self.review_button_width,
+            max_width = self.review_button_width,
             show_parent = self,
-            -- no_focus = true
         }
-
         right_widget = HorizontalGroup:new{
             dimen = Geom:new{ w = 0, h = self.height },
             self.margin_span,
@@ -527,18 +609,14 @@ function VocabItemWidget:initItemWidget()
         table.insert(self.layout, self.got_it_button)
         table.insert(self.layout, self.more_button)
     else
-        local star = Button:new{
+        self.has_review_buttons = false
+        local star = IconWidget:new{
             icon = "check",
-            icon_width = star_width,
-            icon_height = star_width,
-            bordersize = 0,
-            radius = 0,
-            margin = 0,
-            show_parent = self,
-            enabled = false,
-            no_focus = true,
+            width = star_width,
+            height = star_width,
+            dim = true
         }
-        right_side_width =  Size.padding.large * 3 + self.item.review_count * (star:getSize().w)
+        right_side_width =  Size.padding.large * 4 + self.item.review_count * (star:getSize().w)
 
         if self.item.review_count > 0 then
             right_widget = HorizontalGroup:new {
@@ -566,6 +644,20 @@ function VocabItemWidget:initItemWidget()
         face = subtitle_face,
         fgcolor = subtitle_color
     }
+
+    local word_widget = Button:new{
+        text = self.item.word,
+        bordersize = 0,
+        callback = function() self.item.callback(self.item) end,
+        padding = 0,
+        max_width = math.ceil(math.max(5,text_max_width - Size.padding.fullscreen))
+    }
+
+    if self.item.is_dim then
+        word_widget.label_widget.fgcolor = dim_color
+    end
+
+    table.insert(self.layout, 1, word_widget)
 
     self[1] = FrameContainer:new{
         padding = 0,
@@ -670,6 +762,8 @@ function VocabItemWidget:showMore()
         book_title = self.item.book_title,
         dates = _("Added on") .. " " .. os.date("%Y-%m-%d", self.item.create_time) .. " | " ..
         _("Review scheduled at") .. " " .. os.date("%Y-%m-%d %H:%M", self.item.due_time),
+        prev_context = self.item.prev_context,
+        next_context = self.item.next_context,
         remove_callback = function()
             self:remover()
         end,
@@ -683,17 +777,48 @@ function VocabItemWidget:showMore()
 end
 
 function VocabItemWidget:onTap(_, ges)
-    if self.item.callback then
-        self.item.callback(self.item)
+    if self.has_review_buttons then
+        if ges.pos.x > self.forgot_button.dimen.x and ges.pos.x < self.forgot_button.dimen.x + self.forgot_button.dimen.w then
+            self:onForgot()
+        elseif ges.pos.x > self.got_it_button.dimen.x and ges.pos.x < self.got_it_button.dimen.x + self.got_it_button.dimen.w then
+            self:onGotIt()
+        elseif ges.pos.x > self.more_button.dimen.x and ges.pos.x < self.more_button.dimen.x + self.more_button.dimen.w then
+            if self.item.review_count < 6 then
+                self:showMore()
+            else
+                self:remover()
+            end
+        elseif self.item.callback then
+            self.item.callback(self.item)
+        end
+    else
+        if BD.mirroredUILayout() then
+            if ges.pos.x > self.more_button.dimen.x and ges.pos.x < self.more_button.dimen.x + self.more_button.dimen.w * 2 then
+                if self.show_parent.is_edit_mode or self.item.review_count >= 6 then
+                    self:remover()
+                else
+                    self:showMore()
+                end
+            elseif self.item.callback then
+                self.item.callback(self.item)
+            end
+        else
+            if ges.pos.x > self.more_button.dimen.x - self.more_button.dimen.w and ges.pos.x < self.more_button.dimen.x + self.more_button.dimen.w then
+                if self.show_parent.is_edit_mode or self.item.review_count >= 6 then
+                    self:remover()
+                else
+                    self:showMore()
+                end
+            elseif self.item.callback then
+                self.item.callback(self.item)
+            end
+        end
     end
-
     return true
 end
 
-function VocabItemWidget:onHold()
-    if self.item.callback then
-        self.item.callback(self.item)
-    end
+function VocabItemWidget:onHold(_, ges)
+    self:onTap(_, ges)
     return true
 end
 
@@ -753,6 +878,12 @@ function VocabularyBuilderWidget:init()
             GestureRange:new{
                 ges = "swipe",
                 range = self.dimen,
+            }
+        }
+        self.ges_events.MultiSwipe = {
+            GestureRange:new{
+                ges = "multiswipe",
+                range = function() return self.dimen end,
             }
         }
     end
@@ -871,6 +1002,16 @@ function VocabularyBuilderWidget:init()
     self:setupItemHeight()
     self.main_content = VerticalGroup:new{}
 
+    -- calculate item's review button width once
+    local temp_button = Button:new{
+        text = _("Got it"),
+        padding_h = Size.padding.large
+    }
+    self.review_button_width = temp_button:getSize().w
+    temp_button:setText(_("Forgot"))
+    self.review_button_width = math.min(math.max(self.review_button_width, temp_button:getSize().w), Screen:getWidth()/4)
+    temp_button:free()
+
     self:_populateItems()
 
     local frame_content = FrameContainer:new{
@@ -907,22 +1048,19 @@ function VocabularyBuilderWidget:setupItemHeight()
     self.items_per_page = math.floor(content_height / line_height)
     self.item_margin = self.item_margin + math.floor((content_height - self.items_per_page * line_height ) / self.items_per_page )
     self.pages = math.ceil(DB:selectCount() / self.items_per_page)
+    self.show_page = math.min(self.pages, self.show_page)
 end
 
 function VocabularyBuilderWidget:nextPage()
-    local new_page = math.min(self.show_page+1, self.pages)
-    if new_page > self.show_page then
-        self.show_page = new_page
-        self:_populateItems()
-    end
+    local new_page = self.show_page == self.pages and 1 or self.show_page + 1
+    self.show_page = new_page
+    self:_populateItems()
 end
 
 function VocabularyBuilderWidget:prevPage()
-    local new_page = math.max(self.show_page-1, 1)
-    if new_page < self.show_page then
-        self.show_page = new_page
-        self:_populateItems()
-    end
+    local new_page = self.show_page == 1 and self.pages or self.show_page - 1
+    self.show_page = new_page
+    self:_populateItems()
 end
 
 function VocabularyBuilderWidget:goToPage(page)
@@ -968,6 +1106,7 @@ function VocabularyBuilderWidget:_populateItems()
         local item = VocabItemWidget:new{
             height = self.item_height,
             width = self.item_width,
+            review_button_width = self.review_button_width,
             item = self.item_table[idx],
             index = idx,
             show_parent = self,
@@ -1094,6 +1233,14 @@ function VocabularyBuilderWidget:onSwipe(arg, ges_ev)
     end
 end
 
+function VocabularyBuilderWidget:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
+    return true
+end
+
 function VocabularyBuilderWidget:onClose()
     DB:batchUpdateItems(self.item_table)
     UIManager:close(self)
@@ -1124,9 +1271,8 @@ function VocabBuilder:init()
 end
 
 function VocabBuilder:addToMainMenu(menu_items)
-    menu_items.vocabulary_builder = {
+    menu_items.vocabbuilder = {
         text = _("Vocabulary builder"),
-        keep_menu_open = true,
         callback = function()
             local vocab_items = {}
             for i = 1, DB:selectCount() do
@@ -1198,11 +1344,17 @@ end
 function VocabBuilder:onWordLookedUp(word, title)
     if not settings.enabled then return end
     if self.builder_widget and self.builder_widget.current_lookup_word == word then return true end
-
+    local prev_context
+    local next_context
+    if settings.with_context then
+        prev_context, next_context = self.ui.highlight:getSelectedWordContext(15)
+    end
     DB:insertOrUpdate({
         book_title = title,
         time = os.time(),
-        word = word
+        word = word,
+        prev_context = prev_context,
+        next_context = next_context
     })
     return true
 end

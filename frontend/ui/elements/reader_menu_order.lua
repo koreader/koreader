@@ -188,7 +188,7 @@ local order = {
     search = {
         "dictionary_lookup",
         "dictionary_lookup_history",
-        "vocabulary_builder",
+        "vocabbuilder",
         "dictionary_settings",
         "----------------------------",
         "wikipedia_lookup",
