@@ -22,10 +22,12 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconButton = require("ui/widget/iconbutton")
+local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
+local Notification = require("ui/widget/notification")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Screen = Device.screen
@@ -68,7 +70,7 @@ function MenuDialog:init()
         self.key_events.Close = { { Device.input.group.Back }, doc = "close dialog" }
     end
     if Device:isTouchDevice() then
-        self.ges_events.TapClose = {
+        self.ges_events.Tap = {
             GestureRange:new {
                 ges = "tap",
                 range = Geom:new {
@@ -245,16 +247,19 @@ function MenuDialog:onCloseWidget()
     end)
 end
 
-function MenuDialog:onTapClose()
+function MenuDialog:onTap(_, ges)
+    if ges.pos:notIntersectWith(self[1][1].dimen) then
+        -- Tap outside closes widget
+        self:onClose()
+        return true
+    end
+end
+
+function MenuDialog:onClose()
     UIManager:close(self)
     if self.tap_close_callback then
         self.tap_close_callback()
     end
-    return true
-end
-
-function MenuDialog:onClose()
-    self:onTapClose()
     return true
 end
 
@@ -304,7 +309,7 @@ function WordInfoDialog:init()
             self.key_events.Close = { { Device.input.group.Back }, doc = "close dialog" }
         end
         if Device:isTouchDevice() then
-            self.ges_events.TapClose = {
+            self.ges_events.Tap = {
                 GestureRange:new {
                     ges = "tap",
                     range = Geom:new {
@@ -353,7 +358,12 @@ function WordInfoDialog:init()
 
     local copy_button = Button:new{
         text = "", -- copy in nerdfont,
-        callback = function() Device.input.setClipboardText(self.title) end,
+        callback = function()
+            Device.input.setClipboardText(self.title)
+            UIManager:show(Notification:new{
+                text = _("Word copied to clipboard."),
+            })
+        end,
         bordersize = 0,
     }
     local has_context = self.prev_context or self.next_context
@@ -446,7 +456,7 @@ function WordInfoDialog:onCloseWidget()
     end)
 end
 
-function WordInfoDialog:onTapClose()
+function WordInfoDialog:onClose()
     UIManager:close(self)
     if self.tap_close_callback then
         self.tap_close_callback()
@@ -454,9 +464,12 @@ function WordInfoDialog:onTapClose()
     return true
 end
 
-function WordInfoDialog:onClose()
-    self:onTapClose()
-    return true
+function WordInfoDialog:onTap(_, ges)
+    if ges.pos:notIntersectWith(self[1][1].dimen) then
+        -- Tap outside closes widget
+        self:onClose()
+        return true
+    end
 end
 
 function WordInfoDialog:paintTo(...)
@@ -597,18 +610,13 @@ function VocabItemWidget:initItemWidget()
         table.insert(self.layout, self.more_button)
     else
         self.has_review_buttons = false
-        local star = Button:new{
+        local star = IconWidget:new{
             icon = "check",
-            icon_width = star_width,
-            icon_height = star_width,
-            bordersize = 0,
-            radius = 0,
-            margin = 0,
-            show_parent = self,
-            enabled = false,
-            no_focus = true,
+            width = star_width,
+            height = star_width,
+            dim = true
         }
-        right_side_width =  Size.padding.large * 3 + self.item.review_count * (star:getSize().w)
+        right_side_width =  Size.padding.large * 4 + self.item.review_count * (star:getSize().w)
 
         if self.item.review_count > 0 then
             right_widget = HorizontalGroup:new {
@@ -809,10 +817,8 @@ function VocabItemWidget:onTap(_, ges)
     return true
 end
 
-function VocabItemWidget:onHold()
-    if self.item.callback then
-        self.item.callback(self.item)
-    end
+function VocabItemWidget:onHold(_, ges)
+    self:onTap(_, ges)
     return true
 end
 
@@ -1046,19 +1052,15 @@ function VocabularyBuilderWidget:setupItemHeight()
 end
 
 function VocabularyBuilderWidget:nextPage()
-    local new_page = math.min(self.show_page+1, self.pages)
-    if new_page > self.show_page then
-        self.show_page = new_page
-        self:_populateItems()
-    end
+    local new_page = self.show_page == self.pages and 1 or self.show_page + 1
+    self.show_page = new_page
+    self:_populateItems()
 end
 
 function VocabularyBuilderWidget:prevPage()
-    local new_page = math.max(self.show_page-1, 1)
-    if new_page < self.show_page then
-        self.show_page = new_page
-        self:_populateItems()
-    end
+    local new_page = self.show_page == 1 and self.pages or self.show_page - 1
+    self.show_page = new_page
+    self:_populateItems()
 end
 
 function VocabularyBuilderWidget:goToPage(page)
