@@ -303,4 +303,35 @@ function RenderImage:renderSVGImageFileWithMupdf(filename, width, height, zoom)
     return bb -- pre-multiplied alpha: no is_straight_alpha=true
 end
 
+--- Renders a checkerboard pattern (useful as a fallback after a decoding failure)
+function RenderImage:renderCheckerboard(width, height, bb_type)
+    width = width or 800
+    height = height or 800
+    local bb = Blitbuffer.new(width, height, bb_type or Blitbuffer.TYPE_BB8)
+    local checker_size = bit.rshift(math.min(width, height), 4)
+    local pen_color = Blitbuffer.COLOR_BLACK
+    local row_start
+    for y = 0, height - 1, checker_size do
+        row_start = pen_color
+        for x = 0, width - 1, checker_size do
+            -- BBs are zero-initialized (i.e., black)
+            if pen_color == Blitbuffer.COLOR_WHITE then
+                bb:paintRect(x, y, checker_size, checker_size, Blitbuffer.COLOR_WHITE)
+                -- Alternate pen color every "column"
+                pen_color = Blitbuffer.COLOR_BLACK
+            else
+                pen_color = Blitbuffer.COLOR_WHITE
+            end
+        end
+        -- Alternate initial pen color every "row"
+        if row_start == Blitbuffer.COLOR_WHITE then
+            pen_color = Blitbuffer.COLOR_BLACK
+        else
+            pen_color = Blitbuffer.COLOR_WHITE
+        end
+    end
+
+    return bb
+end
+
 return RenderImage
