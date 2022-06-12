@@ -1273,7 +1273,6 @@ end
 function VocabBuilder:addToMainMenu(menu_items)
     menu_items.vocabbuilder = {
         text = _("Vocabulary builder"),
-        keep_menu_open = true,
         callback = function()
             local vocab_items = {}
             for i = 1, DB:selectCount() do
