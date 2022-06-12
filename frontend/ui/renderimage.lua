@@ -1,5 +1,7 @@
 --[[--
 Image rendering module.
+
+All the render* functions should return a BlitBuffer object on success, nil otherwise.
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
@@ -7,7 +9,7 @@ local Math = require("optmath")
 local ffi = require("ffi")
 local logger = require("logger")
 
--- Will be loaded when needed
+-- Backends are lazy-loaded
 local Mupdf = nil
 local Pic = nil
 local NnSVG = nil
@@ -24,7 +26,7 @@ local RenderImage = {}
 function RenderImage:renderImageFile(filename, want_frames, width, height)
     local file = io.open(filename, "rb")
     if not file then
-        logger.info("could not open image file:", filename)
+        logger.warn("could not open image file:", filename)
         return
     end
     local data = file:read("*a")
@@ -72,7 +74,7 @@ function RenderImage:renderImageDataWithMupdf(data, size, width, height)
     local ok, image = pcall(Mupdf.renderImage, data, size, width, height)
     logger.dbg("Mupdf.renderImage", ok, image)
     if not ok then
-        logger.info("failed rendering image (mupdf):", image)
+        logger.warn("failed rendering image (MuPDF):", image)
         return
     end
     return image
@@ -94,7 +96,7 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
     local ok, gif = pcall(Pic.openGIFDocumentFromData, data, size)
     logger.dbg("Pic.openGIFDocumentFromData", ok)
     if not ok then
-        logger.info("failed rendering image (giflib):", gif)
+        logger.warn("failed rendering image (GifLib):", gif)
         return
     end
     local nb_frames = gif:getPages()
@@ -152,7 +154,7 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
         end
         gif:close()
     end
-    logger.info("failed rendering image (giflib)")
+    logger.warn("failed rendering image (GifLib)")
 end
 
 --- Rescales a BlitBuffer to the requested size if needed
@@ -214,7 +216,11 @@ function RenderImage:renderSVGImageFileWithNanoSVG(filename, width, height, zoom
     if not NnSVG then
         NnSVG = require("libs/libkoreader-nnsvg")
     end
-    local svg_image = NnSVG.new(filename)
+    local ok, svg_image = pcall(NnSVG.new, filename)
+    if not ok then
+        logger.warn("failed rendering SVG (NanoSVG):", svg_image)
+        return
+    end
     local native_w, native_h = svg_image:getSize()
     if not zoom then
         if width and height then
@@ -254,6 +260,7 @@ end
 function RenderImage:renderSVGImageFileWithMupdf(filename, width, height, zoom)
     local ok, document = pcall(Mupdf.openDocument, filename)
     if not ok then
+        logger.warn("failed rendering SVG (MuPDF):", document)
         return
     end
     -- document:layoutDocument(width, height, 20) -- does not change anything
@@ -289,7 +296,7 @@ function RenderImage:renderSVGImageFileWithMupdf(filename, width, height, zoom)
     local rendered, bb = pcall(page.draw_new, page, dc, width, height, 0, 0)
     if not rendered then
         logger.warn("MuPDF renderSVG error:", bb)
-        bb = Blitbuffer.new(width, height, Blitbuffer.TYPE_BBRGB32)
+        bb = nil
     end
     page:close()
     document:close()
