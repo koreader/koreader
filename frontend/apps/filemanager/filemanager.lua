@@ -28,6 +28,7 @@ local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
+local TagChooser = require("ui/widget/tagchooser")
 local TitleBar = require("ui/widget/titlebar")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local UIManager = require("ui/uimanager")
@@ -744,6 +745,15 @@ function FileManager:tapPlus()
                         UIManager:close(self.file_dialog)
                     end
                 }
+            },
+            {
+                {
+                    text = _("Browse tags here"),
+                    callback = function()
+                        self:openTagBrowser(self.file_chooser.path)
+                        UIManager:close(self.file_dialog)
+                    end
+                }
             }
         }
 
@@ -926,6 +936,15 @@ function FileManager:openRandomFile(dir)
             text = _("File not found"),
         })
     end
+end
+
+function FileManager:openTagBrowser(path)
+    local tag_chooser = TagChooser:new{
+        path = path,
+        title = _("Tag Browser"),
+        show_hidden = self.file_chooser.show_hidden
+    }
+    UIManager:show(tag_chooser)
 end
 
 function FileManager:copyFile(file)
