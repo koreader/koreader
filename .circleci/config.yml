@@ -84,7 +84,7 @@ jobs:
           path: koreader-emulator-x86_64-linux-gnu/koreader/junit-test-results.xml
   docs:
     docker:
-      - image: koreader/koappimage:0.2.2
+      - image: koreader/kobase:0.3.0
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
