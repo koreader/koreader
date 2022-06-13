@@ -354,6 +354,24 @@ function PocketBook:initNetworkManager(NetworkMgr)
     function NetworkMgr:isWifiOn()
         return band(inkview.QueryNetwork(), C.NET_CONNECTED) ~= 0
     end
+
+    local UIManager = require("ui/uimanager");
+
+    local function wifiKeepAlive()
+        logger.dbg('check keep alive')
+
+        if (NetworkMgr:isWifiOn()) then
+            logger.dbg('ping wifi keep alive')
+
+            inkview.NetMgrPing();
+        end
+
+        -- Make sure only one wifiKeepAlive is scheduled
+        UIManager:unschedule(wifiKeepAlive)
+        UIManager:scheduleIn(30, wifiKeepAlive);
+    end
+
+    wifiKeepAlive();
 end
 
 function PocketBook:getSoftwareVersion()
