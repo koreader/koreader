@@ -38,7 +38,7 @@ function BookInfo:isSupported(file)
     return lfs.attributes(file, "mode") == "file"
 end
 
-function BookInfo:show(file, book_props)
+function BookInfo:show(file, book_props, extract_and_return)
     local kv_pairs = {}
 
     local directory, filename = util.splitFilePathName(file)
@@ -55,16 +55,6 @@ function BookInfo:show(file, book_props)
             end
         end
     end
-    local file_size = lfs.attributes(file, "size") or 0
-    local file_modification = lfs.attributes(file, "modification") or 0
-    local size_f = util.getFriendlySize(file_size)
-    local size_b = util.getFormattedSize(file_size)
-    local size = string.format("%s (%s bytes)", size_f, size_b)
-    table.insert(kv_pairs, { _("Filename:"), BD.filename(filename) })
-    table.insert(kv_pairs, { _("Format:"), filetype:upper() })
-    table.insert(kv_pairs, { _("Size:"), size })
-    table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", file_modification) })
-    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(directory)), separator = true })
 
     -- book_props may be provided if caller already has them available
     -- but it may lack "pages", that we may get from sidecar file
@@ -134,6 +124,21 @@ function BookInfo:show(file, book_props)
     if not book_props then
         book_props = {}
     end
+
+    if extract_and_return == true then
+        return book_props
+    end
+
+    local file_size = lfs.attributes(file, "size") or 0
+    local file_modification = lfs.attributes(file, "modification") or 0
+    local size_f = util.getFriendlySize(file_size)
+    local size_b = util.getFormattedSize(file_size)
+    local size = string.format("%s (%s bytes)", size_f, size_b)
+    table.insert(kv_pairs, { _("Filename:"), BD.filename(filename) })
+    table.insert(kv_pairs, { _("Format:"), filetype:upper() })
+    table.insert(kv_pairs, { _("Size:"), size })
+    table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", file_modification) })
+    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(directory)), separator = true })
 
     local title = book_props.title
     if title == "" or title == nil then title = _("N/A") end
