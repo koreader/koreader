@@ -334,9 +334,29 @@ function PocketBook:reboot()
 end
 
 function PocketBook:initNetworkManager(NetworkMgr)
+    local UIManager = require("ui/uimanager");
+
+    local function keepWifiAlive()
+        -- Make sure only one wifiKeepAlive is scheduled
+        UIManager:unschedule(keepWifiAlive)
+
+        logger.dbg('check keep alive')
+
+        if NetworkMgr:isWifiOn() then
+            logger.dbg('ping wifi keep alive and reschedule')
+
+            inkview.NetMgrPing();
+            UIManager:scheduleIn(30, keepWifiAlive);
+        else
+            logger.dbg('wifi is disabled do not reschedule')
+        end
+    end
+
     function NetworkMgr:turnOnWifi(complete_callback)
         inkview.WiFiPower(1)
-        if inkview.NetConnect(nil) ~= C.NET_OK then
+        if inkview.NetConnect(nil) == C.NET_OK then
+            keepWifiAlive();
+        else
             logger.info('NetConnect failed')
         end
         if complete_callback then
@@ -354,24 +374,6 @@ function PocketBook:initNetworkManager(NetworkMgr)
     function NetworkMgr:isWifiOn()
         return band(inkview.QueryNetwork(), C.NET_CONNECTED) ~= 0
     end
-
-    local UIManager = require("ui/uimanager");
-
-    local function wifiKeepAlive()
-        logger.dbg('check keep alive')
-
-        if (NetworkMgr:isWifiOn()) then
-            logger.dbg('ping wifi keep alive')
-
-            inkview.NetMgrPing();
-        end
-
-        -- Make sure only one wifiKeepAlive is scheduled
-        UIManager:unschedule(wifiKeepAlive)
-        UIManager:scheduleIn(30, wifiKeepAlive);
-    end
-
-    wifiKeepAlive();
 end
 
 function PocketBook:getSoftwareVersion()
