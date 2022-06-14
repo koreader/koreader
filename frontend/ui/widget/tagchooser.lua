@@ -46,9 +46,9 @@ function TagChooser:init()
                                 local bookinfo = BookInfoManager:show(filename, nil, extract_data)
                                 if bookinfo then
                                     if bookinfo.keywords then
-                                        kws = util.splitToArray(bookinfo.keywords, "\n")
+                                        local kws = util.splitToArray(bookinfo.keywords, "\n")
                                         for i=1, #kws do
-                                            kw = BD.auto(kws[i])
+                                            local kw = BD.auto(kws[i])
                                             if tags[kw] == nil then
                                                 tags[kw] = {}
                                             end
@@ -85,7 +85,7 @@ function TagChooser:genItemTableFromPath(path)
         })
     end
 
-    sorting = function(a, b)
+    local sorting = function(a, b)
         return ffiUtil.strcoll(a.text, b.text)
     end
     table.sort(item_table, sorting)
@@ -102,7 +102,7 @@ function TagChooser:genItemTableFromPath(path)
     return item_table
 end
 
-function TagChooser:onMenuSelect(item)
+function TagChooser:onMenuSelect(tag)
     local file_chooser = FileChooser:new{
         parent = self,
         path = self.path,
@@ -110,9 +110,9 @@ function TagChooser:onMenuSelect(item)
         select_file = true,
         detailed_file_info = true,
         no_title = false,
-        title = item.text,
+        title = tag.text,
         file_filter = function(filename)
-            for i, book in ipairs(item.books) do
+            for i, book in ipairs(tag.books) do
                 if filename == book then
                     return true
                 end
