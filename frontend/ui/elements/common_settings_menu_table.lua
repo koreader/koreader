@@ -594,4 +594,15 @@ common_settings.screenshot = {
     keep_menu_open = true,
 }
 
+common_settings.metric_system = {
+    text = _("Metric system"),
+    checked_func = function()
+        return G_reader_settings:readSetting("metric_system", true)
+    end,
+    callback = function(touchmenu_instance)
+        G_reader_settings:toggle("metric_system")
+        if touchmenu_instance then touchmenu_instance:updateItems() end
+    end,
+}
+
 return common_settings
