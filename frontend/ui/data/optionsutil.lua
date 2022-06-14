@@ -151,9 +151,10 @@ function optionsutil.showValues(configurable, option, prefix, document, is_size)
                                             current, value_current, default)
         end
     else
+        local unit = G_reader_settings:nilOrTrue("metric_system") and _("mm") or _("\"")
         text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
-                                            current, real_size_string(current, "pt"),
-                                            default, real_size_string(default, "pt"))
+                                            current, real_size_string(current, unit),
+                                            default, real_size_string(default, unit))
     end
     UIManager:show(InfoMessage:new{ text=text })
 end
