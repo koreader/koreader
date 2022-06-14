@@ -100,6 +100,7 @@ local order = {
         "mass_storage_settings", -- if Device:canToggleMassStorage()
         "file_ext_assoc",
         "screenshot",
+        "metric_system",
     },
     navigation = {
         "back_to_exit",
