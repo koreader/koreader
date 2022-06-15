@@ -227,18 +227,6 @@ function AutoDim:autodim_task()
     local idle_duration = now - self.last_action_time
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
-        self.trap_widget = TrapWidget:new{
-            dismiss_callback = function()
-                self:restoreFrontlight()
-                self.trap_widget = nil
-            end
-        }
-
-        -- This is the active widget before showing self.trap_widget
-        self.top_widget_before_dim = UIManager:getTopWidget()
-
-        UIManager:show(self.trap_widget) -- suppress taps during dimming
-
         self.autodim_save_fl = Device.powerd:frontlightIntensity()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_fraction / 100 + 0.5)
         -- Clamp `self.autodim_end_fl` to 1 if `self.autodim_fraction` ~= 0
@@ -246,14 +234,30 @@ function AutoDim:autodim_task()
             self.autodim_end_fl = 1
         end
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
-        -- calculate time until the next decrease step
-        self.autodim_step_time_s = math.max(self.autodim_duration_s / fl_diff, 0.001)
-        self.ramp_event_countdown_startvalue = Device:hasEinkScreen() and
-            math.floor((1/AUTODIM_EVENT_FREQUENCY) / self.autodim_step_time_s + 0.5) or 0
-        self.ramp_event_countdown = self.ramp_event_countdown_startvalue
+        if fl_diff > 0 then
+            self.trap_widget = TrapWidget:new{
+                dismiss_callback = function()
+                    self:restoreFrontlight()
+                    self.trap_widget = nil
+                end
+            }
 
-        self:ramp_task() -- which schedules itself
-        -- Don't schedule `autodim_task` here, as this is done in `trap_widget.dismiss_callback` or in `onResume`
+            -- This is the active widget before showing self.trap_widget
+            self.top_widget_before_dim = UIManager:getTopWidget()
+
+            UIManager:show(self.trap_widget) -- suppress taps during dimming
+
+            -- calculate time until the next decrease step
+            self.autodim_step_time_s = math.max(self.autodim_duration_s / fl_diff, 0.001)
+            self.ramp_event_countdown_startvalue = Device:hasEinkScreen() and
+                math.floor((1/AUTODIM_EVENT_FREQUENCY) / self.autodim_step_time_s + 0.5) or 0
+            self.ramp_event_countdown = self.ramp_event_countdown_startvalue
+
+            self:ramp_task() -- which schedules itself
+            -- Don't schedule `autodim_task` here, as this is done in `trap_widget.dismiss_callback` or in `onResume`
+        else
+            self:_schedule_autodim_task(time.s(self.autodim_starttime_m * 60))
+        end
     else
         self:_schedule_autodim_task(time.to_s(check_delay))
     end
