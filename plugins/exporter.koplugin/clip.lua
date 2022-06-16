@@ -62,8 +62,8 @@ function MyClipping:parseMyClippings()
                 }
             elseif index == 2 then
                 info = self:getInfo(line)
-                -- elseif index == 3 then
-                -- should be a blank line, we skip this line
+            -- elseif index == 3 then
+            -- should be a blank line, we skip this line
             elseif index == 4 then
                 text = self:getText(line)
             end
@@ -222,9 +222,9 @@ function MyClipping:getImage(image)
     local doc = DocumentRegistry:openDocument(image.file)
     if doc then
         local png = doc:clipPagePNGString(image.pos0, image.pos1,
-            image.pboxes, image.drawer)
+                image.pboxes, image.drawer)
         --doc:clipPagePNGFile(image.pos0, image.pos1,
-        --image.pboxes, image.drawer, "/tmp/"..md5(png)..".png")
+                --image.pboxes, image.drawer, "/tmp/"..md5(png)..".png")
         doc:close()
         if png then return { png = png, hash = md5(png) } end
     end
@@ -237,9 +237,9 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
     -- see ReaderBookmark:getBookmarkAutoText and ReaderBookmark:getBookmarkPageString
     --- @todo Remove this once we get rid of auto-text or improve the data model.
     local pattern = "^" .. T(_("Page %1 %2 @ %3"),
-        "%[?%d*%]?%d+",
-        "(.*)",
-        "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
+                               "%[?%d*%]?%d+",
+                               "(.*)",
+                               "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
 
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
@@ -260,8 +260,8 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                 end
             end
             if item.text == "" and item.pos0 and item.pos1 and
-                item.pos0.x and item.pos0.y and
-                item.pos1.x and item.pos1.y then
+                    item.pos0.x and item.pos0.y and
+                    item.pos1.x and item.pos1.y then
                 -- highlights in reflowing mode don't have page in pos
                 if item.pos0.page == nil then item.pos0.page = page end
                 if item.pos1.page == nil then item.pos1.page = page end
@@ -291,7 +291,7 @@ end
 
 function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
     if lfs.attributes(history_file, "mode") ~= "file"
-        or not history_file:find(".+%.lua$") then
+    or not history_file:find(".+%.lua$") then
         return
     end
     if lfs.attributes(doc_file, "mode") ~= "file" then return end
@@ -299,9 +299,9 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
     if ok then
         if not stored then
             logger.warn("An empty history file ",
-                history_file,
-                "has been found. The book associated is ",
-                doc_file)
+                        history_file,
+                        "has been found. The book associated is ",
+                        doc_file)
             return
         elseif not stored.highlight then
             return
@@ -321,14 +321,14 @@ function MyClipping:parseHistory()
     local clippings = {}
     for f in lfs.dir(self.history_dir) do
         self:parseHistoryFile(clippings,
-            self.history_dir .. "/" .. f,
-            DocSettings:getPathFromHistory(f) .. "/" ..
-            DocSettings:getNameFromHistory(f))
+                              self.history_dir .. "/" .. f,
+                              DocSettings:getPathFromHistory(f) .. "/" ..
+                              DocSettings:getNameFromHistory(f))
     end
     for _, item in ipairs(ReadHistory.hist) do
         self:parseHistoryFile(clippings,
-            DocSettings:getSidecarFile(item.file),
-            item.file)
+                              DocSettings:getSidecarFile(item.file),
+                              item.file)
     end
 
     return clippings
@@ -350,6 +350,7 @@ function MyClipping:getProps(file)
         end
         document:close()
     end
+
     return book_props
 end
 
