@@ -105,14 +105,7 @@ local extensions = {
 -- remove file extensions added by former KOReader
 -- extract author name in "Title(Author)" format
 -- extract author name in "Title - Author" format
-function MyClipping:getTitle(line, path)
-    if path then
-        local props = self:getProps(path)
-        if props and props.title ~= "" then
-            return props.title, props.authors or props.author
-        end
-    end
-
+function MyClipping:parseTitleFromPath(line)
     line = line:match("^%s*(.-)%s*$") or ""
     if extensions[line:sub(-4):lower()] then
         line = line:sub(1, -5)
@@ -361,18 +354,39 @@ function MyClipping:getProps(file)
     return book_props
 end
 
-function MyClipping:parseCurrentDoc(view)
-    local clippings = {}
+local function isEmpty(s)
+    return s == nil or s == ""
+end
+
+function MyClipping:getDocMeta(view)
+    local props = self:getProps(view.document.file)
+    local number_of_pages = view.document.info.number_of_pages
+    local title = props.title
+    local author = props.author or props.authors
     local path = view.document.file
     local _, _, docname = path:find(".*/(.*)")
-    local title, author = self:getTitle(docname, path)
-    clippings[title] = {
-        file = view.document.file,
+    local parsed_title, parsed_author = self:parseTitleFromPath(docname)
+    if isEmpty(title) then
+        title = isEmpty(parsed_title) and "Unknown Book" or parsed_title
+    end
+    if isEmpty(author) then
+        author = isEmpty(parsed_author) and "Unknown Author" or parsed_author
+    end
+    return {
         title = title,
+        -- To make sure that export doesn't fail due to unsupported charchters.
+        exportable_title = parsed_title,
         author = author,
+        number_of_pages = number_of_pages,
+        file = view.document.file,
     }
-    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[title])
+end
 
+function MyClipping:parseCurrentDoc(view)
+    local clippings = {}
+    local meta = self:getDocMeta(view)
+    clippings[meta.title] = meta
+    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[meta.title])
     return clippings
 end
 
