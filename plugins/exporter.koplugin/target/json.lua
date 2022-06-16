@@ -43,7 +43,7 @@ function JsonExporter:export(t)
     end
     local file = io.open(path, "w")
     if not file then return false end
-    file:write(rapidjson.encode(exportable, { pretty = true }))
+    file:write(rapidjson.encode(exportable, {pretty = true}))
     file:write("\n")
     file:close()
     return true
@@ -53,7 +53,7 @@ function JsonExporter:share(t)
     local content = format(t)
     content.created_on = self.timestamp or os.time()
     content.version = self:getVersion()
-    Device:doShareText(rapidjson.encode(content, { pretty = true }))
+    Device:doShareText(rapidjson.encode(content, {pretty = true}))
 end
 
 return JsonExporter
