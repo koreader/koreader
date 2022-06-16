@@ -62,8 +62,8 @@ function MyClipping:parseMyClippings()
                 }
             elseif index == 2 then
                 info = self:getInfo(line)
-            -- elseif index == 3 then
-            -- should be a blank line, we skip this line
+                -- elseif index == 3 then
+                -- should be a blank line, we skip this line
             elseif index == 4 then
                 text = self:getText(line)
             end
@@ -105,14 +105,7 @@ local extensions = {
 -- remove file extensions added by former KOReader
 -- extract author name in "Title(Author)" format
 -- extract author name in "Title - Author" format
-function MyClipping:getTitle(line, path)
-    if path then
-        local props = self:getProps(path)
-        if props and props.title ~= "" then
-            return props.title, props.authors or props.author
-        end
-    end
-
+function MyClipping:parseTitleFromPath(line)
     line = line:match("^%s*(.-)%s*$") or ""
     if extensions[line:sub(-4):lower()] then
         line = line:sub(1, -5)
@@ -229,9 +222,9 @@ function MyClipping:getImage(image)
     local doc = DocumentRegistry:openDocument(image.file)
     if doc then
         local png = doc:clipPagePNGString(image.pos0, image.pos1,
-                image.pboxes, image.drawer)
+            image.pboxes, image.drawer)
         --doc:clipPagePNGFile(image.pos0, image.pos1,
-                --image.pboxes, image.drawer, "/tmp/"..md5(png)..".png")
+        --image.pboxes, image.drawer, "/tmp/"..md5(png)..".png")
         doc:close()
         if png then return { png = png, hash = md5(png) } end
     end
@@ -244,9 +237,9 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
     -- see ReaderBookmark:getBookmarkAutoText and ReaderBookmark:getBookmarkPageString
     --- @todo Remove this once we get rid of auto-text or improve the data model.
     local pattern = "^" .. T(_("Page %1 %2 @ %3"),
-                               "%[?%d*%]?%d+",
-                               "(.*)",
-                               "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
+        "%[?%d*%]?%d+",
+        "(.*)",
+        "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
 
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
@@ -267,8 +260,8 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                 end
             end
             if item.text == "" and item.pos0 and item.pos1 and
-                    item.pos0.x and item.pos0.y and
-                    item.pos1.x and item.pos1.y then
+                item.pos0.x and item.pos0.y and
+                item.pos1.x and item.pos1.y then
                 -- highlights in reflowing mode don't have page in pos
                 if item.pos0.page == nil then item.pos0.page = page end
                 if item.pos1.page == nil then item.pos1.page = page end
@@ -298,7 +291,7 @@ end
 
 function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
     if lfs.attributes(history_file, "mode") ~= "file"
-    or not history_file:find(".+%.lua$") then
+        or not history_file:find(".+%.lua$") then
         return
     end
     if lfs.attributes(doc_file, "mode") ~= "file" then return end
@@ -306,9 +299,9 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
     if ok then
         if not stored then
             logger.warn("An empty history file ",
-                        history_file,
-                        "has been found. The book associated is ",
-                        doc_file)
+                history_file,
+                "has been found. The book associated is ",
+                doc_file)
             return
         elseif not stored.highlight then
             return
@@ -328,14 +321,14 @@ function MyClipping:parseHistory()
     local clippings = {}
     for f in lfs.dir(self.history_dir) do
         self:parseHistoryFile(clippings,
-                              self.history_dir .. "/" .. f,
-                              DocSettings:getPathFromHistory(f) .. "/" ..
-                              DocSettings:getNameFromHistory(f))
+            self.history_dir .. "/" .. f,
+            DocSettings:getPathFromHistory(f) .. "/" ..
+            DocSettings:getNameFromHistory(f))
     end
     for _, item in ipairs(ReadHistory.hist) do
         self:parseHistoryFile(clippings,
-                              DocSettings:getSidecarFile(item.file),
-                              item.file)
+            DocSettings:getSidecarFile(item.file),
+            item.file)
     end
 
     return clippings
@@ -357,22 +350,42 @@ function MyClipping:getProps(file)
         end
         document:close()
     end
-
     return book_props
+end
+
+local function isEmpty(s)
+    return s == nil or s == ""
+end
+
+function MyClipping:getDocMeta(view)
+    local props = self:getProps(view.document.file)
+    local number_of_pages = view.document.info.number_of_pages
+    local title = props.title
+    local author = props.author or props.authors
+    local path = view.document.file
+    local _, _, docname = path:find(".*/(.*)")
+    local parsed_title, parsed_author = self:parseTitleFromPath(docname)
+    if isEmpty(title) then
+        title = isEmpty(parsed_title) and "Unknown Book" or parsed_title
+    end
+    if isEmpty(author) then
+        author = isEmpty(parsed_author) and "Unknown Author" or parsed_author
+    end
+    return {
+        title = title,
+        -- To make sure that export doesn't fail due to unsupported charchters.
+        exportable_title = parsed_title,
+        author = author,
+        number_of_pages = number_of_pages,
+        file = view.document.file,
+    }
 end
 
 function MyClipping:parseCurrentDoc(view)
     local clippings = {}
-    local path = view.document.file
-    local _, _, docname = path:find(".*/(.*)")
-    local title, author = self:getTitle(docname, path)
-    clippings[title] = {
-        file = view.document.file,
-        title = title,
-        author = author,
-    }
-    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[title])
-
+    local meta = self:getDocMeta(view)
+    clippings[meta.title] = meta
+    self:parseHighlight(view.highlight.saved, view.ui.bookmark.bookmarks, clippings[meta.title])
     return clippings
 end
 

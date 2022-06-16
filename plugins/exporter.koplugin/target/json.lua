@@ -13,7 +13,8 @@ local function format(booknotes)
         author = booknotes.author,
         entries = {},
         exported = booknotes.exported,
-        file = booknotes.file
+        file = booknotes.file,
+        number_of_pages = booknotes.number_of_pages
     }
     for _, entry in ipairs(booknotes) do
         table.insert(t.entries, entry[1])
@@ -42,7 +43,7 @@ function JsonExporter:export(t)
     end
     local file = io.open(path, "w")
     if not file then return false end
-    file:write(rapidjson.encode(exportable, {pretty = true}))
+    file:write(rapidjson.encode(exportable, { pretty = true }))
     file:write("\n")
     file:close()
     return true
@@ -52,7 +53,7 @@ function JsonExporter:share(t)
     local content = format(t)
     content.created_on = self.timestamp or os.time()
     content.version = self:getVersion()
-    Device:doShareText(rapidjson.encode(content, {pretty = true}))
+    Device:doShareText(rapidjson.encode(content, { pretty = true }))
 end
 
 return JsonExporter
