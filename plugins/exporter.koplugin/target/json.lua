@@ -13,7 +13,8 @@ local function format(booknotes)
         author = booknotes.author,
         entries = {},
         exported = booknotes.exported,
-        file = booknotes.file
+        file = booknotes.file,
+        number_of_pages = booknotes.number_of_pages
     }
     for _, entry in ipairs(booknotes) do
         table.insert(t.entries, entry[1])
