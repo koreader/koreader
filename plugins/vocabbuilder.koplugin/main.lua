@@ -640,7 +640,7 @@ function VocabItemWidget:initItemWidget()
     local text_max_width = self.width - point_widget_width - right_side_width
 
     local subtitle_prefix = TextWidget:new{
-        text = BD.mirroredUILayout() and self:getTimeSinceDue() .. _("From ") or self:getTimeSinceDue() .. _("From ") ,
+        text = self:getTimeSinceDue() .. _("From") .. " ",
         face = subtitle_face,
         fgcolor = subtitle_color
     }
@@ -653,9 +653,7 @@ function VocabItemWidget:initItemWidget()
         max_width = math.ceil(math.max(5,text_max_width - Size.padding.fullscreen))
     }
 
-    if self.item.is_dim then
-        word_widget.label_widget.fgcolor = dim_color
-    end
+    word_widget.label_widget.fgcolor = self.item.is_dim and dim_color or Blitbuffer.COLOR_BLACK
 
     table.insert(self.layout, 1, word_widget)
 
