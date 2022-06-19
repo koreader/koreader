@@ -44,7 +44,7 @@ end
 local AutoWarmth = WidgetContainer:new{
     name = "autowarmth",
     sched_times = {},
-    sched_funcs = {}, -- necessary for unschedule, function, warmth
+    sched_warmths = {}, -- necessary for unschedule, function, warmth
 }
 
 -- get timezone offset in hours (including dst)
@@ -127,7 +127,9 @@ function AutoWarmth:onResume()
     if resume_date.day == SunTime.date.day and resume_date.month == SunTime.date.month
         and resume_date.year == SunTime.date.year then
         local now = SunTime:getTimeInSec(resume_date)
-        self:scheduleWarmthChanges(now)
+        self:scheduleNextWarmthChange(now, self.sched_warmth_index)
+        -- reschedule 5sec after midnight
+        UIManager:scheduleIn(24*3600 + 5 - now, self.scheduleMidnightUpdate, self)
     else
         self:scheduleMidnightUpdate() -- resume is on the other day, do all calcs again
     end
@@ -135,6 +137,7 @@ end
 
 AutoWarmth.onLeaveStandby = AutoWarmth.onResume
 
+<<<<<<< HEAD
 -- wrapper for unscheduling, so that only our setWarmth gets unscheduled
 function AutoWarmth.setWarmth(val, force)
     if val then
@@ -148,21 +151,29 @@ function AutoWarmth.setWarmth(val, force)
             Device.powerd:setWarmth(val, force)
         end
     end
+=======
+function AutoWarmth:onSuspend()
+    if self.activate == 0 then return end
+    UIManager:unschedule(self.scheduleMidnightUpdate)
+    UIManager:unschedule(self.setWarmth)
+>>>>>>> e1e8b8c5 (Reduce schedulings for power saving)
 end
+
+AutoWarmth.onEnterStandby = AutoWarmth.onSuspend
 
 function AutoWarmth:scheduleMidnightUpdate()
     logger.dbg("AutoWarmth: scheduleMidnightUpdate")
     -- first unschedule all old functions
-    UIManager:unschedule(self.scheduleMidnightUpdate) -- when called from menu or resume
+    UIManager:unschedule(self.scheduleMidnightUpdate)
+    UIManager:unschedule(AutoWarmth.setWarmth)
 
-    SunTime:setPosition(self.location, self.latitude, self.longitude,
-        self.timezone, self.altitude, true)
+    SunTime:setPosition(self.location, self.latitude, self.longitude, self.timezone, self.altitude, true)
     SunTime:setAdvanced()
     SunTime:setDate() -- today
     SunTime:calculateTimes()
 
     self.sched_times = {}
-    self.sched_funcs = {}
+    self.sched_warmths = {}
 
     local function prepareSchedule(times, index1, index2)
         local time1 = times[index1]
@@ -170,7 +181,7 @@ function AutoWarmth:scheduleMidnightUpdate()
 
         local time = SunTime:getTimeInSec(time1)
         table.insert(self.sched_times, time)
-        table.insert(self.sched_funcs, {AutoWarmth.setWarmth, self.warmth[index1]})
+        table.insert(self.sched_warmths, self.warmth[index1])
 
         local time2 = times[index2]
         if not time2 then return end -- to near to the pole
@@ -185,8 +196,7 @@ function AutoWarmth:scheduleMidnightUpdate()
                 -- which map to warmth 0, 10, 20, 30 ... 100)
                 if frac(next_warmth * device_warmth_fit_scale) == 0 then
                     table.insert(self.sched_times, time + delta_t * i)
-                    table.insert(self.sched_funcs, {self.setWarmth,
-                        math.floor(math.min(self.warmth[index1], 100) + delta_w * i)})
+                    table.insert(self.sched_warmths, math.floor(math.min(self.warmth[index1], 100) + delta_w * i))
                 end
             end
         end
@@ -249,26 +259,24 @@ function AutoWarmth:scheduleMidnightUpdate()
     local now = SunTime:getTimeInSec()
 
     -- reschedule 5sec after midnight
-    UIManager:scheduleIn(24*3600 + 5 - now, self.scheduleMidnightUpdate, self )
-
-    self:scheduleWarmthChanges(now)
+    UIManager:scheduleIn(24*3600 + 5 - now, self.scheduleMidnightUpdate, self)
+    -- and schedule the first warmth change
+    self:scheduleNextWarmthChange(now, 1)
 end
 
---- @todo: As we have standby now, don't do the scheduling of the whole schedule,
--- but only the next warmth value plus an additional scheduleWarmthChanges
--- This would safe a bit of energy, but not really much.
-function AutoWarmth:scheduleWarmthChanges(time)
-    logger.dbg("AutoWarmth: scheduleWarmthChanges")
-    for i = 1, #self.sched_funcs do -- loop not essential, as unschedule unschedules all functions at once
-        if not UIManager:unschedule(self.sched_funcs[i][1]) then
-            break
-        end
+-- schedules the next warmth change
+-- search_pos ... start searching from that index
+function AutoWarmth:scheduleNextWarmthChange(time, search_pos)
+    logger.dbg("AutoWarmth: scheduleWarmthChange")
+    if UIManager:unschedule(AutoWarmth.setWarmth) then
+        logger.err("AutoWarmth: abnormal unschedule, time changed?")
     end
 
-    UIManager:unschedule(AutoWarmth.setWarmth) -- to be safe, if there are no scheduled entries
+    if self.activate == 0 or #self.sched_warmths == 0 or search_pos > #self.sched_warmths then
+        return
+    end
 
-    if self.activate == 0 then return end
-    if #self.sched_funcs == 0 then return end
+    self.sched_warmth_index = search_pos or 1
 
     -- `actual_warmth` is the value which should be applied now.
     -- `next_warmth` is valid `delay_time` seconds after now for resume on some devices (KA1)
@@ -280,27 +288,51 @@ function AutoWarmth:scheduleWarmthChanges(time)
     -- before true midnight. OK, this value is actually not quite the right one, as it is calculated
     -- for the current day (and not the previous one), but this is for a corner case
     -- and the error is small.
-    local actual_warmth = self.sched_funcs[#self.sched_funcs][2]
+    local actual_warmth = self.sched_warmths[self.sched_warmth_index or #self.sched_warmths]
     local next_warmth = actual_warmth
-    for i = 1, #self.sched_funcs do
+    for i = self.sched_warmth_index, #self.sched_warmths do
         if self.sched_times[i] <= time then
-            actual_warmth = self.sched_funcs[i][2] or actual_warmth
+            actual_warmth = self.sched_warmths[i] or actual_warmth
         else
-            UIManager:scheduleIn(self.sched_times[i] - time,
-                self.sched_funcs[i][1], self.sched_funcs[i][2])
+            self.sched_warmth_index = i
+            break
         end
         if self.sched_times[i] <= time + delay_time then
-            next_warmth = self.sched_funcs[i][2] or next_warmth
+            next_warmth = self.sched_warmths[i] or next_warmth
         end
     end
     -- update current warmth immediately
-    self.setWarmth(actual_warmth)
+    self:setWarmth(actual_warmth) -- no setWarmth rescheduling
+    if self.sched_warmth_index and self.sched_warmth_index <= #self.sched_warmths then
+        -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
+        UIManager:scheduleIn(self.sched_times[self.sched_warmth_index] - time,
+                self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
+    end
 
     -- On some strange devices like KA1 the above doesn't work right after a resume so
     -- schedule setting of another valid warmth (=`next_warmth`) again (one time).
     -- On sane devices this schedule does no harm.
     -- see https://github.com/koreader/koreader/issues/8363
-    UIManager:scheduleIn(delay_time, self.setWarmth, next_warmth, true)
+    UIManager:scheduleIn(delay_time, self.setWarmth, self, next_warmth, true) -- no setWarmth rescheduling
+
+-- Set warmth and schedule the next warmth change
+function AutoWarmth:setWarmth(val, schedule_next)
+    if val then
+        if val > 100 then
+            DeviceListener:onSetNightMode(true)
+        else
+            DeviceListener:onSetNightMode(false)
+        end
+        if Device:hasNaturalLight() then
+            val = math.min(val, 100)
+            Device.powerd:setWarmth(val)
+        end
+    end
+    if schedule_next then
+        local now = SunTime:getTimeInSec()
+        self:scheduleNextWarmthChange(now, self.sched_warmth_index + 1)
+    end
+>>>>>>> e1e8b8c5 (Reduce schedulings for power saving)
 end
 
 function AutoWarmth:hoursToClock(hours)
@@ -312,8 +344,7 @@ end
 
 function AutoWarmth:addToMainMenu(menu_items)
     menu_items.autowarmth = {
-        text = Device:hasNaturalLight() and _("Auto warmth and night mode")
-            or _("Auto night mode"),
+        text = Device:hasNaturalLight() and _("Auto warmth and night mode") or _("Auto night mode"),
         checked_func = function() return self.activate ~= 0 end,
         sub_item_table_func = function()
             return self:getSubMenuItems()
@@ -349,8 +380,7 @@ To use the sun's position, a geographical location must be entered. The calculat
 function AutoWarmth:getSubMenuItems()
     return {
         {
-            text = Device:hasNaturalLight() and _("About auto warmth and night mode")
-                or _("About auto night mode"),
+            text = Device:hasNaturalLight() and _("About auto warmth and night mode") or _("About auto night mode"),
             callback = function()
                 UIManager:show(InfoMessage:new{
                     text = about_text,
@@ -397,8 +427,7 @@ function AutoWarmth:getSubMenuItems()
             enabled_func = function()
                 return self.activate ~=0
             end,
-            text = Device:hasNaturalLight() and _("Warmth and night mode settings")
-                or _("Night mode settings"),
+            text = Device:hasNaturalLight() and _("Warmth and night mode settings") or _("Night mode settings"),
             sub_item_table = self:getWarmthMenu(),
             separator = true,
         },
@@ -654,7 +683,7 @@ function AutoWarmth:getScheduleMenu()
     end
 
     local retval = {
-        getScheduleMenuEntry(_("Solar midnight"), 1, false ),
+        getScheduleMenuEntry(_("Solar midnight"), 1, false),
         getScheduleMenuEntry(_("Astronomical dawn"), 2, false),
         getScheduleMenuEntry(_("Nautical dawn"), 3, false),
         getScheduleMenuEntry(_("Civil dawn"), 4),
@@ -754,8 +783,7 @@ function AutoWarmth:getWarmthMenu()
 
     local retval = {
         {
-            text = Device:hasNaturalLight() and _("Set warmth and night mode for:")
-                or _("Set night mode for:"),
+            text = Device:hasNaturalLight() and _("Set warmth and night mode for:") or _("Set night mode for:"),
             enabled_func = function() return false end,
         },
         getWarmthMenuEntry(_("Solar noon"), 6, false),
@@ -910,7 +938,7 @@ function AutoWarmth:getLocationString()
     if self.location ~= "" then
         return self.location
     else
-        return "(" .. self.latitude .. "," .. self.longitude .. ")"
+        return string.format("(%.2f°,%.2f°)", self.latitude, self.longitude)
     end
 end
 
