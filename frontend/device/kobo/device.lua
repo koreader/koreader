@@ -105,6 +105,8 @@ local Kobo = Generic:new{
     ntx_dev = "/dev/input/event0",
     -- Stable path to the Touch input device
     touch_dev = "/dev/input/event1",
+    -- Stable path to the Power Button input device
+    power_dev = nil,
     -- Event code to use to detect contact pressure
     pressure_event = nil,
     -- Device features multiple CPU cores
@@ -414,7 +416,6 @@ local KoboIo = Kobo:new{
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
-        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
         -- Warmth goes from 0 to 10 on the device's side (our own internal scale is still normalized to [0...100])
         -- NOTE: Those three extra keys are *MANDATORY* if frontlight_mixer is set!
         nl_min = 0,
@@ -424,6 +425,10 @@ local KoboIo = Kobo:new{
     -- It would appear that the Libra 2 inherited its ancestor's quirks, and more...
     -- c.f., https://github.com/koreader/koreader/issues/8414 & https://github.com/koreader/koreader/issues/8664
     hasReliableMxcWaitFor = no,
+    -- NOTE: There are at least two hardware revisions of this device (*without* a device code change, this time),
+    --       with *significant* hardware changes, so we'll handle this by making the sysfs path discovery automagic.
+    --       c.f., https://github.com/koreader/koreader/issues/9218
+    automagic_sysfs = true,
 }
 
 function Kobo:setupChargingLED()
@@ -514,6 +519,57 @@ function Kobo:init()
         end
     end
 
+    -- Automagic sysfs discovery
+    if self.automagic_sysfs then
+        -- Battery
+        if util.pathExists("/sys/class/power_supply/battery") then
+            -- Newer devices (circa sunxi)
+            self.battery_sysfs = "/sys/class/power_supply/battery"
+        else
+            self.battery_sysfs = "/sys/class/power_supply/mc13892_bat"
+        end
+
+        -- Frontlight
+        if self:hasNaturalLight() then
+            if util.fileExists("/sys/class/leds/aw99703-bl_FL1/color") then
+                -- HWConfig FL_PWM is AW99703x2
+                self.frontlight_settings.frontlight_mixer = "/sys/class/leds/aw99703-bl_FL1/color"
+            elseif util.fileExists("/sys/class/backlight/lm3630a_led/color") then
+                -- HWConfig FL_PWM is LM3630
+                self.frontlight_settings.frontlight_mixer = "/sys/class/backlight/lm3630a_led/color"
+            elseif util.fileExists("/sys/class/backlight/tlc5947_bl/color") then
+                -- HWConfig FL_PWM is TLC5947
+                self.frontlight_settings.frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color"
+            end
+        end
+
+        -- Input
+        if util.fileExists("/dev/input/by-path/platform-1-0010-event") then
+            -- Elan (HWConfig TouchCtrl is ekth6)
+            self.touch_dev = "/dev/input/by-path/platform-1-0010-event"
+        else
+            self.touch_dev = "/dev/input/event1"
+        end
+
+        if util.fileExists("/dev/input/by-path/platform-gpio-keys-event") then
+            -- Libra 2 w/ a BD71828 PMIC
+            self.ntx_dev = "/dev/input/by-path/platform-gpio-keys-event"
+        elseif util.fileExists("/dev/input/by-path/platform-ntx_event0-event") then
+            -- sunxi & Mk. 7
+            self.ntx_dev = "/dev/input/by-path/platform-ntx_event0-event"
+        elseif util.fileExists("/dev/input/by-path/platform-mxckpd-event") then
+            -- circa Mk. 5 i.MX
+            self.ntx_dev = "/dev/input/by-path/platform-mxckpd-event"
+        else
+            self.ntx_dev = "/dev/input/event0"
+        end
+
+        if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey-event") then
+            -- Libra 2 w/ a BD71828 PMIC
+            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
+        end
+    end
+
     -- Automagically set this so we never have to remember to do it manually ;p
     if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
         self.hasNaturalLightMixer = yes
@@ -563,10 +619,19 @@ function Kobo:init()
 
     Generic.init(self)
 
-    -- When present, event2 is the raw accelerometer data (3-Axis Orientation/Motion Detection)
-    self.ntx_fd = self.input.open(self.ntx_dev) -- Various HW Buttons, Switches & Synthetic NTX events
+    -- Various HW Buttons, Switches & Synthetic NTX events
+    self.ntx_fd = self.input.open(self.ntx_dev)
+    -- Dedicated Power Button input device (if any)
+    if self.power_dev then
+        self.input.open(self.power_dev)
+    end
+    -- Touch panel
     self.input.open(self.touch_dev)
-    -- fake_events is only used for usb plug event so far
+    -- NOTE: On devices with a gyro, there may be a dedicated input device outputting the raw accelerometer data
+    --       (3-Axis Orientation/Motion Detection).
+    --       We skip it because we don't need it (synthetic rotation change events are sent to the main ntx input device),
+    --       and it's usually *extremely* verbose, so it'd just be a waste of processing power.
+    -- fake_events is only used for usb plug & charge events so far (generated via uevent, c.f., input/iput-kobo.h in base).
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
     self.input.open("fake_events")
 
