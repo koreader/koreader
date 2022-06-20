@@ -1,8 +1,9 @@
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
 local WakeupMgr = require("device/wakeupmgr")
+local ffiUtil = require("ffi/util")
 local logger = require("logger")
-local util = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
 
 -- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
@@ -818,7 +819,7 @@ function Kobo:getFirmwareVersion()
     version_file:close()
 
     local i = 0
-    for field in util.gsplit(version_str, ",", false, false) do
+    for field in ffiUtil.gsplit(version_str, ",", false, false) do
         i = i + 1
         if (i == 3) then
              self.firmware_rev = field
@@ -966,7 +967,7 @@ function Kobo:suspend()
         logger.warn("Kobo suspend: the kernel refused to flag subsystems for suspend!")
     end
 
-    util.sleep(2)
+    ffiUtil.sleep(2)
     logger.info("Kobo suspend: waited for 2s because of reasons...")
 
     os.execute("sync")
@@ -1061,7 +1062,7 @@ function Kobo:resume()
     end
 
     -- HACK: wait a bit (0.1 sec) for the kernel to catch up
-    util.usleep(100000)
+    ffiUtil.usleep(100000)
 
     if self.hasIRGrid then
         -- cf. #1862, I can reliably break IR touch input on resume...
