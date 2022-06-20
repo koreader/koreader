@@ -259,13 +259,36 @@ if Screen:isColorEnabled() or Screen:isColorScreen() then
     common_settings.color_rendering = require("ui/elements/screen_color_menu_table")
 end
 
+-- fullscreen toggle for supported devices
+if not Device:isAlwaysFullscreen() then
+    common_settings.fullscreen = {
+        text = _("Fullscreen"),
+        checked_func = function()
+            return Device.fullscreen or Device.isDefaultFullscreen()
+        end,
+        callback = function()
+            Device:toggleFullscreen()
+            -- for legacy android devices
+            if Device:isAndroid() then
+                local api = Device.firmware_rev
+                local needs_restart = api < 19 and api >= 16
+                if needs_restart then
+                    UIManager:show(InfoMessage:new{
+                        text = _("This will take effect on next restart.")
+                    })
+                end
+            end
+        end,
+    }
+end
+
 if Device:isAndroid() then
     -- android common settings
     local isAndroid, android = pcall(require, "android")
     if not isAndroid then return end
 
     -- screen timeout options, disabled if device needs wakelocks.
-    common_settings.screen_timeout = require("ui/elements/screen_android"):getTimeoutMenuTable()
+    common_settings.screen_timeout = require("ui/elements/timeout_android"):getTimeoutMenuTable()
 
     -- haptic feedback override
     common_settings.android_haptic_feedback = {
@@ -304,15 +327,6 @@ if Device:isAndroid() then
             G_reader_settings:saveSetting("android_ignore_back_button", not is_ignored)
         end,
     }
-
-    -- fullscreen toggle on devices with compatible fullscreen methods (apis 14-18)
-    if Device.firmware_rev < 19 then
-        common_settings.fullscreen = {
-            text = _("Fullscreen"),
-            checked_func = function() return android.isFullscreen() end,
-            callback = function() require("ui/elements/screen_android"):toggleFullscreen() end,
-        }
-    end
 
     -- ignore battery optimization
     if Device.firmware_rev >= 23 then
