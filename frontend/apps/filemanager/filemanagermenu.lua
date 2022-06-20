@@ -860,6 +860,7 @@ function FileManagerMenu:onShowMenu(tab_index)
 end
 
 function FileManagerMenu:onCloseFileManagerMenu()
+    if not self.menu_container then return end
     local last_tab_index = self.menu_container[1].last_index
     G_reader_settings:saveSetting("filemanagermenu_tab_index", last_tab_index)
     UIManager:close(self.menu_container)
@@ -900,6 +901,7 @@ function FileManagerMenu:onSwipeShowMenu(ges)
 end
 
 function FileManagerMenu:onSetDimensions(dimen)
+    self:onCloseFileManagerMenu()
     -- update listening according to new screen dimen
     if Device:isTouchDevice() then
         self:initGesListener()
