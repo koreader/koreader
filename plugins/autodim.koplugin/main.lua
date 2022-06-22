@@ -173,6 +173,9 @@ end
 
 function AutoDim:onInputEvent()
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
+    -- Make sure the next scheduled autodim check is as much in the future
+    -- as possible, to reduce wakes from standby.
+    self:_schedule_autodim_task()
 end
 
 function AutoDim:_unschedule_autodim_task()
