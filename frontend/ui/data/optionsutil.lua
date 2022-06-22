@@ -17,8 +17,8 @@ function optionsutil.enableIfEquals(configurable, option, value)
 end
 
 -- Converts px size to mm, inch or pt
--- if the `metric_system`-setting is not set or true -> mm
--- if the `metric_sytem`-setting is false -> inch
+-- if the `metric_length`-setting is not set or true -> mm
+-- if the `metric_length`-setting is false -> inch
 -- if format == "pt" -> pt
 local function convertSizeTo(px, format)
     local format_factor = 1 -- we are defaulting on mm
@@ -151,7 +151,7 @@ function optionsutil.showValues(configurable, option, prefix, document, is_size)
                                             current, value_current, default)
         end
     else
-        local unit = G_reader_settings:nilOrTrue("metric_system") and _("mm") or _("\"")
+        local unit = G_reader_settings:nilOrTrue("metric_length") and _("mm") or _("\"")
         text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
                                             current, real_size_string(current, unit),
                                             default, real_size_string(default, unit))
@@ -162,7 +162,7 @@ end
 function optionsutil.showValuesHMargins(configurable, option)
     local default = G_reader_settings:readSetting("copt_"..option.name)
     local current = configurable[option.name]
-    local unit = G_reader_settings:nilOrTrue("metric_system") and _("mm") or _("\"")
+    local unit = G_reader_settings:nilOrTrue("metric_length") and _("mm") or _("\"")
     if not default then
         UIManager:show(InfoMessage:new{
             text = T(_([[

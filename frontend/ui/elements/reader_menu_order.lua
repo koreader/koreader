@@ -89,6 +89,7 @@ local order = {
         "font_ui_fallbacks",
         "----------------------------",
         "time",
+        "units",
         "device_status_alarm",
         "charging_led", -- if Device:canToggleChargingLED()
         "autostandby",
@@ -100,7 +101,6 @@ local order = {
         "mass_storage_settings", -- if Device:canToggleMassStorage()
         "file_ext_assoc",
         "screenshot",
-        "metric_system",
     },
     navigation = {
         "back_to_exit",
