@@ -71,6 +71,7 @@ local settingsList = {
     wifi_on = {category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     wifi_off = {category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     toggle_wifi = {category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    toggle_fullscreen = {category="none", event="ToggleFullscreen", title=_("Toggle Fullscreen"), device=true, condition=not Device:isAlwaysFullscreen()},
     show_network_info = {category="none", event="ShowNetworkInfo", title=_("Show network info"), device=true, separator=true},
     suspend = {category="none", event="SuspendEvent", title=_("Suspend"), device=true},
     exit = {category="none", event="Exit", title=_("Exit KOReader"), device=true},
@@ -236,6 +237,7 @@ local dispatcher_menu_order = {
     "wifi_on",
     "wifi_off",
     "toggle_wifi",
+    "toggle_fullscreen",
     "show_network_info",
 
     "show_frontlight_dialog",
