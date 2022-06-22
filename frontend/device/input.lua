@@ -528,6 +528,12 @@ function Input:handleKeyBoardEv(ev)
         end
     end
 
+    -- F11 is used on Linux to toggle fullscreen
+    if self:isEvKeyPress(ev) and keycode == "VPlus" and jit.os == "Linux" then
+        local UIManager = require("ui/uimanager")
+        UIManager:broadcastEvent(Event:new("ToggleFullscreen"))
+    end
+
     -- quit on Alt + F4
     -- this is also emitted by the close event in SDL
     if self:isEvKeyPress(ev) and self.modifiers["Alt"] and keycode == "F4" then
