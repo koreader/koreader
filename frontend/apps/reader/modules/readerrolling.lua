@@ -762,6 +762,9 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- it directly to screen and triggering a regional refresh.
                     if self.mark_orig_content_bb then
                         Screen.bb:blitFrom(self.mark_orig_content_bb, screen_x, screen_y, 0, 0, marker_w, marker_h)
+                        -- The unmark refresh will crash the PW5 driver if Swipe
+                        -- Animations are enabled, so disable them for this refresh.
+                        Screen:setSwipeAnimations(false)
                         Screen:refreshUI(screen_x, screen_y, marker_w, marker_h)
                         self.mark_orig_content_bb:free()
                         self.mark_orig_content_bb = nil
