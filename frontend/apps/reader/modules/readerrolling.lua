@@ -670,6 +670,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
     end
     if self.unmark_func then
         -- execute scheduled unmark now to clean previous marker
+        UIManager:unschedule(self.unmark_func)
         self.unmark_func()
         self.unmark_func = nil
     end
