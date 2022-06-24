@@ -25,10 +25,10 @@ local powerd = Device:getPowerDevice()
 -- xxx 15*60
 local WAKEUP_TIMER_SECONDS = 5*60 -- time for a scheduled wakeup, when a charger is connected
 
-local default_stop_threshold = 95
-local default_start_threshold = 80
-local default_aux_stop_threshold = 99
-local default_aux_start_threshold = 95
+local default_stop_thr = 95
+local default_start_thr = 80
+local default_aux_stop_thr = 99
+local default_aux_start_thr = 95
 local default_balance_thr = 10
 
 local BatteryCare = WidgetContainer:new{
@@ -40,15 +40,15 @@ function BatteryCare:init()
     if not Device:canControlCharge() then return end
 
     self.enabled = G_reader_settings:isTrue("battery_care")
-    self.battery_care_stop_threshold = G_reader_settings:readSetting("battery_care_stop_threshold",
-        default_stop_threshold)
-    self.battery_care_start_threshold = G_reader_settings:readSetting("battery_care_start_threshold",
-        default_start_threshold)
+    self.battery_care_stop_thr = G_reader_settings:readSetting("battery_care_stop_thr",
+        default_stop_thr)
+    self.battery_care_start_thr = G_reader_settings:readSetting("battery_care_start_thr",
+        default_start_thr)
 
-    self.battery_care_aux_stop_threshold = G_reader_settings:readSetting("battery_care_aux_stop_threshold",
-        default_aux_stop_threshold)
-    self.battery_care_aux_start_threshold = G_reader_settings:readSetting("battery_care_aux_start_threshold",
-        default_aux_start_threshold)
+    self.battery_care_aux_stop_thr = G_reader_settings:readSetting("battery_care_aux_stop_thr",
+        default_aux_stop_thr)
+    self.battery_care_aux_start_thr = G_reader_settings:readSetting("battery_care_aux_start_thr",
+        default_aux_start_thr)
     self.battery_care_balance_thr = G_reader_settings:readSetting("battery_care_balance_thr",
         default_balance_thr)
 
@@ -217,19 +217,19 @@ end
 
 BatteryCare.onNotCharging = BatteryCare.onCharging
 
-function BatteryCare:setThresholds(touchmenu_instance, title, info, lower, upper, lower_default, upper_default)
+function BatteryCare:setThresholds(touchmenu_instance, title, info, lower, upper, lower_default, upper_default, value_min)
     local threshold_spinner = DoubleSpinWidget:new {
         title_text = title,
         info_text = info,
         left_text = _("Start"),
         left_value = self[lower] or lower_default,
         left_default = lower_default,
-        left_min = 10,
+        left_min = value_min or 10,
         left_max = 100,
         right_text = _("Stop"),
         right_value = self[upper] or upper_default,
         left_upper = upper_default,
-        right_min = 50,
+        right_min = value_min or 50,
         right_max = 100,
         unit = "%",
         ok_always_enabled = true,
@@ -259,14 +259,14 @@ function BatteryCare:setThresholds(touchmenu_instance, title, info, lower, upper
     UIManager:show(threshold_spinner)
 end
 
-function BatteryCare:setAuxMin(touchmenu_instance, title, info, setting, value_default)
+function BatteryCare:setAuxMin(touchmenu_instance, title, info, setting, value_default, value_min, value_max)
     local threshold_spinner = SpinWidget:new{
         title_text = title,
         info_text = info,
         value = self[setting] or value_default,
         default = value_default,
-        value_min = 1,
-        value_max = 100,
+        value_min = value_min,
+        value_max = value_max,
         value_hold_step = 5,
         unit = "%",
         ok_always_enabled = true,
@@ -300,9 +300,9 @@ On some devices an auxilliary battery can be managed, too.]])
 function BatteryCare:addToMainMenu(menu_items)
     local batt_item = {
         text_func = function()
-            if self.battery_care_start_threshold and  self.battery_care_stop_threshold then
+            if self.battery_care_start_thr and  self.battery_care_stop_thr then
                 return T(_("Primary battery charge hysteresis: %1 % — %2 %"),
-                    self.battery_care_start_threshold, self.battery_care_stop_threshold)
+                    self.battery_care_start_thr, self.battery_care_stop_thr)
             else
                 return _("Primary battery charge hysteresis")
             end
@@ -311,14 +311,14 @@ function BatteryCare:addToMainMenu(menu_items)
             return self.enabled
         end,
         checked_func = function()
-            return self.battery_care_start_threshold and self.battery_care_stop_threshold
+            return self.battery_care_start_thr and self.battery_care_stop_thr
         end,
         keep_menu_open = true,
         callback = function(touchmenu_instance)
             self:setThresholds(touchmenu_instance, _("Charge hysteresis thresholds"),
                 _("Enter lower threshold to start and upper threshold to stop start charging.\nCharging will starts if the capacity is below the lower and stops if the capacity is higher than the upper threshold."),
-                "battery_care_start_threshold", "battery_care_stop_threshold",
-                default_start_threshold, default_stop_threshold)
+                "battery_care_start_thr", "battery_care_stop_thr",
+                default_start_thr, default_stop_thr)
         end,
         separator = true,
     }
@@ -327,9 +327,9 @@ function BatteryCare:addToMainMenu(menu_items)
     if Device:isKobo() and Device:hasAuxBattery() or Device:isEmulator() then
         aux_batt_item = {
             text_func = function()
-                if self.battery_care_aux_start_threshold and self.battery_care_aux_stop_threshold then
+                if self.battery_care_aux_start_thr and self.battery_care_aux_stop_thr then
                     return T(_("Auxilliary battery charge hysteresis: %1 % — %2 %"),
-                        self.battery_care_aux_start_threshold, self.battery_care_aux_stop_threshold)
+                        self.battery_care_aux_start_thr, self.battery_care_aux_stop_thr)
                 else
                     return _("Auxilliary battery charge hysteresis")
                 end
@@ -338,14 +338,14 @@ function BatteryCare:addToMainMenu(menu_items)
                 return self.enabled
             end,
             checked_func = function()
-                return self.battery_care_aux_start_threshold and self.battery_care_aux_stop_threshold
+                return self.battery_care_aux_start_thr and self.battery_care_aux_stop_thr
             end,
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 self:setThresholds(touchmenu_instance, _("Charge hysteresis thresholds"),
                     _("Enter lower threshold to start and upper threshold to stop start charging.\nCharging starts if the capacity is below the lower and stops if the capacity is higher than the upper threshold."),
-                    "battery_care_aux_start_threshold", "battery_care_aux_stop_threshold",
-                    default_aux_start_threshold, default_aux_stop_threshold)
+                    "battery_care_aux_start_thr", "battery_care_aux_stop_thr",
+                    default_aux_start_thr, default_aux_stop_thr, self.battery_care_balance_thr)
             end,
         }
         aux_batt_ballance = {
@@ -368,7 +368,7 @@ function BatteryCare:addToMainMenu(menu_items)
                 self:setAuxMin(touchmenu_instance,
                     _("Charge equalize thresholds"),
                     _("Enter threshold to equalize batteries."),
-                    "battery_care_balance_thr", default_balance_thr)
+                    "battery_care_balance_thr", default_balance_thr, 1, self.battery_care_aux_start_thr)
             end,
         }
     end
@@ -473,15 +473,16 @@ function BatteryCare:task() -- the brain of batteryCare
     end
 
     logger.dbg("BatteryCare: battery", curr_capacity, " - ",
-        self.battery_care_start_threshold, self.battery_care_stop_threshold)
+        self.battery_care_start_thr, self.battery_care_stop_thr)
 
     local charge_batt, charge_aux -- nil means, don't change state
+    local balance_batt
 
-    if self.battery_care_stop_threshold and self.battery_care_start_threshold then
-        if curr_capacity > self.battery_care_stop_threshold then
+    if self.battery_care_stop_thr and self.battery_care_start_thr then
+        if curr_capacity > self.battery_care_stop_thr then
             logger.dbg("BatteryCare: disable batt charge")
             charge_batt = false
-        elseif curr_capacity < self.battery_care_start_threshold then
+        elseif curr_capacity < self.battery_care_start_thr then
             logger.dbg("BatteryCare: enable batt charge")
             charge_batt = true
         else
@@ -489,37 +490,34 @@ function BatteryCare:task() -- the brain of batteryCare
         end
     end
 
-    if curr_aux_capacity and self.battery_care_aux_stop_threshold and self.battery_care_aux_start_threshold then
+    if curr_aux_capacity and self.battery_care_aux_stop_thr and self.battery_care_aux_start_thr then
         logger.dbg("BatteryCare: aux battery", curr_aux_capacity, " - ",
-            self.battery_care_aux_start_threshold, self.battery_care_aux_stop_threshold)
+            self.battery_care_aux_start_thr, self.battery_care_aux_stop_thr)
 
-        if curr_aux_capacity > self.battery_care_aux_stop_threshold then
+        if curr_aux_capacity > self.battery_care_aux_stop_thr then
             logger.dbg("BatteryCare: disable aux batt charge")
             charge_aux = false
-        elseif curr_aux_capacity < self.battery_care_aux_start_threshold then
+        elseif curr_aux_capacity < self.battery_care_aux_start_thr then
             logger.dbg("BatteryCare: enable aux batt charge")
             charge_aux = true
         else
             logger.dbg("BatteryCare: nochange aux batt charge")
         end
-        if self.battery_care_balance_thr then
+        if self.battery_care_balance_thr and curr_aux_capacity < self.battery_care_balance_thr then
+            balance_batt = true
             if curr_capacity <= curr_aux_capacity then
                 logger.dbg("BatteryCare: batt lower or equal aux, enable charging")
                 charge_batt = true
                 charge_aux = true
             else
-                if powerd:isChargerPresent() then
-                    logger.dbg("BatteryCare: enable batt charge (charger present)")
-                    charge_batt = true
-                else
-                    logger.dbg("BatteryCare: batt higher than aux, disable charging")
-                    charge_batt = false
-                end
+                logger.dbg("BatteryCare: batt higher than aux, disable charging")
+                charge_batt = false
+                charge_aux = false
             end
         end
     end
 
-    info = powerd:charge(charge_batt, charge_aux)
+    info = powerd:charge(charge_batt, charge_aux, balance_batt)
     logger.dbg("BatteryCare:", info)
 end
 

@@ -59,7 +59,7 @@ function BasePowerD:setDismissBatteryStatus(status) self.battery_warning = statu
 function BasePowerD:isChargingHW() return false end
 --- @note: ...at which point this should start returning true (i.e., plugged in & fully charged).
 function BasePowerD:isChargedHW() return false end
-function BasePowerD:chargeHW(batt, aux_batt) return "" end
+function BasePowerD:chargeHW(batt, aux_batt, balance) return "" end
 function BasePowerD:isAuxChargingHW() return false end
 function BasePowerD:isAuxChargedHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
