@@ -528,6 +528,12 @@ function Input:handleKeyBoardEv(ev)
         end
     end
 
+    -- toggle fullscreen on F11
+    if self:isEvKeyPress(ev) and keycode == "F11" and not self.device:isAlwaysFullscreen() then
+        local UIManager = require("ui/uimanager")
+        UIManager:broadcastEvent(Event:new("ToggleFullscreen"))
+    end
+
     -- quit on Alt + F4
     -- this is also emitted by the close event in SDL
     if self:isEvKeyPress(ev) and self.modifiers["Alt"] and keycode == "F4" then
