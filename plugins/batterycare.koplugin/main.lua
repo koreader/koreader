@@ -22,8 +22,12 @@ local T = require("ffi/util").template
 
 local powerd = Device:getPowerDevice()
 
--- xxx 15*60
-local WAKEUP_TIMER_SECONDS = 5*60 -- time for a scheduled wakeup, when a charger is connected
+ -- Time for a scheduled wakeup, when a charger is connected.
+ -- As long a charger is connected, we have no need for extensive power saving, so a shorter
+ -- time will help not to exceed the upper charge limit.
+ -- For example: on a Sage, with an noname charger we can expect around 1%/min. Charging on a poor
+ -- laptop might give us 0.5%/min or less.
+local WAKEUP_TIMER_SECONDS = 5*60
 
 local default_stop_thr = 95
 local default_start_thr = 80
@@ -151,25 +155,25 @@ function BatteryCare:scheduleWakeupCall(enabled)
     -- Schedule a wakeup if necessary, when going to suspend.
     local wakeup_timer_seconds
     if powerd:isCharging() then
-        -- If charging from an external charger or aux battery
+        -- If charging from an external charger or aux battery use the default value
         wakeup_timer_seconds = WAKEUP_TIMER_SECONDS
     else
         -- If _not_ charging ...
-        if powerd.device:hasAuxBattery() and powerd:isAuxBatteryConnected() and powerd:getAuxCapacityHW() then
+        if powerd.device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
             -- ... and with an aux battery for a _long_ sleeping period: It is desireable to load
             -- the internal battery (from the aux batt) if its capacity drops.
-            wakeup_timer_seconds = 6 * 3600 -- four times a day
+            wakeup_timer_seconds = 6 * 3600 -- four times a day, maybe this can be reduced to once a day
         else
-            -- ... an no aux battery present:  Don't wake.
+            -- ... an no aux battery present:  don't wake.
             wakeup_timer_seconds = nil
         end
     end
 
     if wakeup_timer_seconds then
-        logger.dbg("BatteryCare: scheduling a wakeup in", wakeup_timer_seconds)
+        logger.dbg("BatteryCare: scheduling wakeup in", wakeup_timer_seconds)
         WakeupManager:addTask(wakeup_timer_seconds, wakeupCall)
     else
-        logger.dbg("BatteryCare: scheduling a wakeup skipped")
+        logger.dbg("BatteryCare: scheduling wakeup skipped")
     end
 end
 
@@ -476,7 +480,7 @@ function BatteryCare:task() -- the brain of batteryCare
         return
     end
 
-    logger.dbg("BatteryCare: battery", curr_capacity, " - ",
+    logger.dbg("BatteryCare: battery", curr_capacity, "-",
         self.battery_care_start_thr, self.battery_care_stop_thr)
 
     local charge_batt, charge_aux -- nil means, don't change state
@@ -496,7 +500,7 @@ function BatteryCare:task() -- the brain of batteryCare
 
     if curr_aux_capacity then
         if self.battery_care_aux_stop_thr and self.battery_care_aux_start_thr then
-            logger.dbg("BatteryCare: aux battery", curr_aux_capacity, " - ",
+            logger.dbg("BatteryCare: aux battery", curr_aux_capacity, "-",
                 self.battery_care_aux_start_thr, self.battery_care_aux_stop_thr)
 
             if curr_aux_capacity > self.battery_care_aux_stop_thr then
