@@ -151,7 +151,12 @@ function optionsutil.showValues(configurable, option, prefix, document, is_size)
                                             current, value_current, default)
         end
     else
-        local unit = G_reader_settings:nilOrTrue("metric_length") and _("mm") or _("\"")
+        local unit
+        if is_size == 1 then
+            unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "\""
+        else
+            unit = "pt"
+        end
         text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
                                             current, real_size_string(current, unit),
                                             default, real_size_string(default, unit))
@@ -162,7 +167,7 @@ end
 function optionsutil.showValuesHMargins(configurable, option)
     local default = G_reader_settings:readSetting("copt_"..option.name)
     local current = configurable[option.name]
-    local unit = G_reader_settings:nilOrTrue("metric_length") and _("mm") or _("\"")
+    local unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "\""
     if not default then
         UIManager:show(InfoMessage:new{
             text = T(_([[

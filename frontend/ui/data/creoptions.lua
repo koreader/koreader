@@ -224,7 +224,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 },
                 hide_on_apply = true,
                 name_text_hold_callback = function(configurable, opt, prefix)
-                    optionsutil.showValues(configurable, opt, prefix, nil, true)
+                    optionsutil.showValues(configurable, opt, prefix, nil, 1)
                 end,
                 more_options = true,
                 more_options_param = {
@@ -278,7 +278,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 },
                 hide_on_apply = true,
                 name_text_hold_callback = function(configurable, opt, prefix)
-                    optionsutil.showValues(configurable, opt, prefix, nil, true)
+                    optionsutil.showValues(configurable, opt, prefix, nil, 1)
                 end,
                 help_text = _([[In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
                 more_options = true,
@@ -455,7 +455,7 @@ Note that your selected font size is not affected by this setting.]]),
                         name = "font_size",
                         name_text = _("Font Size"),
                     }
-                    optionsutil.showValues(configurable, opt, prefix, nil, true)
+                    optionsutil.showValues(configurable, opt, prefix, nil, 2)
                 end,
             },
             {
