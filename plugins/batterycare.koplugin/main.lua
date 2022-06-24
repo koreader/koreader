@@ -212,7 +212,7 @@ end
 function BatteryCare:onCharging()
     logger.dbg("BatteryCare: onCharging/onNotCharging")
     -- Give the firmware some time (at least less than standby time) to calculate the new state
-    UIManager:scheduleIn(1.5, self.task, self) -- task gets called in 1.5s and then schedules itself on a full minute
+    UIManager:scheduleIn(0.5, self.task, self) -- task gets called in 0.5s and then schedules itself on a full minute
 end
 
 BatteryCare.onNotCharging = BatteryCare.onCharging
@@ -226,11 +226,13 @@ function BatteryCare:setThresholds(touchmenu_instance, title, info, lower, upper
         left_default = lower_default,
         left_min = value_min or 10,
         left_max = 100,
+        left_hold_step = 5,
         right_text = _("Stop"),
         right_value = self[upper] or upper_default,
         right_default = upper_default,
         right_min = value_min or 50,
         right_max = 100,
+        right_hold_step = 5,
         unit = "%",
         ok_always_enabled = true,
         default_values = true,
@@ -492,27 +494,29 @@ function BatteryCare:task() -- the brain of batteryCare
         end
     end
 
-    if curr_aux_capacity and self.battery_care_aux_stop_thr and self.battery_care_aux_start_thr then
-        logger.dbg("BatteryCare: aux battery", curr_aux_capacity, " - ",
-            self.battery_care_aux_start_thr, self.battery_care_aux_stop_thr)
+    if curr_aux_capacity then
+        if self.battery_care_aux_stop_thr and self.battery_care_aux_start_thr then
+            logger.dbg("BatteryCare: aux battery", curr_aux_capacity, " - ",
+                self.battery_care_aux_start_thr, self.battery_care_aux_stop_thr)
 
-        if curr_aux_capacity > self.battery_care_aux_stop_thr then
-            logger.dbg("BatteryCare: disable aux batt charge")
-            charge_aux = false
-        elseif curr_aux_capacity < self.battery_care_aux_start_thr then
-            logger.dbg("BatteryCare: enable aux batt charge")
-            charge_aux = true
-        else
-            logger.dbg("BatteryCare: nochange aux batt charge")
+            if curr_aux_capacity > self.battery_care_aux_stop_thr then
+                logger.dbg("BatteryCare: disable aux batt charge")
+                charge_aux = false
+            elseif curr_aux_capacity < self.battery_care_aux_start_thr then
+                logger.dbg("BatteryCare: enable aux batt charge")
+                charge_aux = true
+            else
+                logger.dbg("BatteryCare: nochange aux batt charge")
+            end
         end
         if self.battery_care_balance_thr and curr_aux_capacity < self.battery_care_balance_thr then
             balance_batt = true
             if curr_capacity <= curr_aux_capacity then
-                logger.dbg("BatteryCare: batt lower or equal aux, enable charging")
+                logger.dbg("BatteryCare: batt lower or equal aux")
                 charge_batt = true
                 charge_aux = true
             else
-                logger.dbg("BatteryCare: batt higher than aux, disable charging")
+                logger.dbg("BatteryCare: batt higher than aux")
                 charge_batt = false
                 charge_aux = false
             end
