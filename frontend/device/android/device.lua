@@ -83,6 +83,7 @@ local Device = Generic:new{
     home_dir = android.getExternalStoragePath(),
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     isHapticFeedbackEnabled = yes,
+    isDefaultFullscreen = function() return android.app.activity.sdkVersion >= 19 end,
     hasClipboard = yes,
     hasOTAUpdates = android.ota.isEnabled,
     hasOTARunning = function() return android.ota.isRunning end,
@@ -366,8 +367,8 @@ function Device:_toggleFullscreenLegacy()
     android.setFullscreen(not is_fullscreen)
     G_reader_settings:saveSetting("disable_android_fullscreen", is_fullscreen)
 
-    is_fullscreen = android.isFullscreen()
-    if is_fullscreen then
+    self.fullscreen = android.isFullscreen()
+    if self.fullscreen then
         self:setViewport(0, 0, width, height)
     else
         self:setViewport(0, 0, available_width, available_height)
@@ -396,12 +397,14 @@ function Device:_toggleStatusBarVisibility()
     logger.info(string.format("Switching viewport to new geometry [x=%d,y=%d,w=%d,h=%d]",
         0, statusbar_height, width, new_height))
 
-    self:setViewport(viewport)
+    self.screen:setViewport(viewport)
     if is_fullscreen and self.viewport then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchTranslate,
             {x = 0 - self.viewport.x, y = 0 - self.viewport.y})
     end
+
+    self.fullscreen = is_fullscreen
 end
 
 function Device:isAlwaysFullscreen()
