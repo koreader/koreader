@@ -22,8 +22,12 @@ local T = require("ffi/util").template
 
 local powerd = Device:getPowerDevice()
 
--- xxx 15*60
-local WAKEUP_TIMER_SECONDS = 5*60 -- time for a scheduled wakeup, when a charger is connected
+ -- Time for a scheduled wakeup, when a charger is connected.
+ -- As long a charger is connected, we have no need for extensive power saving, so a shorter
+ -- time will help not to exceed the upper charge limit.
+ -- For example: on a Sage, with an noname charger we can expect around 1%/min. Charging on a poor
+ -- laptop might give us 0.5%/min or less.
+local WAKEUP_TIMER_SECONDS = 5*60
 
 local default_stop_thr = 95
 local default_start_thr = 80
@@ -151,25 +155,25 @@ function BatteryCare:scheduleWakeupCall(enabled)
     -- Schedule a wakeup if necessary, when going to suspend.
     local wakeup_timer_seconds
     if powerd:isCharging() then
-        -- If charging from an external charger or aux battery
+        -- If charging from an external charger or aux battery use the default value
         wakeup_timer_seconds = WAKEUP_TIMER_SECONDS
     else
         -- If _not_ charging ...
-        if powerd.device:hasAuxBattery() and powerd:isAuxBatteryConnected() and powerd:getAuxCapacityHW() then
+        if powerd.device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
             -- ... and with an aux battery for a _long_ sleeping period: It is desireable to load
             -- the internal battery (from the aux batt) if its capacity drops.
-            wakeup_timer_seconds = 6 * 3600 -- four times a day
+            wakeup_timer_seconds = 6 * 3600 -- four times a day, maybe this can be reduced to once a day
         else
-            -- ... an no aux battery present:  Don't wake.
+            -- ... an no aux battery present:  don't wake.
             wakeup_timer_seconds = nil
         end
     end
 
     if wakeup_timer_seconds then
-        logger.dbg("BatteryCare: scheduling a wakeup in", wakeup_timer_seconds)
+        logger.dbg("BatteryCare: scheduling wakeup in", wakeup_timer_seconds)
         WakeupManager:addTask(wakeup_timer_seconds, wakeupCall)
     else
-        logger.dbg("BatteryCare: scheduling a wakeup skipped")
+        logger.dbg("BatteryCare: scheduling wakeup skipped")
     end
 end
 
@@ -212,7 +216,7 @@ end
 function BatteryCare:onCharging()
     logger.dbg("BatteryCare: onCharging/onNotCharging")
     -- Give the firmware some time (at least less than standby time) to calculate the new state
-    UIManager:scheduleIn(1.5, self.task, self) -- task gets called in 1.5s and then schedules itself on a full minute
+    UIManager:scheduleIn(0.5, self.task, self) -- task gets called in 0.5s and then schedules itself on a full minute
 end
 
 BatteryCare.onNotCharging = BatteryCare.onCharging
@@ -226,11 +230,13 @@ function BatteryCare:setThresholds(touchmenu_instance, title, info, lower, upper
         left_default = lower_default,
         left_min = value_min or 10,
         left_max = 100,
+        left_hold_step = 5,
         right_text = _("Stop"),
         right_value = self[upper] or upper_default,
         right_default = upper_default,
         right_min = value_min or 50,
         right_max = 100,
+        right_hold_step = 5,
         unit = "%",
         ok_always_enabled = true,
         default_values = true,
@@ -474,7 +480,7 @@ function BatteryCare:task() -- the brain of batteryCare
         return
     end
 
-    logger.dbg("BatteryCare: battery", curr_capacity, " - ",
+    logger.dbg("BatteryCare: battery", curr_capacity, "-",
         self.battery_care_start_thr, self.battery_care_stop_thr)
 
     local charge_batt, charge_aux -- nil means, don't change state
@@ -492,27 +498,29 @@ function BatteryCare:task() -- the brain of batteryCare
         end
     end
 
-    if curr_aux_capacity and self.battery_care_aux_stop_thr and self.battery_care_aux_start_thr then
-        logger.dbg("BatteryCare: aux battery", curr_aux_capacity, " - ",
-            self.battery_care_aux_start_thr, self.battery_care_aux_stop_thr)
+    if curr_aux_capacity then
+        if self.battery_care_aux_stop_thr and self.battery_care_aux_start_thr then
+            logger.dbg("BatteryCare: aux battery", curr_aux_capacity, "-",
+                self.battery_care_aux_start_thr, self.battery_care_aux_stop_thr)
 
-        if curr_aux_capacity > self.battery_care_aux_stop_thr then
-            logger.dbg("BatteryCare: disable aux batt charge")
-            charge_aux = false
-        elseif curr_aux_capacity < self.battery_care_aux_start_thr then
-            logger.dbg("BatteryCare: enable aux batt charge")
-            charge_aux = true
-        else
-            logger.dbg("BatteryCare: nochange aux batt charge")
+            if curr_aux_capacity > self.battery_care_aux_stop_thr then
+                logger.dbg("BatteryCare: disable aux batt charge")
+                charge_aux = false
+            elseif curr_aux_capacity < self.battery_care_aux_start_thr then
+                logger.dbg("BatteryCare: enable aux batt charge")
+                charge_aux = true
+            else
+                logger.dbg("BatteryCare: nochange aux batt charge")
+            end
         end
         if self.battery_care_balance_thr and curr_aux_capacity < self.battery_care_balance_thr then
             balance_batt = true
             if curr_capacity <= curr_aux_capacity then
-                logger.dbg("BatteryCare: batt lower or equal aux, enable charging")
+                logger.dbg("BatteryCare: batt lower or equal aux")
                 charge_batt = true
                 charge_aux = true
             else
-                logger.dbg("BatteryCare: batt higher than aux, disable charging")
+                logger.dbg("BatteryCare: batt higher than aux")
                 charge_batt = false
                 charge_aux = false
             end

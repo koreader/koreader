@@ -244,8 +244,8 @@ end
 --- Enables or disables charging of batteries
 -- @param bool batt enables charging of the main battery
 -- @param bool aux_batt enables charging of an auxilliary battery
-function BasePowerD:charge(batt, aux_batt)
-    return self:chargeHW(batt, aux_batt)
+function BasePowerD:charge(batt, aux_batt, balance)
+    return self:chargeHW(batt, aux_batt, balance)
 end
 
 function BasePowerD:getAuxCapacity()
