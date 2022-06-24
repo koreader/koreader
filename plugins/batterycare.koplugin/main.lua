@@ -22,18 +22,18 @@ local T = require("ffi/util").template
 
 local powerd = Device:getPowerDevice()
 
+local default_stop_thr = 95
+local default_start_thr = 80 -- set this a bit lower as `default_aux_stop_thr`, for reasons (dc/dc step up efficiency ...)
+local default_aux_stop_thr = 95
+local default_aux_start_thr = 90
+local default_balance_thr = 25 -- balance if aux batt is below this
+
  -- Time for a scheduled wakeup, when a charger is connected.
  -- As long a charger is connected, we have no need for extensive power saving, so a shorter
  -- time will help not to exceed the upper charge limit.
  -- For example: on a Sage, with an noname charger we can expect around 1%/min. Charging on a poor
  -- laptop might give us 0.5%/min or less.
-local WAKEUP_TIMER_SECONDS = 5*60
-
-local default_stop_thr = 95
-local default_start_thr = 80
-local default_aux_stop_thr = 99
-local default_aux_start_thr = 95
-local default_balance_thr = 10
+local WAKEUP_TIMER_SECONDS = (100 - math.min(default_stop_thr, default_aux_stop_thr)) * 60
 
 local BatteryCare = WidgetContainer:new{
     name = "batterycare",
@@ -56,9 +56,10 @@ function BatteryCare:init()
     self.battery_care_balance_thr = G_reader_settings:readSetting("battery_care_balance_thr",
         default_balance_thr)
 
+    self.ui.menu:registerToMainMenu(self)
+
     self:task() -- Schedules itself, if BatteryCare is enabled.
 
-    self.ui.menu:registerToMainMenu(self)
 end
 
 function BatteryCare:onDispatcherRegisterActions()
@@ -122,9 +123,8 @@ function BatteryCare:onBatteryCareOnceToggle()
 end
 
 function BatteryCare:_schedule()
-    -- schedule the same time as footer update, to reduce wake ups.
+    -- schedule the same time as footer update, to reduce wakeups from standby.
     UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.task, self)
---        UIManager:scheduleIn(5, self.task, self) -- for testing xxx
 end
 
 function BatteryCare:_unschedule()
@@ -180,13 +180,13 @@ end
 function BatteryCare:onExit()
     logger.dbg("BatteryCare: onExit/onRestart/onReboot")
     self:_unschedule()
-    self:scheduleWakeupCall(false)
+    self:scheduleWakeupCall(false) -- no wakeup
     powerd:charge(true, true) -- restore default behaviour
 end
 
 BatteryCare.onRestart = BatteryCare.onExit
 BatteryCare.onReboot = BatteryCare.onExit
--- no BatteryCare.onPowerOff as we don't want the cover to be succed
+-- no BatteryCare.onPowerOff as we don't want the cover to be sucked out
 
 function BatteryCare:onEnterStandby()
     self:_unschedule()
@@ -198,7 +198,7 @@ end
 
 function BatteryCare:onSuspend()
     logger.dbg("BatteryCare: onSuspend")
-    self:task() -- check current state
+    self:task()
     self:_unschedule()
     self:scheduleWakeupCall(true)
 end
@@ -208,10 +208,7 @@ function BatteryCare:onResume()
     logger.dbg("BatteryCare: isCharging", tostring(powerd:isCharging()), "isAuxCharging", tostring(powerd:isAuxCharging()))
     self:scheduleWakeupCall(false)
     self:task() -- is not scheduled here
-    -- .. and give the firmware some time (at least less than standby time) to calculate the new state
---    UIManager:scheduleIn(0.5, self.task, self) -- task gets called in 0.5s and then schedules itself on a full minute
 end
-
 
 function BatteryCare:onCharging()
     logger.dbg("BatteryCare: onCharging/onNotCharging")
@@ -457,8 +454,7 @@ function BatteryCare:task() -- the brain of batteryCare
         return
     end
 
-    logger.dbg("BatteryCare: isCharging", tostring(powerd:isChargingHW()), "isAuxCharging",
-        tostring(powerd:isAuxChargingHW()))
+    logger.dbg("BatteryCare: isCharging", tostring(powerd:isChargingHW()), "isAuxCharging", tostring(powerd:isAuxChargingHW()))
 
     local curr_capacity = powerd:getCapacityHW()
 
