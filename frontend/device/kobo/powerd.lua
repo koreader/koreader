@@ -96,7 +96,7 @@ function KoboPowerD:init()
     self.is_charging_file = self.battery_sysfs .. "/status"
 
     if self.device:canControlCharge() then
-        self.aux_batt_charger = "/sys/class/misc/cilix/pin_ce"
+        -- self.aux_batt_charger = "/sys/class/misc/cilix/pin_ce" -- xxx not needed anymore
         self.battery_sysfs_charge_enable = "/sys/class/misc/cilix/glf72120_enable"
         self.aux_battery_sysfs_charge_enable = "/sys/class/misc/cilix/sy6974b/charge_enable"
         self.is_charger_present_file = "/sys/class/power_supply/battery/device/charger_type"
@@ -128,27 +128,22 @@ function KoboPowerD:init()
         -- and return a string about what's happening.
         function KoboPowerD:chargeHW(batt, aux_batt, balance)
             logger.dbg("Charger: batt", tostring(batt), "aux_batt", tostring(aux_batt))
-            local info = ""
 
-            -- early out
             if batt == nil and aux_batt == nil then
                 return "Charger: nothing to do"
             end
 
-            local charger_is_present = self:isChargerPresentHW()
+            local info
+            local is_charger_present = self:isChargerPresentHW()
+            local has_aux_battery = self.device:hasAuxBattery()
 
-            -- check if aux battery is connected without a charger
-            -- nil ... no aux battery
-            -- 0 ... aux battery with external charger
-            -- 1 ... aux battery no external charger (after a resume it stays at 1, maybe a firmware bug?)
-            local power_cover_status = self:unchecked_read_int_file(self.aux_batt_charger)
-            logger.dbg("Charger: power_cover_status", tostring(power_cover_status))
-            if power_cover_status == 1 and charger_is_present then
-                logger.dbg("Charger: power_cover_status forced to 0")
-                power_cover_status = 0 -- mitigate the mentioned firmware bug
+            -- When balancing is requested and a charger is connected, charge both batteries
+            if balance and is_charger_present then
+                batt = true
+                aux_batt = true
             end
 
-            if power_cover_status == 0 then -- aux batt plus ext charger
+            if has_aux_battery and is_charger_present then -- aux batt plus ext charger
                 info = "Charger: aux battery with external charger; "
                 if batt == true then
                     if aux_batt == true then
@@ -167,7 +162,7 @@ function KoboPowerD:init()
                     if aux_batt == true then
                         info = info .. "battery: no, aux: yes"
                         -- aux battery can only be charged together with internal battery on Sage
-                        if self:isChargerPresentHW() then
+                        if is_charger_present then
                             writeToSys("1", self.battery_sysfs_charge_enable)
                             writeToSys("1", self.aux_battery_sysfs_charge_enable)
                         end
@@ -183,7 +178,7 @@ function KoboPowerD:init()
                     if aux_batt == true then -- we can not charge aux batt alone
                         info = info .. "battery: xx,  aux: yes"
                         -- aux battery can only be charged together with internal battery on Sage
-                        if self:isChargerPresentHW() then
+                        if is_charger_present then
                             writeToSys("1", self.battery_sysfs_charge_enable)
                             writeToSys("1", self.aux_battery_sysfs_charge_enable)
                         end
@@ -196,7 +191,7 @@ function KoboPowerD:init()
                     end
 
                 end
-            elseif power_cover_status == 1 then -- aux batt no ext. charger
+            elseif has_aux_battery and not is_charger_present then -- aux batt no ext. charger
                 info = "Charger: aux battery, no external charger; "
                 if batt == true then
                     info = info .. "battery: yes, aux: yes"
@@ -210,11 +205,13 @@ function KoboPowerD:init()
                     writeToSys("1", self.aux_battery_sysfs_charge_enable)
                     writeToSys("0", self.otg_enable_file)
                 end
-            elseif power_cover_status == nil then -- only device, no aux battery
+            else -- only device, no aux battery
+                info = "Charger: only internal battery; "
                 if batt == true then
                     info = info .. "battery: yes"
                     writeToSys("1", self.battery_sysfs_charge_enable)
-                elseif batt == false then
+                elseif batt == false then -- this should really not happen
+                    logger.err("Charger: no batteries found. This is strange.")
                     info = info .. "battery: no"
                     writeToSys("0", self.battery_sysfs_charge_enable)
                 end
