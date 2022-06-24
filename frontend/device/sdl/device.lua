@@ -61,6 +61,7 @@ local Device = Generic:new{
     hasDPad = yes,
     hasWifiToggle = no,
     isTouchDevice = yes,
+    isDefaultFullscreen = no,
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
     hasEinkScreen = no,
@@ -127,6 +128,7 @@ local Emulator = Device:new{
 local UbuntuTouch = Device:new{
     model = "UbuntuTouch",
     hasFrontlight = yes,
+    isDefaultFullscreen = yes,
 }
 
 function Device:init()
@@ -310,6 +312,22 @@ function Device:setDateTime(year, month, day, hour, min, sec)
         return true
     else
         return false
+    end
+end
+
+function Device:isAlwaysFullscreen()
+    -- return true on embedded devices, which should default to fullscreen
+    return self:isDefaultFullscreen()
+end
+
+function Device:toggleFullscreen()
+    local current_mode = self.fullscreen or self:isDefaultFullscreen()
+    local new_mode = not current_mode
+    local ok, err = SDL.setWindowFullscreen(new_mode)
+    if not ok then
+        logger.warn("Unable to toggle fullscreen mode to", new_mode, "\n", err)
+    else
+        self.fullscreen = new_mode
     end
 end
 

@@ -236,6 +236,12 @@ if Device:canToggleGSensor() then
     end
 end
 
+if not Device:isAlwaysFullscreen() then
+    function DeviceListener:onToggleFullscreen()
+        Device:toggleFullscreen()
+    end
+end
+
 function DeviceListener:onIterateRotation()
     -- Simply rotate by 90° CW
     local arg = bit.band(Screen:getRotationMode() + 1, 3)

@@ -41,6 +41,7 @@ local Device = {
     hasFewKeys = no,
     hasWifiToggle = yes,
     hasWifiManager = no,
+    isDefaultFullscreen = yes,
     isHapticFeedbackEnabled = no,
     isTouchDevice = no,
     hasFrontlight = no,
@@ -395,6 +396,9 @@ function Device:setDateTime(year, month, day, hour, min, sec) end
 
 -- Device specific method if any setting needs being saved
 function Device:saveSettings() end
+
+function Device:isAlwaysFullscreen() return true end
+function Device:toggleFullscreen() end
 
 -- Simulates suspend/resume
 function Device:simulateSuspend() end
