@@ -454,8 +454,7 @@ function BatteryCare:task() -- the brain of batteryCare
         return
     end
 
-    logger.dbg("BatteryCare: isCharging", tostring(powerd:isChargingHW()), "isAuxCharging",
-        tostring(powerd:isAuxChargingHW()))
+    logger.dbg("BatteryCare: isCharging", tostring(powerd:isChargingHW()), "isAuxCharging", tostring(powerd:isAuxChargingHW()))
 
     local curr_capacity = powerd:getCapacityHW()
 
