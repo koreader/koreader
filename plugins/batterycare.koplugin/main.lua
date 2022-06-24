@@ -228,11 +228,13 @@ function BatteryCare:setThresholds(touchmenu_instance, title, info, lower, upper
         left_max = 100,
         right_text = _("Stop"),
         right_value = self[upper] or upper_default,
-        left_upper = upper_default,
+        right_default = upper_default,
         right_min = value_min or 50,
         right_max = 100,
         unit = "%",
         ok_always_enabled = true,
+        default_values = true,
+        is_range = true,
         callback = function(left_value, right_value)
             if left_value > right_value then
                 left_value = right_value
@@ -264,7 +266,7 @@ function BatteryCare:setAuxMin(touchmenu_instance, title, info, setting, value_d
         title_text = title,
         info_text = info,
         value = self[setting] or value_default,
-        default = value_default,
+        default_value = value_default,
         value_min = value_min,
         value_max = value_max,
         value_hold_step = 5,
