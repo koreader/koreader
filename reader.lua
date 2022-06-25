@@ -13,13 +13,19 @@ io.stdout:write([[
  [*] Current time: ]], os.date("%x-%X"), "\n")
 io.stdout:flush()
 
+-- Set up Lua and ffi search paths
+require("setupkoenv")
+
+-- Apply startup user patches and execute startup user scripts
+local userpatch = require("userpatch")
+userpatch.applyPatches(userpatch.early_once)
+userpatch.applyPatches(userpatch.early)
+
 -- Load default settings
 require("defaults")
 local DataStorage = require("datastorage")
 pcall(dofile, DataStorage:getDataDir() .. "/defaults.persistent.lua")
 
--- Set up Lua and ffi search paths
-require("setupkoenv")
 
 io.stdout:write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
 io.stdout:flush()
@@ -205,6 +211,9 @@ end
 
 local UIManager = require("ui/uimanager")
 
+-- Apply developer patches
+userpatch.applyPatches(userpatch.late)
+
 -- Inform once about color rendering on newly supported devices
 -- (there are some android devices that may not have a color screen,
 -- and we are not (yet?) able to guess that fact)
@@ -363,6 +372,13 @@ local function exitReader()
     end
 end
 
-local ret = exitReader()
+-- Apply before_exit patches and execute user scripts
+userpatch.applyPatches(userpatch.before_exit)
+
+local reader_retval = exitReader()
+
+-- Apply exit user patches and execute user scripts
+userpatch.applyPatches(userpatch.on_exit)
+
 -- Close the Lua state on exit
-os.exit(ret, true)
+os.exit(reader_retval, true)

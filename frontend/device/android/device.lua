@@ -460,7 +460,7 @@ end
 
 function Device:canExecuteScript(file)
     local file_ext = string.lower(util.getFileNameSuffix(file))
-    if android.prop.flavor ~= "fdroid" and file_ext == "sh"  then
+    if android.prop.flavor ~= "fdroid" and file_ext == "sh" then
         return true
     end
 end
