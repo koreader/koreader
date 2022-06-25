@@ -103,9 +103,9 @@ endif
 ifdef ANDROID
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
-	@echo "[*] Install afterupdate marker"
-	@echo "# If this file is here, there are no afterupdate scripts in /sdcard/koreader/scripts/afterupdate." > $(INSTALL_DIR)/koreader/afterupdate.marker
 endif
+	@echo "[*] Install update once marker"
+	@echo "# This file indicates that update once patches have not been applied yet." > $(INSTALL_DIR)/koreader/update_once.marker
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
