@@ -1,6 +1,7 @@
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local KeyValuePage = require("ui/widget/keyvaluepage")
+local Math = require("optmath")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local time = require("ui/time")
@@ -45,15 +46,27 @@ function SystemStat:appendCounters()
     if self.resume_sec then
         self:put({_("  Last resume time"), os.date("%c", self.resume_sec)})
     end
+    local uptime = os.difftime(os.time(), self.start_sec)
+    local suspend = 0
+    if Device:canSuspend() then
+        suspend = time.to_number(Device.total_suspend_time)
+    end
+    local standby = 0
+    if Device:canStandby() then
+        standby = time.to_number(Device.total_standby_time)
+    end
     self:put({"  " .. _("Up time"),
-            util.secondsToClockDuration("", os.difftime(os.time(), self.start_sec), false, true, true)})
+            util.secondsToClockDuration("", uptime, false, true, true)
+            .. " (" .. Math.round(((uptime - suspend - standby) / uptime) * 100) .. "%)"})
     if Device:canSuspend() then
         self:put({"  " .. _("Time in suspend"),
-            util.secondsToClockDuration("", time.to_number(Device.total_suspend_time), false, true, true)})
+            util.secondsToClockDuration("", suspend, false, true, true)
+            .. " (" .. Math.round((suspend / uptime) * 100) .. "%)"})
     end
     if Device:canStandby() then
         self:put({"  " .. _("Time in standby"),
-            util.secondsToClockDuration("", time.to_number(Device.total_standby_time), false, true, true)})
+            util.secondsToClockDuration("", standby, false, true, true)
+            .. " (" .. Math.round((standby / uptime) * 100) .. "%)"})
     end
     self:put({_("Counters"), ""})
     self:put({_("  wake-ups"), self.wakeup_count})
