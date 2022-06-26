@@ -29,7 +29,7 @@ local function convertSizeTo(px, format)
         format_factor = 1 / 25.4
     end
 
-    local display_dpi = Device:getDisplayDPI() or Screen:getDPI() -- use device hardcoded dpi if available
+    local display_dpi = Device:getDeviceScreenDPI() or Screen:getDPI() -- use device hardcoded dpi if available
     return Screen:scaleBySize(px) / display_dpi * 25.4 * format_factor
 end
 
