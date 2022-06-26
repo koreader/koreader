@@ -29,6 +29,18 @@ function SystemStat:init()
     elseif Device:isSDL() then
         self.storage_filter = "/dev/sd"
     end
+
+    -- Account for a start-up mid-charge
+    local powerd = Device:getPowerDevice()
+    if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+        if powerd:isAuxCharging() and not powerd:isAuxCharged() then
+            self.charge_count = self.charge_count + 1
+        end
+    else
+        if powerd:isCharging() and not powerd:isCharged() then
+            self.charge_count = self.charge_count + 1
+        end
+    end
 end
 
 function SystemStat:put(p)
