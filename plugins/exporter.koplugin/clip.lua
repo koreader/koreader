@@ -55,7 +55,7 @@ function MyClipping:parseMyClippings()
         for line in file:lines() do
             line = line:match("^%s*(.-)%s*$") or ""
             if index == 1 then
-                title, author = self:getTitle(line)
+                title, author = self:parseTitleFromPath(line)
                 clippings[title] = clippings[title] or {
                     title = title,
                     author = author,
@@ -307,7 +307,7 @@ function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
             return
         end
         local _, docname = util.splitFilePathName(doc_file)
-        local title, author = self:getTitle(util.splitFileNameSuffix(docname), doc_file)
+        local title, author = self:parseTitleFromPath(util.splitFileNameSuffix(docname), doc_file)
         clippings[title] = {
             file = doc_file,
             title = title,
