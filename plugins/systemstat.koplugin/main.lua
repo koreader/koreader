@@ -9,9 +9,9 @@ local util = require("util")
 local _ = require("gettext")
 
 local SystemStat = {
-    start_sec = os.time(),
-    suspend_sec = nil,
-    resume_sec = nil,
+    start_time = time.realtime(),
+    suspend_time = nil,
+    resume_time = nil,
     wakeup_count = 0,
     sleep_count = 0,
     charge_count = 0,
@@ -39,24 +39,24 @@ function SystemStat:putSeparator()
 end
 
 function SystemStat:appendCounters()
-    self:put({_("KOReader started at"), os.date("%c", self.start_sec)})
-    if self.suspend_sec then
-       self:put({_("  Last suspend time"), os.date("%c", self.suspend_sec)})
+    self:put({_("KOReader started at"), os.date("%c", time.to_s(self.start_time))})
+    if self.suspend_time then
+       self:put({_("  Last suspend time"), os.date("%c", time.to_s(self.suspend_time))})
     end
-    if self.resume_sec then
-        self:put({_("  Last resume time"), os.date("%c", self.resume_sec)})
+    if self.resume_time then
+        self:put({_("  Last resume time"), os.date("%c", time.to_s(self.resume_time))})
     end
-    local uptime = os.difftime(os.time(), self.start_sec)
+    local uptime = time.realtime() - self.start_time
     local suspend = 0
     if Device:canSuspend() then
-        suspend = time.to_number(Device.total_suspend_time)
+        suspend = Device.total_suspend_time
     end
     local standby = 0
     if Device:canStandby() then
-        standby = time.to_number(Device.total_standby_time)
+        standby = Device.total_standby_time
     end
     self:put({"  " .. _("Up time"),
-            util.secondsToClockDuration("", uptime, false, true, true)})
+            util.secondsToClockDuration("", time.to_s(uptime), false, true, true)})
     if Device:canSuspend() or Device:canStandby() then
         local awake = uptime - suspend - standby
         self:put({"  " .. _("Time spent awake"),
@@ -65,12 +65,12 @@ function SystemStat:appendCounters()
     end
     if Device:canSuspend() then
         self:put({"  " .. _("Time in suspend"),
-            util.secondsToClockDuration("", suspend, false, true, true)
+            util.secondsToClockDuration("", time.to_s(suspend), false, true, true)
             .. " (" .. Math.round((suspend / uptime) * 100) .. "%)"})
     end
     if Device:canStandby() then
         self:put({"  " .. _("Time in standby"),
-            util.secondsToClockDuration("", standby, false, true, true)
+            util.secondsToClockDuration("", time.to_s(standby), false, true, true)
             .. " (" .. Math.round((standby / uptime) * 100) .. "%)"})
     end
     self:put({_("Counters"), ""})
@@ -244,12 +244,12 @@ function SystemStat:appendStorageInfo()
 end
 
 function SystemStat:onSuspend()
-    self.suspend_sec = os.time()
+    self.suspend_time = time.realtime()
     self.sleep_count = self.sleep_count + 1
 end
 
 function SystemStat:onResume()
-    self.resume_sec = os.time()
+    self.resume_time = time.realtime()
     self.wakeup_count = self.wakeup_count + 1
 end
 
