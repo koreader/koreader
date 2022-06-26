@@ -56,8 +56,13 @@ function SystemStat:appendCounters()
         standby = time.to_number(Device.total_standby_time)
     end
     self:put({"  " .. _("Up time"),
-            util.secondsToClockDuration("", uptime, false, true, true)
-            .. " (" .. Math.round(((uptime - suspend - standby) / uptime) * 100) .. "%)"})
+            util.secondsToClockDuration("", uptime, false, true, true)})
+    if Device:canSuspend() or Device:canStandby() then
+        local awake = uptime - suspend - standby
+        self:put({"  " .. _("Time spent awake"),
+            util.secondsToClockDuration("", awake, false, true, true)
+            .. " (" .. Math.round((awake / uptime) * 100) .. "%)"})
+    end
     if Device:canSuspend() then
         self:put({"  " .. _("Time in suspend"),
             util.secondsToClockDuration("", suspend, false, true, true)
