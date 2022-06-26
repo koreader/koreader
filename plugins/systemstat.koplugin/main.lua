@@ -10,6 +10,7 @@ local _ = require("gettext")
 
 local SystemStat = {
     start_time = time.realtime(),
+    start_monotonic_time = time.boottime_or_realtime(),
     suspend_time = nil,
     resume_time = nil,
     wakeup_count = 0,
@@ -46,7 +47,7 @@ function SystemStat:appendCounters()
     if self.resume_time then
         self:put({_("  Last resume time"), os.date("%c", time.to_s(self.resume_time))})
     end
-    local uptime = time.realtime() - self.start_time
+    local uptime = time.boottime_or_realtime() - self.start_monotonic_time
     local suspend = 0
     if Device:canSuspend() then
         suspend = Device.total_suspend_time
