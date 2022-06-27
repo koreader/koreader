@@ -64,10 +64,14 @@ function AutoSuspend:_schedule(shutdown_only)
     -- On devices with an auxiliary battery, we only care about the auxiliary battery being charged...
     local powerd = Device:getPowerDevice()
     if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
-        is_charging = powerd:isAuxCharging()
+        is_charging = powerd:isAuxCharging() and not powerd:isAuxCharged()
     else
-        is_charging = powerd:isCharging()
+        is_charging = powerd:isCharging() and not powerd:isCharged()
     end
+    -- We *do* want to make sure we attempt to go into suspend/shutdown again while *fully* charged, though.
+    -- FIXME: Suspend is tricky on Kobo, though.
+    --        Need to do something on unplug to make sure we reset & unschedule the unexpected wakeup shenanigans,
+    --        *and* that we reschedule both of these properly...
     if PluginShare.pause_auto_suspend or is_charging then
         suspend_delay_seconds = self.auto_suspend_timeout_seconds
         shutdown_delay_seconds = self.autoshutdown_timeout_seconds
