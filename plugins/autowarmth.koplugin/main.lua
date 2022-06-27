@@ -329,13 +329,10 @@ end
 -- Set warmth and schedule the next warmth change
 function AutoWarmth:setWarmth(val, schedule_next)
     if val then
-        if val > 100 then
-            DeviceListener:onSetNightMode(true)
-        else
-            DeviceListener:onSetNightMode(false)
-        end
+        DeviceListener:onSetNightMode(val > 100)
+
         if Device:hasNaturalLight() then
-            val = math.min(val, 100)
+            val = math.min(val, 100) -- "mask" night mode
             Device.powerd:setWarmth(val)
         end
     end
