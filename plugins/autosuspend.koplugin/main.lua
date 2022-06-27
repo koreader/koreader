@@ -46,7 +46,7 @@ function AutoSuspend:_enabledStandby()
 end
 
 function AutoSuspend:_enabled()
-    return self.auto_suspend_timeout_seconds > 0
+    return Device:canSuspend() and self.auto_suspend_timeout_seconds > 0
 end
 
 function AutoSuspend:_enabledShutdown()
