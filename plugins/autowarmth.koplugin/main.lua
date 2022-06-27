@@ -117,7 +117,7 @@ function AutoWarmth:onAutoWarmthMode()
     self:scheduleMidnightUpdate()
 end
 
-function AutoWarmth:onResume()
+function AutoWarmth:leavePowerSavingState(from_resume)
     if self.activate == 0 then return end
 
     logger.dbg("AutoWarmth: onResume/onLeaveStandby")
@@ -127,15 +127,21 @@ function AutoWarmth:onResume()
     if resume_date.day == SunTime.date.day and resume_date.month == SunTime.date.month
         and resume_date.year == SunTime.date.year then
         local now = SunTime:getTimeInSec(resume_date)
-        self:scheduleNextWarmthChange(now, self.sched_warmth_index)
+        self:scheduleNextWarmthChange(now, self.sched_warmth_index, from_resume)
         -- reschedule 5sec after midnight
         UIManager:scheduleIn(24*3600 + 5 - now, self.scheduleMidnightUpdate, self)
     else
-        self:scheduleMidnightUpdate() -- resume is on the other day, do all calcs again
+        self:scheduleMidnightUpdate(from_resume) -- resume is on the other day, do all calcs again
     end
 end
 
-AutoWarmth.onLeaveStandby = AutoWarmth.onResume
+function AutoWarmth:onResume()
+    self:leavePowerSavingState(true)
+end
+
+function AutoWarmth:onLeaveStandby()
+    self:leavePowerSavingState(false)
+end
 
 <<<<<<< HEAD
 -- wrapper for unscheduling, so that only our setWarmth gets unscheduled
@@ -161,7 +167,8 @@ end
 
 AutoWarmth.onEnterStandby = AutoWarmth.onSuspend
 
-function AutoWarmth:scheduleMidnightUpdate()
+-- from_resume ... true if called from onResume
+function AutoWarmth:scheduleMidnightUpdate(from_resume)
     logger.dbg("AutoWarmth: scheduleMidnightUpdate")
     -- first unschedule all old functions
     UIManager:unschedule(self.scheduleMidnightUpdate)
@@ -261,12 +268,13 @@ function AutoWarmth:scheduleMidnightUpdate()
     -- reschedule 5sec after midnight
     UIManager:scheduleIn(24*3600 + 5 - now, self.scheduleMidnightUpdate, self)
     -- and schedule the first warmth change
-    self:scheduleNextWarmthChange(now, 1)
+    self:scheduleNextWarmthChange(now, 1, from_resume)
 end
 
 -- schedules the next warmth change
 -- search_pos ... start searching from that index
-function AutoWarmth:scheduleNextWarmthChange(time, search_pos)
+-- from_resume ... true if first call after resume
+function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
     logger.dbg("AutoWarmth: scheduleWarmthChange")
     if UIManager:unschedule(AutoWarmth.setWarmth) then
         logger.err("AutoWarmth: abnormal unschedule, time changed?")
@@ -293,27 +301,30 @@ function AutoWarmth:scheduleNextWarmthChange(time, search_pos)
     for i = self.sched_warmth_index, #self.sched_warmths do
         if self.sched_times[i] <= time then
             actual_warmth = self.sched_warmths[i] or actual_warmth
+            if self.sched_times[i] <= time + delay_time then
+                next_warmth = self.sched_warmths[i] or next_warmth
+            end
         else
             self.sched_warmth_index = i
             break
         end
-        if self.sched_times[i] <= time + delay_time then
-            next_warmth = self.sched_warmths[i] or next_warmth
-        end
     end
     -- update current warmth immediately
-    self:setWarmth(actual_warmth) -- no setWarmth rescheduling
-    if self.sched_warmth_index and self.sched_warmth_index <= #self.sched_warmths then
+    self:setWarmth(actual_warmth, false) -- no setWarmth rescheduling
+    if self.sched_warmth_index <= #self.sched_warmths then
         -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
         UIManager:scheduleIn(self.sched_times[self.sched_warmth_index] - time,
                 self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
     end
 
-    -- On some strange devices like KA1 the above doesn't work right after a resume so
-    -- schedule setting of another valid warmth (=`next_warmth`) again (one time).
-    -- On sane devices this schedule does no harm.
-    -- see https://github.com/koreader/koreader/issues/8363
-    UIManager:scheduleIn(delay_time, self.setWarmth, self, next_warmth, true) -- no setWarmth rescheduling
+    if from_resume then
+        -- On some strange devices like KA1 setWarmth doesn't work right after a resume so
+        -- schedule setting of another valid warmth (=`next_warmth`) again (one time).
+        -- On sane devices this schedule does no harm.
+        -- see https://github.com/koreader/koreader/issues/8363
+        UIManager:scheduleIn(delay_time, self.setWarmth, self, next_warmth, true) -- no setWarmth rescheduling
+    end
+end
 
 -- Set warmth and schedule the next warmth change
 function AutoWarmth:setWarmth(val, schedule_next)
@@ -330,7 +341,7 @@ function AutoWarmth:setWarmth(val, schedule_next)
     end
     if schedule_next then
         local now = SunTime:getTimeInSec()
-        self:scheduleNextWarmthChange(now, self.sched_warmth_index + 1)
+        self:scheduleNextWarmthChange(now, self.sched_warmth_index, false)
     end
 >>>>>>> e1e8b8c5 (Reduce schedulings for power saving)
 end
