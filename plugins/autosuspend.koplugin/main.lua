@@ -607,7 +607,9 @@ function AutoSuspend:AllowStandbyHandler()
         -- because if we were woken up by user input, those events should already be in the evdev queue...
         UIManager:consumeInputEarlyAfterPM(true)
     else
-        self:_start_standby()
+        if not self.going_to_suspend then
+            self:_start_standby()
+        end
     end
 end
 
