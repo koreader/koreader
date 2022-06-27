@@ -311,10 +311,10 @@ function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
     end
     -- update current warmth immediately
     self:setWarmth(actual_warmth, false) -- no setWarmth rescheduling
-    if self.sched_warmth_index <= #self.sched_warmths then
+    local next_sched_time = self.sched_times[self.sched_warmth_index] - time
+    if self.sched_warmth_index <= #self.sched_warmths and next_sched_time > 0 then
         -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
-        UIManager:scheduleIn(self.sched_times[self.sched_warmth_index] - time,
-                self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
+        UIManager:scheduleIn(next_sched_time, self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
     end
 
     if from_resume then
@@ -452,11 +452,7 @@ function AutoWarmth:getActivateMenu()
             help_text = help_text,
             checked_func = function() return self.activate == activator end,
             callback = function()
-                if self.activate ~= activator then
-                    self.activate = activator
-                else
-                    self.activate = 0
-                end
+                self.activate = self.activate ~= activator and activator or 0
                 G_reader_settings:saveSetting("autowarmth_activate", self.activate)
                 self:scheduleMidnightUpdate()
             end,
