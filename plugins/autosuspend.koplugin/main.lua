@@ -69,9 +69,6 @@ function AutoSuspend:_schedule(shutdown_only)
         is_charging = powerd:isCharging() and not powerd:isCharged()
     end
     -- We *do* want to make sure we attempt to go into suspend/shutdown again while *fully* charged, though.
-    -- FIXME: Suspend is tricky on Kobo, though.
-    --        Need to do something on unplug to make sure we reset & unschedule the unexpected wakeup shenanigans,
-    --        *and* that we reschedule both of these properly...
     if PluginShare.pause_auto_suspend or is_charging then
         suspend_delay_seconds = self.auto_suspend_timeout_seconds
         shutdown_delay_seconds = self.autoshutdown_timeout_seconds
@@ -352,6 +349,14 @@ function AutoSuspend:onUnexpectedWakeupLimit()
     logger.dbg("AutoSuspend: onUnexpectedWakeupLimit")
     -- Only re-engage the *shutdown* schedule to avoid doing the same dance indefinitely.
     self:_restart()
+end
+
+function AutoSuspend:onNotCharging()
+    logger.dbg("AutoSuspend: onNotCharging")
+    -- Make sure both the suspend & shutdown timers are re-engaged on unplug,
+    -- in case we hit an UnexpectedWakeupLimit during the charge cycle...
+    self:_unschedule()
+    self:_start()
 end
 
 -- time_scale:

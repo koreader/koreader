@@ -173,6 +173,7 @@ function UIManager:init()
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
         end
+        -- USB plug events with a power-only charger
         self.event_handlers["Charging"] = function()
             self:_beforeCharging()
             -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
@@ -182,11 +183,13 @@ function UIManager:init()
         end
         self.event_handlers["NotCharging"] = function()
             -- We need to put the device into suspension, other things need to be done before it.
+            Device:usbPlugOut()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
             end
         end
+        -- USB plug events with a data-aware host
         self.event_handlers["UsbPlugIn"] = function()
             self:_beforeCharging()
             -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
@@ -200,6 +203,7 @@ function UIManager:init()
         end
         self.event_handlers["UsbPlugOut"] = function()
             -- We need to put the device into suspension, other things need to be done before it.
+            Device:usbPlugOut()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()

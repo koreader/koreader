@@ -1076,6 +1076,11 @@ function Kobo:resume()
     self:setupChargingLED()
 end
 
+function Kobo:usbPlugOut()
+    -- Reset the unexpected wakeup shenanigans, since we're no longer charging, meaning power savings are now critical again ;).
+    self.unexpected_wakeup_count = 0
+end
+
 function Kobo:saveSettings()
     -- save frontlight state to G_reader_settings (and NickelConf if needed)
     self.powerd:saveSettings()
