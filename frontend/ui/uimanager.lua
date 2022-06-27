@@ -382,6 +382,14 @@ function UIManager:init()
             Device:simulateResume()
             self:_afterResume()
         end
+        self.event_handlers["PowerRelease"] = function()
+            -- Resume if we were suspended
+            if Device.screen_saver_mode then
+                self:resume()
+            else
+                self:suspend()
+            end
+        end
     end
 end
 
