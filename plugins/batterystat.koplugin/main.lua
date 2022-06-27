@@ -7,6 +7,7 @@ local PowerD = require("device"):getPowerDevice()
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dbg = require("dbg")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 
@@ -18,13 +19,13 @@ function State:new(o)
     self.__index = self
     if o.percentage == nil or o.timestamp == nil then
         o.percentage = PowerD:getCapacityHW()
-        o.timestamp = os.time()
+        o.timestamp = time.boottime_or_realtime_coarse()
     end
     return o
 end
 
 function State:toString()
-    return string.format("{%d @ %s}", self.percentage, os.date("%c", self.timestamp))
+    return string.format("{%d @ %s}", self.percentage, os.date("%c", time.to_s(self.timestamp)))
 end
 
 local Usage = {}
@@ -44,14 +45,14 @@ end
 function Usage:append(state)
     local curr = State:new()
     self.percentage = self.percentage + math.abs(state.percentage - curr.percentage)
-    self.time = self.time + os.difftime(curr.timestamp - state.timestamp)
+    self.time = self.time + curr.timestamp - state.timestamp
 end
 
 function Usage:percentageRate()
     if self.time == 0 then
         return 0
     else
-        return self.percentage / self.time
+        return self.percentage / time.to_s(self.time)
     end
 end
 
@@ -84,7 +85,7 @@ end
 
 function Usage:dump(kv_pairs, id)
     local name = id or _("Consumed:")
-    table.insert(kv_pairs, {INDENTATION .. _("Total time:"), duration(self.time) })
+    table.insert(kv_pairs, {INDENTATION .. _("Total time:"), duration(time.to_s(self.time)) })
     table.insert(kv_pairs, {INDENTATION .. name, shorten(self.percentage), "%"})
     table.insert(kv_pairs, {INDENTATION .. _("Change per hour:"), shorten(self:percentageRatePerHour())})
 end
