@@ -70,7 +70,6 @@ local Device = Generic:new{
     startTextInput = SDL.startTextInput,
     stopTextInput = SDL.stopTextInput,
     canOpenLink = getLinkOpener,
-    canControlCharge = yes, -- development of batteryCare
     openLink = function(self, link)
         local enabled, tool = getLinkOpener()
         if not enabled or not tool or not link or type(link) ~= "string" then return end
@@ -123,6 +122,7 @@ local Emulator = Device:new{
     canPowerOff = yes,
     canReboot = yes,
     canSuspend = yes,
+    canControlCharge = yes, -- for development of batteryCare
 }
 
 local UbuntuTouch = Device:new{
