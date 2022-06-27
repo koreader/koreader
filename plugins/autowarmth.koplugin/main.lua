@@ -287,11 +287,11 @@ function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
     self.sched_warmth_index = search_pos or 1
 
     -- `actual_warmth` is the value which should be applied now.
-    -- `next_warmth` is valid `delay_time` seconds after now for resume on some devices (KA1)
+    -- `next_warmth` is valid `delay_s` seconds after now for resume on some devices (KA1)
     -- Most of the times this will be the same as `actual_warmth`.
     -- We need both, as we could have a very rapid change in warmth (depending on user settings)
     -- or by chance a change in warmth very shortly after (a few ms) resume time.
-    local delay_time = 1.5
+    local delay_s = 1.5
     -- Use the last warmth value, so that we have a valid value when resuming after 24:00 but
     -- before true midnight. OK, this value is actually not quite the right one, as it is calculated
     -- for the current day (and not the previous one), but this is for a corner case
@@ -301,7 +301,7 @@ function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
     for i = self.sched_warmth_index, #self.sched_warmths do
         if self.sched_times[i] <= time then
             actual_warmth = self.sched_warmths[i] or actual_warmth
-            if self.sched_times[i] <= time + delay_time then
+            if self.sched_times[i] <= time + delay_s then
                 next_warmth = self.sched_warmths[i] or next_warmth
             end
         else
@@ -322,7 +322,7 @@ function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
         -- schedule setting of another valid warmth (=`next_warmth`) again (one time).
         -- On sane devices this schedule does no harm.
         -- see https://github.com/koreader/koreader/issues/8363
-        UIManager:scheduleIn(delay_time, self.setWarmth, self, next_warmth, true) -- no setWarmth rescheduling
+        UIManager:scheduleIn(delay_s, self.setWarmth, self, next_warmth, true) -- no setWarmth rescheduling
     end
 end
 
