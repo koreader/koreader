@@ -339,11 +339,13 @@ function Emulator:simulateSuspend()
     local Screensaver = require("ui/screensaver")
     Screensaver:setup()
     Screensaver:show()
+    self.screen_saver_mode = true
 end
 
 function Emulator:simulateResume()
     local Screensaver = require("ui/screensaver")
     Screensaver:close()
+    self.screen_saver_mode = false
 end
 
 -- fake network manager for the emulator
