@@ -239,6 +239,12 @@ function UIManager:init()
             Device:usbPlugOut()
             self:_afterNotCharging()
         end
+        self.event_handlers["WakeupFromSuspend"] = function()
+            Device:wakeupFromSuspend()
+        end
+        self.event_handlers["ReadyToSuspend"] = function()
+            Device:readyToSuspend()
+        end
     elseif Device:isRemarkable() then
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
