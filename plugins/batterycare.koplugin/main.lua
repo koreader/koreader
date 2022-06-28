@@ -217,6 +217,8 @@ function BatteryCare:onCharging()
 end
 
 BatteryCare.onNotCharging = BatteryCare.onCharging
+BatteryCare.onUsbPlugIn = BatteryCare.onCharging
+BatteryCare.onUsbPlugOut = BatteryCare.onCharging
 
 function BatteryCare:setThresholds(touchmenu_instance, title, info, lower, upper, lower_default, upper_default, value_min)
     local threshold_spinner = DoubleSpinWidget:new {
