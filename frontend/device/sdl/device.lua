@@ -120,6 +120,7 @@ local Emulator = Device:new{
     hasNaturalLightApi = yes,
     hasWifiToggle = yes,
     hasWifiManager = yes,
+    -- Not really, Device:reboot & Device:powerOff are not implemented, so we just exit ;).
     canPowerOff = yes,
     canReboot = yes,
     -- NOTE: Via simulateSuspend
