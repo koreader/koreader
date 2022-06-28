@@ -273,6 +273,18 @@ function Kindle:usbPlugOut()
     self.charging_mode = false
 end
 
+function Kindle:wakeupFromSuspend()
+    logger.warn("Kindle wakeupFromSuspend")
+    if not self:supportsScreensaver() then return end
+    -- Check for wakeup alarm rtc
+end
+
+function Kindle:readyToSuspend()
+    logger.warn("Kindle readyToSuspend")
+    if not self:supportsScreensaver() then return end
+    -- Set rtc if requested
+end
+
 function Kindle:ambientBrightnessLevel()
     local haslipc, lipc = pcall(require, "liblipclua")
     if not haslipc or lipc == nil then return 0 end
