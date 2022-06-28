@@ -275,6 +275,14 @@ function Kindle:usbPlugOut()
     self.charging_mode = false
 end
 
+function Kindle:wakeupFromSuspend()
+    self.powerd:wakeupFromSuspend()
+end
+
+function Kindle:readyToSuspend()
+    self.powerd:readyToSuspend()
+end
+
 function Kindle:ambientBrightnessLevel()
     local haslipc, lipc = pcall(require, "liblipclua")
     if not haslipc or lipc == nil then return 0 end
