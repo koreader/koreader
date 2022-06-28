@@ -37,6 +37,7 @@ local Remarkable = Generic:new{
     hasOTAUpdates = yes,
     canReboot = yes,
     canPowerOff = yes,
+    canSuspend = yes,
     isTouchDevice = yes,
     hasFrontlight = no,
     hasSystemFonts = yes,

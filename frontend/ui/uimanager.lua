@@ -1794,11 +1794,11 @@ Executes all the operations of a suspension (i.e., sleep) request.
 This function usually puts the device into suspension.
 ]]
 function UIManager:suspend()
-    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
+    if self.event_handlers["Suspend"] then
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
         Device.powerd:toggleSuspend()
-    elseif Device.isPocketBook() and Device.canSuspend() then
+    elseif Device.canSuspend() then
         Device:suspend()
     end
 end
@@ -1813,7 +1813,7 @@ function UIManager:resume()
     -- invalidate the last battery capacity pull time so that we get up to date data immediately.
     Device:getPowerDevice():invalidateCapacityCache()
 
-    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
+    if self.event_handlers["Resume"] then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()

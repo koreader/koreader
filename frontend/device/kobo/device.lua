@@ -72,6 +72,7 @@ local Kobo = Generic:new{
     canStandby = no, -- will get updated by checkStandby()
     canReboot = yes,
     canPowerOff = yes,
+    canSuspend = yes,
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
     -- most Kobos have also mirrored X coordinates

@@ -1,12 +1,7 @@
 local Device = require("device")
 
-if not Device:isCervantes() and
-    not Device:isKindle() and
-    not Device:isKobo() and
-    not Device:isRemarkable() and
-    not Device:isSDL() and
-    not Device:isSonyPRSTUX() and
-    not Device:isPocketBook() then
+-- Any device that can Suspend can also at least power off  ;).
+if not Device:canSuspend() then
     return { disabled = true, }
 end
 
@@ -135,8 +130,6 @@ function AutoSuspend:init()
     -- Disabled, until the user opts in.
     self.auto_standby_timeout_seconds = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1)
 
-    if Device:isPocketBook() and not Device:canSuspend() then return end
-
     -- We only want those to exist as *instance* members
     self.is_standby_scheduled = false
     self.going_to_suspend = false
@@ -179,7 +172,6 @@ end
 -- NOTE: event_hook takes care of overloading this to unregister the hook, too.
 function AutoSuspend:onCloseWidget()
     logger.dbg("AutoSuspend: onCloseWidget")
-    if Device:isPocketBook() and not Device:canSuspend() then return end
 
     self:_unschedule()
     self.task = nil
@@ -473,32 +465,34 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
 end
 
 function AutoSuspend:addToMainMenu(menu_items)
-    menu_items.autosuspend = {
-        sorting_hint = "device",
-        checked_func = function()
-            return self:_enabled()
-        end,
-        text_func = function()
-            if self.auto_suspend_timeout_seconds and self.auto_suspend_timeout_seconds > 0 then
-                local time_string = util.secondsToClockDuration("modern",
-                    self.auto_suspend_timeout_seconds, true, true, true)
-                return T(_("Autosuspend timeout: %1"), time_string)
-            else
-                return _("Autosuspend timeout")
-            end
-        end,
-        keep_menu_open = true,
-        callback = function(touchmenu_instance)
-            -- 60 sec (1') is the minimum and 24*3600 sec (1day) is the maximum suspend time.
-            -- A suspend time of one day seems to be excessive.
-            -- But it might make sense for battery testing.
-            self:pickTimeoutValue(touchmenu_instance,
-                _("Timeout for autosuspend"), _("Enter time in hours and minutes."),
-                "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds,
-                {60, 24*3600}, 1)
-        end,
-    }
-    if Device:canPowerOff() or Device:isEmulator() then
+    if Device:canSuspend() then
+        menu_items.autosuspend = {
+            sorting_hint = "device",
+            checked_func = function()
+                return self:_enabled()
+            end,
+            text_func = function()
+                if self.auto_suspend_timeout_seconds and self.auto_suspend_timeout_seconds > 0 then
+                    local time_string = util.secondsToClockDuration("modern",
+                        self.auto_suspend_timeout_seconds, true, true, true)
+                    return T(_("Autosuspend timeout: %1"), time_string)
+                else
+                    return _("Autosuspend timeout")
+                end
+            end,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                -- 60 sec (1') is the minimum and 24*3600 sec (1day) is the maximum suspend time.
+                -- A suspend time of one day seems to be excessive.
+                -- But it might make sense for battery testing.
+                self:pickTimeoutValue(touchmenu_instance,
+                    _("Timeout for autosuspend"), _("Enter time in hours and minutes."),
+                    "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds,
+                    {60, 24*3600}, 1)
+            end,
+        }
+    end
+    if Device:canPowerOff() then
         menu_items.autoshutdown = {
             sorting_hint = "device",
             checked_func = function()

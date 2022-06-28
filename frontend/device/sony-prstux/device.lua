@@ -17,6 +17,7 @@ local SonyPRSTUX = Generic:new{
     hasWifiManager = yes,
     canReboot = yes,
     canPowerOff = yes,
+    canSuspend = yes,
     usbPluggedIn = false,
     home_dir = nil,
 }

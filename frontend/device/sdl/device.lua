@@ -67,7 +67,7 @@ local Device = Generic:new{
     hasEinkScreen = no,
     hasSystemFonts = yes,
     canSuspend = no,
-    canStandby = yes,
+    canStandby = no,
     startTextInput = SDL.startTextInput,
     stopTextInput = SDL.stopTextInput,
     canOpenLink = getLinkOpener,
@@ -122,7 +122,9 @@ local Emulator = Device:new{
     hasWifiManager = yes,
     canPowerOff = yes,
     canReboot = yes,
+    -- NOTE: Via simulateSuspend
     canSuspend = yes,
+    canStandby = no,
 }
 
 local UbuntuTouch = Device:new{

@@ -133,6 +133,8 @@ local Kindle = Generic:new{
     canModifyFBInfo = yes,
     -- NOTE: Newer devices will turn the frontlight off at 0
     canTurnFrontlightOff = yes,
+    -- NOTE: Via powerd.toggleSuspend
+    canSuspend = yes,
     home_dir = "/mnt/us",
     -- New devices are REAGL-aware, default to REAGL
     isREAGL = yes,
