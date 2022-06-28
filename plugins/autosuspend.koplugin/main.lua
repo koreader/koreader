@@ -1,6 +1,6 @@
 local Device = require("device")
 
--- Any device that can Suspend can also at least power off  ;).
+-- If a device can power off or go into standby, it can also suspend ;).
 if not Device:canSuspend() then
     return { disabled = true, }
 end
