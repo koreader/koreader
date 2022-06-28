@@ -1,4 +1,6 @@
 local BasePowerD = require("device/generic/powerd")
+local WakeupMgr = require("device/wakeupmgr")
+local logger = require("logger")
 -- liblipclua, see require below
 
 local KindlePowerD = BasePowerD:new{
@@ -19,6 +21,8 @@ function KindlePowerD:init()
     if not self.device:canTurnFrontlightOff() then
         self.fl_max = self.fl_max + 1
     end
+
+    self:initWakeupMgr()
 end
 
 -- If we start with the light off (fl_intensity is fl_min), ensure a toggle will set it to the lowest "on" step,
@@ -184,6 +188,71 @@ function KindlePowerD:toggleSuspend()
     else
         os.execute("powerd_test -p")
     end
+end
+
+-- Kindle only allows setting the RTC via lipc during the ReadyToSuspend state
+function KindlePowerD:setRtcWakeup(seconds_from_now)
+    if self.lipc_handle then
+        self.lipc_handle:set_int_property("com.lab126.powerd", "rtcWakeup", seconds_from_now)
+    end
+end
+
+-- Check the powerd state: are we still in screensaver mode.
+function KindlePowerD:getPowerdState()
+    if self.lipc_handle then
+        return self.lipc_handle:get_string_property("com.lab126.powerd", "state")
+    end
+end
+
+function KindlePowerD:checkUnexpectedWakeup()
+    local state = self:getPowerdState()
+    logger.info("Powerd resume state:", state)
+    -- If we moved on to the active state,
+    -- then we were woken by user input not our alarm.
+    if state ~= "screenSaver" and state ~= "suspended" then return end
+
+    if self.device.wakeup_mgr:isWakeupAlarmScheduled() and self.device.wakeup_mgr:wakeupAction() then
+        logger.info("Kindle scheduled wakeup")
+    else
+        logger.info("Kindle unscheduled wakeup")
+    end
+end
+
+-- Dummy fuctions. They will be defined in initWakeupMgr
+function KindlePowerD:wakeupFromSuspend() end
+function KindlePowerD:readyToSuspend() end
+
+-- Support WakeupMgr on Lipc & supportsScreensaver devices.
+function KindlePowerD:initWakeupMgr()
+    if not self.device:supportsScreensaver() then return end
+    if self.lipc_handle == nil then return end
+
+    function KindlePowerD:wakeupFromSuspend()
+        logger.info("Kindle wakeupFromSuspend")
+        -- Give the device a few seconds to settle.
+        -- This filters out user input resumes -> device will resume to active
+        -- Also the Kindle stays in Ready to suspend for 10 seconds
+        -- so the alarm may fire 10 seconds early
+        local UIManager = require("ui/uimanager")
+        UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
+    end
+
+    function KindlePowerD:readyToSuspend()
+        logger.info("Kindle readyToSuspend")
+        if self.device.wakeup_mgr:isWakeupAlarmScheduled() then
+            local now = os.time()
+            local alarm = self.device.wakeup_mgr:getWakeupAlarmEpoch()
+            if alarm > now then
+                -- Powerd / Lipc need seconds_from_now not epoch
+                self:setRtcWakeup(alarm - now)
+            else
+                -- wakeup time is in the past
+                self.device.wakeup_mgr:removeTasks(alarm)
+            end
+        end
+    end
+
+    self.device.wakeup_mgr = WakeupMgr:new{rtc = require("device/kindle/mockrtc")}
 end
 
 --- @fixme: This won't ever fire, as KindlePowerD is already a metatable on a plain table.
