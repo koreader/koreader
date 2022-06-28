@@ -340,6 +340,7 @@ end
 function AutoSuspend:onUnexpectedWakeupLimit()
     logger.dbg("AutoSuspend: onUnexpectedWakeupLimit")
     -- Only re-engage the *shutdown* schedule to avoid doing the same dance indefinitely.
+    self:_unschedule()
     self:_restart()
 end
 
