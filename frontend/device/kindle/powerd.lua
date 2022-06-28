@@ -186,6 +186,20 @@ function KindlePowerD:toggleSuspend()
     end
 end
 
+-- Kindle only allows setting the RTC via lipc during the ReadyToSuspend state
+function KindlePowerD:setRtcWakeup(seconds_from_now)
+    if self.lipc_handle then
+        self.lipc_handle:set_int_property("com.lab126.powerd", "rtcWakeup", seconds_from_now)
+    end
+end
+
+-- Check the powerd state: are we still in screensaver mode.
+function KindlePowerD:getPowerdState()
+    if self.lipc_handle then
+        return self.lipc_handle:get_string_property("com.lab126.powerd", "state")
+    end
+end
+
 --- @fixme: This won't ever fire, as KindlePowerD is already a metatable on a plain table.
 function KindlePowerD:__gc()
     if self.lipc_handle then
