@@ -1,5 +1,7 @@
 local Generic = require("device/generic/device")
+local ffi = require("ffi")
 local logger = require("logger")
+local C = ffi.C
 
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
@@ -146,8 +148,8 @@ local Kindle = Generic:new{
     -- NOTE: While this ought to behave on Zelda/Rex, turns out, nope, it really doesn't work on *any* of 'em :/ (c.f., ko#5884).
     canHWDither = no,
     -- Kindle specific RTC wakeup scheduling
-    self._wakeup_scheduled = false
-    self._wakeup_scheduled_epoch = nil
+    _wakeup_scheduled = false,
+    _wakeup_scheduled_epoch = nil,
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -281,14 +283,14 @@ function Kindle:wakeupFromSuspend()
     if not self:supportsScreensaver() then return end
     -- Check for wakeup alarm rtc
     logger.warn("Powerd resume state:", self.powerd:getPowerdState())
-    logger.warn("Sys Alarm", os.date(" (%F %T %z)", tonumber(ffi.C.timegm(require("ffi/rtc"):getWakeupAlarmSys()))))
+    logger.warn("Sys Alarm", os.date(" (%F %T %z)", tonumber(C.timegm(require("ffi/rtc"):getWakeupAlarmSys()))))
 end
 
 function Kindle:readyToSuspend()
     logger.warn("Kindle readyToSuspend")
     if not self:supportsScreensaver() then return end
     if self._wakeup_scheduled then
-        now = os.time()
+        local now = os.time()
         if self._wakeup_scheduled_epoch > now then
             -- Powerd / Lipc need seconds_from_now not epoch
             self.powerd:setRtcWakeup(self._wakeup_scheduled_epoch - now)
