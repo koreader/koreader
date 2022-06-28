@@ -11,6 +11,7 @@ See @{ffi.rtc} for implementation details.
 See also: <https://linux.die.net/man/4/rtc>.
 --]]
 
+local KindleRTC = require("device/kindle/kindle_rtc")
 local RTC = require("ffi/rtc")
 local logger = require("logger")
 
@@ -41,6 +42,14 @@ function WakeupMgr:new(o)
     self.__index = self
     if o.init then o:init() end
     return o
+end
+
+function WakeupMgr:init()
+    if self.device == "Kindle" then
+        self.RTC = KindleRTC
+    else
+        self.RTC = RTC
+    end
 end
 
 --[[--
@@ -169,7 +178,7 @@ Set wakeup alarm.
 Simple wrapper for @{ffi.rtc.setWakeupAlarm}.
 --]]
 function WakeupMgr:setWakeupAlarm(epoch, enabled)
-    return RTC:setWakeupAlarm(epoch, enabled)
+    return self.RTC:setWakeupAlarm(epoch, enabled)
 end
 
 --[[--
@@ -178,7 +187,7 @@ Unset wakeup alarm.
 Simple wrapper for @{ffi.rtc.unsetWakeupAlarm}.
 --]]
 function WakeupMgr:unsetWakeupAlarm()
-    return RTC:unsetWakeupAlarm()
+    return self.RTC:unsetWakeupAlarm()
 end
 
 --[[--
@@ -187,7 +196,7 @@ Get wakealarm as set by us.
 Simple wrapper for @{ffi.rtc.getWakeupAlarm}.
 --]]
 function WakeupMgr:getWakeupAlarm()
-    return RTC:getWakeupAlarm()
+    return self.RTC:getWakeupAlarm()
 end
 
 --[[--
@@ -196,7 +205,7 @@ Get RTC wakealarm from system.
 Simple wrapper for @{ffi.rtc.getWakeupAlarm}.
 --]]
 function WakeupMgr:getWakeupAlarmSys()
-    return RTC:getWakeupAlarmSys()
+    return self.RTC:getWakeupAlarmSys()
 end
 
 --[[--
@@ -207,7 +216,7 @@ Checks if we set the alarm.
 Simple wrapper for @{ffi.rtc.validateWakeupAlarmByProximity}.
 --]]
 function WakeupMgr:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
-    return RTC:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
+    return self.RTC:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
 end
 
 --[[--
@@ -216,10 +225,10 @@ Check if a wakeup is scheduled.
 Simple wrapper for @{ffi.rtc.isWakeupAlarmScheduled}.
 --]]
 function WakeupMgr:isWakeupAlarmScheduled()
-    local wakeup_scheduled = RTC:isWakeupAlarmScheduled()
+    local wakeup_scheduled = self.RTC:isWakeupAlarmScheduled()
     if wakeup_scheduled then
         -- NOTE: This can't return nil given that we're behind an isWakeupAlarmScheduled check.
-        local alarm = RTC:getWakeupAlarmEpoch()
+        local alarm = self.RTC:getWakeupAlarmEpoch()
         logger.dbg("WakeupMgr:isWakeupAlarmScheduled: An alarm is scheduled for " .. alarm .. os.date(" (%F %T %z)", alarm))
     else
         logger.dbg("WakeupMgr:isWakeupAlarmScheduled: No alarm is currently scheduled.")

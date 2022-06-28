@@ -1,4 +1,6 @@
 local Generic = require("device/generic/device")
+local KindleRTC = require("device/kindle/kindle_rtc")
+local WakeupMgr = require("device/wakeupmgr")
 local ffi = require("ffi")
 local logger = require("logger")
 local C = ffi.C
@@ -147,9 +149,6 @@ local Kindle = Generic:new{
     isNightModeChallenged = no,
     -- NOTE: While this ought to behave on Zelda/Rex, turns out, nope, it really doesn't work on *any* of 'em :/ (c.f., ko#5884).
     canHWDither = no,
-    -- Kindle specific RTC wakeup scheduling
-    _wakeup_scheduled = false,
-    _wakeup_scheduled_epoch = nil,
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -281,89 +280,29 @@ end
 function Kindle:wakeupFromSuspend()
     logger.warn("Kindle wakeupFromSuspend")
     if not self:supportsScreensaver() then return end
-    -- Check for wakeup alarm rtc
     logger.warn("Powerd resume state:", self.powerd:getPowerdState())
     logger.warn("Sys Alarm", os.date(" (%F %T %z)", tonumber(C.timegm(require("ffi/rtc"):getWakeupAlarmSys()))))
+    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(15) then
+        logger.warn("Kindle scheduled wakeup")
+    else
+        logger.warn("Kindle unscheduled wakeup")
+    end
 end
 
 function Kindle:readyToSuspend()
     logger.warn("Kindle readyToSuspend")
     if not self:supportsScreensaver() then return end
-    if self._wakeup_scheduled then
+    if KindleRTC:isWakeupAlarmScheduled() then
         local now = os.time()
-        if self._wakeup_scheduled_epoch > now then
+        local alarm = KindleRTC:getWakeupAlarmEpoch()
+        if alarm > now then
             -- Powerd / Lipc need seconds_from_now not epoch
-            self.powerd:setRtcWakeup(self._wakeup_scheduled_epoch - now)
+            self.powerd:setRtcWakeup(alarm - now)
         else
             -- wakeup time is in the past
-            self:unsetWakeupAlarm()
+            KindleRTC:unsetWakeupAlarm()
         end
     end
-end
-
--- RTC functions with kindle specific implementations
--- This call always succeeds, errors will only happen at suspend time in
--- powerd:setRtcWakeup()
-function Kindle:setWakeupAlarm(epoch, enabled)
-    enabled = (enabled ~= nil) and enabled or true
-    if enabled then
-        self._wakeup_scheduled = true
-        self._wakeup_scheduled_epoch = epoch
-    else
-        self:unsetWakeupAlarm()
-    end
-    return true
-end
-
-function Kindle:unsetWakeupAlarm()
-    self._wakeup_scheduled = false
-    self._wakeup_scheduled_epoch = nil
-end
-
-function Kindle:getWakeupAlarmEpoch()
-    return self._wakeup_scheduled_epoch
-end
-
---[[--
-Checks if the alarm we set matches the system alarm as well as the current time.
---]]
-function Kindle:validateWakeupAlarmByProximity(task_alarm, proximity)
-    -- In principle alarm time and current time should match within a second,
-    -- but let's be absurdly generous and assume anything within 30 is a match.
-    -- In practice, Kobo's suspend() schedules check_unexpected_wakeup 15s *after*
-    -- the actual wakeup, so we need to account for at least that much ;).
-    proximity = proximity or 30
-
-    -- We want everything in UTC time_t (i.e. a Posix epoch).
-    local now = os.time()
-
-    local alarm = self:getWakeupAlarmEpoch()
-    local alarm_sys = tonumber(C.timegm(self:getWakeupAlarmSys()))
-
-    if not (alarm and alarm_sys) then return end
-
-   -- Everything's in UTC, ask Lua to convert that to a human-readable format in the local timezone
-    if task_alarm then
-        print("validateWakeupAlarmByProximity:",
-            "\ntask              @ " .. task_alarm .. os.date(" (%F %T %z)", task_alarm),
-            "\nlast set alarm    @ " .. alarm .. os.date(" (%F %T %z)", alarm),
-            "\ncurrent rtc alarm @ " .. alarm_sys .. os.date(" (%F %T %z)", alarm_sys),
-            "\ncurrent time is     " .. now .. os.date(" (%F %T %z)", now))
-    end
-
-    -- If our stored alarm and the system alarm don't match, we didn't set it.
-    if alarm ~= alarm_sys then return end
-
-    -- If our stored alarm and the provided task alarm don't match,
-    -- we're not talking about the same task. This should never happen.
-    if task_alarm and alarm ~= task_alarm then return end
-
-    local diff = now - alarm
-    if diff >= 0 and diff < proximity then return true end
-end
-
-function Kindle:isWakeupAlarmScheduled()
-    return self._wakeup_scheduled
 end
 
 function Kindle:ambientBrightnessLevel()
@@ -1061,6 +1000,8 @@ function KindlePaperWhite5:init()
 
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
+
+    self.wakeup_mgr = WakeupMgr:new{device = "Kindle"}
 
     Kindle.init(self)
 
