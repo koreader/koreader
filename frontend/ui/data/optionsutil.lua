@@ -37,8 +37,18 @@ end
 local function real_size_string(ko_size, unit)
     if not ko_size or not unit then return "" end
     ko_size = tonumber(ko_size)
+    local shown_unit
+    if unit == "pt" then
+        shown_unit = C_("FontSize", "pt")
+    elseif unit == "mm" then
+        shown_unit = C_("Length", "mm")
+    elseif unit == "in" then
+        shown_unit = C_("Length", "in")
+    else
+        shown_unit = unit -- for future units
+    end
     if ko_size then
-        return string.format(" (%.2f %s)", convertSizeTo(ko_size, unit), unit)
+        return string.format(" (%.2f %s)", convertSizeTo(ko_size, unit), shown_unit)
     else
         return ""
     end
@@ -157,7 +167,7 @@ function optionsutil.showValues(configurable, option, prefix, document, is_size)
         if is_size == "pt" then
             unit = "pt"
         else
-            unit = G_reader_settings:nilOrTrue("metric_length") and C_("Length", "mm") or C_("Length", "in")
+            unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "in"
         end
         text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
                                             current, real_size_string(current, unit),
