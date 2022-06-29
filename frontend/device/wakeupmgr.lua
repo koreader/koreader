@@ -23,6 +23,7 @@ WakeupMgr base class.
 local WakeupMgr = {
     dev_rtc = "/dev/rtc0", -- RTC device
     _task_queue = {},      -- Table with epoch at which to schedule the task and the function to be scheduled.
+    RTC = RTC,
 }
 
 --[[--
@@ -42,14 +43,6 @@ function WakeupMgr:new(o)
     self.__index = self
     if o.init then o:init() end
     return o
-end
-
-function WakeupMgr:init()
-    if self.device == "Kindle" then
-        self.RTC = KindleRTC
-    else
-        self.RTC = RTC
-    end
 end
 
 --[[--

@@ -1009,7 +1009,7 @@ function KindlePaperWhite5:init()
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
 
-    self.wakeup_mgr = WakeupMgr:new{device = "Kindle"}
+    self.wakeup_mgr = WakeupMgr:new{RTC = require("device/kindle/kindle_rtc")}
 
     Kindle.init(self)
 
