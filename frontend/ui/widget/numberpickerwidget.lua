@@ -150,18 +150,18 @@ function NumberPickerWidget:init()
                                 local input_value = tonumber(input_text)
                                 local turn_off_checks = false
 
-                                -- if the first character of the input string is ":" turn of min-max checks
+                                -- if the first character of the input string is ":" turn off min-max checks
                                 if input_text:match("^:") and G_reader_settings:isTrue("debug_verbose") then
                                     turn_off_checks = true -- turn off checks
                                     input_text = input_text:gsub("^:", "") -- shorten input
                                     input_value = tonumber(input_text) -- try to get value
                                 end
 
-                                -- if the input text starts with `=` try to evaluate the expression
+                                -- if the input text starts with `=`, try to evaluate the expression
                                 -- only allow `math.*` and no other functions to be safe here.
                                 if input_text:match("^=") then
                                     local function evaluate_string(code)
-                                        -- only execute if there a no chars (except math.xxx) and {[]} in the user input
+                                        -- only execute if there are no chars (except math.xxx) and no {[]} in the user input
                                         local check_code = code:gsub("math%.%a*", "")
                                         if check_code:find("[%a%[%]%{%}]") then
                                             return nil
@@ -182,7 +182,7 @@ function NumberPickerWidget:init()
                                     if not input_value then return end
                                     if input_value < self.value_min or input_value > self.value_max then
                                         UIManager:show(InfoMessage:new{
-                                            text = T(_("ATTENTION:\nYou turned of sanity checks!\nThis value should be in the range %1 - %2\nUndefined behavior is possible.\n"), self.value_min, self.value_max),
+                                            text = T(_("ATTENTION:\nSanity checks are disabled, by prefixing the input with ':'!\nThis value should be in the range %1 - %2.\nUndefined behavior may occur.\n"), self.value_min, self.value_max),
                                         })
                                     end
                                     self.value = input_value
