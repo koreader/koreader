@@ -56,9 +56,7 @@ function KindleRTC:validateWakeupAlarmByProximity(task_alarm, proximity)
     if task_alarm and alarm ~= task_alarm then return end
 
     local diff = now - alarm
-    -- Kindle stays in Ready to suspend for 10 seconds so the alarm may
-    -- fire 10 seconds early
-    if diff >= -10 and diff < proximity then return true end
+    if diff >= 0 and diff < proximity then return true end
 end
 
 function KindleRTC:isWakeupAlarmScheduled()

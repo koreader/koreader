@@ -1,9 +1,7 @@
 local Generic = require("device/generic/device")
 local KindleRTC = require("device/kindle/kindle_rtc")
 local WakeupMgr = require("device/wakeupmgr")
-local ffi = require("ffi")
 local logger = require("logger")
-local C = ffi.C
 
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
@@ -277,20 +275,30 @@ function Kindle:usbPlugOut()
     self.charging_mode = false
 end
 
-function Kindle:wakeupFromSuspend()
-    logger.warn("Kindle wakeupFromSuspend")
-    if not self:supportsScreensaver() then return end
-    logger.warn("Powerd resume state:", self.powerd:getPowerdState())
-    logger.warn("Sys Alarm", os.date(" (%F %T %z)", tonumber(C.timegm(require("ffi/rtc"):getWakeupAlarmSys()))))
-    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction(15) then
-        logger.warn("Kindle scheduled wakeup")
+function Kindle:checkUnexpectedWakeup()
+    local state = self.powerd:getPowerdState()
+    logger.info("Powerd resume state:", state)
+    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction() then
+        logger.info("Kindle scheduled wakeup")
     else
-        logger.warn("Kindle unscheduled wakeup")
+        logger.info("Kindle unscheduled wakeup")
     end
 end
 
+function Kindle:wakeupFromSuspend()
+    logger.info("Kindle wakeupFromSuspend")
+    if not self:supportsScreensaver() then return end
+    logger.info("Powerd resume state:", self.powerd:getPowerdState())
+    -- Give the device a few seconds to settle.
+    -- This filters out user input resumes -> device will resume to active
+    -- Also the Kindle stays in Ready to suspend for 10 seconds
+    -- so the alarm may fire 10 seconds early
+    local UIManager = require("ui/uimanager")
+    UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
+end
+
 function Kindle:readyToSuspend()
-    logger.warn("Kindle readyToSuspend")
+    logger.info("Kindle readyToSuspend")
     if not self:supportsScreensaver() then return end
     if KindleRTC:isWakeupAlarmScheduled() then
         local now = os.time()
