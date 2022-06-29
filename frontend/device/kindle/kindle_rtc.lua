@@ -1,5 +1,6 @@
 local ffi = require("ffi")
 local C = ffi.C
+local RTC = require("ffi/rtc")
 
 
 local KindleRTC = {
@@ -44,7 +45,7 @@ function KindleRTC:validateWakeupAlarmByProximity(task_alarm, proximity)
     local now = os.time()
 
     local alarm = self:getWakeupAlarmEpoch()
-    local alarm_sys = tonumber(C.timegm(self:getWakeupAlarmSys()))
+    local alarm_sys = tonumber(C.timegm(RTC:getWakeupAlarmSys()))
 
     if not (alarm and alarm_sys) then return end
 

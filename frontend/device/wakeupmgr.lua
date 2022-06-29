@@ -205,7 +205,7 @@ Get RTC wakealarm from system.
 Simple wrapper for @{ffi.rtc.getWakeupAlarm}.
 --]]
 function WakeupMgr:getWakeupAlarmSys()
-    return self.RTC:getWakeupAlarmSys()
+    return RTC:getWakeupAlarmSys()
 end
 
 --[[--
