@@ -200,9 +200,18 @@ function WakeupMgr:getWakeupAlarm()
 end
 
 --[[--
+Get wakealarm epoch as set by us.
+
+Simple wrapper for @{ffi.rtc.getWakeupAlarmEpoch}.
+--]]
+function WakeupMgr:getWakeupAlarmEpoch()
+    return self.RTC:getWakeupAlarmEpoch()
+end
+
+--[[--
 Get RTC wakealarm from system.
 
-Simple wrapper for @{ffi.rtc.getWakeupAlarm}.
+Simple wrapper for @{ffi.rtc.getWakeupAlarmSys}.
 --]]
 function WakeupMgr:getWakeupAlarmSys()
     return RTC:getWakeupAlarmSys()

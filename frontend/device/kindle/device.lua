@@ -1,5 +1,4 @@
 local Generic = require("device/generic/device")
-local KindleRTC = require("device/kindle/kindle_rtc")
 local WakeupMgr = require("device/wakeupmgr")
 local logger = require("logger")
 
@@ -300,15 +299,16 @@ end
 function Kindle:readyToSuspend()
     logger.info("Kindle readyToSuspend")
     if not self:supportsScreensaver() then return end
-    if KindleRTC:isWakeupAlarmScheduled() then
+    if self.wakeup_mgr:isWakeupAlarmScheduled() then
         local now = os.time()
-        local alarm = KindleRTC:getWakeupAlarmEpoch()
+        local alarm = self.wakeup_mgr:getWakeupAlarmEpoch()
         if alarm > now then
             -- Powerd / Lipc need seconds_from_now not epoch
             self.powerd:setRtcWakeup(alarm - now)
+            logger.info("set alarm @ ", os.date("%T", alarm))
         else
             -- wakeup time is in the past
-            KindleRTC:unsetWakeupAlarm()
+            self.wakeup_mgr:removeTasks(alarm)
         end
     end
 end
