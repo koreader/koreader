@@ -39,7 +39,7 @@ local function real_size_string(ko_size, unit)
     ko_size = tonumber(ko_size)
     local shown_unit
     if unit == "pt" then
-        shown_unit = C_("FontSize", "pt")
+        shown_unit = C_("Font size", "pt")
     elseif unit == "mm" then
         shown_unit = C_("Length", "mm")
     elseif unit == "in" then
