@@ -1,8 +1,3 @@
-local ffi = require("ffi")
-local C = ffi.C
-local RTC = require("ffi/rtc")
-
-
 local KindleRTC = {
     _wakeup_scheduled = false,
     _wakeup_scheduled_epoch = nil,
