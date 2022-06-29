@@ -6,6 +6,7 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 local logger = require("logger")
 local Screen = Device.screen
@@ -25,7 +26,7 @@ local function convertSizeTo(px, format)
 
     if format == "pt" then
         format_factor =  format_factor * 2660 / 1000 -- see https://www.wikiwand.com/en/Metric_typographic_units
-    elseif format == "\"" then
+    elseif format == "in" then
         format_factor = 1 / 25.4
     end
 
@@ -153,10 +154,10 @@ function optionsutil.showValues(configurable, option, prefix, document, is_size)
         end
     else
         local unit
-        if is_size == 1 then
-            unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "\""
-        else
+        if is_size == "pt" then
             unit = "pt"
+        else
+            unit = G_reader_settings:nilOrTrue("metric_length") and C_("Length", "mm") or C_("Length", "in")
         end
         text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
                                             current, real_size_string(current, unit),
@@ -168,7 +169,7 @@ end
 function optionsutil.showValuesHMargins(configurable, option)
     local default = G_reader_settings:readSetting("copt_"..option.name)
     local current = configurable[option.name]
-    local unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "\""
+    local unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "in"
     if not default then
         UIManager:show(InfoMessage:new{
             text = T(_([[
