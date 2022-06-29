@@ -32,7 +32,7 @@ function KindleRTC:getWakeupAlarmEpoch()
 end
 
 --[[--
-Checks if the alarm we set matches the system alarm as well as the current time.
+Checks if the alarm we set matches the current time.
 --]]
 function KindleRTC:validateWakeupAlarmByProximity(task_alarm, proximity)
     -- In principle alarm time and current time should match within a second,
@@ -45,24 +45,19 @@ function KindleRTC:validateWakeupAlarmByProximity(task_alarm, proximity)
     local now = os.time()
 
     local alarm = self:getWakeupAlarmEpoch()
-    local alarm_sys = tonumber(C.timegm(RTC:getWakeupAlarmSys()))
 
-    if not (alarm and alarm_sys) then return end
+    if not (alarm and task_alarm) then return end
 
    -- Everything's in UTC, ask Lua to convert that to a human-readable format in the local timezone
     if task_alarm then
         print("validateWakeupAlarmByProximity:",
             "\ntask              @ " .. task_alarm .. os.date(" (%F %T %z)", task_alarm),
             "\nlast set alarm    @ " .. alarm .. os.date(" (%F %T %z)", alarm),
-            "\ncurrent rtc alarm @ " .. alarm_sys .. os.date(" (%F %T %z)", alarm_sys),
             "\ncurrent time is     " .. now .. os.date(" (%F %T %z)", now))
     end
 
-    -- If our stored alarm and the system alarm don't match, we didn't set it.
-    if alarm ~= alarm_sys then return end
-
     -- If our stored alarm and the provided task alarm don't match,
-    -- we're not talking about the same task. This should never happen.
+    -- we're not talking about the same task.
     if task_alarm and alarm ~= task_alarm then return end
 
     local diff = now - alarm
