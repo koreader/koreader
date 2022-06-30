@@ -287,7 +287,6 @@ end
 function Kindle:wakeupFromSuspend()
     logger.info("Kindle wakeupFromSuspend")
     if not self:supportsScreensaver() then return end
-    logger.info("Powerd resume state:", self.powerd:getPowerdState())
     -- Give the device a few seconds to settle.
     -- This filters out user input resumes -> device will resume to active
     -- Also the Kindle stays in Ready to suspend for 10 seconds
@@ -305,7 +304,6 @@ function Kindle:readyToSuspend()
         if alarm > now then
             -- Powerd / Lipc need seconds_from_now not epoch
             self.powerd:setRtcWakeup(alarm - now)
-            logger.info("set alarm @ ", os.date("%T", alarm))
         else
             -- wakeup time is in the past
             self.wakeup_mgr:removeTasks(alarm)
