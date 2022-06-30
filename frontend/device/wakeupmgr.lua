@@ -11,7 +11,6 @@ See @{ffi.rtc} for implementation details.
 See also: <https://linux.die.net/man/4/rtc>.
 --]]
 
-local KindleRTC = require("device/kindle/kindle_rtc")
 local RTC = require("ffi/rtc")
 local logger = require("logger")
 
