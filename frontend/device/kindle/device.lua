@@ -1,5 +1,4 @@
 local Generic = require("device/generic/device")
-local WakeupMgr = require("device/wakeupmgr")
 local logger = require("logger")
 
 local function yes() return true end
@@ -274,41 +273,12 @@ function Kindle:usbPlugOut()
     self.charging_mode = false
 end
 
-function Kindle:checkUnexpectedWakeup()
-    local state = self.powerd:getPowerdState()
-    logger.info("Powerd resume state:", state)
-    if self.wakeup_mgr:isWakeupAlarmScheduled() and self.wakeup_mgr:wakeupAction() then
-        logger.info("Kindle scheduled wakeup")
-    else
-        logger.info("Kindle unscheduled wakeup")
-    end
-end
-
 function Kindle:wakeupFromSuspend()
-    logger.info("Kindle wakeupFromSuspend")
-    if not self:supportsScreensaver() then return end
-    -- Give the device a few seconds to settle.
-    -- This filters out user input resumes -> device will resume to active
-    -- Also the Kindle stays in Ready to suspend for 10 seconds
-    -- so the alarm may fire 10 seconds early
-    local UIManager = require("ui/uimanager")
-    UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
+    self.powerd:wakeupFromSuspend()
 end
 
 function Kindle:readyToSuspend()
-    logger.info("Kindle readyToSuspend")
-    if not self:supportsScreensaver() then return end
-    if self.wakeup_mgr:isWakeupAlarmScheduled() then
-        local now = os.time()
-        local alarm = self.wakeup_mgr:getWakeupAlarmEpoch()
-        if alarm > now then
-            -- Powerd / Lipc need seconds_from_now not epoch
-            self.powerd:setRtcWakeup(alarm - now)
-        else
-            -- wakeup time is in the past
-            self.wakeup_mgr:removeTasks(alarm)
-        end
-    end
+    self.powerd:readyToSuspend()
 end
 
 function Kindle:ambientBrightnessLevel()
@@ -1006,8 +976,6 @@ function KindlePaperWhite5:init()
 
     -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
     self.screen:_MTK_ToggleFastMode(true)
-
-    self.wakeup_mgr = WakeupMgr:new{RTC = require("device/kindle/kindle_rtc")}
 
     Kindle.init(self)
 
