@@ -252,7 +252,7 @@ function KindlePowerD:initWakeupMgr()
         end
     end
 
-    self.device.wakeup_mgr = WakeupMgr:new{RTC = require("device/kindle/kindle_rtc")}
+    self.device.wakeup_mgr = WakeupMgr:new{rtc = require("device/kindle/kindle_rtc")}
 end
 
 --- @fixme: This won't ever fire, as KindlePowerD is already a metatable on a plain table.
