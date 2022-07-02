@@ -1,8 +1,8 @@
 local Event = require("ui/event")
 local Generic = require("device/generic/device")
 local SDL = require("ffi/SDL2_0")
-local logger = require("logger")
 local ffi = require("ffi")
+local logger = require("logger")
 
 -- SDL computes WM_CLASS on X11/Wayland based on process's binary name.
 -- Some desktop environments rely on WM_CLASS to name the app and/or to assign the proper icon.
