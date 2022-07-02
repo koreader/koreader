@@ -1,12 +1,7 @@
 local Device = require("device")
 
-if not Device:isCervantes() and
-    not Device:isKindle() and
-    not Device:isKobo() and
-    not Device:isRemarkable() and
-    not Device:isSDL() and
-    not Device:isSonyPRSTUX() and
-    not Device:isPocketBook() then
+-- If a device can power off or go into standby, it can also suspend ;).
+if not Device:canSuspend() then
     return { disabled = true, }
 end
 
@@ -46,6 +41,7 @@ function AutoSuspend:_enabledStandby()
 end
 
 function AutoSuspend:_enabled()
+    -- NOTE: Plugin is only enabled if Device:canSuspend(), so we can elide the check here
     return self.auto_suspend_timeout_seconds > 0
 end
 
@@ -64,10 +60,11 @@ function AutoSuspend:_schedule(shutdown_only)
     -- On devices with an auxiliary battery, we only care about the auxiliary battery being charged...
     local powerd = Device:getPowerDevice()
     if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
-        is_charging = powerd:isAuxCharging()
+        is_charging = powerd:isAuxCharging() and not powerd:isAuxCharged()
     else
-        is_charging = powerd:isCharging()
+        is_charging = powerd:isCharging() and not powerd:isCharged()
     end
+    -- We *do* want to make sure we attempt to go into suspend/shutdown again while *fully* charged, though.
     if PluginShare.pause_auto_suspend or is_charging then
         suspend_delay_seconds = self.auto_suspend_timeout_seconds
         shutdown_delay_seconds = self.autoshutdown_timeout_seconds
@@ -134,8 +131,6 @@ function AutoSuspend:init()
     -- Disabled, until the user opts in.
     self.auto_standby_timeout_seconds = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1)
 
-    if Device:isPocketBook() and not Device:canSuspend() then return end
-
     -- We only want those to exist as *instance* members
     self.is_standby_scheduled = false
     self.going_to_suspend = false
@@ -178,7 +173,6 @@ end
 -- NOTE: event_hook takes care of overloading this to unregister the hook, too.
 function AutoSuspend:onCloseWidget()
     logger.dbg("AutoSuspend: onCloseWidget")
-    if Device:isPocketBook() and not Device:canSuspend() then return end
 
     self:_unschedule()
     self.task = nil
@@ -346,8 +340,19 @@ end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
     logger.dbg("AutoSuspend: onUnexpectedWakeupLimit")
+    -- Should be unnecessary, because we should *always* follow onSuspend, which already does this...
+    -- Better safe than sorry, though ;).
+    self:_unschedule()
     -- Only re-engage the *shutdown* schedule to avoid doing the same dance indefinitely.
     self:_restart()
+end
+
+function AutoSuspend:onNotCharging()
+    logger.dbg("AutoSuspend: onNotCharging")
+    -- Make sure both the suspend & shutdown timers are re-engaged on unplug,
+    -- in case we hit an UnexpectedWakeupLimit during the charge cycle...
+    self:_unschedule()
+    self:_start()
 end
 
 -- time_scale:
@@ -464,6 +469,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
 end
 
 function AutoSuspend:addToMainMenu(menu_items)
+    -- Device:canSuspend() check elided because it's a plugin requirement
     menu_items.autosuspend = {
         sorting_hint = "device",
         checked_func = function()
@@ -489,7 +495,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                 {60, 24*3600}, 1)
         end,
     }
-    if Device:canPowerOff() or Device:isEmulator() then
+    if Device:canPowerOff() then
         menu_items.autoshutdown = {
             sorting_hint = "device",
             checked_func = function()

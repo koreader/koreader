@@ -72,6 +72,7 @@ local Kobo = Generic:new{
     canStandby = no, -- will get updated by checkStandby()
     canReboot = yes,
     canPowerOff = yes,
+    canSuspend = yes,
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
     -- most Kobos have also mirrored X coordinates
@@ -1074,6 +1075,11 @@ function Kobo:resume()
 
     -- A full suspend may have toggled the LED off.
     self:setupChargingLED()
+end
+
+function Kobo:usbPlugOut()
+    -- Reset the unexpected wakeup shenanigans, since we're no longer charging, meaning power savings are now critical again ;).
+    self.unexpected_wakeup_count = 0
 end
 
 function Kobo:saveSettings()

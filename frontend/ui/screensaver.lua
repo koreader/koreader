@@ -64,6 +64,11 @@ local Screensaver = {
     default_screensaver_message = _("Sleeping"),
 }
 
+-- Remind emulator users that Power is bound to F2
+if Device:isEmulator() then
+    Screensaver.default_screensaver_message = Screensaver.default_screensaver_message .. "\n" .. _("(Press F2 to resume)")
+end
+
 function Screensaver:_getRandomImage(dir)
     if not dir then
         return nil
