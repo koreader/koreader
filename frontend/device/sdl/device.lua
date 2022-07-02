@@ -2,6 +2,14 @@ local Event = require("ui/event")
 local Generic = require("device/generic/device")
 local SDL = require("ffi/SDL2_0")
 local logger = require("logger")
+local ffi = require("ffi")
+
+-- SDL computes WM_CLASS on X11/Wayland based on process's binary name.
+-- Some desktop environments rely on WM_CLASS to name the app and/or to assign the proper icon.
+if jit.os == "Linux" or jit.os == "BSD" or jit.os == "POSIX" then
+    if not os.getenv("SDL_VIDEO_WAYLAND_WMCLASS") then ffi.C.setenv("SDL_VIDEO_WAYLAND_WMCLASS", "KOReader", 1) end
+    if not os.getenv("SDL_VIDEO_X11_WMCLASS") then ffi.C.setenv("SDL_VIDEO_X11_WMCLASS", "KOReader", 1) end
+end
 
 local function yes() return true end
 local function no() return false end
