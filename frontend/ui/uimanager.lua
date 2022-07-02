@@ -173,6 +173,7 @@ function UIManager:init()
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
         end
+        -- USB plug events with a power-only charger
         self.event_handlers["Charging"] = function()
             self:_beforeCharging()
             -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
@@ -182,11 +183,13 @@ function UIManager:init()
         end
         self.event_handlers["NotCharging"] = function()
             -- We need to put the device into suspension, other things need to be done before it.
+            Device:usbPlugOut()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
             end
         end
+        -- USB plug events with a data-aware host
         self.event_handlers["UsbPlugIn"] = function()
             self:_beforeCharging()
             -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
@@ -200,6 +203,7 @@ function UIManager:init()
         end
         self.event_handlers["UsbPlugOut"] = function()
             -- We need to put the device into suspension, other things need to be done before it.
+            Device:usbPlugOut()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
@@ -381,6 +385,14 @@ function UIManager:init()
         self.event_handlers["Resume"] = function()
             Device:simulateResume()
             self:_afterResume()
+        end
+        self.event_handlers["PowerRelease"] = function()
+            -- Resume if we were suspended
+            if Device.screen_saver_mode then
+                self:resume()
+            else
+                self:suspend()
+            end
         end
     end
 end
@@ -1782,11 +1794,11 @@ Executes all the operations of a suspension (i.e., sleep) request.
 This function usually puts the device into suspension.
 ]]
 function UIManager:suspend()
-    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
+    if self.event_handlers["Suspend"] then
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
         Device.powerd:toggleSuspend()
-    elseif Device.isPocketBook() and Device.canSuspend() then
+    elseif Device:canSuspend() then
         Device:suspend()
     end
 end
@@ -1801,7 +1813,7 @@ function UIManager:resume()
     -- invalidate the last battery capacity pull time so that we get up to date data immediately.
     Device:getPowerDevice():invalidateCapacityCache()
 
-    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
+    if self.event_handlers["Resume"] then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()

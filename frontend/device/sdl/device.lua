@@ -67,7 +67,7 @@ local Device = Generic:new{
     hasEinkScreen = no,
     hasSystemFonts = yes,
     canSuspend = no,
-    canStandby = yes,
+    canStandby = no,
     startTextInput = SDL.startTextInput,
     stopTextInput = SDL.stopTextInput,
     canOpenLink = getLinkOpener,
@@ -120,9 +120,12 @@ local Emulator = Device:new{
     hasNaturalLightApi = yes,
     hasWifiToggle = yes,
     hasWifiManager = yes,
+    -- Not really, Device:reboot & Device:powerOff are not implemented, so we just exit ;).
     canPowerOff = yes,
     canReboot = yes,
+    -- NOTE: Via simulateSuspend
     canSuspend = yes,
+    canStandby = no,
 }
 
 local UbuntuTouch = Device:new{
@@ -337,11 +340,13 @@ function Emulator:simulateSuspend()
     local Screensaver = require("ui/screensaver")
     Screensaver:setup()
     Screensaver:show()
+    self.screen_saver_mode = true
 end
 
 function Emulator:simulateResume()
     local Screensaver = require("ui/screensaver")
     Screensaver:close()
+    self.screen_saver_mode = false
 end
 
 -- fake network manager for the emulator
