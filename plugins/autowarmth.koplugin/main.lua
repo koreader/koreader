@@ -136,7 +136,7 @@ end
 AutoWarmth.onLeaveStandby = AutoWarmth.onResume
 
 -- wrapper for unscheduling, so that only our setWarmth gets unscheduled
-function AutoWarmth.setWarmth(val)
+function AutoWarmth.setWarmth(val, force)
     if val then
         if val > 100 then
             DeviceListener:onSetNightMode(true)
@@ -145,7 +145,7 @@ function AutoWarmth.setWarmth(val)
         end
         if Device:hasNaturalLight() then
             val = math.min(val, 100)
-            Device.powerd:setWarmth(val)
+            Device.powerd:setWarmth(val, force)
         end
     end
 end
@@ -300,7 +300,7 @@ function AutoWarmth:scheduleWarmthChanges(time)
     -- schedule setting of another valid warmth (=`next_warmth`) again (one time).
     -- On sane devices this schedule does no harm.
     -- see https://github.com/koreader/koreader/issues/8363
-    UIManager:scheduleIn(delay_time, self.setWarmth, next_warmth)
+    UIManager:scheduleIn(delay_time, self.setWarmth, next_warmth, true)
 end
 
 function AutoWarmth:hoursToClock(hours)
