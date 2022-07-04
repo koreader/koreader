@@ -143,26 +143,11 @@ function AutoWarmth:onLeaveStandby()
     self:leavePowerSavingState(false)
 end
 
-<<<<<<< HEAD
 -- wrapper for unscheduling, so that only our setWarmth gets unscheduled
-function AutoWarmth.setWarmth(val, force)
-    if val then
-        if val > 100 then
-            DeviceListener:onSetNightMode(true)
-        else
-            DeviceListener:onSetNightMode(false)
-        end
-        if Device:hasNaturalLight() then
-            val = math.min(val, 100)
-            Device.powerd:setWarmth(val, force)
-        end
-    end
-=======
 function AutoWarmth:onSuspend()
     if self.activate == 0 then return end
     UIManager:unschedule(self.scheduleMidnightUpdate)
     UIManager:unschedule(self.setWarmth)
->>>>>>> e1e8b8c5 (Reduce schedulings for power saving)
 end
 
 AutoWarmth.onEnterStandby = AutoWarmth.onSuspend
@@ -310,7 +295,7 @@ function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
         end
     end
     -- update current warmth immediately
-    self:setWarmth(actual_warmth, false) -- no setWarmth rescheduling
+    self:setWarmth(actual_warmth, false) -- no setWarmth rescheduling, don't force warmth
     local next_sched_time = self.sched_times[self.sched_warmth_index] - time
     if self.sched_warmth_index <= #self.sched_warmths and next_sched_time > 0 then
         -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
@@ -322,25 +307,24 @@ function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
         -- schedule setting of another valid warmth (=`next_warmth`) again (one time).
         -- On sane devices this schedule does no harm.
         -- see https://github.com/koreader/koreader/issues/8363
-        UIManager:scheduleIn(delay_s, self.setWarmth, self, next_warmth, true) -- no setWarmth rescheduling
+        UIManager:scheduleIn(delay_s, self.setWarmth, self, next_warmth, true) -- no setWarmth rescheduling, force warmth
     end
 end
 
 -- Set warmth and schedule the next warmth change
-function AutoWarmth:setWarmth(val, schedule_next)
+function AutoWarmth:setWarmth(val, schedule_next, force_warmth)
     if val then
         DeviceListener:onSetNightMode(val > 100)
 
         if Device:hasNaturalLight() then
             val = math.min(val, 100) -- "mask" night mode
-            Device.powerd:setWarmth(val)
+            Device.powerd:setWarmth(val, force_warmth)
         end
     end
     if schedule_next then
         local now = SunTime:getTimeInSec()
         self:scheduleNextWarmthChange(now, self.sched_warmth_index, false)
     end
->>>>>>> e1e8b8c5 (Reduce schedulings for power saving)
 end
 
 function AutoWarmth:hoursToClock(hours)
