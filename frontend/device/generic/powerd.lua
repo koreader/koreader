@@ -201,9 +201,9 @@ function BasePowerD:fromNativeWarmth(nat_warmth)
 end
 
 --- @note: Takes a warmth in the *KOReader* scale (i.e., [0, 100], *sic*)
-function BasePowerD:setWarmth(warmth)
+function BasePowerD:setWarmth(warmth, force_setting)
     if not self.device:hasNaturalLight() then return false end
-    if warmth == self:frontlightWarmth() then return false end
+    if not force_setting and warmth == self:frontlightWarmth() then return false end
     -- Which means that fl_warmth is *also* in the KOReader scale (unlike fl_intensity)
     self.fl_warmth = self:normalizeWarmth(warmth)
     local nat_warmth = self:toNativeWarmth(self.fl_warmth)
