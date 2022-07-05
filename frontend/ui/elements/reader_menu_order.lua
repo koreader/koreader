@@ -89,6 +89,7 @@ local order = {
         "font_ui_fallbacks",
         "----------------------------",
         "time",
+        "units",
         "device_status_alarm",
         "charging_led", -- if Device:canToggleChargingLED()
         "autostandby",

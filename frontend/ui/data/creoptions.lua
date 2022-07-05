@@ -223,7 +223,9 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     DCREREADER_CONFIG_T_MARGIN_SIZES_XX_HUGE,
                 },
                 hide_on_apply = true,
-                name_text_hold_callback = optionsutil.showValues,
+                name_text_hold_callback = function(configurable, opt, prefix)
+                    optionsutil.showValues(configurable, opt, prefix, nil, "mm")
+                end,
                 more_options = true,
                 more_options_param = {
                     -- Allow this to tune both top and bottom margins, handling
@@ -275,7 +277,9 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     DCREREADER_CONFIG_B_MARGIN_SIZES_XX_HUGE,
                 },
                 hide_on_apply = true,
-                name_text_hold_callback = optionsutil.showValues,
+                name_text_hold_callback = function(configurable, opt, prefix)
+                    optionsutil.showValues(configurable, opt, prefix, nil, "mm")
+                end,
                 help_text = _([[In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
                 more_options = true,
                 more_options_param = {
@@ -451,7 +455,7 @@ Note that your selected font size is not affected by this setting.]]),
                         name = "font_size",
                         name_text = _("Font Size"),
                     }
-                    optionsutil.showValues(configurable, opt, prefix)
+                    optionsutil.showValues(configurable, opt, prefix, nil, "pt")
                 end,
             },
             {

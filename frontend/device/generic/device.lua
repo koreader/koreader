@@ -239,6 +239,10 @@ function Device:setScreenDPI(dpi_override)
     self.input.gesture_detector:init()
 end
 
+function Device:getDeviceScreenDPI()
+    return self.display_dpi
+end
+
 function Device:getPowerDevice()
     return self.powerd
 end

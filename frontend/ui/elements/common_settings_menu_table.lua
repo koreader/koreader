@@ -608,4 +608,21 @@ common_settings.screenshot = {
     keep_menu_open = true,
 }
 
+common_settings.units = {
+    text = _("Units"),
+    sub_item_table = {
+        {
+            text = _("Metric length"),
+            checked_func = function()
+                return G_reader_settings:readSetting("metric_length", true)
+            end,
+            callback = function(touchmenu_instance)
+                G_reader_settings:toggle("metric_length")
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end,
+            keep_menu_open = true,
+        },
+    },
+}
+
 return common_settings
