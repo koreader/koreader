@@ -495,7 +495,7 @@ function CoverImage:menuEntryCache()
                 end,
             },
             self:menuEntrySetPath("cover_image_cache_path", _("Cover cache folder"), _("Current cache path:\n%1"),
-                ("Choose a cache folder. The contents of the old folder will be migrated."),
+                _("Choose a cache folder. The contents of the old folder will be migrated."),
                 default_cache_path, true, false, self.migrateCache),
             {
                 text = _("Clear cached covers"),
