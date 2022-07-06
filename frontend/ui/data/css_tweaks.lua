@@ -427,10 +427,19 @@ Further small adjustments can be done with 'Line Spacing' in the bottom menu.]])
             },
             {
                 id = "font_size_all_inherit",
+                conflicts_with = "font_size_most_reset",
                 title = _("Ignore publisher font sizes"),
                 description = _("Disable font-size specified in embedded styles."),
                 priority = -1, -- so in-page footnotes smaller can override this
                 css = [[* { font-size: inherit !important; }]],
+            },
+            {
+                id = "font_size_most_reset",
+                conflicts_with = "font_size_all_inherit",
+                title = _("Reset main text font size"),
+                description = _("Disable font-size set on the main text (keeping possibly larger headings untouched), so that KOReader's font size is used."),
+                priority = -1, -- so in-page footnotes smaller can override this
+                css = [[body, p, li, div, blockquote { font-size: 1rem !important; }]],
             },
         },
         {
