@@ -182,7 +182,7 @@ function NumberPickerWidget:init()
                                     if not input_value then return end
                                     if input_value < self.value_min or input_value > self.value_max then
                                         UIManager:show(InfoMessage:new{
-                                            text = T(_("ATTENTION:\nPrefixing the input with ':' disables sanity checks!\nThis value should be in the range of %1 - %2.\nUndefined behavior may occur.\n"), self.value_min, self.value_max),
+                                            text = T(_("ATTENTION:\nPrefixing the input with ':' disables sanity checks!\nThis value should be in the range of %1 - %2.\nUndefined behavior may occur."), self.value_min, self.value_max),
                                         })
                                     end
                                     self.value = input_value
