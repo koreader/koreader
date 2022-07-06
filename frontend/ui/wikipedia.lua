@@ -933,9 +933,9 @@ hr.koreaderwikifrontpage {
 
 /* So many links, make them look like normal text except for underline */
 a {
-    display:inline;
+    display: inline;
     text-decoration: underline;
-    color: black;
+    color: inherit;
     font-weight: inherit;
 }
 /* No underline for links without their href that we removed */
