@@ -7,8 +7,16 @@ They may have the following optional attributes:
  - description: text displayed when holding on menu item
  - priority: higher numbers are appended after lower numbers
    (if not specified, default to 0)
+ - conflicts_with: a string with the id of another tweak that should be
+   disabled when this tweak is enabled, or an array/table of tweaks ids,
+   or a function(other_id) return true for ids conflicting.
+   It is also used with "hold / use on all books", unless the
+   next property is provided.
+ - global_conflicts_with: similar to 'conflicts_with', but used with
+   "hold / use on all books". If 'false', no conflict check is done.
 ]]
 
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 
@@ -32,22 +40,26 @@ local CssTweaks = {
             title = _("Horizontal margins"),
             {
                 id = "margin_horizontal_all_0",
+                conflicts_with = "paragraph_no_horizontal_margin",
                 title = _("Ignore all horizontal margins"),
                 css = [[* { margin-left: 0 !important; margin-right: 0 !important; }]],
             },
             {
                 id = "padding_horizontal_all_0",
+                conflicts_with = "paragraph_no_horizontal_padding",
                 title = _("Ignore all horizontal padding"),
                 css = [[* { padding-left: 0 !important; padding-right: 0 !important; }]],
                 separator = true,
             },
             {
                 id = "paragraph_no_horizontal_margin",
+                conflicts_with = "margin_horizontal_all_0",
                 title = _("Ignore horizontal paragraph margins"),
                 css = [[p, li { margin-left: 0 !important; margin-right: 0 !important; }]],
             },
             {
                 id = "paragraph_no_horizontal_padding",
+                conflicts_with = "padding_horizontal_all_0",
                 title = _("Ignore horizontal paragraph padding"),
                 css = [[p, li { padding-left: 0 !important; padding-right: 0 !important; }]],
             },
@@ -56,22 +68,26 @@ local CssTweaks = {
             title = _("Vertical margins"),
             {
                 id = "margin_vertical_all_0",
+                conflicts_with = "paragraph_no_vertical_margin",
                 title = _("Ignore all vertical margins"),
                 css = [[* { margin-top: 0 !important; margin-bottom: 0 !important; }]],
             },
             {
                 id = "padding_vertical_all_0",
+                conflicts_with = "paragraph_no_vertical_padding",
                 title = _("Ignore all vertical padding"),
                 css = [[* { padding-top: 0 !important; padding-bottom: 0 !important; }]],
                 separator = true,
             },
             {
                 id = "paragraph_no_vertical_margin",
+                conflicts_with = "margin_vertical_all_0",
                 title = _("Ignore vertical paragraph margins"),
                 css = [[p, li { margin-top: 0 !important; margin-bottom: 0 !important; }]],
             },
             {
                 id = "paragraph_no_vertical_padding",
+                conflicts_with = "padding_vertical_all_0",
                 title = _("Ignore vertical paragraph padding"),
                 css = [[p, li { padding-top: 0 !important; padding-bottom: 0 !important; }]],
             },
@@ -179,6 +195,7 @@ These tweaks allow you to change this behavior, and to override publisher rules.
             -- This trick will work with EPUB, but not with single file HTML.
             {
                 id = "widows_orphans_avoid",
+                conflicts_with = "widows_avoid_orphans_allow",
                 title = _("Avoid widows and orphans"),
                 description = _("Avoid widow and orphan lines, allowing for some possible blank space at the bottom of pages."),
                 css = [[
@@ -192,6 +209,7 @@ DocFragment {
             },
             {
                 id = "widows_avoid_orphans_allow",
+                conflicts_with = "widows_orphans_avoid",
                 title = _("Avoid widows but allow orphans"),
                 description = _([[
 Avoid widow lines, but allow orphan lines, allowing for some possible blank space at the bottom of pages.
@@ -225,6 +243,7 @@ DocFragment {
             title = _("Text alignment"),
             {
                 id = "text_align_most_left",
+                conflicts_with = { "text_align_all_left", "text_align_most_justify" },
                 title = _("Left align most text"),
                 description = _("Enforce left alignment of text in common text elements."),
                 css = [[body, p, li { text-align: left !important; }]],
@@ -232,6 +251,7 @@ DocFragment {
             },
             {
                 id = "text_align_all_left",
+                conflicts_with = { "text_align_most_left", "text_align_all_justify" },
                 title = _("Left align all elements"),
                 description = _("Enforce left alignment of text in all elements."),
                 css = [[* { text-align: left !important; }]],
@@ -240,6 +260,7 @@ DocFragment {
             },
             {
                 id = "text_align_most_justify",
+                conflicts_with = { "text_align_most_left", "text_align_all_justify" },
                 title = _("Justify most text"),
                 description = _("Text justification is the default, but it may be overridden by publisher styles. This will re-enable it for most common text elements."),
                 css = [[
@@ -253,6 +274,7 @@ pre {
             },
             {
                 id = "text_align_all_justify",
+                conflicts_with = { "text_align_all_left", "text_align_most_justify" },
                 title = _("Justify all elements"),
                 description = _("Text justification is the default, but it may be overridden by publisher styles. This will force justification on all elements, some of which may not be centered as expected."),
                 css = [[
@@ -286,12 +308,14 @@ You may also want to enable, in the top menu → Gear → Taps and gestures → 
             },
             {
                 id = "body_direction_rtl",
+                conflicts_with = "body_direction_ltr",
                 title = _("Document direction RTL"),
                 css = [[body { direction: rtl !important; }]],
                 priority = 2, -- so it overrides the LTR one below
             },
             {
                 id = "text_align_most_right",
+                conflicts_with = "text_align_all_right",
                 title = _("Right align most text"),
                 description = _("Enforce right alignment of text in common text elements."),
                 -- Includes H1..H6 as this is probably most useful for RTL readers
@@ -300,6 +324,7 @@ You may also want to enable, in the top menu → Gear → Taps and gestures → 
             },
             {
                 id = "text_align_all_right",
+                conflicts_with = "text_align_most_right",
                 title = _("Right align all elements"),
                 description = _("Enforce right alignment of text in all elements."),
                 css = [[* { text-align: right !important; }]],
@@ -308,6 +333,7 @@ You may also want to enable, in the top menu → Gear → Taps and gestures → 
             },
             {
                 id = "body_direction_ltr",
+                conflicts_with = "body_direction_rtl",
                 title = _("Document direction LTR"),
                 css = [[body { direction: ltr !important; }]],
             },
@@ -500,6 +526,7 @@ body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
             title = _("Spacing between paragraphs"),
             {
                 id = "paragraph_whitespace",
+                conflicts_with = { "paragraph_whitespace_half", "paragraph_no_whitespace" },
                 title = _("Spacing between paragraphs"),
                 description = _("Add a line of whitespace between paragraphs."),
                 priority = 5, -- Override "Ignore margins and paddings" above
@@ -507,6 +534,7 @@ body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
             },
             {
                 id = "paragraph_whitespace_half",
+                conflicts_with = { "paragraph_whitespace", "paragraph_no_whitespace" },
                 title = _("Spacing between paragraphs (half)"),
                 description = _("Add half a line of whitespace between paragraphs."),
                 priority = 5,
@@ -514,6 +542,7 @@ body, h1, h2, h3, h4, h5, h6, div, li, td, th { text-indent: 0 !important; }
             },
             {
                 id = "paragraph_no_whitespace",
+                conflicts_with = { "paragraph_whitespace", "paragraph_whitespace_half" },
                 title = _("No spacing between paragraphs"),
                 description = _("No whitespace between paragraphs is the default, but it may be overridden by publisher styles. This will re-enable it for paragraphs and list items."),
                 priority = 5,
@@ -573,45 +602,53 @@ table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse
             title = _("Links"),
             {
                 id = "a_black",
+                conflicts_with = "a_blue",
                 title = _("Links always black"),
                 css = [[a, a * { color: black !important; }]],
             },
             {
                 id = "a_blue",
+                conflicts_with = "a_black",
                 title = _("Links always blue"),
                 css = [[a, a * { color: blue !important; }]],
                 separator = true,
             },
             {
                 id = "a_bold",
+                conflicts_with = "a_not_bold",
                 title = _("Links always bold"),
                 css = [[a, a * { font-weight: bold !important; }]],
             },
             {
                 id = "a_not_bold",
+                conflicts_with = "a_bold",
                 title = _("Links never bold"),
                 css = [[a, a * { font-weight: normal !important; }]],
                 separator = true,
             },
             {
                 id = "a_italic",
+                conflicts_with = "a_not_italic",
                 title = _("Links always italic"),
                 css = [[a, a * { font-style: italic !important; }]],
             },
             {
                 id = "a_not_italic",
+                conflicts_with = "a_italic",
                 title = _("Links never italic"),
                 css = [[a, a * { font-style: normal !important; }]],
                 separator = true,
             },
             {
                 id = "a_underline",
+                conflicts_with = "a_not_underline",
                 title = _("Links always underlined"),
                 css = [[a[href], a[href] * { text-decoration: underline !important; }]],
                 -- Have it apply only on real links with a href=, not on anchors
             },
             {
                 id = "a_not_underline",
+                conflicts_with = "a_underline",
                 title = _("Links never underlined"),
                 css = [[a, a * { text-decoration: none !important; }]],
             },
@@ -816,6 +853,8 @@ body[name="comments"] > section
         },
         {
             id = "footnote-inpage_epub",
+            conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
+            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_epub") end,
             title = _("In-page EPUB footnotes"),
             description = _([[
 Show EPUB footnote text at the bottom of pages that contain links to them.
@@ -839,6 +878,8 @@ This only works with footnotes that have specific attributes set by the publishe
         },
         {
             id = "footnote-inpage_epub_smaller",
+            conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
+            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_epub") end,
             title = _("In-page EPUB footnotes (smaller)"),
             description = _([[
 Show EPUB footnote text at the bottom of pages that contain links to them.
@@ -865,6 +906,8 @@ This only works with footnotes that have specific attributes set by the publishe
         },
         {
             id = "footnote-inpage_wikipedia",
+            conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
+            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_wikipedia") end,
             title = _("In-page Wikipedia footnotes"),
             description = _([[Show footnotes at the bottom of pages in Wikipedia EPUBs.]]),
             css = [[
@@ -880,6 +923,8 @@ ol.references > li > .mw-cite-backlink { display: none; }
         },
         {
             id = "footnote-inpage_wikipedia_smaller",
+            conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
+            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_wikipedia") end,
             title = _("In-page Wikipedia footnotes (smaller)"),
             description = _([[Show footnotes at the bottom of pages in Wikipedia EPUBs.]]),
             css = [[
@@ -900,6 +945,8 @@ ol.references > li > .mw-cite-backlink { display: none; }
         -- usually random across books).
         {
             id = "footnote-inpage_classic_classnames",
+            conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
+            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_classic_classnames") end,
             title = _("In-page classic classname footnotes"),
             description = _([[
 Show footnotes with classic classnames at the bottom of pages.
@@ -918,6 +965,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
         },
         {
             id = "footnote-inpage_classic_classnames_smaller",
+            conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_") end,
+            global_conflicts_with = function(id) return util.stringStartsWith(id, "footnote-inpage_classic_classnames") end,
             title = _("In-page classic classname footnotes (smaller)"),
             description = _([[
 Show footnotes with classic classnames at the bottom of pages.

@@ -267,6 +267,82 @@ function ReaderStyleTweak:nbTweaksEnabled(sub_item_table)
     return nb_enabled, nb_found
 end
 
+function ReaderStyleTweak:resolveConflictsBeforeEnabling(id, conflicts_with)
+    -- conflicts_with may be a string, an array or hash table of ids, or a function:
+    -- make it a function for us here
+    local conflicts_with_type = type(conflicts_with)
+    local conflicts_with_func
+    if conflicts_with_type == "function" then
+        conflicts_with_func = conflicts_with
+    elseif conflicts_with_type == "string" then
+        conflicts_with_func = function(otid) return otid == conflicts_with end
+    elseif conflicts_with_type == "table" then
+        conflicts_with_func = function(otid) return conflicts_with[otid] ~= nil or util.arrayContains(conflicts_with, otid) end
+    else
+        conflicts_with_func = function(otid) return false end
+    end
+    local to_remove = {}
+    for other_id, other_enabled in pairs(self.doc_tweaks) do
+        -- We also reset the provided "id" for a complete cleanup,
+        -- it is expected the called will re-enable it
+        if other_enabled and (other_id == id or conflicts_with_func(other_id)) then
+            table.insert(to_remove, other_id)
+        end
+    end
+    for _, other_id in ipairs(to_remove) do
+        self.doc_tweaks[other_id] = nil
+    end
+    -- global_tweaks may also contain some conflicting ids: we need to make them false
+    -- in doc_tweaks to have them disabled (but we keem them in global_tweaks)
+    local to_make_false = {}
+    for other_id, other_enabled in pairs(self.global_tweaks) do
+        -- (We shouldn't be called if the provided "id" is already enabled
+        -- in global_tweaks. So we don't check for that here.)
+        if other_enabled and conflicts_with_func(other_id) then
+            table.insert(to_make_false, other_id)
+        end
+    end
+    for _, other_id in ipairs(to_make_false) do
+        self.doc_tweaks[other_id] = false
+    end
+end
+
+function ReaderStyleTweak:resolveConflictsBeforeMakingDefault(id, conflicts_with)
+    local conflicts_with_type = type(conflicts_with)
+    local conflicts_with_func
+    if conflicts_with_type == "function" then
+        conflicts_with_func = conflicts_with
+    elseif conflicts_with_type == "string" then
+        conflicts_with_func = function(otid) return otid == conflicts_with end
+    elseif conflicts_with_type == "table" then
+        conflicts_with_func = function(otid) return conflicts_with[otid] ~= nil or util.arrayContains(conflicts_with, otid) end
+    else
+        conflicts_with_func = function(otid) return false end
+    end
+    local to_remove = {}
+    for other_id, other_enabled in pairs(self.global_tweaks) do
+        -- We also reset the provided "id" for a complete cleanup,
+        -- it is expected the called will re-enable it
+        if other_id == id or conflicts_with_func(other_id) then
+            table.insert(to_remove, other_id)
+        end
+    end
+    for _, other_id in ipairs(to_remove) do
+        self.global_tweaks[other_id] = nil
+    end
+    -- Also remove the provided "id" and any conflicting one from doc_tweaks (where
+    -- they may be false and prevent this new default to apply to current book)
+    to_remove = {}
+    for other_id, other_enabled in pairs(self.doc_tweaks) do
+        if other_id == id or conflicts_with_func(other_id) then
+            table.insert(to_remove, other_id)
+        end
+    end
+    for _, other_id in ipairs(to_remove) do
+        self.doc_tweaks[other_id] = nil
+    end
+end
+
 -- Called by ReaderTypeset, returns the already built string
 function ReaderStyleTweak:getCssText()
     return self.css_text
@@ -432,7 +508,24 @@ You can enable individual tweaks on this book with a tap, or view more details a
                         toggle_global_default_callback = function()
                             if self.global_tweaks[item.id] then
                                 self.global_tweaks[item.id] = nil
+                                if self.doc_tweaks[item.id] == false then
+                                    self.doc_tweaks[item.id] = nil
+                                end
                             else
+                                if item.conflicts_with and item.global_conflicts_with ~= false then
+                                    -- For hold/makeDefault/global_tweaks, the tweak may provide 'global_conflicts_with':
+                                    --   if 'false': no conflict checks
+                                    --   if a function: use it instead of item.conflicts_with
+                                    --   if nil or 'true', use item.conflicts_with
+                                    if type(item.global_conflicts_with) == "function" then
+                                        self:resolveConflictsBeforeMakingDefault(item.id, item.global_conflicts_with)
+                                    else
+                                        self:resolveConflictsBeforeMakingDefault(item.id, item.conflicts_with)
+                                    end
+                                    -- Remove all references in doc_tweak
+                                    self:resolveConflictsBeforeEnabling(item.id, item.conflicts_with)
+                                    self.doc_tweaks[item.id] = nil
+                                end
                                 self.global_tweaks[item.id] = true
                             end
                             touchmenu_instance:updateItems()
@@ -452,6 +545,9 @@ You can enable individual tweaks on this book with a tap, or view more details a
                             self.doc_tweaks[item.id] = nil
                         end
                     else
+                        if item.conflicts_with then
+                            self:resolveConflictsBeforeEnabling(item.id, item.conflicts_with)
+                        end
                         self.doc_tweaks[item.id] = true
                     end
                     self:updateCssText(true) -- apply it immediately
@@ -593,10 +689,8 @@ p.someTitleClassName { text-indent: 0; }
 DIV.advertisement { display: none !important; }
 
 .footnoteContainerClassName {
-    font-size: 0.8rem !important;
-    text-align: justify !important;
-    margin: 0 !important;
     -cr-hint: footnote-inpage;
+    margin: 0 !important;
 }
 ]]
 
