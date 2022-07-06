@@ -19,6 +19,7 @@ They may have the following optional attributes:
 local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
+local T = require("ffi/util").template
 
 -- Default globally enabled style tweaks, for new installations
 local DEFAULT_GLOBAL_STYLE_TWEAKS = {}
@@ -992,7 +993,131 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
     font-size: 0.8rem !important;
 }
             ]],
+            separator = true,
         },
+        -- Next tweaks, with the help of crengine, will apply only to elements that were
+        -- matched by previous tweaks that have set them the "footnote-inpage" cr-hint,
+        -- and their children (their content).
+        -- They have to have "-cr-hint: late" so they are applied very late ("*" having
+        -- a very low specificity, would get checked early before the others get a chance
+        -- to apply the hint).
+        -- For the font-size changes, we want to match only block elements (with "-inline")
+        -- as we want to keep any relative font-size (ie. 0.5em) for inline nodes like <sup>.
+        -- We also add a selector for the <autoBoxing> internal element (which are explicitely
+        -- not matched by '*') as we may get some in/as footnote containers, and they would
+        -- inherit some of these properties, that we wish to reset too.
+        (function()
+            local sub_table = {
+                title = _("In-page footnote font size"),
+            }
+            for __, rem in ipairs( { 1.0, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65 } ) do
+                local pct = rem * 100
+                table.insert(sub_table, {
+                    id = T("inpage_footnote_font-size_%1", pct),
+                    conflicts_with = function(id) return util.stringStartsWith(id, "inpage_footnote_font-size_") end,
+                    title = T(_("Footnote font size: %1 %"), pct),
+                    css = T([[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inside-inpage-footnote -inline;
+        font-size: %1rem !important;
+}
+                    ]], rem),
+                })
+            end
+            return sub_table
+        end)(),
+        {
+            title = _("In-page footnote fix-up"),
+            {
+                id = "inpage_footnote_text-indent_0",
+                title = _("No footnote indentation"),
+                css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inside-inpage-footnote;
+        text-indent: 0 !important;
+}
+                ]],
+            },
+            {
+                id = "inpage_footnote_text_justify",
+                title = _("Justify footnote text"),
+                css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inside-inpage-footnote;
+        text-align: justify !important;
+}
+                ]],
+            },
+            {
+                id = "inpage_footnote_no_block_spacing",
+                title = _("Remove block margins"),
+                description = _([[
+Remove block margin and padding inside inpage footnotes.]]),
+                css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inside-inpage-footnote -inline;
+        margin: 0 !important;
+        padding: 0 !important;
+}
+                ]],
+            },
+            {
+                id = "inpage_footnote_no_inline_spacing",
+                title = _("Remove cosmetic spacing"),
+                description = _([[
+Remove inline margin and padding inside inpage footnotes.]]),
+                css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inside-inpage-footnote inline;
+        margin: 0 !important;
+        padding: 0 !important;
+}
+                ]],
+            },
+            {
+                id = "inpage_footnote_all_inline",
+                title = _("Inline all footnote content"),
+                description = _([[
+If the footnote number is on a single line and the footnote text on the next line, or if there are variable levels of indentation, this tweak can make all the footnote content become a single paragraph.
+This will break any complex footnote containing quotes or lists.]]),
+                priority = 5,
+                -- We use "-inpage-footnote" as the inpage-footnote container itself needs to stay block for
+                -- inpage footnote support to work. But all its children will become inline.
+                css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inside-inpage-footnote -inpage-footnote -inline;
+        display: inline !important;
+}
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inside-inpage-footnote;
+        list-style-position: inside;
+}
+                ]],
+            },
+            {
+                id = "inpage_footnote_regularize_text",
+                title = _("Regularize text size on inline elements"),
+                description = _([[
+If the footnote text uses variable or absolute font sizes, line height or vertical alignments, which would make it too irregular, you can reset all of them to get a leaner text (to the expense of loosing superscripts).]]),
+                priority = 6,
+                css = [[
+*, autoBoxing {
+    -cr-hint: late;
+    -cr-only-if: inside-inpage-footnote -inpage-footnote;
+        font-size: inherit !important;
+        line-height: inherit !important;
+        vertical-align: inherit !important;
+}
+                ]],
+            },
+        }
     },
     -- No current need for workarounds
     -- {
