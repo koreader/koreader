@@ -820,6 +820,8 @@ function TouchMenu:onSwipe(arg, ges_ev)
         self:onPrevPage()
     elseif direction == "north" then
         self:closeMenu()
+    elseif direction == "south" then
+        self:onBack()
     end
 end
 
