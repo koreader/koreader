@@ -756,7 +756,7 @@ function TouchMenu:switchMenuTab(tab_num)
     self:updateItems()
 end
 
-function TouchMenu:backToUpperMenu()
+function TouchMenu:backToUpperMenu(no_close)
     if #self.item_table_stack ~= 0 then
         self.item_table = table.remove(self.item_table_stack)
         self.page = 1
@@ -771,7 +771,7 @@ function TouchMenu:backToUpperMenu()
             self.parent_id = nil
         end
         self:updateItems()
-    else
+    elseif not no_close then
         self:closeMenu()
     end
 end
@@ -821,7 +821,10 @@ function TouchMenu:onSwipe(arg, ges_ev)
     elseif direction == "north" then
         self:closeMenu()
     elseif direction == "south" then
-        self:onBack()
+        -- We don't allow the menu to be closed (this is also necessary as
+        -- a swipe south will be emitted when done opening the menu with
+        -- swipe, as the event handled for that is pan south).
+        self:backToUpperMenu(true)
     end
 end
 
