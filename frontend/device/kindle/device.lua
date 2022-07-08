@@ -1,4 +1,5 @@
 local Generic = require("device/generic/device")
+local time = require("ui/time")
 local logger = require("logger")
 
 local function yes() return true end
@@ -147,6 +148,8 @@ local Kindle = Generic:new{
     isNightModeChallenged = no,
     -- NOTE: While this ought to behave on Zelda/Rex, turns out, nope, it really doesn't work on *any* of 'em :/ (c.f., ko#5884).
     canHWDither = no,
+    -- The time the device went into suspend
+    suspend_time = 0,
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -277,10 +280,13 @@ end
 
 function Kindle:wakeupFromSuspend()
     self.powerd:wakeupFromSuspend()
+    self.last_suspend_time = time.boottime_or_realtime_coarse() - self.suspend_time
+    self.total_suspend_time = self.total_suspend_time + self.last_suspend_time
 end
 
 function Kindle:readyToSuspend()
     self.powerd:readyToSuspend()
+    self.suspend_time = time.boottime_or_realtime_coarse()
 end
 
 function Kindle:ambientBrightnessLevel()
