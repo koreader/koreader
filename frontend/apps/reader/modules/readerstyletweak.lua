@@ -284,7 +284,7 @@ function ReaderStyleTweak:resolveConflictsBeforeEnabling(id, conflicts_with)
     local to_remove = {}
     for other_id, other_enabled in pairs(self.doc_tweaks) do
         -- We also reset the provided "id" for a complete cleanup,
-        -- it is expected the called will re-enable it
+        -- it is expected the caller will re-enable it
         if other_enabled and (other_id == id or conflicts_with_func(other_id)) then
             table.insert(to_remove, other_id)
         end
@@ -293,7 +293,7 @@ function ReaderStyleTweak:resolveConflictsBeforeEnabling(id, conflicts_with)
         self.doc_tweaks[other_id] = nil
     end
     -- global_tweaks may also contain some conflicting ids: we need to make them false
-    -- in doc_tweaks to have them disabled (but we keem them in global_tweaks)
+    -- in doc_tweaks to have them disabled (but we keep them in global_tweaks)
     local to_make_false = {}
     for other_id, other_enabled in pairs(self.global_tweaks) do
         -- (We shouldn't be called if the provided "id" is already enabled
@@ -322,7 +322,7 @@ function ReaderStyleTweak:resolveConflictsBeforeMakingDefault(id, conflicts_with
     local to_remove = {}
     for other_id, other_enabled in pairs(self.global_tweaks) do
         -- We also reset the provided "id" for a complete cleanup,
-        -- it is expected the called will re-enable it
+        -- it is expected the caller will re-enable it
         if other_id == id or conflicts_with_func(other_id) then
             table.insert(to_remove, other_id)
         end
@@ -493,7 +493,6 @@ You can enable individual tweaks on this book with a tap, or view more details a
                 tweak_id = item.id,
                 enabled_func = is_enabled,
                 checked_func = function() return self:isTweakEnabled(item.id) end,
-                -- text = item.title or "### undefined tweak title ###",
                 text_func = function()
                     local title = item.title or "### undefined tweak title ###"
                     if self.global_tweaks[item.id] then
@@ -515,9 +514,9 @@ You can enable individual tweaks on this book with a tap, or view more details a
                                 if item.conflicts_with and item.global_conflicts_with ~= false then
                                     -- For hold/makeDefault/global_tweaks, the tweak may provide 'global_conflicts_with':
                                     --   if 'false': no conflict checks
-                                    --   if a function: use it instead of item.conflicts_with
                                     --   if nil or 'true', use item.conflicts_with
-                                    if type(item.global_conflicts_with) == "function" then
+                                    --   otherwise, use it instead of item.conflicts_with
+                                    if item.global_conflicts_with ~= true and item.global_conflicts_with ~= nil then
                                         self:resolveConflictsBeforeMakingDefault(item.id, item.global_conflicts_with)
                                     else
                                         self:resolveConflictsBeforeMakingDefault(item.id, item.conflicts_with)
