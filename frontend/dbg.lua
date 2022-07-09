@@ -21,6 +21,7 @@ These functions don't do anything when debugging is turned off.
 local logger = require("logger")
 local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
+local time = require("ui/time")
 
 local Dbg = {
     -- set to nil so first debug:turnOff call won't be skipped
@@ -124,7 +125,7 @@ end
 function Dbg:logEv(ev)
     local ev_value = tostring(ev.value)
     local log = ev.type.."|"..ev.code.."|"
-                ..ev_value.."|"..ev.time.sec.."|"..ev.time.usec.."\n"
+                ..ev_value.."|"..time.format_time(ev.time).."\n"
     if self.ev_log then
         self.ev_log:write(log)
         self.ev_log:flush()
