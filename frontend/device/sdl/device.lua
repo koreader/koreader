@@ -3,6 +3,7 @@ local Generic = require("device/generic/device")
 local SDL = require("ffi/SDL2_0")
 local ffi = require("ffi")
 local logger = require("logger")
+local time = require("ui/time")
 
 -- SDL computes WM_CLASS on X11/Wayland based on process's binary name.
 -- Some desktop environments rely on WM_CLASS to name the app and/or to assign the proper icon.
@@ -212,7 +213,7 @@ function Device:init()
                         y = 100*scrolled_y,
                     },
                     pos = pos,
-                    time = ev.time,
+                    time = time.timeval(ev.time),
                     mousewheel_direction = scrolled_y,
                 }
                 local fake_ges_release = {
@@ -220,7 +221,7 @@ function Device:init()
                     distance = fake_ges.distance,
                     relative = fake_ges.relative,
                     pos = pos,
-                    time = ev.time,
+                    time = time.timeval(ev.time),
                     from_mousewheel = true,
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)

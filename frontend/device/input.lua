@@ -1261,7 +1261,6 @@ function Input:waitEvent(now, deadline)
                     table.insert(handled, handled_ev)
                 end
             elseif event.type == C.EV_SDL then
-                event.time = event.time and time.timeval(event.time)
                 local handled_ev = self:handleSdlEv(event)
                 if handled_ev then
                     table.insert(handled, handled_ev)
