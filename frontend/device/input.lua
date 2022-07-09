@@ -724,7 +724,7 @@ function Input:handleTouchEv(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", ev.time)
+                self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
@@ -1171,12 +1171,6 @@ function Input:waitEvent(now, deadline)
 
         -- Handle errors
         if ok then
-            -- convert all timevals to time
-            for i = 1, #ev do
-                if ev[i].time then
-                    ev[i].time = time.timeval(ev[i].time)
-                end
-            end
             -- We're good, process the event and go back to UIManager.
             break
         elseif ok == false then
@@ -1214,33 +1208,34 @@ function Input:waitEvent(now, deadline)
                 DEBUG:logEv(event)
                 if event.type == C.EV_KEY then
                     logger.dbg(string.format(
-                        "key event => code: %d (%s), value: %s, time: %s",
+                        "key event => code: %d (%s), value: %s, time: %d.%06d",
                         event.code, self.event_map[event.code] or linux_evdev_key_code_map[event.code], event.value,
-                        time.format_time(event.time)))
+                        event.time.sec, event.time.usec))
                 elseif event.type == C.EV_SYN then
                     logger.dbg(string.format(
-                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %s",
-                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_syn_code_map[event.code],
-                        event.value,time.format_time(event.time)))
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_syn_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
                 elseif event.type == C.EV_ABS then
                     logger.dbg(string.format(
-                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %s",
-                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_abs_code_map[event.code],
-                        event.value,time.format_time(event.time)))
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_abs_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
                 elseif event.type == C.EV_MSC then
                     logger.dbg(string.format(
-                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %s",
-                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_msc_code_map[event.code],
-                        event.value,time.format_time(event.time)))
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_msc_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
                 elseif event.type == C.EV_REP then
                     logger.dbg(string.format(
-                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %s",
-                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_rep_code_map[event.code],
-                        event.value,time.format_time(event.time)))
-                    else
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_rep_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                else
                     logger.dbg(string.format(
-                        "input event => type: %d (%s), code: %d, value: %s, time: %s",
-                        event.type, linux_evdev_type_map[event.type], event.code, event.value, time.format_time(event.time)))
+                        "input event => type: %d (%s), code: %d, value: %s, time: %d.%06d",
+                        event.type, linux_evdev_type_map[event.type], event.code, event.value,
+                        event.time.sec, event.time.usec))
                 end
             end
             self:eventAdjustHook(event)
@@ -1266,6 +1261,7 @@ function Input:waitEvent(now, deadline)
                     table.insert(handled, handled_ev)
                 end
             elseif event.type == C.EV_SDL then
+                event.time = event.time and time.timeval(event.time)
                 local handled_ev = self:handleSdlEv(event)
                 if handled_ev then
                     table.insert(handled, handled_ev)
