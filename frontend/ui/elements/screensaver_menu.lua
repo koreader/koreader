@@ -295,6 +295,15 @@ return {
                             G_reader_settings:saveSetting("screensaver_delay", "tap")
                         end
                     },
+                    {
+                        text = _("Until 'Exit screensaver' gesture"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("screensaver_delay") == "gesture"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_delay", "gesture")
+                        end
+                    },
                 },
             },
         },

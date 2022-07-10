@@ -73,6 +73,7 @@ local settingsList = {
     toggle_wifi = {category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     toggle_fullscreen = {category="none", event="ToggleFullscreen", title=_("Toggle Fullscreen"), device=true, condition=not Device:isAlwaysFullscreen()},
     show_network_info = {category="none", event="ShowNetworkInfo", title=_("Show network info"), device=true, separator=true},
+    exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit screensaver"), device=true},
     suspend = {category="none", event="SuspendEvent", title=_("Suspend"), device=true},
     exit = {category="none", event="Exit", title=_("Exit KOReader"), device=true},
     restart = {category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart()},
@@ -221,6 +222,7 @@ local dispatcher_menu_order = {
     "show_menu",
     "screenshot",
 
+    "exit_screensaver",
     "suspend",
     "exit",
     "restart",
