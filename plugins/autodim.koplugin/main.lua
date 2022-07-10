@@ -11,6 +11,7 @@ local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TrapWidget = require("ui/widget/trapwidget")
+local logger = require("logger")
 local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
@@ -165,16 +166,14 @@ function AutoDim:_schedule_autodim_task(seconds)
     UIManager:scheduleIn(seconds, self.autodim_task, self)
 end
 
+function AutoDim:_unschedule_autodim_task()
+    UIManager:unschedule(self.autodim_task)
+end
+
 function AutoDim:restoreFrontlight()
-    print("xxx restoreFrontlight")
     if self.autodim_save_fl then
-        self.last_action_time = UIManager:getElapsedTimeSinceBoot()
         Device.powerd:setIntensity(self.autodim_save_fl)
         self:updateFooter(true)
-        if self.isCurrentlyDimming then
-            self:_unschedule_ramp_task()
-        end
-        self:_schedule_autodim_task()
         self.autodim_save_fl = nil
     end
 end
@@ -183,11 +182,8 @@ function AutoDim:onInputEvent()
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     -- Make sure the next scheduled autodim check is as much in the future
     -- as possible, to reduce wakes from standby.
+    self:_unschedule_ramp_task()
     self:_schedule_autodim_task()
-end
-
-function AutoDim:_unschedule_autodim_task()
-    UIManager:unschedule(self.autodim_task)
 end
 
 function AutoDim:onResume()
@@ -210,7 +206,7 @@ end
 function AutoDim:onSuspend()
     if self.isCurrentlyDimming then
         self:_unschedule_autodim_task()
-        -- don't unschedule ramp task, as this is done in onResume if necessary
+        self:_unschedule_ramp_task()
         self.isCurrentlyDimming = true -- message to self:onResume to go on with restoring
     end
 end
@@ -221,13 +217,11 @@ function AutoDim:onEnterStandby()
 end
 
 function AutoDim:onLeaveStandby()
-    print("xxx onleavestandby", UIManager:getElapsedTimeSinceBoot() - self.last_action_time, self.isCurrentlyDimming)
     if self.isCurrentlyDimming then
         if self.last_ramp_scheduling_time then
             -- we are during the ramp down
             local now = UIManager:getElapsedTimeSinceBoot()
             local next_ramp_time_s = self.last_ramp_scheduling_time + time.s(self.autodim_step_time_s) - now
-            print("xxx unscheduleRampTask in onlevafestandby")
             self:_unschedule_ramp_task() -- self.last_ramp_scheduling_time gets deleted with this call
             self.isCurrentlyDimming = true -- as this gets deleted by `_unschedule_ramp_task()`
             if next_ramp_time_s <= 0 then -- only happens, when standby is ended by a scheduled ramp_task()
@@ -236,10 +230,9 @@ function AutoDim:onLeaveStandby()
                 self:_schedule_ramp_task(time.to_s(next_ramp_time_s))
             end
         else
-            self:_unschedule_ramp_task() -- self.last_ramp_scheduling_time gets deleted with this call
+            self:_unschedule_ramp_task()
         end
     else
-        self.last_action_time = self.last_action_time - Device.last_standby_time -- correct by time in standby
         UIManager:unschedule(self.ramp_task)
         self:autodim_task() -- check times and reschedule autodim_task if necessary
     end
@@ -261,11 +254,9 @@ end
 function AutoDim:autodim_task()
     if self.isCurrentlyDimming then return end
 
-    print("xxx autodim_task")
     local now = UIManager:getElapsedTimeSinceBoot()
     local idle_duration = now - self.last_action_time
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
-    print("xxx check delay", check_delay)
     if check_delay <= 0 then
         self.autodim_save_fl = self.autodim_save_fl or Device.powerd:frontlightIntensity()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_fraction / 100 + 0.5)
@@ -275,6 +266,9 @@ function AutoDim:autodim_task()
         end
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         if fl_diff > 0 then
+            if self.trap_widget then
+                logger.err("AutoDim: internal error")
+            end
             self.trap_widget = TrapWidget:new{
                 dismiss_callback = function()
                     self:restoreFrontlight()
@@ -304,7 +298,6 @@ function AutoDim:autodim_task()
 end
 
 function AutoDim:ramp_task()
-    print("xxx ramp_task")
     self.isCurrentlyDimming = true -- this will disable rescheduling of the `autodim_task`
     local fl_level = Device.powerd:frontlightIntensity()
     if fl_level > self.autodim_end_fl then
@@ -331,9 +324,11 @@ function AutoDim:_schedule_ramp_task(next_time_s)
 end
 
 function AutoDim:_unschedule_ramp_task()
-    UIManager:unschedule(self.ramp_task)
-    self.isCurrentlyDimming = false
-    self.last_ramp_scheduling_time = nil
+    if self.isCurrentlyDimming then
+        UIManager:unschedule(self.ramp_task)
+        self.isCurrentlyDimming = false
+        self.last_ramp_scheduling_time = nil
+    end
 end
 
 return AutoDim
