@@ -11,7 +11,6 @@ local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TrapWidget = require("ui/widget/trapwidget")
-local logger = require("logger")
 local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
@@ -186,29 +185,25 @@ function AutoDim:onInputEvent()
     self:_schedule_autodim_task()
 end
 
-function AutoDim:onResume()
-    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
-    if self.isCurrentlyDimming then
-        if self.trap_widget then
-            UIManager:close(self.trap_widget)
-            self.trap_widget = nil
-            self.widget_before_dim = nil
-        end
-        UIManager:scheduleIn(1, function()
-            self:restoreFrontlight()
-            self:updateFooter(true)
-        end)
-        self:_unschedule_ramp_task()
-    end
-    self:_schedule_autodim_task()
-end
-
 function AutoDim:onSuspend()
+    self:_unschedule_autodim_task()
     if self.isCurrentlyDimming then
-        self:_unschedule_autodim_task()
         self:_unschedule_ramp_task()
         self.isCurrentlyDimming = true -- message to self:onResume to go on with restoring
     end
+end
+
+function AutoDim:onResume()
+    self.last_action_time = UIManager:getElapsedTimeSinceBoot()
+    if self.trap_widget then
+        UIManager:scheduleIn(1, function()
+            UIManager:close(self.trap_widget)
+            self.trap_widget = nil
+            self:restoreFrontlight()
+        end)
+        self.isCurrentlyDimming = false
+    end
+    self:_schedule_autodim_task()
 end
 
 function AutoDim:onEnterStandby()
@@ -233,7 +228,6 @@ function AutoDim:onLeaveStandby()
             self:_unschedule_ramp_task()
         end
     else
-        UIManager:unschedule(self.ramp_task)
         self:autodim_task() -- check times and reschedule autodim_task if necessary
     end
 end
@@ -266,9 +260,6 @@ function AutoDim:autodim_task()
         end
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         if fl_diff > 0 then
-            if self.trap_widget then
-                logger.err("AutoDim: internal error")
-            end
             self.trap_widget = TrapWidget:new{
                 dismiss_callback = function()
                     self:restoreFrontlight()
