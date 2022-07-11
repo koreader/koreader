@@ -690,6 +690,7 @@ function Screensaver:show()
             message_widget = InfoMessage:new{
                 text = screensaver_message,
                 readonly = true,
+                dismissable = false,
             }
         else
             local face = Font:getFace("infofont")
@@ -777,6 +778,10 @@ function Screensaver:close()
         self.delayed_close = true
     elseif screensaver_delay == "disable" then
         self:close_widget()
+    elseif screensaver_delay == "gesture" then
+        if self.screensaver_widget then
+            self.screensaver_widget:showWaitForGestureMessage()
+        end
     else
         logger.dbg("tap to exit from screensaver")
     end
