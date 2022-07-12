@@ -549,8 +549,11 @@ function Kobo:init()
 
         -- Input
         if util.fileExists("/dev/input/by-path/platform-1-0010-event") then
-            -- Elan (HWConfig TouchCtrl is ekth6)
+            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 1
             self.touch_dev = "/dev/input/by-path/platform-1-0010-event"
+        elseif util.fileExists("/dev/input/by-path/platform-0-0010-event") then
+            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 0
+            self.touch_dev = "/dev/input/by-path/platform-0-0010-event"
         else
             self.touch_dev = "/dev/input/event1"
         end
