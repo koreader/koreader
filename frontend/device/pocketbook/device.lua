@@ -296,7 +296,9 @@ function PocketBook:associateFileExtensions(assoc)
     local info = {}
     for l in io.lines("/ebrmain/config/extensions.cfg") do
         local m = { l:match("^([^:]*):([^:]*):([^:]*):([^:]*):(.*)") }
-        info[m[1]] = m
+        if #m > 0 then
+            info[m[1]] = m
+        end
     end
     local res = {"#koreader"}
     for k,v in pairs(assoc) do
