@@ -1305,9 +1305,11 @@ function Input:inhibitInput(toggle)
             self.handleTouchEv = self.voidEv
         end
         if not self._msc_ev_handler then
-            if not self.device:isPocketBook() then
+            if not self.device:isPocketBook() and not self.device:isAndroid() then
                 -- NOTE: PocketBook is a special snowflake, synthetic Power events are sent as EV_MSC.
                 --       Thankfully, that's all that EV_MSC is used for on that platform.
+                -- NOTE: Android, on the other hand, handles a *lot* of critical stuff over EV_MSC,
+                --       as it's used to communicate between Android and Lua land ;).
                 self._msc_ev_handler = self.handleMiscEv
                 self.handleMiscEv = self.voidEv
             end
