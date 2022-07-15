@@ -46,6 +46,7 @@ local AutoWarmth = WidgetContainer:new{
     name = "autowarmth",
     sched_times_s = {},
     sched_warmths = {},
+    fl_turned_off = nil -- true/false if autowarmth has toggled the frontlight
 }
 
 -- get timezone offset in hours (including dst)
@@ -70,6 +71,7 @@ function AutoWarmth:init()
         or {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0}
     self.warmth = G_reader_settings:readSetting("autowarmth_warmth")
         or { 90, 90, 80, 60, 20, 20, 20, 60, 80, 90, 90}
+    self.fl_off_during_day = G_reader_settings:saveSetting("autowarmth_fl_off_during_day")
 
     -- schedule recalculation shortly afer midnight
     self:scheduleMidnightUpdate()
@@ -441,6 +443,22 @@ function AutoWarmth:getSubMenuItems()
             end,
             text = Device:hasNaturalLight() and _("Warmth and night mode settings") or _("Night mode settings"),
             sub_item_table = self:getWarmthMenu(),
+        },
+        {
+            checked_func = function()
+                return self.fl_off_during_day
+            end,
+            text = _("Frontlight off during the day"),
+            callback = function(touchmenu_instance)
+                self.fl_off_during_day = not self.fl_off_during_day
+				print("xxx fl_off_during_day", self.fl_off_during_day)
+                G_reader_settings:saveSetting("autowarmth_fl_off_during_day", self.fl_off_during_day)
+                self:scheduleMidnightUpdate()
+                if touchmenu_instance then
+                    self:updateItems(touchmenu_instance)
+                end
+            end,
+            keep_menu_open = true,
             separator = true,
         },
         self:getTimesMenu(_("Currently active parameters")),
