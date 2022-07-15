@@ -183,6 +183,7 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
 
     self.sched_times_s = {}
     self.sched_warmths = {}
+    self.fl_turned_off = nil
 
     local function prepareSchedule(times_h, index1, index2)
         local time1_h = times_h[index1]
@@ -324,6 +325,33 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
         -- see https://github.com/koreader/koreader/issues/8363
         UIManager:scheduleIn(delay_s, self.setWarmth, self, next_warmth, true) -- no setWarmth rescheduling, force warmth
     end
+
+	-- Check if AutoWarmth shall toggle frontlight daytime and twilight
+    if self.fl_off_during_day then
+        if time_s > self.current_times_h[5]*3600 and time_s < self.current_times_h[7]*3600 then
+            -- during daytime (depending on choosens activation: SunTime, fixed Schedule, closer...
+			-- turn on frontlight off once, user can override this selection by a gesture
+            if Device.powerd:isFrontlightOn() then
+                if self.fl_turned_off ~= true then -- can be false or nil
+                    Device.powerd:turnOffFrontlight()
+                    self.fl_turned_off = true
+                end
+            else
+                if self.fl_turned_off ~= false then -- can be true or nil
+                    Device.powerd:turnOnFrontlight()
+                    self.fl_turned_off = false
+                end
+            end
+        else
+            -- outside of selected daytime, turn on frontlight once, user can override this selection by a gesture
+            if Device.powerd:isFrontlightOff() then
+                if self.fl_turned_off ~= false then -- can be true or nil
+                    Device.powerd:turnOnFrontlight()
+                    self.fl_turned_off = false
+                end
+            end
+        end
+    end
 end
 
 -- Set warmth and schedule the next warmth change
@@ -451,12 +479,13 @@ function AutoWarmth:getSubMenuItems()
             text = _("Frontlight off during the day"),
             callback = function(touchmenu_instance)
                 self.fl_off_during_day = not self.fl_off_during_day
-				print("xxx fl_off_during_day", self.fl_off_during_day)
+                print("xxx fl_off_during_day", self.fl_off_during_day)
                 G_reader_settings:saveSetting("autowarmth_fl_off_during_day", self.fl_off_during_day)
                 self:scheduleMidnightUpdate()
                 if touchmenu_instance then
                     self:updateItems(touchmenu_instance)
                 end
+                print("xxx self.fl_turned_off", self.fl_turned_off)
             end,
             keep_menu_open = true,
             separator = true,
