@@ -44,7 +44,7 @@ end
 
 local AutoWarmth = WidgetContainer:new{
     name = "autowarmth",
-    sched_times = {},
+    sched_times_s = {},
     sched_warmths = {},
 }
 
@@ -127,10 +127,10 @@ function AutoWarmth:leavePowerSavingState(from_resume)
     -- check if resume and suspend are done on the same day
     if resume_date.day == SunTime.date.day and resume_date.month == SunTime.date.month
         and resume_date.year == SunTime.date.year then
-        local now = SunTime:getTimeInSec(resume_date)
-        self:scheduleNextWarmthChange(now, self.sched_warmth_index, from_resume)
+        local now_s = SunTime:getTimeInSec(resume_date)
+        self:scheduleNextWarmthChange(now_s, self.sched_warmth_index, from_resume)
         -- reschedule 5sec after midnight
-        UIManager:scheduleIn(24*3600 + 5 - now, self.scheduleMidnightUpdate, self)
+        UIManager:scheduleIn(24*3600 + 5 - now_s, self.scheduleMidnightUpdate, self)
     else
         self:scheduleMidnightUpdate(from_resume) -- resume is on the other day, do all calcs again
     end
@@ -177,32 +177,32 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
     SunTime:setPosition(self.location, self.latitude, self.longitude, self.timezone, self.altitude, true)
     SunTime:setAdvanced()
     SunTime:setDate() -- today
-    SunTime:calculateTimes()
+    SunTime:calculateTimes() -- calculates times in hours
 
-    self.sched_times = {}
+    self.sched_times_s = {}
     self.sched_warmths = {}
 
-    local function prepareSchedule(times, index1, index2)
-        local time1 = times[index1]
-        if not time1 then return end
+    local function prepareSchedule(times_h, index1, index2)
+        local time1_h = times_h[index1]
+        if not time1_h then return end
 
-        local time = SunTime:getTimeInSec(time1)
-        table.insert(self.sched_times, time)
+        local time1_s = SunTime:getTimeInSec(time1_h)
+        table.insert(self.sched_times_s, time1_s)
         table.insert(self.sched_warmths, self.warmth[index1])
 
-        local time2 = times[index2]
-        if not time2 then return end -- to near to the pole
+        local time2_h = times_h[index2]
+        if not time2_h then return end -- to near to the pole
         local warmth_diff = math.min(self.warmth[index2], 100) - math.min(self.warmth[index1], 100)
         if warmth_diff ~= 0 then
-            local time_diff = SunTime:getTimeInSec(time2) - time
-            local delta_t = time_diff / math.abs(warmth_diff) -- can be inf, no problem
+            local time_diff_s = SunTime:getTimeInSec(time2_h) - time1_s
+            local delta_t = time_diff_s / math.abs(warmth_diff) -- cannot be inf, no problem
             local delta_w = warmth_diff > 0 and 1 or -1
             for i = 1, math.abs(warmth_diff)-1 do
                 local next_warmth = math.min(self.warmth[index1], 100) + delta_w * i
                 -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
                 -- which map to warmth 0, 10, 20, 30 ... 100)
                 if frac(next_warmth * device_warmth_fit_scale) == 0 then
-                    table.insert(self.sched_times, time + delta_t * i)
+                    table.insert(self.sched_times_s, time1_s + delta_t * i)
                     table.insert(self.sched_warmths, math.floor(math.min(self.warmth[index1], 100) + delta_w * i))
                 end
             end
@@ -210,75 +210,73 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
     end
 
     if self.activate == activate_sun then
-        self.current_times = {unpack(SunTime.times, 1, midnight_index)}
+        self.current_times_h = {unpack(SunTime.times, 1, midnight_index)}
     elseif self.activate == activate_schedule then
-        self.current_times = {unpack(self.scheduler_times, 1, midnight_index)}
+        self.current_times_h = {unpack(self.scheduler_times, 1, midnight_index)}
     else
-        self.current_times = {unpack(SunTime.times, 1, midnight_index)}
+        self.current_times_h = {unpack(SunTime.times, 1, midnight_index)}
         if self.activate == activate_closer_noon then
             for i = 1, midnight_index do
-                if not self.current_times[i] then
-                    self.current_times[i] = self.scheduler_times[i]
+                if not self.current_times_h[i] then
+                    self.current_times_h[i] = self.scheduler_times[i]
                 elseif self.scheduler_times[i] and
-                    math.abs(self.current_times[i]%24 - 12) > math.abs(self.scheduler_times[i]%24 - 12) then
-                    self.current_times[i] = self.scheduler_times[i]
+                    math.abs(self.current_times_h[i]%24 - 12) > math.abs(self.scheduler_times[i]%24 - 12) then
+                    self.current_times_h[i] = self.scheduler_times[i]
                 end
             end
         else -- activate_closer_midnight
             for i = 1, midnight_index do
-                if not self.current_times[i] then
-                    self.current_times[i] = self.scheduler_times[i]
+                if not self.current_times_h[i] then
+                    self.current_times_h[i] = self.scheduler_times[i]
                 elseif self.scheduler_times[i] and
-                    math.abs(self.current_times[i]%24 - 12) < math.abs(self.scheduler_times[i]%24 - 12) then
-                    self.current_times[i] = self.scheduler_times[i]
+                    math.abs(self.current_times_h[i]%24 - 12) < math.abs(self.scheduler_times[i]%24 - 12) then
+                    self.current_times_h[i] = self.scheduler_times[i]
                 end
             end
         end
     end
 
     if self.easy_mode then
-        self.current_times[1] = nil
-        self.current_times[2] = nil
-        self.current_times[3] = nil
-        self.current_times[6] = nil
-        self.current_times[9] = nil
-        self.current_times[10] = nil
-        self.current_times[11] = nil
+        self.current_times_h[1] = nil
+        self.current_times_h[2] = nil
+        self.current_times_h[3] = nil
+        self.current_times_h[6] = nil
+        self.current_times_h[9] = nil
+        self.current_times_h[10] = nil
+        self.current_times_h[11] = nil
     end
 
     -- here are dragons
     local i = 1
     -- find first valid entry
-    while not self.current_times[i] and i <= midnight_index do
+    while not self.current_times_h[i] and i <= midnight_index do
         i = i + 1
     end
     local next
     while i <= midnight_index do
         next = i + 1
         -- find next valid entry
-        while not self.current_times[next] and next <= midnight_index do
+        while not self.current_times_h[next] and next <= midnight_index do
             next = next + 1
         end
-        prepareSchedule(self.current_times, i, next)
+        prepareSchedule(self.current_times_h, i, next)
         i = next
     end
 
-    local now = SunTime:getTimeInSec()
+    local now_s = SunTime:getTimeInSec()
 
     -- reschedule 5sec after midnight
-    UIManager:scheduleIn(24*3600 + 5 - now, self.scheduleMidnightUpdate, self)
+    UIManager:scheduleIn(24*3600 + 5 - now_s, self.scheduleMidnightUpdate, self)
     -- and schedule the first warmth change
-    self:scheduleNextWarmthChange(now, 1, from_resume)
+    self:scheduleNextWarmthChange(now_s, 1, from_resume)
 end
 
 -- schedules the next warmth change
 -- search_pos ... start searching from that index
 -- from_resume ... true if first call after resume
-function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
+function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
     logger.dbg("AutoWarmth: scheduleWarmthChange")
-    if UIManager:unschedule(AutoWarmth.setWarmth) then
-        logger.err("AutoWarmth: abnormal unschedule, time changed?")
-    end
+    UIManager:unschedule(AutoWarmth.setWarmth)
 
     if self.activate == 0 or #self.sched_warmths == 0 or search_pos > #self.sched_warmths then
         return
@@ -299,9 +297,9 @@ function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
     local actual_warmth = self.sched_warmths[self.sched_warmth_index or #self.sched_warmths]
     local next_warmth = actual_warmth
     for i = self.sched_warmth_index, #self.sched_warmths do
-        if self.sched_times[i] <= time then
+        if self.sched_times_s[i] <= time_s then
             actual_warmth = self.sched_warmths[i] or actual_warmth
-            if self.sched_times[i] <= time + delay_s then
+            if self.sched_times_s[i] <= time_s + delay_s then
                 next_warmth = self.sched_warmths[i] or next_warmth
             end
         else
@@ -311,10 +309,10 @@ function AutoWarmth:scheduleNextWarmthChange(time, search_pos, from_resume)
     end
     -- update current warmth immediately
     self:setWarmth(actual_warmth, false) -- no setWarmth rescheduling, don't force warmth
-    local next_sched_time = self.sched_times[self.sched_warmth_index] - time
-    if self.sched_warmth_index <= #self.sched_warmths and next_sched_time > 0 then
+    local next_sched_time_s = self.sched_times_s[self.sched_warmth_index] - time_s
+    if self.sched_warmth_index <= #self.sched_warmths and next_sched_time_s > 0 then
         -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
-        UIManager:scheduleIn(next_sched_time, self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
+        UIManager:scheduleIn(next_sched_time_s, self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
     end
 
     if from_resume then
@@ -337,8 +335,8 @@ function AutoWarmth:setWarmth(val, schedule_next, force_warmth)
         end
     end
     if schedule_next then
-        local now = SunTime:getTimeInSec()
-        self:scheduleNextWarmthChange(now, self.sched_warmth_index, false)
+        local now_s = SunTime:getTimeInSec()
+        self:scheduleNextWarmthChange(now_s, self.sched_warmth_index, false)
     end
 end
 
@@ -810,14 +808,14 @@ end
 
 -- title
 -- location: add a location string
--- activator: nil               .. current_times,
+-- activator: nil               .. current_times_h,
 --            activate_sun      .. sun times
 --            activate_schedule .. scheduler times
 -- request_easy: true if easy_mode should be used
 function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     local times
     if not activator then
-        times = self.current_times
+        times = self.current_times_h
     elseif activator == activate_sun then
         times = SunTime.times
     elseif activator == activate_schedule then
@@ -852,7 +850,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - str_len)
             .. self:hoursToClock(t[num])
         if easy then
-            if t[num] and self.current_times[num] and self.current_times[num] ~= t[num] then
+            if t[num] and self.current_times_h[num] and self.current_times_h[num] ~= t[num] then
                 return text .. "\n"
             else
                 return ""
@@ -862,7 +860,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         if not t[num] then -- entry deactivated
             return retval .. "\n"
         elseif Device:hasNaturalLight() then
-            if self.current_times[num] == t[num] then
+            if self.current_times_h[num] == t[num] then
                 if self.warmth[num] <= 100 then
                     return retval .. " (💡" .. self.warmth[num] .."%)\n"
                 else
@@ -872,7 +870,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
                 return retval .. "\n"
             end
         else
-            if self.current_times[num] == t[num] then
+            if self.current_times_h[num] == t[num] then
                 if self.warmth[num] <= 100 then
                     return retval .. " (☼)\n"
                 else
@@ -922,7 +920,7 @@ end
 
 -- title
 -- location: add a location string
--- activator: nil               .. current_times,
+-- activator: nil               .. current_times_h,
 --            activate_sun      .. sun times
 --            activate_schedule .. scheduler times
 function AutoWarmth:getTimesMenu(title, location, activator)
