@@ -475,7 +475,14 @@ function AutoWarmth:getSubMenuItems()
             callback = function(touchmenu_instance)
                 self.fl_off_during_day = not self.fl_off_during_day
                 G_reader_settings:saveSetting("autowarmth_fl_off_during_day", self.fl_off_during_day)
+
                 self:scheduleMidnightUpdate()
+                -- Turn the fl on during day if necessary;
+                -- no need to turn it off as this is done trough `scheduleMidnightUpdate()`
+                if not self.fl_off_during_day and Device.powerd:isFrontlightOff() then
+                    Device.powerd:turnOnFrontlight()
+                end
+
                 if touchmenu_instance then
                     self:updateItems(touchmenu_instance)
                 end
