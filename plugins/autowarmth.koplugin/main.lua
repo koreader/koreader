@@ -196,11 +196,11 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         local time2_h = times_h[index2]
         if not time2_h then return end -- to near to the pole
         local warmth_diff = math.min(self.warmth[index2], 100) - math.min(self.warmth[index1], 100)
-        if warmth_diff ~= 0 then
-            local time_diff_s = SunTime:getTimeInSec(time2_h) - time1_s
+        local time_diff_s = SunTime:getTimeInSec(time2_h) - time1_s
+        if warmth_diff ~= 0 and time_diff_s > 0 then
             local delta_t = time_diff_s / math.abs(warmth_diff) -- cannot be inf, no problem
             local delta_w = warmth_diff > 0 and 1 or -1
-            for i = 1, math.abs(warmth_diff)-1 do
+            for i = 1, math.abs(warmth_diff) - 1 do
                 local next_warmth = math.min(self.warmth[index1], 100) + delta_w * i
                 -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
                 -- which map to warmth 0, 10, 20, 30 ... 100)
@@ -347,7 +347,6 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
             self.fl_turned_off = false
         end
     end
-    print("xxx", time_s)
 end
 
 -- Set warmth and schedule the next warmth change
@@ -690,7 +689,7 @@ function AutoWarmth:getScheduleMenu()
                             UIManager:show(ConfirmBox:new{
                                 text = _("This time is before the previous time.\nAdjust the previous time?"),
                                 ok_callback = function()
-                                    for i = num-1, 1, -1 do
+                                    for i = num - 1, 1, -1 do
                                         if self.scheduler_times[i] then
                                             if new_time < self.scheduler_times[i] then
                                                 self.scheduler_times[i] = new_time
