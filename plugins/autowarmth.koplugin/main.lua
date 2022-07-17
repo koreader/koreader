@@ -334,6 +334,7 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
             if Device.powerd:isFrontlightOn() then
                 if self.fl_turned_off ~= true then -- can be false or nil
                     Device.powerd:turnOffFrontlight()
+                    UIManager:broadcastEvent(Event:new("FrontlightTurnedOff"))
                 end
             end
             self.fl_turned_off = true

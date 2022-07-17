@@ -209,6 +209,7 @@ end
 function AutoDim:onEnterStandby()
     self:_unschedule_autodim_task()
     -- don't unschedule ramp task, as this is done in onLeaveStandby if necessary
+    self.autodim_fl_save = nil
 end
 
 function AutoDim:onLeaveStandby()
@@ -232,6 +233,21 @@ function AutoDim:onLeaveStandby()
     end
 end
 
+function AutoDim:onFrontlightTurnedOff()
+    -- This might be happening through autowarmth during a ramp down.
+    -- Set original intensity, but don't turn fl on actually.
+    self.isCurrentlyDimming = false
+    self.last_ramp_scheduling_time = nil
+    UIManager:unschedule(self.ramp_task)
+
+    if self.autodim_fl_save then
+        Device.powerd.fl_intensity = self.autodim_save_fl
+    end
+    self.autodim_fl_save = nil
+    UIManager:close(self.trap_widget) -- don't swallow input events from now
+    self:_schedule_autodim_task() -- reschedule
+end
+
 function AutoDim:updateFooter(clear)
     -- update footer only if it is not covered by another widget
     if self.top_widget_before_dim == "ReaderUI" or
@@ -247,7 +263,9 @@ end
 
 function AutoDim:autodim_task()
     if self.isCurrentlyDimming then return end
-
+    if Device.powerd:isFrontlightOff() then
+        self:_schedule_autodim_task()
+    end
     local now = UIManager:getElapsedTimeSinceBoot()
     local idle_duration = now - self.last_action_time
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
@@ -281,7 +299,8 @@ function AutoDim:autodim_task()
             self:ramp_task() -- which schedules itself
             -- Don't schedule `autodim_task` here, as this is done in `trap_widget.dismiss_callback` or in `onResume`
         else
-            self:_schedule_autodim_task(time.s(self.autodim_starttime_m * 60))
+            self.autodim_save_fl = nil
+            self:_schedule_autodim_task()
         end
     else
         self:_schedule_autodim_task(time.to_s(check_delay))
