@@ -446,7 +446,7 @@ If that font happens to be part of this list already, it will be used first.]]),
         end,
         help_text = _([[
 Adjust the size of each fallback font so they all get the same x-height, and lowercase characters picked in them look similarly sized as those from the defaut font.
-This may help with greek words inside latin text (as latin fonts often do not have all the greek characters), but may make Chinese or Indic characters smaller when picked from fallback fonts.]]),
+This may help with Greek words inside Latin text (as Latin fonts often do not have all the greek characters), but may make Chinese or Indic characters smaller when picked from fallback fonts.]]),
         separator = true,
     })
 
@@ -478,7 +478,7 @@ This may help with greek words inside latin text (as latin fonts often do not ha
         end,
         help_text = _([[
 Monospace fonts may look big when inline with your main font if it has a small x-height.
-This allows scaling all monospace fonts by this percentage, so they can fit your preferred font height or have them be a bit smaller to distinguish it more easily.]]),
+This setting allows scaling all monospace fonts by this percentage so they can fit your preferred font height, or you can make them be a bit smaller to distinguish them more easily.]]),
         separator = true,
     })
 
