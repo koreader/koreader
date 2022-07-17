@@ -446,7 +446,7 @@ If that font happens to be part of this list already, it will be used first.]]),
         end,
         help_text = _([[
 Adjust the size of each fallback font so they all get the same x-height, and lowercase characters picked in them look similarly sized as those from the defaut font.
-This may help with Greek words inside Latin text (as Latin fonts often do not have all the greek characters), but may make Chinese or Indic characters smaller when picked from fallback fonts.]]),
+This may help with Greek words among Latin text (as Latin fonts often do not have all the Greek characters), but may make Chinese or Indic characters smaller when picked from fallback fonts.]]),
         separator = true,
     })
 
