@@ -55,17 +55,23 @@ function ReaderFont:init()
     -- Font list
     local face_list = cre.getFontFaces()
     for k,v in ipairs(face_list) do
-        local font_filename, font_faceindex = cre.getFontFaceFilenameAndFaceIndex(v)
+        local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
         table.insert(self.face_table, {
             text_func = function()
                 -- defaults are hardcoded in credocument.lua
                 local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
                 local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_fonts[1]
+                local monospace_font = G_reader_settings:readSetting("monospace_font") or self.ui.document.monospace_font
                 local text = v
                 if font_filename and font_faceindex then
                     text = FontList:getLocalizedFontName(font_filename, font_faceindex) or text
                 end
 
+                if v == monospace_font then
+                    text = text .. " \u{1F13C}" -- Squared Latin Capital Letter M
+                elseif is_monospace then
+                    text = text .. " \u{1D39}" -- Modified Letter Capital M
+                end
                 if v == default_font then
                     text = text .. "   ★"
                 end
@@ -85,7 +91,7 @@ function ReaderFont:init()
                 self:onSetFont(v)
             end,
             hold_callback = function(touchmenu_instance)
-                self:makeDefault(v, touchmenu_instance)
+                self:makeDefault(v, is_monospace, touchmenu_instance)
             end,
             checked_func = function()
                 return v == self.font_face
@@ -306,8 +312,31 @@ function ReaderFont:onSetFont(face)
     end
 end
 
-function ReaderFont:makeDefault(face, touchmenu_instance)
+function ReaderFont:makeDefault(face, is_monospace, touchmenu_instance)
     if face then
+        if is_monospace then
+            -- If the font is monospace, assume it wouldn't be a candidate
+            -- to be set as a fallback font, and allow it to be set as the
+            -- default monospace font.
+            UIManager:show(MultiConfirmBox:new{
+                text = T(_("Would you like %1 to be used as the default font (★), or the monospace font (\u{1F13C})?"), face),
+                choice1_text = _("Default"),
+                choice1_callback = function()
+                    G_reader_settings:saveSetting("cre_font", face)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+                choice2_text = C_("Font", "Monospace"),
+                choice2_callback = function()
+                    G_reader_settings:saveSetting("monospace_font", face)
+                    -- We need to reset the main font for the biases to be re-set correctly
+                    local current_face = self.font_face
+                    self.font_face = nil
+                    self:onSetFont(current_face)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
+            return
+        end
         UIManager:show(MultiConfirmBox:new{
             text = T(_("Would you like %1 to be used as the default font (★), or the fallback font (�)?\n\nCharacters not found in the active font are shown in the fallback font instead."), face),
             choice1_text = _("Default"),
@@ -404,6 +433,52 @@ These fonts will be used in this order:
 You can set a preferred fallback font with a long-press on a font name, and it will be used before these.
 If that font happens to be part of this list already, it will be used first.]]),
             table.concat(self.ui.document.fallback_fonts, "\n")),
+    })
+    table.insert(settings_table, {
+        text = _("Adjust fallback font sizes"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("cre_adjusted_fallback_font_sizes")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("cre_adjusted_fallback_font_sizes")
+            self.ui.document:setAdjustedFallbackFontSizes(G_reader_settings:nilOrTrue("cre_adjusted_fallback_font_sizes"))
+            self.ui:handleEvent(Event:new("UpdatePos"))
+        end,
+        help_text = _([[
+Adjust the size of each fallback font so they all get the same x-height, and lowercase characters picked in them look similarly sized as those from the defaut font.
+This may help with Greek words among Latin text (as Latin fonts often do not have all the Greek characters), but may make Chinese or Indic characters smaller when picked from fallback fonts.]]),
+        separator = true,
+    })
+
+    table.insert(settings_table, {
+        text_func = function()
+            local scale = G_reader_settings:readSetting("cre_monospace_scaling") or 100
+            return T(_("Monospace fonts scaling: %1 %"), scale)
+        end,
+        callback = function()
+            local SpinWidget = require("ui/widget/spinwidget")
+            UIManager:show(SpinWidget:new{
+                value = G_reader_settings:readSetting("cre_monospace_scaling") or 100,
+                value_min = 30,
+                value_step = 1,
+                value_hold_step = 5,
+                value_max = 150,
+                unit = "%",
+                title_text = _("Monospace font scaling"),
+                -- no info_text: we want this widget to stay small, so we can move it
+                -- around to see the effect of the scaling
+                keep_shown_on_apply = true,
+                callback = function(spin)
+                    local scale = spin.value
+                    G_reader_settings:saveSetting("cre_monospace_scaling", scale)
+                    self.ui.document:setMonospaceFontScaling(scale)
+                    self.ui:handleEvent(Event:new("UpdatePos"))
+                end
+            })
+        end,
+        help_text = _([[
+Monospace fonts may look big when inline with your main font if it has a small x-height.
+This setting allows scaling all monospace fonts by this percentage so they can fit your preferred font height, or you can make them be a bit smaller to distinguish them more easily.]]),
         separator = true,
     })
 
