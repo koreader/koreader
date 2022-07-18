@@ -209,7 +209,6 @@ end
 function AutoDim:onEnterStandby()
     self:_unschedule_autodim_task()
     -- don't unschedule ramp task, as this is done in onLeaveStandby if necessary
-    self.autodim_fl_save = nil
 end
 
 function AutoDim:onLeaveStandby()
@@ -240,11 +239,14 @@ function AutoDim:onFrontlightTurnedOff()
     self.last_ramp_scheduling_time = nil
     UIManager:unschedule(self.ramp_task)
 
-    if self.autodim_fl_save then
+    if self.autodim_save_fl then
         Device.powerd.fl_intensity = self.autodim_save_fl
     end
-    self.autodim_fl_save = nil
-    UIManager:close(self.trap_widget) -- don't swallow input events from now
+    self.autodim_save_fl = nil
+    if self.trap_widget then
+        UIManager:close(self.trap_widget) -- don't swallow input events from now
+        self.trap_widget = nil
+    end
     self:_schedule_autodim_task() -- reschedule
 end
 
