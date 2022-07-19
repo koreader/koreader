@@ -14,7 +14,7 @@ endif
 
 # releases do not contain tests and misc data
 IS_RELEASE := $(if $(or $(EMULATE_READER),$(WIN32)),,1)
-IS_RELEASE := $(if $(or $(IS_RELEASE),$(APPIMAGE),$(DEBIAN),$(MACOS)),1,)
+IS_RELEASE := $(if $(or $(IS_RELEASE),$(APPIMAGE),$(LINUX),$(MACOS)),1,)
 
 ANDROID_ARCH?=arm
 ifeq ($(ANDROID_ARCH), x86)
@@ -25,6 +25,16 @@ ANDROID_ABI?=armeabi-v7a
 # Use the git commit count as the (integer) Android version code
 ANDROID_VERSION?=$(shell git rev-list --count HEAD)
 ANDROID_NAME?=$(VERSION)
+
+LINUX_ARCH?=native
+ifeq ($(LINUX_ARCH), native)
+	LINUX_ARCH_NAME:=$(shell uname -m)
+else ifeq ($(LINUX_ARCH), arm64)
+	LINUX_ARCH_NAME:=aarch64
+else ifeq ($(LINUX_ARCH), arm)
+	LINUX_ARCH_NAME:=armv7l
+endif
+LINUX_ARCH_NAME?=$(LINUX_ARCH)
 
 # set PATH to find CC in managed toolchains
 ifeq ($(TARGET), android)
@@ -55,7 +65,7 @@ ANDROID_LIBS_ROOT:=$(ANDROID_LAUNCHER_DIR)/libs
 ANDROID_LIBS_ABI:=$(ANDROID_LIBS_ROOT)/$(ANDROID_ABI)
 APPIMAGE_DIR=$(PLATFORM_DIR)/appimage
 CERVANTES_DIR=$(PLATFORM_DIR)/cervantes
-DEBIAN_DIR=$(PLATFORM_DIR)/debian
+LINUX_DIR=$(PLATFORM_DIR)/linux
 KINDLE_DIR=$(PLATFORM_DIR)/kindle
 KOBO_DIR=$(PLATFORM_DIR)/kobo
 MACOS_DIR=$(PLATFORM_DIR)/mac
@@ -103,9 +113,10 @@ endif
 ifdef ANDROID
 	cd $(INSTALL_DIR)/koreader && \
 		ln -sf ../../$(ANDROID_DIR)/*.lua .
-endif
+
 	@echo "[*] Install update once marker"
 	@echo "# This file indicates that update once patches have not been applied yet." > $(INSTALL_DIR)/koreader/update_once.marker
+endif
 ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
@@ -412,31 +423,44 @@ androidupdate: all
 	cp $(ANDROID_LAUNCHER_DIR)/bin/NativeActivity.apk \
 		koreader-android-$(ANDROID_ARCH)$(KODEDUG_SUFFIX)-$(VERSION).apk
 
-debianupdate: all
+LINUX_PACKAGE:=koreader-linux-$(LINUX_ARCH_NAME)$(KODEDUG_SUFFIX)-$(VERSION).tar.gz
+linuxupdate: all
 	mkdir -pv \
-		$(INSTALL_DIR)/debian/usr/bin \
-		$(INSTALL_DIR)/debian/usr/lib \
-		$(INSTALL_DIR)/debian/usr/share/pixmaps \
-		$(INSTALL_DIR)/debian/usr/share/applications \
-		$(INSTALL_DIR)/debian/usr/share/doc/koreader \
-		$(INSTALL_DIR)/debian/usr/share/man/man1
+		$(INSTALL_DIR)/linux/usr/bin \
+		$(INSTALL_DIR)/linux/usr/lib \
+		$(INSTALL_DIR)/linux/usr/share/pixmaps \
+		$(INSTALL_DIR)/linux/usr/share/applications \
+		$(INSTALL_DIR)/linux/usr/share/doc/koreader \
+		$(INSTALL_DIR)/linux/usr/share/man/man1
 
-	cp -pv resources/koreader.png $(INSTALL_DIR)/debian/usr/share/pixmaps
-	cp -pv $(DEBIAN_DIR)/koreader.desktop $(INSTALL_DIR)/debian/usr/share/applications
-	cp -pv $(DEBIAN_DIR)/copyright COPYING $(INSTALL_DIR)/debian/usr/share/doc/koreader
-	cp -pv $(DEBIAN_DIR)/koreader.sh $(INSTALL_DIR)/debian/usr/bin/koreader
-	cp -Lr $(INSTALL_DIR)/koreader $(INSTALL_DIR)/debian/usr/lib
+	cp -pv resources/koreader.png $(INSTALL_DIR)/linux/usr/share/pixmaps
+	cp -pv $(LINUX_DIR)/koreader.desktop $(INSTALL_DIR)/linux/usr/share/applications
+	cp -pv $(LINUX_DIR)/copyright COPYING $(INSTALL_DIR)/linux/usr/share/doc/koreader
+	cp -pv $(LINUX_DIR)/koreader.sh $(INSTALL_DIR)/linux/usr/bin/koreader
+	cp -Lr $(INSTALL_DIR)/koreader $(INSTALL_DIR)/linux/usr/lib
 
-	gzip -cn9 $(DEBIAN_DIR)/changelog > $(INSTALL_DIR)/debian/usr/share/doc/koreader/changelog.Debian.gz
-	gzip -cn9 $(DEBIAN_DIR)/koreader.1 > $(INSTALL_DIR)/debian/usr/share/man/man1/koreader.1.gz
+	gzip -cn9 $(LINUX_DIR)/koreader.1 > $(INSTALL_DIR)/linux/usr/share/man/man1/koreader.1.gz
 
 	chmod 644 \
-		$(INSTALL_DIR)/debian/usr/share/doc/koreader/changelog.Debian.gz \
-		$(INSTALL_DIR)/debian/usr/share/doc/koreader/copyright \
-		$(INSTALL_DIR)/debian/usr/share/man/man1/koreader.1.gz
+		$(INSTALL_DIR)/linux/usr/share/doc/koreader/copyright \
+		$(INSTALL_DIR)/linux/usr/share/man/man1/koreader.1.gz
 
 	rm -rf \
-		$(INSTALL_DIR)/debian/usr/lib/koreader/{ota,cache,clipboard,screenshots,spec,tools,resources/fonts,resources/icons/src}
+		$(INSTALL_DIR)/linux/usr/lib/koreader/{ota,cache,clipboard,screenshots,spec,tools,l10n/templates,resources/fonts,resources/icons/src}
+
+	# remove leftovers
+	find $(INSTALL_DIR)/linux -type f \( -name ".git" -o -name ".gitignore" -o -name "discovery2spore" -o -name "wadl2spore" -o -name "*.txt" -o -name "LICENSE*" -o -name "NOTICE" -o -name "README.md" \) -print0 | xargs -0 rm -rf
+	find $(INSTALL_DIR)/linux -type d \( -name "test" -o -name ".github" \) -print0 | xargs -0 rm -rf
+
+	# fix permissions
+	find $(INSTALL_DIR)/linux -type d -print0 | xargs -0 chmod 755
+	find $(INSTALL_DIR)/linux -executable -type f -print0 | xargs -0 chmod 755
+	find $(INSTALL_DIR)/linux -type f \( -name "COPYING" -o -name "git-rev" -o -name "*manifest" -o -name "*.cff" -o -name "*.css" -o -name "*.desktop" -o -name "*.json" -o -name "*.html" -o -name "*.lua" -o -name "*.pattern" -o -name "*.png" -o -name "*.otf" -o -name "*.po*" -o -name "*.so*" -o -name "*.svg" -o -name "*.template" -o -name "*.tpl" -o -name "*.ttf" \) -print0 | xargs -0 chmod 644
+	find $(INSTALL_DIR)/linux -type f -name "reader.lua" -print0 | xargs -0 chmod 755
+	cd $(INSTALL_DIR)/linux/usr && \
+		tar -czf ../../../$(LINUX_PACKAGE) *
+
+	rm -rf $(INSTALL_DIR)/linux
 
 macosupdate: all
 	mkdir -p \
@@ -559,18 +583,8 @@ else ifeq ($(TARGET), remarkable)
 	make remarkableupdate
 else ifeq ($(TARGET), ubuntu-touch)
 	make utupdate
-else ifeq ($(TARGET), debian)
-	make debianupdate
-	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR)
-else ifeq ($(TARGET), debian-armel)
-	make debianupdate
-	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR) armel
-else ifeq ($(TARGET), debian-armhf)
-	make debianupdate
-	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR) armhf
-else ifeq ($(TARGET), debian-arm64)
-	make debianupdate
-	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR) arm64
+else ifeq ($(TARGET), linux)
+	make linuxupdate
 else ifeq ($(TARGET), macos)
 	make macosupdate
 	$(CURDIR)/platform/mac/do_mac_bundle.sh $(INSTALL_DIR)
