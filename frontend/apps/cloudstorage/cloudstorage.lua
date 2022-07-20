@@ -604,7 +604,6 @@ function CloudStorage:uploadFile(url)
     local path_chooser
     path_chooser = PathChooser:new{
         select_directory = false,
-        detailed_file_info = true,
         path = self.last_path,
         onConfirm = function(file_path)
             self.last_path = file_path:match("(.*)/")
