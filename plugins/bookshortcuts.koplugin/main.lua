@@ -92,9 +92,6 @@ function BookShortcuts:getSubMenuItems()
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 local path_chooser = PathChooser:new{
-                    select_file = true,
-                    select_directory = true,
-                    detailed_file_info = true,
                     path = G_reader_settings:readSetting("home_dir"),
                     onConfirm = function(path)
                         self:addShortcut(path)
