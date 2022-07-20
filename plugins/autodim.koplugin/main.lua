@@ -15,6 +15,7 @@ local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
+local Powerd = Device.powerd
 local T = FFIUtil.template
 
 local DEFAULT_AUTODIM_STARTTIME_M = 5
@@ -171,7 +172,7 @@ end
 
 function AutoDim:restoreFrontlight()
     if self.autodim_save_fl then
-        Device.powerd:setIntensity(self.autodim_save_fl)
+        Powerd:setIntensity(self.autodim_save_fl)
         self:updateFooter(true)
         self.autodim_save_fl = nil
     end
@@ -239,9 +240,7 @@ function AutoDim:onFrontlightTurnedOff()
     self.last_ramp_scheduling_time = nil
     UIManager:unschedule(self.ramp_task)
 
-    if self.autodim_save_fl then
-        Device.powerd.fl_intensity = self.autodim_save_fl
-    end
+    Powerd.fl_intensity = self.autodim_save_fl or Powerd.fl_intensity
     self.autodim_save_fl = nil
     if self.trap_widget then
         UIManager:close(self.trap_widget) -- don't swallow input events from now
@@ -265,14 +264,14 @@ end
 
 function AutoDim:autodim_task()
     if self.isCurrentlyDimming then return end
-    if Device.powerd:isFrontlightOff() then
+    if Powerd:isFrontlightOff() then
         self:_schedule_autodim_task()
     end
     local now = UIManager:getElapsedTimeSinceBoot()
     local idle_duration = now - self.last_action_time
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
-        self.autodim_save_fl = self.autodim_save_fl or Device.powerd:frontlightIntensity()
+        self.autodim_save_fl = self.autodim_save_fl or Powerd:frontlightIntensity()
         self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_fraction / 100 + 0.5)
         -- Clamp `self.autodim_end_fl` to 1 if `self.autodim_fraction` ~= 0
         if self.autodim_fraction ~= 0 and self.autodim_end_fl == 0 then
@@ -311,9 +310,9 @@ end
 
 function AutoDim:ramp_task()
     self.isCurrentlyDimming = true -- this will disable rescheduling of the `autodim_task`
-    local fl_level = Device.powerd:frontlightIntensity()
+    local fl_level = Powerd:frontlightIntensity()
     if fl_level > self.autodim_end_fl then
-        Device.powerd:setIntensity(fl_level - 1)
+        Powerd:setIntensity(fl_level - 1)
         self.ramp_event_countdown = self.ramp_event_countdown - 1
         if self.ramp_event_countdown <= 0 then
             -- Update footer on every self.ramp_event_countdown call

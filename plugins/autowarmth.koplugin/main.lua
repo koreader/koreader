@@ -24,6 +24,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local C_ = _.pgettext
+local Powerd = Device.powerd
 local T = FFIUtil.template
 local Screen = require("device").screen
 local util = require("util")
@@ -35,7 +36,7 @@ local activate_closer_midnight = 4
 
 local midnight_index = 11
 
-local device_max_warmth = Device:hasNaturalLight() and Device.powerd.fl_warmth_max or 100
+local device_max_warmth = Device:hasNaturalLight() and Powerd.fl_warmth_max or 100
 local device_warmth_fit_scale = device_max_warmth / 100
 
 local function frac(x)
@@ -144,21 +145,6 @@ end
 
 function AutoWarmth:onLeaveStandby()
     self:leavePowerSavingState(false)
-end
-
--- wrapper for unscheduling, so that only our setWarmth gets unscheduled
-function AutoWarmth.setWarmth(val, force)
-    if val then
-        if val > 100 then
-            DeviceListener:onSetNightMode(true)
-        else
-            DeviceListener:onSetNightMode(false)
-        end
-        if Device:hasNaturalLight() then
-            val = math.min(val, 100)
-            Device.powerd:setWarmth(val, force)
-        end
-    end
 end
 
 function AutoWarmth:onSuspend()
@@ -278,7 +264,7 @@ end
 -- search_pos ... start searching from that index
 -- from_resume ... true if first call after resume
 function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
-    logger.dbg("AutoWarmth: scheduleWarmthChange")
+    logger.dbg("AutoWarmth: scheduleNextWarmthChange")
     UIManager:unschedule(AutoWarmth.setWarmth)
 
     if self.activate == 0 or #self.sched_warmths == 0 or search_pos > #self.sched_warmths then
@@ -331,18 +317,18 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
         if time_s >= self.current_times_h[5]*3600 and time_s < self.current_times_h[7]*3600 then
             -- during daytime (depending on choosens activation: SunTime, fixed Schedule, closer...
             -- turn on frontlight off once, user can override this selection by a gesture
-            if Device.powerd:isFrontlightOn() then
+            if Powerd:isFrontlightOn() then
                 if self.fl_turned_off ~= true then -- can be false or nil
-                    Device.powerd:turnOffFrontlight()
+                    Powerd:turnOffFrontlight()
                     UIManager:broadcastEvent(Event:new("FrontlightTurnedOff"))
                 end
             end
             self.fl_turned_off = true
         else
             -- outside of selected daytime, turn on frontlight once, user can override this selection by a gesture
-            if Device.powerd:isFrontlightOff() then
+            if Powerd:isFrontlightOff() then
                 if self.fl_turned_off ~= false then -- can be true or nil
-                    Device.powerd:turnOnFrontlight()
+                    Powerd:turnOnFrontlight()
                 end
             end
             self.fl_turned_off = false
@@ -357,7 +343,7 @@ function AutoWarmth:setWarmth(val, schedule_next, force_warmth)
 
         if Device:hasNaturalLight() then
             val = math.min(val, 100) -- "mask" night mode
-            Device.powerd:setWarmth(val, force_warmth)
+            Powerd:setWarmth(val, force_warmth)
         end
     end
     if schedule_next then
@@ -480,8 +466,8 @@ function AutoWarmth:getSubMenuItems()
                 self:scheduleMidnightUpdate()
                 -- Turn the fl on during day if necessary;
                 -- no need to turn it off as this is done trough `scheduleMidnightUpdate()`
-                if not self.fl_off_during_day and Device.powerd:isFrontlightOff() then
-                    Device.powerd:turnOnFrontlight()
+                if not self.fl_off_during_day and Powerd:isFrontlightOff() then
+                    Powerd:turnOnFrontlight()
                 end
 
                 if touchmenu_instance then
