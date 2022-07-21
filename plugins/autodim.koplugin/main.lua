@@ -44,10 +44,10 @@ function AutoDim:init()
 end
 
 function AutoDim:addToMainMenu(menu_items)
-    menu_items.autodim = self:getAutodimMenu()
+    menu_items.autodim = self:getAutoDimMenu()
 end
 
-function AutoDim:getAutodimMenu()
+function AutoDim:getAutoDimMenu()
     return {
         text = _("Automatic dimmer"),
         checked_func = function() return self.autodim_starttime_m > 0 end,
@@ -159,7 +159,14 @@ end
 function AutoDim:_schedule_autodim_task(seconds)
     UIManager:unschedule(self.autodim_task)
     if self.autodim_starttime_m < 0 then
+        if self.onResume then
+            self:clearEventHandlers()
+        end
         return
+    else
+        if not self.onResume then
+            self:setEventHandlers()
+        end
     end
 
     seconds = seconds or self.autodim_starttime_m * 60
@@ -186,7 +193,7 @@ function AutoDim:onInputEvent()
     self:_schedule_autodim_task()
 end
 
-function AutoDim:onSuspend()
+function AutoDim:_onSuspend()
     self:_unschedule_autodim_task()
     if self.isCurrentlyDimming then
         self:_unschedule_ramp_task()
@@ -194,7 +201,7 @@ function AutoDim:onSuspend()
     end
 end
 
-function AutoDim:onResume()
+function AutoDim:_onResume()
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     if self.trap_widget then
         UIManager:scheduleIn(1, function()
@@ -207,12 +214,12 @@ function AutoDim:onResume()
     self:_schedule_autodim_task()
 end
 
-function AutoDim:onEnterStandby()
+function AutoDim:_onEnterStandby()
     self:_unschedule_autodim_task()
     -- don't unschedule ramp task, as this is done in onLeaveStandby if necessary
 end
 
-function AutoDim:onLeaveStandby()
+function AutoDim:_onLeaveStandby()
     if self.isCurrentlyDimming then
         if self.last_ramp_scheduling_time then
             -- we are during the ramp down
@@ -231,6 +238,20 @@ function AutoDim:onLeaveStandby()
     else
         self:autodim_task() -- check times and reschedule autodim_task if necessary
     end
+end
+
+function AutoDim:setEventHandlers()
+    self.onResume = self._onResume
+    self.onSuspend = self._onSuspend
+    self.onEnterStandby = self._onEnterStandby
+    self.onLeaveStandby = self._onLeaveStandby
+end
+
+function AutoDim:clearEventHandlers()
+    self.onResume = nil
+    self.onSuspend = nil
+    self.onEnterStandby = nil
+    self.onLeaveStandby = nil
 end
 
 function AutoDim:onFrontlightTurnedOff()

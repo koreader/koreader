@@ -122,8 +122,6 @@ function AutoWarmth:onAutoWarmthMode()
 end
 
 function AutoWarmth:leavePowerSavingState(from_resume)
-    if self.activate == 0 then return end
-
     logger.dbg("AutoWarmth: onResume/onLeaveStandby")
     local resume_date = os.date("*t")
 
@@ -132,28 +130,41 @@ function AutoWarmth:leavePowerSavingState(from_resume)
         and resume_date.year == SunTime.date.year then
         local now_s = SunTime:getTimeInSec(resume_date)
         self:scheduleNextWarmthChange(now_s, self.sched_warmth_index, from_resume)
-        -- reschedule 5sec after midnight
-        UIManager:scheduleIn(24*3600 + 5 - now_s, self.scheduleMidnightUpdate, self)
+        -- Reschedule 1sec after midnight
+        UIManager:scheduleIn(24*3600 + 1 - now_s, self.scheduleMidnightUpdate, self)
     else
         self:scheduleMidnightUpdate(from_resume) -- resume is on the other day, do all calcs again
     end
 end
 
-function AutoWarmth:onResume()
+function AutoWarmth:_onResume()
     self:leavePowerSavingState(true)
 end
 
-function AutoWarmth:onLeaveStandby()
+function AutoWarmth:_onLeaveStandby()
     self:leavePowerSavingState(false)
 end
 
-function AutoWarmth:onSuspend()
-    if self.activate == 0 then return end
+function AutoWarmth:_onSuspend()
     UIManager:unschedule(self.scheduleMidnightUpdate)
     UIManager:unschedule(self.setWarmth)
 end
 
-AutoWarmth.onEnterStandby = AutoWarmth.onSuspend
+AutoWarmth._onEnterStandby = AutoWarmth._onSuspend
+
+function AutoWarmth:setEventHandlers()
+    self.onResume = self._onResume
+    self.onSuspend = self._onSuspend
+    self.onEnterStandby = self._onEnterStandby
+    self.onLeaveStandby = self._onLeaveStandby
+end
+
+function AutoWarmth:clearEventHandlers()
+    self.onResume = nil
+    self.onSuspend = nil
+    self.onEnterStandby = nil
+    self.onLeaveStandby = nil
+end
 
 -- from_resume ... true if called from onResume
 function AutoWarmth:scheduleMidnightUpdate(from_resume)
@@ -254,10 +265,17 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
 
     local now_s = SunTime:getTimeInSec()
 
-    -- reschedule 5sec after midnight
-    UIManager:scheduleIn(24*3600 + 5 - now_s, self.scheduleMidnightUpdate, self)
-    -- and schedule the first warmth change
-    self:scheduleNextWarmthChange(now_s, 1, from_resume)
+    -- Reschedule 1sec after midnight
+    UIManager:scheduleIn(24*3600 + 1 - now_s, self.scheduleMidnightUpdate, self)
+
+    -- set event handlers
+    if self.activate ~= 0 then
+        -- Schedule the first warmth change
+        self:scheduleNextWarmthChange(now_s, 1, from_resume)
+        self:setEventHandlers()
+    else
+        self:clearEventHandlers()
+    end
 end
 
 -- schedules the next warmth change
