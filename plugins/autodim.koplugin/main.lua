@@ -312,20 +312,17 @@ function AutoDim:ramp_task()
     self.isCurrentlyDimming = true -- this will disable rescheduling of the `autodim_task`
     local fl_level = Powerd:frontlightIntensity()
     if fl_level > self.autodim_end_fl then
-        Powerd:setIntensity(fl_level - 1)
+        fl_level = fl_level - 1
+        Powerd:setIntensity(fl_level)
         self.ramp_event_countdown = self.ramp_event_countdown - 1
         if self.ramp_event_countdown <= 0 then
             -- Update footer on every self.ramp_event_countdown call
             self:updateFooter()
             self.ramp_event_countdown = self.ramp_event_countdown_startvalue
+            self.last_ramp_scheduling_time = nil
         end
         self:_schedule_ramp_task(self.autodim_step_time_s) -- Reschedule only if ramp is not finished
         -- `isCurrentlyDimming` stays true, to flag we have a dimmed FL.
-    end
-    if fl_level == self.autodim_end_fl and self.ramp_event_countdown_startvalue > 0 then
-        -- Update footer at the end of the ramp.
-        self:updateFooter()
-        self.last_ramp_scheduling_time = nil
     end
 end
 

@@ -176,8 +176,8 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         if not time1_h then return end
 
         local time1_s = SunTime:getTimeInSec(time1_h)
-        table.insert(self.sched_times_s, time1_s)
-        table.insert(self.sched_warmths, self.warmth[index1])
+        self.sched_times_s[#self.sched_times_s + 1] = time1_s
+        self.sched_warmths[#self.sched_warmths + 1] = self.warmth[index1]
 
         local time2_h = times_h[index2]
         if not time2_h then return end -- to near to the pole
@@ -288,8 +288,11 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
     for i = self.sched_warmth_index, #self.sched_warmths do
         if self.sched_times_s[i] <= time_s then
             actual_warmth = self.sched_warmths[i] or actual_warmth
-            if self.sched_times_s[i] <= time_s + delay_s then
-                next_warmth = self.sched_warmths[i] or next_warmth
+            local j = i
+            while self.sched_times_s[j] <= time_s + delay_s do
+                -- Most times only one iteration through this loop
+                next_warmth = self.sched_warmths[j] or next_warmth
+                j = j + 1
             end
         else
             self.sched_warmth_index = i
@@ -298,10 +301,12 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
     end
     -- update current warmth immediately
     self:setWarmth(actual_warmth, false) -- no setWarmth rescheduling, don't force warmth
-    local next_sched_time_s = self.sched_times_s[self.sched_warmth_index] - time_s
-    if self.sched_warmth_index <= #self.sched_warmths and next_sched_time_s > 0 then
-        -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
-        UIManager:scheduleIn(next_sched_time_s, self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
+    if self.sched_warmth_index <= #self.sched_warmths then
+        local next_sched_time_s = self.sched_times_s[self.sched_warmth_index] - time_s
+        if next_sched_time_s > 0 then
+            -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
+            UIManager:scheduleIn(next_sched_time_s, self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
+        end
     end
 
     if from_resume then
