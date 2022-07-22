@@ -96,7 +96,6 @@ function KoboPowerD:init()
     self.is_charging_file = self.battery_sysfs .. "/status"
 
     if self.device:canControlCharge() then
-        -- self.aux_batt_charger = "/sys/class/misc/cilix/pin_ce" -- xxx not needed anymore
         self.battery_sysfs_charge_enable = "/sys/class/misc/cilix/glf72120_enable"
         self.aux_battery_sysfs_charge_enable = "/sys/class/misc/cilix/sy6974b/charge_enable"
         self.is_charger_present_file = "/sys/class/power_supply/battery/device/charger_type"
