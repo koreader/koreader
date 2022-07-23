@@ -575,6 +575,14 @@ local PocketBook650 = PocketBook:new{
     display_dpi = 212,
 }
 
+-- PocketBook Era (700)
+local PocketBook700 = PocketBook:new{
+    model = "PB700",
+    display_dpi = 300,
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+}
+
 -- PocketBook InkPad 3 (740)
 local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
@@ -709,6 +717,8 @@ elseif codename == "PB641" then
     return PocketBook641
 elseif codename == "PB650" or codename == "PocketBook 650" then
     return PocketBook650
+elseif codename == "PB700" or codename == "PocketBook 700" then
+    return PocketBook700
 elseif codename == "PB740" then
     return PocketBook740
 elseif codename == "PB740-2" or codename == "PB740-3" then
