@@ -135,7 +135,11 @@ function BatteryCare:unschedule_task()
     UIManager:unschedule(self.task)
 end
 
-function BatteryCare:printMessage()
+function BatteryCare:printMessage(enabled)
+    if enabled == false then
+        self.message_old_capacity = -1
+    end
+
     if not self.can_pretty_print or not self.show_capacity_in_sleep then
         return
     end
@@ -151,13 +155,14 @@ function BatteryCare:printMessage()
     end
 
     local message
+    local charge_symbol = "↯"
     if self.curr_aux_capacity then
         message = string.format(" %s%d%% %s%d%% ",
-            powerd:isCharging() and "+" or " ", self.curr_capacity,
-            powerd:isAuxCharging() and "+" or " ", self.curr_aux_capacity)
+            curr_charging and charge_symbol or " ", self.curr_capacity,
+            aux_charging and charge_symbol or " ", self.curr_aux_capacity)
     else
         message = string.format(" %s%d%% ",
-            powerd:isCharging() and "+" or " ", self.curr_capacity)
+            curr_charging and charge_symbol or " ", self.curr_capacity)
     end
 
     self.message_old_capacity = self.curr_capacity
@@ -165,7 +170,12 @@ function BatteryCare:printMessage()
     self.message_old_charging = curr_charging
     self.message_old_aux_charging = aux_charging
 
-    message = string.format("./fbink -q -x -%s '%s'", tostring(#message), message)
+    -- Correct lenght of message by utf8 encoded symbols ("↯")
+    local charge_symbol_len = #charge_symbol - 1
+    local message_len = #message
+        - (curr_charging == true and charge_symbol_len or 0)
+        - (aux_charging == true and charge_symbol_len or 0)
+    message = string.format("./fbink -q -F TEWI -x -%s '%s'", tostring(message_len), message)
     os.execute(message)
     logger.dbg("BatteryCare: Screensaver", message)
 end
@@ -258,12 +268,15 @@ function BatteryCare:onResume()
     logger.dbg("BatteryCare: isCharging", tostring(powerd:isCharging()), "isAuxCharging", tostring(powerd:isAuxCharging()))
     self:scheduleWakeupCall(false, false)
     self:task() -- is not scheduled here
+
+    self:printMessage(false)
 end
 
 function BatteryCare:onCharging()
     logger.dbg("BatteryCare: onCharging/onNotCharging UsbPlugIn/Out")
 
     if UIManager:getTopWidget() == "ScreenSaver" then
+        self:task()
         self:printMessage()
         self:scheduleWakeupCall(true, false)
     end
