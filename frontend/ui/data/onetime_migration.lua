@@ -331,7 +331,7 @@ if last_migration_date < 20220116 then
         for i = #opds_servers, 1, -1 do
             local server = opds_servers[i]
 
-            if server.url == "https://standardebooks.org/opds" then
+            if server.url == "https://standardebooks.org/feeds/opds" then
                 found = true
             elseif server.url == "https://m.gutenberg.org/ebooks.opds/?format=opds" then
                 gutenberg_id = i
@@ -341,7 +341,7 @@ if last_migration_date < 20220116 then
         if not found then
             local std_ebooks = {
                 title = "Standard Ebooks",
-                url = "https://standardebooks.org/opds",
+                url = "https://standardebooks.org/feeds/opds",
             }
 
             -- Append it at the same position as on stock installs, if possible
