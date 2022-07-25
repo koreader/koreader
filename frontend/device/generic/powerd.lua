@@ -139,14 +139,14 @@ function BasePowerD:frontlightWarmth()
     return self.fl_warmth
 end
 
-function BasePowerD:read_int_file(file)
+function BasePowerD:read_int_file(file, error_val)
     local fd = io.open(file, "r")
     if fd then
         local int = fd:read("*number")
         fd:close()
         return int or 0
     else
-        return 0
+        return error_val or 0
     end
 end
 

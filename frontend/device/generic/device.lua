@@ -385,6 +385,12 @@ function Device:suspend() end
 -- Hardware specific method to resume the device
 function Device:resume() end
 
+-- Hardware specific method to suspend subsytems of the device
+function Device:suspendSubsystems() end
+
+-- Hardware specific method to resume subsystems of the device
+function Device:resumeSubsystems() end
+
 -- Hardware specific method to power off the device
 function Device:powerOff() end
 

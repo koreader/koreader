@@ -929,6 +929,37 @@ function Kobo:standby(max_duration)
     end
 end
 
+function Kobo:suspendSubsystems()
+    -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
+    --       kernel to suspend/resume various subsystems
+    --       c.f., state_extended_store @ kernel/power/main.c
+    local ret = writeToSys("1", "/sys/power/state-extended")
+    if ret then
+        logger.info("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
+    else
+        logger.warn("Kobo suspend: the kernel refused to flag subsystems for suspend!")
+    end
+end
+
+function Kobo:resumeSubsystems(settle_time)
+    -- Now that we're up, unflag subsystems for suspend...
+    -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
+    --       kernel to suspend/resume various subsystems
+    --       cf. kernel/power/main.c @ L#207
+    --       Among other things, this sets up the wakeup pins (e.g., resume on input).
+    local ret = writeToSys("0", "/sys/power/state-extended")
+    if ret then
+        logger.info("Kobo resume: successfully asked the kernel to resume subsystems")
+    else
+        logger.warn("Kobo resume: the kernel refused to flag subsystems for resume!")
+    end
+
+    -- HACK: wait at least 0.1 sec for the kernel to catch up
+    settle_time = settle_time or 0
+    ffiUtil.usleep(math.max(settle_time or 100000))
+end
+
+
 function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
     local UIManager = require("ui/uimanager")
@@ -964,15 +995,7 @@ function Kobo:suspend()
     end
     -]]
 
-    -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
-    --       kernel to suspend/resume various subsystems
-    --       c.f., state_extended_store @ kernel/power/main.c
-    local ret = writeToSys("1", "/sys/power/state-extended")
-    if ret then
-        logger.info("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
-    else
-        logger.warn("Kobo suspend: the kernel refused to flag subsystems for suspend!")
-    end
+    self:suspendSubsystems()
 
     ffiUtil.sleep(2)
     logger.info("Kobo suspend: waited for 2s because of reasons...")
@@ -1002,7 +1025,7 @@ function Kobo:suspend()
     logger.info("Kobo suspend: asking for a suspend to RAM . . .")
     local suspend_time = time.boottime_or_realtime_coarse()
 
-    ret = writeToSys("mem", "/sys/power/state")
+    local ret = writeToSys("mem", "/sys/power/state")
 
     -- NOTE: At this point, we *should* be in suspend to RAM, as such,
     --       execution should only resume on wakeup...
@@ -1014,7 +1037,8 @@ function Kobo:suspend()
     else
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
         -- Reset state-extended back to 0 since we are giving up.
-        writeToSys("0", "/sys/power/state-extended")
+        -- Todo: Ask @NiLuJe: Why is are the subsystems are not always enabled here? Isn't this the right point to do, right after leaving sleep mode. Why is this delayed to resume?
+        self:resumeSubsystems()
     end
 
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
@@ -1056,20 +1080,7 @@ function Kobo:resume()
     UIManager:unschedule(self.checkUnexpectedWakeup)
     UIManager:unschedule(self.suspend)
 
-    -- Now that we're up, unflag subsystems for suspend...
-    -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
-    --       kernel to suspend/resume various subsystems
-    --       cf. kernel/power/main.c @ L#207
-    --       Among other things, this sets up the wakeup pins (e.g., resume on input).
-    local ret = writeToSys("0", "/sys/power/state-extended")
-    if ret then
-        logger.info("Kobo resume: successfully asked the kernel to resume subsystems")
-    else
-        logger.warn("Kobo resume: the kernel refused to flag subsystems for resume!")
-    end
-
-    -- HACK: wait a bit (0.1 sec) for the kernel to catch up
-    ffiUtil.usleep(100000)
+    self:resumeSubsystems()
 
     if self.hasIRGrid then
         -- cf. #1862, I can reliably break IR touch input on resume...

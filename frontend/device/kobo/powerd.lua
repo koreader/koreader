@@ -126,7 +126,7 @@ function KoboPowerD:init()
         -- Enable/disable charging of batteries,
         -- and return a string about what's happening.
         function KoboPowerD:chargeHW(batt, aux_batt, balance)
-            logger.dbg("Charger: batt", tostring(batt), "aux_batt", tostring(aux_batt))
+            logger.dbg("Charger: batt", tostring(batt), "aux_batt", tostring(aux_batt), "balance", tostring(balance))
 
             if batt == nil and aux_batt == nil then
                 return "Charger: nothing to do"
@@ -154,7 +154,7 @@ function KoboPowerD:init()
                         writeToSys("1", self.battery_sysfs_charge_enable)
                         writeToSys("0", self.aux_battery_sysfs_charge_enable)
                     else -- if aux_batt == nil
-                        info = info .. "battery: no,  aux: xx"
+                        info = info .. "battery: yes,  aux: xx"
                         writeToSys("1", self.battery_sysfs_charge_enable)
                     end
                 elseif batt == false then
@@ -242,11 +242,11 @@ function KoboPowerD:init()
             -- 0 when discharging
             -- 3 when full
             -- 2 when charging via DCP
-            return this:read_int_file(this.aux_batt_charging_file) ~= 0
+            return this:read_int_file(this.aux_batt_charging_file, -1) ~= 0
         end
 
         self.isAuxChargedHW = function(this)
-            return this:read_int_file(this.aux_batt_charging_file) == 3
+            return this:read_int_file(this.aux_batt_charging_file, -1) == 3
         end
     end
 
