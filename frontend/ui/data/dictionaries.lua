@@ -102,9 +102,9 @@ local dictionaries = {
         name = "GNU/FDL Anglicko/Český slovník",
         lang_in = "Czech",
         lang_out = "English",
-        entries = 178904, -- ~90000 each way
+        entries = 88994,
         license = _("GNU/FDL"),
-        url = "http://http.debian.net/debian/pool/non-free/s/stardict-english-czech/stardict-english-czech_20161201.orig.tar.gz",
+        url = "https://github.com/Vuizur/czech-dictionary-extender/releases/download/1.0.0/czech-english-dict.tar.gz",
     },
     {
         name = "GNU/FDL Německo/Český slovník",
