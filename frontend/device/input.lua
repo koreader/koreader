@@ -1051,9 +1051,9 @@ function Input:waitEvent(now, deadline)
     --                          Otherwise, errno is the actual error code from the backend (e.g., select's errno for the C backend).
     -- * nil: When something terrible happened (e.g., fatal poll/read failure). We abort in such cases.
     while true do
-        if #self.timer_callbacks > 0 then
+        if self.timer_callbacks[1] then
             -- If we have timers set, we need to honor them once we're done draining the input events.
-            while #self.timer_callbacks > 0 do
+            while self.timer_callbacks[1] do
                 -- Choose the earliest deadline between the next timer deadline, and our full timeout deadline.
                 local deadline_is_timer = false
                 local with_timerfd = false
@@ -1121,13 +1121,39 @@ function Input:waitEvent(now, deadline)
                     end
 
                     if consume_callback then
-                        local touch_ges = self.timer_callbacks[1].callback()
-                        table.remove(self.timer_callbacks, 1)
+                        local touch_ges
                         -- If it was a timerfd, we also need to close the fd.
                         -- NOTE: The fact that deadlines are sorted *should* ensure that the timerfd that expired
-                        --       is actually the first of the list without us having to double-check that...
+                        --       is actually the first of the list, but it's entirely plausible that a multitouch
+                        --       gesture would generate multiple timers for different slots with the same deadline,
+                        --       so we *do* need to find the right node in the timer_callbacks list,
+                        --       to make sure we free the right timerfd node...
+                        --       c.f., https://github.com/koreader/koreader/issues/9376
                         if timerfd then
-                            input.clearTimer(timerfd)
+                            for i, item in ipairs(self.timer_callbacks) do
+                                if item.timerfd == timerfd then
+                                    -- In the vast majority of cases, we should find our match on the first entry ;).
+                                    touch_ges = item.callback()
+                                    table.remove(self.timer_callbacks, i)
+                                    input.clearTimer(timerfd)
+                                    break
+                                end
+                            end
+                        else
+                            -- NOTE: The same edge-case as above could still apply here,
+                            --       but at worst we just fire the "wrong" callback if multiple slots have the same deadline...
+                            --       We don't really have a way to discriminate which slot should actually win the race here,
+                            --       though (not even going by insertion order, as the sort in setTimeout clobbers that).
+                            -- The best we can do is try to consume *all* the callbacks with the same deadline,
+                            -- in case the callback at the head of the list does not return a gesture...
+                            local current_deadline = self.timer_callbacks[1].deadline
+                            while self.timer_callbacks[1] and self.timer_callbacks[1].deadline == current_deadline do
+                                touch_ges = self.timer_callbacks[1].callback()
+                                table.remove(self.timer_callbacks, 1)
+                                if touch_ges then
+                                    break
+                                end
+                            end
                         end
                         if touch_ges then
                             -- The timers we'll encounter are for finalizing a hold or (if enabled) double tap gesture,
