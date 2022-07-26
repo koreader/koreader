@@ -350,9 +350,14 @@ function InputText:init()
     end
     -- Beware other cases where implicit conversion to text may be done
     -- at some point, but checkTextEditability() would say "not editable".
-    if self.input_type == "number" and type(self.text) == "number" then
-        -- checkTextEditability() fails if self.text stays not a string
-        self.text = tostring(self.text)
+    if self.input_type == "number" then
+        if type(self.text) == "number" then
+            -- checkTextEditability() fails if self.text stays not a string
+            self.text = tostring(self.text)
+        end
+        if type(self.hint) == "number" then
+            self.hint = tostring(self.hint)
+        end
     end
     self:initTextBox(self.text)
     self:checkTextEditability()
