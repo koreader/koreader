@@ -286,7 +286,6 @@ function Screensaver:chooseFile(document_cover)
                 local PathChooser = require("ui/widget/pathchooser")
                 local path_chooser = PathChooser:new{
                     select_directory = false,
-                    select_file = true,
                     file_filter = function(filename)
                         local suffix = util.getFileNameSuffix(filename)
                         if document_cover and DocumentRegistry:hasProvider(filename) then
@@ -295,7 +294,6 @@ function Screensaver:chooseFile(document_cover)
                             return true
                         end
                     end,
-                    detailed_file_info = true,
                     path = self.root_path,
                     onConfirm = function(file_path)
                         if document_cover then
