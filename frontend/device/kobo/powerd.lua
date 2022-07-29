@@ -100,7 +100,10 @@ function KoboPowerD:init()
         self.aux_battery_sysfs_charge_enable = "/sys/class/misc/cilix/sy6974b/charge_enable"
         self.is_charger_present_file = "/sys/class/power_supply/battery/device/charger_type"
         self.is_usb_connected_file = "/sys/class/misc/cilix/usb_conn"
-        self.otg_enable_file = "/sys/class/misc/cilix/sy6974b/otg_enable"
+        self.auto_mode_file = "/sys/class/misc/cilix/auto_mode"
+
+        -- setting this to "1" will charge the aux_battery from the internal one; amazing
+        -- self.aux_battery_sysfs_otg_enable = "/sys/class/misc/cilix/sy6974b/otg_enable"
 
         local function writeToSys(value, file)
             local f = io.open(file, "we")
@@ -125,14 +128,29 @@ function KoboPowerD:init()
 
         -- Enable/disable charging of batteries,
         -- and return a string about what's happening.
+        -- This is tested on a Sage. So for other devices add an appropriate method, hidden behind a
+        -- if self.device:isSunxi() then -- or whatever
+        --     function KoboPowerD:chargeHW(batt, aux_batt, balance)
+        --     ...
+        -- elseif self.device:isxxx() then
+        --     ...
         function KoboPowerD:chargeHW(batt, aux_batt, balance)
             logger.dbg("Charger: batt", tostring(batt), "aux_batt", tostring(aux_batt), "balance", tostring(balance))
+
+            if batt == "default" then
+                -- Turn on default behaviour
+                writeToSys("0", self.auto_mode_file)
+                ffiUtil.usleep(100000) -- Give the Kernel some time
+                writeToSys("1", self.auto_mode_file)
+                ffiUtil.usleep(100000) -- Give the Kernel some time
+                batt = true
+                aux_batt = true
+            end
 
             if batt == nil and aux_batt == nil then
                 return "Charger: nothing to do"
             end
 
-            local info
             local is_charger_present = self:isChargerPresentHW()
             local has_aux_battery = self.device:hasAuxBattery()
 
@@ -142,79 +160,93 @@ function KoboPowerD:init()
                 aux_batt = true
             end
 
+            logger.dbg("Charger: has_aux_battery", tostring(has_aux_battery), "is_charger_present", tostring(is_charger_present))
+
+            local info
+            local batt_val, aux_batt_val  -- nil means don't touch
             if has_aux_battery and is_charger_present then -- aux batt plus ext charger
                 info = "Charger: aux battery with external charger; "
                 if batt == true then
                     if aux_batt == true then
                         info = info .. "battery: yes, aux: yes"
-                        writeToSys("1", self.battery_sysfs_charge_enable)
-                        writeToSys("1", self.aux_battery_sysfs_charge_enable)
+                        batt_val = "1"
+                        aux_batt_val = "1"
                     elseif aux_batt == false then
                         info = info .. "battery: yes, aux: no"
-                        writeToSys("1", self.battery_sysfs_charge_enable)
-                        writeToSys("0", self.aux_battery_sysfs_charge_enable)
+                        batt_val = "1"
+                        aux_batt_val = "0"
                     else -- if aux_batt == nil
-                        info = info .. "battery: yes,  aux: xx"
-                        writeToSys("1", self.battery_sysfs_charge_enable)
+                        info = info .. "battery: yes, aux: xx"
+                        batt_val = "1"
                     end
                 elseif batt == false then
                     if aux_batt == true then
                         info = info .. "battery: no, aux: yes"
                         -- aux battery can only be charged together with internal battery on Sage
-                        if is_charger_present then
-                            writeToSys("1", self.battery_sysfs_charge_enable)
-                            writeToSys("1", self.aux_battery_sysfs_charge_enable)
-                        end
+                        batt_val = "1"
+                        aux_batt_val = "1"
                     elseif aux_batt == false then
-                        info = info .. "battery: no,  aux: no"
-                        writeToSys("0", self.battery_sysfs_charge_enable)
-                        writeToSys("0", self.aux_battery_sysfs_charge_enable)
+                        info = info .. "battery: no, aux: no"
+                        batt_val = "0"
+                        aux_batt_val = "0"
                     else -- if aux_batt == nil
-                        info = info .. "battery: no,  aux: xx"
-                        writeToSys("0", self.battery_sysfs_charge_enable)
+                        info = info .. "battery: no, aux: xx"
+                        batt_val = "0"
                     end
                 else -- if batt == nil
                     if aux_batt == true then -- we can not charge aux batt alone
-                        info = info .. "battery: xx,  aux: yes"
+                        info = info .. "battery: xx, aux: yes"
                         -- aux battery can only be charged together with internal battery on Sage
-                        if is_charger_present then
-                            writeToSys("1", self.battery_sysfs_charge_enable)
-                            writeToSys("1", self.aux_battery_sysfs_charge_enable)
-                        end
+                        batt_val = "1"
+                        aux_batt_val = "1"
                     elseif aux_batt == false then
-                        info = info .. "battery: xx,  aux: no"
-                        writeToSys("0", self.battery_sysfs_charge_enable)
-                        writeToSys("0", self.aux_battery_sysfs_charge_enable)
+                        info = info .. "battery: xx, aux: no"
+                        batt_val = "0"
+                        aux_batt_val = "0"
                     else
-                        info = info .. "battery: xx,  aux: xx"
+                        info = info .. "battery: xx, aux: xx"
                     end
-
                 end
             elseif has_aux_battery and not is_charger_present then -- aux batt no ext. charger
                 info = "Charger: aux battery, no external charger; "
+                -- Attention inverted logic
                 if batt == true then
                     info = info .. "battery: yes, aux: yes"
                     -- Attention inverted logic
-                    writeToSys("0", self.battery_sysfs_charge_enable)
-                    writeToSys("0", self.aux_battery_sysfs_charge_enable)
-                    writeToSys("1", self.otg_enable_file)
+                    batt_val = "0"
+                    aux_batt_val = "0"
                 elseif batt == false then
-                    info = info .. "battery: no,  aux: no"
-                    writeToSys("1", self.battery_sysfs_charge_enable)
-                    writeToSys("1", self.aux_battery_sysfs_charge_enable)
-                    writeToSys("0", self.otg_enable_file)
+                    info = info .. "battery: no, aux: no"
+                    -- Attention inverted logic
+                    batt_val = "1"
+                    aux_batt_val = "1"
+                else
+                    info = info .. "battery: xx, aux: xx"
                 end
             else -- only device, no aux battery
                 info = "Charger: only internal battery; "
                 if batt == true then
                     info = info .. "battery: yes"
-                    writeToSys("1", self.battery_sysfs_charge_enable)
+                    batt_val = "1"
                 elseif batt == false then -- this should really not happen
                     logger.err("Charger: no batteries found. This is strange.")
                     info = info .. "battery: no"
-                    writeToSys("0", self.battery_sysfs_charge_enable)
+                    batt_val = "0"
+                else
+                    info = info .. "battery: xx"
                 end
             end
+
+            if batt_val and batt_val ~= self:isChargingHW() then
+                logger.err("xxx bat_val", batt_val)
+                writeToSys(batt_val, self.battery_sysfs_charge_enable)
+            end
+            if aux_batt_val and aux_batt_val ~= self:isAuxChargingHW() then
+                logger.err("xxx aux_bat_val", aux_batt_val)
+                writeToSys(aux_batt_val, self.aux_battery_sysfs_charge_enable)
+            end
+
+            self.device:setupChargingLED()
             return info
         end -- chargeHW()
     end -- canControlCharge

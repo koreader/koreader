@@ -941,7 +941,7 @@ function Kobo:suspendSubsystems()
     end
 end
 
-function Kobo:resumeSubsystems(settle_time)
+function Kobo:resumeSubsystems()
     -- Now that we're up, unflag subsystems for suspend...
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
     --       kernel to suspend/resume various subsystems
@@ -955,8 +955,7 @@ function Kobo:resumeSubsystems(settle_time)
     end
 
     -- HACK: wait at least 0.1 sec for the kernel to catch up
-    settle_time = settle_time or 0
-    ffiUtil.usleep(math.max(settle_time or 100000))
+    ffiUtil.usleep(100000)
 end
 
 
@@ -994,6 +993,9 @@ function Kobo:suspend()
         logger.info("Kobo suspend: Current WakeUp count:", curr_wakeup_count)
     end
     -]]
+
+    local Event = require("ui/event")
+    UIManager:broadcastEvent(Event:new("SuspendSubsystems"))
 
     self:suspendSubsystems()
 
@@ -1037,7 +1039,6 @@ function Kobo:suspend()
     else
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
         -- Reset state-extended back to 0 since we are giving up.
-        -- Todo: Ask @NiLuJe: Why is are the subsystems are not always enabled here? Isn't this the right point to do, right after leaving sleep mode. Why is this delayed to resume?
         self:resumeSubsystems()
     end
 

@@ -15,6 +15,7 @@ local BasePowerD = {
 
     last_capacity_pull_time = time.s(-61),      -- timestamp of last pull
     last_aux_capacity_pull_time = time.s(-61),  -- timestamp of last pull
+    capacity_pull_intervall = time.s(60),       -- default intervall between two capacity reads
 
     is_fl_on = false,                 -- whether the frontlight is on
 }
@@ -226,7 +227,7 @@ function BasePowerD:getCapacity()
         now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
     end
 
-    if now - self.last_capacity_pull_time >= time.s(60) then
+    if now - self.last_capacity_pull_time >= self.capacity_pull_intervall then
         self.batt_capacity = self:getCapacityHW()
         self.last_capacity_pull_time = now
     end
@@ -258,7 +259,7 @@ function BasePowerD:getAuxCapacity()
         now = time.now() + self.device.total_standby_time + self.device.total_suspend_time
     end
 
-    if now - self.last_aux_capacity_pull_time >= time.s(60) then
+    if now - self.last_aux_capacity_pull_time >= self.capacity_pull_intervall then
         local aux_batt_capa = self:getAuxCapacityHW()
         -- If the read failed, don't update our cache, and retry next time.
         if aux_batt_capa then

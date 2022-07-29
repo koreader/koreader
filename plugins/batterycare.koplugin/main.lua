@@ -9,6 +9,8 @@ if not Device:canControlCharge() then
     return { disabled = true }
 end
 
+local OSDebug = true -- show debugging messages onScreen
+
 local Dispatcher = require("dispatcher")
 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
 local InfoMessage = require("ui/widget/infomessage")
@@ -35,6 +37,10 @@ local KOBO_WAKEUP_OFFSET_S = 16   -- Offset on Kobo between scheduled wakeup and
 -- For example: on a Sage, with an noname charger we can expect around 1%/min. Charging on a poor
 -- laptop might give us 0.5%/min or less.
 local WAKEUP_TIMER_SECONDS = 60 - KOBO_WAKEUP_OFFSET_S -- so wake every minute if charging
+
+if OSDebug then
+    Powerd.capacity_pull_intervall = 1
+end
 
 local BatteryCare = WidgetContainer:new{
     name = "batterycare",
@@ -95,6 +101,7 @@ function BatteryCare:onBatteryCareDisable()
     G_reader_settings:saveSetting("battery_care", false)
     self.charge_once = false
     self:unschedule_task()
+    self:setDefaultCharging()
 end
 
 function BatteryCare:onBatteryCareToggle()
@@ -130,167 +137,117 @@ function BatteryCare:onBatteryCareOnceToggle()
     self:task()
 end
 
-function BatteryCare:schedule_task()
-    -- schedule the same time as footer update, to reduce wakeups from standby.
-    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.task, self)
-end
-
-function BatteryCare:unschedule_task()
-    UIManager:unschedule(self.task)
-end
-
-function BatteryCare:printMessage()
-    if not self.can_pretty_print or not self.show_capacity_in_sleep or not Device.screen_saver_mode then
-        return
-    end
-
-    local curr_charging = Powerd:isCharging()
-    local aux_charging = Powerd:isAuxCharging()
-
-    -- message will be constructed an look like ' ↯90%  80%'
-    local message
-    local charge_symbol = "↯"
-    if self.curr_aux_capacity then
-        if Powerd:isAuxBatteryConnected() then
-            message = string.format(" %s%d%% %s%d%% ",
-                curr_charging and charge_symbol or " ", self.curr_capacity,
-                aux_charging and charge_symbol or " ", self.curr_aux_capacity)
-        else -- device resumed without power cover during sleep
-            message = string.format(" %s%d%%      ",
-                curr_charging and charge_symbol or " ", self.curr_capacity)
-        end
-    else
-        message = string.format(" %s%d%% ",
-            curr_charging and charge_symbol or " ", self.curr_capacity)
-    end
-
-    -- Correct lenght of message by utf8 encoded symbols ("↯")
-    local charge_symbol_len = #charge_symbol - 1
-    local message_len = #message
-        - (curr_charging == true and charge_symbol_len or 0)
-        - (aux_charging == true and charge_symbol_len or 0)
-    -- Show message at top right of screen
-    message = string.format("./fbink -q -F TEWI -x -%s '%s'", tostring(message_len), message)
-    os.execute(message)
-    logger.dbg("BatteryCare: Screensaver", message)
-
-    -- Onscreen Debugging messages
-    -- local date = os.date("*t")
-    -- os.execute("./fbink -q -x 1 -y 3 " .. date.hour .. ":" .. date.min .. ":" .. date.sec)
-
-end
-
-local function wakeupCall()
-    -- Onscreen Debugging messages
-    -- local date = os.date("*t") -- xxx
-    -- os.execute("./fbink -q -x 1 -y 5 'wakupCall at " .. date.hour .. ":" .. date.min .. ":" .. date.sec .. "'") -- xxx
-    UIManager:scheduleIn(1, UIManager.suspend, UIManager)
-end
-
-function BatteryCare:scheduleWakeupCall(enabled)
-    -- We will do wakeup from suspend every WAKEUP_TIMER_SECONDS if connected to an external charger or
-    -- if the internal battery is charged from the aux battery. Then we can check and set the new
-    -- charging state.
-
-    if Device.wakeup_mgr then
-        Device.wakeup_mgr:removeTasks(nil, wakeupCall)
-    end
-
-    if not enabled or not Device.wakeup_mgr then
-        logger.dbg("BatteryCare: don't schedule wakeup call")
-        return
-    end
-
-    -- Schedule a wakeup if necessary, when going to suspend.
-    local wakeup_timer_seconds
-    if Powerd:isCharging() then
-        -- If charging from an external charger or aux battery use the default value
-        wakeup_timer_seconds = WAKEUP_TIMER_SECONDS
-    else
-        -- If _not_ charging ...
-        if Device:hasAuxBattery() and Powerd:isAuxBatteryConnected() then
-            -- ... and with an aux battery for a _long_ sleeping period: It is desireable to load
-            -- the internal battery (from the aux batt) if its capacity drops.
-            wakeup_timer_seconds = 6 * 3600 - KOBO_WAKEUP_OFFSET_S -- four times a day, maybe this can be reduced to once a day
-        else
-            -- ... and no aux battery present wake once per day
-            wakeup_timer_seconds = 24 * 3600 - KOBO_WAKEUP_OFFSET_S
-        end
-    end
-    -- A Kobo Sage needs at least KOBO_WAKEUP_OFFSET_S seconds betweeen wakeup and suspend
-    -- Should be no problem, as our shortest wakeup will be around a minute, but for further experiments ...
-    Device.wakeup_mgr:addTask(math.max(wakeup_timer_seconds, KOBO_WAKEUP_OFFSET_S), wakeupCall)
-
-    -- Onscreen Debugging messages
-    -- local date = os.date("*t") -- xxx
-    -- os.execute("./fbink -q -x 1 -y 7 '" .. date.hour .. ":" .. date.min .. ":" .. date.sec -- xxx
-    --    .. " wake up in " .. math.max(wakeup_timer_seconds, KOBO_WAKEUP_OFFSET_S) .. "    '") -- xxx
-end
-
-function BatteryCare:onExit()
+function BatteryCare:_onExit()
     logger.dbg("BatteryCare: onExit/onRestart/onReboot")
     self:unschedule_task()
-    self:scheduleWakeupCall(false) -- no wakeup
-    Powerd:charge(true, true) -- restore default behaviour
+    self:unscheduleWakeupCall() -- no wakeup
+    self:setDefaultCharging()
 end
 
-BatteryCare.onRestart = BatteryCare.onExit
-BatteryCare.onReboot = BatteryCare.onExit
--- no BatteryCare.onPowerOff as we don't want the cover to be sucked out
-
-function BatteryCare:onEnterStandby()
-    if not self.enabled then return end
+function BatteryCare:_onEnterStandby()
     self:unschedule_task()
 end
 
-function BatteryCare:onLeaveStandby()
-    if not self.enabled then return end
+function BatteryCare:_onLeaveStandby()
     self:task()
 end
 
-function BatteryCare:onSuspend()
-    if not self.enabled then return end
+function BatteryCare:setDefaultCharging()
+    local info = Powerd:charge("default")
+    logger.dbg("BatteryCare:", info)
+
+    -- The kernel takes more than 6 sec to catch up the charge("default")
+    UIManager:scheduleIn(8, function()
+        logger.dbg("BatteryCare: delayed task after default charging")
+        self:task(true)
+    end)
+    UIManager:scheduleIn(9, self.printMessage, self)
+end
+
+function BatteryCare:_onSuspend()
     logger.dbg("BatteryCare: onSuspend")
 
-    -- Let the kernel enable and settle the resumeSubsystem
-    -- Tested on a Sage FW4.33.19608
-    Device:resumeSubsystems(1e6)
+--    Device:resumeSubsystems() -- may be removed? xxx
+--    self:setDefaultCharging()
 
-    self:scheduleWakeupCall(true)
-
-    self:unschedule_task() -- just to be sure, suspend can be entered from many ways
+    self:unschedule_task() -- just to be sure, suspend can be entered in many ways
     self:task() -- set the current charge state
     self:unschedule_task()
+
     if self.show_capacity_in_sleep then
         UIManager:tickAfterNext(self.printMessage, self)
-        -- Give the kernel some time to detect changes
-        UIManager:scheduleIn(5, self.printMessage, self)
+        -- The firmware seems to toggle battery charging after 6-7 secs and toggle it again after 1-2 more secs.
+        -- To make things more complicated, the FW also toggles aux batt charging after 2-3 secs and toggle it again 1-2 secs later.
+        -- So show the user what is happening, This behavior can not be changed by us :/
+        for i = 1, Device.suspend_wait_timeout - 1 do
+            UIManager:scheduleIn(i, function()
+                self:printMessage()
+                logger.dbg("BatteryCare: suspend log isCharging", tostring(Powerd:isCharging()),
+                    "isAuxCharging", tostring(Powerd:isAuxCharging()))
+            end)
+        end
     end
 end
 
-function BatteryCare:onResume()
-    if not self.enabled then return end
-    logger.dbg("BatteryCare: onResume/onLeaveStandby")
+function BatteryCare:_onResume()
+    logger.dbg("BatteryCare: onResume")
     logger.dbg("BatteryCare: isCharging", tostring(Powerd:isCharging()), "isAuxCharging", tostring(Powerd:isAuxCharging()))
-    self:scheduleWakeupCall(false)
+    self:unscheduleWakeupCall()
     self:task() -- is not scheduled here
 end
 
-function BatteryCare:onCharging()
-    if not self.enabled then return end
-    if not Device.screen_saver_mode then
-        logger.dbg("BatteryCare: onCharging/onNotCharging UsbPlugIn/Out")
+function BatteryCare:_onCharging()
+    self:unscheduleWakeupCall()
+    if Device.screen_saver_mode then
+        logger.dbg("BatteryCare: onCharging/onNotCharging in screen_saver_mode")
+        -- self:task() gets called in the following self:onSuspend()
+    else
+        logger.dbg("BatteryCare: onCharging/onNotCharging")
         self:unschedule_task()
         self:task()
-    else
-        Device:resumeSubsystems(2e6) -- wake subsystems
-        logger.dbg("BatteryCare: onCharging/onNotCharging UsbPlugIn/Out in screen_saver_mode")
     end
 end
 
-BatteryCare.onNotCharging = BatteryCare.onCharging
-BatteryCare.onUsbPlugIn = BatteryCare.onCharging
-BatteryCare.onUsbPlugOut = BatteryCare.onCharging
+function BatteryCare:_onSuspendSubsystems()
+    logger.dbg("BatteryCare: onSuspendSubsystems")
+    self:rescheduleWakeupCall()
+    self:task(true)
+    self:printMessage() -- Print the final charging state on screen
+    logger.info("BatteryCare: additional kernel settle time")
+    require("ffi/util").usleep(1e6) -- 0.5s, 1s, 2s works
+end
+
+function BatteryCare:setEventHandlers()
+    if self.onSuspend == nil then
+        self.onSuspend = self._onSuspend
+        self.onResume = self._onResume
+        self.onEnterStandby = self._onEnterStandby
+        self.onLeaveStandby = self._onLeaveStandby
+        self.onCharging = self._onCharging
+        self.onNotCharging = self._onCharging
+        self.onSuspendSubsystems = self._onSuspendSubsystems
+        self.onExit = self._onExit
+        self.onRestart = self._onExit
+        self.onReboot = self._onExit
+--        self.onPowerOff = self._onExit -- we don't want the cover be sucked out during poweroff!
+    end
+end
+
+function BatteryCare:clearEventHandlers()
+    if self.onSuspend ~= nil then
+        self.onSuspend = nil
+        self.onResume = nil
+        self.onEnterStandby = nil
+        self.onLeaveStandby = nil
+        self.onCharging = nil
+        self.onNotCharging = nil
+        self.onSuspendSubsystems = nil
+        self.onExit = nil
+        self.onRestart = nil
+        self.onReboot = nil
+        self.onPowerOff = nil
+    end
+end
 
 function BatteryCare:setThresholds(touchmenu_instance, title, info, lower, upper, lower_default, upper_default, value_min)
     local threshold_spinner = DoubleSpinWidget:new {
@@ -353,6 +310,7 @@ function BatteryCare:setAuxMin(touchmenu_instance, title, info, setting, value_d
             if spin.value >= 0 and spin.value <=100 then
                 self[setting] = spin.value
                 G_reader_settings:saveSetting(setting, spin.value)
+                self:setEventHandlers()
                 self:unschedule_task()
                 self:task()
             end
@@ -364,6 +322,7 @@ function BatteryCare:setAuxMin(touchmenu_instance, title, info, setting, value_d
             G_reader_settings:delSetting(setting)
             self:unschedule_task()
             self:task()
+            self:clearEventHandlers()
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     }
@@ -471,19 +430,6 @@ function BatteryCare:addToMainMenu(menu_items)
                 separator = true,
             },
             {
-                text = _("Show capacity in sleep state"),
-                checked_func = function()
-                    return self.show_capacity_in_sleep
-                end,
-                callback = function(touchmenu_instance)
-                    self.show_capacity_in_sleep = not self.show_capacity_in_sleep
-                    G_reader_settings:saveSetting("battery_care_show_capacity_in_sleep", self.show_capacity_in_sleep)
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-                keep_menu_open = true,
-                separator = true,
-            },
-            {
                 text = _("Battery care"),
                 checked_func = function()
                     return self.enabled
@@ -515,6 +461,22 @@ function BatteryCare:addToMainMenu(menu_items)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             },
+            {
+                text = _("Show capacity in sleep state"),
+                enabled_func = function()
+                    return self.enabled
+                end,
+                checked_func = function()
+                    return self.show_capacity_in_sleep
+                end,
+                callback = function(touchmenu_instance)
+                    self.show_capacity_in_sleep = not self.show_capacity_in_sleep
+                    G_reader_settings:saveSetting("battery_care_show_capacity_in_sleep", self.show_capacity_in_sleep)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+                keep_menu_open = true,
+                separator = true,
+            },
             batt_item,
             aux_batt_item,
             aux_batt_ballance,
@@ -525,20 +487,22 @@ end
 --- Calculate the charging conditions for an internal and an external battery, and schedules its next call.
 -- The actual action has to be done in Powerd:charge().
 -- For a new device an appropriate Powerd:charge() has to be implemented.
-function BatteryCare:task() -- the brain of batteryCare
+function BatteryCare:task(no_schedule) -- the brain of batteryCare
     local info
     if self.enabled then
-        if self:unschedule_task() then
-            -- delete the next line, after testing -xxxx
-            logger.err("BatteryCare: XXX: THIS SHOULD NOT HAPPEN; BUGBUGUBUGUBUGUBUGUBUG")
+        self:setEventHandlers()
+        if not no_schedule then
+            if self:unschedule_task() then
+                -- delete the next line, after testing -xxxx
+                logger.err("BatteryCare: XXX: THIS SHOULD NOT HAPPEN; BUGBUGUBUGUBUGUBUGUBUG")
+            end
+            self:schedule_task()
         end
-        -- todo enable eventHandlers
-        self:schedule_task()
     else
         self:unschedule_task()
         info = Powerd:charge(true, true) -- restore default behavior
         logger.dbg("BatteryCare disabled:", info)
-        -- todo disable eventHandlers
+        self:clearEventHandlers()
         return
     end
 
@@ -557,7 +521,7 @@ function BatteryCare:task() -- the brain of batteryCare
             info = Powerd:charge(false, false)
         else
             logger.dbg("BatteryCare: charge once running")
-            info = Powerd:charge(true, true) -- turn on default behaviour
+            info = Powerd:charge(true, true)
         end
         logger.dbg("BatteryCare:", info)
         return
@@ -613,8 +577,119 @@ function BatteryCare:task() -- the brain of batteryCare
     info = Powerd:charge(charge_batt, charge_aux, balance_batt)
     logger.dbg("BatteryCare:", info)
 
+    if OSDebug then
+        os.execute("./fbink -q -x 1 -y 9 '" .. info .. "    '")
+    end
+end
+
+local function wakeupCall()
+    if OSDebug then
+        local date = os.date("*t")
+        os.execute("./fbink -q -x 1 -y 5 'wakeupCall at " .. string.format("%02d:%02d:%02d", date.hour, date.min, date.sec) .. "'")
+    end
+
+    -- Put device to sleep again and execute self:task in self:_onSuspend
+--    UIManager:scheduleIn(1, UIManager.suspend, UIManager)
+    UIManager:tickAfterNext(UIManager.suspend, UIManager)
+end
+
+function BatteryCare:rescheduleWakeupCall()
+    logger.dbg("BatteryCare: rescheduleWakeupCall")
+    self:unscheduleWakeupCall(true)
+    self:scheduleWakeupCall(true)
+end
+
+function BatteryCare:unscheduleWakeupCall(no_log)
+    if not no_log then logger.dbg("BatteryCare: unscheduleWakeupCall") end
+    Device.wakeup_mgr:removeTasks(nil, wakeupCall)
+end
+
+function BatteryCare:scheduleWakeupCall(no_log)
+    -- We will do wakeup from suspend every WAKEUP_TIMER_SECONDS if connected to an external charger or
+    -- if the internal battery is charged from the aux battery. Then we can check and set the new
+    -- charging state.
+
+    if not no_log then logger.dbg("BatteryCare: scheduleWakeupCall") end
+
+    if not Device.wakeup_mgr then return end
+
+    logger.dbg("BatteryCare: WakeupCall isCharging", Powerd:isCharging())
+
+    -- Schedule a wakeup if necessary, when going to suspend.
+    local wakeup_timer_seconds = WAKEUP_TIMER_SECONDS
+    if not Powerd:isCharging() then
+        -- If _not_ charging ...
+        if Device:hasAuxBattery() and Powerd:isAuxBatteryConnected() then
+            -- ... and with an aux battery for a _long_ sleeping period: It is desireable to load
+            -- the internal battery (from the aux batt) if its capacity drops.
+            wakeup_timer_seconds = 6 * 3600 - KOBO_WAKEUP_OFFSET_S -- four times a day, maybe this can be reduced to once a day
+        else
+            -- ... and no aux battery present wake once per day
+            wakeup_timer_seconds = 24 * 3600 - KOBO_WAKEUP_OFFSET_S
+        end
+    end
+    -- A Kobo Sage needs at least KOBO_WAKEUP_OFFSET_S seconds betweeen wakeup and suspend
+    -- Should be no problem, as our shortest wakeup will be around a minute, but for further experiments ...
+    Device.wakeup_mgr:addTask(math.max(wakeup_timer_seconds, KOBO_WAKEUP_OFFSET_S), wakeupCall)
+
+    if OSDebug then
+        local date = os.date("*t")
+        os.execute("./fbink -q -x 1 -y 7 '" .. string.format("%02d:%02d:%02d", date.hour, date.min, date.sec)
+            .. " wake up in " .. math.max(wakeup_timer_seconds, KOBO_WAKEUP_OFFSET_S) .. "s    '")
+        logger.dbg("BatteryCare: xxx scheduleWakeupCall", string.format("%02d:%02d:%02d", date.hour, date.min, date.sec))
+    end
+
+end
+function BatteryCare:schedule_task()
+    -- schedule the same time as footer update, to reduce wakeups from standby.
+    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.task, self)
+end
+
+function BatteryCare:unschedule_task()
+    UIManager:unschedule(self.task)
+end
+
+function BatteryCare:printMessage()
+    if not self.can_pretty_print or not self.show_capacity_in_sleep or not Device.screen_saver_mode then
+        return
+    end
+
+    local curr_charging = Powerd:isCharging()
+    local aux_charging = Powerd:isAuxCharging()
+
+    -- message will be constructed an look like ' ↯90%  80%'
+    local message
+    local charge_symbol = "↯"
+    if self.curr_aux_capacity then
+        if Powerd:isAuxBatteryConnected() then
+            message = string.format(" %s%d%% %s%d%% ",
+                curr_charging and charge_symbol or " ", self.curr_capacity,
+                aux_charging and charge_symbol or " ", self.curr_aux_capacity)
+        else -- device resumed without power cover during sleep
+            message = string.format(" %s%d%%      ",
+                curr_charging and charge_symbol or " ", self.curr_capacity)
+        end
+    else
+        message = string.format(" %s%d%% ",
+            curr_charging and charge_symbol or " ", self.curr_capacity)
+    end
+
+    -- Correct lenght of message by utf8 encoded symbols ("↯")
+    local charge_symbol_len = #charge_symbol - 1
+    local message_len = #message
+        - (curr_charging == true and charge_symbol_len or 0)
+        - (aux_charging == true and charge_symbol_len or 0)
+    -- Show message at top right of screen
+    message = string.format("./fbink -q -F TEWI -x -%s -y 0 '%s'", tostring(message_len), message)
+    os.execute(message)
+    logger.dbg("BatteryCare: Screensaver", message)
+
     -- Onscreen Debugging messages
-    -- os.execute("./fbink -q -x 1 -y 9 '" .. info .. "---'")
+    if OSDebug then
+        local date = os.date("*t")
+        os.execute("./fbink -q -x -10 -y 3 '" .. string.format("%02d:%02d:%02d", date.hour, date.min, date.sec) .. "'")
+    end
+
 end
 
 return BatteryCare
