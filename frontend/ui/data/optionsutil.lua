@@ -163,7 +163,7 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
                                             current, value_current, default)
         end
     else
-        if unit ~= "pt" then
+        if unit and unit ~= "pt" then
             unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "in"
         end
         text = T(_("%1\n%2\nCurrent value: %3%4\nDefault value: %5%6"), name_text, help_text,
