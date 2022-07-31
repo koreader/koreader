@@ -563,7 +563,7 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
                 if boxes then
                     local drawer = item.drawer or self.highlight.saved_drawer
                     local is_note_mark = self.highlight.note_mark and
-                        self.ui.bookmark:getBookmarkNote({ page = page, datetime = item.datetime, })                        
+                        self.ui.bookmark:getBookmarkNote({ page = page, datetime = item.datetime, })
                     for _, box in pairs(boxes) do
                         local rect = self:pageToScreenTransform(page, box)
                         if rect then
@@ -612,7 +612,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                     if boxes then
                         local drawer = item.drawer or self.highlight.saved_drawer
                         local is_note_mark = self.highlight.note_mark and
-                            self.ui.bookmark:getBookmarkNote({ page = item.pos0, datetime = item.datetime, })                        
+                            self.ui.bookmark:getBookmarkNote({ page = item.pos0, datetime = item.datetime, })
                         for _, box in pairs(boxes) do
                             self:drawHighlightRect(bb, x, y, box, drawer, is_note_mark)
                             if is_note_mark and self.highlight.note_mark == "sidemark" then
