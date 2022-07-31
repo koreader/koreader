@@ -32,6 +32,7 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Screen = Device.screen
 local Size = require("ui/size")
+local SortWidget = require("ui/widget/sortwidget")
 local TextWidget = require("ui/widget/textwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TitleBar = require("ui/widget/titlebar")
@@ -51,6 +52,45 @@ local subtitle_italic_face = Font:getFace("NotoSans-Italic.ttf", 12)
 local subtitle_color = Blitbuffer.COLOR_DARK_GRAY
 local dim_color = Blitbuffer.Color8(0x22)
 local settings = G_reader_settings:readSetting("vocabulary_builder", {enabled = true})
+
+
+local function onShowFilter(widget)
+    local sort_items = {}
+    local book_data = DB:selectBooks()
+    local toggled = {}
+    for _, ifo in pairs(book_data) do
+        table.insert(sort_items, {
+            text = ifo.name or "",
+            callback = function()
+                ifo.filter = not ifo.filter
+                if toggled[ifo.id] then
+                    toggled[ifo.id] = nil
+                else
+                    toggled[ifo.id] = true
+                end
+            end,
+            checked_func = function()
+                return ifo.filter
+            end,
+            ifo = ifo,
+        })
+    end
+
+    local sort_widget = SortWidget:new{
+        title = _("Filter words from books"),
+        item_table = sort_items,
+        sort_disabled = true,
+        callback = function()
+            if #toggled then
+                DB:toggleBookFilter(toggled)
+                widget:reloadItems()
+            end
+
+            UIManager:setDirty(nil, "ui")
+        end
+    }
+    UIManager:show(sort_widget)
+end
 
 --[[--
 Menu dialogue widget
@@ -134,6 +174,14 @@ function MenuDialog:init()
     self.context_switch:setPosition(settings.with_context and 2 or 1)
     self:mergeLayoutInVertical(self.context_switch)
 
+    local filter_button = {
+        text = _("Filter books"),
+        callback = function()
+            self:onClose()
+            onShowFilter(self.show_parent)
+        end
+    }
+
     local edit_button = {
         text = self.is_edit_mode and _("Resume") or _("Quick deletion"),
         callback = function()
@@ -175,6 +223,7 @@ function MenuDialog:init()
     local buttons = ButtonTable:new{
         width = width,
         buttons = {
+            {filter_button},
             {edit_button},
             {reset_button},
             {clean_button}
@@ -286,7 +335,6 @@ function MenuDialog:onConfigChoose(values, name, event, args, position)
         UIManager:setDirty(nil, "ui", nil, true)
     end)
 end
-
 
 --[[--
 Individual word info dialogue widget
@@ -549,7 +597,7 @@ end
 
 function VocabItemWidget:initItemWidget()
     for i = 1, #self.layout do self.layout[i] = nil end
-    if not self.show_parent.is_edit_mode and self.item.review_count < 6 then
+    if not self.show_parent.is_edit_mode then
         self.more_button = Button:new{
             text = (self.item.prev_context or self.item.next_context) and "⋯" or "⋮",
             padding = Size.padding.button,
@@ -616,9 +664,32 @@ function VocabItemWidget:initItemWidget()
             height = star_width,
             dim = true
         }
-        right_side_width =  Size.padding.large * 4 + self.item.review_count * (star:getSize().w)
 
-        if self.item.review_count > 0 then
+        if self.item.review_count > 6 then
+            right_side_width =  Size.padding.large * 4 + 9 * (star:getSize().w)
+            right_widget = HorizontalGroup:new {
+                dimen = Geom:new{w=0, h = self.height}
+            }
+            for i=1, 6, 1 do
+                table.insert(right_widget, star)
+            end
+            table.insert(right_widget,
+                TextWidget:new {
+                    text = " + ",
+                    face = word_face,
+                    fgcolor = Blitbuffer.COLOR_DARK_GRAY
+                }
+            )
+            table.insert(right_widget, star)
+            table.insert(right_widget,
+                TextWidget:new {
+                    text = "× " .. self.item.review_count-6,
+                    face = word_face,
+                    fgcolor = Blitbuffer.COLOR_DARK_GRAY
+                }
+            )
+        elseif self.item.review_count > 0 then
+            right_side_width =  Size.padding.large * 4 + self.item.review_count * (star:getSize().w)
             right_widget = HorizontalGroup:new {
                 dimen = Geom:new{w=0, h = self.height}
             }
@@ -627,6 +698,7 @@ function VocabItemWidget:initItemWidget()
             end
         else
             star:free()
+            right_side_width =  Size.padding.large * 4
             right_widget = HorizontalGroup:new{
                 dimen = Geom:new{w=0, h = self.height},
                  HorizontalSpan:new {width = Size.padding.default }
@@ -711,7 +783,6 @@ function VocabItemWidget:initItemWidget()
 end
 
 function VocabItemWidget:getTimeSinceDue()
-    if self.item.review_count >= 8 then return "" end
 
     local elapsed = os.time() - self.item.due_time
     local abs = math.abs(elapsed)
@@ -781,18 +852,14 @@ function VocabItemWidget:onTap(_, ges)
         elseif ges.pos.x > self.got_it_button.dimen.x and ges.pos.x < self.got_it_button.dimen.x + self.got_it_button.dimen.w then
             self:onGotIt()
         elseif ges.pos.x > self.more_button.dimen.x and ges.pos.x < self.more_button.dimen.x + self.more_button.dimen.w then
-            if self.item.review_count < 6 then
-                self:showMore()
-            else
-                self:remover()
-            end
+            self:showMore()
         elseif self.item.callback then
             self.item.callback(self.item)
         end
     else
         if BD.mirroredUILayout() then
             if ges.pos.x > self.more_button.dimen.x and ges.pos.x < self.more_button.dimen.x + self.more_button.dimen.w * 2 then
-                if self.show_parent.is_edit_mode or self.item.review_count >= 6 then
+                if self.show_parent.is_edit_mode then
                     self:remover()
                 else
                     self:showMore()
@@ -802,7 +869,7 @@ function VocabItemWidget:onTap(_, ges)
             end
         else
             if ges.pos.x > self.more_button.dimen.x - self.more_button.dimen.w and ges.pos.x < self.more_button.dimen.x + self.more_button.dimen.w then
-                if self.show_parent.is_edit_mode or self.item.review_count >= 6 then
+                if self.show_parent.is_edit_mode then
                     self:remover()
                 else
                     self:showMore()
@@ -1045,8 +1112,8 @@ function VocabularyBuilderWidget:setupItemHeight()
     local content_height = self.dimen.h - self.title_bar:getHeight() - self.footer_height - Size.padding.large
     self.items_per_page = math.floor(content_height / line_height)
     self.item_margin = self.item_margin + math.floor((content_height - self.items_per_page * line_height ) / self.items_per_page )
-    self.pages = math.ceil(DB:selectCount() / self.items_per_page)
-    self.show_page = math.min(self.pages, self.show_page)
+    self.pages = math.ceil(#self.item_table / self.items_per_page)
+    self.show_page = math.max(1, math.min(self.pages, self.show_page))
 end
 
 function VocabularyBuilderWidget:nextPage()
@@ -1115,6 +1182,9 @@ function VocabularyBuilderWidget:_populateItems()
             item
         )
     end
+    if #self.main_content == 0 then
+        table.insert(self.main_content, HorizontalSpan:new{width = self.item_width})
+    end
     self.footer_page:setText(T(_("Page %1 of %2"), self.show_page, self.pages), self.footer_center_width)
     if self.pages > 1 then
         self.footer_page:enable()
@@ -1122,11 +1192,17 @@ function VocabularyBuilderWidget:_populateItems()
         self.footer_page:disableWithoutDimming()
     end
     if self.pages == 0 then
-        self.footer_page:setText(_("No items"), self.footer_center_width)
+        local has_filtered_book = DB:hasFilteredBook()
+        self.footer_page:setText(has_filtered_book and _("Filter in effect") or _("No items"), self.footer_center_width)
         self.footer_first_up:hide()
         self.footer_last_down:hide()
         self.footer_left:hide()
         self.footer_right:hide()
+    elseif self.footer_left.hidden then
+        self.footer_first_up:show()
+        self.footer_last_down:show()
+        self.footer_left:show()
+        self.footer_right:show()
     end
     local chevron_first = "chevron.first"
     local chevron_last = "chevron.last"
@@ -1193,7 +1269,15 @@ function VocabularyBuilderWidget:showMenu()
         reset_callback = function()
             self:resetItems()
         end,
+        show_parent = self
     })
+end
+
+function VocabularyBuilderWidget:reloadItems()
+    DB:batchUpdateItems(self.item_table)
+    self.item_table = self.reload_items_callback()
+    self.pages = math.ceil(#self.item_table / self.items_per_page)
+    self:goToPage(1)
 end
 
 function VocabularyBuilderWidget:onShow()
@@ -1220,8 +1304,8 @@ function VocabularyBuilderWidget:onSwipe(arg, ges_ev)
         -- Allow easier closing with swipe down
         self:onClose()
     elseif direction == "north" then
-        -- no use for now
-        do end -- luacheck: ignore 541
+        -- open filter
+        onShowFilter(self)
     else -- diagonal swipe
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
@@ -1272,65 +1356,69 @@ function VocabBuilder:addToMainMenu(menu_items)
     menu_items.vocabbuilder = {
         text = _("Vocabulary builder"),
         callback = function()
-            local vocab_items = {}
-            for i = 1, DB:selectCount() do
-                table.insert(vocab_items, {
-                    callback = function(item)
-                        -- custom button table
-                        local tweak_buttons_func
-                        if item.due_time <= os.time() then
-                            tweak_buttons_func = function(buttons)
-                                local tweaked_button_count = 0
-                                local early_break
-                                for j = 1, #buttons do
-                                    for k = 1, #buttons[j] do
-                                        if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
-                                            buttons[j][k] = {
-                                                id = "got_it",
-                                                text = _("Got it"),
-                                                callback = function()
-                                                    self.builder_widget:gotItFromDict(item.word)
-                                                    UIManager:sendEvent(Event:new("Close"))
+            local reload_items = function()
+                local vocab_items = {}
+                for i = 1, DB:selectCount() do
+                    table.insert(vocab_items, {
+                        callback = function(item)
+                            -- custom button table
+                            local tweak_buttons_func
+                            if item.due_time <= os.time() then
+                                tweak_buttons_func = function(buttons)
+                                    local tweaked_button_count = 0
+                                    local early_break
+                                    for j = 1, #buttons do
+                                        for k = 1, #buttons[j] do
+                                            if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
+                                                buttons[j][k] = {
+                                                    id = "got_it",
+                                                    text = _("Got it"),
+                                                    callback = function()
+                                                        self.builder_widget:gotItFromDict(item.word)
+                                                        UIManager:sendEvent(Event:new("Close"))
+                                                    end
+                                                }
+                                                if tweaked_button_count == 1 then
+                                                    early_break = true
+                                                    break
                                                 end
-                                            }
-                                            if tweaked_button_count == 1 then
-                                                early_break = true
-                                                break
-                                            end
-                                            tweaked_button_count = tweaked_button_count + 1
-                                        elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
-                                            buttons[j][k] = {
-                                                id = "forgot",
-                                                text = _("Forgot"),
-                                                callback = function()
-                                                    self.builder_widget:forgotFromDict(item.word)
-                                                    UIManager:sendEvent(Event:new("Close"))
+                                                tweaked_button_count = tweaked_button_count + 1
+                                            elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
+                                                buttons[j][k] = {
+                                                    id = "forgot",
+                                                    text = _("Forgot"),
+                                                    callback = function()
+                                                        self.builder_widget:forgotFromDict(item.word)
+                                                        UIManager:sendEvent(Event:new("Close"))
+                                                    end
+                                                }
+                                                if tweaked_button_count == 1 then
+                                                    early_break = true
+                                                    break
                                                 end
-                                            }
-                                            if tweaked_button_count == 1 then
-                                                early_break = true
-                                                break
+                                                tweaked_button_count = tweaked_button_count + 1
                                             end
-                                            tweaked_button_count = tweaked_button_count + 1
                                         end
+                                        if early_break then break end
                                     end
-                                    if early_break then break end
                                 end
                             end
-                        end
 
-                        self.builder_widget.current_lookup_word = item.word
-                        self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, tweak_buttons_func))
-                    end
-                })
+                            self.builder_widget.current_lookup_word = item.word
+                            self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, tweak_buttons_func))
+                        end
+                    })
+                end
+                return vocab_items
             end
 
             self.builder_widget = VocabularyBuilderWidget:new{
                 title = _("Vocabulary builder"),
-                item_table = vocab_items,
+                item_table = reload_items(),
                 select_items_callback = function(items, start_idx, end_idx)
                     DB:select_items(items, start_idx, end_idx)
-                end
+                end,
+                reload_items_callback = reload_items
             }
 
             UIManager:show(self.builder_widget)
@@ -1344,7 +1432,7 @@ function VocabBuilder:onWordLookedUp(word, title)
     if self.builder_widget and self.builder_widget.current_lookup_word == word then return true end
     local prev_context
     local next_context
-    if settings.with_context then
+    if settings.with_context and self.ui.highlight then
         prev_context, next_context = self.ui.highlight:getSelectedWordContext(15)
     end
     DB:insertOrUpdate({

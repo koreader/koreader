@@ -5,7 +5,7 @@ local LuaData = require("luadata")
 
 local db_location = DataStorage:getSettingsDir() .. "/vocabulary_builder.sqlite3"
 
-local DB_SCHEMA_VERSION = 20220608
+local DB_SCHEMA_VERSION = 20220730
 local VOCABULARY_DB_SCHEMA = [[
     -- To store looked up words
     CREATE TABLE IF NOT EXISTS "vocabulary" (
@@ -22,34 +22,25 @@ local VOCABULARY_DB_SCHEMA = [[
     CREATE TABLE IF NOT EXISTS "title" (
         "id"            INTEGER NOT NULL UNIQUE,
         "name"          TEXT UNIQUE,
-        PRIMARY KEY("id" AUTOINCREMENT)
+        "filter"        INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY("id")
     );
     CREATE INDEX IF NOT EXISTS due_time_index ON vocabulary(due_time);
     CREATE INDEX IF NOT EXISTS title_name_index ON title(name);
 ]]
 
-local VocabularyBuilder = {
-    count = 0,
-}
+local VocabularyBuilder = {}
 
 function VocabularyBuilder:init()
     VocabularyBuilder:createDB()
 end
 
-function VocabularyBuilder:hasItems()
-    if self.count > 0 then
-        return true
-    end
-    self.count = self:selectCount()
-    return self.count > 0
-end
-
 function VocabularyBuilder:selectCount(conn)
     if conn then
-        return tonumber(conn:rowexec("SELECT count(0) FROM vocabulary;"))
+        return tonumber(conn:rowexec("SELECT count(0) FROM vocabulary INNER JOIN title ON filter=true AND title_id=id;"))
     else
         local db_conn = SQ3.open(db_location)
-        local count = tonumber(db_conn:rowexec("SELECT count(0) FROM vocabulary;"))
+        local count = tonumber(db_conn:rowexec("SELECT count(0) FROM vocabulary INNER JOIN title ON filter=true AND title_id=id;"))
         db_conn:close()
         return count
     end
@@ -67,10 +58,12 @@ function VocabularyBuilder:createDB()
     db_conn:exec(VOCABULARY_DB_SCHEMA)
     -- Check version
     local db_version = tonumber(db_conn:rowexec("PRAGMA user_version;"))
-    if db_version < DB_SCHEMA_VERSION then
-        if db_version == 0 then
-            self:insertLookupData(db_conn)
-        elseif db_version < 20220608 then
+    if db_version == 0 then
+        self:insertLookupData(db_conn)
+        -- Update version
+        db_conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
+    elseif db_version < DB_SCHEMA_VERSION then
+        if db_version < 20220608 then
             db_conn:exec([[ ALTER TABLE vocabulary ADD prev_context TEXT;
                             ALTER TABLE vocabulary ADD next_context TEXT;
                             ALTER TABLE vocabulary ADD title_id INTEGER;
@@ -83,6 +76,9 @@ function VocabularyBuilder:createDB()
                             );
 
                             ALTER TABLE vocabulary DROP book_title;]])
+        end
+        if db_version < 20220730 then
+            db_conn:exec("ALTER TABLE title ADD filter INTEGER NOT NULL DEFAULT 1;")
         end
 
         db_conn:exec("CREATE INDEX IF NOT EXISTS title_id_index ON vocabulary(title_id);")
@@ -113,13 +109,13 @@ function VocabularyBuilder:insertLookupData(db_conn)
 
         local words = {}
         local insert_sql = [[INSERT OR REPLACE INTO vocabulary
-                            (word, title_id, create_time, due_time) values
-                            (?, (SELECT id FROM title WHERE name = ?), ?, ?);]]
+                            (word, title_id, create_time, due_time, review_time) values
+                            (?, (SELECT id FROM title WHERE name = ?), ?, ?, ?);]]
         stmt = db_conn:prepare(insert_sql)
         for i = #lookup_history_table, 1, -1 do
             local value = lookup_history_table[i]
             if not words[value.word] then
-                stmt:bind(value.word, value.book_title or "", value.time, value.time + 5*60)
+                stmt:bind(value.word, value.book_title or "", value.time, value.time + 5*60, value.time)
                 stmt:step()
                 stmt:clearbind():reset()
                 words[value.word] = true
@@ -131,7 +127,7 @@ end
 
 function VocabularyBuilder:_select_items(items, start_idx)
     local conn = SQ3.open(db_location)
-    local sql = string.format("SELECT * FROM vocabulary LEFT JOIN title ON title_id = title.id ORDER BY due_time limit %d OFFSET %d;", 32, start_idx-1)
+    local sql = string.format("SELECT * FROM vocabulary INNER JOIN title ON title_id = title.id AND filter = true ORDER BY due_time limit %d OFFSET %d;", 32, start_idx-1)
 
     local results = conn:exec(sql)
     conn:close()
@@ -143,7 +139,7 @@ function VocabularyBuilder:_select_items(items, start_idx)
         local item = items[start_idx+i-1]
         if item and not item.word then
             item.word = results.word[i]
-            item.review_count = math.max(0, math.min(8, tonumber(results.review_count[i])))
+            item.review_count = math.max(0, tonumber(results.review_count[i]))
             item.book_title = results.name[i] or ""
             item.create_time = tonumber( results.create_time[i])
             item.review_time = nil --use this field to flag change
@@ -188,7 +184,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     local current_time = os.time()
 
     local due_time
-    local target_count = math.min(math.max(item.review_count + (isGot and 1 or -1), 0), 8)
+    local target_count = math.max(item.review_count + (isGot and 1 or -1), 0)
     if not isGot or target_count == 0 then
         due_time = current_time + 5 * 60
     elseif target_count == 1 then
@@ -243,20 +239,56 @@ function VocabularyBuilder:insertOrUpdate(entry)
     stmt:step()
     stmt:clearbind():reset()
 
-    stmt = conn:prepare([[INSERT INTO vocabulary (word, title_id, create_time, due_time, prev_context, next_context)
-                        VALUES (?, (SELECT id FROM title WHERE name = ?), ?, ?, ?, ?)
+    stmt = conn:prepare([[INSERT INTO vocabulary (word, title_id, create_time, due_time, review_time, prev_context, next_context)
+                        VALUES (?, (SELECT id FROM title WHERE name = ?), ?, ?, ?, ?, ?)
                         ON CONFLICT(word) DO UPDATE SET title_id = excluded.title_id,
                         create_time = excluded.create_time,
                         review_count = MAX(review_count-1, 0),
                         due_time = ?,
                         prev_context = ifnull(excluded.prev_context, prev_context),
                         next_context = ifnull(excluded.next_context, next_context);]]);
-    stmt:bind(entry.word, entry.book_title, entry.time, entry.time+300,
+    stmt:bind(entry.word, entry.book_title, entry.time, entry.time+300, entry.time,
               entry.prev_context, entry.next_context, entry.time+300)
     stmt:step()
     stmt:clearbind():reset()
-    self.count = tonumber(conn:rowexec("SELECT count(0) from vocabulary;"))
     conn:close()
+end
+
+function VocabularyBuilder:toggleBookFilter(ids)
+    local id_string = ""
+    for key, _ in pairs(ids) do
+        id_string = id_string .. (id_string == "" and "" or ",") .. key
+    end
+    local conn = SQ3.open(db_location)
+    conn:exec("UPDATE title SET filter = (filter | 1) - (filter & 1) WHERE id in ("..id_string..");")
+    conn:close()
+end
+
+function VocabularyBuilder:selectBooks()
+    local conn = SQ3.open(db_location)
+    local sql = string.format("SELECT * FROM title")
+
+    local results = conn:exec(sql)
+    conn:close()
+
+    local items = {}
+    if not results then return items end
+
+    for i = 1, #results.id do
+        table.insert(items, {
+            id = tonumber(results.id[i]),
+            name = results.name[i],
+            filter = tonumber(results.filter[i]) ~= 0
+        })
+    end
+    return items
+end
+
+function VocabularyBuilder:hasFilteredBook()
+    local conn = SQ3.open(db_location)
+    local has_filter = tonumber(conn:rowexec("SELECT count(0) FROM title WHERE filter = false limit 1;"))
+    conn:close()
+    return has_filter ~= 0
 end
 
 function VocabularyBuilder:remove(item)
@@ -266,7 +298,6 @@ function VocabularyBuilder:remove(item)
     stmt:step()
     stmt:clearbind():reset()
 
-    self.count = self.count - 1
     conn:close()
 end
 
@@ -280,7 +311,6 @@ end
 function VocabularyBuilder:purge()
     local conn = SQ3.open(db_location)
     conn:exec("DELETE FROM vocabulary; DELETE FROM title;")
-    self.count = 0
     conn:close()
 end
 
