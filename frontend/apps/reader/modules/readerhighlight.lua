@@ -427,7 +427,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
                         self.view.highlight.note_mark = radio.provider
                         G_reader_settings:saveSetting("highlight_note_mark", radio.provider)
                     end
-                    self.view:getNoteMarkPosition()
+                    self.view:setupNoteMarkPosition()
                     UIManager:setDirty(self.dialog, "ui")
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
