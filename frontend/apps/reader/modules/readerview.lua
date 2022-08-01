@@ -674,7 +674,7 @@ function ReaderView:recalculate()
         self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
     end
 
-    self:getNoteMarkPosition()
+    self:setupNoteMarkPosition()
 
     -- Flag a repaint so self:paintTo will be called
     -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).
@@ -1179,7 +1179,7 @@ function ReaderView:getTapZones()
     return forward_zone, backward_zone
 end
 
-function ReaderView:getNoteMarkPosition()
+function ReaderView:setupNoteMarkPosition()
     local is_sidemark = self.highlight.note_mark == "sidemark"
 
     -- set/free note mark sign
