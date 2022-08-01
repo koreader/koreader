@@ -51,6 +51,7 @@ local ReaderView = OverlapGroup:extend{
         indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     },
     highlight_visible = true,
+    note_mark_line_w = 3, -- side line thickness
     note_mark_sign = nil,
     note_mark_pos_x1 = nil, -- page 1
     note_mark_pos_x2 = nil, -- page 2 in two-page mode
@@ -493,57 +494,6 @@ function ReaderView:drawTempHighlight(bb, x, y)
 end
 
 function ReaderView:drawSavedHighlight(bb, x, y)
-    -- set/free note mark sign
-    if self.highlight.note_mark == "sidemark" then
-        if not self.note_mark_sign then
-            self.note_mark_sign = TextWidget:new{
-                text = "\u{F040}", -- pencil
-                face = Font:getFace("smallinfofont", 14),
-                padding = 0,
-            }
-        end
-    else
-        if self.note_mark_sign then
-            self.note_mark_sign:free()
-            self.note_mark_sign = nil
-        end
-    end
-    -- calculate position x of the note side line/mark
-    if self.highlight.note_mark == "sideline" or self.highlight.note_mark == "sidemark" then
-        local screen_w = Screen:getWidth()
-        local sign_w = self.highlight.note_mark == "sideline" and 3 or self.note_mark_sign:getWidth()
-        local sign_gap
-        if self.ui.paging then
-            sign_gap = Screen:scaleBySize(10) -- to screen edge (fixed position)
-            if BD.mirroredUILayout() then
-                self.note_mark_pos_x1 = sign_gap
-            else
-                self.note_mark_pos_x1 = screen_w - sign_gap - sign_w
-            end
-        else
-            sign_gap = Screen:scaleBySize(5) -- to text edge
-            local doc_margins = self.ui.document:getPageMargins()
-            local pos_x_r = screen_w - doc_margins["right"] + sign_gap -- mark in the right margin
-            local pos_x_l = doc_margins["left"] - sign_gap - sign_w -- mark in the left margin
-            if self.ui.document:getVisiblePageCount() == 1 then
-                if BD.mirroredUILayout() then
-                    self.note_mark_pos_x1 = pos_x_l
-                else
-                    self.note_mark_pos_x1 = pos_x_r
-                end
-            else -- two-page mode
-                local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage(true)+1)
-                if BD.mirroredUILayout() then
-                    self.note_mark_pos_x1 = pos_x_l
-                    self.note_mark_pos_x2 = pos_x_l + page2_x
-                else
-                    self.note_mark_pos_x1 = pos_x_r - page2_x
-                    self.note_mark_pos_x2 = pos_x_r
-                end
-            end
-        end
-    end
-
     if self.ui.paging then
         self:drawPageSavedHighlight(bb, x, y)
     else
@@ -562,14 +512,14 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
                 local boxes = self.document:getPageBoxesFromPositions(page, pos0, pos1)
                 if boxes then
                     local drawer = item.drawer or self.highlight.saved_drawer
-                    local is_note_mark = self.highlight.note_mark and
+                    local draw_note_mark = self.highlight.note_mark and
                         self.ui.bookmark:getBookmarkNote({ page = page, datetime = item.datetime, })
                     for _, box in pairs(boxes) do
                         local rect = self:pageToScreenTransform(page, box)
                         if rect then
-                            self:drawHighlightRect(bb, x, y, rect, drawer, is_note_mark)
-                            if is_note_mark and self.highlight.note_mark == "sidemark" then
-                                is_note_mark = false -- side mark in the first line only
+                            self:drawHighlightRect(bb, x, y, rect, drawer, draw_note_mark)
+                            if draw_note_mark and self.highlight.note_mark == "sidemark" then
+                                draw_note_mark = false -- side mark in the first line only
                             end
                         end
                     end -- end for each box
@@ -611,12 +561,12 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                     local boxes = self.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
                     if boxes then
                         local drawer = item.drawer or self.highlight.saved_drawer
-                        local is_note_mark = self.highlight.note_mark and
+                        local draw_note_mark = self.highlight.note_mark and
                             self.ui.bookmark:getBookmarkNote({ page = item.pos0, datetime = item.datetime, })
                         for _, box in pairs(boxes) do
-                            self:drawHighlightRect(bb, x, y, box, drawer, is_note_mark)
-                            if is_note_mark and self.highlight.note_mark == "sidemark" then
-                                is_note_mark = false -- side mark in the first line only
+                            self:drawHighlightRect(bb, x, y, box, drawer, draw_note_mark)
+                            if draw_note_mark and self.highlight.note_mark == "sidemark" then
+                                draw_note_mark = false -- side mark in the first line only
                             end
                         end -- end for each box
                     end -- end if boxes
@@ -626,7 +576,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     end -- end for all saved highlight
 end
 
-function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, is_note_mark)
+function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, draw_note_mark)
     local x, y, w, h = rect.x, rect.y, rect.w, rect.h
     if drawer == "lighten" then
         bb:lightenRect(x, y, w, h, self.highlight.lighten_factor)
@@ -641,7 +591,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, is_note_mark)
     elseif drawer == "invert" then
         bb:invertRect(x, y, w, h)
     end
-    if is_note_mark then
+    if draw_note_mark then
         if self.highlight.note_mark == "underline" then
             bb:paintRect(x, y + h - 1, w, 2, Blitbuffer.COLOR_BLACK)
         else
@@ -654,7 +604,7 @@ function ReaderView:drawHighlightRect(bb, _x, _y, rect, drawer, is_note_mark)
                 note_mark_pos_x = self.note_mark_pos_x2
             end
             if self.highlight.note_mark == "sideline" then
-                bb:paintRect(note_mark_pos_x, y, 3, h, Blitbuffer.COLOR_BLACK)
+                bb:paintRect(note_mark_pos_x, y, self.note_mark_line_w, h, Blitbuffer.COLOR_BLACK)
             elseif self.highlight.note_mark == "sidemark" then
                 self.note_mark_sign:paintTo(bb, note_mark_pos_x, y)
             end
@@ -723,6 +673,9 @@ function ReaderView:recalculate()
     if self.dimen.w > self.visible_area.w then
         self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
     end
+
+    self:getNoteMarkPosition()
+
     -- Flag a repaint so self:paintTo will be called
     -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).
     UIManager:setDirty(self.dialog, self.currently_scrolling and "fast" or "partial")
@@ -1224,6 +1177,60 @@ function ReaderView:getTapZones()
         backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
     end
     return forward_zone, backward_zone
+end
+
+function ReaderView:getNoteMarkPosition()
+    local is_sidemark = self.highlight.note_mark == "sidemark"
+
+    -- set/free note mark sign
+    if is_sidemark then
+        if not self.note_mark_sign then
+            self.note_mark_sign = TextWidget:new{
+                text = "\u{F040}", -- pencil
+                face = Font:getFace("smallinfofont", 14),
+                padding = 0,
+            }
+        end
+    else
+        if self.note_mark_sign then
+            self.note_mark_sign:free()
+            self.note_mark_sign = nil
+        end
+    end
+
+    -- calculate position x of the note side line/mark
+    if is_sidemark or self.highlight.note_mark == "sideline" then
+        local screen_w = Screen:getWidth()
+        local sign_w = is_sidemark and self.note_mark_sign:getWidth() or self.note_mark_line_w
+        local sign_gap = Screen:scaleBySize(5) -- to the text (cre) or to the screen edge (pdf)
+        if self.ui.paging then
+            if BD.mirroredUILayout() then
+                self.note_mark_pos_x1 = sign_gap
+            else
+                self.note_mark_pos_x1 = screen_w - sign_gap - sign_w
+            end
+        else
+            local doc_margins = self.ui.document:getPageMargins()
+            local pos_x_r = screen_w - doc_margins["right"] + sign_gap -- mark in the right margin
+            local pos_x_l = doc_margins["left"] - sign_gap - sign_w -- mark in the left margin
+            if self.ui.document:getVisiblePageCount() == 1 then
+                if BD.mirroredUILayout() then
+                    self.note_mark_pos_x1 = pos_x_l
+                else
+                    self.note_mark_pos_x1 = pos_x_r
+                end
+            else -- two-page mode
+                local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage(true)+1)
+                if BD.mirroredUILayout() then
+                    self.note_mark_pos_x1 = pos_x_l
+                    self.note_mark_pos_x2 = pos_x_l + page2_x
+                else
+                    self.note_mark_pos_x1 = pos_x_r - page2_x
+                    self.note_mark_pos_x2 = pos_x_r
+                end
+            end
+        end
+    end
 end
 
 return ReaderView
