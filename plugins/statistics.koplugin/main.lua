@@ -236,7 +236,7 @@ function ReaderStatistics:initData()
 end
 
 function ReaderStatistics:isEnabled()
-    return self.settings.is_enabled
+    return not self:isDocless() and self.settings.is_enabled
 end
 
 -- Reset the (volatile) stats on page count changes (e.g., after a font size update)
