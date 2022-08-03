@@ -63,6 +63,7 @@ function PicDocument:register(registry)
     registry:addProvider("jpg", "image/jpeg", self, 80)
     registry:addProvider("jpeg", "image/jpeg", self, 80)
     registry:addProvider("png", "image/png", self, 80)
+    registry:addProvider("webp", "image/webp", self, 80)
 end
 
 return PicDocument

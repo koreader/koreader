@@ -600,6 +600,7 @@ local ext_to_mimetype = {
     jpg = "image/jpeg",
     jpeg = "image/jpeg",
     gif = "image/gif",
+    webp = "image/webp",
     svg = "image/svg+xml",
     html= "application/xhtml+xml",
     xhtml= "application/xhtml+xml",
