@@ -5,7 +5,11 @@ local _ = require("gettext")
 -- json exporter
 local JsonExporter = require("base"):new {
     name = "json",
-    mimetype = "application/json",
+    -- the proper mimetype is "application/json" as stated in
+    -- https://www.iana.org/assignments/media-types/application/json
+    -- but we follow google recommendations because we just share on android.
+    -- https://developer.android.com/training/sharing/send#using-the-right-mimetype
+    mimetype = "text/json",
 }
 
 function JsonExporter:getMenuTable()
