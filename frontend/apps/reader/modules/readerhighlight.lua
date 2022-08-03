@@ -398,7 +398,7 @@ function ReaderHighlight:addToMainMenu(menu_items)
             local notemark = self.view.highlight.note_mark or "none"
             for __, v in ipairs(note_mark) do
                 if v[2] == notemark then
-                    return T(_("Note mark: %1"), string.lower(v[1]))
+                    return T(_("Note marker: %1"), string.lower(v[1]))
                 end
             end
         end,
@@ -415,17 +415,17 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 })
             end
             UIManager:show(require("ui/widget/radiobuttonwidget"):new{
-                title_text = _("Note mark"),
+                title_text = _("Note marker"),
                 width_factor = 0.5,
                 keep_shown_on_apply = true,
                 radio_buttons = radio_buttons,
                 callback = function(radio)
                     if radio.provider == "none" then
                         self.view.highlight.note_mark = nil
-                        G_reader_settings:delSetting("highlight_note_mark")
+                        G_reader_settings:delSetting("highlight_note_marker")
                     else
                         self.view.highlight.note_mark = radio.provider
-                        G_reader_settings:saveSetting("highlight_note_mark", radio.provider)
+                        G_reader_settings:saveSetting("highlight_note_marker", radio.provider)
                     end
                     self.view:setupNoteMarkPosition()
                     UIManager:setDirty(self.dialog, "ui")
