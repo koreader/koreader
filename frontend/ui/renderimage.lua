@@ -238,8 +238,8 @@ function RenderImage:renderWebpImageDataWithLibwebp(data, size, want_frames, wid
         setmetatable(frames, frames_mt)
         return frames
     else
-        local ok, image_bb = pcall(webp.getFrameImage, webp, 1)
-        if ok and image_bb then
+        local ok2, image_bb = pcall(webp.getFrameImage, webp, 1)
+        if ok2 and image_bb then
             image_bb = self:scaleBlitBuffer(image_bb, width, height)
         else
             logger.warn("failed rendering image (libwebp)")
