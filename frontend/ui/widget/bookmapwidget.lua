@@ -67,10 +67,15 @@ function BookMapRow:getPageX(page, right_edge)
     return x
 end
 
-function BookMapRow:getPageAtX(x)
+function BookMapRow:getPageAtX(x, at_bounds_if_outside)
     x = x - self.pages_frame_offset_x
-    if x < 0 or x >= self.pages_frame_inner_width then
-        return
+    if x < 0 then
+        if not at_bounds_if_outside then return end
+        x = 0
+    end
+    if x >= self.pages_frame_inner_width then
+        if not at_bounds_if_outside then return end
+        x = self.pages_frame_inner_width - 1
     end
     -- Reverse of the computation in :getPageX():
     local slot_idx = math.floor(x / (self.page_slot_width + self.page_slot_extra / self.nb_page_slots))
@@ -834,7 +839,9 @@ function BookMapWidget:update()
                                 text = self.ui.toc:cleanUpTocTitle(item.title, true),
                                 width = txt_max_width,
                                 face = self.flat_toc_depth_faces[item.depth],
-                            }
+                            },
+                            -- Store this TOC item page, so we can tap on it to launch PageBrowser on its page
+                            toc_item_page = item.page,
                         })
                         -- Add a bit more spacing for the BookMapRow(s) underneath this Toc item title
                         -- (so the page number painted in this spacing feels included in the indentation)
@@ -1348,14 +1355,16 @@ function BookMapWidget:onTap(arg, ges)
     end
     local x, y = ges.pos.x, ges.pos.y
     local row, row_idx, row_y, row_h = self:getVGroupRowAtY(y-self.title_bar_h) -- luacheck: no unused
-    if not row or not row.start_page then
-        -- not a BookMapRow, probably a TOC title
+    if not row then
         return true
     end
-    if BD.mirroredUILayout() then
-        x = x - self.scrollbar_width
+    local page = row.toc_item_page      -- it might be a TOC title
+    if not page and row.start_page then -- or a BookMapRow
+        if BD.mirroredUILayout() then
+            x = x - self.scrollbar_width
+        end
+        page = row:getPageAtX(x, true)
     end
-    local page = row:getPageAtX(x)
     if page then
         local PageBrowserWidget = require("ui/widget/pagebrowserwidget")
         UIManager:show(PageBrowserWidget:new{
