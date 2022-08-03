@@ -13,6 +13,7 @@ local logger = require("logger")
 local Mupdf = nil
 local Pic = nil
 local NnSVG = nil
+local WebP = nil
 
 local RenderImage = {}
 
@@ -47,12 +48,21 @@ function RenderImage:renderImageData(data, size, want_frames, width, height)
     if not data or not size or size == 0 then
         return
     end
-    -- Guess if it is a GIF
+    -- Guess if it is a GIF or a WebP image: the dedicated methods are able to handle
+    -- animated GIF or WebP images, which MuPDF don't handle.
     local buffer = ffi.cast("unsigned char*", data)
     local header = ffi.string(buffer, math.min(4, size))
     if header == "GIF8" then
         logger.dbg("GIF file provided, renderImageData: using GifLib")
         local image = self:renderGifImageDataWithGifLib(data, size, want_frames, width, height)
+        if image then
+            return image
+        end
+        -- fallback to rendering with MuPDF
+    elseif header == "RIFF" then
+        -- (The header should be "RIFFxxxxWEBPVP8", but we let libwebp check for what's after "RIFF".)
+        logger.dbg("possible WebP file provided, renderImageData: using libwebp")
+        local image = self:renderWebpImageDataWithLibwebp(data, size, want_frames, width, height)
         if image then
             return image
         end
@@ -155,6 +165,89 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
         gif:close()
     end
     logger.warn("failed rendering image (GifLib)")
+end
+
+--- Renders image data as a BlitBuffer with libwebp
+--
+-- @tparam data string or userdata (pointer) with image bytes
+-- @int size size of data
+-- @bool[opt=false] want_frames whether to also return a list with animated WebP frames
+-- @int width requested width
+-- @int height requested height
+-- @treturn BlitBuffer or list of frames (each a function returning a Blitbuffer)
+function RenderImage:renderWebpImageDataWithLibwebp(data, size, want_frames, width, height)
+    if not data or not size or size == 0 then
+        return
+    end
+    if not WebP then WebP = require("ffi/webp") end
+    local valid, webp = pcall(WebP.fromData, data, size)
+    if not valid then
+        logger.warn("failed opening image (libwebp):", webp)
+        return
+    end
+    logger.dbg("WebP image, nb frames:", webp.nb_frames)
+    if want_frames and webp.nb_frames > 1 then
+        -- Returns a regular table, with functions (returning the BlitBuffer)
+        -- as values. Users will have to check via type() and call them.
+        -- (The __len metamethod is a Lua 5.2 feature, otherwise we
+        -- could have used setmetatable to avoid creating all the functions)
+        local frames = {}
+        -- As we don't cache the bb we build on the fly, let caller know it
+        -- will have to free them
+        frames.image_disposable = true
+        for i=1, webp.nb_frames do
+            table.insert(frames, function()
+                -- As we may be rescaling the bb we'll get, we can provide no_copy=true
+                -- to avoid the copy done by default, and do it ourselves if needed.
+                local ok, webp_bb = pcall(webp.getFrameImage, webp, i, true)
+                if ok and webp_bb then
+                    local image_bb = self:scaleBlitBuffer(webp_bb, width, height)
+                    if image_bb == webp_bb then -- no scaling was done
+                        image_bb = webp_bb:copy()
+                    end
+                    return image_bb
+                else
+                    logger.warn("failed rendering image frame (libwebp)", i)
+                end
+            end)
+        end
+        -- We can't close our webp object as long as we may fetch some
+        -- frame: we need to delay it till 'frames' is no longer used.
+        frames.webp_close_needed = true
+        -- Since frames is a plain table, __gc won't work on Lua 5.1/LuaJIT,
+        -- not without a little help from the newproxy hack...
+        frames.webp = webp
+        local frames_mt = {}
+        function frames_mt:__gc()
+            logger.dbg("frames.gc() called, closing webp object", self.webp)
+            if self.webp_close_needed then
+                self.webp:close()
+                self.webp_close_needed = nil
+            end
+        end
+        -- Much like our other stuff, when we're puzzled about __gc, we do it manually!
+        -- So, also set this method, so that ImageViewer can explicitely call it onClose.
+        function frames:free()
+            logger.dbg("frames.free() called, closing webp object", self.webp)
+            if self.webp_close_needed then
+                self.webp:close()
+                self.webp_close_needed = nil
+            end
+        end
+        local setmetatable = require("ffi/__gc")
+        setmetatable(frames, frames_mt)
+        return frames
+    else
+        local ok, image_bb = pcall(webp.getFrameImage, webp, 1)
+        if ok and image_bb then
+            image_bb = self:scaleBlitBuffer(image_bb, width, height)
+        else
+            logger.warn("failed rendering image (libwebp)")
+            image_bb = nil
+        end
+        webp:close()
+        return image_bb
+    end
 end
 
 --- Rescales a BlitBuffer to the requested size if needed
