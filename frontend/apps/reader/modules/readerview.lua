@@ -43,7 +43,7 @@ local ReaderView = OverlapGroup:extend{
     -- highlight with "lighten" or "underscore" or "strikeout" or "invert"
     highlight = {
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
-        note_mark = G_reader_settings:readSetting("highlight_note_mark"),
+        note_mark = G_reader_settings:readSetting("highlight_note_marker"),
         temp_drawer = "invert",
         temp = {},
         saved_drawer = "lighten",
@@ -1182,7 +1182,7 @@ end
 function ReaderView:setupNoteMarkPosition()
     local is_sidemark = self.highlight.note_mark == "sidemark"
 
-    -- set/free note mark sign
+    -- set/free note marker sign
     if is_sidemark then
         if not self.note_mark_sign then
             self.note_mark_sign = TextWidget:new{
