@@ -307,6 +307,13 @@ local highlight_style = {
     {_("Invert"), "invert"},
 }
 
+local note_mark = {
+    {_("None"), "none"},
+    {_("Underline"), "underline"},
+    {_("Side line"), "sideline"},
+    {_("Side mark"), "sidemark"},
+}
+
 local long_press_action = {
     {_("Ask with popup dialog"), "ask"},
     {_("Do nothing"), "nothing"},
@@ -384,6 +391,47 @@ function ReaderHighlight:addToMainMenu(menu_items)
                 end
             }
             UIManager:show(spin_widget)
+        end,
+    })
+    table.insert(menu_items.highlight_options.sub_item_table, {
+        text_func = function()
+            local notemark = self.view.highlight.note_mark or "none"
+            for __, v in ipairs(note_mark) do
+                if v[2] == notemark then
+                    return T(_("Note marker: %1"), string.lower(v[1]))
+                end
+            end
+        end,
+        callback = function(touchmenu_instance)
+            local notemark = self.view.highlight.note_mark or "none"
+            local radio_buttons = {}
+            for _, v in ipairs(note_mark) do
+                table.insert(radio_buttons, {
+                    {
+                        text = v[1],
+                        checked = v[2] == notemark,
+                        provider = v[2],
+                    },
+                })
+            end
+            UIManager:show(require("ui/widget/radiobuttonwidget"):new{
+                title_text = _("Note marker"),
+                width_factor = 0.5,
+                keep_shown_on_apply = true,
+                radio_buttons = radio_buttons,
+                callback = function(radio)
+                    if radio.provider == "none" then
+                        self.view.highlight.note_mark = nil
+                        G_reader_settings:delSetting("highlight_note_marker")
+                    else
+                        self.view.highlight.note_mark = radio.provider
+                        G_reader_settings:saveSetting("highlight_note_marker", radio.provider)
+                    end
+                    self.view:setupNoteMarkPosition()
+                    UIManager:setDirty(self.dialog, "ui")
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
         end,
     })
     if self.document.info.has_pages then
