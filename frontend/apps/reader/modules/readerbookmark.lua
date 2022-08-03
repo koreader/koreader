@@ -1100,7 +1100,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note, new_te
                         UIManager:close(self.input)
                         if from_highlight then
                             if self.view.highlight.note_mark then
-                                UIManager:setDirty(self.dialog, "ui") -- refresh note mark
+                                UIManager:setDirty(self.dialog, "ui") -- refresh note marker
                             end
                         else
                             bookmark.type = self:getBookmarkType(bookmark)
