@@ -180,8 +180,8 @@ function RenderImage:renderWebpImageDataWithLibwebp(data, size, want_frames, wid
         return
     end
     if not WebP then WebP = require("ffi/webp") end
-    local ok, webp = pcall(WebP.fromData, data, size)
-    if not ok then
+    local valid, webp = pcall(WebP.fromData, data, size)
+    if not valid then
         logger.warn("failed opening image (libwebp):", webp)
         return
     end
@@ -199,8 +199,8 @@ function RenderImage:renderWebpImageDataWithLibwebp(data, size, want_frames, wid
             table.insert(frames, function()
                 -- As we may be rescaling the bb we'll get, we can provide no_copy=true
                 -- to avoid the copy done by default, and do it ourselves if needed.
-                local ok2, webp_bb = pcall(webp.getFrameImage, webp, i, true)
-                if ok2 and webp_bb then
+                local ok, webp_bb = pcall(webp.getFrameImage, webp, i, true)
+                if ok and webp_bb then
                     local image_bb = self:scaleBlitBuffer(webp_bb, width, height)
                     if image_bb == webp_bb then -- no scaling was done
                         image_bb = webp_bb:copy()
@@ -238,8 +238,8 @@ function RenderImage:renderWebpImageDataWithLibwebp(data, size, want_frames, wid
         setmetatable(frames, frames_mt)
         return frames
     else
-        local ok2, image_bb = pcall(webp.getFrameImage, webp, 1)
-        if ok2 and image_bb then
+        local ok, image_bb = pcall(webp.getFrameImage, webp, 1)
+        if ok and image_bb then
             image_bb = self:scaleBlitBuffer(image_bb, width, height)
         else
             logger.warn("failed rendering image (libwebp)")
