@@ -307,7 +307,7 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
         if self.sched_times_s[i] <= time_s then
             actual_warmth = self.sched_warmths[i] or actual_warmth
             local j = i
-            while self.sched_times_s[j] <= time_s + delay_s do
+            while j <= #self.sched_warmths and self.sched_times_s[j] <= time_s + delay_s do
                 -- Most times only one iteration through this loop
                 next_warmth = self.sched_warmths[j] or next_warmth
                 j = j + 1
