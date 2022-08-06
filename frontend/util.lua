@@ -4,6 +4,7 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 
 local BaseUtil = require("ffi/util")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = BaseUtil.template
 
 local lshift = bit.lshift
@@ -152,11 +153,11 @@ end
 
 --- Converts seconds to a period of time string.
 ---- @int seconds number of seconds
----- @bool withoutSeconds if true 1h30', if false 1h30'10''
+---- @bool withoutSeconds if true 1h30', if false 1h30'10"
 ---- @bool hmsFormat, if true format 1h30m10s
 ---- @bool withDays, if true format 1d12h30m10s
----- @treturn string clock string in the form of 1h30'10'' or 1h30m10s
-function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays)
+---- @treturn string clock string in the form of 1h30'10" or 1h30m10s
+function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, compact)
     local SECONDS_SYMBOL = "\""
     seconds = tonumber(seconds)
     if seconds == 0 then
@@ -168,7 +169,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays)
             end
         else
             if hmsFormat then
-                return T(_("%1s"), "0")
+                return T(C_("Time", "%1s"), "0")
             else
                 return "0" .. SECONDS_SYMBOL
             end
@@ -176,24 +177,29 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays)
     elseif seconds < 60 then
         if withoutSeconds and seconds < 30 then
             if hmsFormat then
-                -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
-                return T(_("%1m"), "0")
+                return T(C_("Time", "%1m"), "0")
             else
                 return "0'"
             end
         elseif withoutSeconds and seconds >= 30 then
             if hmsFormat then
-                -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
-                return T(_("%1m"), "1")
+                return T(C_("Time", "%1m"), "1")
             else
                 return "1'"
             end
         else
             if hmsFormat then
-                -- @translators This is the 'm' for minute and 's' for seconds, like in 30m30s. This is a duration.
-                return T(_("%1m%2s"), "0", string.format("%02d", seconds))
+                if compact then
+                    return T(C_("Time", "%1s"), string.format("%d", seconds))
+                else
+                    return T(C_("Time", "%1m%2s"), "0", string.format("%02d", seconds))
+                end
             else
-                return "0'" .. string.format("%02d", seconds) .. SECONDS_SYMBOL
+                if compact then
+                    return string.format("%d", seconds) .. SECONDS_SYMBOL
+                else
+                    return "0'" .. string.format("%02d", seconds) .. SECONDS_SYMBOL
+                end
             end
         end
     else
@@ -201,21 +207,21 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays)
         if withoutSeconds then
             time_string = time_string .. ":"
         end
+        time_string = time_string:gsub(":", C_("Time", "h"), 1)
+        time_string = time_string:gsub(":", C_("Time", "m"), 1)
+        time_string = time_string:gsub("^00" .. C_("Time", "h"), "") -- delete leading "00h"
+        time_string = time_string:gsub("^00" .. C_("Time", "m"), "") -- delete leading "00m"
+        if time_string:find("^0%d") then
+            time_string = time_string:gsub("^0", "") -- delete leading "0"
+        end
+        if withoutSeconds and time_string == "" then
+            time_string = "0" .. C_("Time", "m")
+        end
+
         if hmsFormat then
-            -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
-            time_string = time_string:gsub(":", _("h"), 1)
-            -- @translators This is the 'm' for minute, like in 1h30m30s. This is a duration.
-            time_string = time_string:gsub(":", _("m"), 1)
-            time_string = time_string:gsub("^00" .. _("h"), "") -- delete leading "00h"
-            time_string = time_string:gsub("^0", "") -- delete leading "0"
-            -- @translators This is the 's' for second, like in 1h30m30s. This is a duration.
-            return withoutSeconds and time_string or (time_string .. _("s"))
+            return withoutSeconds and time_string or (time_string .. C_("Time", "s"))
         else
-            -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
-            time_string = time_string:gsub(":", _("h"), 1)
-            time_string = time_string:gsub(":", "'", 1)
-            time_string = time_string:gsub("^00" .. _("h"), "") -- delete leading "00h"
-            time_string = time_string:gsub("^0", "") -- delete leading "0"
+            time_string = time_string:gsub(C_("Time", "m"), "'") -- replace m with '
             return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
         end
     end
@@ -227,12 +233,13 @@ end
 ---- @bool withoutSeconds if true 1h30' or 1h30m, if false 1h30'10" or 1h30m10s
 ---- @bool hmsFormat, modern format only, if true format 1h30m or 1h30m10s
 ---- @bool withDays, if hours>=24 include days in clock string 1d12h10m10s
+---- @bool compact, if set removes all leading zeros (incl. units if necessary)
 ---- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h30m, 1h30m10s
-function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat, withDays)
+function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat, withDays, compact)
     if format == "modern" then
-        return util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays)
+        return util.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, compact)
     else
-        -- Assume "classic" to give safe default
+         -- Assume "classic" to give safe default
         return util.secondsToClock(seconds, withoutSeconds, withDays)
     end
 end
@@ -992,19 +999,15 @@ function util.getFriendlySize(size, right_align)
     size = tonumber(size)
     if not size or type(size) ~= "number" then return end
     if size > 1000*1000*1000 then
-        -- @translators This is an abbreviation for the gigabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 GB"), string.format(frac_format, size/1000/1000/1000))
+        return T(C_("Data storage size", "%1 GB"), string.format(frac_format, size/1000/1000/1000))
     end
     if size > 1000*1000 then
-        -- @translators This is an abbreviation for the megabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 MB"), string.format(frac_format, size/1000/1000))
+        return T(C_("Data storage size", "%1 MB"), string.format(frac_format, size/1000/1000))
     end
     if size > 1000 then
-        -- @translators This is an abbreviation for the kilobyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 kB"), string.format(frac_format, size/1000))
+        return T(C_("Data storage size", "%1 kB"), string.format(frac_format, size/1000))
     else
-        -- @translators This is an abbreviation for the byte, a unit of computer memory or data storage capacity.
-        return T(_("%1 B"), string.format(deci_format, size))
+        return T(C_("Data storage size", "%1 B"), string.format(deci_format, size))
     end
 end
 

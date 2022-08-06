@@ -243,6 +243,8 @@ function Input:init()
     self.event_map[10011] = "UsbPlugOut"
     self.event_map[10020] = "Charging"
     self.event_map[10021] = "NotCharging"
+    self.event_map[10030] = "WakeupFromSuspend"
+    self.event_map[10031] = "ReadyToSuspend"
 
     -- user custom event map
     local custom_event_map_location = string.format(
@@ -258,6 +260,9 @@ function Input:init()
     if G_reader_settings:isTrue("backspace_as_back") then
         table.insert(self.group.Back, "Backspace")
     end
+
+    -- setup inhibitInputUntil scheduling function
+    self._inhibitInputUntil_func = function() self:inhibitInputUntil() end
 end
 
 --[[--
@@ -493,7 +498,8 @@ function Input:handleKeyBoardEv(ev)
     -- fake events
     if keycode == "IntoSS" or keycode == "OutOfSS"
     or keycode == "UsbPlugIn" or keycode == "UsbPlugOut"
-    or keycode == "Charging" or keycode == "NotCharging" then
+    or keycode == "Charging" or keycode == "NotCharging"
+    or keycode == "WakeupFromSuspend" or keycode == "ReadyToSuspend" then
         return keycode
     end
 
@@ -523,6 +529,12 @@ function Input:handleKeyBoardEv(ev)
         elseif ev.value == EVENT_VALUE_KEY_RELEASE then
             return "PowerRelease"
         end
+    end
+
+    -- toggle fullscreen on F11
+    if self:isEvKeyPress(ev) and keycode == "F11" and not self.device:isAlwaysFullscreen() then
+        local UIManager = require("ui/uimanager")
+        UIManager:broadcastEvent(Event:new("ToggleFullscreen"))
     end
 
     -- quit on Alt + F4
@@ -602,7 +614,8 @@ function Input:handlePowerManagementOnlyEv(ev)
     -- Fake events
     if keycode == "IntoSS" or keycode == "OutOfSS"
     or keycode == "UsbPlugIn" or keycode == "UsbPlugOut"
-    or keycode == "Charging" or keycode == "NotCharging" then
+    or keycode == "Charging" or keycode == "NotCharging"
+    or keycode == "WakeupFromSuspend" or keycode == "ReadyToSuspend" then
         return keycode
     end
 
@@ -1292,8 +1305,14 @@ function Input:inhibitInput(toggle)
             self.handleTouchEv = self.voidEv
         end
         if not self._msc_ev_handler then
-            self._msc_ev_handler = self.handleMiscEv
-            self.handleMiscEv = self.voidEv
+            if not self.device:isPocketBook() and not self.device:isAndroid() then
+                -- NOTE: PocketBook is a special snowflake, synthetic Power events are sent as EV_MSC.
+                --       Thankfully, that's all that EV_MSC is used for on that platform.
+                -- NOTE: Android, on the other hand, handles a *lot* of critical stuff over EV_MSC,
+                --       as it's used to communicate between Android and Lua land ;).
+                self._msc_ev_handler = self.handleMiscEv
+                self.handleMiscEv = self.voidEv
+            end
         end
         if not self._sdl_ev_handler then
             self._sdl_ev_handler = self.handleSdlEv
@@ -1303,6 +1322,9 @@ function Input:inhibitInput(toggle)
             self._generic_ev_handler = self.handleGenericEv
             self.handleGenericEv = self.voidEv
         end
+
+        -- Reset gesture detection state to a blank slate, to avoid bogus gesture detection on restore.
+        self:resetState()
     else
         -- Restore event handlers, if any
         if self._key_ev_handler then
@@ -1331,6 +1353,40 @@ function Input:inhibitInput(toggle)
             self._generic_ev_handler = nil
         end
     end
+end
+
+--[[--
+Request all input events to be ignored for some duration.
+
+@param set_or_seconds either `true`, in which case a platform-specific delay is chosen, or a duration in seconds (***int***).
+]]
+function Input:inhibitInputUntil(set_or_seconds)
+    local UIManager = require("ui/uimanager")
+    UIManager:unschedule(self._inhibitInputUntil_func)
+    if not set_or_seconds then -- remove any previously set
+        self:inhibitInput(false)
+        return
+    end
+    local delay_s
+    if set_or_seconds == true then
+        -- Use an adequate delay to account for device refresh duration
+        -- so any events happening in this delay (ie. before a widget
+        -- is really painted on screen) are discarded.
+        if self.device:hasEinkScreen() then
+            -- A screen refresh can take a few 100ms,
+            -- sometimes > 500ms on some devices/temperatures.
+            -- So, block for 400ms (to have it displayed) + 400ms
+            -- for user reaction to it
+            delay_s = 0.8
+        else
+            -- On non-eInk screen, display is usually instantaneous
+            delay_s = 0.4
+        end
+    else -- we expect a number
+        delay_s = set_or_seconds
+    end
+    UIManager:scheduleIn(delay_s, self._inhibitInputUntil_func)
+    self:inhibitInput(true)
 end
 
 return Input

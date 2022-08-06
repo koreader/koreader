@@ -22,9 +22,11 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local time = require("ui/time")
 local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
 
 local FrontLightWidget = FocusManager:new{
+    name = "FrontLightWidget",
     width = nil,
     height = nil,
     -- This should stay active during natural light configuration
@@ -180,7 +182,7 @@ function FrontLightWidget:layout()
         self.fl_level,
     }
     local fl_min = Button:new{
-        text = _("Min"),
+        text = C_("Extrema", "Min"),
         margin = Size.margin.small,
         radius = 0,
         enabled = true,
@@ -191,7 +193,7 @@ function FrontLightWidget:layout()
         end, -- min is 1 (We use 0 to mean "toggle")
     }
     local fl_max = Button:new{
-        text = _("Max"),
+        text = C_("Extrema", "Max"),
         margin = Size.margin.small,
         radius = 0,
         enabled = true,
@@ -309,7 +311,7 @@ function FrontLightWidget:layout()
             self.nl_level,
         }
         local nl_min = Button:new{
-            text = _("Min"),
+            text = C_("Extrema", "Min"),
             margin = Size.margin.small,
             radius = 0,
             enabled = true,
@@ -320,7 +322,7 @@ function FrontLightWidget:layout()
             end,
         }
         local nl_max = Button:new{
-            text = _("Max"),
+            text = C_("Extrema", "Max"),
             margin = Size.margin.small,
             radius = 0,
             enabled = true,

@@ -275,7 +275,13 @@ The footnote content may be empty, truncated, or include other footnotes.
 
 From the footnote popup, you can jump to the footnote location in the book by swiping to the left.]]),
         })
+        local footnote_popup_settings_items = {}
         table.insert(menu_items.follow_links.sub_item_table, 5, {
+            text = _("Footnote popup settings"),
+            sub_item_table = footnote_popup_settings_items,
+            separator = true,
+        })
+        table.insert(footnote_popup_settings_items, {
             text = _("Show more links as footnotes"),
             enabled_func = function()
                 return isFootnoteLinkInPopupEnabled() and
@@ -287,8 +293,23 @@ From the footnote popup, you can jump to the footnote location in the book by sw
                     not isPreferFootnoteEnabled())
             end,
             help_text = _([[Loosen footnote detection rules to show more links as footnotes.]]),
+            separator = true,
         })
-        table.insert(menu_items.follow_links.sub_item_table, 6, {
+        table.insert(footnote_popup_settings_items, {
+            text = _("Use book font as popup font"),
+            enabled_func = function()
+                return isFootnoteLinkInPopupEnabled() and
+                    (isTapToFollowLinksOn() or isSwipeToFollowNearestLinkEnabled())
+            end,
+            checked_func = function()
+                return G_reader_settings:isTrue("footnote_popup_use_book_font")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("footnote_popup_use_book_font")
+            end,
+            help_text = _([[Display the footnote popup text with the font set as the document font (the book text may still render with a different font if the book uses embedded fonts).]]),
+        })
+        table.insert(footnote_popup_settings_items, {
             text = _("Set footnote popup font size"),
             enabled_func = function()
                 return isFootnoteLinkInPopupEnabled() and
@@ -358,7 +379,6 @@ The recommended value is -2.]]),
             help_text = _([[
 The footnote popup font adjusts to the font size you've set for the document.
 This allows you to specify how much smaller or larger it should be relative to the document font size.]]),
-            separator = true,
         })
     end
 end
@@ -1345,6 +1365,7 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     local popup
     popup = FootnoteWidget:new{
         html = html,
+        doc_font_name = self.ui.font.font_face,
         doc_font_size = Screen:scaleBySize(self.ui.font.font_size),
         doc_margins = self.ui.document:getPageMargins(),
         close_callback = close_callback,

@@ -9,17 +9,17 @@ local function dpi() return Screen:getDPI() end
 
 local function custom() return G_reader_settings:readSetting("custom_screen_dpi") end
 
-local function setDPI(_dpi)
+local function setDPI(dpi_val)
     local InfoMessage = require("ui/widget/infomessage")
     local UIManager = require("ui/uimanager")
     UIManager:show(InfoMessage:new{
-        text = _dpi and T(_("DPI set to %1. This will take effect after restarting."), _dpi)
+        text = dpi_val and T(_("DPI set to %1. This will take effect after restarting."), dpi_val)
                or _("DPI set to auto. This will take effect after restarting."),
     })
     -- If this is set to nil, reader.lua doesn't call setScreenDPI
-    G_reader_settings:saveSetting("screen_dpi", _dpi)
+    G_reader_settings:saveSetting("screen_dpi", dpi_val)
     -- Passing a nil properly resets to defaults/auto
-    Device:setScreenDPI(_dpi)
+    Device:setScreenDPI(dpi_val)
 end
 
 local function spinWidgetSetDPI(touchmenu_instance)

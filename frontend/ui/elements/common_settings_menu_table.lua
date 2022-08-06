@@ -133,11 +133,11 @@ if Device:setDateTime() then
             local curr_hour = now_t.hour
             local curr_min = now_t.min
             local time_widget = DateTimeWidget:new{
-                is_date = false,
                 hour = curr_hour,
                 min = curr_min,
                 ok_text = _("Set time"),
                 title_text = _("Set time"),
+                info_text =_("Time is in hours and minutes."),
                 callback = function(time)
                     if Device:setDateTime(nil, nil, nil, time.hour, time.min) then
                         now_t = os.date("*t")
@@ -169,6 +169,7 @@ if Device:setDateTime() then
                 day = curr_day,
                 ok_text = _("Set date"),
                 title_text = _("Set date"),
+                info_text = _("Date is in years, months and days."),
                 callback = function(time)
                     now_t = os.date("*t")
                     if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
@@ -258,13 +259,36 @@ if Screen:isColorEnabled() or Screen:isColorScreen() then
     common_settings.color_rendering = require("ui/elements/screen_color_menu_table")
 end
 
+-- fullscreen toggle for supported devices
+if not Device:isAlwaysFullscreen() then
+    common_settings.fullscreen = {
+        text = _("Fullscreen"),
+        checked_func = function()
+            return Device.fullscreen or Device.isDefaultFullscreen()
+        end,
+        callback = function()
+            Device:toggleFullscreen()
+            -- for legacy android devices
+            if Device:isAndroid() then
+                local api = Device.firmware_rev
+                local needs_restart = api < 19 and api >= 16
+                if needs_restart then
+                    UIManager:show(InfoMessage:new{
+                        text = _("This will take effect on next restart.")
+                    })
+                end
+            end
+        end,
+    }
+end
+
 if Device:isAndroid() then
     -- android common settings
     local isAndroid, android = pcall(require, "android")
     if not isAndroid then return end
 
     -- screen timeout options, disabled if device needs wakelocks.
-    common_settings.screen_timeout = require("ui/elements/screen_android"):getTimeoutMenuTable()
+    common_settings.screen_timeout = require("ui/elements/timeout_android"):getTimeoutMenuTable()
 
     -- haptic feedback override
     common_settings.android_haptic_feedback = {
@@ -303,15 +327,6 @@ if Device:isAndroid() then
             G_reader_settings:saveSetting("android_ignore_back_button", not is_ignored)
         end,
     }
-
-    -- fullscreen toggle on devices with compatible fullscreen methods (apis 14-18)
-    if Device.firmware_rev < 19 then
-        common_settings.fullscreen = {
-            text = _("Fullscreen"),
-            checked_func = function() return android.isFullscreen() end,
-            callback = function() require("ui/elements/screen_android"):toggleFullscreen() end,
-        }
-    end
 
     -- ignore battery optimization
     if Device.firmware_rev >= 23 then
@@ -591,6 +606,23 @@ common_settings.screenshot = {
         Screenshoter:chooseFolder()
     end,
     keep_menu_open = true,
+}
+
+common_settings.units = {
+    text = _("Units"),
+    sub_item_table = {
+        {
+            text = _("Metric length"),
+            checked_func = function()
+                return G_reader_settings:readSetting("metric_length", true)
+            end,
+            callback = function(touchmenu_instance)
+                G_reader_settings:toggle("metric_length")
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end,
+            keep_menu_open = true,
+        },
+    },
 }
 
 return common_settings

@@ -41,6 +41,7 @@ local Device = {
     hasFewKeys = no,
     hasWifiToggle = yes,
     hasWifiManager = no,
+    isDefaultFullscreen = yes,
     isHapticFeedbackEnabled = no,
     isTouchDevice = no,
     hasFrontlight = no,
@@ -67,7 +68,7 @@ local Device = {
     canToggleChargingLED = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
-    canSuspend = yes,
+    canSuspend = no,
     canStandby = no,
     canPowerSaveWhileCharging = no,
     total_standby_time = 0, -- total time spent in standby
@@ -238,6 +239,10 @@ function Device:setScreenDPI(dpi_override)
     self.input.gesture_detector:init()
 end
 
+function Device:getDeviceScreenDPI()
+    return self.display_dpi
+end
+
 function Device:getPowerDevice()
     return self.powerd
 end
@@ -395,6 +400,9 @@ function Device:setDateTime(year, month, day, hour, min, sec) end
 
 -- Device specific method if any setting needs being saved
 function Device:saveSettings() end
+
+function Device:isAlwaysFullscreen() return true end
+function Device:toggleFullscreen() end
 
 -- Simulates suspend/resume
 function Device:simulateSuspend() end

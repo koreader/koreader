@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220426
+local CURRENT_MIGRATION_DATE = 20220625
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -366,7 +366,7 @@ if last_migration_date < 20220205 then
     end
 end
 
--- Rename several time storing settings and shift their value to the new meaning
+-- Rename several time storing settings and shift their value to the new meaning see (#8999)
 if last_migration_date < 20220426 then
     local function migrateSettingsName(old, new, factor)
         factor = factor or 1
@@ -387,6 +387,35 @@ if last_migration_date < 20220426 then
     migrateSettingsName("device_status_memory_interval", "device_status_memory_interval_minutes")
 end
 
+-- Rename several time storing settings and shift their value to the new meaning follow up to (#8999)
+if last_migration_date < 20220523 then
+    local function migrateSettingsName(old, new, factor)
+        factor = factor or 1
+        if G_reader_settings:readSetting(old) then
+            local value = math.floor(G_reader_settings:readSetting(old) * factor)
+            G_reader_settings:saveSetting(new, value)
+            G_reader_settings:delSetting(old)
+        end
+    end
+    migrateSettingsName("highlight_long_hold_threshold", "highlight_long_hold_threshold_s")
+end
+
+-- #9104
+if last_migration_date < 20220625 then
+    os.remove("afterupdate.marker")
+
+    -- Move an existing `koreader/patch.lua` to `koreader/patches/1-patch.lua` (-> will be excuted in `early`)
+    local data_dir = DataStorage:getDataDir()
+    local patch_dir = data_dir .. "/patches"
+    if lfs.attributes(data_dir .. "/patch.lua", "mode") == "file" then
+        if lfs.attributes(patch_dir, "mode") == nil then
+            if not lfs.mkdir(patch_dir, "mode") then
+                logger.err("User patch error creating directory", patch_dir)
+            end
+        end
+        os.rename(data_dir .. "/patch.lua", patch_dir .. "/1-patch.lua")
+    end
+end
 
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)

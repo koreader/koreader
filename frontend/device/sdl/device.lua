@@ -1,7 +1,16 @@
 local Event = require("ui/event")
 local Generic = require("device/generic/device")
 local SDL = require("ffi/SDL2_0")
+local ffi = require("ffi")
 local logger = require("logger")
+local time = require("ui/time")
+
+-- SDL computes WM_CLASS on X11/Wayland based on process's binary name.
+-- Some desktop environments rely on WM_CLASS to name the app and/or to assign the proper icon.
+if jit.os == "Linux" or jit.os == "BSD" or jit.os == "POSIX" then
+    if not os.getenv("SDL_VIDEO_WAYLAND_WMCLASS") then ffi.C.setenv("SDL_VIDEO_WAYLAND_WMCLASS", "KOReader", 1) end
+    if not os.getenv("SDL_VIDEO_X11_WMCLASS") then ffi.C.setenv("SDL_VIDEO_X11_WMCLASS", "KOReader", 1) end
+end
 
 local function yes() return true end
 local function no() return false end
@@ -61,12 +70,13 @@ local Device = Generic:new{
     hasDPad = yes,
     hasWifiToggle = no,
     isTouchDevice = yes,
+    isDefaultFullscreen = no,
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
     hasEinkScreen = no,
     hasSystemFonts = yes,
     canSuspend = no,
-    canStandby = yes,
+    canStandby = no,
     startTextInput = SDL.startTextInput,
     stopTextInput = SDL.stopTextInput,
     canOpenLink = getLinkOpener,
@@ -119,14 +129,18 @@ local Emulator = Device:new{
     hasNaturalLightApi = yes,
     hasWifiToggle = yes,
     hasWifiManager = yes,
+    -- Not really, Device:reboot & Device:powerOff are not implemented, so we just exit ;).
     canPowerOff = yes,
     canReboot = yes,
+    -- NOTE: Via simulateSuspend
     canSuspend = yes,
+    canStandby = no,
 }
 
 local UbuntuTouch = Device:new{
     model = "UbuntuTouch",
     hasFrontlight = yes,
+    isDefaultFullscreen = yes,
 }
 
 function Device:init()
@@ -199,7 +213,7 @@ function Device:init()
                         y = 100*scrolled_y,
                     },
                     pos = pos,
-                    time = ev.time,
+                    time = time.timeval(ev.time),
                     mousewheel_direction = scrolled_y,
                 }
                 local fake_ges_release = {
@@ -207,7 +221,7 @@ function Device:init()
                     distance = fake_ges.distance,
                     relative = fake_ges.relative,
                     pos = pos,
-                    time = ev.time,
+                    time = time.timeval(ev.time),
                     from_mousewheel = true,
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)
@@ -313,17 +327,35 @@ function Device:setDateTime(year, month, day, hour, min, sec)
     end
 end
 
+function Device:isAlwaysFullscreen()
+    -- return true on embedded devices, which should default to fullscreen
+    return self:isDefaultFullscreen()
+end
+
+function Device:toggleFullscreen()
+    local current_mode = self.fullscreen or self:isDefaultFullscreen()
+    local new_mode = not current_mode
+    local ok, err = SDL.setWindowFullscreen(new_mode)
+    if not ok then
+        logger.warn("Unable to toggle fullscreen mode to", new_mode, "\n", err)
+    else
+        self.fullscreen = new_mode
+    end
+end
+
 function Emulator:supportsScreensaver() return true end
 
 function Emulator:simulateSuspend()
     local Screensaver = require("ui/screensaver")
     Screensaver:setup()
     Screensaver:show()
+    self.screen_saver_mode = true
 end
 
 function Emulator:simulateResume()
     local Screensaver = require("ui/screensaver")
     Screensaver:close()
+    self.screen_saver_mode = false
 end
 
 -- fake network manager for the emulator

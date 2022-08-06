@@ -1,9 +1,11 @@
+local Device = require("device")
 local logger = require("logger")
 local slt2 = require("template/slt2")
 
 -- html exporter
 local HtmlExporter = require("base"):new {
     name = "html",
+    shareable = Device:canShareText(),
 }
 
 local function format(booknotes)
@@ -32,21 +34,18 @@ local function format(booknotes)
     return booknotes
 end
 
-function HtmlExporter:export(t)
+function HtmlExporter:getRenderedContent(t)
     local title
-    local path = self:getFilePath(t)
     if #t == 1 then
         title = t[1].title
     else
         title = "All Books"
     end
-    local file = io.open(path, "w")
     local template = slt2.loadfile(self.path .. "/template/note.tpl")
     local clipplings = {}
     for _, booknotes in ipairs(t) do
         table.insert(clipplings, format(booknotes))
     end
-    if not file then return false end
     local content = slt2.render(template, {
         clippings=clipplings,
         document_title = title,
@@ -54,9 +53,22 @@ function HtmlExporter:export(t)
         timestamp = self:getTimeStamp(),
         logger = logger
     })
+    return content
+end
+
+function HtmlExporter:export(t)
+    local path = self:getFilePath(t)
+    local file = io.open(path, "w")
+    if not file then return false end
+    local content = self:getRenderedContent(t)
     file:write(content)
     file:close()
     return true
+end
+
+function HtmlExporter:share(t)
+    local content = self:getRenderedContent({t})
+    Device:doShareText(content)
 end
 
 return HtmlExporter

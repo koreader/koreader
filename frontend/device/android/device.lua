@@ -83,6 +83,7 @@ local Device = Generic:new{
     home_dir = android.getExternalStoragePath(),
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     isHapticFeedbackEnabled = yes,
+    isDefaultFullscreen = function() return android.app.activity.sdkVersion >= 19 end,
     hasClipboard = yes,
     hasOTAUpdates = android.ota.isEnabled,
     hasOTARunning = function() return android.ota.isRunning end,
@@ -97,7 +98,9 @@ local Device = Generic:new{
     hasExternalSD = function() return android.getExternalSdPath() end,
     importFile = function(path) android.importFile(path) end,
     canShareText = yes,
-    doShareText = function(text) android.sendText(text) end,
+    doShareText = function(self, text, reason, title, mimetype)
+        android.sendText(text, reason, title, mimetype)
+    end,
 
     canExternalDictLookup = yes,
     getExternalDictLookupList = function() return external.dicts end,
@@ -339,27 +342,85 @@ function Device:setViewport(x,y,w,h)
     self.screen:setViewport(viewport)
 end
 
-function Device:toggleFullscreen()
+-- fullscreen
+
+-- to-do: implement fullscreen toggle in API19+
+local function canToggleFullscreen()
     local api = android.app.activity.sdkVersion
-    if api >= 19 then
-        logger.dbg("ignoring fullscreen toggle, reason: always in immersive mode")
-    elseif api < 19 and api >= 17 then
-        local width = android.getScreenWidth()
-        local height = android.getScreenHeight()
-        -- NOTE: Since we don't do HW rotation here, this should always match width
-        local available_width = android.getScreenAvailableWidth()
-        local available_height = android.getScreenAvailableHeight()
-        local is_fullscreen = android.isFullscreen()
-        android.setFullscreen(not is_fullscreen)
-        G_reader_settings:saveSetting("disable_android_fullscreen", is_fullscreen)
-        is_fullscreen = android.isFullscreen()
-        if is_fullscreen then
-            self:setViewport(0, 0, width, height)
-        else
-            self:setViewport(0, 0, available_width, available_height)
-        end
+    return api < 19, api
+end
+
+-- toggle fullscreen API 19+
+function Device:_toggleFullscreenImmersive()
+    logger.dbg("ignoring fullscreen toggle, reason: always in immersive mode")
+end
+
+-- toggle fullscreen API 17-18
+function Device:_toggleFullscreenLegacy()
+    local width = android.getScreenWidth()
+    local height = android.getScreenHeight()
+    -- NOTE: Since we don't do HW rotation here, this should always match width
+    local available_width = android.getScreenAvailableWidth()
+    local available_height = android.getScreenAvailableHeight()
+
+    local is_fullscreen = android.isFullscreen()
+    android.setFullscreen(not is_fullscreen)
+    G_reader_settings:saveSetting("disable_android_fullscreen", is_fullscreen)
+
+    self.fullscreen = android.isFullscreen()
+    if self.fullscreen then
+        self:setViewport(0, 0, width, height)
     else
-        logger.dbg("ignoring fullscreen toggle, reason: legacy api " .. api)
+        self:setViewport(0, 0, available_width, available_height)
+    end
+end
+
+-- toggle fullscreen API 14-16
+function Device:_toggleStatusBarVisibility()
+    local is_fullscreen = android.isFullscreen()
+    android.setFullscreen(not is_fullscreen)
+    logger.dbg(string.format("requesting fullscreen: %s", not is_fullscreen))
+    local width = android.getScreenWidth()
+    local height = android.getScreenHeight()
+    local statusbar_height = android.getStatusBarHeight()
+    local new_height = height - statusbar_height
+
+    if not is_fullscreen and self.viewport then
+        statusbar_height = 0
+        -- reset touchTranslate to normal
+        self.input:registerEventAdjustHook(
+            self.input.adjustTouchTranslate,
+            {x = 0 + self.viewport.x, y = 0 + self.viewport.y})
+    end
+
+    local viewport = Geom:new{x=0, y=statusbar_height, w=width, h=new_height}
+    logger.info(string.format("Switching viewport to new geometry [x=%d,y=%d,w=%d,h=%d]",
+        0, statusbar_height, width, new_height))
+
+    self.screen:setViewport(viewport)
+    if is_fullscreen and self.viewport then
+        self.input:registerEventAdjustHook(
+            self.input.adjustTouchTranslate,
+            {x = 0 - self.viewport.x, y = 0 - self.viewport.y})
+    end
+
+    self.fullscreen = is_fullscreen
+end
+
+function Device:isAlwaysFullscreen()
+    return not canToggleFullscreen()
+end
+
+function Device:toggleFullscreen()
+    local is_fullscreen = android.isFullscreen()
+    logger.dbg(string.format("requesting fullscreen: %s", not is_fullscreen))
+    local dummy, api = canToggleFullscreen()
+    if api >= 19 then
+        self:_toggleFullscreenImmersive()
+    elseif api >= 16 then
+        self:_toggleFullscreenLegacy()
+    else
+        self:_toggleStatusBarVisibility()
     end
 end
 
@@ -399,7 +460,7 @@ end
 
 function Device:canExecuteScript(file)
     local file_ext = string.lower(util.getFileNameSuffix(file))
-    if android.prop.flavor ~= "fdroid" and file_ext == "sh"  then
+    if android.prop.flavor ~= "fdroid" and file_ext == "sh" then
         return true
     end
 end

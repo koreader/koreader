@@ -14,6 +14,7 @@ local logger = require("logger")
 local util = require("util")
 local time = require("ui/time")
 local _ = require("gettext")
+local C_ = _.pgettext
 local N_ = _.ngettext
 local T = require("ffi/util").template
 
@@ -150,6 +151,7 @@ If set to 0, keitai input is disabled entirely and only flick input can be used.
                     value_min = 0,
                     value_max = 10,
                     value_step = 1,
+                    unit = C_("Time", "s"),
                     ok_text = _("Set interval"),
                     default_value = DEFAULT_KEITAI_TAP_INTERVAL_S,
                     callback = function(spin)

@@ -1,6 +1,7 @@
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local KeyValuePage = require("ui/widget/keyvaluepage")
+local Math = require("optmath")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local time = require("ui/time")
@@ -8,9 +9,10 @@ local util = require("util")
 local _ = require("gettext")
 
 local SystemStat = {
-    start_sec = os.time(),
-    suspend_sec = nil,
-    resume_sec = nil,
+    start_time = time.realtime(),
+    start_monotonic_time = time.boottime_or_realtime_coarse(),
+    suspend_time = nil,
+    resume_time = nil,
     wakeup_count = 0,
     sleep_count = 0,
     charge_count = 0,
@@ -27,6 +29,18 @@ function SystemStat:init()
     elseif Device:isSDL() then
         self.storage_filter = "/dev/sd"
     end
+
+    -- Account for a start-up mid-charge
+    local powerd = Device:getPowerDevice()
+    if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+        if powerd:isAuxCharging() and not powerd:isAuxCharged() then
+            self.charge_count = self.charge_count + 1
+        end
+    else
+        if powerd:isCharging() and not powerd:isCharged() then
+            self.charge_count = self.charge_count + 1
+        end
+    end
 end
 
 function SystemStat:put(p)
@@ -38,22 +52,39 @@ function SystemStat:putSeparator()
 end
 
 function SystemStat:appendCounters()
-    self:put({_("KOReader started at"), os.date("%c", self.start_sec)})
-    if self.suspend_sec then
-       self:put({_("  Last suspend time"), os.date("%c", self.suspend_sec)})
+    self:put({_("KOReader started at"), os.date("%c", time.to_s(self.start_time))})
+    if self.suspend_time then
+       self:put({_("  Last suspend time"), os.date("%c", time.to_s(self.suspend_time))})
     end
-    if self.resume_sec then
-        self:put({_("  Last resume time"), os.date("%c", self.resume_sec)})
+    if self.resume_time then
+        self:put({_("  Last resume time"), os.date("%c", time.to_s(self.resume_time))})
+    end
+    local uptime = time.boottime_or_realtime_coarse() - self.start_monotonic_time
+    local suspend = 0
+    if Device:canSuspend() then
+        suspend = Device.total_suspend_time
+    end
+    local standby = 0
+    if Device:canStandby() then
+        standby = Device.total_standby_time
     end
     self:put({"  " .. _("Up time"),
-            util.secondsToClockDuration("", os.difftime(os.time(), self.start_sec), false, true, true)})
+            util.secondsToClockDuration("", time.to_s(uptime), false, true, true)})
+    if Device:canSuspend() or Device:canStandby() then
+        local awake = uptime - suspend - standby
+        self:put({"  " .. _("Time spent awake"),
+            util.secondsToClockDuration("", time.to_s(awake), false, true, true)
+            .. " (" .. Math.round((awake / uptime) * 100) .. "%)"})
+    end
     if Device:canSuspend() then
         self:put({"  " .. _("Time in suspend"),
-            util.secondsToClockDuration("", time.to_number(Device.total_suspend_time), false, true, true)})
+            util.secondsToClockDuration("", time.to_s(suspend), false, true, true)
+            .. " (" .. Math.round((suspend / uptime) * 100) .. "%)"})
     end
     if Device:canStandby() then
         self:put({"  " .. _("Time in standby"),
-            util.secondsToClockDuration("", time.to_number(Device.total_standby_time), false, true, true)})
+            util.secondsToClockDuration("", time.to_s(standby), false, true, true)
+            .. " (" .. Math.round((standby / uptime) * 100) .. "%)"})
     end
     self:put({_("Counters"), ""})
     self:put({_("  wake-ups"), self.wakeup_count})
@@ -226,12 +257,12 @@ function SystemStat:appendStorageInfo()
 end
 
 function SystemStat:onSuspend()
-    self.suspend_sec = os.time()
+    self.suspend_time = time.realtime()
     self.sleep_count = self.sleep_count + 1
 end
 
 function SystemStat:onResume()
-    self.resume_sec = os.time()
+    self.resume_time = time.realtime()
     self.wakeup_count = self.wakeup_count + 1
 end
 

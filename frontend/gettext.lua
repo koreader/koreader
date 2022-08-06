@@ -103,7 +103,7 @@ local function getPluralFunc(pl_tests, nplurals, plural_default)
             local pl_test = pl_tests[i]
             pl_test = logicalCtoLua(pl_test)
 
-            if i > 1 and not (tonumber(pl_test) ~= nil) then
+            if i > 1 and tonumber(pl_test) == nil then
                 pl_test = " elseif "..pl_test
             end
             if tonumber(pl_test) ~= nil then
@@ -215,6 +215,10 @@ function GetText_mt.__index.changeLang(new_lang)
                     -- Hardcoded workaround for Hebrew which has 4 plural forms.
                     if plurals == "n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && n % 10 == 0) ? 2 : 3)" then
                         plurals = "n == 1 ? 0 : (n == 2) ? 1 : (n > 10 && n % 10 == 0) ? 2 : 3"
+                    end
+                    -- Hardcoded workaround for Latvian.
+                    if plurals == "n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2" then
+                        plurals = "n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19 ? 0 : (n % 10 == 1 && n % 100 != 11) ? 1 : 2"
                     end
                     -- Hardcoded workaround for Romanian which has 3 plural forms.
                     if plurals == "n == 1) ? 0 : ((n == 0 || n != 1 && n % 100 >= 1 && n % 100 <= 19) ? 1 : 2" then

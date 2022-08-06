@@ -1,12 +1,7 @@
 local Device = require("device")
 
-if not Device:isCervantes() and
-    not Device:isKindle() and
-    not Device:isKobo() and
-    not Device:isRemarkable() and
-    not Device:isSDL() and
-    not Device:isSonyPRSTUX() and
-    not Device:isPocketBook() then
+-- If a device can power off or go into standby, it can also suspend ;).
+if not Device:canSuspend() then
     return { disabled = true, }
 end
 
@@ -33,11 +28,12 @@ local AutoSuspend = WidgetContainer:new{
     auto_suspend_timeout_seconds = default_auto_suspend_timeout_seconds,
     auto_standby_timeout_seconds = default_auto_standby_timeout_seconds,
     last_action_time = 0,
-    is_standby_scheduled = false,
+    is_standby_scheduled = nil,
     task = nil,
     standby_task = nil,
     leave_standby_task = nil,
-    going_to_suspend = false,
+    wrapped_leave_standby_task = nil,
+    going_to_suspend = nil,
 }
 
 function AutoSuspend:_enabledStandby()
@@ -45,6 +41,7 @@ function AutoSuspend:_enabledStandby()
 end
 
 function AutoSuspend:_enabled()
+    -- NOTE: Plugin is only enabled if Device:canSuspend(), so we can elide the check here
     return self.auto_suspend_timeout_seconds > 0
 end
 
@@ -63,10 +60,11 @@ function AutoSuspend:_schedule(shutdown_only)
     -- On devices with an auxiliary battery, we only care about the auxiliary battery being charged...
     local powerd = Device:getPowerDevice()
     if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
-        is_charging = powerd:isAuxCharging()
+        is_charging = powerd:isAuxCharging() and not powerd:isAuxCharged()
     else
-        is_charging = powerd:isCharging()
+        is_charging = powerd:isCharging() and not powerd:isCharged()
     end
+    -- We *do* want to make sure we attempt to go into suspend/shutdown again while *fully* charged, though.
     if PluginShare.pause_auto_suspend or is_charging then
         suspend_delay_seconds = self.auto_suspend_timeout_seconds
         shutdown_delay_seconds = self.autoshutdown_timeout_seconds
@@ -133,7 +131,9 @@ function AutoSuspend:init()
     -- Disabled, until the user opts in.
     self.auto_standby_timeout_seconds = G_reader_settings:readSetting("auto_standby_timeout_seconds", -1)
 
-    if Device:isPocketBook() and not Device:canSuspend() then return end
+    -- We only want those to exist as *instance* members
+    self.is_standby_scheduled = false
+    self.going_to_suspend = false
 
     UIManager.event_hook:registerWidget("InputEvent", self)
     -- We need an instance-specific function reference to schedule, because in some rare cases,
@@ -173,7 +173,6 @@ end
 -- NOTE: event_hook takes care of overloading this to unregister the hook, too.
 function AutoSuspend:onCloseWidget()
     logger.dbg("AutoSuspend: onCloseWidget")
-    if Device:isPocketBook() and not Device:canSuspend() then return end
 
     self:_unschedule()
     self.task = nil
@@ -200,6 +199,7 @@ function AutoSuspend:_unschedule_standby()
 
     -- Make sure we don't trigger a ghost LeaveStandby event...
     if self.leave_standby_task then
+        logger.dbg("AutoSuspend: unschedule leave standby task")
         UIManager:unschedule(self.leave_standby_task)
     end
 end
@@ -340,8 +340,19 @@ end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
     logger.dbg("AutoSuspend: onUnexpectedWakeupLimit")
+    -- Should be unnecessary, because we should *always* follow onSuspend, which already does this...
+    -- Better safe than sorry, though ;).
+    self:_unschedule()
     -- Only re-engage the *shutdown* schedule to avoid doing the same dance indefinitely.
     self:_restart()
+end
+
+function AutoSuspend:onNotCharging()
+    logger.dbg("AutoSuspend: onNotCharging")
+    -- Make sure both the suspend & shutdown timers are re-engaged on unplug,
+    -- in case we hit an UnexpectedWakeupLimit during the charge cycle...
+    self:_unschedule()
+    self:_start()
 end
 
 -- time_scale:
@@ -360,45 +371,47 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
     -- Standby uses a different scheduled task than suspend/shutdown
     local is_standby = setting == "auto_standby_timeout_seconds"
 
-    local left_val
+    local day, hour, minute, second
+    local day_max, hour_max, min_max, sec_max
     if time_scale == 2 then
-        left_val = math.floor(setting_val / (24*3600))
+        day = math.floor(setting_val / (24*3600))
+        hour = math.floor(setting_val / 3600) % 24
+        day_max = math.floor(range[2] / (24*3600)) - 1
+        hour_max = 23
     elseif time_scale == 1 then
-        left_val = math.floor(setting_val / 3600)
+        hour = math.floor(setting_val / 3600)
+        minute = math.floor(setting_val / 60) % 60
+        hour_max = math.floor(range[2] / 3600) - 1
+        min_max = 59
     else
-        left_val = math.floor(setting_val / 60)
+        minute = math.floor(setting_val / 60)
+        second = math.floor(setting_val) % 60
+        min_max =  math.floor(range[2] / 60) - 1
+        sec_max = 59
     end
 
-    local right_val
-    if time_scale == 2 then
-        right_val = math.floor(setting_val / 3600) % 24
-    elseif time_scale == 1 then
-        right_val = math.floor(setting_val / 60) % 60
-    else
-        right_val = math.floor(setting_val) % 60
-    end
     local time_spinner
     time_spinner = DateTimeWidget:new {
-        is_date = false,
-        hour = left_val,
-        min = right_val,
+        day = day,
+        hour = hour,
+        min = minute,
+        sec = second,
+        day_hold_step = 5,
         hour_hold_step = 5,
         min_hold_step = 10,
-        hour_max = (time_scale == 2 and math.floor(range[2] / (24*3600)))
-            or (time_scale == 1 and math.floor(range[2] / 3600))
-            or math.floor(range[2] / 60),
-        min_max = (time_scale == 2 and 23) or 59,
+        sec_hold_step = 10,
+        day_max = day_max,
+        hour_max = hour_max,
+        min_max = min_max,
+        sec_max = sec_max,
         ok_text = _("Set timeout"),
         title_text = title,
         info_text = info,
-        callback = function(spinner)
-            if time_scale == 2 then
-                self[setting] = (spinner.hour * 24 + spinner.min) * 3600
-            elseif time_scale == 1 then
-                self[setting] = spinner.hour * 3600 + spinner.min * 60
-            else
-                self[setting] = spinner.hour * 60 + spinner.min
-            end
+        callback = function(t)
+            self[setting] = (((t.day or 0) * 24 +
+                             (t.hour or 0)) * 60 +
+                             (t.min or 0)) * 60 +
+                             (t.sec or 0)
             self[setting] = Math.clamp(self[setting], range[1], range[2])
             G_reader_settings:saveSetting(setting, self[setting])
             if is_standby then
@@ -412,32 +425,26 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
             if touchmenu_instance then touchmenu_instance:updateItems() end
             local time_string = util.secondsToClockDuration("modern", self[setting],
                 time_scale == 2 or time_scale == 1, true, true)
-            time_string = time_string:gsub("00m$", ""):gsub("^0+m", ""):gsub("^0", "")
             UIManager:show(InfoMessage:new{
                 text = T(_("%1: %2"), title, time_string),
                 timeout = 3,
             })
         end,
         default_value = util.secondsToClockDuration("modern", default_value,
-            time_scale == 2 or time_scale == 1, true, true):gsub("00m$", ""):gsub("^00m:", ""),
+            time_scale == 2 or time_scale == 1, true, true),
         default_callback = function()
-            local hour
+            local day, hour, min, sec -- luacheck: ignore 431
             if time_scale == 2 then
-                hour = math.floor(default_value / (24*3600))
+                day = math.floor(default_value / (24*3600))
+                hour = math.floor(default_value / 3600) % 24
             elseif time_scale == 1 then
                 hour = math.floor(default_value / 3600)
-            else
-                hour = math.floor(default_value / 60)
-            end
-            local min
-            if time_scale == 2 then
-                min = math.floor(default_value / 3600) % 24
-            elseif time_scale == 1 then
                 min = math.floor(default_value / 60) % 60
             else
-                min = math.floor(default_value % 60)
+                min = math.floor(default_value / 60)
+                sec = math.floor(default_value % 60)
             end
-            time_spinner:update(nil, hour, min)
+            time_spinner:update(nil, nil, day, hour, min, sec) -- It is ok to pass nils here.
         end,
         extra_text = _("Disable"),
         extra_callback = function(this)
@@ -462,6 +469,7 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
 end
 
 function AutoSuspend:addToMainMenu(menu_items)
+    -- Device:canSuspend() check elided because it's a plugin requirement
     menu_items.autosuspend = {
         sorting_hint = "device",
         checked_func = function()
@@ -470,7 +478,7 @@ function AutoSuspend:addToMainMenu(menu_items)
         text_func = function()
             if self.auto_suspend_timeout_seconds and self.auto_suspend_timeout_seconds > 0 then
                 local time_string = util.secondsToClockDuration("modern",
-                    self.auto_suspend_timeout_seconds, true, true, true):gsub("00m$", ""):gsub("^00m:", "")
+                    self.auto_suspend_timeout_seconds, true, true, true)
                 return T(_("Autosuspend timeout: %1"), time_string)
             else
                 return _("Autosuspend timeout")
@@ -480,14 +488,14 @@ function AutoSuspend:addToMainMenu(menu_items)
         callback = function(touchmenu_instance)
             -- 60 sec (1') is the minimum and 24*3600 sec (1day) is the maximum suspend time.
             -- A suspend time of one day seems to be excessive.
-            -- But or battery testing it might give some sense.
+            -- But it might make sense for battery testing.
             self:pickTimeoutValue(touchmenu_instance,
                 _("Timeout for autosuspend"), _("Enter time in hours and minutes."),
                 "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds,
                 {60, 24*3600}, 1)
         end,
     }
-    if Device:canPowerOff() or Device:isEmulator() then
+    if Device:canPowerOff() then
         menu_items.autoshutdown = {
             sorting_hint = "device",
             checked_func = function()
@@ -496,7 +504,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             text_func = function()
                 if self.autoshutdown_timeout_seconds and self.autoshutdown_timeout_seconds > 0 then
                     local time_string = util.secondsToClockDuration("modern", self.autoshutdown_timeout_seconds,
-                        true, true, true):gsub("00m$", ""):gsub("^00m:", "")
+                        true, true, true)
                     return T(_("Autoshutdown timeout: %1"), time_string)
                 else
                     return _("Autoshutdown timeout")
@@ -509,7 +517,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                 -- Maximum more than four weeks seems a bit excessive if you want to enable authoshutdown,
                 -- even if the battery can last up to three months.
                 self:pickTimeoutValue(touchmenu_instance,
-                    _("Timeout for autoshutdown"),  _("Enter time in days and hours."),
+                    _("Timeout for autoshutdown"), _("Enter time in days and hours."),
                     "autoshutdown_timeout_seconds", default_autoshutdown_timeout_seconds,
                     {5*60, 28*24*3600}, 2)
             end,
@@ -533,7 +541,7 @@ This is experimental on most devices, except those running on a sunxi SoC (Kobo 
             text_func = function()
                 if self.auto_standby_timeout_seconds and self.auto_standby_timeout_seconds > 0 then
                     local time_string = util.secondsToClockDuration("modern", self.auto_standby_timeout_seconds,
-                        false, true, true):gsub("00m$", ""):gsub("^0+m", ""):gsub("^0", "")
+                        false, true, true, true)
                     return T(_("Autostandby timeout: %1"), time_string)
                 else
                     return _("Autostandby timeout")
@@ -589,8 +597,25 @@ function AutoSuspend:AllowStandbyHandler()
         -- to make sure UIManager will consume the input events that woke us up first
         -- (in case we were woken up by user input, as opposed to an rtc wake alarm)!
         -- (This ensures we'll use an up to date last_action_time, and that it only ever gets updated from *user* input).
-        -- NOTE: UIManager consumes scheduled tasks before input events, which is why we can't use nextTick.
-        UIManager:tickAfterNext(self.leave_standby_task)
+        -- NOTE: While UIManager consumes scheduled tasks before input events, we do *NOT* have to rely on tickAfterNext,
+        --       solely because of where we run inside an UI frame (via UIManager:_standbyTransition):
+        --       we're neither a scheduled task nor an input event, we run *between* scheduled tasks and input polling.
+        --       That means we go straight to input polling when returning, *without* a trip through the task queue
+        --       (c.f., UIManager:_checkTasks in UIManager:handleInput).
+        UIManager:nextTick(self.leave_standby_task)
+
+        -- Since we go straight to input polling, and that our time spent in standby won't have affected the already computed
+        -- input polling deadline (because MONOTONIC doesn't tick during standby/suspend),
+        -- tweak said deadline to make sure poll will return immediately, so we get a chance to run through the task queue ASAP.
+        -- This ensures we get a LeaveStandby event in a timely fashion,
+        -- even when there isn't actually any user input happening (e.g., woken up by the rtc alarm).
+        -- This shouldn't prevent us from actually consuming any pending input events first,
+        -- because if we were woken up by user input, those events should already be in the evdev queue...
+        UIManager:consumeInputEarlyAfterPM(true)
+    else
+        if not self.going_to_suspend then
+            self:_start_standby()
+        end
     end
 end
 

@@ -49,6 +49,7 @@ local SpinWidget = FocusManager:new{
     -- Optional extra button above ok/cancel buttons row
     option_text = nil,
     option_callback = nil,
+    unit = nil,
 }
 
 function SpinWidget:init()
@@ -80,6 +81,9 @@ function SpinWidget:init()
          }
     end
 
+    if self.unit and self.unit ~= "" then
+        self.precision = self.precision and self.precision or "%1d"
+    end
     -- Actually the widget layout
     self:update()
 end
@@ -102,6 +106,7 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
         picker_updated_callback = function(value, value_index)
             self:update(value, value_index)
         end,
+        unit = self.unit,
     }
     self:mergeLayoutInVertical(value_widget)
     local value_group = HorizontalGroup:new{
@@ -121,10 +126,18 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
 
     local buttons = {}
     if self.default_value then
+        local unit = ""
+        if self.unit then
+            if self.unit == "°" then
+                unit = self.unit
+            elseif self.unit ~= "" then
+                unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
+            end
+        end
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Default value: %1"),
-                    self.precision and string.format(self.precision, self.default_value) or self.default_value),
+                text = self.default_text or T(_("Default value: %1%2"),
+                    self.precision and string.format(self.precision, self.default_value) or self.default_value, unit),
                 callback = function()
                     value_widget.value = self.default_value
                     value_widget:update()

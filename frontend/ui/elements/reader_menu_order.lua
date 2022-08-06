@@ -89,6 +89,7 @@ local order = {
         "font_ui_fallbacks",
         "----------------------------",
         "time",
+        "units",
         "device_status_alarm",
         "charging_led", -- if Device:canToggleChargingLED()
         "autostandby",
@@ -130,6 +131,7 @@ local order = {
     screen = {
         "screensaver",
         "coverimage",
+        "autodim",
         "----------------------------",
         "screen_rotation",
         "----------------------------",
@@ -187,6 +189,7 @@ local order = {
     search = {
         "dictionary_lookup",
         "dictionary_lookup_history",
+        "vocabbuilder",
         "dictionary_settings",
         "----------------------------",
         "wikipedia_lookup",

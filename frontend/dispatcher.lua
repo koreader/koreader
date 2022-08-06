@@ -71,7 +71,9 @@ local settingsList = {
     wifi_on = {category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     wifi_off = {category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     toggle_wifi = {category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
+    toggle_fullscreen = {category="none", event="ToggleFullscreen", title=_("Toggle Fullscreen"), device=true, condition=not Device:isAlwaysFullscreen()},
     show_network_info = {category="none", event="ShowNetworkInfo", title=_("Show network info"), device=true, separator=true},
+    exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit screensaver"), device=true},
     suspend = {category="none", event="SuspendEvent", title=_("Suspend"), device=true},
     exit = {category="none", event="Exit", title=_("Exit KOReader"), device=true},
     restart = {category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart()},
@@ -129,6 +131,7 @@ local settingsList = {
     book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true, separator=true},
     show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
     toggle_bookmark = {category="none", event="ToggleBookmark", title=_("Toggle bookmark"), reader=true},
+    toggle_page_change_animation = {category="none", event="TogglePageChangeAnimation", title=_("Toggle page turn animations"), reader=true, condition=Device:canDoSwipeAnimation()},
     toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, separator=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true},
@@ -219,6 +222,7 @@ local dispatcher_menu_order = {
     "show_menu",
     "screenshot",
 
+    "exit_screensaver",
     "suspend",
     "exit",
     "restart",
@@ -235,6 +239,7 @@ local dispatcher_menu_order = {
     "wifi_on",
     "wifi_off",
     "toggle_wifi",
+    "toggle_fullscreen",
     "show_network_info",
 
     "show_frontlight_dialog",
@@ -306,6 +311,7 @@ local dispatcher_menu_order = {
     "font_kerning",
 
     "toggle_bookmark",
+    "toggle_page_change_animation",
     "toggle_page_flipping",
     "toggle_reflow",
     "toggle_inverse_reading_order",

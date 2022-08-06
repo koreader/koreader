@@ -844,6 +844,7 @@ Widget that displays config menubar and config panel
 
 local ConfigDialog = FocusManager:new{
     --is_borderless = false,
+    name = "ConfigDialog",
     panel_index = 1,
     is_fresh = true,
 }
@@ -1171,6 +1172,8 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     right_step = more_options_param.right_step,
                     right_hold_step = more_options_param.right_hold_step,
                     keep_shown_on_apply = true,
+                    unit = more_options_param.unit,
+                    precision = more_options_param.precision,
                     close_callback = function()
                         if when_applied_callback then
                             when_applied_callback()
@@ -1264,7 +1267,8 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     value_step = more_options_param.value_step or 1,
                     value_hold_step = value_hold_step,
                     value_max = more_options_param.value_max or values[#values],
-                    precision = more_options_param.precision or "%02d",
+                    unit = more_options_param.unit,
+                    precision = more_options_param.precision,
                     keep_shown_on_apply = true,
                     close_callback = function()
                         if when_applied_callback then
@@ -1333,6 +1337,13 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                                 end)
                             end,
                         })
+                    end,
+                    option_text =  more_options_param.other_button and more_options_param.other_button.text,
+                    option_callback =  more_options_param.other_button and function()
+                        when_applied_callback = nil -- prevent bottom menu from being shown (before being hidden again)
+                        widget:onClose()
+                        local option = self:findOptionByName(more_options_param.other_button.other_option)
+                        self:onConfigMoreChoose(option.values, option.name, option.event, nil, option.name_text, option.more_options_param)
                     end,
                 }
             end
@@ -1416,6 +1427,23 @@ function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, dir
             end)
         end,
     })
+end
+
+function ConfigDialog:findOptionByName(name)
+    local option
+    for i=1, #self.config_options do
+        local options = self.config_options[i].options
+        for j=1, #options do
+            if options[j].name == name then
+                option = options[j]
+                break
+            end
+        end
+        if option then
+            break
+        end
+    end
+    return option
 end
 
 function ConfigDialog:closeDialog()

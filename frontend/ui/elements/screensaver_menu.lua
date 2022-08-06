@@ -1,5 +1,6 @@
 local Screensaver = require("ui/screensaver")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local function hasLastFile()
     if G_reader_settings:hasNot("lastfile") then
@@ -157,7 +158,8 @@ return {
                             if G_reader_settings:nilOrFalse("screensaver_stretch_images") then
                                 return _("Stretch to fit screen")
                             elseif G_reader_settings:readSetting("screensaver_stretch_limit_percentage") then
-                                return _("Stretch to fit screen (with limit)")
+                                return T(_("Stretch to fit screen (with limit: %1 %)"),
+                                    G_reader_settings:readSetting("screensaver_stretch_limit_percentage"))
                             else
                                 return _("Stretch to fit screen")
                             end
@@ -291,6 +293,15 @@ return {
                         end,
                         callback = function()
                             G_reader_settings:saveSetting("screensaver_delay", "tap")
+                        end
+                    },
+                    {
+                        text = _("Until 'Exit screensaver' gesture"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("screensaver_delay") == "gesture"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_delay", "gesture")
                         end
                     },
                 },

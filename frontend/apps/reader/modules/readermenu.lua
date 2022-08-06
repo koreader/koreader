@@ -407,6 +407,10 @@ function ReaderMenu:onCloseReaderMenu()
     return true
 end
 
+function ReaderMenu:onSetDimensions(dimen)
+    self:onCloseReaderMenu()
+end
+
 function ReaderMenu:onCloseDocument()
     if Device:supportsScreensaver() then
         -- Remove the item we added (which cleans up references to document

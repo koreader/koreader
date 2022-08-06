@@ -3,7 +3,6 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
-local DataStorage = require("datastorage")
 local Device = require("device")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
@@ -18,12 +17,13 @@ local SpinWidget = require("ui/widget/spinwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
-local ffiUtil = require("ffi/util")
-local T = ffiUtil.template
 local Screen = Device.screen
+local T = ffiUtil.template
 
 -- Default settings
 if G_reader_settings:hasNot("screensaver_show_message") then
@@ -64,6 +64,11 @@ local Screensaver = {
     default_screensaver_message = _("Sleeping"),
 }
 
+-- Remind emulator users that Power is bound to F2
+if Device:isEmulator() then
+    Screensaver.default_screensaver_message = Screensaver.default_screensaver_message .. "\n" .. _("(Press F2 to resume)")
+end
+
 function Screensaver:_getRandomImage(dir)
     if not dir then
         return nil
@@ -77,12 +82,13 @@ function Screensaver:_getRandomImage(dir)
     math.randomseed(os.time())
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if ok then
-        for entry in iter, dir_obj do
-            if lfs.attributes(dir .. entry, "mode") == "file" then
-                local extension = string.lower(string.match(entry, ".+%.([^.]+)") or "")
+        for f in iter, dir_obj do
+            -- Always ignore macOS resource forks, too.
+            if lfs.attributes(dir .. f, "mode") == "file" and not util.stringStartsWith(f, "._") then
+                local extension = string.lower(string.match(f, ".+%.([^.]+)") or "")
                 if self.screensaver_provider[extension] then
                     i = i + 1
-                    pics[i] = entry
+                    pics[i] = f
                 end
             end
         end
@@ -92,6 +98,7 @@ function Screensaver:_getRandomImage(dir)
     else
         return nil
     end
+
     return dir .. pics[math.random(i)]
 end
 
@@ -106,7 +113,6 @@ function Screensaver:_calcAverageTimeForPages(pages)
 
     -- Compare average_time_per_page against itself to make sure it's not nan
     if average_time_per_page and average_time_per_page == average_time_per_page and pages then
-        local util = require("util")
         local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
         sec = util.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
     end
@@ -261,7 +267,7 @@ function Screensaver:chooseFolder()
         }
     })
     local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
-                         or DataStorage:getDataDir() .. "/screenshots/"
+                         or _("N/A")
     self.choose_dialog = ButtonDialogTitle:new{
         title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
@@ -277,11 +283,9 @@ function Screensaver:chooseFile(document_cover)
             text = text,
             callback = function()
                 UIManager:close(self.choose_dialog)
-                local util = require("util")
                 local PathChooser = require("ui/widget/pathchooser")
                 local path_chooser = PathChooser:new{
                     select_directory = false,
-                    select_file = true,
                     file_filter = function(filename)
                         local suffix = util.getFileNameSuffix(filename)
                         if document_cover and DocumentRegistry:hasProvider(filename) then
@@ -290,7 +294,6 @@ function Screensaver:chooseFile(document_cover)
                             return true
                         end
                     end,
-                    detailed_file_info = true,
                     path = self.root_path,
                     onConfirm = function(file_path)
                         if document_cover then
@@ -321,8 +324,9 @@ function Screensaver:chooseFile(document_cover)
         }
     })
     local screensaver_image = G_reader_settings:readSetting("screensaver_image")
-                           or DataStorage:getDataDir() .. "/resources/koreader.png"
+                           or _("N/A")
     local screensaver_document_cover = G_reader_settings:readSetting("screensaver_document_cover")
+                                    or _("N/A")
     local title = document_cover and T(_("Current screensaver document cover:\n%1"), BD.filepath(screensaver_document_cover))
         or T(_("Current screensaver image:\n%1"), BD.filepath(screensaver_image))
     self.choose_dialog = ButtonDialogTitle:new{
@@ -391,7 +395,8 @@ function Screensaver:setStretchLimit(touchmenu_instance)
         value = G_reader_settings:readSetting("screensaver_stretch_limit_percentage", 8),
         value_min = 0,
         value_max = 25,
-        default_value = 8, -- percent
+        default_value = 8,
+        unit = "%",
         title_text = _("Set maximum stretch limit"),
         ok_text = _("Set"),
         ok_always_enabled = true,
@@ -683,6 +688,7 @@ function Screensaver:show()
             message_widget = InfoMessage:new{
                 text = screensaver_message,
                 readonly = true,
+                dismissable = false,
             }
         else
             local face = Font:getFace("infofont")
@@ -770,6 +776,10 @@ function Screensaver:close()
         self.delayed_close = true
     elseif screensaver_delay == "disable" then
         self:close_widget()
+    elseif screensaver_delay == "gesture" then
+        if self.screensaver_widget then
+            self.screensaver_widget:showWaitForGestureMessage()
+        end
     else
         logger.dbg("tap to exit from screensaver")
     end

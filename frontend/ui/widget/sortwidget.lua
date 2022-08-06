@@ -93,10 +93,12 @@ function SortItemWidget:init()
 end
 
 function SortItemWidget:onTap(_, ges)
-    if self.item.checked_func and ges.pos:intersectWith(self.checkmark_widget.dimen) then
+    if self.item.checked_func and ( self.show_parent.sort_disabled or ges.pos:intersectWith(self.checkmark_widget.dimen) ) then
         if self.item.callback then
             self.item:callback()
         end
+    elseif self.show_parent.sort_disabled then
+        return true
     elseif self.show_parent.marked == self.index then
         self.show_parent.marked = 0
     else
@@ -123,6 +125,7 @@ local SortWidget = FocusManager:new{
     -- table of items to sort
     item_table = nil, -- mandatory (array)
     callback = nil,
+    sort_disabled = false
 }
 
 function SortWidget:init()

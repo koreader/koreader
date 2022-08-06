@@ -30,6 +30,7 @@ local CreDocument = Document:new{
 
     line_space_percent = 100,
     default_font = "Noto Serif",
+    monospace_font = "Droid Sans Mono",
     header_font = "Noto Sans",
 
     -- Reasons for the fallback font ordering:
@@ -131,6 +132,9 @@ function CreDocument:engineInit()
         -- It should ensure we use real fonts (and not synthesized ones) for normal text
         -- and bold text with the font_base_weight setting set to its default value of 0 (=400).
         cre.regularizeRegisteredFontsWeights(true) -- true to print what modifications were made
+
+        -- Set up bias for some specific fonts
+        self:setOtherFontBiases()
 
         engine_initialized = true
     end
@@ -236,6 +240,12 @@ function CreDocument:setupDefaultView()
     -- loadDocument(only_metadata) another document to get its metadata
     -- or cover image, eg. from History hold menu).
     self:setupFallbackFontFaces()
+
+    -- Adjust or not fallback font sizes
+    self:setAdjustedFallbackFontSizes(G_reader_settings:nilOrTrue("cre_adjusted_fallback_font_sizes"))
+
+    -- set monospace fonts size scaling
+    self:setMonospaceFontScaling(G_reader_settings:readSetting("cre_monospace_scaling") or 100)
 
     -- adjust font sizes according to dpi set in canvas context
     self._document:adjustFontSizes(CanvasContext:getDPI())
@@ -797,6 +807,10 @@ function CreDocument:getFontFace()
     return self._document:getFontFace()
 end
 
+function CreDocument:getEmbeddedFontList()
+    return self._document:getEmbeddedFontList()
+end
+
 function CreDocument:getCurrentPos()
     return self._document:getCurrentPos()
 end
@@ -833,6 +847,10 @@ end
 function CreDocument:getTextFromXPointers(pos0, pos1, draw_selection)
     local draw_segmented_selection = draw_selection -- always use segmented selections
     return self._document:getTextFromXPointers(pos0, pos1, draw_selection, draw_segmented_selection)
+end
+
+function CreDocument:extendXPointersToSentenceSegment(pos0, pos1)
+    return self._document:extendXPointersToSentenceSegment(pos0, pos1)
 end
 
 function CreDocument:getHTMLFromXPointer(xp, flags, from_final_parent)
@@ -894,8 +912,8 @@ function CreDocument:setFontFace(new_font_face)
         -- See: crengine/src/lvfntman.cpp LVFontDef::CalcMatch():
         -- it will compute a score for each font, where it adds:
         --  + 25600 if standard font family matches (inherit serif sans-serif
-        --     cursive fantasy monospace) (note that crengine registers all fonts as
-        --     "sans-serif", except if their name is "Times" or "Times New Roman")
+        --     cursive fantasy monospace) (note that crengine registers all fonts
+        --     as "sans-serif", except monospace fonts)
         --  + 6400 if they don't and none are monospace (ie:serif vs sans-serif,
         --      prefer a sans-serif to a monospace if looking for a serif)
         --  +256000 if font names match
@@ -906,20 +924,42 @@ function CreDocument:setFontFace(new_font_face)
         --  +25601: uses existing real font-family, but use our font even
         --          for font-family: monospace
         -- +256001: prefer our font to any existing font-family font
-        self._document:setAsPreferredFontWithBias(new_font_face, 1)
-        -- +1 +128x5 +256x5: we want our main font, even if it has no italic
-        -- nor bold variant (eg FreeSerif), to win over all other fonts that
-        -- have an italic or bold variant:
+        -- cre.setAsPreferredFontWithBias(new_font_face, 1)
+        -- Rather +1 +128x5 +256x5: we want our main font, even if it has no italic
+        -- nor bold variant (eg FreeSerif), to win over all other fonts that have
+        -- an italic or bold variant:
         --   italic_match = 5 * (256 for real italic, or 128 for fake italic
         --   weight_match = 5 * (256 - weight_diff * 256 / 800)
         -- so give our font a bias enough to win over real italic or bold fonts
         -- (all others params (size, family, name), used for computing the match
         -- score, have a factor of 100 or 1000 vs the 5 used for italic & weight,
         -- so it shouldn't hurt much).
-        -- Note that this is mostly necessary when forcing a not found name,
-        -- as we do in the Ignore font-family style tweak.
-        self._document:setAsPreferredFontWithBias(new_font_face, 1 + 128*5 + 256*5)
+        -- Note that this is mostly necessary when a font name is given and we
+        -- don't have the font.
+        cre.setAsPreferredFontWithBias(new_font_face, 1 + 128*5 + 256*5)
+
+        -- The above call has resetted all other biases, so re-set our other ones
+        self:setOtherFontBiases()
     end
+end
+
+function CreDocument:setOtherFontBiases()
+    -- Make sure the user selected (or the default) monospace font is used even
+    -- if other monospace fonts were registered (same factor as above so its
+    -- synthetic bold or italic are used, in case some other monospace font
+    -- has real bold or italic variants)
+    local monospace_font = G_reader_settings:readSetting("monospace_font") or self.monospace_font
+    cre.setAsPreferredFontWithBias(monospace_font, 1 + 128*5 + 256*5, false)
+end
+
+function CreDocument:setMonospaceFontScaling(value)
+    logger.dbg("CreDocument: set monospace font scaling", value)
+    self._document:setIntProperty("font.monospace.size.scale.percent", value or 100)
+end
+
+function CreDocument:setAdjustedFallbackFontSizes(toggle)
+    logger.dbg("CreDocument: set adjusted fallback font sizes", toggle)
+    self._document:setIntProperty("crengine.font.fallback.sizes.adjusted", toggle and 1 or 0)
 end
 
 function CreDocument:setupFallbackFontFaces()
@@ -1122,6 +1162,11 @@ end
 function CreDocument:setWordExpansion(value)
     logger.dbg("CreDocument: set word expansion", value)
     self._document:setIntProperty("crengine.style.max.added.letter.spacing.percent", value or 0)
+end
+
+function CreDocument:setCJKWidthScaling(value)
+    logger.dbg("CreDocument: set cjk width scaling", value)
+    self._document:setIntProperty("crengine.style.cjk.width.scale.percent", value or 100)
 end
 
 function CreDocument:setStyleSheet(new_css_file, appended_css_content )
@@ -1738,13 +1783,13 @@ function CreDocument:setupCallCache()
         end
     end
     -- We override a bit more specifically the one responsible for drawing page
-    self.drawCurrentView = function(_self, target, x, y, rect, pos)
+    self.drawCurrentView = function(this, target, x, y, rect, pos)
         local do_draw = false
-        local current_tag = _self._callCacheGetCurrentTag()
-        local current_buffer_tag = _self._callCacheGet("current_buffer_tag")
-        if _self.buffer and (_self.buffer.w ~= rect.w or _self.buffer.h ~= rect.h) then
+        local current_tag = this._callCacheGetCurrentTag()
+        local current_buffer_tag = this._callCacheGet("current_buffer_tag")
+        if this.buffer and (this.buffer.w ~= rect.w or this.buffer.h ~= rect.h) then
             do_draw = true
-        elseif not _self.buffer then
+        elseif not this.buffer then
             do_draw = true
         elseif not current_buffer_tag then
             do_draw = true
@@ -1754,20 +1799,20 @@ function CreDocument:setupCallCache()
         local starttime = now()
         if do_draw then
             if do_log then logger.dbg("callCache: ########## drawCurrentView: full draw") end
-            CreDocument.drawCurrentView(_self, target, x, y, rect, pos)
+            CreDocument.drawCurrentView(this, target, x, y, rect, pos)
             addStatMiss("drawCurrentView", starttime)
-            _self._callCacheSet("current_buffer_tag", current_tag)
+            this._callCacheSet("current_buffer_tag", current_tag)
         else
             if do_log then logger.dbg("callCache: ---------- drawCurrentView: light draw") end
-            target:blitFrom(_self.buffer, x, y, 0, 0, rect.w, rect.h)
+            target:blitFrom(this.buffer, x, y, 0, 0, rect.w, rect.h)
             addStatHit("drawCurrentView", starttime)
         end
     end
     -- Dump statistics on close
     if do_stats then
-        self.close = function(_self)
+        self.close = function(this)
             dumpStats()
-            CreDocument.close(_self)
+            CreDocument.close(this)
         end
     end
 end

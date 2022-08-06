@@ -339,7 +339,6 @@ Do you want to proceed?]]),
         cancel_text = _("No"),
         ok_callback = function()
             local path_chooser = PathChooser:new{
-                select_directory = true,
                 select_file = false,
                 path = self.last_path,
                 onConfirm = function(dir_path)
@@ -380,9 +379,7 @@ end
 function TextEditor:chooseFile()
     self:loadSettings()
     local path_chooser = PathChooser:new{
-        select_file = true,
         select_directory = false,
-        detailed_file_info = true,
         path = self.last_path,
         onConfirm = function(file_path)
             -- Remember last_path only when we select a file from it

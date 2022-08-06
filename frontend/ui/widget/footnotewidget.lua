@@ -21,26 +21,6 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 local time = require("ui/time")
 
--- If we wanted to use the default font set for the book,
--- we'd need to add a few functions to crengine and cre.cpp
--- to get the font files paths (for each font, regular, italic,
--- bold...) so we can pass them to MuPDF with:
---   @font-face {
---       font-family: 'KOReader Footnote Font';
---       src: url("%1");
---   }
---   @font-face {
---       font-family: 'KOReader Footnote Font';
---       src: url("%2");
---       font-style: italic;
---   }
---   body {
---       font-family: 'KOReader Footnote Font';
---   }
--- But it looks quite fine if we use "Noto Sans": the difference in font look
--- (Sans, vs probably Serif in the book) will help noticing this is a KOReader
--- UI element, and somehow justify the difference in looks.
-
 -- Note: we can't use < or > in comments in the CSS, or MuPDF complains with:
 --   error: css syntax error: unterminated comment.
 -- So, HTML tags in comments are written upppercase (eg: <li> => LI)
@@ -53,6 +33,7 @@ local PAGE_CSS = [[
     font-family: '%5';
 }
 %6
+%7
 ]]
 
 -- Make default MuPDF styles (source/html/html-layout.c) a bit
@@ -62,7 +43,7 @@ local DEFAULT_CSS = [[
 body {
     margin: 0;                  /* MuPDF: margin: 1em */
     padding: 0;
-    line-height: 1.3;
+    line-height: 1.3;           /* MuPDF defaults to 1.2 */
     text-align: justify;
 }
 /* We keep left and right margin the same so it also displays as expected in RTL */
@@ -139,6 +120,7 @@ local FootnoteWidget = InputContainer:new{
     -- For the doc_* values, we expect to be provided with the real
     -- (already scaled) sizes in screen pixels
     doc_font_size = Screen:scaleBySize(18),
+    doc_font_name = nil,
     doc_margins = {
         left = Screen:scaleBySize(20),
         right = Screen:scaleBySize(20),
@@ -233,6 +215,38 @@ function FootnoteWidget:init()
         font_size = self.doc_font_size + (G_reader_settings:readSetting("footnote_popup_relative_font_size") or -2)
     end
 
+    local font_css = ""
+    if G_reader_settings:isTrue("footnote_popup_use_book_font") then
+        -- Note: we can't provide any base weight (as supported by crengine), as MuPDF
+        -- will use the bold font for anything with a weight > 400. We can only use the
+        -- font as-is, without its natural weight tweaked.
+        local seen_font_path = {}
+        for i=1, 4 do
+            local bold = i >= 3
+            local italic = i == 2 or i ==4
+            -- We assume the font is not from a collection, and ignore the index.
+            local font_path = cre.getFontFaceFilenameAndFaceIndex(self.doc_font_name, bold, italic)
+            -- crengine returns the regular filename when requesting a bold that
+            -- it has synthesized; but MuPDF would consider it as real bold and
+            -- would use it as-is: by not providing the fake bold font file path,
+            -- we let MuPDF itself synthesize the bold (and also italic if none
+            -- provided). So, keep track of what's been seen and used.
+            if font_path and not seen_font_path[font_path] then
+                seen_font_path[font_path] = true
+                font_css = font_css .. T("\n@font-face { font-family: 'KOReaderFootnoteFont'; src: url('%1')%2%3}",
+                            font_path,
+                            bold and "; font-weight: bold" or "",
+                            italic and "; font-style: italic" or "")
+            end
+        end
+        if font_css ~= "" then
+            -- If not using our standard font, override "line-height:1.3" (which is fine
+            -- with Noto Sans) to use something smaller (looks like MuPDF's default is 1.2
+            -- and we can't make it use the font natural line height...)
+            font_css = font_css .. "\nbody { font-family: 'KOReaderFootnoteFont'; line-height: 1.2 !important; }\n"
+        end
+    end
+
     -- We want to display the footnote text with the same margins as
     -- the document, but keep the scrollbar in the right margin, so
     -- both small footnotes (without scrollbar) and longer ones (with
@@ -245,8 +259,9 @@ function FootnoteWidget:init()
     if BD.mirroredUILayout() then
         html_left_margin, html_right_margin = html_right_margin, html_left_margin
     end
+
     local css = T(PAGE_CSS, "0", html_right_margin, "0", html_left_margin, -- top right bottom left
-                    self.font_face, DEFAULT_CSS)
+                    self.font_face, font_css, DEFAULT_CSS)
     if self.css then -- add any provided css
         css = css .. "\n" .. self.css
     end

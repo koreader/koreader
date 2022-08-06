@@ -630,14 +630,14 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
         title = "Enter a custom text",
         fields = {
             {
-                text =  self.custom_text or "",
+                text = self.custom_text or "",
                 description = _("Custom string:"),
                 input_type = "string",
             },
             {
                 text = self.custom_text_repetitions,
                 description =_("Number of repetitions:"),
-                input_type =  "number",
+                input_type = "number",
             },
         },
         buttons = {
@@ -766,8 +766,9 @@ end
 
 function ReaderFooter:unscheduleFooterAutoRefresh()
     if not self.autoRefreshFooter then return end -- not yet set up
+    -- Slightly different wording than in rescheduleFooterAutoRefreshIfNeeded because it might not actually be scheduled at all
+    logger.dbg("ReaderFooter: unschedule autoRefreshFooter")
     UIManager:unschedule(self.autoRefreshFooter)
-    logger.dbg("ReaderFooter.autoRefreshFooter unscheduled")
 end
 
 function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
@@ -808,12 +809,12 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
     if schedule then
         UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
         if not unscheduled then
-            logger.dbg("ReaderFooter.autoRefreshFooter scheduled")
+            logger.dbg("ReaderFooter: scheduled autoRefreshFooter")
         else
-            logger.dbg("ReaderFooter.autoRefreshFooter rescheduled")
+            logger.dbg("ReaderFooter: rescheduled autoRefreshFooter")
         end
     elseif unscheduled then
-        logger.dbg("ReaderFooter.autoRefreshFooter unscheduled")
+        logger.dbg("ReaderFooter: unscheduled autoRefreshFooter")
     end
 end
 
@@ -1198,7 +1199,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_max = 36,
                                 default_value = 14,
                                 ok_text = _("Set size"),
-                                title_text =  _("Footer font size"),
+                                title_text = _("Footer font size"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     self.settings.text_font_size = spin.value
@@ -1251,7 +1252,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         value_max = 98,
                         default_value = DMINIBAR_CONTAINER_HEIGHT,
                         ok_text = _("Set height"),
-                        title_text =  _("Container height"),
+                        title_text = _("Container height"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
                             self.settings.container_height = spin.value
@@ -1277,7 +1278,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         value_max = 49,
                         default_value = 1,
                         ok_text = _("Set margin"),
-                        title_text =  _("Container bottom margin"),
+                        title_text = _("Container bottom margin"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
                             self.settings.container_bottom_padding = spin.value
@@ -1295,7 +1296,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Book title: %1%"), self.settings.book_title_max_width_pct)
+                            return T(_("Book title: %1 %"), self.settings.book_title_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1305,7 +1306,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_step = 5,
                                 value_hold_step = 20,
                                 value_max = 100,
-                                title_text =  _("Maximum width"),
+                                unit = "%",
+                                title_text = _("Maximum width"),
                                 info_text = _("Maximum book title width in percentage of screen width"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1320,7 +1322,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                     {
                         text_func = function()
-                            return T(_("Current chapter: %1%"), self.settings.book_chapter_max_width_pct)
+                            return T(_("Current chapter: %1 %"), self.settings.book_chapter_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
@@ -1330,7 +1332,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 value_step = 5,
                                 value_hold_step = 20,
                                 value_max = 100,
-                                title_text =  _("Maximum width"),
+                                unit = "%",
+                                title_text = _("Maximum width"),
                                 info_text = _("Maximum chapter width in percentage of screen width"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
@@ -1572,7 +1575,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
         table.insert(sub_items[settings_submenu_num].sub_item_table, 4, {
             text_func = function()
                 if self.settings.battery_hide_threshold <= (Device:hasAuxBattery() and 200 or 100) then
-                    return T(_("Hide battery status if level higher than: %1%"), self.settings.battery_hide_threshold)
+                    return T(_("Hide battery status if level higher than: %1 %"), self.settings.battery_hide_threshold)
                 else
                     return _("Hide battery status")
                 end
@@ -1591,8 +1594,9 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                     value_min = 0,
                     value_max = Device:hasAuxBattery() and 200 or 100,
                     default_value = Device:hasAuxBattery() and 200 or 100,
+                    unit = "%",
                     value_hold_step = 10,
-                    title_text =  _("Hide battery threshold"),
+                    title_text = _("Hide battery threshold"),
                     callback = function(spin)
                         self.settings.battery_hide_threshold = spin.value
                         self:refreshFooter(true, true)
@@ -1747,7 +1751,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                                 value_hold_step = 2,
                                 value_max = value_max,
                                 default_value = default_value,
-                                title_text =  _("Progress bar size"),
+                                title_text = _("Progress bar size"),
                                 keep_shown_on_apply = true,
                                 callback = function(spin)
                                     if self.settings.progress_style_thin then
@@ -1907,7 +1911,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
             },
             {
                 text_func = function()
-                    return T(_("Minimal width: %1%"), self.settings.progress_bar_min_width_pct)
+                    return T(_("Minimal width: %1 %"), self.settings.progress_bar_min_width_pct)
                 end,
                 enabled_func = function()
                     return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
@@ -1921,7 +1925,8 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                         value_step = 5,
                         value_hold_step = 20,
                         value_max = 50,
-                        title_text =  _("Minimal width"),
+                        unit = "%",
+                        title_text = _("Minimal width"),
                         text = _("Minimal progress bar width in percentage of screen width"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
@@ -2473,8 +2478,12 @@ function ReaderFooter:maybeUpdateFooter()
 end
 
 function ReaderFooter:onFrontlightStateChanged()
-    if self.settings.frontlight then
-        self:maybeUpdateFooter()
+    -- Custom variant of maybeUpdateFooter that *also* whitelists the FL widget...
+    local top_wg = UIManager:getTopWidget()
+    if top_wg == "ReaderUI" or top_wg == "FrontLightWidget" then
+        self:onUpdateFooter(self.view.footer_visible)
+    else
+        self:onUpdateFooter()
     end
 end
 
@@ -2486,7 +2495,7 @@ end
 
 function ReaderFooter:onNetworkDisconnected()
     if self.settings.wifi_status then
-        self:maybeUpdateFooter()
+        self:onUpdateFooter(self.view.footer_visible)
     end
 end
 

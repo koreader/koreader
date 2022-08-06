@@ -22,6 +22,7 @@ WakeupMgr base class.
 local WakeupMgr = {
     dev_rtc = "/dev/rtc0", -- RTC device
     _task_queue = {},      -- Table with epoch at which to schedule the task and the function to be scheduled.
+    rtc = RTC, -- The RTC implementation to use, defaults to the RTC module.
 }
 
 --[[--
@@ -88,7 +89,7 @@ with anonymous functions.
 @treturn bool (true if one or more tasks were removed; false otherwise; nil if the task queue is empty).
 --]]
 function WakeupMgr:removeTasks(epoch, callback)
-    if #self._task_queue < 1 then return end
+    if #self._task_queue == 0 then return end
 
     local removed = false
     local reschedule = false
@@ -147,7 +148,7 @@ If necessary, the next upcoming task (if any) is scheduled on exit.
 @treturn bool (true if we were truly woken up by the scheduled wakeup; false otherwise; nil if there weren't any tasks scheduled).
 --]]
 function WakeupMgr:wakeupAction(proximity)
-    if #self._task_queue > 0 then
+    if self._task_queue[1] then
         local task = self._task_queue[1]
         if self:validateWakeupAlarmByProximity(task.epoch, proximity) then
             task.callback()
@@ -169,7 +170,7 @@ Set wakeup alarm.
 Simple wrapper for @{ffi.rtc.setWakeupAlarm}.
 --]]
 function WakeupMgr:setWakeupAlarm(epoch, enabled)
-    return RTC:setWakeupAlarm(epoch, enabled)
+    return self.rtc:setWakeupAlarm(epoch, enabled)
 end
 
 --[[--
@@ -178,7 +179,7 @@ Unset wakeup alarm.
 Simple wrapper for @{ffi.rtc.unsetWakeupAlarm}.
 --]]
 function WakeupMgr:unsetWakeupAlarm()
-    return RTC:unsetWakeupAlarm()
+    return self.rtc:unsetWakeupAlarm()
 end
 
 --[[--
@@ -187,13 +188,22 @@ Get wakealarm as set by us.
 Simple wrapper for @{ffi.rtc.getWakeupAlarm}.
 --]]
 function WakeupMgr:getWakeupAlarm()
-    return RTC:getWakeupAlarm()
+    return self.rtc:getWakeupAlarm()
+end
+
+--[[--
+Get wakealarm epoch as set by us.
+
+Simple wrapper for @{ffi.rtc.getWakeupAlarmEpoch}.
+--]]
+function WakeupMgr:getWakeupAlarmEpoch()
+    return self.rtc:getWakeupAlarmEpoch()
 end
 
 --[[--
 Get RTC wakealarm from system.
 
-Simple wrapper for @{ffi.rtc.getWakeupAlarm}.
+Simple wrapper for @{ffi.rtc.getWakeupAlarmSys}.
 --]]
 function WakeupMgr:getWakeupAlarmSys()
     return RTC:getWakeupAlarmSys()
@@ -207,7 +217,7 @@ Checks if we set the alarm.
 Simple wrapper for @{ffi.rtc.validateWakeupAlarmByProximity}.
 --]]
 function WakeupMgr:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
-    return RTC:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
+    return self.rtc:validateWakeupAlarmByProximity(task_alarm_epoch, proximity)
 end
 
 --[[--
@@ -216,10 +226,10 @@ Check if a wakeup is scheduled.
 Simple wrapper for @{ffi.rtc.isWakeupAlarmScheduled}.
 --]]
 function WakeupMgr:isWakeupAlarmScheduled()
-    local wakeup_scheduled = RTC:isWakeupAlarmScheduled()
+    local wakeup_scheduled = self.rtc:isWakeupAlarmScheduled()
     if wakeup_scheduled then
         -- NOTE: This can't return nil given that we're behind an isWakeupAlarmScheduled check.
-        local alarm = RTC:getWakeupAlarmEpoch()
+        local alarm = self.rtc:getWakeupAlarmEpoch()
         logger.dbg("WakeupMgr:isWakeupAlarmScheduled: An alarm is scheduled for " .. alarm .. os.date(" (%F %T %z)", alarm))
     else
         logger.dbg("WakeupMgr:isWakeupAlarmScheduled: No alarm is currently scheduled.")

@@ -2,17 +2,26 @@ name: build
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   macos_build:
-  
-    runs-on: macos-11
+
+    # macos-11 and macos-12 are broken at this time being.
+    # https://github.com/koreader/koreader/issues/8686,
+    # https://github.com/koreader/koreader/issues/8686#issuecomment-1172950236
+
+    # Please don't update to newer macOS version unless you can test that the new
+    # action produces working binaries.
+    runs-on: macos-10.15
 
     steps:
       - name: XCode version
         run: xcode-select -p
 
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -26,12 +35,12 @@ jobs:
 
       - name: Building in progress…
         run: |
-          export MACOSX_DEPLOYMENT_TARGET=11;
+          export MACOSX_DEPLOYMENT_TARGET=10.15;
           export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}";
           ./kodev release macos
 
       - name: Uploading artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: koreader-macos
           path: '*.7z'

@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DictQuickLookup = require("ui/widget/dictquicklookup")
+local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -20,6 +21,7 @@ local logger = require("logger")
 local time = require("ui/time")
 local util  = require("util")
 local _ = require("gettext")
+local Input = Device.input
 local T = ffiUtil.template
 
 -- We'll store the list of available dictionaries as a module local
@@ -400,7 +402,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
+function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link, tweak_buttons_func)
     logger.dbg("dict lookup word:", word, boxes)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
@@ -410,7 +412,7 @@ function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link)
+        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link, tweak_buttons_func)
     end)
     return true
 end
@@ -881,19 +883,22 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     return results
 end
 
-function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link)
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link, tweak_buttons_func)
     if word == "" then
         return
     end
 
-    if not self.disable_lookup_history then
-        local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
-        if book_title == "" then -- no or empty metadata title
-            if self.ui.document and self.ui.document.file then
-                local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
-                book_title = util.splitFileNameSuffix(filename)
-            end
+    local book_title = self.ui.doc_settings and self.ui.doc_settings:readSetting("doc_props").title or _("Dictionary lookup")
+    if book_title == "" then -- no or empty metadata title
+        if self.ui.document and self.ui.document.file then
+            local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
+            book_title = util.splitFileNameSuffix(filename)
         end
+    end
+
+    -- Event for plugin to catch lookup with book title
+    self.ui:handleEvent(Event:new("WordLookedUp", word, book_title))
+    if not self.disable_lookup_history then
         lookup_history:addTableItem("lookup_history", {
             book_title = book_title,
             time = os.time(),
@@ -944,16 +949,17 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, 
         return
     end
 
-    self:showDict(word, tidyMarkup(results), boxes, link)
+    self:showDict(word, tidyMarkup(results), boxes, link, tweak_buttons_func)
 end
 
-function ReaderDictionary:showDict(word, results, boxes, link)
+function ReaderDictionary:showDict(word, results, boxes, link, tweak_buttons_func)
     if results and results[1] then
         logger.dbg("showing quick lookup window", #self.dict_window_list+1, ":", word, results)
         self.dict_window = DictQuickLookup:new{
             window_list = self.dict_window_list,
             ui = self.ui,
             highlight = self.highlight,
+            tweak_buttons_func = tweak_buttons_func,
             dialog = self.dialog,
             -- original lookup word
             word = word,
@@ -995,10 +1001,10 @@ function ReaderDictionary:showDict(word, results, boxes, link)
         if not results.lookup_cancelled and self._lookup_start_time
             and (time.now() - self._lookup_start_time) > self.quick_dismiss_before_delay then
             -- If the search took more than a few seconds to be done, discard
-            -- queued and coming up events to avoid a voluntary dismissal
+            -- queued and upcoming input events to avoid a voluntary dismissal
             -- (because the user felt the result would not come) to kill the
             -- result that finally came and is about to be displayed
-            UIManager:discardEvents(true)
+            Input:inhibitInputUntil(true)
         end
     end
 end

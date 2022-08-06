@@ -37,6 +37,7 @@ local Remarkable = Generic:new{
     hasOTAUpdates = yes,
     canReboot = yes,
     canPowerOff = yes,
+    canSuspend = yes,
     isTouchDevice = yes,
     hasFrontlight = no,
     hasSystemFonts = yes,
@@ -95,7 +96,11 @@ function Remarkable2:adjustTouchEvent(ev, by)
     -- Inject CLOCK_MONOTONIC timestamps at the end of every input frame in order to have consistent gesture detection across input devices.
     -- c.f., #7536
     if ev.type == C.EV_SYN and ev.code == C.SYN_REPORT then
-       ev.time = time.now()
+        local sec, usec = time.split_s_us(time.now())
+        ev.time = {
+            sec = sec,
+            usec = usec
+        }
     end
 end
 

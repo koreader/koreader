@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
 local Event = require("ui/event")
@@ -20,9 +21,9 @@ local PathChooser = FileChooser:extend{
     is_borderless = true,
     select_directory = true, -- allow selecting directories
     select_file = true,      -- allow selecting files
-    show_files = true, -- show files, even if select_files=false
+    show_files = true, -- show files, even if select_file=false
     -- (directories are always shown, to allow navigation)
-    detailed_file_info = false, -- show size and last mod time in Select message
+    detailed_file_info = true, -- show size and last mod time in Select message (if select_file=true only)
 }
 
 function PathChooser:init()
@@ -48,7 +49,7 @@ function PathChooser:init()
         self:goHome()
     end
     self.onLeftButtonHold = function()
-        UIManager:broadcastEvent(Event:new("ShowFolderShortcutsDialog", function(path) self:changeToPath(path) end))
+        self:showPlusMenu()
     end
     FileChooser.init(self)
 end
@@ -151,6 +152,36 @@ function PathChooser:onMenuHold(item)
     }
     UIManager:show(self.button_dialog)
     return true
+end
+
+function PathChooser:showPlusMenu()
+    local button_dialog
+    button_dialog = ButtonDialog:new{
+        buttons = {
+            {
+                {
+                    text = _("Folder shortcuts"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        UIManager:broadcastEvent(Event:new("ShowFolderShortcutsDialog",
+                            function(path) self:changeToPath(path) end))
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("New folder"),
+                    callback = function()
+                        UIManager:close(button_dialog)
+                        local FileManager = require("apps/filemanager/filemanager")
+                        FileManager.file_chooser = self
+                        FileManager:createFolder()
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(button_dialog)
 end
 
 return PathChooser

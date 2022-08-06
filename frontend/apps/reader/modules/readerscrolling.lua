@@ -5,6 +5,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local time = require("ui/time")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
@@ -162,6 +163,7 @@ Default value: %1 ms]]), scroll_activation_delay_default_ms),
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
+                        unit = C_("Time", "ms"),
                         ok_text = _("Set delay"),
                         default_value = scroll_activation_delay_default_ms,
                         callback = function(spin)

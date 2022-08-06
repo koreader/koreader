@@ -50,6 +50,7 @@ local NumberPickerWidget = FocusManager:new{
     date_year = nil,
     -- on update signal to the caller and pass updated value
     picker_updated_callback = nil,
+    unit = "",
 }
 
 function NumberPickerWidget:init()
@@ -145,7 +146,51 @@ function NumberPickerWidget:init()
                             text = _("OK"),
                             is_enter_default = true,
                             callback = function()
-                                local input_value = tonumber(input_dialog:getInputText())
+                                local input_text = input_dialog:getInputText()
+                                local input_value = tonumber(input_text)
+                                local turn_off_checks = false
+
+                                -- if the first character of the input string is ":" turn off min-max checks
+                                if input_text:match("^:") and G_reader_settings:isTrue("debug_verbose") then
+                                    turn_off_checks = true -- turn off checks
+                                    input_text = input_text:gsub("^:", "") -- shorten input
+                                    input_value = tonumber(input_text) -- try to get value
+                                end
+
+                                -- if the input text starts with `=`, try to evaluate the expression
+                                -- only allow `math.*` and no other functions to be safe here.
+                                if input_text:match("^=") then
+                                    local function evaluate_string(code)
+                                        -- only execute if there are no chars (except math.xxx) and no {[]} in the user input
+                                        local check_code = code:gsub("math%.%a*", "")
+                                        if check_code:find("[%a%[%]%{%}]") then
+                                            return nil
+                                        end
+                                        code = code:gsub("^=", "return ")
+                                        local env = {math = math} -- restrict to only math functions
+                                        local func, dummy = load(code, "user_sandbox", nil, env)
+                                        if func then
+                                            return pcall(func)
+                                        end
+                                    end
+                                    local dummy
+                                    dummy, input_value = evaluate_string(input_text)
+                                    input_value = dummy and tonumber(input_value)
+                                end
+
+                                if turn_off_checks then
+                                    if not input_value then return end
+                                    if input_value < self.value_min or input_value > self.value_max then
+                                        UIManager:show(InfoMessage:new{
+                                            text = T(_("ATTENTION:\nPrefixing the input with ':' disables sanity checks!\nThis value should be in the range of %1 - %2.\nUndefined behavior may occur."), self.value_min, self.value_max),
+                                        })
+                                    end
+                                    self.value = input_value
+                                    self:update()
+                                    UIManager:close(input_dialog)
+                                    return
+                                end
+
                                 if input_value and input_value >= self.value_min and input_value <= self.value_max then
                                     self.value = input_value
                                     self:update()
@@ -176,8 +221,16 @@ function NumberPickerWidget:init()
         end
     end
 
+    local unit = ""
+    if self.unit then
+        if self.unit == "°" then
+            unit = self.unit
+        elseif self.unit ~= "" then
+            unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
+        end
+    end
     self.text_value = Button:new{
-        text = tostring(self.formatted_value),
+        text = tostring(self.formatted_value) .. unit,
         bordersize = 0,
         padding = 0,
         text_font_face = self.spinner_face.font,

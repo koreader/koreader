@@ -349,7 +349,7 @@ function ReaderPaging:onSwipe(_, ges)
         -- We did some panning but released after a short amount of time,
         -- so this gesture ended up being a Swipe - and this swipe was
         -- not handled by the other modules (so, not opening the menus).
-        -- Do as :onPanRelese() and ignore this swipe.
+        -- Do as :onPanRelease() and ignore this swipe.
         self:onPanRelease() -- no arg, so we know there we come from here
         return true
     else

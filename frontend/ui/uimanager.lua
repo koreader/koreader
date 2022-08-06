@@ -42,7 +42,6 @@ local UIManager = {
     _exit_code = nil,
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
-    _discard_events_till = nil,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -174,6 +173,7 @@ function UIManager:init()
         self.event_handlers["Light"] = function()
             Device:getPowerDevice():toggleFrontlight()
         end
+        -- USB plug events with a power-only charger
         self.event_handlers["Charging"] = function()
             self:_beforeCharging()
             -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
@@ -183,11 +183,13 @@ function UIManager:init()
         end
         self.event_handlers["NotCharging"] = function()
             -- We need to put the device into suspension, other things need to be done before it.
+            Device:usbPlugOut()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
             end
         end
+        -- USB plug events with a data-aware host
         self.event_handlers["UsbPlugIn"] = function()
             self:_beforeCharging()
             -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
@@ -201,6 +203,7 @@ function UIManager:init()
         end
         self.event_handlers["UsbPlugOut"] = function()
             -- We need to put the device into suspension, other things need to be done before it.
+            Device:usbPlugOut()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
@@ -235,6 +238,12 @@ function UIManager:init()
         self.event_handlers["NotCharging"] = function()
             Device:usbPlugOut()
             self:_afterNotCharging()
+        end
+        self.event_handlers["WakeupFromSuspend"] = function()
+            Device:wakeupFromSuspend()
+        end
+        self.event_handlers["ReadyToSuspend"] = function()
+            Device:readyToSuspend()
         end
     elseif Device:isRemarkable() then
         self.event_handlers["Suspend"] = function()
@@ -383,6 +392,14 @@ function UIManager:init()
             Device:simulateResume()
             self:_afterResume()
         end
+        self.event_handlers["PowerRelease"] = function()
+            -- Resume if we were suspended
+            if Device.screen_saver_mode then
+                self:resume()
+            else
+                self:suspend()
+            end
+        end
     end
 end
 
@@ -522,13 +539,13 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
 end
 
--- schedule an execution task, task queue is in ascendant order
+-- Schedule an execution task; task queue is in ascending order
 function UIManager:schedule(sched_time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
-        -- do a binary insert
+        -- Do a binary insert.
         repeat
-            p = math.floor((e + s) / 2) -- Not necessary to use (s + (e -s) / 2) here!
+            p = bit.rshift(e + s, 1) -- Not necessary to use (s + (e -s) / 2) here!
             local p_time = self._task_queue[p].time
             if sched_time > p_time then
                 if s == e then
@@ -545,12 +562,13 @@ function UIManager:schedule(sched_time, action, ...)
                 end
                 e = p
             else
-                -- for fairness, it's better to make p+1 is strictly less than
-                -- p might want to revisit here in the future
+                -- For fairness, it's better to make sure p+1 is strictly less than p.
+                -- Might want to revisit that in the future.
                 break
             end
         until e < s
     end
+
     table.insert(self._task_queue, p, {
         time = sched_time,
         action = action,
@@ -603,6 +621,9 @@ Useful to run UI callbacks ASAP without skipping repaints.
 
 @func action reference to the task to be scheduled (may be anonymous)
 @param ... optional arguments passed to action
+
+@return A reference to the initial nextTick wrapper function,
+necessary if the caller wants to unschedule action *before* it actually gets inserted in the task queue by nextTick.
 @see nextTick
 ]]
 function UIManager:tickAfterNext(action, ...)
@@ -610,7 +631,14 @@ function UIManager:tickAfterNext(action, ...)
     -- c.f., http://lua-users.org/wiki/VarargTheSecondClassCitizen
     local n = select('#', ...)
     local va = {...}
-    return self:nextTick(function() self:nextTick(action, unpack(va, 1, n)) end)
+    -- We need to keep a reference to this anonymous function, as it is *NOT* quite `action` yet,
+    -- and the caller might want to unschedule it early...
+    local action_wrapper = function()
+        self:nextTick(action, unpack(va, 1, n))
+    end
+    self:nextTick(action_wrapper)
+
+    return action_wrapper
 end
 --[[
 -- NOTE: This appears to work *nearly* just as well, but does sometimes go too fast (might depend on kernel HZ & NO_HZ settings?)
@@ -1046,37 +1074,6 @@ function UIManager:quit()
 end
 
 --[[--
-Request all @{ui.event.Event|Event}s to be ignored for some duration.
-
-@param set_or_seconds either `true`, in which case a platform-specific delay is chosen, or a duration in seconds (***int***).
-]]
-function UIManager:discardEvents(set_or_seconds)
-    if not set_or_seconds then -- remove any previously set
-        self._discard_events_till = nil
-        return
-    end
-    local delay
-    if set_or_seconds == true then
-        -- Use an adequate delay to account for device refresh duration
-        -- so any events happening in this delay (ie. before a widget
-        -- is really painted on screen) are discarded.
-        if Device:hasEinkScreen() then
-            -- A screen refresh can take a few 100ms,
-            -- sometimes > 500ms on some devices/temperatures.
-            -- So, block for 400ms (to have it displayed) + 400ms
-            -- for user reaction to it
-            delay = time.ms(800)
-        else
-            -- On non-eInk screen, display is usually instantaneous
-            delay = time.ms(400)
-        end
-    else -- we expect a number
-        delay = time.s(set_or_seconds)
-    end
-    self._discard_events_till = time.now() + delay
-end
-
---[[--
 Transmits an @{ui.event.Event|Event} to active widgets, top to bottom.
 Stops at the first handler that returns `true`.
 Note that most complex widgets are based on @{ui.widget.container.WidgetContainer|WidgetContainer},
@@ -1086,15 +1083,6 @@ which itself will take care of propagating an event to its members.
 ]]
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
-
-    -- Ensure discardEvents
-    if self._discard_events_till then
-        if time.now() < self._discard_events_till then
-            return
-        else
-            self._discard_events_till = nil
-        end
-    end
 
     -- The top widget gets to be the first to get the event
     local top_widget = self._window_stack[#self._window_stack]
@@ -1131,7 +1119,7 @@ function UIManager:sendEvent(event)
         if checked_widgets[widget] == nil then
             checked_widgets[widget] = true
             -- Widget's active widgets have precedence to handle this event
-            -- NOTE: While FileManager only has a single (screenshotter), ReaderUI has many active_widgets (each ReaderUI module gets added to the list).
+            -- NOTE: While FileManager only has a single (screenshotter), ReaderUI has a few active_widgets.
             if widget.widget.active_widgets then
                 for _, active_widget in ipairs(widget.widget.active_widgets) do
                     if active_widget:handleEvent(event) then return end
@@ -1183,7 +1171,7 @@ end
 --]]
 
 function UIManager:getNextTaskTime()
-    if #self._task_queue > 0 then
+    if self._task_queue[1] then
         return self._task_queue[1].time - time:now()
     else
         return nil
@@ -1194,25 +1182,21 @@ function UIManager:_checkTasks()
     self._now = time.now()
     local wait_until = nil
 
-    -- task.action may schedule other events
+    -- Tasks due for execution might themselves schedule more tasks (that might also be immediately due for execution ;)).
+    -- Flipping this switch ensures we'll consume all such tasks *before* yielding to input polling.
     self._task_queue_dirty = false
-    while true do
-        if #self._task_queue == 0 then
-            -- Nothing to do!
-            break
-        end
-        local next_task = self._task_queue[1]
-        local task_time = next_task.time or 0
+    while self._task_queue[1] do
+        local task_time = self._task_queue[1].time
         if task_time <= self._now then
-            -- remove from table
+            -- Pop the upcoming task, as it is due for execution...
             local task = table.remove(self._task_queue, 1)
-            -- task is pending to be executed right now. do it.
-            -- NOTE: be careful that task.action() might modify
-            -- _task_queue here. So need to avoid race condition
+            -- ...so do it now.
+            -- NOTE: Said task's action might modify _task_queue.
+            --       To avoid race conditions and catch new upcoming tasks during this call,
+            --       we repeatedly check the head of the queue (c.f., #1758).
             task.action(unpack(task.args, 1, task.argc))
         else
-            -- queue is sorted in ascendant order, safe to assume all items
-            -- are future tasks for now
+            -- As the queue is sorted in ascending order, it's safe to assume all items are currently future tasks.
             wait_until = task_time
             break
         end
@@ -1693,6 +1677,12 @@ function UIManager:handleInput()
     -- this function emits (plugin), or within waitEvent() right after (hardware).
     -- Anywhere else breaks preventStandby/allowStandby invariants used by background jobs while UI is left running.
     self:_standbyTransition()
+    if self._pm_consume_input_early then
+        -- If the PM state transition requires an early return from input polling, honor that.
+        -- c.f., UIManager:setPMInputTimeout (and AutoSuspend:AllowStandbyHandler).
+        deadline = now
+        self._pm_consume_input_early = false
+    end
 
     -- wait for next batch of events
     local input_events = Input:waitEvent(now, deadline)
@@ -1777,9 +1767,6 @@ function UIManager:_beforeSuspend()
 
     -- Disable key repeat to avoid useless chatter (especially where Sleep Covers are concerned...)
     Device:disableKeyRepeat()
-
-    -- Reset gesture detection state to a blank slate (anything power-management related emits KEY events, which don't need gesture detection).
-    Input:resetState()
 end
 
 -- The common operations that should be performed after resuming the device.
@@ -1813,11 +1800,11 @@ Executes all the operations of a suspension (i.e., sleep) request.
 This function usually puts the device into suspension.
 ]]
 function UIManager:suspend()
-    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
+    if self.event_handlers["Suspend"] then
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
         Device.powerd:toggleSuspend()
-    elseif Device.isPocketBook() and Device.canSuspend() then
+    elseif Device:canSuspend() then
         Device:suspend()
     end
 end
@@ -1832,7 +1819,7 @@ function UIManager:resume()
     -- invalidate the last battery capacity pull time so that we get up to date data immediately.
     Device:getPowerDevice():invalidateCapacityCache()
 
-    if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
+    if self.event_handlers["Resume"] then
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()
@@ -1876,6 +1863,12 @@ function UIManager:_standbyTransition()
         self:broadcastEvent(Event:new("PreventStandby"))
     end
     self._prev_prevent_standby_count = self._prevent_standby_count
+end
+
+-- Used by a PM transition event handler to request an early return from input polling.
+-- NOTE: We can't re-use setInputTimeout to avoid interactions with ZMQ...
+function UIManager:consumeInputEarlyAfterPM(toggle)
+    self._pm_consume_input_early = toggle
 end
 
 --- Broadcasts a `FlushSettings` Event to *all* widgets.

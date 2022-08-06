@@ -600,6 +600,7 @@ local ext_to_mimetype = {
     jpg = "image/jpeg",
     jpeg = "image/jpeg",
     gif = "image/gif",
+    webp = "image/webp",
     svg = "image/svg+xml",
     html= "application/xhtml+xml",
     xhtml= "application/xhtml+xml",
@@ -933,9 +934,9 @@ hr.koreaderwikifrontpage {
 
 /* So many links, make them look like normal text except for underline */
 a {
-    display:inline;
+    display: inline;
     text-decoration: underline;
-    color: black;
+    color: inherit;
     font-weight: inherit;
 }
 /* No underline for links without their href that we removed */

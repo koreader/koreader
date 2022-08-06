@@ -24,7 +24,7 @@ git clone git@github.com:koreader/doc.git koreader_doc
 
 # push doc update
 pushd doc && {
-    luajit "$(command -v ldoc)" . 2>/dev/null
+    luajit "$(command -v ldoc)" .
     if [ ! -d html ]; then
         echo "Failed to generate documents..."
         exit 1

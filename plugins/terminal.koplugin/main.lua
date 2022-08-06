@@ -77,6 +77,7 @@ local TextWidget = require("ui/widget/textwidget")
 local bit = require("bit")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
+local C_ = _.pgettext
 local T = require("ffi/util").template
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
@@ -347,14 +348,6 @@ function Terminal:generateInputDialog()
                 end,
             },
             {
-            text = "⎚", --clear
-            callback = function()
-                self.history = ""
-                self.input = {}
-                self.input_dialog:setInputText("$ ")
-            end,
-            },
-            {
             text = "⇧",
             callback = function()
                 self.input_widget:upLine()
@@ -550,6 +543,7 @@ Aliases (shortcuts) to frequently used commands can be placed in:
                         value_max = 30,
                         value_hold_step = 2,
                         default_value = 16,
+                        unit = C_("Data storage size", "kB"),
                         title_text = _("Terminal emulator buffer size (kB)"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("terminal_buffer_size", spin.value)

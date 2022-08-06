@@ -60,6 +60,7 @@ local InfoMessage = InputContainer:new{
     show_icon = true,
     icon = "notice-info",
     alpha = nil, -- if image or icon have an alpha channel (default to true for icons, false for images
+    dismissable = true,
     dismiss_callback = nil,
     -- Passed to TextBoxWidget
     alignment = "left",
@@ -76,23 +77,25 @@ local InfoMessage = InputContainer:new{
 }
 
 function InfoMessage:init()
-    if Device:hasKeys() then
-        self.key_events = {
-            AnyKeyPressed = { { Input.group.Any },
-                seqtext = "any key", doc = "close dialog" }
-        }
-    end
-    if Device:isTouchDevice() then
-        self.ges_events.TapClose = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
+    if self.dismissable then
+        if Device:hasKeys() then
+            self.key_events = {
+                AnyKeyPressed = { { Input.group.Any },
+                    seqtext = "any key", doc = "close dialog" }
+            }
+        end
+        if Device:isTouchDevice() then
+            self.ges_events.TapClose = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
                 }
             }
-        }
+        end
     end
 
     local image_widget
@@ -234,8 +237,8 @@ function InfoMessage:onShow()
         return "ui", self[1][1].dimen
     end)
     if self.flush_events_on_show then
-        -- Discard queued and coming up events to avoid accidental dismissal
-        UIManager:discardEvents(true)
+        -- Discard queued and upcoming input events to avoid accidental dismissal
+        Input:inhibitInputUntil(true)
     end
     -- schedule us to close ourself if timeout provided
     if self.timeout then

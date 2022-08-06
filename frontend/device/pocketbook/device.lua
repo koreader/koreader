@@ -296,7 +296,9 @@ function PocketBook:associateFileExtensions(assoc)
     local info = {}
     for l in io.lines("/ebrmain/config/extensions.cfg") do
         local m = { l:match("^([^:]*):([^:]*):([^:]*):([^:]*):(.*)") }
-        info[m[1]] = m
+        if #m > 0 then
+            info[m[1]] = m
+        end
     end
     local res = {"#koreader"}
     for k,v in pairs(assoc) do
@@ -334,10 +336,28 @@ function PocketBook:reboot()
 end
 
 function PocketBook:initNetworkManager(NetworkMgr)
+    local UIManager = require("ui/uimanager")
+
+    local function keepWifiAlive()
+        -- Make sure only one wifiKeepAlive is scheduled
+        UIManager:unschedule(keepWifiAlive)
+
+        if NetworkMgr:isWifiOn() then
+            logger.dbg("ping wifi keep alive and reschedule")
+
+            inkview.NetMgrPing()
+            UIManager:scheduleIn(30, keepWifiAlive)
+        else
+            logger.dbg("wifi is disabled do not reschedule")
+        end
+    end
+
     function NetworkMgr:turnOnWifi(complete_callback)
         inkview.WiFiPower(1)
-        if inkview.NetConnect(nil) ~= C.NET_OK then
-            logger.info('NetConnect failed')
+        if inkview.NetConnect(nil) == C.NET_OK then
+            keepWifiAlive()
+        else
+            logger.info("NetConnect failed")
         end
         if complete_callback then
             complete_callback()
@@ -555,6 +575,14 @@ local PocketBook650 = PocketBook:new{
     display_dpi = 212,
 }
 
+-- PocketBook Era (700)
+local PocketBook700 = PocketBook:new{
+    model = "PB700",
+    display_dpi = 300,
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+}
+
 -- PocketBook InkPad 3 (740)
 local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
@@ -689,6 +717,8 @@ elseif codename == "PB641" then
     return PocketBook641
 elseif codename == "PB650" or codename == "PocketBook 650" then
     return PocketBook650
+elseif codename == "PB700" or codename == "PocketBook 700" then
+    return PocketBook700
 elseif codename == "PB740" then
     return PocketBook740
 elseif codename == "PB740-2" or codename == "PB740-3" then
