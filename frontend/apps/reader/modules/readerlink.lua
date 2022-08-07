@@ -1434,8 +1434,8 @@ function ReaderLink:hasButton(button)
     return false
 end
 
-function ReaderLink:getButtonsForDialog()
-    local buttons = {}
+function ReaderLink:getButtonsForDialog(link_url)
+    local buttons = {{}}
 
     local add_button_to_row = function(button)
         if #buttons[#buttons] >= 2 then
