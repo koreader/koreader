@@ -121,6 +121,26 @@ local function hasSpecialOffers()
     end
 end
 
+local function frameworkStopped()
+    if os.getenv("STOP_FRAMEWORK") == "yes" then
+        local haslipc, lipc = pcall(require, "liblipclua")
+        if not (haslipc and lipc) then
+            logger.warn("could not load liblibclua")
+            return
+        end
+        local lipc_handle = lipc.init("com.lab126.kaf")
+        if not lipc_handle then
+            logger.warn("could not get lipc handle")
+            return
+        end
+        local frameworkStarted = lipc_handle:register_int_property("frameworkStarted", "r")
+        frameworkStarted.value = 1
+        lipc_handle:set_string_property("com.lab126.blanket", "unload", "splash")
+        lipc_handle:set_string_property("com.lab126.blanket", "unload", "screensaver")
+        return lipc_handle
+    end
+end
+
 local Kindle = Generic:new{
     model = "Kindle",
     isKindle = yes,
@@ -150,6 +170,7 @@ local Kindle = Generic:new{
     canHWDither = no,
     -- The time the device went into suspend
     suspend_time = 0,
+    framework_lipc_handle = frameworkStopped()
 }
 
 function Kindle:initNetworkManager(NetworkMgr)
@@ -995,6 +1016,10 @@ function KindleTouch:exit()
     if self:isMTK() then
         -- Disable the so-called "fast" mode
         self.screen:_MTK_ToggleFastMode(false)
+    end
+
+    if self.framework_lipc_handle then
+        self.framework_lipc_handle:close()
     end
 
     Generic.exit(self)
