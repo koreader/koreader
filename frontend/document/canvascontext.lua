@@ -52,7 +52,11 @@ function CanvasContext:init(device)
         Mupdf.bgr = true
     end
 
-    self.hasEinkScreen = device.hasEinkScreen
+    -- This one may be called by a subprocess, and would crash on Android when
+    -- calling android.isEink() which is only allowed from the main thread.
+    local hasEinkScreen = device.hasEinkScreen()
+    self.hasEinkScreen = function() return hasEinkScreen end
+
     self.canHWDither = device.canHWDither
     self.fb_bpp = device.screen.fb_bpp
 end
