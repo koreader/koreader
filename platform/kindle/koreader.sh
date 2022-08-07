@@ -56,6 +56,7 @@ if [ "${INIT_TYPE}" = "upstart" ]; then
 fi
 
 # Keep track of what we do with pillow...
+export STOP_FRAMEWORK="no"
 export AWESOME_STOPPED="no"
 export CVM_STOPPED="no"
 export VOLUMD_STOPPED="no"
@@ -87,12 +88,10 @@ elif [ "${1}" = "--asap" ]; then
     # Start as soon as possible, without sleeping to workaround UI quirks
     shift 1
     NO_SLEEP="yes"
-    STOP_FRAMEWORK="no"
     REEXEC_FLAGS="${REEXEC_FLAGS} --asap"
     # Don't sleep during eips calls either...
     export EIPS_NO_SLEEP="true"
 else
-    STOP_FRAMEWORK="no"
     NO_SLEEP="no"
 fi
 

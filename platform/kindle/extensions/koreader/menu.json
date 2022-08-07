@@ -25,7 +25,6 @@
 		},
 		{
 			"name": "Start KOReader (no framework)",
-			"if": "\"Kindle2\" -m \"KindleDX\" -m \"KindleDXG\" -m \"Kindle3\" -m \"Kindle4\" -m || || || ||",
 			"priority": 4,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--kual --framework_stop",
