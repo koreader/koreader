@@ -776,6 +776,9 @@ function Screensaver:close()
         self.delayed_close = true
     elseif screensaver_delay == "disable" then
         self:close_widget()
+        -- NOTE: Notify platforms that race with the native system (e.g., Kindle or needsScreenRefreshAfterResume)
+        --       that we've actually closed the widget *right now*.
+        return true
     elseif screensaver_delay == "gesture" then
         if self.screensaver_widget then
             self.screensaver_widget:showWaitForGestureMessage()
