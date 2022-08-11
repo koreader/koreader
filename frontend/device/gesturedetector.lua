@@ -395,8 +395,8 @@ function GestureDetector:tapState(tev)
         self:probeClockSource(tev.timev)
     end
 
-    logger.dbg("in tap state...")
     local slot = tev.slot
+    logger.dbg("slot", slot, "in tap state...")
     if tev.id == -1 then
         local s1 = self.input.main_finger_slot
         local s2 = self.input.main_finger_slot + 1
@@ -563,8 +563,8 @@ function GestureDetector:handleNonTap(tev)
 end
 
 function GestureDetector:panState(tev)
-    logger.dbg("in pan state...")
     local slot = tev.slot
+    logger.dbg("slot", slot, "in pan state...")
     if tev.id == -1 then
         -- end of pan, signal swipe gesture if necessary
         if self:isSwipe(slot) then
@@ -816,8 +816,8 @@ function GestureDetector:handlePanRelease(tev)
 end
 
 function GestureDetector:holdState(tev, hold)
-    logger.dbg("in hold state...")
     local slot = tev.slot
+    logger.dbg("slot", slot, "in hold state...")
     -- When we switch to hold state, we pass an additional boolean param "hold".
     if tev.id ~= -1 and hold and self.last_tevs[slot].x and self.last_tevs[slot].y then
         self.states[slot] = self.holdState
@@ -835,7 +835,8 @@ function GestureDetector:holdState(tev, hold)
         logger.dbg("hold_release detected in slot", slot)
         local last_x = self.last_tevs[slot].x
         local last_y = self.last_tevs[slot].y
-        self:clearState(slot)
+        -- NOTE: Don't leave multiple slots "stuck" in hold state, as we've cleared their timeouts in the main input loop anyway.
+        self:clearStates()
         return {
             ges = "hold_release",
             pos = Geom:new{
