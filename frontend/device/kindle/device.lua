@@ -273,10 +273,12 @@ function Kindle:outofScreenSaver()
     if self.screen_saver_mode == true then
         if self:supportsScreensaver() then
             local Screensaver = require("ui/screensaver")
-            Screensaver:close()
-            -- And redraw everything in case the framework managed to screw us over...
-            local UIManager = require("ui/uimanager")
-            UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
+            local widget_was_closed = Screensaver:close()
+            if widget_was_closed then
+                -- And redraw everything in case the framework managed to screw us over...
+                local UIManager = require("ui/uimanager")
+                UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
+            end
         else
             -- Stop awesome again if need be...
             if os.getenv("AWESOME_STOPPED") == "yes" then
