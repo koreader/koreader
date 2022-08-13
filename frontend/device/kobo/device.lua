@@ -682,7 +682,11 @@ function Kobo:init()
 
     -- Check if the device has a Neonode IR grid (to tone down the chatter on resume ;)).
     if lfs.attributes("/sys/devices/virtual/input/input1/neocmd", "mode") == "file" then
-        self.hasIRGrid = true
+        -- As found on (at least), the Aura H2O
+        self.hasIRGridSysfsKnob = "/sys/devices/virtual/input/input1/neocmd"
+    elseif lfs.attributes("/sys/devices/platform/imx-i2c.1/i2c-1/1-0050/neocmd", "mode") == "file" then
+        -- As found on (at least) the Glo HD (c.f., https://github.com/koreader/koreader/pull/9377#issuecomment-1213544478)
+        self.hasIRGridSysfsKnob = "/sys/devices/platform/imx-i2c.1/i2c-1/1-0050/neocmd"
     end
 end
 
@@ -1070,10 +1074,13 @@ function Kobo:resume()
     -- HACK: wait a bit (0.1 sec) for the kernel to catch up
     ffiUtil.usleep(100000)
 
-    if self.hasIRGrid then
+    if self.hasIRGridSysfsKnob then
         -- cf. #1862, I can reliably break IR touch input on resume...
         -- cf. also #1943 for the rationale behind applying this workaround in every case...
-        writeToSys("a", "/sys/devices/virtual/input/input1/neocmd")
+        -- c.f., neo_ctl @ drivers/input/touchscreen/zforce_i2c.c,
+        -- basically, a is wakeup (for activate), d is sleep (for deactivate), and we don't care about s (set res),
+        -- and l (led signal level, actually a NOP on NTX kernels).
+        writeToSys("a", self.hasIRGridSysfsKnob)
     end
 
     -- A full suspend may have toggled the LED off.
