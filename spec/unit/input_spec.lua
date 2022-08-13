@@ -6,7 +6,7 @@ describe("input module", function()
         ffi = require("ffi")
         C = ffi.C
         require("ffi/linux_input_h")
-        Input = require("device/input")
+        Input = require("device").input
     end)
 
     describe("handleTouchEvPhoenix", function()
