@@ -180,7 +180,7 @@ local Input = {
         [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" }
     },
 
-    timer_callbacks = {},
+    timer_callbacks = nil, -- instance-specific table, because the object may get destroyed & recreated at runtime
     disable_double_tap = true,
     tap_interval_override = nil,
 
@@ -198,8 +198,8 @@ local Input = {
     -- touch state:
     main_finger_slot = 0,
     cur_slot = 0,
-    MTSlots = {},
-    ev_slots = {},
+    MTSlots = nil, -- table, object may be replaced at runtime
+    ev_slots = nil, -- table
     gesture_detector = nil,
 
     -- simple internal clipboard implementation, can be overidden to use system clipboard
@@ -223,6 +223,11 @@ function Input:new(o)
 end
 
 function Input:init()
+    -- Initialize instance-specific tables
+    -- NOTE: Both of these arrays may be destroyed & recreated at runtime, so we don't want a parent/class object for those.
+    self.timer_callbacks = {}
+    self.MTSlots = {}
+
     -- Handle default finger slot
     self.cur_slot = self.main_finger_slot
     self.ev_slots = {
@@ -680,16 +685,24 @@ attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
     if ev.type == C.EV_ABS then
-        if #self.MTSlots == 0 then
-            table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
-        end
         if ev.code == C.ABS_MT_SLOT then
-            self:addSlotIfChanged(ev.value)
+            self:setupSlotData(ev.value)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
             if self.snow_protocol then
                 -- We'll never get an ABS_MT_SLOT event,
                 -- instead we have a slot-like ABS_MT_TRACKING_ID value...
-                self:addSlotIfChanged(ev.value)
+                self:setupSlotData(ev.value)
+            else
+                -- ABS_MT_SLOT *may* be elided if there was only a single contact point in the input frame,
+                -- and as long as it is the *same* contact point as the final contact point of the previous frame...
+                -- (e.g., the Elan driver on the Kobo Sage/Elipsa will do this.
+                -- Ironically enough, that won't stop it from spamming identical ABS_MT_TRACKING_ID values...)
+                if #self.MTSlots == 0 then
+                    -- That means we have to make sure we have somewhere to put the data from our initial slot
+                    -- at the beginning of a frame...
+                    -- (This should be initialized to self.main_finger_slot, i.e., most likely 0)...
+                    self:addSlot(self.cur_slot)
+                end
             end
             self:setCurrentMtSlot("id", ev.value)
         elseif ev.code == C.ABS_MT_TOOL_TYPE then
@@ -770,11 +783,8 @@ function Input:handleTouchEvPhoenix(ev)
     --            input_report_abs(elan_touch_data.input, C.ABS_MT_POSITION_Y, last_y2);
     --            input_mt_sync (elan_touch_data.input);
     if ev.type == C.EV_ABS then
-        if #self.MTSlots == 0 then
-            table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
-        end
         if ev.code == C.ABS_MT_TRACKING_ID then
-            self:addSlotIfChanged(ev.value)
+            self:setupSlotData(ev.value)
             self:setCurrentMtSlot("id", ev.value)
         elseif ev.code == C.ABS_MT_TOUCH_MAJOR and ev.value == 0 then
             self:setCurrentMtSlot("id", -1)
@@ -970,12 +980,16 @@ end
 
 -- helpers for touch event data management:
 
-function Input:setMtSlot(slot, key, val)
+function Input:initMtSlot(slot)
     if not self.ev_slots[slot] then
         self.ev_slots[slot] = {
             slot = slot
         }
     end
+end
+
+function Input:setMtSlot(slot, key, val)
+    self:initMtSlot(slot)
 
     self.ev_slots[slot][key] = val
 end
@@ -1001,10 +1015,23 @@ function Input:getCurrentMtSlotData(key)
     return nil
 end
 
+function Input:addSlot(value)
+    self:initMtSlot(value)
+    table.insert(self.MTSlots, self:getMtSlot(value))
+    self.cur_slot = value
+end
+
 function Input:addSlotIfChanged(value)
     if self.cur_slot ~= value then
-        table.insert(self.MTSlots, self:getMtSlot(value))
-        self.cur_slot = value
+        self:addSlot(value)
+    end
+end
+
+function Input:setupSlotData(value)
+    if #self.MTSlots == 0 then
+        self:addSlot(value)
+    else
+        self:addSlotIfChanged(value)
     end
 end
 
@@ -1121,39 +1148,25 @@ function Input:waitEvent(now, deadline)
                     end
 
                     if consume_callback then
-                        local touch_ges
-                        -- If it was a timerfd, we also need to close the fd.
+                        local touch_ges = self.timer_callbacks[1].callback()
+                        -- If it was a timerfd, we *may* also need to close the fd.
                         -- NOTE: The fact that deadlines are sorted *should* ensure that the timerfd that expired
-                        --       is actually the first of the list, but it's entirely plausible that a multitouch
-                        --       gesture would generate multiple timers for different slots with the same deadline,
-                        --       so we *do* need to find the right node in the timer_callbacks list,
-                        --       to make sure we free the right timerfd node...
-                        --       c.f., https://github.com/koreader/koreader/issues/9376
-                        if timerfd then
-                            for i, item in ipairs(self.timer_callbacks) do
-                                if item.timerfd == timerfd then
-                                    -- In the vast majority of cases, we should find our match on the first entry ;).
-                                    touch_ges = item.callback()
-                                    table.remove(self.timer_callbacks, i)
-                                    input.clearTimer(timerfd)
-                                    break
-                                end
+                        --       is actually at the head of the list, without us having to double-check that...
+                        --       In the rare case we would get a storm of events, we rely on the fact that each event frame
+                        --       *should* have a slightly different timestamp to make sure we never have a deadline collision,
+                        --       combined with the fact that GestureDetector:feedEvent will only ever return a *single* gesture
+                        --       per input frame, even if a frame contains multiple slots on the same timestamp.
+                        -- NOTE: GestureDetector only calls Input:setTimeout for "hold" & "double_tap" gestures.
+                        --       For double taps, the callback itself doesn't interact with the timer_callbacks list,
+                        --       but for holds, it *will* call GestureDetector:clearStates on "hold_release" (and *only* then),
+                        --       and *that* already takes care of pop'ping the (hold) timer and closing the fd,
+                        --       via Input:clearTimeout(slot, "hold")...
+                        if not touch_ges or touch_ges.ges ~= "hold_release" then
+                            -- That leaves explicit cleanup to every other case (i.e., nil or every other gesture)
+                            if timerfd then
+                                input.clearTimer(timerfd)
                             end
-                        else
-                            -- NOTE: The same edge-case as above could still apply here,
-                            --       but at worst we just fire the "wrong" callback if multiple slots have the same deadline...
-                            --       We don't really have a way to discriminate which slot should actually win the race here,
-                            --       though (not even going by insertion order, as the sort in setTimeout clobbers that).
-                            -- The best we can do is try to consume *all* the callbacks with the same deadline,
-                            -- in case the callback at the head of the list does not return a gesture...
-                            local current_deadline = self.timer_callbacks[1].deadline
-                            while self.timer_callbacks[1] and self.timer_callbacks[1].deadline == current_deadline do
-                                touch_ges = self.timer_callbacks[1].callback()
-                                table.remove(self.timer_callbacks, 1)
-                                if touch_ges then
-                                    break
-                                end
-                            end
+                            table.remove(self.timer_callbacks, 1)
                         end
                         if touch_ges then
                             -- The timers we'll encounter are for finalizing a hold or (if enabled) double tap gesture,

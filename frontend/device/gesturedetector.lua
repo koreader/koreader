@@ -84,12 +84,12 @@ local GestureDetector = {
     pending_hold_timer = {},
     track_ids = {},
     tev_stacks = {},
-    -- latest feeded touch event in each slots
+    -- latest touch events fed in each slot
     last_tevs = {},
     first_tevs = {},
     -- for multiswipe gestures
     multiswipe_directions = {},
-    -- detecting status on each slots
+    -- detecting status on each slot
     detectings = {},
     -- for single/double tap
     last_taps = {},
@@ -125,6 +125,14 @@ end
 
 --[[--
 Feeds touch events to state machine.
+
+For drivers that bundle multiple slots in the same input frame,
+events are consumed in LIFO order, because of table.remove ;).
+Note that, in a single input frame, if the same slot gets multiple *consecutive* events,
+only the last one is kept. On the other hand, if the slot *changes* after SYN_MT_REPORT,
+they are *both* kept: i.e., for a sequence (where the number is the slot, and the letter is the order)
+1a -> 1b -> 2a in an input frame, what's processed by this function ends up being 2a -> 1b;
+but for 1a -> 2a -> 1b -> 2b, it's 2b -> 1b -> 2a -> 1a ;).
 --]]
 function GestureDetector:feedEvent(tevs)
     repeat
