@@ -742,14 +742,14 @@ function Input:handleTouchEv(ev)
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
-            local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
+            local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
-            if touch_ges then
+            local ges_evs = {}
+            for _, touch_ges in ipairs(touch_gestures) do
                 self:gestureAdjustHook(touch_ges)
-                return Event:new("Gesture",
-                    self.gesture_detector:adjustGesCoordinate(touch_ges)
-                )
+                table.insert(ges_evs, Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges)))
             end
+            return ges_evs
         end
     end
 end
@@ -801,14 +801,14 @@ function Input:handleTouchEvPhoenix(ev)
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
             -- feed ev in all slots to state machine
-            local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
+            local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
-            if touch_ges then
+            local ges_evs = {}
+            for _, touch_ges in ipairs(touch_gestures) do
                 self:gestureAdjustHook(touch_ges)
-                return Event:new("Gesture",
-                    self.gesture_detector:adjustGesCoordinate(touch_ges)
-                )
+                table.insert(ges_evs, Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges)))
             end
+            return ges_evs
         end
     end
 end
@@ -837,14 +837,14 @@ function Input:handleTouchEvLegacy(ev)
             end
 
             -- feed ev in all slots to state machine
-            local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
+            local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()
-            if touch_ges then
+            local ges_evs = {}
+            for _, touch_ges in ipairs(touch_gestures) do
                 self:gestureAdjustHook(touch_ges)
-                return Event:new("Gesture",
-                    self.gesture_detector:adjustGesCoordinate(touch_ges)
-                )
+                table.insert(ges_evs, Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges)))
             end
+            return ges_evs
         end
     end
 end
@@ -1162,17 +1162,30 @@ function Input:waitEvent(now, deadline)
                     end
 
                     if consume_callback then
-                        local touch_ges = self.timer_callbacks[1].callback()
-                        -- If it was a timerfd, we *may* also need to close the fd.
-                        -- NOTE: The fact that deadlines are sorted *should* ensure that the timerfd that expired
-                        --       is actually at the head of the list, without us having to double-check that...
-                        --       In the rare case we would get a storm of events, we rely on the fact that each event frame
-                        --       *should* have a slightly different timestamp to make sure we never have a deadline collision,
-                        --       combined with the fact that GestureDetector:feedEvent will only ever return a *single* gesture
-                        --       per input frame, even if a frame contains multiple slots on the same timestamp.
-                        -- NOTE: GestureDetector only calls Input:setTimeout for "hold" & "double_tap" gestures.
+                        local touch_ges
+                        local timer_idx = 1
+                        if timerfd then
+                            -- If there's a deadline collision, make sure we call the callback that matches the timerfd returned.
+                            -- We'll handle the next one on the next iteration, as an expired timerfd will ensure
+                            -- that select will return immediately.
+                            for i, item in ipairs(self.timer_callbacks) do
+                                if item.timerfd == timerfd then
+                                    -- In the vast majority of cases, we should find our match on the first entry ;).
+                                    timer_idx = i
+                                    touch_ges = item.callback()
+                                    break
+                                end
+                            end
+                        else
+                            -- If there's a deadline collision, we'll just handle the next one on the next iteration,
+                            -- because the blown deadline means we'll have asked waitForEvent to return immediately.
+                            touch_ges = self.timer_callbacks[1].callback()
+                        end
+
+                        -- NOTE: If it was a timerfd, we *may* also need to close the fd.
+                        --       GestureDetector only calls Input:setTimeout for "hold" & "double_tap" gestures.
                         --       For double taps, the callback itself doesn't interact with the timer_callbacks list,
-                        --       but for holds, it *will* call GestureDetector:clearStates on "hold_release" (and *only* then),
+                        --       but for holds, it *will* call GestureDetector:clearState on "hold_release" (and *only* then),
                         --       and *that* already takes care of pop'ping the (hold) timer and closing the fd,
                         --       via Input:clearTimeout(slot, "hold")...
                         if not touch_ges or touch_ges.ges ~= "hold_release" then
@@ -1180,13 +1193,9 @@ function Input:waitEvent(now, deadline)
                             if timerfd then
                                 input.clearTimer(timerfd)
                             end
-                            table.remove(self.timer_callbacks, 1)
+                            table.remove(self.timer_callbacks, timer_idx)
                         end
                         if touch_ges then
-                            -- The timers we'll encounter are for finalizing a hold or (if enabled) double tap gesture,
-                            -- as such, it makes no sense to try to detect *multiple* subsequent gestures.
-                            -- This is why we clear the full list of timers on the first match ;).
-                            self:clearTimeouts()
                             self:gestureAdjustHook(touch_ges)
                             return {
                                 Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges))
@@ -1303,10 +1312,13 @@ function Input:waitEvent(now, deadline)
                     table.insert(handled, handled_ev)
                 end
             elseif event.type == C.EV_ABS or event.type == C.EV_SYN then
-                local handled_ev = self:handleTouchEv(event)
-                -- We don't generate an Event for *every* input event, so, make sure we don't push nil values to the array
-                if handled_ev then
-                    table.insert(handled, handled_ev)
+                local handled_evs = self:handleTouchEv(event)
+                -- handleTouchEv only returns an array of Events once it gets a SYN_REPORT,
+                -- so more often than not, we just get a nil here ;).
+                if handled_evs then
+                    for _, handled_ev in ipairs(handled_evs) do
+                        table.insert(handled, handled_ev)
+                    end
                 end
             elseif event.type == C.EV_MSC then
                 local handled_ev = self:handleMiscEv(event)
