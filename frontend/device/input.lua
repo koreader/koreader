@@ -815,7 +815,7 @@ function Input:handleTouchEvLegacy(ev)
     -- In those devices the 'handleTouchEv' function doesn't work as expected. Use this function instead.
     if ev.type == C.EV_ABS then
         if #self.MTSlots == 0 then
-            table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
+            self:addSlot(self.cur_slot)
         end
         if ev.code == C.ABS_X then
             self:setCurrentMtSlot("x", ev.value)
@@ -989,8 +989,6 @@ function Input:initMtSlot(slot)
 end
 
 function Input:setMtSlot(slot, key, val)
-    self:initMtSlot(slot)
-
     self.ev_slots[slot][key] = val
 end
 
