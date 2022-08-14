@@ -199,6 +199,7 @@ local Input = {
     main_finger_slot = 0,
     cur_slot = 0,
     MTSlots = nil, -- table, object may be replaced at runtime
+    active_slots = nil, -- ditto
     ev_slots = nil, -- table
     gesture_detector = nil,
 
@@ -227,6 +228,7 @@ function Input:init()
     -- NOTE: Both of these arrays may be destroyed & recreated at runtime, so we don't want a parent/class object for those.
     self.timer_callbacks = {}
     self.MTSlots = {}
+    self.active_slots = {}
 
     -- Handle default finger slot
     self.cur_slot = self.main_finger_slot
@@ -741,7 +743,7 @@ function Input:handleTouchEv(ev)
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
-            self.MTSlots = {}
+            self:newFrame()
             if touch_ges then
                 self:gestureAdjustHook(touch_ges)
                 return Event:new("Gesture",
@@ -800,7 +802,7 @@ function Input:handleTouchEvPhoenix(ev)
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
-            self.MTSlots = {}
+            self:newFrame()
             if touch_ges then
                 self:gestureAdjustHook(touch_ges)
                 return Event:new("Gesture",
@@ -836,7 +838,7 @@ function Input:handleTouchEvLegacy(ev)
 
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
-            self.MTSlots = {}
+            self:newFrame()
             if touch_ges then
                 self:gestureAdjustHook(touch_ges)
                 return Event:new("Gesture",
@@ -1013,15 +1015,29 @@ function Input:getCurrentMtSlotData(key)
     return nil
 end
 
+function Input:newFrame()
+    -- Array of references to the data for each slot seen in this input frame
+    -- (Points to self.ev_slots, c.f., getMtSlot)
+    self.MTSlots = {}
+    -- Simple hash to keep track of which references we've inserted into self.MTSlots (keys are slot numbers)
+    self.active_slots = {}
+end
+
 function Input:addSlot(value)
     self:initMtSlot(value)
     table.insert(self.MTSlots, self:getMtSlot(value))
+    self.active_slots[value] = true
     self.cur_slot = value
 end
 
 function Input:addSlotIfChanged(value)
     if self.cur_slot ~= value then
-        self:addSlot(value)
+        -- We've already seen that slot in this frame, don't insert a duplicate reference!
+        if self.active_slots[value] then
+            self.cur_slot = value
+        else
+            self:addSlot(value)
+        end
     end
 end
 
