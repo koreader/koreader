@@ -587,10 +587,11 @@ function SunTime:getTimeInSec(val)
     end
 
     if type(val) == "table" then
-        return val.hour*3600 + val.min*60 + val.sec
+        val = val.hour*3600 + val.min*60 + val.sec
+    else
+        val = val*3600
     end
-
-    return val*3600
+    return math.floor(val * 1000 ) / 1000
 end
 
 return SunTime

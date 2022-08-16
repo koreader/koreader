@@ -129,7 +129,7 @@ function AutoWarmth:leavePowerSavingState(from_resume)
     if resume_date.day == SunTime.date.day and resume_date.month == SunTime.date.month
         and resume_date.year == SunTime.date.year then
         local now_s = SunTime:getTimeInSec(resume_date)
-        self:scheduleNextWarmthChange(now_s, self.sched_warmth_index, from_resume)
+        self:scheduleNextWarmthChange(now_s, self.sched_warmth_index - 1, from_resume)
         -- Reschedule 1sec after midnight
         UIManager:scheduleIn(24*3600 + 1 - now_s, self.scheduleMidnightUpdate, self)
     else
@@ -203,7 +203,7 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
                 -- which map to warmth 0, 10, 20, 30 ... 100)
                 if frac(next_warmth * device_warmth_fit_scale) == 0 then
                     table.insert(self.sched_times_s, time1_s + delta_t * i)
-                    table.insert(self.sched_warmths, math.floor(math.min(self.warmth[index1], 100) + delta_w * i))
+                    table.insert(self.sched_warmths, next_warmth)
                 end
             end
         end
@@ -305,11 +305,11 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
     local next_warmth = actual_warmth
     for i = self.sched_warmth_index, #self.sched_warmths do
         if self.sched_times_s[i] <= time_s then
-            actual_warmth = self.sched_warmths[i] or actual_warmth
+            actual_warmth = self.sched_warmths[i]
             local j = i
-            while j <= #self.sched_warmths and self.sched_times_s[j] <= time_s + delay_s do
+            while from_resume and j <= #self.sched_warmths and self.sched_times_s[j] <= time_s + delay_s do
                 -- Most times only one iteration through this loop
-                next_warmth = self.sched_warmths[j] or next_warmth
+                next_warmth = self.sched_warmths[j]
                 j = j + 1
             end
         else
@@ -324,6 +324,11 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
         if next_sched_time_s > 0 then
             -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
             UIManager:scheduleIn(next_sched_time_s, self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
+        else
+            -- ToDo: check if a schedule has to be in 1 sec or maybe later lets say at
+            -- self.sched_times_s[self.sched_warmth_index + 1 ] - time_s
+            UIManager:scheduleIn(1, self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
+            print("xxxxxxxxxxxxxx check this")
         end
     end
 
@@ -332,7 +337,7 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
         -- schedule setting of another valid warmth (=`next_warmth`) again (one time).
         -- On sane devices this schedule does no harm.
         -- see https://github.com/koreader/koreader/issues/8363
-        UIManager:scheduleIn(delay_s, self.setWarmth, self, next_warmth, true) -- no setWarmth rescheduling, force warmth
+        UIManager:scheduleIn(delay_s, self.setWarmth, self, next_warmth, false) -- no setWarmth rescheduling, force warmth
     end
 
     -- Check if AutoWarmth shall toggle frontlight daytime and twilight
