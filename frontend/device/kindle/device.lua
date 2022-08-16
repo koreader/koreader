@@ -989,7 +989,10 @@ function KindleBasic3:init()
 
     Kindle.init(self)
 
-    self.input.snow_protocol = true -- cf. https://github.com/koreader/koreader/issues/5070
+    -- This device doesn't emit ABS_MT_TRACKING_ID:-1 events on contact lift,
+    -- so we have to rely on contact lift detection via BTN_TOUCH:0,
+    -- c.f., https://github.com/koreader/koreader/issues/5070
+    self.input.snow_protocol = true
     self.input.open(self.touch_dev)
     self.input.open("fake_events")
 end

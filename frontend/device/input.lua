@@ -225,7 +225,7 @@ end
 
 function Input:init()
     -- Initialize instance-specific tables
-    -- NOTE: Both of these arrays may be destroyed & recreated at runtime, so we don't want a parent/class object for those.
+    -- NOTE: All of these arrays may be destroyed & recreated at runtime, so we don't want a parent/class object for those.
     self.timer_callbacks = {}
     self.MTSlots = {}
     self.active_slots = {}
