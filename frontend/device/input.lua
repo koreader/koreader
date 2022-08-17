@@ -547,14 +547,9 @@ function Input:handleKeyBoardEv(ev)
     -- quit on Alt + F4
     -- this is also emitted by the close event in SDL
     if self:isEvKeyPress(ev) and self.modifiers["Alt"] and keycode == "F4" then
-        local Device = require("frontend/device")
         local UIManager = require("ui/uimanager")
-
-        local save_quit = function()
-            Device:saveSettings()
-            UIManager:quit()
-        end
-        UIManager:broadcastEvent(Event:new("Exit", save_quit))
+        UIManager:broadcastEvent(Event:new("Close")) -- Tell all widgets to close.
+        UIManager:nextTick(function() UIManager:quit() end) -- Ensure the program closes in case of some lingering dialog.
     end
 
     -- handle modifier keys
