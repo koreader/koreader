@@ -687,8 +687,11 @@ function Input:handleTouchEv(ev)
         --       The use of setCurrentMtSlotChecked instead of setCurrentMtSlot ensures
         --       we actually setup the slot data storage and/or reference for the current slot in this case,
         --       as the reference list is empty at the beginning of an input frame (c.f., Input:newFrame).
-        --       The most common platform where you'll see this happen in on PocketBook,
-        --       because of our InkView EVT_POINTERMOVE translation (c.f., translateEvent @ ffi/input_pocketbook.lua).
+        --       The most common platforms where you'll see this happen are:
+        --       * PocketBook, because of our InkView EVT_POINTERMOVE translation
+        --         (c.f., translateEvent @ ffi/input_pocketbook.lua).
+        --       * SDL, because of our SDL_MOUSEMOTION/SDL_FINGERMOTION translation
+        --         (c.f., waitForEvent @ ffi/SDL2_0.lua).
         if ev.code == C.ABS_MT_SLOT then
             self:setupSlotData(ev.value)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
