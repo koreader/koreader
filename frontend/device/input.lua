@@ -682,22 +682,28 @@ attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
     if ev.type == C.EV_ABS then
+        -- NOTE: Ideally, an input frame starts with either ABS_MT_SLOT or ABS_MT_TRACKING_ID,
+        --       but they *both* may be omitted if the last contact point just moved without lift.
+        --       The use of setCurrentMtSlotChecked instead of setCurrentMtSlot ensures
+        --       we actually setup the slot data storage and/or reference for the current slot in this case,
+        --       as the reference list is empty at the beginning of an input frame (c.f., Input:newFrame).
+        --       The most common platforms where you'll see this happen are:
+        --       * PocketBook, because of our InkView EVT_POINTERMOVE translation
+        --         (c.f., translateEvent @ ffi/input_pocketbook.lua).
+        --       * SDL, because of our SDL_MOUSEMOTION/SDL_FINGERMOTION translation
+        --         (c.f., waitForEvent @ ffi/SDL2_0.lua).
         if ev.code == C.ABS_MT_SLOT then
             self:setupSlotData(ev.value)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
             if self.snow_protocol then
-                -- We'll never get an ABS_MT_SLOT event,
-                -- instead we have a slot-like ABS_MT_TRACKING_ID value...
+                -- NOTE: We'll never get an ABS_MT_SLOT event, instead we have a slot-like ABS_MT_TRACKING_ID value...
+                --       This also means this may never be set to -1 on contact lift,
+                --       which is why we instead rely on EV_KEY:BTN_TOUCH:0 for that (c.f., handleKeyBoardEv).
                 self:setupSlotData(ev.value)
             else
-                -- ABS_MT_SLOT *may* be elided if there was only a single contact point in the input frame,
-                -- and as long as it is the *same* contact point as the final contact point of the previous frame...
-                -- (e.g., the Elan driver on the Kobo Sage/Elipsa will do this.
-                -- Ironically enough, that won't stop it from spamming identical ABS_MT_TRACKING_ID values...)
+                -- The Elan driver needlessly repeats unchanged ABS_MT_TRACKING_ID values,
+                -- which allows us to do this here instead of relying more aggressively on setCurrentMtSlotChecked.
                 if #self.MTSlots == 0 then
-                    -- That means we have to make sure we have somewhere to put the data from our initial slot
-                    -- at the beginning of a frame...
-                    -- (This should be initialized to self.main_finger_slot, i.e., most likely 0)...
                     self:addSlot(self.cur_slot)
                 end
             end
@@ -706,9 +712,9 @@ function Input:handleTouchEv(ev)
             -- NOTE: On the Elipsa: Finger == 0; Pen == 1
             self:setCurrentMtSlot("tool", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_X then
-            self:setCurrentMtSlot("x", ev.value)
+            self:setCurrentMtSlotChecked("x", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_Y then
-            self:setCurrentMtSlot("y", ev.value)
+            self:setCurrentMtSlotChecked("y", ev.value)
         elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
             -- Drop hovering *pen* events
             local tool = self:getCurrentMtSlotData("tool")
@@ -716,12 +722,12 @@ function Input:handleTouchEv(ev)
                 self:setCurrentMtSlot("id", -1)
             end
 
-        -- code to emulate mt protocol on kobos
-        -- we "confirm" abs_x, abs_y only when pressure ~= 0
+        -- Emulate MT protocol on ST Kobos:
+        -- we "confirm" ABS_X, ABS_Y only when ABS_PRESSURE ~= 0
         elseif ev.code == C.ABS_X then
-            self:setCurrentMtSlot("abs_x", ev.value)
+            self:setCurrentMtSlotChecked("abs_x", ev.value)
         elseif ev.code == C.ABS_Y then
-            self:setCurrentMtSlot("abs_y", ev.value)
+            self:setCurrentMtSlotChecked("abs_y", ev.value)
         elseif ev.code == C.ABS_PRESSURE then
             if ev.value ~= 0 then
                 self:setCurrentMtSlot("id", 1)
@@ -990,6 +996,15 @@ function Input:setMtSlot(slot, key, val)
 end
 
 function Input:setCurrentMtSlot(key, val)
+    self:setMtSlot(self.cur_slot, key, val)
+end
+
+-- Same as above, but ensures the current slot actually has a live ref first
+function Input:setCurrentMtSlotChecked(key, val)
+    if #self.MTSlots == 0 then
+        self:addSlot(self.cur_slot)
+    end
+
     self:setMtSlot(self.cur_slot, key, val)
 end
 
