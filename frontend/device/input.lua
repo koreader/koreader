@@ -682,7 +682,7 @@ attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
     if ev.type == C.EV_ABS then
-        -- NOTE: Ideally, an input frame starts with either of those,
+        -- NOTE: Ideally, an input frame starts with either ABS_MT_SLOT or ABS_MT_TRACKING_ID,
         --       but they *both* may be omitted if the last contact point just moved without lift.
         --       The use of setCurrentMtSlotChecked instead of setCurrentMtSlot ensures
         --       we actually setup the slot data storage and/or reference for the current slot in this case,
