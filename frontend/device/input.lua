@@ -682,6 +682,7 @@ attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
     if ev.type == C.EV_ABS then
+        -- Ideally, an input frame start with either of those...
         if ev.code == C.ABS_MT_SLOT then
             self:setupSlotData(ev.value)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
@@ -702,33 +703,40 @@ function Input:handleTouchEv(ev)
                 end
             end
             self:setCurrentMtSlot("id", ev.value)
-        elseif ev.code == C.ABS_MT_TOOL_TYPE then
-            -- NOTE: On the Elipsa: Finger == 0; Pen == 1
-            self:setCurrentMtSlot("tool", ev.value)
-        elseif ev.code == C.ABS_MT_POSITION_X then
-            self:setCurrentMtSlot("x", ev.value)
-        elseif ev.code == C.ABS_MT_POSITION_Y then
-            self:setCurrentMtSlot("y", ev.value)
-        elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
-            -- Drop hovering *pen* events
-            local tool = self:getCurrentMtSlotData("tool")
-            if tool and tool == 1 then
-                self:setCurrentMtSlot("id", -1)
+        else
+            -- ...but *both* ABS_MT_SLOT & ABS_MT_TRACKING_ID may be omitted if the last contact point just moved without lift.
+            if #self.MTSlots == 0 then
+                self:addSlot(self.cur_slot)
             end
 
-        -- code to emulate mt protocol on kobos
-        -- we "confirm" abs_x, abs_y only when pressure ~= 0
-        elseif ev.code == C.ABS_X then
-            self:setCurrentMtSlot("abs_x", ev.value)
-        elseif ev.code == C.ABS_Y then
-            self:setCurrentMtSlot("abs_y", ev.value)
-        elseif ev.code == C.ABS_PRESSURE then
-            if ev.value ~= 0 then
-                self:setCurrentMtSlot("id", 1)
-                self:confirmAbsxy()
-            else
-                self:cleanAbsxy()
-                self:setCurrentMtSlot("id", -1)
+            if ev.code == C.ABS_MT_TOOL_TYPE then
+                -- NOTE: On the Elipsa: Finger == 0; Pen == 1
+                self:setCurrentMtSlot("tool", ev.value)
+            elseif ev.code == C.ABS_MT_POSITION_X then
+                self:setCurrentMtSlot("x", ev.value)
+            elseif ev.code == C.ABS_MT_POSITION_Y then
+                self:setCurrentMtSlot("y", ev.value)
+            elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
+                -- Drop hovering *pen* events
+                local tool = self:getCurrentMtSlotData("tool")
+                if tool and tool == 1 then
+                    self:setCurrentMtSlot("id", -1)
+                end
+
+            -- Emulate MT protocol on ST Kobos:
+            -- we "confirm" ABS_X, ABS_Y only when ABS_PRESSURE ~= 0
+            elseif ev.code == C.ABS_X then
+                self:setCurrentMtSlot("abs_x", ev.value)
+            elseif ev.code == C.ABS_Y then
+                self:setCurrentMtSlot("abs_y", ev.value)
+            elseif ev.code == C.ABS_PRESSURE then
+                if ev.value ~= 0 then
+                    self:setCurrentMtSlot("id", 1)
+                    self:confirmAbsxy()
+                else
+                    self:cleanAbsxy()
+                    self:setCurrentMtSlot("id", -1)
+                end
             end
         end
     elseif ev.type == C.EV_SYN then
