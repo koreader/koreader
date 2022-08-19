@@ -341,7 +341,7 @@ if last_migration_date < 20220116 then
         if not found then
             local std_ebooks = {
                 title = "Standard Ebooks",
-                url = "https://standardebooks.org/feeds/opds",
+                url = "https://standardebooks.org/opds",
             }
 
             -- Append it at the same position as on stock installs, if possible
