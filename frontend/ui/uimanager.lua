@@ -116,8 +116,7 @@ function UIManager:init()
         self.event_handlers["Resume"] = function()
             self:_afterResume()
         end
-    end
-    if Device:isKobo() then
+    elseif Device:isKobo() then
         -- We do not want auto suspend procedure to waste battery during
         -- suspend. So let's unschedule it when suspending, and restart it after
         -- resume. Done via the plugin's onSuspend/onResume handlers.
@@ -229,7 +228,7 @@ function UIManager:init()
         end
         self.event_handlers["OutOfSS"] = function()
             Device:outofScreenSaver()
-            self:_afterResume();
+            self:_afterResume()
         end
         self.event_handlers["Charging"] = function()
             self:_beforeCharging()
