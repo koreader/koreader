@@ -750,7 +750,7 @@ function AutoWarmth:getScheduleMenu()
     end
 
     local retval = {
-        getScheduleMenuEntry(_("Solar midnight (previos day)"), 1, false),
+        getScheduleMenuEntry(_("Solar midnight (previous day)"), 1, false),
         getScheduleMenuEntry(_("Astronomical dawn"), 2, false),
         getScheduleMenuEntry(_("Nautical dawn"), 3, false),
         getScheduleMenuEntry(_("Civil dawn"), 4),
