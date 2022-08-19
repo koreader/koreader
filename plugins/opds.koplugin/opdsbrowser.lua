@@ -40,7 +40,7 @@ local OPDSBrowser = Menu:extend{
         },
         {
             title = "Standard Ebooks",
-            url = "https://standardebooks.org/opds",
+            url = "https://standardebooks.org/feeds/opds",
         },
         {
             title = "Feedbooks",

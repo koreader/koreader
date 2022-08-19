@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220625
+local CURRENT_MIGRATION_DATE = 20220819
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -414,6 +414,24 @@ if last_migration_date < 20220625 then
             end
         end
         os.rename(data_dir .. "/patch.lua", patch_dir .. "/1-patch.lua")
+    end
+end
+
+-- OPDS, same as above
+if last_migration_date < 20220819 then
+    logger.info("Performing one-time migration for 20220819")
+
+    local opds_servers = G_reader_settings:readSetting("opds_servers")
+    if opds_servers then
+        -- Update deprecated URLs
+        for i = #opds_servers, 1, -1 do
+            local server = opds_servers[i]
+
+            if server.url == "https://standardebooks.org/opds" then
+                server.url = "https://standardebooks.org/feeds/opds"
+            end
+        end
+        G_reader_settings:saveSetting("opds_servers", opds_servers)
     end
 end
 
