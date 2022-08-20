@@ -557,8 +557,10 @@ end
         if not self.midnight then
             self.midnight = self.noon + 12
         end
-        if not self.midnight_beginning then
+        if not self.midnight_beginning and self.midnight then
             self.midnight_beginning = self.midnight - 24
+        elseif not self.midnight and not self.midnight_beginning then
+            self.midnight = self.midnight_beginning + 24
         end
     elseif self.rise and not self.set then -- only sunrise on that day
         self.midnight = nil
@@ -580,7 +582,7 @@ end
     self.times[11] = self.midnight
 end
 
--- Get time in seconds (either actual time in hours or date struct)
+-- Get time in seconds, rounded to ms (either actual time in hours or date struct)
 function SunTime:getTimeInSec(val)
     if not val then
         val = os.date("*t")
