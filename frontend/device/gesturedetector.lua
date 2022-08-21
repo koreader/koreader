@@ -387,7 +387,7 @@ function GestureDetector:initialState(tev)
                     --       and *that* is a fixed reference for a given slot!
                     --       Here, we really want to remember the *first* tev, so, make a copy of it.
                     contact.initial_tev = self:deepCopyEv(tev)
-                    -- Default to tap state
+                    -- Default to tap state (note that our actual state is still initialState, though).
                     return self:switchState("tapState", tev)
                 end
             end
@@ -517,7 +517,7 @@ function GestureDetector:tapState(tev)
             return self:handleDoubleTap(tev)
         end
     else
-        -- See if we need to do something with the move
+        -- See if we need to do something with the move/hold
         return self:handleNonTap(tev)
     end
 end
@@ -597,22 +597,24 @@ end
 
 function GestureDetector:handleNonTap(tev)
     local slot = tev.slot
-    if self.states[slot] ~= self.tapState then
-        -- switched from other state, probably from initialState
-        -- we return nil in this case
-        self.states[slot] = self.tapState
+    local contact = self:getContact(slot)
+    if contact.state ~= self.tapState then
+        -- Switched from other state, probably from initialState
+        -- We return a move for now in this case.
+        contact.state = self.tapState
         logger.dbg("set up hold timer")
         -- Invalidate previous hold timers on that slot so that the following setTimeout will only react to *this* tapState.
         self.input:clearTimeout(slot, "hold")
-        self.pending_hold_timer[slot] = true
+        contact.pending_hold_timer = true
         self.input:setTimeout(slot, "hold", function()
             -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
-            -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through clearState by a finger up gesture),
+            -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through dropState by a finger up gesture),
             -- then check that we're still in a stationary finger down state (e.g., tapState).
-            if self.pending_hold_timer[slot] and self.states[slot] == self.tapState then
+            -- NOTE: We need to check that the current contact in this slot is *still* the same object first, because closure ;).
+            if contact == self:getContact(slot) and contact.pending_hold_timer and contact.state == self.tapState and contact.down then
                 -- That means we can switch to hold
                 logger.dbg("hold gesture detected in slot", slot)
-                self.pending_hold_timer[slot] = nil
+                contact.pending_hold_timer = nil
                 return self:switchState("holdState", tev, true)
             end
         end, tev.timev, self.ges_hold_interval)
@@ -621,7 +623,8 @@ function GestureDetector:handleNonTap(tev)
             pos = Geom:new{
                 x = tev.x,
                 y = tev.y,
-                w = 0, h = 0,
+                w = 0,
+                h = 0,
             },
             time = tev.timev,
         }
