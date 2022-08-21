@@ -95,8 +95,8 @@ local GestureDetector = {
     finger_down = {},
     -- slot is pending a MT gesture
     pending_mt_gesture = {},
-    -- for single/double tap
-    last_taps = {}, -- FIXME: Rename to previous_tap
+    -- Used for double tap and bounce detection (this is outside a Contact object because it requires minimal persistance).
+    previous_tap = {},
     -- for timestamp clocksource detection
     clock_id = nil,
     -- current values
@@ -506,7 +506,8 @@ function GestureDetector:tapState(tev)
                     pos = Geom:new{
                         x = tev.x,
                         y = tev.y,
-                        w = 0, h = 0,
+                        w = 0,
+                        h = 0,
                     },
                     time = tev.timev,
                 }
@@ -523,77 +524,75 @@ end
 
 function GestureDetector:handleDoubleTap(tev)
     local slot = tev.slot
+    local contact = self:getContact(slot)
     local ges_ev = {
-        -- default to single tap
+        -- Default to single tap
         ges = "tap",
         pos = Geom:new{
-            x = self.last_tevs[slot].x,
-            y = self.last_tevs[slot].y,
-            w = 0, h = 0,
+            x = tev.x,
+            y = tev.y,
+            w = 0,
+            h = 0,
         },
         time = tev.timev,
     }
-    -- cur_tap is used for double tap detection
+    -- cur_tap is used for double tap and bounce detection
     local cur_tap = {
         x = tev.x,
         y = tev.y,
         timev = tev.timev,
     }
 
-    -- Tap interval / bounce detection may be tweaked by widget (i.e. VirtualKeyboard)
+    -- Tap interval / bounce detection may be tweaked by a widget (i.e. VirtualKeyboard)
     local tap_interval = self.input.tap_interval_override or self.ges_tap_interval
-    -- We do tap bounce detection even when double tap is enabled (so, double tap
-    -- is triggered when: ges_tap_interval <= delay < ges_double_tap_interval)
-    if tap_interval ~= 0 and self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap, tap_interval) then
+    -- We do tap bounce detection even when double tap is enabled
+    -- (so, double tap is triggered when: ges_tap_interval <= delay < ges_double_tap_interval).
+    if tap_interval ~= 0 and self.previous_tap[slot] ~= nil and self:isTapBounce(self.previous_tap[slot], cur_tap, tap_interval) then
         logger.dbg("tap bounce detected in slot", slot, ": ignored")
-        -- Simply ignore it, and clear state as this is the end of a touch event
-        -- (this doesn't clear self.last_taps[slot], so a 3rd tap can be detected
-        -- as a double tap)
-        self:clearState(slot)
+        -- Simply ignore it, and drop this slot as this is the end of a touch event.
+        -- (This doesn't clear self.previous_tap[slot], so a 3rd tap can be detected as a double tap).
+        self:dropContact(slot)
         return
     end
 
-    if not self.input.disable_double_tap and self.last_taps[slot] ~= nil and
-                self:isDoubleTap(self.last_taps[slot], cur_tap) then
-        -- it is a double tap
-        self:clearState(slot)
+    if not self.input.disable_double_tap and self.previous_tap[slot] ~= nil and self:isDoubleTap(self.previous_tap[slot], cur_tap) then
+        -- It is a double tap
+        self:dropContact(slot)
         self.input:clearTimeout(slot, "double_tap")
         ges_ev.ges = "double_tap"
-        self.last_taps[slot] = nil
+        self.previous_tap[slot] = nil
         logger.dbg("double tap detected in slot", slot)
         return ges_ev
     end
 
-    -- set current tap to last tap
-    self.last_taps[slot] = cur_tap
+    -- Remember this tap
+    self.previous_tap[slot] = cur_tap
 
     if self.input.disable_double_tap then
-        -- We can send the event immediately (no need for the
-        -- timer stuff needed for double tap support)
+        -- We can send the event immediately (no need for the timer stuff needed for double tap support)
         logger.dbg("single tap detected in slot", slot, ges_ev.pos)
-        self:clearState(slot)
+        self:dropContact(slot)
         return ges_ev
     end
 
-    -- Double tap enabled: we can't send this single tap immediately as it
-    -- may be the start of a double tap. We'll send it as a single tap after
-    -- a timer if no second tap happened in the double tap delay.
+    -- Double tap enabled: we can't send this single tap immediately as it may be the start of a double tap.
+    -- We'll send it as a single tap after a timer if no second tap happened in the double tap delay.
     logger.dbg("set up single/double tap timer")
     -- setTimeout will handle computing the deadline in the least lossy way possible given the platform.
     self.input:setTimeout(slot, "double_tap", function()
-        logger.dbg("in single/double tap timer, single tap:", self.last_taps[slot] ~= nil)
-        -- double tap will set last_tap to nil so if it is not, then
-        -- user has not double-tap'ed: it's a single tap
-        if self.last_taps[slot] ~= nil then
-            self.last_taps[slot] = nil
-            -- we are using closure here
+        logger.dbg("in single/double tap timer, single tap:", self.previous_tap[slot] ~= nil)
+        -- A double tap will nil previous_tap, so if it isn't,
+        -- then the user has not double-tap'ed: it's a single tap
+        if self.previous_tap[slot] ~= nil then
+            self.previous_tap[slot] = nil
+            -- We're using the original ges_ev from the closure here
             logger.dbg("single tap detected in slot", slot, ges_ev.pos)
+            self:dropContact(slot)
             return ges_ev
         end
     end, tev.timev, self.ges_double_tap_interval)
-    -- we are already at the end of touch event
-    -- so reset the state
-    self:clearState(slot)
+    -- Regardless of the timer shenanigans, it's at the very least a contact lift.
+    contact.down = false
 end
 
 function GestureDetector:handleNonTap(tev)
