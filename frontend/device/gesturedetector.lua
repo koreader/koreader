@@ -136,7 +136,7 @@ function GestureDetector:newContact(slot)
         state = self.initialState, -- Current state function
         id = -1, -- Current ABS_MT_TRACKING_ID value
         initial_tev = nil, -- Copy of the input event table at first contact (i.e., at contact down)
-        current_tev = nil, -- Pointer to the current input event table
+        current_tev = nil, -- Pointer to the current input event table, *stable*, c.f., NOTE in feedEvent below
         down = false, -- Contact is down (as opposed to up, i.e., lifted)
         pending_hold_timer = false, -- Contact is pending a hold timer
         pending_mt_gesture = false, -- Contact is pending a MT gesture
@@ -726,12 +726,23 @@ function GestureDetector:handleSwipe(slot, contact, tev)
 end
 
 function GestureDetector:handlePan(slot, contact, tev)
-    local s1 = self.input.main_finger_slot
-    local s2 = self.input.main_finger_slot + 1
-    if (slot == s1 or slot == s2) and self.finger_down[s1] and self.finger_down[s2] then
-        return self:handleTwoFingerPan(tev)
+    -- Check if this might be a two finger gesture by checking if the current slot is one of the two main slots, and the other is active.
+    local buddy_slot = slot == self.input.main_finger_slot and self.input.main_finger_slot + 1 or slot == self.input.main_finger_slot + 1 and self.input.main_finger_slot or nil
+    local buddy_contact = buddy_slot and self:getContact(buddy_slot) or nil
+    if buddy_contact and contact.down and (buddy_contact.down or buddy_contact.pending_mt_gesture) then
+        -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
+        -- Mark that slot as pending, but leave its state alone.
+        contact.pending_mt_gesture = true
+
+        -- Once both contacts have been flagged, we're good to go!
+        if contact.pending_mt_gesture and buddy_contact.pending_mt_gesture then
+            -- This is *NOT* a contact lift, unlike other two finger gestures ;).
+            contact.pending_mt_gesture = false
+            buddy_contact.pending_mt_gesture = false
+            return self:handleTwoFingerPan(contact, buddy_contact)
+        end
     else
-        local pan_direction, pan_distance = self:getPath(slot)
+        local pan_direction, pan_distance = self:getPath(contact)
         local pan_ev = {
             ges = "pan",
             relative = {
@@ -745,20 +756,20 @@ function GestureDetector:handlePan(slot, contact, tev)
             time = tev.timev,
         }
 
-        -- regular pan
-        pan_ev.relative.x = tev.x - self.first_tevs[slot].x
-        pan_ev.relative.y = tev.y - self.first_tevs[slot].y
+        -- Regular pan
+        pan_ev.relative.x = tev.x - contact.initial_tev.x
+        pan_ev.relative.y = tev.y - contact.initial_tev.y
 
         pan_ev.pos = Geom:new{
-            x = self.last_tevs[slot].x,
-            y = self.last_tevs[slot].y,
+            x = tev.x,
+            y = tev.y,
             w = 0,
             h = 0,
         }
 
         local msd_cnt = #self.multiswipe_directions
         local msd_direction_prev = (msd_cnt > 0) and self.multiswipe_directions[msd_cnt][1] or ""
-        local prev_ms_ev, fake_first_tev
+        local prev_ms_ev, fake_initial_tev
 
         if msd_cnt == 0 then
             -- determine whether to initiate a straight or diagonal multiswipe
@@ -770,21 +781,18 @@ function GestureDetector:handlePan(slot, contact, tev)
         -- recompute a more accurate direction and distance in a multiswipe context
         elseif msd_cnt > 0 then
             prev_ms_ev = self.multiswipe_directions[msd_cnt][2]
-            fake_first_tev = {
-                [slot] = {
-                    ["x"] = prev_ms_ev.pos.x,
-                    ["y"] = prev_ms_ev.pos.y,
-                    ["slot"] = slot,
-                },
+            fake_initial_tev = {
+                x = prev_ms_ev.pos.x,
+                y = prev_ms_ev.pos.y,
             }
         end
 
-        -- the first time fake_first_tev is nil, so self.first_tevs is automatically used instead
+        -- the first time fake_initial_tev is nil, so the contact's initial_tev is automatically used instead
         local msd_direction, msd_distance
         if self.multiswipe_type == "straight" then
-            msd_direction, msd_distance = self:getPath(slot, true, false, fake_first_tev)
+            msd_direction, msd_distance = self:getPath(contact, true, false, fake_initial_tev)
         else
-            msd_direction, msd_distance = self:getPath(slot, true, true, fake_first_tev)
+            msd_direction, msd_distance = self:getPath(contact, true, true, fake_initial_tev)
         end
 
         if msd_distance > self.MULTISWIPE_THRESHOLD then
@@ -886,17 +894,28 @@ function GestureDetector:handlePanRelease(slot, contact, tev)
         pos = release_pos,
         time = tev.timev,
     }
-    local s1 = self.input.main_finger_slot
-    local s2 = self.input.main_finger_slot + 1
-    if (slot == s1 or slot == s2) and self.finger_down[s1] and self.finger_down[s2] then
-        logger.dbg("two finger pan release detected")
-        pan_ev.ges = "two_finger_pan_release"
-        self:clearState(slot)
+    -- Check if this might be a two finger gesture by checking if the current slot is one of the two main slots, and the other is active.
+    local buddy_slot = slot == self.input.main_finger_slot and self.input.main_finger_slot + 1 or slot == self.input.main_finger_slot + 1 and self.input.main_finger_slot or nil
+    local buddy_contact = buddy_slot and self:getContact(buddy_slot) or nil
+    if buddy_contact and contact.down and (buddy_contact.down or buddy_contact.pending_mt_gesture) then
+        -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
+        -- Mark that slot as pending and lifted, but leave its state alone
+        contact.pending_mt_gesture = true
+        contact.down = false
+
+        -- Once both contacts have been lifted, we're good to go!
+        if contact.pending_mt_gesture and buddy_contact.pending_mt_gesture then
+            logger.dbg("two finger pan release detected")
+            pan_ev.ges = "two_finger_pan_release"
+            self:dropContact(slot)
+            self:dropContact(buddy_slot)
+            return pan_ev
+        end
     else
         logger.dbg("pan release detected in slot", slot)
-        self:clearState(slot)
+        self:dropContact(slot)
+        return pan_ev
     end
-    return pan_ev
 end
 
 function GestureDetector:holdState(tev, hold)
