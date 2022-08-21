@@ -921,38 +921,37 @@ end
 function GestureDetector:holdState(tev, hold)
     local slot = tev.slot
     logger.dbg("slot", slot, "in hold state...")
+    local contact = self:getContact(tev.slot)
     -- When we switch to hold state, we pass an additional boolean param "hold".
-    if tev.id ~= -1 and hold and self.last_tevs[slot].x and self.last_tevs[slot].y then
-        self.states[slot] = self.holdState
+    if tev.id ~= -1 and hold and tev.x and tev.y then
+        contact.state = self.holdState
         return {
             ges = "hold",
             pos = Geom:new{
-                x = self.last_tevs[slot].x,
-                y = self.last_tevs[slot].y,
+                x = tev.x,
+                y = tev.y,
                 w = 0,
                 h = 0,
             },
             time = tev.timev,
         }
-    elseif tev.id == -1 and self.last_tevs[slot] ~= nil then
+    elseif tev.id == -1 and tev.x and tev.y then
         -- end of hold, signal hold release
         logger.dbg("hold_release detected in slot", slot)
-        local last_x = self.last_tevs[slot].x
-        local last_y = self.last_tevs[slot].y
-        self:clearState(slot)
+        self:dropContact(slot)
         return {
             ges = "hold_release",
             pos = Geom:new{
-                x = last_x,
-                y = last_y,
+                x = tev.x,
+                y = tev.y,
                 w = 0,
                 h = 0,
             },
             time = tev.timev,
         }
-    elseif (tev.x and math.abs(tev.x - self.first_tevs[slot].x) >= self.PAN_THRESHOLD) or
-        (tev.y and math.abs(tev.y - self.first_tevs[slot].y) >= self.PAN_THRESHOLD) then
-        local ges_ev = self:handlePan(tev)
+    elseif tev.id ~= -1 and ((tev.x and math.abs(tev.x - contact.initial_tev.x) >= self.PAN_THRESHOLD) or
+        (tev.y and math.abs(tev.y - contact.initial_tev.y) >= self.PAN_THRESHOLD)) then
+        local ges_ev = self:handlePan(slot, contact, tev)
         if ges_ev ~= nil then ges_ev.ges = "hold_pan" end
         return ges_ev
     end
