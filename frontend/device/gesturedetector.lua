@@ -82,19 +82,8 @@ local GestureDetector = {
     -- Hash of our currently active contacts
     active_contacts = {},
     contact_count = 0,
-    -- states are stored in separated slots
-    states = {},
-    pending_hold_timer = {},
-    track_ids = {},
-    -- latest touch events fed in each slot
-    last_tevs = {},
-    first_tevs = {},
     -- for multiswipe gestures
     multiswipe_directions = {},
-    -- finger down status for each slot
-    finger_down = {},
-    -- slot is pending a MT gesture
-    pending_mt_gesture = {},
     -- Used for double tap and bounce detection (this is outside a Contact object because it requires minimal persistance).
     previous_tap = {},
     -- for timestamp clocksource detection
@@ -161,22 +150,6 @@ function GestureDetector:dropContact(slot)
     -- FIXME: This should *probably* be contact-specific somehow...
     self.multiswipe_directions = {}
     self.multiswipe_type = nil
-end
-
-function GestureDetector:resetContact(slot)
-    self.states[slot] = self.initialState
-    self.pending_hold_timer[slot] = nil
-    self.finger_down[slot] = false
-    self.pending_mt_gesture[slot] = false
-    self.first_tevs[slot] = nil
-    self.last_tevs[slot] = nil
-
-    self.multiswipe_directions = {}
-    self.multiswipe_type = nil
-
-    -- Also clear any pending hold callbacks on that slot.
-    -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
-    self.input:clearTimeout(slot, "hold")
 end
 
 --[[--
@@ -335,39 +308,10 @@ function GestureDetector:getRotate(orig_point, start_point, end_point)
 end
 
 --[[
-Warning! This method won't update self.states, you need to do it in each state method!
+Warning! This method won't update the contact's state field, you need to do it in each state method!
 --]]
 function GestureDetector:switchState(state_new, tev, param)
     return self[state_new](self, tev, param)
-end
-
-function GestureDetector:getState(slot)
-    return self.states[slot]
-end
-
-function GestureDetector:setState(slot, state)
-    self.states[slot] = state
-end
-
-function GestureDetector:clearState(slot)
-    self.states[slot] = self.initialState
-    self.pending_hold_timer[slot] = nil
-    self.finger_down[slot] = false
-    self.pending_mt_gesture[slot] = false
-    self.first_tevs[slot] = nil
-    self.last_tevs[slot] = nil
-    self.multiswipe_directions = {}
-    self.multiswipe_type = nil
-
-    -- Also clear any pending hold callbacks on that slot.
-    -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
-    self.input:clearTimeout(slot, "hold")
-end
-
-function GestureDetector:clearStates()
-    for k, _ in pairs(self.states) do
-        self:clearState(k)
-    end
 end
 
 function GestureDetector:initialState(tev)
@@ -627,8 +571,8 @@ function GestureDetector:handleNonTap(slot, contact, tev)
         }
     else
         -- We're still inside a stream of input events, see if we need to switch to other states.
-        if (tev.x and math.abs(tev.x - self.first_tevs[slot].x) >= self.PAN_THRESHOLD) or
-        (tev.y and math.abs(tev.y - self.first_tevs[slot].y) >= self.PAN_THRESHOLD) then
+        if (tev.x and math.abs(tev.x - contact.initial_tev.x) >= self.PAN_THRESHOLD) or
+        (tev.y and math.abs(tev.y - contact.initial_tev.y) >= self.PAN_THRESHOLD) then
             -- If user's finger moved far enough on the X or Y axes, switch to pan state.
             return self:switchState("panState", tev)
         end
