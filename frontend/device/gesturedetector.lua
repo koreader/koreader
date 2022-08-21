@@ -79,11 +79,13 @@ local GestureDetector = {
         southeast = "diagonal",
         southwest = "diagonal",
     },
+    -- Hash of our currently active contacts
+    active_contacts = {},
+    contact_count = 0,
     -- states are stored in separated slots
     states = {},
     pending_hold_timer = {},
     track_ids = {},
-    tev_stacks = {},
     -- latest touch events fed in each slot
     last_tevs = {},
     first_tevs = {},
@@ -94,7 +96,7 @@ local GestureDetector = {
     -- slot is pending a MT gesture
     pending_mt_gesture = {},
     -- for single/double tap
-    last_taps = {},
+    last_taps = {}, -- FIXME: Rename to previous_tap
     -- for timestamp clocksource detection
     clock_id = nil,
     -- current values
@@ -125,6 +127,58 @@ function GestureDetector:init()
     self.MULTISWIPE_THRESHOLD = self.DOUBLE_TAP_DISTANCE
 end
 
+
+-- Contact object, it'll keep track of everything we need for a single contact across its lifetime
+-- (which should be a single gesture, i.e., from this contact's down to up (and up of its paired contacts for MT gestures)).
+-- We'll identify contacts by their slot numbers, and store 'em in GestureDetector's active_contacts table (hash).
+function GestureDetector:newContact(slot)
+    self.active_contacts[slot] = {
+        state = self.initialState, -- Current state function
+        id = -1, -- Current ABS_MT_TRACKING_ID value
+        initial_tev = nil, -- Copy of the input event table at first contact (i.e., at contact down)
+        current_tev = nil, -- Pointer to the current input event table
+        down = false, -- Contact is down (as opposed to up, i.e., lifted)
+        pending_hold_timer = false, -- Contact is pending a hold timer
+        pending_mt_gesture = false, -- Contact is pending a MT gesture
+    }
+    self.contact_count = self.contact_count + 1
+
+    return self.active_contacts[slot]
+end
+
+function GestureDetector:getContact(slot)
+    return self.active_contacts[slot]
+end
+
+function GestureDetector:dropContact(slot)
+    self.active_contacts[slot] = nil
+    self.contact_count = self.contact_count - 1
+
+    -- Also clear any pending hold callbacks on that slot.
+    -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
+    self.input:clearTimeout(slot, "hold")
+
+    -- FIXME: This should *probably* be contact-specific somehow...
+    self.multiswipe_directions = {}
+    self.multiswipe_type = nil
+end
+
+function GestureDetector:resetContact(slot)
+    self.states[slot] = self.initialState
+    self.pending_hold_timer[slot] = nil
+    self.finger_down[slot] = false
+    self.pending_mt_gesture[slot] = false
+    self.first_tevs[slot] = nil
+    self.last_tevs[slot] = nil
+
+    self.multiswipe_directions = {}
+    self.multiswipe_type = nil
+
+    -- Also clear any pending hold callbacks on that slot.
+    -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
+    self.input:clearTimeout(slot, "hold")
+end
+
 --[[--
 Feeds touch events to state machine.
 
@@ -135,17 +189,17 @@ function GestureDetector:feedEvent(tevs)
     local gestures = {}
     for _, tev in ipairs(tevs) do
         local slot = tev.slot
-        if not self.states[slot] then
-            self:clearState(slot) -- initialize slot state
-        end
-        local ges = self.states[slot](self, tev)
-        if tev.id ~= -1 then
+        local contact = self:getContact(slot)
+        if not contact then
+            contact = self:newContact(slot)
             -- NOTE: tev is actually a simple reference to Input's self.ev_slots[slot],
-            --       which means self.last_tevs[slot] doesn't actually point to the *previous*
+            --       which means a Contact's current_tev doesn't actually point to the *previous*
             --       input frame for a given slot, but always points to the *current* input frame for that slot!
-            --       Compare to self.first_tevs below, which does create a copy...
-            self.last_tevs[slot] = tev
+            --       Compare to initial_tev below, which does create a copy...
+            -- This is what allows us to only do this once on contact creation ;).
+            contact.current_tev = tev
         end
+        local ges = contact.state(self, tev)
         if ges then
             table.insert(gestures, ges)
         end
@@ -289,11 +343,9 @@ function GestureDetector:getRotate(orig_point, start_point, end_point)
 end
 
 --[[
-Warning! this method won't update self.states, you need to do it
-in each state method!
+Warning! This method won't update self.states, you need to do it in each state method!
 --]]
 function GestureDetector:switchState(state_new, tev, param)
-    --- @todo Do we need to check whether state is valid?    (houqp)
     return self[state_new](self, tev, param)
 end
 
@@ -327,21 +379,21 @@ function GestureDetector:clearStates()
 end
 
 function GestureDetector:initialState(tev)
-    local slot = tev.slot
+    local contact = self:getContact(tev.slot)
     if tev.id then
         -- Contact lift
         if tev.id == -1 then
-            self.finger_down[slot] = false
+            contact.down = false
         else
-            self.track_ids[slot] = tev.id
+            contact.id = tev.id
             if tev.x and tev.y then
                 -- Contact down, user starts a new touch motion
-                if not self.finger_down[slot] then
-                    self.finger_down[slot] = true
+                if not contact.down then
+                    contact.down = true
                     -- NOTE: We can't use a simple reference, because tev is actually Input's self.ev_slots[slot],
                     --       and *that* is a fixed reference for a given slot!
-                    --       Here, we really want to rememver the *first* tev, so, make a copy of it.
-                    self.first_tevs[slot] = self:deepCopyEv(tev)
+                    --       Here, we really want to remember the *first* tev, so, make a copy of it.
+                    contact.initial_tev = self:deepCopyEv(tev)
                     -- Default to tap state
                     return self:switchState("tapState", tev)
                 end
