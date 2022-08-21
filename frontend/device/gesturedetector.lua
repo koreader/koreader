@@ -131,6 +131,7 @@ function GestureDetector:newContact(slot)
         multiswipe_type = nil, -- Current multiswipe type for this contact
     }
     self.contact_count = self.contact_count + 1
+    logger.dbg("New contact for slot", slot, "#contacts =", self.contact_count)
 
     return self.active_contacts[slot]
 end
@@ -142,6 +143,7 @@ end
 function GestureDetector:dropContact(slot)
     self.active_contacts[slot] = nil
     self.contact_count = self.contact_count - 1
+    logger.dbg("Dropped contact for slot", slot, "#contacts =", self.contact_count)
 
     -- Also clear any pending hold callbacks on that slot.
     -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
