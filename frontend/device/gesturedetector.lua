@@ -150,6 +150,12 @@ function GestureDetector:dropContact(slot)
     self.input:clearTimeout(slot, "hold")
 end
 
+function GestureDetector:dropContacts()
+    for slot, _ in pairs(self.active_contacts) do
+        self:dropContact(slot)
+    end
+end
+
 --[[--
 Feeds touch events to state machine.
 
