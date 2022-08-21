@@ -82,8 +82,6 @@ local GestureDetector = {
     -- Hash of our currently active contacts
     active_contacts = {},
     contact_count = 0,
-    -- for multiswipe gestures
-    multiswipe_directions = {},
     -- Used for double tap and bounce detection (this is outside a Contact object because it requires minimal persistance).
     previous_tap = {},
     -- for timestamp clocksource detection
@@ -129,6 +127,8 @@ function GestureDetector:newContact(slot)
         down = false, -- Contact is down (as opposed to up, i.e., lifted)
         pending_hold_timer = false, -- Contact is pending a hold timer
         pending_mt_gesture = false, -- Contact is pending a MT gesture
+        multiswipe_directions = {}, -- Accumulated multiswipe chain for this contact
+        multiswipe_type = nil, -- Current multiswipe type for this contact
     }
     self.contact_count = self.contact_count + 1
 
@@ -146,10 +146,6 @@ function GestureDetector:dropContact(slot)
     -- Also clear any pending hold callbacks on that slot.
     -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
     self.input:clearTimeout(slot, "hold")
-
-    -- FIXME: This should *probably* be contact-specific somehow...
-    self.multiswipe_directions = {}
-    self.multiswipe_type = nil
 end
 
 --[[--
@@ -168,6 +164,7 @@ function GestureDetector:feedEvent(tevs)
             -- NOTE: tev is actually a simple reference to Input's self.ev_slots[slot],
             --       which means a Contact's current_tev doesn't actually point to the *previous*
             --       input frame for a given slot, but always points to the *current* input frame for that slot!
+            --       Meaning the tev we feed the state function *always* matches that Contact's current_tev.
             --       Compare to initial_tev below, which does create a copy...
             -- This is what allows us to only do this once on contact creation ;).
             contact.current_tev = tev
@@ -637,10 +634,10 @@ function GestureDetector:handleSwipe(slot, contact, tev)
     local ges = "swipe"
     local multiswipe_directions
 
-    if #self.multiswipe_directions > 1 then
+    if #contact.multiswipe_directions > 1 then
         ges = "multiswipe"
         multiswipe_directions = ""
-        for k, v in ipairs(self.multiswipe_directions) do
+        for k, v in ipairs(contact.multiswipe_directions) do
             local sep = ""
             if k > 1 then
                 sep = " "
@@ -711,20 +708,20 @@ function GestureDetector:handlePan(slot, contact, tev)
             h = 0,
         }
 
-        local msd_cnt = #self.multiswipe_directions
-        local msd_direction_prev = (msd_cnt > 0) and self.multiswipe_directions[msd_cnt][1] or ""
+        local msd_cnt = #contact.multiswipe_directions
+        local msd_direction_prev = (msd_cnt > 0) and contact.multiswipe_directions[msd_cnt][1] or ""
         local prev_ms_ev, fake_initial_tev
 
         if msd_cnt == 0 then
             -- determine whether to initiate a straight or diagonal multiswipe
-            self.multiswipe_type = "straight"
+            contact.multiswipe_type = "straight"
             if pan_direction ~= "north" and pan_direction ~= "south"
                and pan_direction ~= "east" and pan_direction ~= "west" then
-                self.multiswipe_type = "diagonal"
+                contact.multiswipe_type = "diagonal"
             end
         -- recompute a more accurate direction and distance in a multiswipe context
         elseif msd_cnt > 0 then
-            prev_ms_ev = self.multiswipe_directions[msd_cnt][2]
+            prev_ms_ev = contact.multiswipe_directions[msd_cnt][2]
             fake_initial_tev = {
                 x = prev_ms_ev.pos.x,
                 y = prev_ms_ev.pos.y,
@@ -733,7 +730,7 @@ function GestureDetector:handlePan(slot, contact, tev)
 
         -- the first time fake_initial_tev is nil, so the contact's initial_tev is automatically used instead
         local msd_direction, msd_distance
-        if self.multiswipe_type == "straight" then
+        if contact.multiswipe_type == "straight" then
             msd_direction, msd_distance = self:getPath(contact, true, false, fake_initial_tev)
         else
             msd_direction, msd_distance = self:getPath(contact, true, true, fake_initial_tev)
@@ -747,13 +744,13 @@ function GestureDetector:handlePan(slot, contact, tev)
                 pan_ev_multiswipe = util.tableDeepCopy(pan_ev)
             end
             if msd_direction ~= msd_direction_prev then
-                self.multiswipe_directions[msd_cnt+1] = {
+                contact.multiswipe_directions[msd_cnt+1] = {
                     [1] = msd_direction,
                     [2] = pan_ev_multiswipe,
                 }
             -- update ongoing swipe direction to the new maximum
             else
-                self.multiswipe_directions[msd_cnt] = {
+                contact.multiswipe_directions[msd_cnt] = {
                     [1] = msd_direction,
                     [2] = pan_ev_multiswipe,
                 }
