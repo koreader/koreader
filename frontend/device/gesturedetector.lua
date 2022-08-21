@@ -799,7 +799,7 @@ function GestureDetector:handleTwoFingerPan(contact, buddy_contact)
             pos = tstart_pos:midpoint(rstart_pos),
             distance = tpan_dis + rpan_dis,
             direction = tpan_dir,
-            time = tev.timev,
+            time = contact.current_tev.timev,
         }
         if tpan_dir ~= rpan_dir then
             if start_distance > end_distance then
@@ -818,7 +818,7 @@ function GestureDetector:handleTwoFingerPan(contact, buddy_contact)
             ges = "rotate",
             pos = rstart_pos,
             angle = angle,
-            time = tev.timev,
+            time = contact.current_tev.timev,
         }
     end
 end
