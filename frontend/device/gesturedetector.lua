@@ -257,23 +257,16 @@ function GestureDetector:isHold(time1, time2)
     return time_diff >= self.ges_hold_interval
 end
 
-function GestureDetector:isTwoFingerTap()
-    local s1 = self.input.main_finger_slot
-    local s2 = self.input.main_finger_slot + 1
-
-    if self.last_tevs[s1] == nil or self.last_tevs[s2] == nil then
-        logger.dbg("GestureDetector:isTwoFingerTap: One of the slot was never down")
-        return false
-    end
-    local x_diff0 = math.abs(self.last_tevs[s1].x - self.first_tevs[s1].x)
-    local x_diff1 = math.abs(self.last_tevs[s2].x - self.first_tevs[s2].x)
-    local y_diff0 = math.abs(self.last_tevs[s1].y - self.first_tevs[s1].y)
-    local y_diff1 = math.abs(self.last_tevs[s2].y - self.first_tevs[s2].y)
-    local time_diff0 = self.last_tevs[s1].timev - self.first_tevs[s1].timev
+function GestureDetector:isTwoFingerTap(contact, buddy_contact)
+    local x_diff0 = math.abs(contact.current_tev.x - contact.initial_tev.x)
+    local x_diff1 = math.abs(buddy_contact.current_tev.x - buddy_contact.initial_tev.x)
+    local y_diff0 = math.abs(contact.current_tev.y - contact.initial_tev.y)
+    local y_diff1 = math.abs(buddy_contact.current_tev.y - buddy_contact.initial_tev.y)
+    local time_diff0 = contact.current_tev.timev - contact.initial_tev.timev
     if time_diff0 < 0 then
         time_diff0 = time.huge
     end
-    local time_diff1 = self.last_tevs[s2].timev - self.first_tevs[s2].timev
+    local time_diff1 = buddy_contact.current_tev.timev - buddy_contact.initial_tev.timev
     if time_diff1 < 0 then
         time_diff1 = time.huge
     end
@@ -465,32 +458,35 @@ function GestureDetector:tapState(tev)
 
     local slot = tev.slot
     logger.dbg("slot", slot, "in tap state...")
+    local contact = self:getContact(slot)
+    -- Contact lift
     if tev.id == -1 then
-        local s1 = self.input.main_finger_slot
-        local s2 = self.input.main_finger_slot + 1
-        -- end of tap event
-        if (slot == s1 or slot == s2) and (self.finger_down[s1] or self.pending_mt_gesture[s1]) and (self.finger_down[s2] or self.pending_mt_gesture[s2]) then
-            if self:isTwoFingerTap() then
+        -- Check if this might be a two finger gesture by checking if the current slot is one of the two main slots, and the other is active.
+        local buddy_slot = slot == self.input.main_finger_slot and self.input.main_finger_slot + 1 or slot == self.input.main_finger_slot + 1 and self.input.main_finger_slot or nil
+        local buddy_contact = buddy_slot and self:getContact(buddy_slot) or nil
+        if buddy_contact and contact.down and (buddy_contact.down or buddy_contact.pending_mt_gesture) then
+            -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
+            if self:isTwoFingerTap(contact, buddy_contact) then
                 -- Mark that slot as pending and lifted, but leave its state alone
-                self.pending_mt_gesture[slot] = true
-                self.finger_down[slot] = false
+                contact.pending_mt_gesture = true
+                contact.down = false
 
                 -- Once both contacts have been lifted, we're good to go!
-                if self.pending_mt_gesture[s1] and self.pending_mt_gesture[s2] then
+                if contact.pending_mt_gesture and buddy_contact.pending_mt_gesture then
                     local pos0 = Geom:new{
-                        x = self.last_tevs[s1].x,
-                        y = self.last_tevs[s1].y,
+                        x = contact.current_tev.x,
+                        y = contact.current_tev.y,
                         w = 0, h = 0,
                     }
                     local pos1 = Geom:new{
-                        x = self.last_tevs[s2].x,
-                        y = self.last_tevs[s2].y,
+                        x = buddy_contact.current_tev.x,
+                        y = buddy_contact.current_tev.y,
                         w = 0, h = 0,
                     }
                     local tap_span = pos0:distance(pos1)
                     logger.dbg("two-finger tap detected with span", tap_span)
-                    self:clearState(s1)
-                    self:clearState(s2)
+                    self:dropContact(slot)
+                    self:dropContact(buddy_slot)
                     return {
                         ges = "two_finger_tap",
                         pos = pos0:midpoint(pos1),
@@ -499,11 +495,11 @@ function GestureDetector:tapState(tev)
                     }
                 end
             else
-                logger.dbg("Blew the two finger tap deadline")
-                -- One of the slot is down or pending a double tap, but we blew the gesture interval,
-                -- clear both slots and send a single tap on this slot.
-                self:clearState(s1)
-                self:clearState(s2)
+                logger.dbg("Blew the two finger tap constraints")
+                -- One of the slot is down or pending a double tap, but we blew the gesture position/time constraints,
+                -- drop both slots and send a single tap on this slot.
+                self:dropContact(slot)
+                self:dropContact(buddy_slot)
 
                 return {
                     ges = "tap",
@@ -515,24 +511,12 @@ function GestureDetector:tapState(tev)
                     time = tev.timev,
                 }
             end
-        elseif self.last_tevs[slot] ~= nil then
-            -- Normal single tap seems to always go thru here
-            -- (the next 'else' might be there for edge cases)
+        elseif contact.down then
+            -- Hand over to the double tap handler, it's responsible for downgrading to single tap
             return self:handleDoubleTap(tev)
-        else
-            -- last tev in this slot is cleared by last two finger tap
-            self:clearState(slot)
-            return {
-                ges = "tap",
-                pos = Geom:new{
-                    x = tev.x,
-                    y = tev.y,
-                    w = 0, h = 0,
-                },
-                time = tev.timev,
-            }
         end
     else
+        -- See if we need to do something with the move
         return self:handleNonTap(tev)
     end
 end
