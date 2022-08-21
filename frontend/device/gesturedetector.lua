@@ -282,17 +282,17 @@ function GestureDetector:isTwoFingerTap(contact, buddy_contact)
 end
 
 --[[--
-Compares `last_pan` with `first_tev` in this slot.
+Compares `current_tev` with `initial_tev` in this slot.
 
 The second boolean argument `simple` results in only four directions if true.
 
 @return (direction, distance) pan direction and distance
 --]]
-function GestureDetector:getPath(slot, simple, diagonal, first_tev)
-    first_tev = first_tev or self.first_tevs
+function GestureDetector:getPath(contact, simple, diagonal, initial_tev)
+    initial_tev = initial_tev or contact.initial_tev
 
-    local x_diff = self.last_tevs[slot].x - first_tev[slot].x
-    local y_diff = self.last_tevs[slot].y - first_tev[slot].y
+    local x_diff = contact.current_tev.x - initial_tev.x
+    local y_diff = contact.current_tev.y - initial_tev.y
     local direction = nil
     local distance = math.sqrt(x_diff*x_diff + y_diff*y_diff)
     if x_diff ~= 0 or y_diff ~= 0 then
@@ -303,7 +303,7 @@ function GestureDetector:getPath(slot, simple, diagonal, first_tev)
             and math.abs(y_diff) < 1.732*math.abs(x_diff))
            or (simple and diagonal)
         then
-            direction = v_direction..h_direction
+            direction = v_direction .. h_direction
         elseif (math.abs(x_diff) > math.abs(y_diff)) then
             direction = h_direction
         else
@@ -313,15 +313,14 @@ function GestureDetector:getPath(slot, simple, diagonal, first_tev)
     return direction, distance
 end
 
-function GestureDetector:isSwipe(slot)
-    if not self.first_tevs[slot] or not self.last_tevs[slot] then return end
-    local time_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
+function GestureDetector:isSwipe(contact)
+    local time_diff = contact.current_tev.timev - contact.initial_tev.timev
     if time_diff < 0 then
         time_diff = time.huge
     end
     if time_diff < self.ges_swipe_interval then
-        local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
-        local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
+        local x_diff = contact.current_tev.x - contact.initial_tev.x
+        local y_diff = contact.current_tev.y - contact.initial_tev.y
         if x_diff ~= 0 or y_diff ~= 0 then
             return true
         end
@@ -474,14 +473,16 @@ function GestureDetector:tapState(tev)
                 -- Once both contacts have been lifted, we're good to go!
                 if contact.pending_mt_gesture and buddy_contact.pending_mt_gesture then
                     local pos0 = Geom:new{
-                        x = contact.current_tev.x,
-                        y = contact.current_tev.y,
-                        w = 0, h = 0,
+                        x = tev.x,
+                        y = tev.y,
+                        w = 0,
+                        h = 0,
                     }
                     local pos1 = Geom:new{
                         x = buddy_contact.current_tev.x,
                         y = buddy_contact.current_tev.y,
-                        w = 0, h = 0,
+                        w = 0,
+                        h = 0,
                     }
                     local tap_span = pos0:distance(pos1)
                     logger.dbg("two-finger tap detected with span", tap_span)
@@ -514,17 +515,15 @@ function GestureDetector:tapState(tev)
             end
         elseif contact.down then
             -- Hand over to the double tap handler, it's responsible for downgrading to single tap
-            return self:handleDoubleTap(tev)
+            return self:handleDoubleTap(slot, contact, tev)
         end
     else
         -- See if we need to do something with the move/hold
-        return self:handleNonTap(tev)
+        return self:handleNonTap(slot, contact, tev)
     end
 end
 
-function GestureDetector:handleDoubleTap(tev)
-    local slot = tev.slot
-    local contact = self:getContact(slot)
+function GestureDetector:handleDoubleTap(slot, contact, tev)
     local ges_ev = {
         -- Default to single tap
         ges = "tap",
@@ -595,9 +594,7 @@ function GestureDetector:handleDoubleTap(tev)
     contact.down = false
 end
 
-function GestureDetector:handleNonTap(tev)
-    local slot = tev.slot
-    local contact = self:getContact(slot)
+function GestureDetector:handleNonTap(slot, contact, tev)
     if contact.state ~= self.tapState then
         -- Switched from other state, probably from initialState
         -- We return a move for now in this case.
@@ -608,7 +605,7 @@ function GestureDetector:handleNonTap(tev)
         contact.pending_hold_timer = true
         self.input:setTimeout(slot, "hold", function()
             -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
-            -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through dropState by a finger up gesture),
+            -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through dropContact by a finger up gesture),
             -- then check that we're still in a stationary finger down state (e.g., tapState).
             -- NOTE: We need to check that the current contact in this slot is *still* the same object first, because closure ;).
             if contact == self:getContact(slot) and contact.pending_hold_timer and contact.state == self.tapState and contact.down then
@@ -641,46 +638,57 @@ end
 function GestureDetector:panState(tev)
     local slot = tev.slot
     logger.dbg("slot", slot, "in pan state...")
+    local contact = self:getContact(slot)
     if tev.id == -1 then
-        -- end of pan, signal swipe gesture if necessary
-        if self:isSwipe(slot) then
-            local s1 = self.input.main_finger_slot
-            local s2 = self.input.main_finger_slot + 1
-            if (slot == s1 or slot == s2) and self.finger_down[s1] and self.finger_down[s2] then
-                local ges_ev = self:handleTwoFingerPan(tev)
-                self:clearState(slot)
-                if ges_ev then
-                    if ges_ev.ges == "two_finger_pan" then
-                        ges_ev.ges = "two_finger_swipe"
-                    elseif ges_ev.ges == "inward_pan" then
-                        ges_ev.ges = "pinch"
-                    elseif ges_ev.ges == "outward_pan" then
-                        ges_ev.ges = "spread"
+        -- End of pan, signal swipe gesture if necessary
+        if self:isSwipe(contact) then
+            -- Check if this might be a two finger gesture by checking if the current slot is one of the two main slots, and the other is active.
+            local buddy_slot = slot == self.input.main_finger_slot and self.input.main_finger_slot + 1 or slot == self.input.main_finger_slot + 1 and self.input.main_finger_slot or nil
+            local buddy_contact = buddy_slot and self:getContact(buddy_slot) or nil
+            if buddy_contact and contact.down and (buddy_contact.down or buddy_contact.pending_mt_gesture) then
+                -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
+                -- Mark that slot as pending and lifted, but leave its state alone
+                contact.pending_mt_gesture = true
+                contact.down = false
+
+                -- Once both contacts have been lifted, we're good to go!
+                if contact.pending_mt_gesture and buddy_contact.pending_mt_gesture then
+                    local ges_ev = self:handleTwoFingerPan(contact, buddy_contact)
+                    if ges_ev then
+                        if ges_ev.ges == "two_finger_pan" then
+                            ges_ev.ges = "two_finger_swipe"
+                        elseif ges_ev.ges == "inward_pan" then
+                            ges_ev.ges = "pinch"
+                        elseif ges_ev.ges == "outward_pan" then
+                            ges_ev.ges = "spread"
+                        end
+                        logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
                     end
-                    logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
+                    self:dropContact(slot)
+                    self:dropContact(buddy_slot)
+                    return ges_ev
                 end
-                return ges_ev
             else
-                return self:handleSwipe(tev)
+                return self:handleSwipe(slot, contact, tev)
             end
         else -- if end of pan is not swipe then it must be pan release.
-            return self:handlePanRelease(tev)
+            return self:handlePanRelease(slot, contact, tev)
         end
     else
-        if self.states[slot] ~= self.panState then
-            self.states[slot] = self.panState
+        if contact.state ~= self.panState then
+            contact.state = self.panState
         end
-        return self:handlePan(tev)
+        return self:handlePan(slot, contact, tev)
     end
 end
 
-function GestureDetector:handleSwipe(tev)
-    local slot = tev.slot
-    local swipe_direction, swipe_distance = self:getPath(slot)
+function GestureDetector:handleSwipe(slot, contact, tev)
+    local swipe_direction, swipe_distance = self:getPath(contact)
     local start_pos = Geom:new{
-        x = self.first_tevs[slot].x,
-        y = self.first_tevs[slot].y,
-        w = 0, h = 0,
+        x = contact.initial_tev.x,
+        y = contact.initial_tev.y,
+        w = 0,
+        h = 0,
     }
     local ges = "swipe"
     local multiswipe_directions
@@ -705,7 +713,7 @@ function GestureDetector:handleSwipe(tev)
         swipe_direction = "west"
     end
     logger.dbg("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
-    self:clearState(slot)
+    self:dropContact(slot)
     return {
         ges = ges,
         -- use first pan tev coordination as swipe start point
@@ -717,8 +725,7 @@ function GestureDetector:handleSwipe(tev)
     }
 end
 
-function GestureDetector:handlePan(tev)
-    local slot = tev.slot
+function GestureDetector:handlePan(slot, contact, tev)
     local s1 = self.input.main_finger_slot
     local s2 = self.input.main_finger_slot + 1
     if (slot == s1 or slot == s2) and self.finger_down[s1] and self.finger_down[s2] then
@@ -745,7 +752,8 @@ function GestureDetector:handlePan(tev)
         pan_ev.pos = Geom:new{
             x = self.last_tevs[slot].x,
             y = self.last_tevs[slot].y,
-            w = 0, h = 0,
+            w = 0,
+            h = 0,
         }
 
         local msd_cnt = #self.multiswipe_directions
@@ -804,41 +812,41 @@ function GestureDetector:handlePan(tev)
     end
 end
 
-function GestureDetector:handleTwoFingerPan(tev)
-    local s1 = self.input.main_finger_slot
-    local s2 = self.input.main_finger_slot + 1
-    -- triggering slot
-    local tslot = tev.slot
-    -- reference slot
-    local rslot = tslot == s2 and s1 or s2
-    local tpan_dir, tpan_dis = self:getPath(tslot)
+function GestureDetector:handleTwoFingerPan(contact, buddy_contact)
+    -- triggering contact is contact,
+    -- reference contact is buddy_contact
+    local tpan_dir, tpan_dis = self:getPath(contact)
     local tstart_pos = Geom:new{
-        x = self.first_tevs[tslot].x,
-        y = self.first_tevs[tslot].y,
-        w = 0, h = 0,
+        x = contact.initial_tev.x,
+        y = contact.initial_tev.y,
+        w = 0,
+        h = 0,
     }
     local tend_pos = Geom:new{
-        x = self.last_tevs[tslot].x,
-        y = self.last_tevs[tslot].y,
-        w = 0, h = 0,
+        x = contact.current_tev.x,
+        y = contact.current_tev.y,
+        w = 0,
+        h = 0,
     }
     local rstart_pos = Geom:new{
-        x = self.first_tevs[rslot].x,
-        y = self.first_tevs[rslot].y,
-        w = 0, h = 0,
+        x = buddy_contact.initial_tev.x,
+        y = buddy_contact.initial_tev.y,
+        w = 0,
+        h = 0,
     }
-    if self.states[rslot] == self.panState then
-        local rpan_dir, rpan_dis = self:getPath(rslot)
+    if buddy_contact.state == self.panState then
+        local rpan_dir, rpan_dis = self:getPath(buddy_contact)
         local rend_pos = Geom:new{
-            x = self.last_tevs[rslot].x,
-            y = self.last_tevs[rslot].y,
-            w = 0, h = 0,
+            x = buddy_contact.current_tev.x,
+            y = buddy_contact.current_tev.y,
+            w = 0,
+            h = 0,
         }
         local start_distance = tstart_pos:distance(rstart_pos)
         local end_distance = tend_pos:distance(rend_pos)
         local ges_ev = {
             ges = "two_finger_pan",
-            -- use midpoint of tstart and rstart as swipe start point
+            -- Use midpoint of tstart and rstart as swipe start point
             pos = tstart_pos:midpoint(rstart_pos),
             distance = tpan_dis + rpan_dis,
             direction = tpan_dir,
@@ -854,7 +862,7 @@ function GestureDetector:handleTwoFingerPan(tev)
         end
         logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
         return ges_ev
-    elseif self.states[rslot] == self.holdState then
+    elseif buddy_contact.state == self.holdState then
         local angle = self:getRotate(rstart_pos, tstart_pos, tend_pos)
         logger.dbg("rotate", angle, "detected")
         return {
@@ -866,12 +874,12 @@ function GestureDetector:handleTwoFingerPan(tev)
     end
 end
 
-function GestureDetector:handlePanRelease(tev)
-    local slot = tev.slot
+function GestureDetector:handlePanRelease(slot, contact, tev)
     local release_pos = Geom:new{
-        x = self.last_tevs[slot].x,
-        y = self.last_tevs[slot].y,
-        w = 0, h = 0,
+        x = tev.x,
+        y = tev.y,
+        w = 0,
+        h = 0,
     }
     local pan_ev = {
         ges = "pan_release",
@@ -902,7 +910,8 @@ function GestureDetector:holdState(tev, hold)
             pos = Geom:new{
                 x = self.last_tevs[slot].x,
                 y = self.last_tevs[slot].y,
-                w = 0, h = 0,
+                w = 0,
+                h = 0,
             },
             time = tev.timev,
         }
@@ -917,7 +926,8 @@ function GestureDetector:holdState(tev, hold)
             pos = Geom:new{
                 x = last_x,
                 y = last_y,
-                w = 0, h = 0,
+                w = 0,
+                h = 0,
             },
             time = tev.timev,
         }
