@@ -617,8 +617,8 @@ function Contact:handleNonTap()
         }
     else
         -- We're still inside a stream of input events, see if we need to switch to other states.
-        if (tev.x and math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
-        (tev.y and math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
+        if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
+        (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
             -- If user's finger moved far enough on the X or Y axes, switch to pan state.
             return self:panState()
         end
@@ -986,7 +986,7 @@ function Contact:holdState(hold)
 
     logger.dbg("slot", slot, "in hold state...")
     -- When we switch to hold state, we pass an additional boolean param "hold".
-    if tev.id ~= -1 and hold and tev.x and tev.y then
+    if tev.id ~= -1 and hold then
         self.state = Contact.holdState
         return {
             ges = "hold",
@@ -998,7 +998,7 @@ function Contact:holdState(hold)
             },
             time = tev.timev,
         }
-    elseif tev.id == -1 and tev.x and tev.y then
+    elseif tev.id == -1 then
         -- end of hold, signal hold release
         logger.dbg("hold_release detected in slot", slot)
         gesture_detector:dropContact(self)
@@ -1012,8 +1012,8 @@ function Contact:holdState(hold)
             },
             time = tev.timev,
         }
-    elseif tev.id ~= -1 and ((tev.x and math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
-        (tev.y and math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD)) then
+    elseif tev.id ~= -1 and ((math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
+        (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD)) then
         local ges_ev = self:handlePan()
         if ges_ev ~= nil then ges_ev.ges = "hold_pan" end
         return ges_ev
