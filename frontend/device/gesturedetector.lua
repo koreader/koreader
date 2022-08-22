@@ -121,6 +121,7 @@ end
 function GestureDetector:newContact(slot)
     self.active_contacts[slot] = {
         state = self.initialState, -- Current state function
+        slot = slot, -- Current ABS_MT_SLOT value (also its key in the active_contacts hash)
         id = -1, -- Current ABS_MT_TRACKING_ID value
         initial_tev = nil, -- Copy of the input event table at first contact (i.e., at contact down)
         current_tev = nil, -- Pointer to the current input event table, *stable*, c.f., NOTE in feedEvent below
@@ -141,7 +142,8 @@ function GestureDetector:getContact(slot)
     return self.active_contacts[slot]
 end
 
-function GestureDetector:dropContact(slot, contact)
+function GestureDetector:dropContact(contact)
+    local slot = contact.slot
     -- Also clear any pending callbacks on that slot.
     if contact.pending_double_tap_timer then
         self.input:clearTimeout(slot, "double_tap")
@@ -156,8 +158,8 @@ function GestureDetector:dropContact(slot, contact)
 end
 
 function GestureDetector:dropContacts()
-    for slot, contact in pairs(self.active_contacts) do
-        self:dropContact(slot, contact)
+    for _, contact in pairs(self.active_contacts) do
+        self:dropContact(contact)
     end
 end
 
@@ -442,8 +444,8 @@ function GestureDetector:tapState(tev)
                     }
                     local tap_span = pos0:distance(pos1)
                     logger.dbg("two-finger tap detected with span", tap_span)
-                    self:dropContact(slot, contact)
-                    self:dropContact(buddy_slot, buddy_contact)
+                    self:dropContact(contact)
+                    self:dropContact(buddy_contact)
                     return {
                         ges = "two_finger_tap",
                         pos = pos0:midpoint(pos1),
@@ -455,15 +457,15 @@ function GestureDetector:tapState(tev)
                 -- If both contacts are up and we haven't detected any gesture, forget about 'em (should never happen).
                 if contact.down == false and buddy_contact.down == false then
                     logger.warn("GestureDetector:tapState Cancelled two-finger gesture on slots", slot, buddy_slot)
-                    self:dropContact(slot, contact)
-                    self:dropContact(buddy_slot, buddy_contact)
+                    self:dropContact(contact)
+                    self:dropContact(buddy_contact)
                 end
             else
                 logger.dbg("Two finger tap failed to pass the two_finger_tap constraints")
                 -- One of the slot is down or pending a double tap, but we blew the gesture position/time constraints,
                 -- drop both slots and send a single tap on this slot.
-                self:dropContact(slot, contact)
-                self:dropContact(buddy_slot, buddy_contact)
+                self:dropContact(contact)
+                self:dropContact(buddy_contact)
 
                 return {
                     ges = "tap",
@@ -482,7 +484,7 @@ function GestureDetector:tapState(tev)
         else
             -- Huh, caught a *second* contact lift for this contact? (should never happen).
             logger.warn("GestureDetector:tapState Cancelled gesture on slot", slot)
-            self:dropContact(slot, contact)
+            self:dropContact(contact)
         end
     else
         -- See if we need to do something with the move/hold
@@ -516,13 +518,13 @@ function GestureDetector:handleDoubleTap(slot, contact, tev)
     if tap_interval ~= 0 and self.previous_tap[slot] ~= nil and self:isTapBounce(self.previous_tap[slot], cur_tap, tap_interval) then
         logger.dbg("tap bounce detected in slot", slot, ": ignored")
         -- Simply ignore it, and drop this slot as this is the end of a touch event.
-        self:dropContact(slot, contact)
+        self:dropContact(contact)
         return
     end
 
     if not self.input.disable_double_tap and contact.pending_double_tap_timer and self:isDoubleTap(self.previous_tap[slot], cur_tap) then
         -- It is a double tap
-        self:dropContact(slot, contact)
+        self:dropContact(contact)
         ges_ev.ges = "double_tap"
         logger.dbg("double tap detected in slot", slot)
         return ges_ev
@@ -535,7 +537,7 @@ function GestureDetector:handleDoubleTap(slot, contact, tev)
     if self.input.disable_double_tap then
         -- We can send the event immediately (no need for the timer stuff needed for double tap support)
         logger.dbg("single tap detected in slot", slot, ges_ev.pos)
-        self:dropContact(slot, contact)
+        self:dropContact(contact)
         return ges_ev
     end
 
@@ -553,7 +555,7 @@ function GestureDetector:handleDoubleTap(slot, contact, tev)
                     -- A single or double tap will yield a different contact object, by virtue of dropContact and closure magic ;).
                     -- Speaking of closures, this is the original ges_ev from the timer setup.
                     logger.dbg("single tap detected in slot", slot, ges_ev.pos)
-                    self:dropContact(slot, contact)
+                    self:dropContact(contact)
                     return ges_ev
                 end
             end
@@ -653,11 +655,11 @@ function GestureDetector:panState(tev)
                             if ges_ev.ges == "rotate" then
                                 -- For rotate, only drop contact right now (as it's the only contact lift),
                                 -- and switch buddy to a neutered state so that it's ignored until lift.
-                                self:dropContact(slot, contact)
+                                self:dropContact(contact)
                                 buddy_contact.state = self.voidState
                             else
-                                self:dropContact(slot, contact)
-                                self:dropContact(buddy_slot, buddy_contact)
+                                self:dropContact(contact)
+                                self:dropContact(buddy_contact)
                             end
                             return ges_ev
                         end
@@ -667,8 +669,8 @@ function GestureDetector:panState(tev)
                 -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
                 if contact.down == false and buddy_contact.down == false then
                     logger.warn("GestureDetector:panState Cancelled gesture on slots", slot, buddy_slot)
-                    self:dropContact(slot, contact)
-                    self:dropContact(buddy_slot, buddy_contact)
+                    self:dropContact(contact)
+                    self:dropContact(buddy_contact)
                 end
             else
                 return self:handleSwipe(slot, contact, tev)
@@ -691,7 +693,7 @@ function GestureDetector:voidState(tev)
     -- We basically don't do anything but drop the slot on contact lift
     if tev.id == -1 then
         logger.dbg("contact lift detected in slot", slot)
-        self:dropContact(slot, self:getContact(slot))
+        self:dropContact(self:getContact(slot))
     end
 end
 
@@ -726,7 +728,7 @@ function GestureDetector:handleSwipe(slot, contact, tev)
         swipe_direction = "west"
     end
     logger.dbg("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
-    self:dropContact(slot, contact)
+    self:dropContact(contact)
     return {
         ges = ges,
         -- use first pan tev coordination as swipe start point
@@ -925,20 +927,20 @@ function GestureDetector:handlePanRelease(slot, contact, tev)
         if contact.pending_mt_gesture == "pan_release" and buddy_contact.pending_mt_gesture == "pan_release" then
             logger.dbg("two finger pan release detected")
             pan_ev.ges = "two_finger_pan_release"
-            self:dropContact(slot, contact)
-            self:dropContact(buddy_slot, buddy_contact)
+            self:dropContact(contact)
+            self:dropContact(buddy_contact)
             return pan_ev
         end
 
         -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
         if contact.down == false and buddy_contact.down == false then
             logger.warn("GestureDetector:handlePanRelease Cancelled gesture on slots", slot, buddy_slot)
-            self:dropContact(slot, contact)
-            self:dropContact(buddy_slot, buddy_contact)
+            self:dropContact(contact)
+            self:dropContact(buddy_contact)
         end
     else
         logger.dbg("pan release detected in slot", slot)
-        self:dropContact(slot, contact)
+        self:dropContact(contact)
         return pan_ev
     end
 end
@@ -963,7 +965,7 @@ function GestureDetector:holdState(tev, hold)
     elseif tev.id == -1 and tev.x and tev.y then
         -- end of hold, signal hold release
         logger.dbg("hold_release detected in slot", slot)
-        self:dropContact(slot, contact)
+        self:dropContact(contact)
         return {
             ges = "hold_release",
             pos = Geom:new{
