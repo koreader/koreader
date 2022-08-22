@@ -337,7 +337,10 @@ function Contact:initialState()
     if tev.id then
         -- Contact lift
         if tev.id == -1 then
-            self.down = false
+            -- If this slot was a buddy slot that happened to be dropped by a MT gesture in the *same* input frame,
+            -- a lift might be the first thing we process here... We can safely drop it again.
+            logger.dbg("Contact:initialState Cancelled gesture on slot", self.slot)
+            gesture_detector:dropContact(self)
         else
             self.id = tev.id
             if tev.x and tev.y then
