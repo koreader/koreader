@@ -251,6 +251,8 @@ function GestureDetector:isHold(time1, time2)
 end
 
 function Contact:isTwoFingerTap(buddy_contact)
+    local gesture_detector = self.ges_dec
+
     local x_diff0 = math.abs(self.current_tev.x - self.initial_tev.x)
     local x_diff1 = math.abs(buddy_contact.current_tev.x - buddy_contact.initial_tev.x)
     local y_diff0 = math.abs(self.current_tev.y - self.initial_tev.y)
@@ -263,14 +265,14 @@ function Contact:isTwoFingerTap(buddy_contact)
     if time_diff1 < 0 then
         time_diff1 = time.huge
     end
-    logger.dbg("Contact:isTwoFingerTap: x_diff0:", x_diff0, "x_diff1:", x_diff1, "y_diff0:", y_diff0, "y_diff1:", y_diff1, "TWO_FINGER_TAP_REGION:", self.TWO_FINGER_TAP_REGION, "time_diff0:", time_diff0, "time_diff1:", time_diff1, "ges_two_finger_tap_duration:", self.ges_two_finger_tap_duration)
+    logger.dbg("Contact:isTwoFingerTap: x_diff0:", x_diff0, "x_diff1:", x_diff1, "y_diff0:", y_diff0, "y_diff1:", y_diff1, "TWO_FINGER_TAP_REGION:", gesture_detector.TWO_FINGER_TAP_REGION, "time_diff0:", time_diff0, "time_diff1:", time_diff1, "ges_two_finger_tap_duration:", gesture_detector.ges_two_finger_tap_duration)
     return (
-        x_diff0 < self.TWO_FINGER_TAP_REGION and
-        x_diff1 < self.TWO_FINGER_TAP_REGION and
-        y_diff0 < self.TWO_FINGER_TAP_REGION and
-        y_diff1 < self.TWO_FINGER_TAP_REGION and
-        time_diff0 < self.ges_two_finger_tap_duration and
-        time_diff1 < self.ges_two_finger_tap_duration
+        x_diff0 < gesture_detector.TWO_FINGER_TAP_REGION and
+        x_diff1 < gesture_detector.TWO_FINGER_TAP_REGION and
+        y_diff0 < gesture_detector.TWO_FINGER_TAP_REGION and
+        y_diff1 < gesture_detector.TWO_FINGER_TAP_REGION and
+        time_diff0 < gesture_detector.ges_two_finger_tap_duration and
+        time_diff1 < gesture_detector.ges_two_finger_tap_duration
     )
 end
 
@@ -414,7 +416,7 @@ function Contact:tapState()
 
     -- Attempt to detect the clock source for these events (we reset it on suspend to discriminate MONOTONIC from BOOTTIME).
     if not gesture_detector.clock_id then
-        gesture_detector.probeClockSource(tev.timev)
+        gesture_detector:probeClockSource(tev.timev)
     end
 
     logger.dbg("slot", slot, "in tap state...")
@@ -613,8 +615,8 @@ function Contact:handleNonTap()
         }
     else
         -- We're still inside a stream of input events, see if we need to switch to other states.
-        if (tev.x and math.abs(tev.x - self.initial_tev.x) >= self.PAN_THRESHOLD) or
-        (tev.y and math.abs(tev.y - self.initial_tev.y) >= self.PAN_THRESHOLD) then
+        if (tev.x and math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
+        (tev.y and math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
             -- If user's finger moved far enough on the X or Y axes, switch to pan state.
             return self:panState()
         end
