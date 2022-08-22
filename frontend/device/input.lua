@@ -1192,7 +1192,7 @@ function Input:waitEvent(now, deadline)
                             touch_ges = self.timer_callbacks[1].callback()
                         end
 
-                        -- Cleanup; GestureDetector has guards in place to avoud double-frees.
+                        -- Cleanup; GestureDetector has guards in place to avoid double frees because of the callback.
                         if timerfd then
                             input.clearTimer(timerfd)
                         end
