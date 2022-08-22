@@ -1194,11 +1194,11 @@ function Input:waitEvent(now, deadline)
 
                         -- NOTE: If it was a timerfd, we *may* also need to close the fd.
                         --       GestureDetector only calls Input:setTimeout for "hold" & "double_tap" gestures.
-                        --       For double taps, the callback itself doesn't interact with the timer_callbacks list,
-                        --       but for holds, it *will* call GestureDetector:clearState on "hold_release" (and *only* then),
+                        --       * For holds, it *will* call GestureDetector:dropContact on "hold_release" (and *only* then),
                         --       and *that* already takes care of pop'ping the (hold) timer and closing the fd,
                         --       via Input:clearTimeout(slot, "hold")...
-                        if not touch_ges or touch_ges.ges ~= "hold_release" then
+                        --       * For double taps, ditto if the callback yields a "tap"
+                        if not touch_ges or (touch_ges.ges ~= "hold_release" and touch_ges.ges ~= "tap") then
                             -- That leaves explicit cleanup to every other case (i.e., nil or every other gesture)
                             if timerfd then
                                 input.clearTimer(timerfd)
