@@ -609,22 +609,36 @@ function GestureDetector:panState(tev)
                 contact.down = false
                 logger.dbg("Flagged slot", slot, "as pending a two_finger_swipe/pinch/spread")
 
-                -- Once both contacts have been lifted, we're good to go!
-                if contact.pending_mt_gesture == "swipe" and buddy_contact.pending_mt_gesture == "swipe" then
+                -- NOTE: There's a slight trickery involved here to handle the rotate gesture,
+                --       which requires contact to have been lifted, but buddy_contact to still be in hold state...
+                if contact.pending_mt_gesture == "swipe" and (buddy_contact.pending_mt_gesture == "swipe" or (buddy_contact.down and buddy_contact.state == self.holdState)) then
                     local ges_ev = self:handleTwoFingerPan(contact, buddy_contact)
                     if ges_ev then
-                        if ges_ev.ges == "two_finger_pan" then
-                            ges_ev.ges = "two_finger_swipe"
-                        elseif ges_ev.ges == "inward_pan" then
-                            ges_ev.ges = "pinch"
-                        elseif ges_ev.ges == "outward_pan" then
-                            ges_ev.ges = "spread"
+                        if buddy_contact.pending_mt_gesture == "swipe" then
+                            -- Only accept gestures that require both contacts to have been lifted
+                            if ges_ev.ges == "two_finger_pan" then
+                                ges_ev.ges = "two_finger_swipe"
+                            elseif ges_ev.ges == "inward_pan" then
+                                ges_ev.ges = "pinch"
+                            elseif ges_ev.ges == "outward_pan" then
+                                ges_ev.ges = "spread"
+                            else
+                                ges_ev = nil
+                            end
+                        else
+                            -- Only accept the rotate gesture
+                            if ges_ev.ges ~= "rotate" then
+                                ges_ev = nil
+                            end
                         end
-                        logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
+
+                        if ges_ev then
+                            logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
+                            self:dropContact(slot)
+                            self:dropContact(buddy_slot)
+                            return ges_ev
+                        end
                     end
-                    self:dropContact(slot)
-                    self:dropContact(buddy_slot)
-                    return ges_ev
                 end
 
                 -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
