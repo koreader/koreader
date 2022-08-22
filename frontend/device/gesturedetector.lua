@@ -562,7 +562,7 @@ function Contact:handleDoubleTap()
             logger.dbg("in double tap timer for slot", slot, "single tap:", self == gesture_detector:getContact(slot))
             if self == gesture_detector:getContact(slot) and self.pending_double_tap_timer then
                 self.pending_double_tap_timer = false
-                if self.state == self.tapState then
+                if self.state == Contact.tapState then
                     -- A single or double tap will yield a different contact object, by virtue of dropContact and closure magic ;).
                     -- Speaking of closures, this is the original ges_ev from the timer setup.
                     logger.dbg("single tap detected in slot", slot, ges_ev.pos)
@@ -583,10 +583,10 @@ function Contact:handleNonTap()
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
-    if self.state ~= self.tapState then
+    if self.state ~= Contact.tapState then
         -- Switched from other state, probably from initialState
         -- We return a move for now in this case.
-        self.state = self.tapState
+        self.state = Contact.tapState
         logger.dbg("set up hold timer for slot", slot)
         if not self.pending_hold_timer then
             self.pending_hold_timer = true
@@ -597,7 +597,7 @@ function Contact:handleNonTap()
                 -- NOTE: We need to check that the current contact in this slot is *still* the same object first, because closure ;).
                 if self == gesture_detector:getContact(slot) and self.pending_hold_timer then
                     self.pending_hold_timer = nil
-                    if self.state == self.tapState and self.down then
+                    if self.state == Contact.tapState and self.down then
                         -- That means we can switch to hold
                         logger.dbg("hold gesture detected in slot", slot)
                         return self:holdState(true)
@@ -646,7 +646,7 @@ function Contact:panState()
 
                 -- NOTE: There's a slight trickery involved here to handle the rotate gesture,
                 --       which requires contact to have been lifted, but buddy_contact to still be in hold state...
-                if self.pending_mt_gesture == "swipe" and (buddy_contact.pending_mt_gesture == "swipe" or (buddy_contact.down and buddy_contact.state == self.holdState)) then
+                if self.pending_mt_gesture == "swipe" and (buddy_contact.pending_mt_gesture == "swipe" or (buddy_contact.down and buddy_contact.state == Contact.holdState)) then
                     local ges_ev = self:handleTwoFingerPan(buddy_contact)
                     if ges_ev then
                         if buddy_contact.pending_mt_gesture == "swipe" then
@@ -673,7 +673,7 @@ function Contact:panState()
                                 -- For rotate, only drop contact right now (as it's the only contact lift),
                                 -- and switch buddy to a neutered state so that it's ignored until lift.
                                 gesture_detector:dropContact(self)
-                                buddy_contact.state = self.voidState
+                                buddy_contact.state = Contact.voidState
                             else
                                 gesture_detector:dropContact(self)
                                 gesture_detector:dropContact(buddy_contact)
@@ -696,8 +696,8 @@ function Contact:panState()
             return self:handlePanRelease()
         end
     else
-        if self.state ~= self.panState then
-            self.state = self.panState
+        if self.state ~= Contact.panState then
+            self.state = Contact.panState
         end
         return self:handlePan()
     end
@@ -892,7 +892,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
         w = 0,
         h = 0,
     }
-    if buddy_contact.state == self.panState then
+    if buddy_contact.state == Contact.panState then
         local rpan_dir, rpan_dis = buddy_contact:getPath()
         local rend_pos = Geom:new{
             x = buddy_contact.current_tev.x,
@@ -920,7 +920,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
         end
         logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
         return ges_ev
-    elseif buddy_contact.state == self.holdState then
+    elseif buddy_contact.state == Contact.holdState then
         local angle = gesture_detector:getRotate(rstart_pos, tstart_pos, tend_pos)
         logger.dbg("rotate", angle, "detected")
         return {
@@ -987,7 +987,7 @@ function Contact:holdState(hold)
     logger.dbg("slot", slot, "in hold state...")
     -- When we switch to hold state, we pass an additional boolean param "hold".
     if tev.id ~= -1 and hold and tev.x and tev.y then
-        self.state = self.holdState
+        self.state = Contact.holdState
         return {
             ges = "hold",
             pos = Geom:new{
