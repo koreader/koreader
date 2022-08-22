@@ -780,6 +780,11 @@ function Contact:handlePan()
             self.pending_mt_gesture = "pan"
             logger.dbg("Flagged slot", slot, "as pending a two_finger_pan")
         end
+        -- NOTE: If buddy isn't already flagged for a gesture, leave a flag so that we might skip the hold gesture for rotate...
+        if not buddy_contact.pending_mt_gesture then
+            buddy_contact.pending_mt_gesture = "rotate"
+            logger.dbg("Flagged slot", buddy_slot, "as pending a potential rotate")
+        end
 
         -- Once both contacts have been flagged, we're good to go!
         if self.pending_mt_gesture == "pan" and buddy_contact.pending_mt_gesture == "pan" then
@@ -988,16 +993,22 @@ function Contact:holdState(hold)
     -- When we switch to hold state, we pass an additional boolean param "hold".
     if tev.id ~= -1 and hold then
         self.state = Contact.holdState
-        return {
-            ges = "hold",
-            pos = Geom:new{
-                x = tev.x,
-                y = tev.y,
-                w = 0,
-                h = 0,
-            },
-            time = tev.timev,
-        }
+        -- If this contact is part of a rotate gesture, don't actually emit the hold,
+        -- as a finalized rotate will inhibit the hold_release anyway...
+        if self.pending_mt_gesture ~= "rotate" then
+            return {
+                ges = "hold",
+                pos = Geom:new{
+                    x = tev.x,
+                    y = tev.y,
+                    w = 0,
+                    h = 0,
+                },
+                time = tev.timev,
+            }
+        else
+            self.pending_mt_gesture = nil
+        end
     elseif tev.id == -1 then
         -- end of hold, signal hold release
         logger.dbg("hold_release detected in slot", slot)
