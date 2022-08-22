@@ -125,6 +125,7 @@ function GestureDetector:newContact(slot)
         initial_tev = nil, -- Copy of the input event table at first contact (i.e., at contact down)
         current_tev = nil, -- Pointer to the current input event table, *stable*, c.f., NOTE in feedEvent below
         down = false, -- Contact is down (as opposed to up, i.e., lifted)
+        pending_double_tap_timer = false, -- Contact is pending a double_tap timer
         pending_hold_timer = false, -- Contact is pending a hold timer
         pending_mt_gesture = nil, -- Contact is pending a MT gesture (string, gesture name)
         multiswipe_directions = {}, -- Accumulated multiswipe chain for this contact
@@ -217,6 +218,7 @@ function GestureDetector:isDoubleTap(tap1, tap2)
     if time_diff < 0 then
         time_diff = time.huge
     end
+    logger.dbg("GestureDetector:isDoubleTap", tap1, tap2)
     return (
         math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
@@ -470,9 +472,11 @@ function GestureDetector:tapState(tev)
                     time = tev.timev,
                 }
             end
-        elseif contact.down then
+        elseif contact.down or contact.pending_double_tap_timer then
             -- Hand over to the double tap handler, it's responsible for downgrading to single tap
             return self:handleDoubleTap(slot, contact, tev)
+        else
+            logger.dbg("Oh, noes, contact", slot, "is already up but we got a lift")
         end
     else
         -- See if we need to do something with the move/hold
@@ -511,18 +515,18 @@ function GestureDetector:handleDoubleTap(slot, contact, tev)
         return
     end
 
-    if not self.input.disable_double_tap and self.previous_tap[slot] ~= nil and self:isDoubleTap(self.previous_tap[slot], cur_tap) then
+    if not self.input.disable_double_tap and contact.pending_double_tap_timer and self:isDoubleTap(self.previous_tap[slot], cur_tap) then
         -- It is a double tap
         self:dropContact(slot)
         self.input:clearTimeout(slot, "double_tap")
         ges_ev.ges = "double_tap"
-        self.previous_tap[slot] = nil
         logger.dbg("double tap detected in slot", slot)
         return ges_ev
     end
 
     -- Remember this tap
     self.previous_tap[slot] = cur_tap
+    logger.dbg("Set previous_tap for slot", slot, self.previous_tap[slot])
 
     if self.input.disable_double_tap then
         -- We can send the event immediately (no need for the timer stuff needed for double tap support)
@@ -533,20 +537,21 @@ function GestureDetector:handleDoubleTap(slot, contact, tev)
 
     -- Double tap enabled: we can't send this single tap immediately as it may be the start of a double tap.
     -- We'll send it as a single tap after a timer if no second tap happened in the double tap delay.
-    logger.dbg("set up single/double tap timer")
-    -- setTimeout will handle computing the deadline in the least lossy way possible given the platform.
-    self.input:setTimeout(slot, "double_tap", function()
-        logger.dbg("in single/double tap timer, single tap:", self.previous_tap[slot] ~= nil)
-        -- A double tap will nil previous_tap, so if it isn't,
-        -- then the user has not double-tap'ed: it's a single tap
-        if self.previous_tap[slot] ~= nil then
-            self.previous_tap[slot] = nil
-            -- We're using the original ges_ev from the closure here
-            logger.dbg("single tap detected in slot", slot, ges_ev.pos)
-            self:dropContact(slot)
-            return ges_ev
-        end
-    end, tev.timev, self.ges_double_tap_interval)
+    if not contact.pending_double_tap_timer then
+        logger.dbg("set up double tap timer for slot", slot)
+        contact.pending_double_tap_timer = true
+        -- setTimeout will handle computing the deadline in the least lossy way possible given the platform.
+        self.input:setTimeout(slot, "double_tap", function()
+            logger.dbg("in double tap timer for slot", slot, "single tap:", contact == self:getContact(slot))
+            if contact == self:getContact(slot) and contact.pending_double_tap_timer and contact.state == self.tapState then
+                -- A single or double tap will yield a different contact object, by virtue of dropContact and closure magic ;).
+                -- Speaking of closures, this is the original ges_ev from the timer setup.
+                logger.dbg("single tap detected in slot", slot, ges_ev.pos)
+                self:dropContact(slot)
+                return ges_ev
+            end
+        end, tev.timev, self.ges_double_tap_interval)
+    end
     -- Regardless of the timer shenanigans, it's at the very least a contact lift.
     contact.down = false
 end
@@ -556,7 +561,7 @@ function GestureDetector:handleNonTap(slot, contact, tev)
         -- Switched from other state, probably from initialState
         -- We return a move for now in this case.
         contact.state = self.tapState
-        logger.dbg("set up hold timer")
+        logger.dbg("set up hold timer for slot", slot)
         -- Invalidate previous hold timers on that slot so that the following setTimeout will only react to *this* tapState.
         self.input:clearTimeout(slot, "hold")
         contact.pending_hold_timer = true
