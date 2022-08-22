@@ -147,6 +147,7 @@ function GestureDetector:dropContact(slot)
     logger.dbg("Dropped contact for slot", slot, "#contacts =", self.contact_count)
 
     -- Also clear any pending callbacks on that slot.
+    -- FIXME: Should this be guarded behind checks? (we've already cleared contact, though :/)
     self.input:clearTimeout(slot, "double_tap")
     self.input:clearTimeout(slot, "hold")
 end
@@ -550,7 +551,8 @@ function GestureDetector:handleDoubleTap(slot, contact, tev)
             end
         end, tev.timev, self.ges_double_tap_interval)
     end
-    -- Regardless of the timer shenanigans, it's at the very least a contact lift.
+    -- Regardless of the timer shenanigans, it's at the very least a contact lift,
+    -- (and calling dropContact here would break the timer).
     contact.down = false
     logger.dbg("Contact lift for slot", slot)
 end
