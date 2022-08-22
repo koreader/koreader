@@ -418,7 +418,7 @@ function GestureDetector:tapState(tev)
                 -- Mark that slot as pending and lifted, but leave its state alone
                 contact.pending_mt_gesture = "tap"
                 contact.down = false
-                logger.dbg("Flagged slot", slot, "as pending a double_tap")
+                logger.dbg("Flagged slot", slot, "as pending a two_finger_tap")
 
                 -- Once both contacts have been lifted, we're good to go!
                 if contact.pending_mt_gesture == "tap" and buddy_contact.pending_mt_gesture == "tap" then
@@ -453,7 +453,7 @@ function GestureDetector:tapState(tev)
                     self:dropContact(buddy_slot)
                 end
             else
-                logger.dbg("Two finger tap failed to pass the double_tap constraints")
+                logger.dbg("Two finger tap failed to pass the two_finger_tap constraints")
                 -- One of the slot is down or pending a double tap, but we blew the gesture position/time constraints,
                 -- drop both slots and send a single tap on this slot.
                 self:dropContact(slot)
