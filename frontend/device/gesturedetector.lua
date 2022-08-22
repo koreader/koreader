@@ -126,7 +126,7 @@ end
 
 function GestureDetector:newContact(slot)
     self.active_contacts[slot] = Contact:new{
-        state = self.initialState, -- Current state function
+        state = Contact.initialState, -- Current state function
         slot = slot, -- Current ABS_MT_SLOT value (also its key in the active_contacts hash)
         id = -1, -- Current ABS_MT_TRACKING_ID value
         initial_tev = nil, -- Copy of the input event table at first contact (i.e., at contact down)
@@ -191,7 +191,7 @@ function GestureDetector:feedEvent(tevs)
             -- This is what allows us to only do this once on contact creation ;).
             contact.current_tev = tev
         end
-        local ges = contact:state()
+        local ges = contact.state(contact)
         if ges then
             table.insert(gestures, ges)
         end
@@ -413,7 +413,7 @@ function Contact:tapState()
     local gesture_detector = self.ges_dec
 
     -- Attempt to detect the clock source for these events (we reset it on suspend to discriminate MONOTONIC from BOOTTIME).
-    if not self.clock_id then
+    if not gesture_detector.clock_id then
         gesture_detector.probeClockSource(tev.timev)
     end
 
