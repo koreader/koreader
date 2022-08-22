@@ -146,8 +146,8 @@ function GestureDetector:dropContact(slot)
     self.contact_count = self.contact_count - 1
     logger.dbg("Dropped contact for slot", slot, "#contacts =", self.contact_count)
 
-    -- Also clear any pending hold callbacks on that slot.
-    -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
+    -- Also clear any pending callbacks on that slot.
+    self.input:clearTimeout(slot, "double_tap")
     self.input:clearTimeout(slot, "hold")
 end
 
@@ -510,7 +510,6 @@ function GestureDetector:handleDoubleTap(slot, contact, tev)
     if tap_interval ~= 0 and self.previous_tap[slot] ~= nil and self:isTapBounce(self.previous_tap[slot], cur_tap, tap_interval) then
         logger.dbg("tap bounce detected in slot", slot, ": ignored")
         -- Simply ignore it, and drop this slot as this is the end of a touch event.
-        -- (This doesn't clear self.previous_tap[slot], so a 3rd tap can be detected as a double tap).
         self:dropContact(slot)
         return
     end
@@ -518,7 +517,6 @@ function GestureDetector:handleDoubleTap(slot, contact, tev)
     if not self.input.disable_double_tap and contact.pending_double_tap_timer and self:isDoubleTap(self.previous_tap[slot], cur_tap) then
         -- It is a double tap
         self:dropContact(slot)
-        self.input:clearTimeout(slot, "double_tap")
         ges_ev.ges = "double_tap"
         logger.dbg("double tap detected in slot", slot)
         return ges_ev
@@ -554,6 +552,7 @@ function GestureDetector:handleDoubleTap(slot, contact, tev)
     end
     -- Regardless of the timer shenanigans, it's at the very least a contact lift.
     contact.down = false
+    logger.dbg("Contact lift for slot", slot)
 end
 
 function GestureDetector:handleNonTap(slot, contact, tev)
