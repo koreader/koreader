@@ -309,11 +309,13 @@ function Contact:getPath(simple, diagonal, initial_tev)
 end
 
 function Contact:isSwipe()
+    local gesture_detector = self.ges_dec
+
     local time_diff = self.current_tev.timev - self.initial_tev.timev
     if time_diff < 0 then
         time_diff = time.huge
     end
-    if time_diff < self.ges_swipe_interval then
+    if time_diff < gesture_detector.ges_swipe_interval then
         local x_diff = self.current_tev.x - self.initial_tev.x
         local y_diff = self.current_tev.y - self.initial_tev.y
         if x_diff ~= 0 or y_diff ~= 0 then
