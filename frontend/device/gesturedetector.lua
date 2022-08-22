@@ -333,6 +333,7 @@ end
 
 function Contact:initialState()
     local tev = self.current_tev
+    local gesture_detector = self.ges_dec
 
     if tev.id then
         -- Contact lift
