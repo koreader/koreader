@@ -149,7 +149,7 @@ function GestureDetector:getContact(slot)
     return self.active_contacts[slot]
 end
 
-function self.ges_dec:dropContact(contact)
+function GestureDetector:dropContact(contact)
     local slot = contact.slot
     -- Also clear any pending callbacks on that slot.
     if contact.pending_double_tap_timer then
@@ -164,9 +164,9 @@ function self.ges_dec:dropContact(contact)
     logger.dbg("Dropped contact for slot", slot, "#contacts =", self.contact_count)
 end
 
-function self.ges_dec:dropContacts()
+function GestureDetector:dropContacts()
     for _, contact in pairs(self.active_contacts) do
-        self.ges_dec:dropContact(contact)
+        self:dropContact(contact)
     end
 end
 
@@ -682,7 +682,7 @@ function Contact:panState()
 
                 -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
                 if self.down == false and buddy_contact.down == false then
-                    logger.warn("GestureDetector:panState Cancelled gesture on slots", slot, buddy_slot)
+                    logger.warn("Contact:panState Cancelled gesture on slots", slot, buddy_slot)
                     gesture_detector:dropContact(self)
                     gesture_detector:dropContact(buddy_contact)
                 end
