@@ -253,7 +253,7 @@ end
 function Contact:isTwoFingerTap(buddy_contact)
     local x_diff0 = math.abs(self.current_tev.x - self.initial_tev.x)
     local x_diff1 = math.abs(buddy_contact.current_tev.x - buddy_contact.initial_tev.x)
-    local y_diff0 = math.abs(self.current_tev.y - selfinitial_tev.y)
+    local y_diff0 = math.abs(self.current_tev.y - self.initial_tev.y)
     local y_diff1 = math.abs(buddy_contact.current_tev.y - buddy_contact.initial_tev.y)
     local time_diff0 = self.current_tev.timev - self.initial_tev.timev
     if time_diff0 < 0 then
@@ -312,8 +312,8 @@ function Contact:isSwipe()
         time_diff = time.huge
     end
     if time_diff < self.ges_swipe_interval then
-        local x_diff = contact.current_tev.x - contact.initial_tev.x
-        local y_diff = contact.current_tev.y - contact.initial_tev.y
+        local x_diff = self.current_tev.x - self.initial_tev.x
+        local y_diff = self.current_tev.y - self.initial_tev.y
         if x_diff ~= 0 or y_diff ~= 0 then
             return true
         end
@@ -328,7 +328,6 @@ function GestureDetector:getRotate(orig_point, start_point, end_point)
 end
 
 function Contact:initialState()
-    local slot = self.slot
     local tev = self.current_tev
 
     if tev.id then
