@@ -634,8 +634,15 @@ function GestureDetector:panState(tev)
 
                         if ges_ev then
                             logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
-                            self:dropContact(slot)
-                            self:dropContact(buddy_slot)
+                            if ges_ev.ges == "rotate" then
+                                -- For rotate, only drop contact right now (as it's the only contact lift),
+                                -- and switch buddy to a neutered state so that it's ignored until lift.
+                                self:dropContact(slot)
+                                buddy_contact.state = self.voidState
+                            else
+                                self:dropContact(slot)
+                                self:dropContact(buddy_slot)
+                            end
                             return ges_ev
                         end
                     end
@@ -658,6 +665,17 @@ function GestureDetector:panState(tev)
             contact.state = self.panState
         end
         return self:handlePan(slot, contact, tev)
+    end
+end
+
+-- Used to ignore a buddy slot part of a MT gesture that requires staggered contact lifts (i.e., rotate)
+function GestureDetector:voidState(tev)
+    local slot = tev.slot
+    logger.dbg("slot", slot, "in void state...")
+    -- We basically don't do anything but drop the slot on contact lift
+    if tev.id == -1 then
+        logger.dbg("contact lift detected in slot", slot)
+        self:dropContact(slot)
     end
 end
 
