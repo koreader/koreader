@@ -452,9 +452,9 @@ function GestureDetector:tapState(tev)
                     }
                 end
 
-                -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
+                -- If both contacts are up and we haven't detected any gesture, forget about 'em (should never happen).
                 if contact.down == false and buddy_contact.down == false then
-                    logger.dbg("Cancelled gesture for slots", slot, buddy_slot)
+                    logger.warn("GestureDetector:tapState Cancelled two-finger gesture on slots", slot, buddy_slot)
                     self:dropContact(slot, contact)
                     self:dropContact(buddy_slot, buddy_contact)
                 end
@@ -480,7 +480,9 @@ function GestureDetector:tapState(tev)
             -- Hand over to the double tap handler, it's responsible for downgrading to single tap
             return self:handleDoubleTap(slot, contact, tev)
         else
-            logger.dbg("Oh, noes, contact", slot, "is already up but we got a lift")
+            -- Huh, caught a *second* contact lift for this contact? (should never happen).
+            logger.warn("GestureDetector:tapState Cancelled gesture on slot", slot)
+            self:dropContact(slot, contact)
         end
     else
         -- See if we need to do something with the move/hold
@@ -664,7 +666,7 @@ function GestureDetector:panState(tev)
 
                 -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
                 if contact.down == false and buddy_contact.down == false then
-                    logger.dbg("Cancelled gesture for slots", slot, buddy_slot)
+                    logger.warn("GestureDetector:panState Cancelled gesture on slots", slot, buddy_slot)
                     self:dropContact(slot, contact)
                     self:dropContact(buddy_slot, buddy_contact)
                 end
@@ -930,7 +932,7 @@ function GestureDetector:handlePanRelease(slot, contact, tev)
 
         -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
         if contact.down == false and buddy_contact.down == false then
-            logger.dbg("Cancelled gesture for slots", slot, buddy_slot)
+            logger.warn("GestureDetector:handlePanRelease Cancelled gesture on slots", slot, buddy_slot)
             self:dropContact(slot, contact)
             self:dropContact(buddy_slot, buddy_contact)
         end
