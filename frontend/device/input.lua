@@ -1192,19 +1192,12 @@ function Input:waitEvent(now, deadline)
                             touch_ges = self.timer_callbacks[1].callback()
                         end
 
-                        -- NOTE: If it was a timerfd, we *may* also need to close the fd.
-                        --       GestureDetector only calls Input:setTimeout for "hold" & "double_tap" gestures.
-                        --       * For holds, it *will* call GestureDetector:dropContact on "hold_release" (and *only* then),
-                        --       and *that* already takes care of pop'ping the (hold) timer and closing the fd,
-                        --       via Input:clearTimeout(slot, "hold")...
-                        --       * For double taps, ditto if the callback yields a "tap"
-                        if not touch_ges or (touch_ges.ges ~= "hold_release" and touch_ges.ges ~= "tap") then
-                            -- That leaves explicit cleanup to every other case (i.e., nil or every other gesture)
-                            if timerfd then
-                                input.clearTimer(timerfd)
-                            end
-                            table.remove(self.timer_callbacks, timer_idx)
+                        -- Cleanup; GestureDetector has guards in place to avoud double-frees.
+                        if timerfd then
+                            input.clearTimer(timerfd)
                         end
+                        table.remove(self.timer_callbacks, timer_idx)
+
                         if touch_ges then
                             self:gestureAdjustHook(touch_ges)
                             return {
