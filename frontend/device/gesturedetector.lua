@@ -697,8 +697,11 @@ function GestureDetector:handlePan(slot, contact, tev)
     if buddy_contact and contact.down and (buddy_contact.down or buddy_contact.pending_mt_gesture == "pan") then
         -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
         -- Mark that slot as pending, but leave its state alone.
-        contact.pending_mt_gesture = "pan"
-        logger.dbg("Flagged slot", slot, "as pending a two_finger_pan")
+        -- NOTE: Might *already* be flagged as pending a pan, the check is just to limit logging
+        if contact.pending_mt_gesture ~= "pan" then
+            contact.pending_mt_gesture = "pan"
+            logger.dbg("Flagged slot", slot, "as pending a two_finger_pan")
+        end
 
         -- Once both contacts have been flagged, we're good to go!
         if contact.pending_mt_gesture == "pan" and buddy_contact.pending_mt_gesture == "pan" then
