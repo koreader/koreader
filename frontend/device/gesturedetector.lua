@@ -502,6 +502,11 @@ function Contact:tapState()
                     time = tev.timev,
                 }
             end
+        elseif self.pending_mt_gesture == "rotate" then
+            -- If we were flagged as pending a rotate, but have yet to hit either hold or pan state,
+            -- do it now to avoid leaving our buddy slot hanging...
+             self.state = Contact.panState
+             self:panState()
         elseif self.down or self.pending_double_tap_timer then
             -- Hand over to the double tap handler, it's responsible for downgrading to single tap
             return self:handleDoubleTap()
