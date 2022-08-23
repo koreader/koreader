@@ -334,9 +334,15 @@ function GestureDetector:getRotate(orig_point, start_point, end_point)
 
     -- NOTE: I am severely maths impaired, and I just wanted something that preserved rotation direction (CCW if < 0),
     --       so this is shamelessly stolen from https://stackoverflow.com/a/31334882
-    return (math.atan2(end_point.y - orig_point.y, end_point.x - orig_point.x) -
-            math.atan2(start_point.y - orig_point.y, start_point.x - orig_point.x)) *
-            180/math.pi
+    local rad = math.atan2(end_point.y - orig_point.y, end_point.x - orig_point.x) -
+                math.atan2(start_point.y - orig_point.y, start_point.x - orig_point.x)
+    -- Normalize to [-180, 180]
+    if rad < -math.pi then
+        rad = rad + 2 * math.pi
+    elseif rad > math.pi then
+        rad = rad - 2 * math.pi
+    end
+    return rad * 180/math.pi
 end
 
 function Contact:initialState()
