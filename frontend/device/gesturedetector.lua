@@ -325,10 +325,18 @@ function Contact:isSwipe()
 end
 
 function GestureDetector:getRotate(orig_point, start_point, end_point)
+    --[[
     local a = orig_point:distance(start_point)
     local b = orig_point:distance(end_point)
     local c = start_point:distance(end_point)
     return math.acos((a*a + b*b - c*c)/(2*a*b))*180/math.pi
+    --]]
+
+    -- NOTE: I am severely maths impaired, and I just wanted something that preserved rotation direction (CCW if < 0),
+    --       so this is shamelessly stolen from https://stackoverflow.com/a/31334882
+    return (math.atan2(end_point.y - orig_point.y, end_point.x - orig_point.x) -
+            math.atan2(start_point.y - orig_point.y, start_point.x - orig_point.x)) *
+            180/math.pi
 end
 
 function Contact:initialState()
