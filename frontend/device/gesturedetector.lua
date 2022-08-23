@@ -505,6 +505,9 @@ function Contact:tapState()
         elseif self.down or self.pending_double_tap_timer then
             -- Hand over to the double tap handler, it's responsible for downgrading to single tap
             return self:handleDoubleTap()
+        elseif self.pending_mt_gesture then
+            -- If we're part of a MT gesture, flag the contact lift so the fallbacks can catch it.
+            self.down = false
         else
             -- Huh, caught a *second* contact lift for this contact? (should never happen).
             logger.warn("Contact:tapState Cancelled gesture on slot", slot)
