@@ -551,15 +551,15 @@ end
     -- Sometimes at high latitudes noon or midnight does not get calculated.
     -- Maybe there is a minor bug in the calculateNoon/calculateMidnight functions.
     if self.rise and self.set then
-        if not self.noon then
+        if not self.noon and self.rise and self.set then
             self.noon = (self.rise + self.set) / 2
         end
-        if not self.midnight then
+        if not self.midnight and self.noon then
             self.midnight = self.noon + 12
         end
         if not self.midnight_beginning and self.midnight then
             self.midnight_beginning = self.midnight - 24
-        elseif not self.midnight and not self.midnight_beginning then
+        elseif not self.midnight and self.midnight_beginning then
             self.midnight = self.midnight_beginning + 24
         end
     elseif self.rise and not self.set then -- only sunrise on that day
