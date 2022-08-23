@@ -242,9 +242,10 @@ if not Device:isAlwaysFullscreen() then
     end
 end
 
-function DeviceListener:onIterateRotation()
-    -- Simply rotate by 90° CW
-    local arg = bit.band(Screen:getRotationMode() + 1, 3)
+function DeviceListener:onIterateRotation(ccw)
+    -- Simply rotate by 90° CW or CCW
+    local step = ccw and -1 or 1
+    local arg = bit.band(Screen:getRotationMode() + step, 3)
     self.ui:handleEvent(Event:new("SetRotationMode", arg))
     return true
 end

@@ -957,10 +957,12 @@ function Contact:handleTwoFingerPan(buddy_contact)
     elseif buddy_contact.state == Contact.holdState then
         local angle = gesture_detector:getRotate(rstart_pos, tstart_pos, tend_pos)
         logger.dbg("rotate", angle, "detected")
+        local direction = angle > 0 and "cw" or "ccw"
         return {
             ges = "rotate",
             pos = rstart_pos,
             angle = angle,
+            direction = direction,
             time = self.current_tev.timev,
         }
     end

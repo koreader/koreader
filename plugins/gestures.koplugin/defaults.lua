@@ -66,6 +66,8 @@ return {
         two_finger_swipe_southwest = nil,
         spread_gesture = nil,
         pinch_gesture = nil,
+        rotate_cw = nil,
+        rotate_ccw = nil,
     },
     gesture_reader = {
         tap_top_left_corner = {toggle_page_flipping = true,},
@@ -131,6 +133,8 @@ return {
         two_finger_swipe_southwest = nil,
         spread_gesture = {increase_font = 0,},
         pinch_gesture = {decrease_font = 0,},
+        rotate_cw = nil,
+        rotate_ccw = nil,
     },
     custom_multiswipes = {},
 }

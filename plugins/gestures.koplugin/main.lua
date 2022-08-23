@@ -74,6 +74,8 @@ local gestures_list = {
     two_finger_swipe_southwest = "⇙",
     spread_gesture = _("Spread"),
     pinch_gesture = _("Pinch"),
+    rotate_cw = _("Rotate ⤸ 90°"),
+    rotate_ccw = _("Rotate ⤹ 90°"),
     multiswipe = "", -- otherwise registerGesture() won't pick up on multiswipes
     multiswipe_west_east = "⬅ ➡",
     multiswipe_east_west = "➡ ⬅",
@@ -694,6 +696,10 @@ function Gestures:addToMainMenu(menu_items)
             text = _("Spread and pinch"),
             sub_item_table = self:genSubItemTable({"spread_gesture", "pinch_gesture"}),
         })
+        table.insert(menu_items.gesture_manager.sub_item_table, {
+            text = _("Rotation"),
+            sub_item_table = self:genSubItemTable({"rotate_cw", "rotate_ccw"}),
+        })
     end
 
     self:addIntervals(menu_items)
@@ -1027,6 +1033,14 @@ function Gestures:setupGesture(ges)
     elseif ges == "pinch_gesture" then
         ges_type = "pinch"
         zone = zone_fullscreen
+    elseif ges == "rotate_cw" then
+        ges_type = "rotate"
+        zone = zone_fullscreen
+        direction = {cw = true}
+    elseif ges == "rotate_ccw" then
+        ges_type = "rotate"
+        zone = zone_fullscreen
+        direction = {ccw = true}
     else return
     end
     self:registerGesture(ges, ges_type, zone, overrides, direction, distance)

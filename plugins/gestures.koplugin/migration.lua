@@ -188,7 +188,7 @@ function Migration:migrateGestures(caller)
             G_reader_settings:delSetting(ges_mode)
         end
     end
-    --custom multiswipes
+    -- custom multiswipes
     if custom_multiswipes_table then
         for k, v in pairs(custom_multiswipes_table) do
             local multiswipe = "multiswipe_" .. caller:safeMultiswipeName(v)
