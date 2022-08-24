@@ -1023,6 +1023,14 @@ function Contact:handleTwoFingerPan(buddy_contact)
             logger.dbg("Detected a two_finger pan/pinch/spread from a hold, switching slot", self.slot, "to panState")
             self.state = Contact.panState
         end
+        if buddy_contact.state == Contact.tapState then
+            -- If we detected an actual two-finger pan-like gesture but our buddy contact is late and still in tapState,
+            -- (probably because it hasn't moved quite enough to pass PAN_THRESHOLD yet or hasn't been switched to hold yet,
+            -- which is more likely to happen on platforms without timerfd support), forcibly switch it to pan now,
+            -- so that *this* slot isn't left hanging waiting for a buffy that'll never go through panState ;).
+            logger.dbg("Detected a two_finger pan/pinch/spread with a tardy buddy still in tapState, switching slot", buddy_contact.slot, "to panState")
+            buddy_contact.state = Contact.panState
+        end
         logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
         return ges_ev
     end
