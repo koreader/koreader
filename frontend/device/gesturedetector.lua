@@ -1083,7 +1083,7 @@ function Contact:handlePanRelease()
 end
 
 --[[--
-Emits the hold, hold_release & hold_pan gestures.
+Emits the hold, hold_release & hold_pan gestures and their two_finger variants.
 --]]
 function Contact:holdState(new_hold)
     local slot = self.slot
@@ -1105,6 +1105,8 @@ function Contact:holdState(new_hold)
                 -- while our buddy is still down or pending a MT gesture, so mark that slot as pending.
                 self.pending_mt_gesture = "hold"
                 logger.dbg("Flagged slot", slot, "as pending a two_finger_hold")
+                -- NOTE: For simplicty's sake, and because the fingers can move during the hold,
+                --       we don't validate the distance between the two fingers like for a double_tap.
 
                 -- Once both contacts have been flagged, we're good to go!
                 if self.pending_mt_gesture == "hold" and buddy_contact.pending_mt_gesture == "hold" then
