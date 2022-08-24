@@ -473,7 +473,7 @@ This may help with Greek words among Latin text (as Latin fonts often do not hav
                     G_reader_settings:saveSetting("cre_monospace_scaling", scale)
                     self.ui.document:setMonospaceFontScaling(scale)
                     self.ui:handleEvent(Event:new("UpdatePos"))
-                end
+                end,
             })
         end,
         help_text = _([[
@@ -489,7 +489,7 @@ This setting allows scaling all monospace fonts by this percentage so they can f
                 text = _("Would you like to generate an HTML document showing some sample text rendered with each available font?"),
                 ok_callback = function()
                     self:buildFontsTestDocument()
-                end
+                end,
             })
         end,
     })
