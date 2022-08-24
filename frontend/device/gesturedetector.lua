@@ -346,6 +346,11 @@ function GestureDetector:getRotate(orig_point, start_point, end_point)
     return rad * 180/math.pi
 end
 
+function Contact:switchState(state_func, ...)
+    self.state = state_func
+    return state_func(self, ...)
+end
+
 function Contact:initialState()
     local tev = self.current_tev
 
@@ -366,8 +371,8 @@ function Contact:initialState()
                     --       and *that* is a fixed reference for a given slot!
                     --       Here, we really want to remember the *first* tev, so, make a copy of it.
                     self.initial_tev = deepCopyEv(tev)
-                    -- Default to tap state (note that our actual state is still initialState, though).
-                    return self:tapState()
+                    -- Default to tap state
+                    return self:switchState(Contact.tapState)
                 end
             end
         end
@@ -507,8 +512,7 @@ function Contact:tapState()
         elseif self.pending_mt_gesture == "rotate" then
             -- If we were flagged as pending a rotate, but have yet to hit either hold or pan state,
             -- do it now to avoid leaving our buddy slot hanging...
-            self.state = Contact.panState
-            self:panState()
+            return self:switchState(Contact.panState)
         elseif self.down or self.pending_double_tap_timer then
             -- Hand over to the double tap handler, it's responsible for downgrading to single tap
             return self:handleDoubleTap()
@@ -602,17 +606,24 @@ function Contact:handleDoubleTap()
     logger.dbg("Contact:handleDoubleTap Contact lift for slot", slot)
 end
 
+--[[--
+Handles move & hold. Contact is down.
+--]]
 function Contact:handleNonTap()
     local slot = self.slot
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
-    if self.state ~= Contact.tapState then
-        -- Switched from other state, probably from initialState
-        -- We return a move for now in this case.
-        self.state = Contact.tapState
-        logger.dbg("set up hold timer for slot", slot)
+    -- If we've moved enough, switch to a pan
+    if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
+       (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
+        -- If user's finger moved far enough on the X or Y axes, switch to pan state.
+        return self:switchState(Contact.panState)
+    else
+        -- Otherwise, start the hold timer if that hasn't already been done.
+        -- FIXME: What about hold_pan, does that rely on switching to hold first no matter the movement?
         if not self.pending_hold_timer then
+            logger.dbg("set up hold timer for slot", slot)
             self.pending_hold_timer = true
             gesture_detector.input:setTimeout(slot, "hold", function()
                 -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
@@ -624,35 +635,30 @@ function Contact:handleNonTap()
                     if self.state == Contact.tapState and self.down then
                         -- Don't switch to hold if we've actually moved enough to pan...
                         if (math.abs(self.current_tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
-                           (math.abs(self.current_tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
+                            (math.abs(self.current_tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
                             -- If user's finger moved far enough on the X or Y axes, switch to pan state.
-                            logger.dbg("pan gesture detected in slot", slot)
-                            return self:panState()
+                            logger.dbg("hold timer detected a pan gesture in slot", slot)
+                            return self:switchState(Contact.panState)
                         else
                             -- That means we can switch to hold
-                            logger.dbg("hold gesture detected in slot", slot)
-                            return self:holdState(true)
+                            logger.dbg("hold timer detected a hold gesture in slot", slot)
+                            return self:switchState(Contact.holdState, true)
                         end
                     end
                 end
             end, tev.timev, gesture_detector.ges_hold_interval)
-        end
-        return {
-            ges = "touch",
-            pos = Geom:new{
-                x = tev.x,
-                y = tev.y,
-                w = 0,
-                h = 0,
-            },
-            time = tev.timev,
-        }
-    else
-        -- We're still inside a stream of input events, see if we need to switch to other states.
-        if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
-           (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
-            -- If user's finger moved far enough on the X or Y axes, switch to pan state.
-            return self:panState()
+
+            -- NOTE: We only generate touch *once*, on contact down (assuming it isn't a pan...)
+            return {
+                ges = "touch",
+                pos = Geom:new{
+                    x = tev.x,
+                    y = tev.y,
+                    w = 0,
+                    h = 0,
+                },
+                time = tev.timev,
+            }
         end
     end
 end
@@ -740,9 +746,6 @@ function Contact:panState()
             gesture_detector:dropContact(self)
         end
     else
-        if self.state ~= Contact.panState then
-            self.state = Contact.panState
-        end
         return self:handlePan()
     end
 end
@@ -1043,6 +1046,9 @@ function Contact:handlePanRelease()
     end
 end
 
+--[[--
+Handles hold, hold_release & hold_pan.
+--]]
 function Contact:holdState(hold)
     local slot = self.slot
     local tev = self.current_tev
@@ -1051,7 +1057,6 @@ function Contact:holdState(hold)
     logger.dbg("slot", slot, "in hold state...")
     -- When we switch to hold state, we pass an additional boolean param "hold".
     if tev.id ~= -1 and hold then
-        self.state = Contact.holdState
         -- If this contact is part of a rotate gesture, don't actually emit the hold,
         -- as a finalized rotate will inhibit the hold_release anyway...
         if self.pending_mt_gesture ~= "rotate" then
