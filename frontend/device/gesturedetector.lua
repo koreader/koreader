@@ -527,6 +527,8 @@ function Contact:tapState(new_tap)
         end
     else
         -- See if we need to do something with the move/hold
+        -- FIXME: If buddy is up (because pending_mt_gesture "tap") and this would make us switch to pan,
+        --        buddy is fucked because we broke the pairing.
         return self:handleNonTap(new_tap)
     end
 end
