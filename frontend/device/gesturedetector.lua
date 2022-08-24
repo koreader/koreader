@@ -527,6 +527,9 @@ function Contact:tapState(new_tap)
     end
 end
 
+--[[--
+Emits both tap & double_tap gestures. Contact is either down or pending a double_tap timer.
+--]]
 function Contact:handleDoubleTap()
     local slot = self.slot
     local tev = self.current_tev
@@ -656,6 +659,9 @@ function Contact:handleNonTap(new_tap)
     end
 end
 
+--[[--
+Handles the full panel of pans & swipes, including their two-finger variants.
+--]]
 function Contact:panState()
     local slot = self.slot
     local tev = self.current_tev
@@ -743,7 +749,9 @@ function Contact:panState()
     end
 end
 
--- Used to ignore a buddy slot part of a MT gesture that requires staggered contact lifts (i.e., rotate)
+--[[--
+Used to ignore a buddy slot part of a MT gesture that requires staggered contact lifts (i.e., rotate)
+--]]
 function Contact:voidState()
     local slot = self.slot
     local tev = self.current_tev
@@ -757,6 +765,9 @@ function Contact:voidState()
     end
 end
 
+--[[--
+Emits the swipe & multiswipe gestures. Contact is up.
+--]]
 function Contact:handleSwipe()
     local slot = self.slot
     logger.dbg("handleSwipe for slot", slot)
@@ -805,6 +816,9 @@ function Contact:handleSwipe()
     }
 end
 
+--[[--
+Emits the pan gestures and handles their two finger variants. Contact is down (and either in holdState or panState).
+--]]
 function Contact:handlePan()
     local slot = self.slot
     logger.dbg("handlePan for slot", slot)
@@ -918,6 +932,10 @@ function Contact:handlePan()
     end
 end
 
+--[[--
+Emits the pan, two_finger_pan, inward_pan, outward_pan & rotate gestures.
+Contact is down in panState or holdState, or up in panState if it was lifted below the swipe interval.
+--]]
 function Contact:handleTwoFingerPan(buddy_contact)
     local gesture_detector = self.ges_dec
 
@@ -984,6 +1002,9 @@ function Contact:handleTwoFingerPan(buddy_contact)
     end
 end
 
+--[[--
+Emits the pan_release & two_finger_pan_release gestures. Contact is up and in panState.
+--]]
 function Contact:handlePanRelease()
     local slot = self.slot
     logger.dbg("handlePanRelease for slot", slot)
@@ -1040,7 +1061,7 @@ function Contact:handlePanRelease()
 end
 
 --[[--
-Handles hold, hold_release & hold_pan.
+Emits the hold, hold_release & hold_pan gestures.
 --]]
 function Contact:holdState(new_hold)
     local slot = self.slot
