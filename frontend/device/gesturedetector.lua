@@ -371,8 +371,8 @@ function Contact:initialState()
                     --       and *that* is a fixed reference for a given slot!
                     --       Here, we really want to remember the *first* tev, so, make a copy of it.
                     self.initial_tev = deepCopyEv(tev)
-                    -- Default to tap state
-                    return self:switchState(Contact.tapState)
+                    -- Default to tap state, indicating that this is a new contact
+                    return self:switchState(Contact.tapState, true)
                 end
             end
         end
@@ -432,9 +432,9 @@ function GestureDetector:resetClockSource()
 end
 
 --[[--
-Handles both single and double tap.
+Handles both single and double tap. `new_tap` is true for the initial contact down event.
 --]]
-function Contact:tapState()
+function Contact:tapState(new_tap)
     local slot = self.slot
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
@@ -523,7 +523,7 @@ function Contact:tapState()
         end
     else
         -- See if we need to do something with the move/hold
-        return self:handleNonTap()
+        return self:handleNonTap(new_tap)
     end
 end
 
@@ -608,14 +608,16 @@ end
 
 --[[--
 Handles move (switch to panState) & hold (switch to holdState). Contact is down.
+`new_tap` is true for the initial contact down event.
 --]]
-function Contact:handleNonTap()
+function Contact:handleNonTap(new_tap)
     local slot = self.slot
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
     -- If we haven't yet fired the hold timer, do so first and foremost, as hold_pan handling *requires* a hold.
-    if not self.pending_hold_timer then
+    -- We only do this on the first contact down.
+    if new_tap and not self.pending_hold_timer then
         logger.dbg("set up hold timer for slot", slot)
         self.pending_hold_timer = true
         gesture_detector.input:setTimeout(slot, "hold", function()
