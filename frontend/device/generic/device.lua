@@ -573,4 +573,52 @@ function Device:untar(archive, extract_to)
     return os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
 end
 
+-- Set device specific event handlers
+function Device:setDeviceSpecificEventHandlers(UIManager) end
+
+-- The common operations that should be performed before suspending the device.
+function Device:_beforeSuspend()
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    UIManager:flushSettings()
+    UIManager:broadcastEvent(Event:new("Suspend"))
+
+    -- Block input events unrelated to power management
+    self.input:inhibitInput(true)
+
+    -- Disable key repeat to avoid useless chatter (especially where Sleep Covers are concerned...)
+    self:disableKeyRepeat()
+end
+
+-- The common operations that should be performed after resuming the device.
+function Device:_afterResume()
+    -- Restore key repeat
+    self:restoreKeyRepeat()
+
+    -- Restore full input handling
+    self.input:inhibitInput(false)
+
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    UIManager:broadcastEvent(Event:new("Resume"))
+end
+
+-- The common operations that should be performed when the device is plugged to a power source.
+function Device:_beforeCharging()
+    -- Leave the kernel some time to figure it out ;o).
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    UIManager:scheduleIn(1, function() self:setupChargingLED() end)
+    UIManager:broadcastEvent(Event:new("Charging"))
+end
+
+-- The common operations that should be performed when the device is unplugged from a power source.
+function Device:_afterNotCharging()
+    -- Leave the kernel some time to figure it out ;o).
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    UIManager:scheduleIn(1, function() self:setupChargingLED() end)
+    UIManager:broadcastEvent(Event:new("NotCharging"))
+end
+
 return Device

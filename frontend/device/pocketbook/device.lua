@@ -388,6 +388,16 @@ function PocketBook:getDefaultCoverPath()
     return "/mnt/ext1/system/logo/offlogo/cover.bmp"
 end
 
+function PocketBook:setDeviceSpecificEventHandlers(UIManager)
+    -- Only fg/bg state plugin notifiers, not real power event.
+    UIManager.event_handlers["Suspend"] = function()
+        self:_beforeSuspend()
+    end
+    UIManager.event_handlers["Resume"] = function()
+        self:_afterResume()
+    end
+end
+
 -- Pocketbook HW rotation modes start from landsape, CCW
 local function landscape_ccw() return {
     1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
@@ -618,7 +628,6 @@ local PocketBook741 = PocketBook:new{
     isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
 }
-
 
 function PocketBook741._fb_init(fb, finfo, vinfo)
     -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
