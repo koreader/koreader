@@ -449,12 +449,12 @@ function Contact:tapState(new_tap)
     end
 
     logger.dbg("slot", slot, "in tap state...")
+    -- Check if this might be a two finger gesture by checking if the current slot is one of the two main slots, and the other is active.
+    local buddy_slot = slot == gesture_detector.input.main_finger_slot and gesture_detector.input.main_finger_slot + 1 or
+                       slot == gesture_detector.input.main_finger_slot + 1 and gesture_detector.input.main_finger_slot or nil
+    local buddy_contact = buddy_slot and gesture_detector:getContact(buddy_slot) or nil
     -- Contact lift
     if tev.id == -1 then
-        -- Check if this might be a two finger gesture by checking if the current slot is one of the two main slots, and the other is active.
-        local buddy_slot = slot == gesture_detector.input.main_finger_slot and gesture_detector.input.main_finger_slot + 1 or
-                           slot == gesture_detector.input.main_finger_slot + 1 and gesture_detector.input.main_finger_slot or nil
-        local buddy_contact = buddy_slot and gesture_detector:getContact(buddy_slot) or nil
         if buddy_contact and self.down and (buddy_contact.down or buddy_contact.pending_mt_gesture == "tap") then
             -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
             if self:isTwoFingerTap(buddy_contact) then
@@ -527,9 +527,15 @@ function Contact:tapState(new_tap)
         end
     else
         -- See if we need to do something with the move/hold
-        -- FIXME: If buddy is up (because pending_mt_gesture "tap") and this would make us switch to pan,
-        --        buddy is fucked because we broke the pairing.
-        return self:handleNonTap(new_tap)
+        local ges = self:handleNonTap(new_tap)
+        -- NOTE: If buddy is up (because of a tapState pending_mt_gesture, i.e., "tap") and this made us switch to another state,
+        --       drop buddy now, because we won't ever be a match with it again.
+        if buddy_contact and buddy_contact.down == false and buddy_contact.pending_mt_gesture == "tap" and
+           self.state ~= Contact.tapState then
+            logger.dbg("Contact:tapState Cancelled a two-finger tap gesture on slot", buddy_slot, "because slot", slot, "switched to an incompatible state")
+            gesture_detector:dropContact(buddy_contact)
+        end
+        return ges
     end
 end
 
