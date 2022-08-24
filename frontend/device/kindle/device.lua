@@ -368,6 +368,31 @@ function Kindle:readyToSuspend()
     self.suspend_time = time.boottime_or_realtime_coarse()
 end
 
+function Kindle:setDeviceSpecificEventHandlers(UIManager)
+    UIManager.event["IntoSS"] = function()
+        self:_beforeSuspend()
+        self:intoScreenSaver()
+    end
+    UIManager.event["OutOfSS"] = function()
+        self:outofScreenSaver()
+        self:_afterResume()
+    end
+    UIManager.event["Charging"] = function()
+        self:_beforeCharging()
+        self:usbPlugIn()
+    end
+    UIManager.event["NotCharging"] = function()
+        self:usbPlugOut()
+        self:_afterNotCharging()
+    end
+    UIManager.event["WakeupFromSuspend"] = function()
+        self:wakeupFromSuspend()
+    end
+    UIManager.event["ReadyToSuspend"] = function()
+        self:readyToSuspend()
+    end
+end
+
 function Kindle:ambientBrightnessLevel()
     local haslipc, lipc = pcall(require, "liblipclua")
     if not haslipc or lipc == nil then return 0 end

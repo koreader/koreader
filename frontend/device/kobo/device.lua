@@ -1262,31 +1262,6 @@ function Kobo:setDeviceSpecificEventHandlers(UIManager)
             end
         end
     end
-    -- Sleep Cover handling
-    if G_reader_settings:isTrue("ignore_power_sleepcover") then
-        -- NOTE: The hardware event itself will wake the kernel up if it's in suspend (:/).
-        --       Let the unexpected wakeup guard handle that.
-        UIManager.event_handlers["SleepCoverClosed"] = nil
-        UIManager.event_handlers["SleepCoverOpened"] = nil
-    elseif G_reader_settings:isTrue("ignore_open_sleepcover") then
-        -- Just ignore wakeup events, and do NOT set is_cover_closed,
-        -- so device/generic/device will let us use the power button to wake ;).
-        UIManager.event_handlers["SleepCoverClosed"] = function()
-            UIManager.event_handlers["Suspend"]()
-        end
-        UIManager.event_handlers["SleepCoverOpened"] = function()
-            self.is_cover_closed = false
-        end
-    else
-        UIManager.event_handlers["SleepCoverClosed"] = function()
-            self.is_cover_closed = true
-            UIManager.event_handlers["Suspend"]()
-        end
-        UIManager.event_handlers["SleepCoverOpened"] = function()
-            self.is_cover_closed = false
-            UIManager.event_handlers["Resume"]()
-        end
-    end
     UIManager.event_handlers["Light"] = function()
         self:getPowerDevice():toggleFrontlight()
     end
@@ -1328,6 +1303,31 @@ function Kobo:setDeviceSpecificEventHandlers(UIManager)
             -- Potentially dismiss the USBMS ConfirmBox
             local MassStorage = require("ui/elements/mass_storage")
             MassStorage:dismiss()
+        end
+    end
+    -- Sleep Cover handling
+    if G_reader_settings:isTrue("ignore_power_sleepcover") then
+        -- NOTE: The hardware event itself will wake the kernel up if it's in suspend (:/).
+        --       Let the unexpected wakeup guard handle that.
+        UIManager.event_handlers["SleepCoverClosed"] = nil
+        UIManager.event_handlers["SleepCoverOpened"] = nil
+    elseif G_reader_settings:isTrue("ignore_open_sleepcover") then
+        -- Just ignore wakeup events, and do NOT set is_cover_closed,
+        -- so device/generic/device will let us use the power button to wake ;).
+        UIManager.event_handlers["SleepCoverClosed"] = function()
+            UIManager.event_handlers["Suspend"]()
+        end
+        UIManager.event_handlers["SleepCoverOpened"] = function()
+            self.is_cover_closed = false
+        end
+    else
+        UIManager.event_handlers["SleepCoverClosed"] = function()
+            self.is_cover_closed = true
+            UIManager.event_handlers["Suspend"]()
+        end
+        UIManager.event_handlers["SleepCoverOpened"] = function()
+            self.is_cover_closed = false
+            UIManager.event_handlers["Resume"]()
         end
     end
     UIManager.event_handlers["__default__"] = function(input_event)
