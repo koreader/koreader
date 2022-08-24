@@ -651,7 +651,7 @@ function Contact:handleNonTap(new_tap)
         }
     else
         -- Once the hold timer has been fired, we're free to see if we can switch to pan,
-        -- If the contact moved far enough on the X or Y axes...
+        -- if the contact moved far enough on the X or Y axes...
         if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
            (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
             return self:switchState(Contact.panState)
