@@ -532,6 +532,7 @@ Emits both tap & double_tap gestures. Contact is either down or pending a double
 --]]
 function Contact:handleDoubleTap()
     local slot = self.slot
+    logger.dbg("Contact:handleDoubleTap for slot", slot)
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
@@ -614,6 +615,7 @@ Handles move (switch to panState) & hold (switch to holdState). Contact is down.
 --]]
 function Contact:handleNonTap(new_tap)
     local slot = self.slot
+    logger.dbg("Contact:handleNonTap for slot", slot)
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
@@ -770,7 +772,7 @@ Emits the swipe & multiswipe gestures. Contact is up.
 --]]
 function Contact:handleSwipe()
     local slot = self.slot
-    logger.dbg("handleSwipe for slot", slot)
+    logger.dbg("Contact:handleSwipe for slot", slot)
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
@@ -821,7 +823,7 @@ Emits the pan gestures and handles their two finger variants. Contact is down (a
 --]]
 function Contact:handlePan()
     local slot = self.slot
-    logger.dbg("handlePan for slot", slot)
+    logger.dbg("Contact:handlePan for slot", slot)
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
@@ -937,6 +939,7 @@ Emits the pan, two_finger_pan, inward_pan, outward_pan & rotate gestures.
 Contact is down in panState or holdState, or up in panState if it was lifted below the swipe interval.
 --]]
 function Contact:handleTwoFingerPan(buddy_contact)
+    logger.dbg("Contact:handleTwoFingerPan", self.slot)
     local gesture_detector = self.ges_dec
 
     -- triggering contact is self
@@ -1007,7 +1010,7 @@ Emits the pan_release & two_finger_pan_release gestures. Contact is up and in pa
 --]]
 function Contact:handlePanRelease()
     local slot = self.slot
-    logger.dbg("handlePanRelease for slot", slot)
+    logger.dbg("Contact:handlePanRelease for slot", slot)
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
