@@ -717,9 +717,8 @@ function Contact:panState()
                             logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
                             if ges_ev.ges == "rotate" then
                                 -- For rotate, only drop contact right now (as it's the only contact lift),
-                                -- and switch buddy to a neutered state so that it's ignored until lift.
+                                -- buddy should already have been neutered via a switch to voidState.
                                 gesture_detector:dropContact(self)
-                                buddy_contact.state = Contact.voidState
                             else
                                 gesture_detector:dropContact(self)
                                 gesture_detector:dropContact(buddy_contact)
@@ -842,8 +841,9 @@ function Contact:handlePan()
             self.pending_mt_gesture = "pan"
             logger.dbg("Flagged slot", slot, "as pending a two_finger_pan")
         end
-        -- NOTE: If buddy isn't already flagged for a gesture, leave a flag so that we might skip the hold gesture for rotate...
-        if not buddy_contact.pending_mt_gesture then
+        -- NOTE: If buddy isn't already in holdState, and isn't already flagged for a gesture,
+        --       leave a flag so that we might skip the hold gesture for rotate when it switches to holdState...
+        if buddy_contact.state ~= Contact.holdState and not buddy_contact.pending_mt_gesture then
             buddy_contact.pending_mt_gesture = "rotate"
             logger.dbg("Flagged slot", buddy_slot, "as pending a potential rotate")
         end
@@ -969,6 +969,8 @@ function Contact:handleTwoFingerPan(buddy_contact)
         local angle = gesture_detector:getRotate(rstart_pos, tstart_pos, tend_pos)
         logger.dbg("rotate", angle, "detected")
         local direction = angle > 0 and "cw" or "ccw"
+        -- Switch buddy to a neutered state so that it's ignored until lift.
+        buddy_contact.state = Contact.voidState
         return {
             ges = "rotate",
             pos = rstart_pos,
@@ -1008,13 +1010,13 @@ function Contact:handleTwoFingerPan(buddy_contact)
             logger.dbg("Flagged slot", self.slot, "as a two_finger_hold_pan")
             buddy_contact.pending_mt_gesture = "hold_pan"
             logger.dbg("Flagged slot", buddy_contact.slot, "as a two_finger_hold_pan")
-        --[[
-        elseif self.state == Contact.holdState then
-            -- If self is in hold state and we've just detected a pan/pinch/spread,
+        end
+
+        if self.state == Contact.holdState and buddy_contact.state == Contact.panState then
+            -- If self is in holdState but buddy is in panState and we've just detected a pan/pinch/spread,
             -- forcibly update it to pan so that stuff doesn't go wonky on release...
             logger.dbg("Detected a two_finger pan/pinch/spread from a hold, switching slot", self.slot, "to panState")
             self.state = Contact.panState
-        --]]
         end
         logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
         return ges_ev
