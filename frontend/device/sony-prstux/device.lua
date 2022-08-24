@@ -189,20 +189,20 @@ function SonyPRSTUX:getDeviceModel()
 end
 
 function SonyPRSTUX:setDeviceSpecificEventHandlers(UIManager)
-    UIManager.event["Suspend"] = function()
+    UIManager.event_handlers["Suspend"] = function()
         self:_beforeSuspend()
         self:intoScreenSaver()
         self:suspend()
     end
-    UIManager.event["Resume"] = function()
+    UIManager.event_handlers["Resume"] = function()
         self:resume()
         self:outofScreenSaver()
         self:_afterResume()
     end
-    UIManager.event["PowerPress"] = function()
+    UIManager.event_handlers["PowerPress"] = function()
         UIManager:scheduleIn(2, self.poweroff_action)
     end
-    UIManager.event["PowerRelease"] = function()
+    UIManager.event_handlers["PowerRelease"] = function()
         if not UIManager._entered_poweroff_stage then
             UIManager:unschedule(self.poweroff_action)
             -- resume if we were suspended
@@ -213,13 +213,13 @@ function SonyPRSTUX:setDeviceSpecificEventHandlers(UIManager)
             end
         end
     end
-    UIManager.event["Charging"] = function()
+    UIManager.event_handlers["Charging"] = function()
         self:_beforeCharging()
     end
-    UIManager.event["NotCharging"] = function()
+    UIManager.event_handlers["NotCharging"] = function()
         self:_afterNotCharging()
     end
-    UIManager.event["UsbPlugIn"] = function()
+    UIManager.event_handlers["UsbPlugIn"] = function()
         if self.screen_saver_mode then
             self:resume()
             self:outofScreenSaver()
@@ -227,10 +227,10 @@ function SonyPRSTUX:setDeviceSpecificEventHandlers(UIManager)
         end
         self:usbPlugIn()
     end
-    UIManager.event["UsbPlugOut"] = function()
+    UIManager.event_handlers["UsbPlugOut"] = function()
         self:usbPlugOut()
     end
-    UIManager.event["__default__"] = function(input_event)
+    UIManager.event_handlers["__default__"] = function(input_event)
         -- Same as in Kobo: we want to ignore keys during suspension
         if not self.screen_saver_mode then
             UIManager:sendEvent(input_event)
