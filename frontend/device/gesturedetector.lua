@@ -17,11 +17,13 @@ Current detectable gestures:
 * `outward_pan`
 * `pan_release`
 * `hold_release`
+* `two_finger_hold_release`
 * `two_finger_tap`
 * `two_finger_pan`
-* `two_finger_hold_pan` (/!\ both contacts will emit a respective hold_release on lift)
+* `two_finger_hold_pan`
 * `two_finger_swipe`
 * `two_finger_pan_release`
+* `two_finger_hold_pan_release`
 
 You change the state machine by feeding it touch events, i.e. calling
 @{GestureDetector:feedEvent|GestureDetector:feedEvent(tev)}.
@@ -1001,6 +1003,11 @@ function Contact:handleTwoFingerPan(buddy_contact)
             ges_ev.direction = gesture_detector.DIRECTION_TABLE[tpan_dir]
         elseif buddy_contact.state == Contact.holdState and self.state == Contact.holdState then
             ges_ev.ges = "two_finger_hold_pan"
+            -- Flag 'em for holdState to discriminate with two_finger_hold_release
+            self.pending_mt_gesture = "hold_pan_release"
+            logger.dbg("Flagged slot", self.slot, "as pending a two_finger_hold_pan_release")
+            buddy_contact.pending_mt_gesture = "hold_pan_release"
+            logger.dbg("Flagged slot", buddy_contact.slot, "as pending a two_finger_hold_pan_release")
         end
         logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
         return ges_ev
@@ -1045,7 +1052,7 @@ function Contact:handlePanRelease()
         --       (because a single swipe + a single pan would be meaningless).
         if self.pending_mt_gesture == "pan_release" and
            (buddy_contact.pending_mt_gesture == "pan_release" or buddy_contact.pending_mt_gesture == "swipe") then
-            logger.dbg("two finger pan release detected")
+            logger.dbg("two_finger_pan_release detected")
             pan_ev.ges = "two_finger_pan_release"
             gesture_detector:dropContact(self)
             gesture_detector:dropContact(buddy_contact)
@@ -1093,24 +1100,78 @@ function Contact:holdState(new_hold)
             self.pending_mt_gesture = nil
         end
     elseif tev.id == -1 then
-        if self.down then
-            -- end of hold, signal hold release
-            logger.dbg("hold_release detected in slot", slot)
-            gesture_detector:dropContact(self)
-            return {
-                ges = "hold_release",
-                pos = Geom:new{
-                    x = tev.x,
-                    y = tev.y,
-                    w = 0,
-                    h = 0,
-                },
+        -- Check if this might be a two finger gesture by checking if the current slot is one of the two main slots, and the other is active.
+        local buddy_slot = slot == gesture_detector.input.main_finger_slot and gesture_detector.input.main_finger_slot + 1 or
+                           slot == gesture_detector.input.main_finger_slot + 1 and gesture_detector.input.main_finger_slot or nil
+        local buddy_contact = buddy_slot and gesture_detector:getContact(buddy_slot) or nil
+        if buddy_contact and self.down and
+          (buddy_contact.down or buddy_contact.pending_mt_gesture == "hold_release" or buddy_contact.pending_mt_gesture == "hold_pan_release") then
+            -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
+            -- If it's not already pending a hold_pan_release, mark this slot as pending a hold_release.
+            if self.pending_mt_gesture ~= "hold_pan_release" then
+                self.pending_mt_gesture = "hold_release"
+                logger.dbg("Flagged slot", slot, "as pending a two_finger_hold_release")
+            end
+            -- Mark it as lifted regardless.
+            self.down = false
+
+            -- Once both contacts have been lifted, we're good to go!
+            if self.pending_mt_gesture == "hold_release" and buddy_contact.pending_mt_gesture == "hold_release" then
+                logger.dbg("two_finger_hold_release detected")
+                gesture_detector:dropContact(self)
+                gesture_detector:dropContact(buddy_contact)
+                return {
+                    ges = "two_finger_hold_release",
+                    pos = Geom:new{
+                        x = tev.x,
+                        y = tev.y,
+                        w = 0,
+                        h = 0,
+                    },
                 time = tev.timev,
-            }
+                }
+            elseif self.pending_mt_gesture == "hold_pan_release" and buddy_contact.pending_mt_gesture == "hold_pan_release" then
+                logger.dbg("two_finger_hold_pan_release detected")
+                gesture_detector:dropContact(self)
+                gesture_detector:dropContact(buddy_contact)
+                return {
+                    ges = "two_finger_hold_pan_release",
+                    pos = Geom:new{
+                        x = tev.x,
+                        y = tev.y,
+                        w = 0,
+                        h = 0,
+                    },
+                time = tev.timev,
+                }
+            end
+
+            -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
+            if self.down == false and buddy_contact.down == false then
+                logger.warn("Contact:holdState Cancelled gesture on slots", slot, buddy_slot)
+                gesture_detector:dropContact(self)
+                gesture_detector:dropContact(buddy_contact)
+            end
         else
-            -- Huh, caught a *second* contact lift for this contact? (should never happen).
-            logger.warn("Contact:holdState Cancelled gesture on slot", slot)
-            gesture_detector:dropContact(self)
+            if self.down then
+                -- End of hold, signal hold release
+                logger.dbg("hold_release detected in slot", slot)
+                gesture_detector:dropContact(self)
+                return {
+                    ges = "hold_release",
+                    pos = Geom:new{
+                        x = tev.x,
+                        y = tev.y,
+                        w = 0,
+                        h = 0,
+                    },
+                    time = tev.timev,
+                }
+            else
+                -- Huh, caught a *second* contact lift for this contact? (should never happen).
+                logger.warn("Contact:holdState Cancelled gesture on slot", slot)
+                gesture_detector:dropContact(self)
+            end
         end
     elseif tev.id ~= -1 and ((math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
                              (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD)) then
