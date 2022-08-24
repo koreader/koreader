@@ -108,90 +108,13 @@ function UIManager:init()
             Device:reboot()
         end)
     end
-
-    if Device:isCervantes() then
+    if Device:isPocketBook() then
+        -- Only fg/bg state plugin notifiers, not real power event.
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
-            Device:onPowerEvent("Suspend")
         end
         self.event_handlers["Resume"] = function()
-            Device:onPowerEvent("Resume")
             self:_afterResume()
-        end
-        self.event_handlers["PowerPress"] = function()
-            UIManager:scheduleIn(2, self.poweroff_action)
-        end
-        self.event_handlers["PowerRelease"] = function()
-            if not self._entered_poweroff_stage then
-                UIManager:unschedule(self.poweroff_action)
-                -- resume if we were suspended
-                if Device.screen_saver_mode then
-                    self:resume()
-                else
-                    self:suspend()
-                end
-            end
-        end
-        self.event_handlers["Charging"] = function()
-            self:_beforeCharging()
-            if Device.screen_saver_mode then
-                self:suspend()
-            end
-        end
-        self.event_handlers["NotCharging"] = function()
-            self:_afterNotCharging()
-            if Device.screen_saver_mode then
-                self:suspend()
-            end
-        end
-        self.event_handlers["UsbPlugIn"] = function()
-            self:_beforeCharging()
-            if Device.screen_saver_mode then
-                self:suspend()
-            else
-                -- Potentially start an USBMS session
-                local MassStorage = require("ui/elements/mass_storage")
-                MassStorage:start()
-            end
-        end
-        self.event_handlers["UsbPlugOut"] = function()
-            self:_afterNotCharging()
-            if Device.screen_saver_mode then
-                self:suspend()
-            else
-                -- Potentially dismiss the USBMS ConfirmBox
-                local MassStorage = require("ui/elements/mass_storage")
-                MassStorage:dismiss()
-            end
-        end
-        self.event_handlers["__default__"] = function(input_event)
-            -- Same as in Kobo: we want to ignore keys during suspension
-            if not Device.screen_saver_mode then
-                self:sendEvent(input_event)
-            end
-        end
-    elseif Device:isKindle() then
-        self.event_handlers["IntoSS"] = function()
-            self:_beforeSuspend()
-            Device:intoScreenSaver()
-        end
-        self.event_handlers["OutOfSS"] = function()
-            Device:outofScreenSaver()
-            self:_afterResume()
-        end
-        self.event_handlers["Charging"] = function()
-            self:_beforeCharging()
-            Device:usbPlugIn()
-        end
-        self.event_handlers["NotCharging"] = function()
-            Device:usbPlugOut()
-            self:_afterNotCharging()
-        end
-        self.event_handlers["WakeupFromSuspend"] = function()
-            Device:wakeupFromSuspend()
-        end
-        self.event_handlers["ReadyToSuspend"] = function()
-            Device:readyToSuspend()
         end
     elseif Device:isKobo() then
         -- We do not want auto suspend procedure to waste battery during
@@ -298,13 +221,28 @@ function UIManager:init()
                 self:sendEvent(input_event)
             end
         end
-    elseif Device:isPocketBook() then
-        -- Only fg/bg state plugin notifiers, not real power event.
-        self.event_handlers["Suspend"] = function()
+    elseif Device:isKindle() then
+        self.event_handlers["IntoSS"] = function()
             self:_beforeSuspend()
+            Device:intoScreenSaver()
         end
-        self.event_handlers["Resume"] = function()
+        self.event_handlers["OutOfSS"] = function()
+            Device:outofScreenSaver()
             self:_afterResume()
+        end
+        self.event_handlers["Charging"] = function()
+            self:_beforeCharging()
+            Device:usbPlugIn()
+        end
+        self.event_handlers["NotCharging"] = function()
+            Device:usbPlugOut()
+            self:_afterNotCharging()
+        end
+        self.event_handlers["WakeupFromSuspend"] = function()
+            Device:wakeupFromSuspend()
+        end
+        self.event_handlers["ReadyToSuspend"] = function()
+            Device:readyToSuspend()
         end
     elseif Device:isRemarkable() then
         self.event_handlers["Suspend"] = function()
@@ -333,23 +271,6 @@ function UIManager:init()
             -- Same as in Kobo: we want to ignore keys during suspension
             if not Device.screen_saver_mode then
                 self:sendEvent(input_event)
-            end
-        end
-    elseif Device:isSDL() then
-        self.event_handlers["Suspend"] = function()
-            self:_beforeSuspend()
-            Device:simulateSuspend()
-        end
-        self.event_handlers["Resume"] = function()
-            Device:simulateResume()
-            self:_afterResume()
-        end
-        self.event_handlers["PowerRelease"] = function()
-            -- Resume if we were suspended
-            if Device.screen_saver_mode then
-                self:resume()
-            else
-                self:suspend()
             end
         end
     elseif Device:isSonyPRSTUX() then
@@ -398,6 +319,84 @@ function UIManager:init()
             -- Same as in Kobo: we want to ignore keys during suspension
             if not Device.screen_saver_mode then
                 self:sendEvent(input_event)
+            end
+        end
+    elseif Device:isCervantes() then
+        self.event_handlers["Suspend"] = function()
+            self:_beforeSuspend()
+            Device:onPowerEvent("Suspend")
+        end
+        self.event_handlers["Resume"] = function()
+            Device:onPowerEvent("Resume")
+            self:_afterResume()
+        end
+        self.event_handlers["PowerPress"] = function()
+            UIManager:scheduleIn(2, self.poweroff_action)
+        end
+        self.event_handlers["PowerRelease"] = function()
+            if not self._entered_poweroff_stage then
+                UIManager:unschedule(self.poweroff_action)
+                -- resume if we were suspended
+                if Device.screen_saver_mode then
+                    self:resume()
+                else
+                    self:suspend()
+                end
+            end
+        end
+        self.event_handlers["Charging"] = function()
+            self:_beforeCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            end
+        end
+        self.event_handlers["NotCharging"] = function()
+            self:_afterNotCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            end
+        end
+        self.event_handlers["UsbPlugIn"] = function()
+            self:_beforeCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            else
+                -- Potentially start an USBMS session
+                local MassStorage = require("ui/elements/mass_storage")
+                MassStorage:start()
+            end
+        end
+        self.event_handlers["UsbPlugOut"] = function()
+            self:_afterNotCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            else
+                -- Potentially dismiss the USBMS ConfirmBox
+                local MassStorage = require("ui/elements/mass_storage")
+                MassStorage:dismiss()
+            end
+        end
+        self.event_handlers["__default__"] = function(input_event)
+            -- Same as in Kobo: we want to ignore keys during suspension
+            if not Device.screen_saver_mode then
+                self:sendEvent(input_event)
+            end
+        end
+    elseif Device:isSDL() then
+        self.event_handlers["Suspend"] = function()
+            self:_beforeSuspend()
+            Device:simulateSuspend()
+        end
+        self.event_handlers["Resume"] = function()
+            Device:simulateResume()
+            self:_afterResume()
+        end
+        self.event_handlers["PowerRelease"] = function()
+            -- Resume if we were suspended
+            if Device.screen_saver_mode then
+                self:resume()
+            else
+                self:suspend()
             end
         end
     end
