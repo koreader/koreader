@@ -1004,10 +1004,10 @@ function Contact:handleTwoFingerPan(buddy_contact)
         elseif buddy_contact.state == Contact.holdState and self.state == Contact.holdState then
             ges_ev.ges = "two_finger_hold_pan"
             -- Flag 'em for holdState to discriminate with two_finger_hold_release
-            self.pending_mt_gesture = "hold_pan_release"
-            logger.dbg("Flagged slot", self.slot, "as pending a two_finger_hold_pan_release")
-            buddy_contact.pending_mt_gesture = "hold_pan_release"
-            logger.dbg("Flagged slot", buddy_contact.slot, "as pending a two_finger_hold_pan_release")
+            self.pending_mt_gesture = "hold_pan"
+            logger.dbg("Flagged slot", self.slot, "as a two_finger_hold_pan")
+            buddy_contact.pending_mt_gesture = "hold_pan"
+            logger.dbg("Flagged slot", buddy_contact.slot, "as a two_finger_hold_pan")
         end
         logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
         return ges_ev
@@ -1105,10 +1105,15 @@ function Contact:holdState(new_hold)
                            slot == gesture_detector.input.main_finger_slot + 1 and gesture_detector.input.main_finger_slot or nil
         local buddy_contact = buddy_slot and gesture_detector:getContact(buddy_slot) or nil
         if buddy_contact and self.down and
-          (buddy_contact.down or buddy_contact.pending_mt_gesture == "hold_release" or buddy_contact.pending_mt_gesture == "hold_pan_release") then
+           (buddy_contact.down or buddy_contact.pending_mt_gesture == "hold_pan" or
+           buddy_contact.pending_mt_gesture == "hold_release" or buddy_contact.pending_mt_gesture == "hold_pan_release") then
             -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
-            -- If it's not already pending a hold_pan_release, mark this slot as pending a hold_release.
-            if self.pending_mt_gesture ~= "hold_pan_release" then
+            -- If it was doing a hold_pan, flag this slot as pending a hold_pan_release,
+            -- and if it's not already pending a hold_pan_release, mark it as pending a hold_release.
+            if self.pending_mt_gesture == "hold_pan" then
+                self.pending_mt_gesture = "hold_pan_release"
+                logger.dbg("Flagged slot", slot, "as pending a two_finger_hold_pan_release")
+            elseif self.pending_mt_gesture ~= "hold_pan_release" then
                 self.pending_mt_gesture = "hold_release"
                 logger.dbg("Flagged slot", slot, "as pending a two_finger_hold_release")
             end
