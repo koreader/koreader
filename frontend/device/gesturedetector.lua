@@ -607,58 +607,50 @@ function Contact:handleDoubleTap()
 end
 
 --[[--
-Handles move & hold. Contact is down.
+Handles move (switch to panState) & hold (switch to holdState). Contact is down.
 --]]
 function Contact:handleNonTap()
     local slot = self.slot
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
-    -- If we've moved enough, switch to a pan
-    if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
-       (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
-        -- If user's finger moved far enough on the X or Y axes, switch to pan state.
-        return self:switchState(Contact.panState)
-    else
-        -- Otherwise, start the hold timer if that hasn't already been done.
-        -- FIXME: What about hold_pan, does that rely on switching to hold first no matter the movement?
-        if not self.pending_hold_timer then
-            logger.dbg("set up hold timer for slot", slot)
-            self.pending_hold_timer = true
-            gesture_detector.input:setTimeout(slot, "hold", function()
-                -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
-                -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through dropContact by a finger up gesture),
-                -- then check that we're still in a stationary finger down state (e.g., tapState).
-                -- NOTE: We need to check that the current contact in this slot is *still* the same object first, because closure ;).
-                if self == gesture_detector:getContact(slot) and self.pending_hold_timer then
-                    self.pending_hold_timer = nil
-                    if self.state == Contact.tapState and self.down then
-                        -- Don't switch to hold if we've actually moved enough to pan...
-                        if (math.abs(self.current_tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
-                            (math.abs(self.current_tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
-                            -- If user's finger moved far enough on the X or Y axes, switch to pan state.
-                            logger.dbg("hold timer detected a pan gesture in slot", slot)
-                            return self:switchState(Contact.panState)
-                        else
-                            -- That means we can switch to hold
-                            logger.dbg("hold timer detected a hold gesture in slot", slot)
-                            return self:switchState(Contact.holdState, true)
-                        end
-                    end
+    -- If we haven't yet fired the hold timer, do so first and foremost, as hold_pan handling *requires* a hold.
+    if not self.pending_hold_timer then
+        logger.dbg("set up hold timer for slot", slot)
+        self.pending_hold_timer = true
+        gesture_detector.input:setTimeout(slot, "hold", function()
+            -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
+            -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through dropContact by a finger up gesture),
+            -- then check that we're still in a stationary finger down state (e.g., tapState).
+            -- NOTE: We need to check that the current contact in this slot is *still* the same object first, because closure ;).
+            if self == gesture_detector:getContact(slot) and self.pending_hold_timer then
+                self.pending_hold_timer = nil
+                if self.state == Contact.tapState and self.down then
+                    -- NOTE: If we happened to have moved enough, holdState will generate a hold_pan on the *next* event,
+                    --       but for now, the initial hold is mandatory.
+                    logger.dbg("hold timer detected a hold gesture in slot", slot)
+                    return self:switchState(Contact.holdState, true)
                 end
-            end, tev.timev, gesture_detector.ges_hold_interval)
+            end
+        end, tev.timev, gesture_detector.ges_hold_interval)
 
-            -- NOTE: We only generate touch *once*, on contact down (assuming it isn't a pan...)
-            return {
-                ges = "touch",
-                pos = Geom:new{
-                    x = tev.x,
-                    y = tev.y,
-                    w = 0,
-                    h = 0,
-                },
-                time = tev.timev,
-            }
+        -- NOTE: We only generate touch *once*, on contact down (assuming it isn't a pan...)
+        return {
+            ges = "touch",
+            pos = Geom:new{
+                x = tev.x,
+                y = tev.y,
+                w = 0,
+                h = 0,
+            },
+            time = tev.timev,
+        }
+    else
+        -- Once the hold timer has been fired, we're free to see if we can switch to pan,
+        -- If the contact moved far enough on the X or Y axes...
+        if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
+           (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
+            return self:switchState(Contact.panState)
         end
     end
 end
@@ -1049,14 +1041,14 @@ end
 --[[--
 Handles hold, hold_release & hold_pan.
 --]]
-function Contact:holdState(hold)
+function Contact:holdState(new_hold)
     local slot = self.slot
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
 
     logger.dbg("slot", slot, "in hold state...")
-    -- When we switch to hold state, we pass an additional boolean param "hold".
-    if tev.id ~= -1 and hold then
+    -- When we switch to hold state, we pass an additional boolean param "new_hold".
+    if new_hold and tev.id ~= -1 then
         -- If this contact is part of a rotate gesture, don't actually emit the hold,
         -- as a finalized rotate will inhibit the hold_release anyway...
         if self.pending_mt_gesture ~= "rotate" then
