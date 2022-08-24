@@ -188,6 +188,56 @@ function SonyPRSTUX:getDeviceModel()
     return ffi.string("PRS-T2")
 end
 
+function SonyPRSTUX:setDeviceSpecificEventHandlers(UIManager)
+    UIManager.event["Suspend"] = function()
+        self:_beforeSuspend()
+        self:intoScreenSaver()
+        self:suspend()
+    end
+    UIManager.event["Resume"] = function()
+        self:resume()
+        self:outofScreenSaver()
+        self:_afterResume()
+    end
+    UIManager.event["PowerPress"] = function()
+        UIManager:scheduleIn(2, self.poweroff_action)
+    end
+    UIManager.event["PowerRelease"] = function()
+        if not UIManager._entered_poweroff_stage then
+            UIManager:unschedule(self.poweroff_action)
+            -- resume if we were suspended
+            if self.screen_saver_mode then
+                UIManager.event_handlers["Resume"]()
+            else
+                UIManager.event_handlers["Suspend"]()
+            end
+        end
+    end
+    UIManager.event["Charging"] = function()
+        self:_beforeCharging()
+    end
+    UIManager.event["NotCharging"] = function()
+        self:_afterNotCharging()
+    end
+    UIManager.event["UsbPlugIn"] = function()
+        if self.screen_saver_mode then
+            self:resume()
+            self:outofScreenSaver()
+            self:_afterResume()
+        end
+        self:usbPlugIn()
+    end
+    UIManager.event["UsbPlugOut"] = function()
+        self:usbPlugOut()
+    end
+    UIManager.event["__default__"] = function(input_event)
+        -- Same as in Kobo: we want to ignore keys during suspension
+        if not self.screen_saver_mode then
+            UIManager:sendEvent(input_event)
+        end
+    end
+end
+
 -- For Sony PRS-T2
 local SonyPRSTUX_T2 = SonyPRSTUX:new{
     isTouchDevice = yes,
