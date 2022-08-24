@@ -551,14 +551,16 @@ end
     -- Sometimes at high latitudes noon or midnight does not get calculated.
     -- Maybe there is a minor bug in the calculateNoon/calculateMidnight functions.
     if self.rise and self.set then
-        if not self.noon then
+        if not self.noon and self.rise and self.set then
             self.noon = (self.rise + self.set) / 2
         end
-        if not self.midnight then
+        if not self.midnight and self.noon then
             self.midnight = self.noon + 12
         end
-        if not self.midnight_beginning then
+        if not self.midnight_beginning and self.midnight then
             self.midnight_beginning = self.midnight - 24
+        elseif not self.midnight and self.midnight_beginning then
+            self.midnight = self.midnight_beginning + 24
         end
     elseif self.rise and not self.set then -- only sunrise on that day
         self.midnight = nil
@@ -580,17 +582,18 @@ end
     self.times[11] = self.midnight
 end
 
--- Get time in seconds (either actual time in hours or date struct)
+-- Get time in seconds, rounded to ms (either actual time in hours or date struct)
 function SunTime:getTimeInSec(val)
     if not val then
         val = os.date("*t")
     end
 
     if type(val) == "table" then
-        return val.hour*3600 + val.min*60 + val.sec
+        val = val.hour*3600 + val.min*60 + val.sec
+    else
+        val = val*3600
     end
-
-    return val*3600
+    return math.floor(val * 1000 ) / 1000
 end
 
 return SunTime
