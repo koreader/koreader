@@ -532,7 +532,7 @@ function Contact:tapState(new_tap)
         --       drop buddy now, because we won't ever be a match with it again.
         if buddy_contact and buddy_contact.down == false and buddy_contact.pending_mt_gesture == "tap" and
            self.state ~= Contact.tapState then
-            logger.dbg("Contact:tapState Cancelled a two-finger tap gesture on slot", buddy_slot, "because slot", slot, "switched to an incompatible state")
+            logger.warn("Contact:tapState Cancelled a two-finger tap gesture on slot", buddy_slot, "because slot", slot, "switched to an incompatible state")
             gesture_detector:dropContact(buddy_contact)
         end
         return ges
