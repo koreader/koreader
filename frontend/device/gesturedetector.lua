@@ -843,7 +843,7 @@ function Contact:handlePan()
         end
         -- NOTE: If buddy isn't already in holdState, and isn't already flagged for a gesture,
         --       leave a flag so that we might skip the hold gesture for rotate when it switches to holdState...
-        if buddy_contact.state ~= Contact.holdState and not buddy_contact.pending_mt_gesture then
+        if buddy_contact.state == Contact.tapState and not buddy_contact.pending_mt_gesture then
             buddy_contact.pending_mt_gesture = "rotate"
             logger.dbg("Flagged slot", buddy_slot, "as pending a potential rotate")
         end
