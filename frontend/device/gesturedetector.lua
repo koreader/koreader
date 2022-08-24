@@ -583,17 +583,16 @@ function Contact:handleDoubleTap()
     -- Double tap enabled: we can't send this single tap immediately as it may be the start of a double tap.
     -- We'll send it as a single tap after a timer if no second tap happened in the double tap delay.
     if not self.pending_double_tap_timer then
-        logger.dbg("set up double tap timer for slot", slot)
+        logger.dbg("set up double_tap timer for slot", slot)
         self.pending_double_tap_timer = true
         -- setTimeout will handle computing the deadline in the least lossy way possible given the platform.
         gesture_detector.input:setTimeout(slot, "double_tap", function()
-            logger.dbg("in double tap timer for slot", slot, "single tap:", self == gesture_detector:getContact(slot))
             if self == gesture_detector:getContact(slot) and self.pending_double_tap_timer then
                 self.pending_double_tap_timer = false
                 if self.state == Contact.tapState then
                     -- A single or double tap will yield a different contact object, by virtue of dropContact and closure magic ;).
                     -- Speaking of closures, this is the original ges_ev from the timer setup.
-                    logger.dbg("single tap detected in slot", slot, ges_ev.pos)
+                    logger.dbg("double_tap timer detected a single tap in slot", slot, ges_ev.pos)
                     gesture_detector:dropContact(self)
                     return ges_ev
                 end
