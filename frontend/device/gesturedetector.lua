@@ -19,6 +19,7 @@ Current detectable gestures:
 * `hold_release`
 * `two_finger_tap`
 * `two_finger_pan`
+* `two_finger_hold_pan` (/!\ both contacts will emit a respective hold_release on lift)
 * `two_finger_swipe`
 * `two_finger_pan_release`
 
@@ -845,10 +846,9 @@ function Contact:handlePan()
             logger.dbg("Flagged slot", buddy_slot, "as pending a potential rotate")
         end
 
-        -- Once both contacts have been flagged and are *actually* in pan state, we're good to go!
-        -- (holdState can call handlePan, so panState is not a guarantee).
-        if self.pending_mt_gesture == "pan" and self.state == Contact.panState and
-           buddy_contact.pending_mt_gesture == "pan" and buddy_contact.state == Contact.panState then
+        -- Once both contacts have been flagged, we're good to go!
+        -- (Keep in mind that holdState can call handlePan, so either contact can be in panState or holdState).
+        if self.pending_mt_gesture == "pan" and buddy_contact.pending_mt_gesture == "pan" then
             -- This is *NOT* a contact lift, unlike other two finger gestures ;).
             self.pending_mt_gesture = nil
             buddy_contact.pending_mt_gesture = nil
@@ -935,11 +935,11 @@ function Contact:handlePan()
 end
 
 --[[--
-Emits the pan, two_finger_pan, inward_pan, outward_pan & rotate gestures.
+Emits the pan, two_finger_pan, two_finger_hold_pan, inward_pan, outward_pan & rotate gestures.
 Contact is down in panState or holdState, or up in panState if it was lifted below the swipe interval.
 --]]
 function Contact:handleTwoFingerPan(buddy_contact)
-    logger.dbg("Contact:handleTwoFingerPan", self.slot)
+    logger.dbg("Contact:handleTwoFingerPan for slot", self.slot)
     local gesture_detector = self.ges_dec
 
     -- triggering contact is self
@@ -963,7 +963,18 @@ function Contact:handleTwoFingerPan(buddy_contact)
         w = 0,
         h = 0,
     }
-    if buddy_contact.state == Contact.panState then
+    if buddy_contact.state == Contact.holdState and self.state == Contact.panState then
+        local angle = gesture_detector:getRotate(rstart_pos, tstart_pos, tend_pos)
+        logger.dbg("rotate", angle, "detected")
+        local direction = angle > 0 and "cw" or "ccw"
+        return {
+            ges = "rotate",
+            pos = rstart_pos,
+            angle = angle,
+            direction = direction,
+            time = self.current_tev.timev,
+        }
+    else
         local rpan_dir, rpan_dis = buddy_contact:getPath()
         local rend_pos = Geom:new{
             x = buddy_contact.current_tev.x,
@@ -988,20 +999,11 @@ function Contact:handleTwoFingerPan(buddy_contact)
                 ges_ev.ges = "outward_pan"
             end
             ges_ev.direction = gesture_detector.DIRECTION_TABLE[tpan_dir]
+        elseif buddy_contact.state == Contact.holdState and self.state == Contact.holdState then
+            ges_ev.ges = "two_finger_hold_pan"
         end
         logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
         return ges_ev
-    elseif buddy_contact.state == Contact.holdState then
-        local angle = gesture_detector:getRotate(rstart_pos, tstart_pos, tend_pos)
-        logger.dbg("rotate", angle, "detected")
-        local direction = angle > 0 and "cw" or "ccw"
-        return {
-            ges = "rotate",
-            pos = rstart_pos,
-            angle = angle,
-            direction = direction,
-            time = self.current_tev.timev,
-        }
     end
 end
 
