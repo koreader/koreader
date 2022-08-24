@@ -17,6 +17,7 @@ Current detectable gestures:
 * `outward_pan`
 * `pan_release`
 * `hold_release`
+* `two_finger_hold`
 * `two_finger_hold_release`
 * `two_finger_tap`
 * `two_finger_pan`
@@ -362,7 +363,7 @@ function Contact:initialState()
         if tev.id == -1 then
             -- If this slot was a buddy slot that happened to be dropped by a MT gesture in the *same* input frame,
             -- a lift might be the first thing we process here... We can safely drop it again.
-            logger.dbg("Contact:initialState Cancelled gesture on slot", self.slot)
+            logger.dbg("Contact:initialState Cancelled a gesture on slot", self.slot)
             self.ges_dec:dropContact(self)
         else
             self.id = tev.id
@@ -477,7 +478,7 @@ function Contact:tapState(new_tap)
                         h = 0,
                     }
                     local tap_span = pos0:distance(pos1)
-                    logger.dbg("two-finger tap detected with span", tap_span)
+                    logger.dbg("two_finger_tap detected with span", tap_span)
                     gesture_detector:dropContact(self)
                     gesture_detector:dropContact(buddy_contact)
                     return {
@@ -490,7 +491,7 @@ function Contact:tapState(new_tap)
 
                 -- If both contacts are up and we haven't detected any gesture, forget about 'em (should never happen).
                 if self.down == false and buddy_contact.down == false then
-                    logger.warn("Contact:tapState Cancelled two-finger gesture on slots", slot, buddy_slot)
+                    logger.warn("Contact:tapState Cancelled a two-finger gesture on slots", slot, buddy_slot)
                     gesture_detector:dropContact(self)
                     gesture_detector:dropContact(buddy_contact)
                 end
@@ -521,7 +522,7 @@ function Contact:tapState(new_tap)
             return self:handleDoubleTap()
         else
             -- Huh, caught a *second* contact lift for this contact? (should never happen).
-            logger.warn("Contact:tapState Cancelled gesture on slot", slot)
+            logger.warn("Contact:tapState Cancelled a gesture on slot", slot)
             gesture_detector:dropContact(self)
         end
     else
@@ -730,7 +731,7 @@ function Contact:panState()
 
                 -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
                 if self.down == false and buddy_contact.down == false then
-                    logger.warn("Contact:panState Cancelled gesture on slots", slot, buddy_slot)
+                    logger.warn("Contact:panState Cancelled gestures on slots", slot, buddy_slot)
                     gesture_detector:dropContact(self)
                     gesture_detector:dropContact(buddy_contact)
                 end
@@ -738,14 +739,14 @@ function Contact:panState()
                 return self:handleSwipe()
             else
                 -- Huh, caught a *second* contact lift for this contact? (should never happen).
-                logger.warn("Contact:panState Cancelled swipe gesture on slot", slot)
+                logger.warn("Contact:panState Cancelled a swipe gesture on slot", slot)
                 gesture_detector:dropContact(self)
             end
         elseif self.down then -- if end of pan is not swipe then it must be pan release.
             return self:handlePanRelease()
         else
             -- Huh, caught a *second* contact lift for this contact? (should never happen).
-            logger.warn("Contact:panState Cancelled pan gesture on slot", slot)
+            logger.warn("Contact:panState Cancelled a pan gesture on slot", slot)
             gesture_detector:dropContact(self)
         end
     else
@@ -851,7 +852,7 @@ function Contact:handlePan()
         -- Once both contacts have been flagged, we're good to go!
         -- (Keep in mind that holdState can call handlePan, so either contact can be in panState or holdState).
         if self.pending_mt_gesture == "pan" and buddy_contact.pending_mt_gesture == "pan" then
-            -- This is *NOT* a contact lift, unlike other two finger gestures ;).
+            -- This is *NOT* a contact lift, unlike most other two finger gestures ;).
             self.pending_mt_gesture = nil
             buddy_contact.pending_mt_gesture = nil
             logger.dbg("Cleared the pending two_finger_pan flag for slots", slot, buddy_slot)
@@ -1070,7 +1071,7 @@ function Contact:handlePanRelease()
 
         -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
         if self.down == false and buddy_contact.down == false then
-            logger.warn("Contact:handlePanRelease Cancelled gesture on slots", slot, buddy_slot)
+            logger.warn("Contact:handlePanRelease Cancelled gestures on slots", slot, buddy_slot)
             gesture_detector:dropContact(self)
             gesture_detector:dropContact(buddy_contact)
         end
@@ -1095,16 +1096,56 @@ function Contact:holdState(new_hold)
         -- If this contact is part of a rotate gesture, don't actually emit the hold,
         -- as a finalized rotate will inhibit the hold_release anyway...
         if self.pending_mt_gesture ~= "rotate" then
-            return {
-                ges = "hold",
-                pos = Geom:new{
-                    x = tev.x,
-                    y = tev.y,
-                    w = 0,
-                    h = 0,
-                },
-                time = tev.timev,
-            }
+            -- Check if this might be a two finger gesture by checking if the current slot is one of the two main slots, and the other is active.
+            local buddy_slot = slot == gesture_detector.input.main_finger_slot and gesture_detector.input.main_finger_slot + 1 or
+                               slot == gesture_detector.input.main_finger_slot + 1 and gesture_detector.input.main_finger_slot or nil
+            local buddy_contact = buddy_slot and gesture_detector:getContact(buddy_slot) or nil
+            if buddy_contact and self.down and (buddy_contact.down or buddy_contact.pending_mt_gesture == "hold") then
+                -- Both main contacts are actives, and we're currently down,
+                -- while our buddy is still down or pending a MT gesture, so mark that slot as pending.
+                self.pending_mt_gesture = "hold"
+                logger.dbg("Flagged slot", slot, "as pending a two_finger_hold")
+
+                -- Once both contacts have been flagged, we're good to go!
+                if self.pending_mt_gesture == "hold" and buddy_contact.pending_mt_gesture == "hold" then
+                    -- This is *NOT* a contact lift, unlike most other two finger gestures ;).
+                    self.pending_mt_gesture = nil
+                    buddy_contact.pending_mt_gesture = nil
+                    logger.dbg("Cleared the pending two_finger_hold flag for slots", slot, buddy_slot)
+
+                    local pos0 = Geom:new{
+                        x = tev.x,
+                        y = tev.y,
+                        w = 0,
+                        h = 0,
+                    }
+                    local pos1 = Geom:new{
+                        x = buddy_contact.current_tev.x,
+                        y = buddy_contact.current_tev.y,
+                        w = 0,
+                        h = 0,
+                    }
+                    local tap_span = pos0:distance(pos1)
+                    logger.dbg("two_finger_hold detected with span", tap_span)
+                    return {
+                        ges = "two_finger_hold",
+                        pos = pos0:midpoint(pos1),
+                        span = tap_span,
+                        time = tev.timev,
+                    }
+                end
+            else
+                return {
+                    ges = "hold",
+                    pos = Geom:new{
+                        x = tev.x,
+                        y = tev.y,
+                        w = 0,
+                        h = 0,
+                    },
+                    time = tev.timev,
+                }
+            end
         else
             self.pending_mt_gesture = nil
         end
@@ -1162,7 +1203,7 @@ function Contact:holdState(new_hold)
 
             -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
             if self.down == false and buddy_contact.down == false then
-                logger.warn("Contact:holdState Cancelled gesture on slots", slot, buddy_slot)
+                logger.warn("Contact:holdState Cancelled gestures on slots", slot, buddy_slot)
                 gesture_detector:dropContact(self)
                 gesture_detector:dropContact(buddy_contact)
             end
@@ -1183,7 +1224,7 @@ function Contact:holdState(new_hold)
                 }
             else
                 -- Huh, caught a *second* contact lift for this contact? (should never happen).
-                logger.warn("Contact:holdState Cancelled gesture on slot", slot)
+                logger.warn("Contact:holdState Cancelled a gesture on slot", slot)
                 gesture_detector:dropContact(self)
             end
         end
