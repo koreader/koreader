@@ -736,7 +736,7 @@ function Contact:panState()
                         end
 
                         if ges_ev then
-                            logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance or math.abs(math.floor(ges_ev.angle)), "detected")
+                            logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance or math.abs(ges_ev.angle), "detected")
                             if ges_ev.ges == "rotate" then
                                 -- For rotate, only drop contact right now (as it's the only contact lift),
                                 -- buddy should already have been neutered via a switch to voidState.
