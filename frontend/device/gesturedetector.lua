@@ -756,10 +756,6 @@ function Contact:panState()
                 return self:handleSwipe()
             end
         -- If end of pan is not swipe then it must be pan release.
-        elseif buddy_contact and buddy_contact.down == false then
-            logger.dbg("Contact:panState Dropped stale buddy on slot", buddy_contact.slot)
-            gesture_detector:dropContact(buddy_contact)
-            buddy_contact = nil
         elseif self.down then
             return self:handlePanRelease(buddy_contact)
         end
