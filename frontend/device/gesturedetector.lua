@@ -773,7 +773,7 @@ function Contact:voidState()
 end
 
 --[[--
-Emits the swipe & multiswipe gestures. Contact is up.
+Emits the swipe & multiswipe gestures. Contact is up. ST only (i.e., there isn't any buddy contact active).
 --]]
 function Contact:handleSwipe()
     local slot = self.slot
@@ -1039,7 +1039,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
 end
 
 --[[--
-Emits the pan_release & two_finger_pan_release gestures. Contact is up and in panState.
+Emits the pan_release & two_finger_pan_release gestures. Contact is up (but down is still true) and in panState.
 --]]
 function Contact:handlePanRelease()
     local slot = self.slot
@@ -1082,17 +1082,16 @@ function Contact:handlePanRelease()
             gesture_detector:dropContact(buddy_contact)
             return pan_ev
         end
-
-        -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
-        if self.down == false and buddy_contact.down == false then
-            logger.warn("Contact:handlePanRelease Cancelled gestures on slots", slot, buddy_slot)
-            gesture_detector:dropContact(self)
-            gesture_detector:dropContact(buddy_contact)
-        end
     else
         logger.dbg("pan release detected in slot", slot)
         gesture_detector:dropContact(self)
         return pan_ev
+    end
+    -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
+    if buddy_contact and self.down == false and buddy_contact.down == false then
+        logger.warn("Contact:handlePanRelease Cancelled gestures on slots", slot, buddy_slot)
+        gesture_detector:dropContact(self)
+        gesture_detector:dropContact(buddy_contact)
     end
 end
 
