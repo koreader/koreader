@@ -1126,7 +1126,12 @@ function Contact:handlePanRelease(buddy_contact)
             gesture_detector:dropContact(buddy_contact)
             return pan_ev
         end
-    else
+    elseif buddy_contact and buddy_contact.down == false then
+        -- What's left to go through is ST, if we still have a stale buddy, it's time to get rid of it.
+        logger.dbg("Contact:handlePanRelease Dropped stale buddy on slot", buddy_contact.slot)
+        gesture_detector:dropContact(buddy_contact)
+        buddy_contact = nil
+    elseif self.down then
         logger.dbg("pan release detected in slot", slot)
         gesture_detector:dropContact(self)
         return pan_ev
