@@ -520,6 +520,7 @@ function Contact:tapState(new_tap)
             -- do it now to avoid leaving our buddy slot hanging...
             return self:switchState(Contact.panState)
         elseif buddy_contact and buddy_contact.down == false then
+            -- What's left to go through is ST, if we still have a stale buddy, it's time to get rid of it.
             logger.dbg("Contact:tapState Dropped stale buddy on slot", buddy_contact.slot)
             gesture_detector:dropContact(buddy_contact)
             buddy_contact = nil
@@ -749,13 +750,14 @@ function Contact:panState()
                     end
                 end
             elseif buddy_contact and buddy_contact.down == false then
+                -- What's left to go through is ST, if we still have a stale buddy, it's time to get rid of it.
                 logger.dbg("Contact:panState Dropped stale buddy on slot", buddy_contact.slot)
                 gesture_detector:dropContact(buddy_contact)
                 buddy_contact = nil
             elseif self.down then
                 return self:handleSwipe()
             end
-        -- If end of pan is not swipe then it must be pan release.
+        -- If the contact lift is not a swipe, then it's a pan.
         elseif self.down then
             return self:handlePanRelease(buddy_contact)
         end
@@ -790,6 +792,7 @@ function Contact:voidState()
     -- We basically don't do anything but drop the slot on contact lift
     if tev.id == -1 then
         if buddy_contact and buddy_contact.down == false then
+            -- What's left to go through is ST, if we still have a stale buddy, it's time to get rid of it.
             logger.dbg("Contact:voidState Dropped stale buddy on slot", buddy_contact.slot)
             gesture_detector:dropContact(buddy_contact)
             buddy_contact = nil
@@ -1260,6 +1263,7 @@ function Contact:holdState(new_hold)
             logger.dbg("Contact:holdState Contact lift for slot", slot)
             self.down = false
         elseif buddy_contact and buddy_contact.down == false then
+            -- What's left to go through is ST, if we still have a stale buddy, it's time to get rid of it.
             logger.dbg("Contact:holdState Dropped stale buddy on slot", buddy_contact.slot)
             gesture_detector:dropContact(buddy_contact)
             buddy_contact = nil
