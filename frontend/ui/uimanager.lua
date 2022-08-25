@@ -1590,7 +1590,7 @@ function UIManager:widgetInvert(widget, x, y, w, h)
 end
 
 function UIManager:setInputTimeout(timeout)
-    self.INPUT_TIMEOUT = timeout or 200*1000
+    self.INPUT_TIMEOUT = timeout or (200*1000)
 end
 
 function UIManager:resetInputTimeout()
