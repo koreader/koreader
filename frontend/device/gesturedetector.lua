@@ -765,10 +765,27 @@ function Contact:voidState()
     local gesture_detector = self.ges_dec
 
     logger.dbg("slot", slot, "in void state...")
+    -- Check if this might be a two finger gesture by checking if the current slot is one of the two main slots, and the other is active.
+    local buddy_slot = slot == gesture_detector.input.main_finger_slot and gesture_detector.input.main_finger_slot + 1 or
+                       slot == gesture_detector.input.main_finger_slot + 1 and gesture_detector.input.main_finger_slot or nil
+    local buddy_contact = buddy_slot and gesture_detector:getContact(buddy_slot) or nil
     -- We basically don't do anything but drop the slot on contact lift
     if tev.id == -1 then
-        logger.dbg("Contact:voidState Contact lift detected in slot", slot)
-        gesture_detector:dropContact(self)
+        if self.down then
+            logger.dbg("Contact:voidState Contact lift detected in slot", slot)
+            gesture_detector:dropContact(self)
+        else
+            -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
+            if buddy_contact and self.down == false and buddy_contact.down == false then
+                logger.warn("Contact:voidState Cancelled gestures in slots", slot, buddy_slot)
+                gesture_detector:dropContact(self)
+                gesture_detector:dropContact(buddy_contact)
+            elseif not buddy_contact and self.down == false then
+                -- Huh, caught a *second* contact lift for this contact? (should never happen).
+                logger.warn("Contact:voidState Cancelled a gesture in slot", slot)
+                gesture_detector:dropContact(self)
+            end
+        end
     end
 end
 
