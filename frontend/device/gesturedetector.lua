@@ -1234,7 +1234,7 @@ function Contact:holdState(new_hold)
             -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
             -- If it was doing a hold_pan, flag this slot as pending a hold_pan_release,
             -- and if it's not already pending a hold_pan_release, mark it as pending a hold_release.
-            if self.pending_mt_gesture == "hold_pan" then
+            if self.pending_mt_gesture == "hold_pan" or self.pending_mt_gesture == "pan" then
                 self.pending_mt_gesture = "hold_pan_release"
                 logger.dbg("Flagged slot", slot, "as pending a two_finger_hold_pan_release")
             elseif self.pending_mt_gesture ~= "hold_pan_release" then
