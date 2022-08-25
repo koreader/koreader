@@ -1,4 +1,3 @@
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -328,30 +327,25 @@ if Device:canReboot() then
             end,
         })
     end
+
+function DeviceListener:onRestart()
+    self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
 end
 
-if Device:canPowerOff() then
-    function DeviceListener:onPowerOff()
-        UIManager:show(ConfirmBox:new{
-            text = _("Are you sure you want to power off the device?"),
-            ok_text = _("Power off"),
-            ok_callback = function()
-                UIManager:nextTick(UIManager.poweroff_action)
-            end,
-        })
-    end
-end
-
-function DeviceListener:onSuspendEvent()
+function DeviceListener:onRequestSuspend()
     UIManager:suspend()
+end
+
+function DeviceListener:onRequestReboot()
+    UIManager:reboot()
+end
+
+function DeviceListener:onRequestPowerOff()
+    UIManager:powerOff()
 end
 
 function DeviceListener:onExit(callback)
     self.ui.menu:exitOrRestart(callback)
-end
-
-function DeviceListener:onRestart()
-    self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
 end
 
 function DeviceListener:onFullRefresh()

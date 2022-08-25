@@ -109,7 +109,7 @@ function UIManager:init()
         end)
     end
 
-    Device:setDeviceSpecificEventHandlers(self)
+    Device:setDeviceEventHandlers(self)
 end
 
 --[[--
@@ -1473,26 +1473,36 @@ function UIManager:runForever()
     return self:run()
 end
 
--- todo delete these from here, after all devices got `setDeviceSpecificEventHandlers()`
 --[[--
 Executes all the operations of a suspension (i.e., sleep) request.
 
 This function usually puts the device into suspension.
 ]]
 function UIManager:suspend()
+    -- Should always exist, as defined in `generic/device` or overwritten with `setDeviceSpecificEventHandler`
     if self.event_handlers["Suspend"] then
-        self.event_handlers["Suspend"]()
-    elseif Device:canSuspend() then
-        Device:suspend()
+        -- Give the other event handlers a chance to be executed.
+        -- `Suspend` and `Resume` events will be sent by the handler
+        UIManager:nextTick(self.event_handlers["Suspend"])
     end
 end
 
 function UIManager:reboot()
-    UIManager:broadcastEvent(Event:new("Reboot"))
+    -- Should always exist, as defined in `generic/device` or overwritten with `setDeviceSpecificEventHandler`
+    if self.event_handlers["Reboot"] then
+        -- Give the other event handlers a chance to be executed.
+        -- 'Reboot' event will be sent by the handler
+        UIManager:nextTick(self.event_handlers["Reboot"])
+    end
 end
 
 function UIManager:powerOff()
-    UIManager:broadcastEvent(Event:new("PowerOff"))
+    -- Should always exist, as defined in `generic/device` or overwritten with `setDeviceSpecificEventHandler`
+    if self.event_handlers["PowerOff"] then
+        -- Give the other event handlers a chance to be executed.
+        -- 'PowerOff' event will be sent by the handler
+        UIManager:nextTick(self.event_handlers["PowerOff"])
+    end
 end
 
 --[[--
