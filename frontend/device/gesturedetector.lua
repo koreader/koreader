@@ -887,9 +887,9 @@ function Contact:handlePan(buddy_contact)
         -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
         -- Mark that slot as pending, but leave its state alone.
         -- NOTE: Might *already* be flagged as pending a pan, the check is just to limit logging
-        if self.pending_mt_gesture ~= "pan" and self.pending_mt_gesture ~= "hold_pan" then
+        if self.pending_mt_gesture ~= "pan" then
             self.pending_mt_gesture = "pan"
-            logger.dbg("Flagged slot", slot, "as pending a two_finger_pan")
+            logger.dbg("Flagged slot", slot, "as pending a two_finger_pan/two_finger_hold_pan")
         end
         -- NOTE: If buddy isn't already in holdState, and isn't already flagged for a gesture,
         --       leave a flag so that we might skip the hold gesture for rotate when it switches to holdState...
@@ -898,14 +898,13 @@ function Contact:handlePan(buddy_contact)
             logger.dbg("Flagged slot", buddy_slot, "as pending a potential rotate")
         end
 
-        -- Once both contacts have been flagged (keep in mind we handle both pan & hold_pan), we're good to go!
+        -- Once both contacts have been flagged, we're good to go!
         -- (Keep in mind that holdState can call handlePan, so either contact can be in panState or holdState).
-        if (self.pending_mt_gesture == "pan" or self.pending_mt_gesture == "hold_pan") and
-           (buddy_contact.pending_mt_gesture == "pan" or buddy_contact.pending_mt_gesture == "hold_pan") then
+        if self.pending_mt_gesture == "pan" and buddy_contact.pending_mt_gesture == "pan" then
             -- This is *NOT* a contact lift, unlike most other two finger gestures ;).
             self.pending_mt_gesture = nil
             buddy_contact.pending_mt_gesture = nil
-            logger.dbg("Cleared the pending two_finger_pan flag for slots", slot, buddy_slot)
+            logger.dbg("Cleared the pending two_finger_pan/two_finger_hold_pan flag for slots", slot, buddy_slot)
             return self:handleTwoFingerPan(buddy_contact)
         end
     else
@@ -1318,7 +1317,16 @@ function Contact:holdState(new_hold)
     elseif tev.id ~= -1 and ((math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
                              (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD)) then
         local ges_ev = self:handlePan(buddy_contact)
-        if ges_ev ~= nil then ges_ev.ges = "hold_pan" end
+        if ges_ev ~= nil then
+            if ges_ev.ges == "two_finger_hold_pan" then
+                -- Only send it once per pair
+                if not (buddy_contact and buddy_contact.pending_mt_gesture == "hold_pan" and self.pending_mt_gesture == "hold_pan") then
+                    ges_ev = nil
+                end
+            else
+                ges_ev.ges = "hold_pan"
+            end
+        end
         return ges_ev
     end
 end
