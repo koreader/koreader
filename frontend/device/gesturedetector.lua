@@ -1158,7 +1158,7 @@ function Contact:holdState(new_hold)
                 }
             end
         else
-            self.pending_mt_gesture = nil
+            logger.dbg("Inhibited hold gesture on slot", slot, "because it's flagged for a rotate gesture")
         end
     elseif tev.id == -1 then
         if buddy_contact and self.down and buddy_contact.state == Contact.holdState and
@@ -1207,22 +1207,27 @@ function Contact:holdState(new_hold)
                 time = tev.timev,
                 }
             end
-        else
-            if self.down then
-                -- End of hold, signal hold release
-                logger.dbg("hold_release detected in slot", slot)
-                gesture_detector:dropContact(self)
-                return {
-                    ges = "hold_release",
-                    pos = Geom:new{
-                        x = tev.x,
-                        y = tev.y,
-                        w = 0,
-                        h = 0,
-                    },
-                    time = tev.timev,
-                }
-            end
+        elseif buddy_contact and self.down and
+               buddy_contact.state == Contact.panState and buddy_contact.down and
+               self.pending_mt_gesture == "rotate" then
+            -- If we're part of a rotate gesture, but we were lifted *before* our buddy (e.g., because of the snow protocol),
+            -- leave the contact dropping to it.
+            logger.dbg("Contact:holdState Contact lift for slot", slot)
+            self.down = false
+        elseif self.down then
+            -- End of hold, signal hold release
+            logger.dbg("hold_release detected in slot", slot)
+            gesture_detector:dropContact(self)
+            return {
+                ges = "hold_release",
+                pos = Geom:new{
+                    x = tev.x,
+                    y = tev.y,
+                    w = 0,
+                    h = 0,
+                },
+                time = tev.timev,
+            }
         end
         -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
         if buddy_contact and self.down == false and buddy_contact.down == false then
