@@ -209,7 +209,7 @@ function Device:init()
                 end
             elseif ev.code == C.APP_CMD_PAUSE then
                 if not android.prop.brokenLifecycle then
-                    UIManager:broadcastEvent(Event:new("Suspend"))
+                    UIManager:broadcastEvent(Event:new("RequestSuspend"))
                 end
             elseif ev.code == C.AEVENT_POWER_CONNECTED then
                 UIManager:broadcastEvent(Event:new("Charging"))

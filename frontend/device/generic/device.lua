@@ -573,8 +573,52 @@ function Device:untar(archive, extract_to)
     return os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
 end
 
--- Set device specific event handlers
-function Device:setDeviceSpecificEventHandlers(UIManager) end
+-- Set device event handlers common to all devices
+function Device:setDeviceEventHandlers(UIManager)
+    if self:canReboot() then
+        UIManager.event_handlers["Reboot"] = function()
+            local ConfirmBox = require("ui/widget/confirmbox")
+            UIManager:show(ConfirmBox:new{
+                text = _("Are you sure you want to reboot the device?"),
+                ok_text = _("Reboot"),
+                ok_callback = function()
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("Reboot"))
+                    UIManager:nextTick(UIManager.reboot_action)
+                end,
+            })
+        end
+    else
+        UIManager.event_handlers["Reboot"] = function() end
+    end
+
+    if self:canPowerOff() then
+        UIManager.event_handlers["PowerOff"] = function()
+            local ConfirmBox = require("ui/widget/confirmbox")
+            UIManager:show(ConfirmBox:new{
+                text = _("Are you sure you want to power off the device?"),
+                ok_text = _("Power off"),
+                ok_callback = function()
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("PowerOff"))
+                    UIManager:nextTick(UIManager.poweroff_action)
+                end,
+            })
+        end
+    else
+        UIManager.event_handlers["PowerOff"] = function() end
+    end
+
+    self:setDeviceSpecificEventHandlers(UIManager)
+end
+
+-- Devices can add additional event handlers by overwriting this method.
+function Device:setDeviceSpecificEventHandlers(UIManager)
+    -- This will be most probably overwritten in the device specific `setDeviceSpecificEventHandlers`
+    UIManager.event_handlers["Suspend"] = function()
+        self.suspend()
+    end
+end
 
 -- The common operations that should be performed before suspending the device.
 function Device:_beforeSuspend()
