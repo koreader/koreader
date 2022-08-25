@@ -1853,12 +1853,12 @@ end
 function UIManager:_standbyTransition()
     if self._prevent_standby_count == 0 and self._prev_prevent_standby_count > 0 then
         -- edge prevent->allow
-        logger.dbg("allow standby")
+        logger.dbg("UIManager:_standbyTransition -> AllowStandby")
         Device:setAutoStandby(true)
         self:broadcastEvent(Event:new("AllowStandby"))
     elseif self._prevent_standby_count > 0 and self._prev_prevent_standby_count == 0 then
         -- edge allow->prevent
-        logger.dbg("prevent standby")
+        logger.dbg("UIManager:_standbyTransition -> PreventStandby")
         Device:setAutoStandby(false)
         self:broadcastEvent(Event:new("PreventStandby"))
     end
