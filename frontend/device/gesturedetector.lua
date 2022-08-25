@@ -974,8 +974,13 @@ function Contact:handleTwoFingerPan(buddy_contact)
         local angle = gesture_detector:getRotate(rstart_pos, tstart_pos, tend_pos)
         logger.dbg("rotate", angle, "detected")
         local direction = angle > 0 and "cw" or "ccw"
-        -- Switch buddy to a neutered state so that it's ignored until lift.
-        buddy_contact.state = Contact.voidState
+        -- If buddy is still down, switch it to a neutered state so that it's ignored until lift.
+        if buddy_contact.down then
+            buddy_contact.state = Contact.voidState
+        else
+            -- If it's already up (e.g., because of the snow protocol), drop it now.
+            gesture_detector:dropContact(buddy_contact)
+        end
         return {
             ges = "rotate",
             pos = rstart_pos,
