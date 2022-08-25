@@ -659,6 +659,7 @@ function Contact:handleNonTap(new_tap)
                 if self.state == Contact.tapState and self.down then
                     -- NOTE: If we happened to have moved enough, holdState will generate a hold_pan on the *next* event,
                     --       but for now, the initial hold is mandatory.
+                    --       On the other hand, if we're *already* in pan state, we stay there and don't switch to hold.
                     logger.dbg("hold timer detected a hold gesture in slot", slot)
                     return self:switchState(Contact.holdState, true)
                 end
