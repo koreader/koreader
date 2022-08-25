@@ -984,8 +984,8 @@ function Contact:handleTwoFingerPan(buddy_contact)
         w = 0,
         h = 0,
     }
-    if buddy_contact.state == Contact.holdState and self.state == Contact.panState then
-        -- NOTE: We only handle the rotate gesture when triggered by the pan finger
+    if self.current_tev.id == -1 and buddy_contact.state == Contact.holdState and self.state == Contact.panState then
+        -- NOTE: We only handle the rotate gesture when triggered by the just lifted pan finger
         --       (actually, it needs to pass the swipe interval check, but it is in panState),
         --       because this gesture would be too difficult to discriminate from a pinch/spread the other way around ;).
         --       TL;DR: Both fingers need to move for a pinch/spread, while a finger needs to stay still for a rotate.
