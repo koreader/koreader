@@ -1374,9 +1374,11 @@ function GestureDetector:adjustGesCoordinate(ges)
             ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.y), (ges.pos.x)
         end
         if ges.ges == "swipe" or ges.ges == "pan"
+            or ges.ges == "hold_pan"
             or ges.ges == "multiswipe"
             or ges.ges == "two_finger_swipe"
             or ges.ges == "two_finger_pan"
+            or ges.ges == "two_finger_hold_pan"
         then
             ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_90)
             if ges.ges == "multiswipe" then
@@ -1400,9 +1402,11 @@ function GestureDetector:adjustGesCoordinate(ges)
             ges.pos.x, ges.pos.y = (ges.pos.y), (self.screen:getHeight() - ges.pos.x)
         end
         if ges.ges == "swipe" or ges.ges == "pan"
+            or ges.ges == "hold_pan"
             or ges.ges == "multiswipe"
             or ges.ges == "two_finger_swipe"
             or ges.ges == "two_finger_pan"
+            or ges.ges == "two_finger_hold_pan"
         then
             ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_270)
             if ges.ges == "multiswipe" then
@@ -1426,9 +1430,11 @@ function GestureDetector:adjustGesCoordinate(ges)
             ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.x), (self.screen:getHeight() - ges.pos.y)
         end
         if ges.ges == "swipe" or ges.ges == "pan"
+            or ges.ges == "hold_pan"
             or ges.ges == "multiswipe"
             or ges.ges == "two_finger_swipe"
             or ges.ges == "two_finger_pan"
+            or ges.ges == "two_finger_hold_pan"
         then
             ges.direction = translateGesDirCoordinate(ges.direction, ges_coordinate_translation_180)
             if ges.ges == "multiswipe" then
