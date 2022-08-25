@@ -774,8 +774,13 @@ function Contact:voidState()
         if self.down then
             logger.dbg("Contact:voidState Contact lift detected in slot", slot)
             gesture_detector:dropContact(self)
+            -- If both contacts are up, forget about 'em (should ideally not happen)
+            if buddy_contact and buddy_contact.down == false then
+                logger.warn("Contact:voidState Cancelled gestures in slots", slot, buddy_slot)
+                gesture_detector:dropContact(buddy_contact)
+            end
         else
-            -- If both contacts are up and we haven't detected any gesture, forget about 'em (should ideally not happen)
+            -- If both contacts are up, forget about 'em (should ideally not happen)
             if buddy_contact and self.down == false and buddy_contact.down == false then
                 logger.warn("Contact:voidState Cancelled gestures in slots", slot, buddy_slot)
                 gesture_detector:dropContact(self)
