@@ -3,7 +3,7 @@ This module detects gestures.
 
 Current detectable gestures:
 
-* `touch` (user touched screen)
+* `touch` (emitted once on first contact down, unless it's a pan)
 * `tap` (touch action detected as single tap)
 * `pan`
 * `hold`
@@ -838,7 +838,7 @@ function Contact:handlePan(buddy_contact)
         -- Both main contacts are actives, and we're currently down, while our buddy is still down or pending a MT gesture
         -- Mark that slot as pending, but leave its state alone.
         -- NOTE: Might *already* be flagged as pending a pan, the check is just to limit logging
-        if self.pending_mt_gesture ~= "pan" then
+        if self.pending_mt_gesture ~= "pan" and self.pending_mt_gesture ~= "hold_pan" then
             self.pending_mt_gesture = "pan"
             logger.dbg("Flagged slot", slot, "as pending a two_finger_pan")
         end
@@ -849,9 +849,10 @@ function Contact:handlePan(buddy_contact)
             logger.dbg("Flagged slot", buddy_slot, "as pending a potential rotate")
         end
 
-        -- Once both contacts have been flagged, we're good to go!
+        -- Once both contacts have been flagged (keep in mind we handle both pan & hold_pan), we're good to go!
         -- (Keep in mind that holdState can call handlePan, so either contact can be in panState or holdState).
-        if self.pending_mt_gesture == "pan" and buddy_contact.pending_mt_gesture == "pan" then
+        if (self.pending_mt_gesture == "pan" or self.pending_mt_gesture == "hold_pan") and
+           (buddy_contact.pending_mt_gesture == "pan" or buddy_contact.pending_mt_gesture == "hold_pan") then
             -- This is *NOT* a contact lift, unlike most other two finger gestures ;).
             self.pending_mt_gesture = nil
             buddy_contact.pending_mt_gesture = nil
