@@ -11,7 +11,7 @@ Current detectable gestures:
 * `pinch`
 * `spread`
 * `rotate`
-* `hold_pan`
+* `hold_pan` (will emit `hold_release` on contact lift, unlike its two-finger variant)
 * `double_tap`
 * `inward_pan`
 * `outward_pan`
