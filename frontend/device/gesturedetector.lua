@@ -720,7 +720,10 @@ function Contact:panState()
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_swipe/pinch/spread")
                 -- Neuter its buddy
                 buddy_contact.state = Contact.voidState
-                buddy_contact.mt_gesture = "swipe"
+                -- Don't break rotate handling...
+                if buddy_contact.mt_gesture ~= "rotate" then
+                    buddy_contact.mt_gesture = "swipe"
+                end
 
                 local ges_ev = self:handleTwoFingerPan(buddy_contact)
                 if ges_ev then
@@ -791,17 +794,17 @@ function Contact:voidState()
             -- defer to the proper state (wthout switching state).
             -- FIXME: Possibly make mt_gesture an mt_state variable pointing to the state func to save us this if ladder...
             if self.mt_gesture == "tap" then
-                logger.dbg("Contact:voidState Deferring slot", slot, "to tapState to handle MT contact lift")
+                logger.dbg("Contact:voidState Deferring slot", slot, "to tapState to handle MT contact lift for gesture", self.mt_gesture)
                 return self:tapState()
             elseif self.mt_gesture == "swipe" or self.mt_gesture == "pan" or self.mt_gesture == "pan_release" then
-                logger.dbg("Contact:voidState Deferring slot", slot, "to panState to handle MT contact lift")
+                logger.dbg("Contact:voidState Deferring slot", slot, "to panState to handle MT contact lift for gesture", self.mt_gesture)
                 return self:panState()
             elseif self.mt_gesture == "hold" or self.mt_gesture == "hold_pan" or
                    self.mt_gesture == "hold_release" or self.mt_gesture == "hold_pan_release" then
-                logger.dbg("Contact:voidState Deferring slot", slot, "to holdState to handle MT contact lift")
+                logger.dbg("Contact:voidState Deferring slot", slot, "to holdState to handle MT contact lift for gesture", self.mt_gesture)
                 return self:holdState()
             else
-                logger.warn("Contact:voidState Unknown MT gesture for slot", slot, "cannot handle contact lift properly")
+                logger.warn("Contact:voidState Unknown MT gesture", self.mt_gesture, "for slot", slot, "cannot handle contact lift properly")
             end
         elseif self.down then
             logger.dbg("Contact:voidState Contact lift detected in slot", slot)
@@ -890,8 +893,11 @@ function Contact:handlePan()
         end
         -- Neuter its buddy
         -- NOTE: Small trickery for rotate, which requires both contacts to be in very specific states.
-        if buddy_contact.state == Contact.holdState and self.state == Contact.panState then
+        --       We merge tapState with holdState because it's likely that the hold hasn't taken yet,
+        --       and it never will after that because we switch to voidState ;).
+        if (buddy_contact.state == Contact.holdState or buddy_contact.state == Contact.tapState) and self.state == Contact.panState then
             buddy_contact.mt_gesture = "rotate"
+            logger.dbg("Flagged slot", buddy_contact.slot, "as part of a rotate")
         else
             buddy_contact.mt_gesture = "pan"
         end
@@ -983,6 +989,8 @@ Contact is down in panState or holdState, or up in panState if it was lifted bel
 --]]
 function Contact:handleTwoFingerPan(buddy_contact)
     logger.dbg("Contact:handleTwoFingerPan for slot", self.slot)
+    logger.dbg("self.mt_gesture", self.mt_gesture)
+    logger.dbg("buddy_contact.mt_gesture", buddy_contact.mt_gesture)
     local gesture_detector = self.ges_dec
 
     -- triggering contact is self
