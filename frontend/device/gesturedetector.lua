@@ -593,6 +593,13 @@ function Contact:handleDoubleTap()
         return
     end
 
+    -- cur_tap is used for double tap and bounce detection
+    local cur_tap = {
+        x = tev.x,
+        y = tev.y,
+        timev = tev.timev,
+    }
+
     -- Tap interval / bounce detection may be tweaked by a widget (i.e. VirtualKeyboard)
     local tap_interval = gesture_detector.input.tap_interval_override or gesture_detector.ges_tap_interval
     -- We do tap bounce detection even when double tap is enabled
@@ -614,12 +621,6 @@ function Contact:handleDoubleTap()
             h = 0,
         },
         time = tev.timev,
-    }
-    -- cur_tap is used for double tap and bounce detection
-    local cur_tap = {
-        x = tev.x,
-        y = tev.y,
-        timev = tev.timev,
     }
 
     if not gesture_detector.input.disable_double_tap and self.pending_double_tap_timer and gesture_detector:isDoubleTap(gesture_detector.previous_tap[slot], cur_tap) then
