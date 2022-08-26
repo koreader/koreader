@@ -786,18 +786,34 @@ function Contact:voidState()
     logger.dbg("slot", slot, "in void state...")
     -- We basically don't do anything but drop the slot on contact lift
     if tev.id == -1 then
-        if self.down then
+        if self.down and buddy_contact and buddy_contact.down and self.mt_gesture then
+            -- If we were lifted before our buddy, and we're part of a MT gesture,
+            -- defer to the proper state (wthout switching state).
+            -- FIXME: Possibly make mt_gesture an mt_state variable pointing to the state func to save us this if ladder...
+            if self.mt_gesture == "tap" then
+                return self:tapState()
+            elseif self.mt_gesture == "swipe" or self.mt_gesture == "pan" or self.mt_gesture == "pan_release" then
+                return self:panState()
+            elseif self.mt_gesture == "hold" or self.mt_gesture == "hold_pan" or
+                   self.mt_gesture == "hold_release" or self.mt_gesture == "hold_pan_release" then
+                return self:holdState()
+            else
+                logger.warn("Contact:voidState Unknown MT gesture for slot", slot, "cannot handle contact lift properly")
+            end
+        elseif self.down then
             logger.dbg("Contact:voidState Contact lift detected in slot", slot)
             gesture_detector:dropContact(self)
-        else
-            -- Huh, caught a *second* contact lift for this contact? (should never happen).
-            logger.warn("Contact:voidState Cancelled a gesture in slot", slot)
-            gesture_detector:dropContact(self)
         end
+
         if buddy_contact and buddy_contact.down == false then
             -- Huh, caught a buddy contact lift in voidState's place? (should never happen).
             logger.warn("Contact:voidState Cancelled a gesture in slot", buddy_slot)
             gesture_detector:dropContact(buddy_contact)
+        end
+        if self.down == false then
+            -- Huh, caught a *second* contact lift for this contact? (should never happen).
+            logger.warn("Contact:voidState Cancelled a gesture in slot", slot)
+            gesture_detector:dropContact(self)
         end
     end
 end
