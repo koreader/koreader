@@ -200,7 +200,6 @@ local Input = {
     cur_slot = 0,
     MTSlots = nil, -- table, object may be replaced at runtime
     active_slots = nil, -- ditto
-    slot_count = 0,
     ev_slots = nil, -- table
     gesture_detector = nil,
 
@@ -1043,18 +1042,15 @@ function Input:newFrame()
     -- Array of references to the data for each slot seen in this input frame
     -- (Points to self.ev_slots, c.f., getMtSlot)
     self.MTSlots = {}
-    -- Simple hash to keep track of which references we've inserted into self.MTSlots
-    -- (keys are slot numbers, values are indexes into self.MTSlots or falsy)
+    -- Simple hash to keep track of which references we've inserted into self.MTSlots (keys are slot numbers)
     self.active_slots = {}
-    self.slot_count = 0
 end
 
 function Input:addSlot(value)
     logger.dbg("Input:addSlot creating storage for slot", value)
     self:initMtSlot(value)
     table.insert(self.MTSlots, self:getMtSlot(value))
-    self.slot_count = self.slot_count + 1
-    self.active_slots[value] = self.slot_count
+    self.active_slots[value] = true
     self.cur_slot = value
 end
 
