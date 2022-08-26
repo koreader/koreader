@@ -733,8 +733,7 @@ function Input:handleTouchEv(ev)
             -- Drop hovering *pen* events
             local tool = self:getCurrentMtSlotData("tool")
             if tool and tool == 1 then
-                -- We use a sentinel value to prevent even sending those to GestureDetector
-                self:setCurrentMtSlot("id", -42)
+                self:setCurrentMtSlot("id", -1)
             end
 
         -- Emulate MT protocol on ST Kobos:
@@ -754,11 +753,6 @@ function Input:handleTouchEv(ev)
         end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
-            -- Drop hover events
-            if self:getCurrentMtSlotData("id") == -42 then
-                self:removeSlot(self.cur_slot)
-            end
-
             for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
@@ -1062,15 +1056,6 @@ function Input:addSlot(value)
     self.slot_count = self.slot_count + 1
     self.active_slots[value] = self.slot_count
     self.cur_slot = value
-end
-
-function Input:removeSlot(value)
-    if self.active_slots[value] then
-        logger.dbg("Input:removeSlot dropping reference to slot", value)
-        table.remove(self.MTSlots, self.active_slots[value])
-        self.slot_count = self.slot_count - 1
-        self.active_slots[value] = false
-    end
 end
 
 function Input:addSlotIfChanged(value)
