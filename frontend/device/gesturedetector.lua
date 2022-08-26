@@ -593,6 +593,17 @@ function Contact:handleDoubleTap()
         return
     end
 
+    -- Tap interval / bounce detection may be tweaked by a widget (i.e. VirtualKeyboard)
+    local tap_interval = gesture_detector.input.tap_interval_override or gesture_detector.ges_tap_interval
+    -- We do tap bounce detection even when double tap is enabled
+    -- (so, double tap is triggered when: ges_tap_interval <= delay < ges_double_tap_interval).
+    if tap_interval ~= 0 and gesture_detector.previous_tap[slot] ~= nil and gesture_detector:isTapBounce(gesture_detector.previous_tap[slot], cur_tap, tap_interval) then
+        logger.dbg("tap bounce detected in slot", slot, ": ignored")
+        -- Simply ignore it, and drop this slot as this is the end of a touch event.
+        gesture_detector:dropContact(self)
+        return
+    end
+
     local ges_ev = {
         -- Default to single tap
         ges = "tap",
@@ -610,17 +621,6 @@ function Contact:handleDoubleTap()
         y = tev.y,
         timev = tev.timev,
     }
-
-    -- Tap interval / bounce detection may be tweaked by a widget (i.e. VirtualKeyboard)
-    local tap_interval = gesture_detector.input.tap_interval_override or gesture_detector.ges_tap_interval
-    -- We do tap bounce detection even when double tap is enabled
-    -- (so, double tap is triggered when: ges_tap_interval <= delay < ges_double_tap_interval).
-    if tap_interval ~= 0 and gesture_detector.previous_tap[slot] ~= nil and gesture_detector:isTapBounce(gesture_detector.previous_tap[slot], cur_tap, tap_interval) then
-        logger.dbg("tap bounce detected in slot", slot, ": ignored")
-        -- Simply ignore it, and drop this slot as this is the end of a touch event.
-        gesture_detector:dropContact(self)
-        return
-    end
 
     if not gesture_detector.input.disable_double_tap and self.pending_double_tap_timer and gesture_detector:isDoubleTap(gesture_detector.previous_tap[slot], cur_tap) then
         -- It is a double tap
@@ -1280,7 +1280,7 @@ function Contact:holdState(new_hold)
                         w = 0,
                         h = 0,
                     },
-                time = tev.timev,
+                    time = tev.timev,
                 }
             elseif self.pending_mt_gesture == "hold_pan_release" and buddy_contact.pending_mt_gesture == "hold_pan_release" then
                 logger.dbg("two_finger_hold_pan_release detected")
@@ -1294,7 +1294,7 @@ function Contact:holdState(new_hold)
                         w = 0,
                         h = 0,
                     },
-                time = tev.timev,
+                    time = tev.timev,
                 }
             end
         elseif buddy_contact and self.down and
