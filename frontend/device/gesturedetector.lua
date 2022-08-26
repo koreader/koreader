@@ -862,6 +862,7 @@ function Contact:voidState()
                 if buddy_contact and buddy_contact.mt_gesture == "hold" and self.mt_gesture == "hold" then
                     self.mt_gesture = "pan"
                     buddy_contact.mt_gesture = "rotate"
+                    logger.dbg("Contact:voidState We moved while pending a hold gesture, swap to a rotate")
                 end
             else
                 self.mt_immobile = true
