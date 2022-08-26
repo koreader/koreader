@@ -50,10 +50,10 @@ function HookContainer:registerWidget(name, widget)
     self:_assertIsValidName(name)
     assert(type(widget) == "table")
     -- *That* is the function we actually register and need to unregister later, so keep a ref to it...
-    local hook_func = function(args)
+    local hook_func = function()
         local f = widget["on" .. name]
         self:_assertIsValidFunction(f)
-        f(widget, args)
+        f(widget)
     end
     self:register(name, hook_func)
     local original_close_widget = widget.onCloseWidget
