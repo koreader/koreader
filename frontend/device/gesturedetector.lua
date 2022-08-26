@@ -821,6 +821,12 @@ function Contact:voidState()
             logger.warn("Contact:voidState Cancelled a gesture in slot", slot)
             gesture_detector:dropContact(self)
         end
+    else
+        -- We need to be able to go back/switch to panState to deal with rotate...
+        if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
+           (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
+            return self:switchState(Contact.panState)
+        end
     end
 end
 
