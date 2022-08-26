@@ -912,7 +912,7 @@ function Contact:handlePan()
            self.state == Contact.panState then
             buddy_contact.mt_gesture = "rotate"
             logger.dbg("Flagged slot", buddy_contact.slot, "as part of a rotate")
-        elseif buddy_contact.mt_gesture ~= "rotate" then
+        else
             buddy_contact.mt_gesture = "pan"
             logger.dbg("Flagged slot", buddy_contact.slot, "as part of a pan")
         end
@@ -1069,19 +1069,13 @@ function Contact:handleTwoFingerPan(buddy_contact)
                 ges_ev.ges = "outward_pan"
             end
             ges_ev.direction = gesture_detector.DIRECTION_TABLE[tpan_dir]
-        else
-            if self.state == Contact.holdState then
-                ges_ev.ges = "two_finger_hold_pan"
-                -- Flag 'em for holdState to discriminate with two_finger_hold_release
-                self.mt_gesture = "hold_pan"
-                logger.dbg("Flagged slot", self.slot, "as a two_finger_hold_pan")
-                buddy_contact.mt_gesture = "hold_pan"
-                logger.dbg("Flagged slot", buddy_contact.slot, "as a two_finger_hold_pan")
-            elseif buddy_contact.mt_gesture == "rotate" then
-                -- Allow switching away from rotate, and to match the trigger (pan or swipe)
-                buddy_contact.mt_gesture = self.mt_gesture
-                logger.dbg("Flagged slot", buddy_contact.slot, "as part of a two_finger_pan")
-            end
+        elseif self.state == Contact.holdState then
+            ges_ev.ges = "two_finger_hold_pan"
+            -- Flag 'em for holdState to discriminate with two_finger_hold_release
+            self.mt_gesture = "hold_pan"
+            logger.dbg("Flagged slot", self.slot, "as a two_finger_hold_pan")
+            buddy_contact.mt_gesture = "hold_pan"
+            logger.dbg("Flagged slot", buddy_contact.slot, "as a two_finger_hold_pan")
         end
 
         logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
