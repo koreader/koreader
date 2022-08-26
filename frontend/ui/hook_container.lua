@@ -86,16 +86,15 @@ end
 
 --- Execute all registered functions of name. Must be called with self.
 -- @tparam string name The name of the hook. Can only be an non-empty string.
--- @param args Any kind of arguments sending to the functions.
 -- @treturn number The number of functions have been executed.
-function HookContainer:execute(name, args)
+function HookContainer:execute(name)
     self:_assertIsValidName(name)
     if self[name] == nil or #self[name] == 0 then
         return 0
     end
 
     for _, f in ipairs(self[name]) do
-        f(args)
+        f()
     end
     return #self[name]
 end
