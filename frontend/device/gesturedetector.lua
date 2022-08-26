@@ -818,7 +818,7 @@ function Contact:voidState()
                 return self:panState()
             elseif self.mt_gesture == "rotate" then
                 -- NOTE: As usual, rotate requires some trickery...
-                --      (The reference contact *has* to be the panning one; while we're the held one in this scenario).
+                --      (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
                 local ges_ev = buddy_contact:panState()
                 if ges_ev then
                     -- If we got a gesture, this slot is done!
