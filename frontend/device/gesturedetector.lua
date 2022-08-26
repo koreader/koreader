@@ -854,9 +854,8 @@ function Contact:voidState()
                 --       (This happens when attempting a rotate, and the hold timer for slot 0 expires
                 --       before slot 1 has the chance to switch to panState).
                 if buddy_contact and buddy_contact.mt_gesture == "hold" and self.mt_gesture == "hold" then
-                    -- FIXME: Err, this should be the other way around?
-                    buddy_contact.mt_gesture = "pan"
-                    self.mt_gesture = "rotate"
+                    self.mt_gesture = "pan"
+                    buddy_contact.mt_gesture = "rotate"
                 end
             else
                 self.mt_immobile = true
