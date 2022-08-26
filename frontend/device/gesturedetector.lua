@@ -348,9 +348,11 @@ function Contact:isSwipe()
     if time_diff < 0 then
         time_diff = time.huge
     end
+    logger.dbg("Contact:isSwipe: time_diff:", time_diff, "ges_swipe_interval:", gesture_detector.ges_swipe_interval)
     if time_diff < gesture_detector.ges_swipe_interval then
         local x_diff = self.current_tev.x - self.initial_tev.x
         local y_diff = self.current_tev.y - self.initial_tev.y
+        logger.dbg("Contact:isSwipe: x_diff:", x_diff, "y_diff:", y_diff)
         if x_diff ~= 0 or y_diff ~= 0 then
             return true
         end
