@@ -1065,10 +1065,12 @@ function Input:addSlot(value)
 end
 
 function Input:removeSlot(value)
-    logger.dbg("Input:removeSlot dropping reference for slot", value)
-    table.remove(self.MTSlots, self.active_slots[value])
-    self.slot_count = self.slot_count - 1
-    self.active_slots[value] = false
+    if self.active_slots[value] then
+        logger.dbg("Input:removeSlot dropping reference to slot", value)
+        table.remove(self.MTSlots, self.active_slots[value])
+        self.slot_count = self.slot_count - 1
+        self.active_slots[value] = false
+    end
 end
 
 function Input:addSlotIfChanged(value)
