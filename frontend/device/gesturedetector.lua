@@ -145,7 +145,7 @@ function GestureDetector:newContact(slot)
         pending_double_tap_timer = false, -- Contact is pending a double_tap timer
         pending_hold_timer = false, -- Contact is pending a hold timer
         mt_gesture = nil, -- Contact is part of a MT gesture (string, gesture name)
-        mt_immobile = nil, -- Contact is part of a MT gesture, and hasn't moved
+        mt_immobile = true, -- Contact is part of a MT gesture, and hasn't moved
         multiswipe_directions = {}, -- Accumulated multiswipe chain for this contact
         multiswipe_type = nil, -- Current multiswipe type for this contact
         buddy_contact = buddy_contact, -- Ref to the paired contact in a MT gesture (if any)
@@ -800,6 +800,13 @@ function Contact:voidState()
             elseif self.mt_gesture == "swipe" or self.mt_gesture == "pan" or self.mt_gesture == "pan_release" or
                    self.mt_gesture == "rotate" then
                 logger.dbg("Contact:voidState Deferring slot", slot, "to panState to handle MT contact lift for gesture", self.mt_gesture)
+                -- NOTE: As usual, rotate requires some more trickery...
+                if self.mt_gesture == "rotate" then
+                    -- We need to invert our roles, as the assumption in panState is that contact is the panning one,
+                    -- while we're, in fact, the held one, and we're skipping handlePan, which would set things right...
+                    self.mt_gesture = "swipe"
+                    buddy_contact.mt_gesture = "rotate"
+                end
                 return self:panState()
             elseif self.mt_gesture == "hold" or self.mt_gesture == "hold_pan" or
                    self.mt_gesture == "hold_release" or self.mt_gesture == "hold_pan_release" then
@@ -826,7 +833,7 @@ function Contact:voidState()
     else
         -- We need to be able to discriminate between a moving and unmoving contact for rotate/pan discrimination.
         -- FIXME: Limit this to panState MT ges?
-        if not self.mt_immobile then
+        if self.mt_immobile then
             if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
                (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
                 self.mt_immobile = false
