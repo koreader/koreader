@@ -144,7 +144,6 @@ function GestureDetector:newContact(slot)
         down = false, -- Contact is down (as opposed to up, i.e., lifted)
         pending_double_tap_timer = false, -- Contact is pending a double_tap timer
         pending_hold_timer = false, -- Contact is pending a hold timer
-        pending_mt_gesture = nil, -- Contact is pending a MT gesture (string, gesture name)
         mt_gesture = nil, -- Contact is part of a MT gesture (string, gesture name)
         multiswipe_directions = {}, -- Accumulated multiswipe chain for this contact
         multiswipe_type = nil, -- Current multiswipe type for this contact
@@ -534,10 +533,6 @@ function Contact:tapState(new_tap)
                     time = tev.timev,
                 }
             end
-        elseif self.pending_mt_gesture == "rotate" then
-            -- If we were flagged as pending a rotate, but have yet to hit either hold or pan state,
-            -- do it now to avoid leaving our buddy slot hanging...
-            return self:switchState(Contact.panState)
         elseif self.down or self.pending_double_tap_timer then
             -- Hand over to the double tap handler, it's responsible for downgrading to single tap
             return self:handleDoubleTap()
