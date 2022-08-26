@@ -1614,13 +1614,13 @@ end
 
 -- Process all pending events on all registered ZMQs.
 function UIManager:processZMQs()
+    if self._zeromqs[1] then
+        self:dispatchInputEventHooks()
+    end
     for _, zeromq in ipairs(self._zeromqs) do
         for input_event in zeromq.waitEvent, zeromq do
             self:handleInputEvent(input_event)
         end
-    end
-    if self._zeromqs[1] then
-        self:dispatchInputEventHooks()
     end
 end
 
@@ -1695,12 +1695,14 @@ function UIManager:handleInput()
 
     -- delegate each input event to handler
     if input_events then
+        -- Dispatch event hooks first, as some plugins (*cough* AutoSuspend *cough*)
+        -- rely on it to react properly to the actual event...
+        if input_events[1] then
+            self:dispatchInputEventHooks()
+        end
         -- Handle the full batch of events
         for __, ev in ipairs(input_events) do
             self:handleInputEvent(ev)
-        end
-        if input_events[1] then
-            self:dispatchInputEventHooks()
         end
     end
 
