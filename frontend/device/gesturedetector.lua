@@ -815,10 +815,12 @@ function Contact:voidState()
                 logger.dbg("Contact:voidState Deferring slot", slot, "to tapState to handle MT contact lift for gesture", self.mt_gesture)
                 return self:tapState()
             elseif self.mt_gesture == "swipe" or self.mt_gesture == "pan" or self.mt_gesture == "pan_release" then
+                logger.dbg("Contact:voidState Deferring slot", slot, "to panState to handle MT contact lift for gesture", self.mt_gesture)
                 return self:panState()
             elseif self.mt_gesture == "rotate" then
                 -- NOTE: As usual, rotate requires some trickery...
                 --      (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
+                logger.dbg("Contact:voidState Deferring slot", slot, "to panState via its buddy", buddy_slot, "to handle MT contact lift for gesture", self.mt_gesture)
                 local ges_ev = buddy_contact:panState()
                 if ges_ev then
                     -- If we got a gesture, this slot is done!
