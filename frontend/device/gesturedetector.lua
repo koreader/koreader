@@ -145,6 +145,7 @@ function GestureDetector:newContact(slot)
         pending_double_tap_timer = false, -- Contact is pending a double_tap timer
         pending_hold_timer = false, -- Contact is pending a hold timer
         mt_gesture = nil, -- Contact is part of a MT gesture (string, gesture name)
+        mt_immobile = nil, -- Contact is part of a MT gesture, and hasn't moved
         multiswipe_directions = {}, -- Accumulated multiswipe chain for this contact
         multiswipe_type = nil, -- Current multiswipe type for this contact
         buddy_contact = buddy_contact, -- Ref to the paired contact in a MT gesture (if any)
@@ -822,6 +823,17 @@ function Contact:voidState()
             logger.warn("Contact:voidState Cancelled a gesture in slot", slot)
             gesture_detector:dropContact(self)
         end
+    else
+        -- We need to be able to discriminate between a moving and unmoving contact for rotate/pan discrimination.
+        -- FIXME: Limit this to panState MT ges?
+        if not self.mt_immobile then
+            if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
+               (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
+                self.mt_immobile = false
+            else
+                self.mt_immobile = true
+            end
+        end
     end
 end
 
@@ -896,7 +908,8 @@ function Contact:handlePan()
         -- NOTE: Small trickery for rotate, which requires both contacts to be in very specific states.
         --       We merge tapState with holdState because it's likely that the hold hasn't taken yet,
         --       and it never will after that because we switch to voidState ;).
-        if (buddy_contact.state == Contact.holdState or buddy_contact.state == Contact.tapState) and self.state == Contact.panState then
+        if (buddy_contact.state == Contact.holdState or buddy_contact.state == Contact.tapState or buddy_contact.mt_immobile) and
+           self.state == Contact.panState then
             buddy_contact.mt_gesture = "rotate"
             logger.dbg("Flagged slot", buddy_contact.slot, "as part of a rotate")
         elseif buddy_contact.mt_gesture ~= "rotate" then
