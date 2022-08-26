@@ -1598,7 +1598,7 @@ function UIManager:resetInputTimeout()
 end
 
 -- NOTE: The Event hook mechanism used to dispatch for *every* event, and would actually pass the event along.
---       We've simplified that to once per input frame, and without passing anything (as we, in fact, have never made us of it).
+--       We've simplified that to once per input frame, and without passing anything (as we, in fact, have never made use of it).
 function UIManager:handleInputEvent(input_event)
     local hookable_event = false
     if input_event.handler ~= "onInputError" then
