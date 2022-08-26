@@ -811,7 +811,6 @@ function Contact:voidState()
         if self.down and buddy_contact and buddy_contact.down and self.mt_gesture then
             -- If we were lifted before our buddy, and we're part of a MT gesture,
             -- defer to the proper state (wthout switching state).
-            -- FIXME: Possibly make mt_gesture an mt_state variable pointing to the state func to save us this if ladder...
             if self.mt_gesture == "tap" then
                 logger.dbg("Contact:voidState Deferring slot", slot, "to tapState to handle MT contact lift for gesture", self.mt_gesture)
                 return self:tapState()
