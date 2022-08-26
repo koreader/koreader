@@ -1600,38 +1600,26 @@ end
 -- NOTE: The Event hook mechanism used to dispatch for *every* event, and would actually pass the event along.
 --       We've simplified that to once per input frame, and without passing anything (as we, in fact, have never made use of it).
 function UIManager:handleInputEvent(input_event)
-    local hookable_event = false
-    if input_event.handler ~= "onInputError" then
-        hookable_event = true
-    end
     local handler = self.event_handlers[input_event]
     if handler then
         handler(input_event)
     else
         self.event_handlers["__default__"](input_event)
     end
-
-    return hookable_event
 end
 
-function UIManager:dispatchInputEventHook()
+function UIManager:dispatchInputEventHooks()
     self.event_hook:execute("InputEvent")
 end
 
 -- Process all pending events on all registered ZMQs.
 function UIManager:processZMQs()
-    local hookable_events = false
     for _, zeromq in ipairs(self._zeromqs) do
         for input_event in zeromq.waitEvent, zeromq do
-            if self:handleInputEvent(input_event) then
-                hookable_events = true
-            end
+            self:handleInputEvent(input_event)
         end
     end
-
-    if hookable_events then
-        self:dispatchInputEventHook()
-    end
+    self:dispatchInputEventHooks()
 end
 
 function UIManager:handleInput()
@@ -1705,17 +1693,11 @@ function UIManager:handleInput()
 
     -- delegate each input event to handler
     if input_events then
-        local hookable_events = false
         -- Handle the full batch of events
         for __, ev in ipairs(input_events) do
-            if self:handleInputEvent(ev) then
-                hookable_events = true
-            end
+            self:handleInputEvent(ev)
         end
-
-        if hookable_events then
-            self:dispatchInputEventHook()
-        end
+        self:dispatchInputEventHooks()
     end
 
     if self.looper then
