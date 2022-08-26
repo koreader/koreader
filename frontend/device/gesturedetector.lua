@@ -714,19 +714,17 @@ function Contact:panState()
     if tev.id == -1 then
         -- End of pan, signal swipe gesture if necessary
         if self:isSwipe() then
-            if self.down and (buddy_contact or self.mt_gesture) then
-                -- We're down, and our buddy is either active or we're already flagged for an MT gesture
+            if buddy_contact and self.down then
+                -- Both main contacts are actives and we are down, mark that slot
                 self.mt_gesture = "swipe"
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_swipe/pinch/spread")
-                -- Neuter its buddy, if it's still active
-                if buddy_contact then
-                    buddy_contact.state = Contact.voidState
-                    buddy_contact.mt_gesture = "swipe"
-                end
+                -- Neuter its buddy
+                buddy_contact.state = Contact.voidState
+                buddy_contact.mt_gesture = "swipe"
 
                 local ges_ev = self:handleTwoFingerPan(buddy_contact)
                 if ges_ev then
-                    if buddy_contact and buddy_contact.mt_gesture == "swipe" then
+                    if buddy_contact.mt_gesture == "swipe" then
                         -- Only accept gestures that require both contacts to have been lifted
                         if ges_ev.ges == "two_finger_pan" then
                             ges_ev.ges = "two_finger_swipe"
@@ -1150,27 +1148,21 @@ function Contact:holdState(new_hold)
             }
         end
     elseif tev.id == -1 then
-        if self.down and (buddy_contact or self.mt_gesture) then
-            -- We're down, and our buddy is either active or we're already flagged for an MT gesture
+        if buddy_contact and self.down then
+            -- Both main contacts are actives and we are down, mark that slot
             if self.mt_gesture == "hold_pan" or self.mt_gesture == "pan" then
                 self.mt_gesture = "hold_pan_release"
-                if buddy_contact then
-                    buddy_contact.mt_gesture = "hold_pan_release"
-                end
+                buddy_contact.mt_gesture = "hold_pan_release"
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_hold_pan_release")
                 logger.dbg("two_finger_hold_pan_release detected")
             else
                 self.mt_gesture = "hold_release"
-                if buddy_contact then
-                    buddy_contact.mt_gesture = "hold_release"
-                end
+                buddy_contact.mt_gesture = "hold_release"
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_hold_release")
                 logger.dbg("two_finger_hold_release detected")
             end
-            -- Neuter its budd, if it's still active.
-            if buddy_contact then
-                buddy_contact.state = Contact.voidState
-            end
+            -- Neuter its buddy
+            buddy_contact.state = Contact.voidState
 
             -- Don't drop buddy, voidState will handle it
             gesture_detector:dropContact(self)
