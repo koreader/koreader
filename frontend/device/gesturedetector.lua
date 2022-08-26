@@ -738,11 +738,17 @@ function Contact:panState()
                 self.mt_gesture = "swipe"
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_swipe/pinch/spread")
                 -- Neuter its buddy
-                buddy_contact.state = Contact.voidState
-                -- Don't break rotate handling...
-                if buddy_contact.mt_gesture ~= "rotate" then
+                -- NOTE: Similar trickery as in handlePan to deal with rotate...
+                if buddy_contact.state == Contact.holdState or
+                   buddy_contact.state == Contact.tapState or
+                   buddy_contact.mt_immobile then
+                    buddy_contact.mt_gesture = "rotate"
+                    logger.dbg("Flagged slot", buddy_contact.slot, "as part of a rotate release")
+                else
                     buddy_contact.mt_gesture = "swipe"
+                    logger.dbg("Flagged slot", buddy_contact.slot, "as part of a swipe")
                 end
+                buddy_contact.state = Contact.voidState
 
                 local ges_ev = self:handleTwoFingerPan(buddy_contact)
                 if ges_ev then
@@ -821,6 +827,7 @@ function Contact:voidState()
                 -- NOTE: As usual, rotate requires some trickery...
                 --      (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
                 logger.dbg("Contact:voidState Deferring slot", slot, "to panState via its buddy", buddy_slot, "to handle MT contact lift for gesture", self.mt_gesture)
+                -- FIXME: Would it be safer to forcibly mangle it into a lift by updating its current_tev.id to -1?
                 local ges_ev = buddy_contact:panState()
                 if ges_ev then
                     -- If we got a gesture, this slot is done!
