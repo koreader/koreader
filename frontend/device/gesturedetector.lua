@@ -186,8 +186,8 @@ function GestureDetector:dropContact(contact)
     end
 
     -- If we have a buddy contact, drop its buddy ref to us
-    if self.buddy_contact then
-        self.buddy_contact.buddy_contact = nil
+    if contact.buddy_contact then
+        contact.buddy_contact.buddy_contact = nil
     end
 
     self.active_contacts[slot] = nil
