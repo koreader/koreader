@@ -167,7 +167,9 @@ describe("device module", function()
         it("should flush book settings before suspend", function()
             local sample_pdf = "spec/front/unit/data/tall.pdf"
             local ReaderUI = require("apps/reader/readerui")
+            local kobo_dev = require("device/kobo/device")
             local Device = require("device")
+            Device.setDeviceSpecificEventHandlers = kobo_dev.setDeviceSpecificEventHandlers
 
             NickelConf.frontLightLevel.get.returns(1)
             NickelConf.frontLightState.get.returns(0)
