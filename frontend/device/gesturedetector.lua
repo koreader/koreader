@@ -791,11 +791,14 @@ function Contact:voidState()
             -- defer to the proper state (wthout switching state).
             -- FIXME: Possibly make mt_gesture an mt_state variable pointing to the state func to save us this if ladder...
             if self.mt_gesture == "tap" then
+                logger.dbg("Contact:voidState Deferring slot", slot, "to tapState to handle MT contact lift")
                 return self:tapState()
             elseif self.mt_gesture == "swipe" or self.mt_gesture == "pan" or self.mt_gesture == "pan_release" then
+                logger.dbg("Contact:voidState Deferring slot", slot, "to panState to handle MT contact lift")
                 return self:panState()
             elseif self.mt_gesture == "hold" or self.mt_gesture == "hold_pan" or
                    self.mt_gesture == "hold_release" or self.mt_gesture == "hold_pan_release" then
+                logger.dbg("Contact:voidState Deferring slot", slot, "to holdState to handle MT contact lift")
                 return self:holdState()
             else
                 logger.warn("Contact:voidState Unknown MT gesture for slot", slot, "cannot handle contact lift properly")
