@@ -200,6 +200,7 @@ local Input = {
     cur_slot = 0,
     MTSlots = nil, -- table, object may be replaced at runtime
     active_slots = nil, -- ditto
+    slot_count = 0,
     ev_slots = nil, -- table
     gesture_detector = nil,
 
@@ -1049,7 +1050,7 @@ function Input:newFrame()
     -- (Points to self.ev_slots, c.f., getMtSlot)
     self.MTSlots = {}
     -- Simple hash to keep track of which references we've inserted into self.MTSlots
-    -- (keys are slot numbers, values are indexes into self.MTSlots)
+    -- (keys are slot numbers, values are indexes into self.MTSlots or falsy)
     self.active_slots = {}
     self.slot_count = 0
 end
@@ -1058,19 +1059,15 @@ function Input:addSlot(value)
     logger.dbg("Input:addSlot creating storage for slot", value)
     self:initMtSlot(value)
     table.insert(self.MTSlots, self:getMtSlot(value))
-    self.active_slots[value] = true
+    self.slot_count = self.slot_count + 1
+    self.active_slots[value] = self.slot_count
     self.cur_slot = value
 end
 
 function Input:removeSlot(value)
     logger.dbg("Input:removeSlot dropping reference for slot", value)
-    local needle = self:getMtSlot(value)
-    for k, v in ipairs(self.MTSlots) do
-        if v == needle then
-            table.remove(self.MTSlots, k)
-            break
-        end
-    end
+    table.remove(self.MTSlots, self.active_slots[value])
+    self.slot_count = self.slot_count - 1
     self.active_slots[value] = false
 end
 
