@@ -391,6 +391,7 @@ function Contact:initialState()
         if tev.id == -1 then
             -- If this slot was a buddy slot that happened to be dropped by a MT gesture in the *same* input frame,
             -- a lift might be the first thing we process here... We can safely drop it again.
+            -- Hover pen events are also a good candidate for this.
             logger.dbg("Contact:initialState Cancelled a gesture in slot", self.slot)
             self.ges_dec:dropContact(self)
         else
@@ -559,6 +560,10 @@ function Contact:tapState(new_tap)
             gesture_detector:dropContact(self)
         end
     else
+        -- If we're pending a double_tap timer, flag the contact as down again.
+        if self.pending_double_tap_timer then
+            self.down = true
+        end
         -- See if we need to do something with the move/hold
         local ges = self:handleNonTap(new_tap)
         -- NOTE: If buddy is up (because of a tapState pending_mt_gesture, i.e., "tap") and this made us switch to another state,
@@ -573,13 +578,20 @@ function Contact:tapState(new_tap)
 end
 
 --[[--
-Emits both tap & double_tap gestures. Contact is either down or pending a double_tap timer.
+Emits both tap & double_tap gestures. Contact is up (but down is still true) or pending a double_tap timer.
 --]]
 function Contact:handleDoubleTap()
     local slot = self.slot
     logger.dbg("Contact:handleDoubleTap for slot", slot)
     local tev = self.current_tev
     local gesture_detector = self.ges_dec
+
+    -- If we don't actually detect two distinct taps (i.e., down -> up -> down -> up), then it's a hover, ignore it.
+    -- (Without a timer, these get dropped in initialState).
+    if self.pending_double_tap_timer and self.down == false then
+        logger.dbg("Contact:handleDoubleTap: Ignoring consecutive hover event")
+        return
+    end
 
     local ges_ev = {
         -- Default to single tap
