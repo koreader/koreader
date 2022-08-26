@@ -514,7 +514,6 @@ function Contact:tapState(new_tap)
                     span = tap_span,
                     time = tev.timev,
                 }
-                end
             else
                 logger.dbg("Two finger tap failed to pass the two_finger_tap constraints")
                 -- We blew the gesture position/time constraints,
@@ -537,6 +536,7 @@ function Contact:tapState(new_tap)
             -- Hand over to the double tap handler, it's responsible for downgrading to single tap
             return self:handleDoubleTap()
         end
+
         if buddy_contact and buddy_contact.down == false then
             -- Huh, caught a buddy contact lift in voidState's place? (should never happen).
             logger.warn("Contact:tapState Cancelled a gesture in slot", buddy_slot)
@@ -757,6 +757,7 @@ function Contact:panState()
             -- If the contact lift is not a swipe, then it's a pan.
             return self:handlePanRelease()
         end
+
         if buddy_contact and buddy_contact.down == false then
             -- Huh, caught a buddy contact lift in voidState's place? (should never happen).
             logger.warn("Contact:panState Cancelled a gesture in slot", buddy_slot)
@@ -1080,6 +1081,7 @@ function Contact:handlePanRelease()
         gesture_detector:dropContact(self)
         return pan_ev
     end
+
     if buddy_contact and buddy_contact.down == false then
         -- Huh, caught a buddy contact lift in voidState's place? (should never happen).
         logger.warn("Contact:handlePanRelease Cancelled a gesture in slot", buddy_slot)
@@ -1189,6 +1191,7 @@ function Contact:holdState(new_hold)
                 time = tev.timev,
             }
         end
+
         if buddy_contact and buddy_contact.down == false then
             -- Huh, caught a buddy contact lift in voidState's place? (should never happen).
             logger.warn("Contact:holdState Cancelled a gesture in slot", buddy_slot)
