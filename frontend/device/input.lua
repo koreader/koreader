@@ -732,7 +732,8 @@ function Input:handleTouchEv(ev)
             -- Drop hovering *pen* events
             local tool = self:getCurrentMtSlotData("tool")
             if tool and tool == 1 then
-                self:setCurrentMtSlot("id", -1)
+                -- We use a sentinel value to prevent even sending those to GestureDetector
+                self:setCurrentMtSlot("id", -42)
             end
 
         -- Emulate MT protocol on ST Kobos:
@@ -752,6 +753,11 @@ function Input:handleTouchEv(ev)
         end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
+            -- Drop hover events
+            if self:getCurrentMtSlotData("id") == -42 then
+                self:removeSlot(self.cur_slot)
+            end
+
             for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
@@ -1042,8 +1048,10 @@ function Input:newFrame()
     -- Array of references to the data for each slot seen in this input frame
     -- (Points to self.ev_slots, c.f., getMtSlot)
     self.MTSlots = {}
-    -- Simple hash to keep track of which references we've inserted into self.MTSlots (keys are slot numbers)
+    -- Simple hash to keep track of which references we've inserted into self.MTSlots
+    -- (keys are slot numbers, values are indexes into self.MTSlots)
     self.active_slots = {}
+    self.slot_count = 0
 end
 
 function Input:addSlot(value)
@@ -1052,6 +1060,18 @@ function Input:addSlot(value)
     table.insert(self.MTSlots, self:getMtSlot(value))
     self.active_slots[value] = true
     self.cur_slot = value
+end
+
+function Input:removeSlot(value)
+    logger.dbg("Input:removeSlot dropping reference for slot", value)
+    local needle = self:getMtSlot(value)
+    for k, v in ipairs(self.MTSlots) do
+        if v == needle then
+            table.remove(self.MTSlots, k)
+            break
+        end
+    end
+    self.active_slots[value] = false
 end
 
 function Input:addSlotIfChanged(value)
