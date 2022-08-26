@@ -714,17 +714,19 @@ function Contact:panState()
     if tev.id == -1 then
         -- End of pan, signal swipe gesture if necessary
         if self:isSwipe() then
-            if buddy_contact and self.down then
-                -- Both main contacts are actives and we are down, mark that slot
+            if self.down and (buddy_contact or self.mt_gesture) then
+                -- We're down, and our buddy is either active or we're already flagged for an MT gesture
                 self.mt_gesture = "swipe"
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_swipe/pinch/spread")
-                -- Neuter its buddy
-                buddy_contact.state = Contact.voidState
-                buddy_contact.mt_gesture = "swipe"
+                -- Neuter its buddy, if it's still active
+                if buddy_contact then
+                    buddy_contact.state = Contact.voidState
+                    buddy_contact.mt_gesture = "swipe"
+                end
 
                 local ges_ev = self:handleTwoFingerPan(buddy_contact)
                 if ges_ev then
-                    if buddy_contact.mt_gesture == "swipe" then
+                    if buddy_contact and buddy_contact.mt_gesture == "swipe" then
                         -- Only accept gestures that require both contacts to have been lifted
                         if ges_ev.ges == "two_finger_pan" then
                             ges_ev.ges = "two_finger_swipe"
@@ -1165,7 +1167,7 @@ function Contact:holdState(new_hold)
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_hold_release")
                 logger.dbg("two_finger_hold_release detected")
             end
-            -- Neuter its buddy (if it's still alive)
+            -- Neuter its budd, if it's still active.
             if buddy_contact then
                 buddy_contact.state = Contact.voidState
             end
