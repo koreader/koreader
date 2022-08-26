@@ -252,11 +252,18 @@ function GestureDetector:isTapBounce(tap1, tap2, interval)
     if time_diff < 0 then
         time_diff = time.huge
     end
-    return (
-        math.abs(tap1.x - tap2.x) < self.SINGLE_TAP_BOUNCE_DISTANCE and
-        math.abs(tap1.y - tap2.y) < self.SINGLE_TAP_BOUNCE_DISTANCE and
-        time_diff < interval
-    )
+    logger.dbg("GestureDetector:isTapBounce for", tap1, tap2)
+    logger.dbg("GestureDetector:isTapBounce: time_diff:", time_diff, "interval:", interval)
+    if time_diff < interval then
+        local x_diff = math.abs(tap1.x - tap2.x)
+        local y_diff = math.abs(tap1.y - tap2.y)
+        logger.dbg("GestureDetector:isTapBounce: x_diff:", x_diff, "y_diff:", y_diff, "SINGLE_TAP_BOUNCE_DISTANCE:", self.SINGLE_TAP_BOUNCE_DISTANCE)
+
+        return (
+            x_diff < self.SINGLE_TAP_BOUNCE_DISTANCE and
+            y_diff < self.SINGLE_TAP_BOUNCE_DISTANCE
+        )
+    end
 end
 
 function GestureDetector:isDoubleTap(tap1, tap2)
@@ -264,12 +271,18 @@ function GestureDetector:isDoubleTap(tap1, tap2)
     if time_diff < 0 then
         time_diff = time.huge
     end
-    logger.dbg("GestureDetector:isDoubleTap", tap1, tap2)
-    return (
-        math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
-        math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
-        time_diff < self.ges_double_tap_interval
-    )
+    logger.dbg("GestureDetector:isDoubleTap for", tap1, tap2)
+    logger.dbg("GestureDetector:isDoubleTap: time_diff:", time_diff, "ges_double_tap_interval:", self.ges_double_tap_interval)
+    if time_diff < self.ges_double_tap_interval then
+        local x_diff = math.abs(tap1.x - tap2.x)
+        local y_diff = math.abs(tap1.y - tap2.y)
+        logger.dbg("GestureDetector:isDoubleTap: x_diff:", x_diff, "y_diff:", y_diff, "DOUBLE_TAP_DISTANCE:", self.DOUBLE_TAP_DISTANCE)
+
+        return (
+            x_diff < self.DOUBLE_TAP_DISTANCE and
+            y_diff < self.DOUBLE_TAP_DISTANCE
+        )
+    end
 end
 
 -- Takes times as input, not a tev
@@ -286,10 +299,6 @@ end
 function Contact:isTwoFingerTap(buddy_contact)
     local gesture_detector = self.ges_dec
 
-    local x_diff0 = math.abs(self.current_tev.x - self.initial_tev.x)
-    local x_diff1 = math.abs(buddy_contact.current_tev.x - buddy_contact.initial_tev.x)
-    local y_diff0 = math.abs(self.current_tev.y - self.initial_tev.y)
-    local y_diff1 = math.abs(buddy_contact.current_tev.y - buddy_contact.initial_tev.y)
     local time_diff0 = self.current_tev.timev - self.initial_tev.timev
     if time_diff0 < 0 then
         time_diff0 = time.huge
@@ -298,15 +307,22 @@ function Contact:isTwoFingerTap(buddy_contact)
     if time_diff1 < 0 then
         time_diff1 = time.huge
     end
-    logger.dbg("Contact:isTwoFingerTap: x_diff0:", x_diff0, "x_diff1:", x_diff1, "y_diff0:", y_diff0, "y_diff1:", y_diff1, "TWO_FINGER_TAP_REGION:", gesture_detector.TWO_FINGER_TAP_REGION, "time_diff0:", time_diff0, "time_diff1:", time_diff1, "ges_two_finger_tap_duration:", gesture_detector.ges_two_finger_tap_duration)
-    return (
-        x_diff0 < gesture_detector.TWO_FINGER_TAP_REGION and
-        x_diff1 < gesture_detector.TWO_FINGER_TAP_REGION and
-        y_diff0 < gesture_detector.TWO_FINGER_TAP_REGION and
-        y_diff1 < gesture_detector.TWO_FINGER_TAP_REGION and
-        time_diff0 < gesture_detector.ges_two_finger_tap_duration and
-        time_diff1 < gesture_detector.ges_two_finger_tap_duration
-    )
+    logger.dbg("Contact:isTwoFingerTap: time_diff0:", time_diff0, "time_diff1:", time_diff1, "ges_two_finger_tap_duration:", gesture_detector.ges_two_finger_tap_duration)
+    if time_diff0 < gesture_detector.ges_two_finger_tap_duration and
+       time_diff1 < gesture_detector.ges_two_finger_tap_duration then
+        local x_diff0 = math.abs(self.current_tev.x - self.initial_tev.x)
+        local x_diff1 = math.abs(buddy_contact.current_tev.x - buddy_contact.initial_tev.x)
+        local y_diff0 = math.abs(self.current_tev.y - self.initial_tev.y)
+        local y_diff1 = math.abs(buddy_contact.current_tev.y - buddy_contact.initial_tev.y)
+        logger.dbg("Contact:isTwoFingerTap: x_diff0:", x_diff0, "x_diff1:", x_diff1, "y_diff0:", y_diff0, "y_diff1:", y_diff1, "TWO_FINGER_TAP_REGION:", gesture_detector.TWO_FINGER_TAP_REGION)
+
+        return (
+            x_diff0 < gesture_detector.TWO_FINGER_TAP_REGION and
+            x_diff1 < gesture_detector.TWO_FINGER_TAP_REGION and
+            y_diff0 < gesture_detector.TWO_FINGER_TAP_REGION and
+            y_diff1 < gesture_detector.TWO_FINGER_TAP_REGION
+        )
+    end
 end
 
 --[[--
