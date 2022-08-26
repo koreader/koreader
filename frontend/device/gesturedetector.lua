@@ -762,9 +762,6 @@ function Contact:panState()
                         if ges_ev.ges ~= "rotate" then
                             ges_ev = nil
                         end
-                        -- Clear the rotate flag, for voidState's sake, as the gesture is no longer pending,
-                        -- so voidState can safely just drop the contact.
-                        buddy_contact.mt_gesture = nil
                     end
 
                     if ges_ev then
