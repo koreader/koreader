@@ -762,6 +762,9 @@ function Contact:panState()
                         if ges_ev.ges ~= "rotate" then
                             ges_ev = nil
                         end
+                        -- Clear the rotate flag, for voidState's sake, as the gesture is no longer pending,
+                        -- so voidState can safely just drop the contact.
+                        buddy_contact.mt_gesture = nil
                     end
 
                     if ges_ev then
@@ -815,17 +818,12 @@ function Contact:voidState()
             if self.mt_gesture == "tap" then
                 logger.dbg("Contact:voidState Deferring slot", slot, "to tapState to handle MT contact lift for gesture", self.mt_gesture)
                 return self:tapState()
-            elseif self.mt_gesture == "swipe" or self.mt_gesture == "pan" or self.mt_gesture == "pan_release" or
-                   self.mt_gesture == "rotate" then
-                logger.dbg("Contact:voidState Deferring slot", slot, "to panState to handle MT contact lift for gesture", self.mt_gesture)
-                -- NOTE: As usual, rotate requires some more trickery...
-                if self.mt_gesture == "rotate" then
-                    -- We need to invert our roles, as the assumption in panState is that contact is the panning one,
-                    -- while we're, in fact, the held one, and we're skipping handlePan, which would set things right...
-                    self.mt_gesture = "swipe"
-                    buddy_contact.mt_gesture = "rotate"
-                end
+            elseif self.mt_gesture == "swipe" or self.mt_gesture == "pan" or self.mt_gesture == "pan_release" then
                 return self:panState()
+            elseif self.mt_gesture == "rotate" then
+                -- NOTE: As usual, rotate requires some trickery...
+                --      (The reference contact *has* to be the panning one; while we're the held one in this scenario).
+                return buddy_contact:panState()
             elseif self.mt_gesture == "hold" or self.mt_gesture == "hold_pan" or
                    self.mt_gesture == "hold_release" or self.mt_gesture == "hold_pan_release" then
                 logger.dbg("Contact:voidState Deferring slot", slot, "to holdState to handle MT contact lift for gesture", self.mt_gesture)
@@ -859,6 +857,7 @@ function Contact:voidState()
                 --       (This happens when attempting a rotate, and the hold timer for slot 0 expires
                 --       before slot 1 has the chance to switch to panState).
                 if buddy_contact and buddy_contact.mt_gesture == "hold" and self.mt_gesture == "hold" then
+                    -- FIXME: Err, this should be the other way around?
                     buddy_contact.mt_gesture = "pan"
                     self.mt_gesture = "rotate"
                 end
