@@ -1148,21 +1148,27 @@ function Contact:holdState(new_hold)
             }
         end
     elseif tev.id == -1 then
-        if buddy_contact and self.down then
-            -- Both main contacts are actives and we are down, mark that slot
+        if self.down and (buddy_contact or self.mt_gesture) then
+            -- We're down, and our buddy is either active or we're already flagged for an MT gesture
             if self.mt_gesture == "hold_pan" or self.mt_gesture == "pan" then
                 self.mt_gesture = "hold_pan_release"
-                buddy_contact.mt_gesture = "hold_pan_release"
+                if buddy_contact then
+                    buddy_contact.mt_gesture = "hold_pan_release"
+                end
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_hold_pan_release")
                 logger.dbg("two_finger_hold_pan_release detected")
             else
                 self.mt_gesture = "hold_release"
-                buddy_contact.mt_gesture = "hold_release"
+                if buddy_contact then
+                    buddy_contact.mt_gesture = "hold_release"
+                end
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_hold_release")
                 logger.dbg("two_finger_hold_release detected")
             end
-            -- Neuter its buddy
-            buddy_contact.state = Contact.voidState
+            -- Neuter its buddy (if it's still alive)
+            if buddy_contact then
+                buddy_contact.state = Contact.voidState
+            end
 
             -- Don't drop buddy, voidState will handle it
             gesture_detector:dropContact(self)
