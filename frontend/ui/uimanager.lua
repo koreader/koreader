@@ -1619,7 +1619,9 @@ function UIManager:processZMQs()
             self:handleInputEvent(input_event)
         end
     end
-    self:dispatchInputEventHooks()
+    if self._zeromqs[1] then
+        self:dispatchInputEventHooks()
+    end
 end
 
 function UIManager:handleInput()
@@ -1697,7 +1699,9 @@ function UIManager:handleInput()
         for __, ev in ipairs(input_events) do
             self:handleInputEvent(ev)
         end
-        self:dispatchInputEventHooks()
+        if input_events[1] then
+            self:dispatchInputEventHooks()
+        end
     end
 
     if self.looper then
