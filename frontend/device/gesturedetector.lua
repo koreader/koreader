@@ -830,6 +830,13 @@ function Contact:voidState()
             if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
                (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
                 self.mt_immobile = false
+                -- NOTE: If we were flagged for a hold gesture, that won't do, switch to rotate.
+                --       (This happens when attempting a rotate, and the hold timer for slot 0 expires
+                --       before slot 1 has the chance to switch to panState).
+                if buddy_contact and buddy_contact.mt_gesture == "hold" and self.mt_gesture == "hold" then
+                    buddy_contact.mt_gesture = "pan"
+                    self.mt_gesture = "rotate"
+                end
             else
                 self.mt_immobile = true
             end
