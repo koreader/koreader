@@ -717,7 +717,7 @@ function Contact:panState()
             if buddy_contact and self.down then
                 -- Both main contacts are actives and we are down, mark that slot
                 self.mt_gesture = "swipe"
-                logger.dbg("Flagged slot", slot, "as pending a two_finger_swipe/pinch/spread")
+                logger.dbg("Flagged slot", slot, "as part of a two_finger_swipe/pinch/spread")
                 -- Neuter its buddy
                 buddy_contact.state = Contact.voidState
                 buddy_contact.mt_gesture = "swipe"
@@ -1066,7 +1066,7 @@ function Contact:handlePanRelease()
     if buddy_contact and self.down then
         -- Both main contacts are actives and we are down, mark that slot
         self.mt_gesture = "pan_release"
-        logger.dbg("Flagged slot", slot, "as pending a two_finger_pan_release")
+        logger.dbg("Flagged slot", slot, "as part of a two_finger_pan_release")
         -- Neuter its buddy
         buddy_contact.state = Contact.voidState
         buddy_contact.mt_gesture = "pan_release"
