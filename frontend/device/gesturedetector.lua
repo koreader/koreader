@@ -378,9 +378,9 @@ function GestureDetector:getRotate(orig_point, start_point, end_point)
     return rad * 180/math.pi
 end
 
-function Contact:switchState(state_func, ...)
+function Contact:switchState(state_func, func_arg)
     self.state = state_func
-    return state_func(self, ...)
+    return state_func(self, func_arg)
 end
 
 function Contact:initialState()
