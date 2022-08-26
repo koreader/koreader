@@ -187,6 +187,7 @@ function GestureDetector:dropContact(contact)
 
     -- If we have a buddy contact, drop its buddy ref to us
     if contact.buddy_contact then
+        logger.dbg("Breaking MT buddy pairing with slot", contact.buddy_contact.slot)
         contact.buddy_contact.buddy_contact = nil
     end
 
