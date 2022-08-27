@@ -812,7 +812,7 @@ function Contact:voidState()
                 return self:panState()
             elseif self.mt_gesture == "rotate" then
                 -- NOTE: As usual, rotate requires some trickery,
-                --       because it's the only gesture that requires both slots to be in *deifferent* states...
+                --       because it's the only gesture that requires both slots to be in *different* states...
                 --       (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
                 logger.dbg("Contact:voidState Deferring slot", slot, "to panState via its buddy", buddy_slot, "to handle MT contact lift for gesture", self.mt_gesture)
                 local ges_ev = buddy_contact:panState()
@@ -1205,7 +1205,24 @@ function Contact:holdState(new_hold)
     elseif tev.id == -1 then
         if buddy_contact and self.down then
             -- Both main contacts are actives and we are down, mark that slot
-            if self.mt_gesture == "hold_pan" or self.mt_gesture == "pan" then
+            if self.mt_gesture == "rotate" and buddy_contact.mt_gesture == "pan" then
+                -- NOTE: We're setup as the hold in a rotate gesture, and we were lifted *before* our pan buddy,
+                --       do a bit of gymnastics, because the trigger contact for a rotate *needs* to be the pan...
+                --       This is a snow protocol special :/.
+                logger.dbg("Contact:holdState We're setup as a rotate pivot, checking...")
+                local ges_ev = buddy_contact:handleTwoFingerPan(self)
+                if ges_ev then
+                    if ges_ev.ges ~= "rotate" then
+                        ges_ev = nil
+                    else
+                        logger.dbg(ges_ev.ges, ges_ev.direction, math.abs(ges_ev.angle), "detected")
+                    end
+                end
+                -- Regardless of whether this panned out (pun intended), this is a lift, so we'll defer to voidState next.
+                buddy_contact.state = Contact.voidState
+                gesture_detector:dropContact(self)
+                return ges_ev
+            elseif self.mt_gesture == "hold_pan" or self.mt_gesture == "pan" then
                 self.mt_gesture = "hold_pan_release"
                 buddy_contact.mt_gesture = "hold_pan_release"
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_hold_pan_release")
