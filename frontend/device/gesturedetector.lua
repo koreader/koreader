@@ -754,7 +754,7 @@ function Contact:panState()
                 local ges_ev = self:handleTwoFingerPan(buddy_contact)
                 if ges_ev then
                     if buddy_contact.mt_gesture == "swipe" then
-                        -- Only accept gestures that require both contacts to have been lifted
+                        -- Only accept gestures that require both contacts to have been lifted (FIXME: Already taken care of in handleTwoFingerPan)
                         if ges_ev.ges == "two_finger_pan" then
                             ges_ev.ges = "two_finger_swipe"
                         elseif ges_ev.ges == "inward_pan" then
@@ -828,14 +828,10 @@ function Contact:voidState()
                 -- NOTE: As usual, rotate requires some trickery...
                 --      (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
                 logger.dbg("Contact:voidState Deferring slot", slot, "to panState via its buddy", buddy_slot, "to handle MT contact lift for gesture", self.mt_gesture)
-                -- FIXME: Would it be safer to forcibly mangle it into a lift by updating its current_tev.id to -1?
-                --        That's re: panState possibly cancelling the gesture returned by handleTwoFingerPan based on the mt gesture,
-                --        and, err, not even going through that but handlePan first if it's not a lift...
-                --        The issue with not returning a gesture would be that we do *NOT* drop the contact, which leaves it orphaned...
                 local ges_ev = buddy_contact:panState()
+                -- Regardless of whether we detected a gesture, this is a contact lift, so it's curtains for us!'
+                gesture_detector:dropContact(self)
                 if ges_ev then
-                    -- If we got a gesture, this slot is done!
-                    gesture_detector:dropContact(self)
                     return ges_ev
                 end
             elseif self.mt_gesture == "hold" or self.mt_gesture == "hold_pan" or
