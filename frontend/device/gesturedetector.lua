@@ -490,7 +490,6 @@ function Contact:tapState(new_tap)
     local slot = self.slot
     local tev = self.current_tev
     local buddy_contact = self.buddy_contact
-    local buddy_slot = buddy_contact and self.buddy_contact.slot
     local gesture_detector = self.ges_dec
 
     -- Attempt to detect the clock source for these events (we reset it on suspend to discriminate MONOTONIC from BOOTTIME).
@@ -597,7 +596,7 @@ function Contact:handleDoubleTap()
     -- We do tap bounce detection even when double tap is enabled
     -- (so, double tap is triggered when: ges_tap_interval <= delay < ges_double_tap_interval).
     if tap_interval ~= 0 and gesture_detector.previous_tap[slot] ~= nil and gesture_detector:isTapBounce(gesture_detector.previous_tap[slot], cur_tap, tap_interval) then
-        logger.dbg("tap bounce detected in slot", slot, ": ignored")
+        logger.dbg("tap bounce detected in slot", slot)
         -- Simply ignore it, and drop this slot as this is the end of a touch event.
         gesture_detector:dropContact(self)
         return
@@ -719,7 +718,6 @@ function Contact:panState()
     local slot = self.slot
     local tev = self.current_tev
     local buddy_contact = self.buddy_contact
-    local buddy_slot = buddy_contact and self.buddy_contact.slot
     local gesture_detector = self.ges_dec
 
     logger.dbg("slot", slot, "in pan state...")
@@ -835,7 +833,6 @@ function Contact:voidState()
         end
     else
         -- We need to be able to discriminate between a moving and unmoving contact for rotate/pan discrimination.
-        -- FIXME: Limit this to panState MT ges?
         if self.mt_immobile then
             if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
                (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
@@ -1153,7 +1150,6 @@ function Contact:holdState(new_hold)
     local slot = self.slot
     local tev = self.current_tev
     local buddy_contact = self.buddy_contact
-    local buddy_slot = buddy_contact and self.buddy_contact.slot
     local gesture_detector = self.ges_dec
 
     logger.dbg("slot", slot, "in hold state...")
