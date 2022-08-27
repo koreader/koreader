@@ -828,6 +828,8 @@ function Contact:voidState()
                 --      (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
                 logger.dbg("Contact:voidState Deferring slot", slot, "to panState via its buddy", buddy_slot, "to handle MT contact lift for gesture", self.mt_gesture)
                 -- FIXME: Would it be safer to forcibly mangle it into a lift by updating its current_tev.id to -1?
+                --        That's re: panState possibly cancelling the gesture returned by handleTwoFingerPan based on the mt gesture,
+                --        and, err, not even going through that but handlePan first if it's not a lift...
                 local ges_ev = buddy_contact:panState()
                 if ges_ev then
                     -- If we got a gesture, this slot is done!
