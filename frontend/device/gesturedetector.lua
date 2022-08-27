@@ -1050,7 +1050,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
         --       (actually, it needs to pass the swipe interval check, but it is in panState),
         --       because this gesture would be too difficult to discriminate from a pinch/spread the other way around ;).
         --       TL;DR: Both fingers need to move for a pinch/spread, while a finger needs to stay still for a rotate.
-        -- NOTE: FWIW, on an Elipsa, if we misdetect a pinch (i.e., both fingers moved)
+        -- NOTE: FWIW, on an Elipsa, if we misdetect a pinch (i.e., both fingers moved) for a rotate
         --       because the buddy slot failed to pass the pan threshold, we get a very shallow angle (often < 1°, at most ~2°).
         --       If, on the other hand, we misdetect a rotate that *looked* like a pinch,
         --       (i.e., a pinch with only one finger moving), we get slightly larger shallow angles (~5°).
