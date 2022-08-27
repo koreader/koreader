@@ -882,7 +882,6 @@ function Contact:handleSwipe()
     if #self.multiswipe_directions > 1 then
         ges = "multiswipe"
         multiswipe_directions = ""
-        -- TODO: Double-check how self.multiswipe_directions is laid out, because this looks eerily like a job for table.concat...
         for k, v in ipairs(self.multiswipe_directions) do
             local sep = ""
             if k > 1 then
