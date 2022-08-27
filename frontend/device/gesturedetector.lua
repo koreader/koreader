@@ -843,7 +843,7 @@ function Contact:voidState()
             if (math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
                (math.abs(tev.y - self.initial_tev.y) >= gesture_detector.PAN_THRESHOLD) then
                 self.mt_immobile = false
-                logger.dbg("Contact:voidState Slot", slot, "moved enough to pass the pan threshold")
+                logger.dbg("Contact:voidState Slot", slot, "moved enough on either axes to pass the pan threshold:", gesture_detector.PAN_THRESHOLD)
                 -- NOTE: We've just moved: if we were flagged for a hold gesture (meaning our buddy is still in holdState),
                 --       that won't do anymore, switch to a setup for a rotate gesture.
                 --       (This happens when attempting a rotate, and the hold timer for slot 0 expires
