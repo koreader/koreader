@@ -731,14 +731,15 @@ function Contact:panState()
 
     logger.dbg("slot", slot, "in pan state...")
     if tev.id == -1 then
-        -- End of pan, signal swipe gesture if necessary
+        -- End of pan, emit swipe and swipe-like gestures if necessary
         if self:isSwipe() then
             if buddy_contact and self.down then
                 -- Both main contacts are actives and we are down, mark that slot
                 self.mt_gesture = "swipe"
                 logger.dbg("Flagged slot", slot, "as part of a two_finger_swipe/pinch/spread")
                 -- Neuter its buddy
-                -- NOTE: Similar trickery as in handlePan to deal with rotate...
+                -- NOTE: Similar trickery as in handlePan to deal with rotate,
+                --       without the panState check for self, because we're obviously in panState...
                 if buddy_contact.state == Contact.holdState or
                    buddy_contact.state == Contact.tapState or
                    (buddy_contact.state == Contact.voidState and buddy_contact.mt_immobile) then
