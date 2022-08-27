@@ -815,7 +815,15 @@ function Contact:voidState()
                 --       because it's the only gesture that requires both slots to be in *different* states...
                 --       (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
                 logger.dbg("Contact:voidState Deferring slot", slot, "to panState via its buddy", buddy_slot, "to handle MT contact lift for gesture", self.mt_gesture)
+                -- NOTE: To avoid further issues if the lifts are staggered, we'll force lift buddy now,
+                --       to make sure panState tries for the rotate gesture *now*...
+                buddy_contact.current_tev.id = -1
                 local ges_ev = buddy_contact:panState()
+                --       ... and then send it to the void, so that there aren't any issues if the lifts are staggered,
+                --       because if it only lifts on the next input frame, it won't go through MT codepaths at all,
+                --       and you'll end up with a single swipe, and if it lifts even later,
+                --       we'd have to deal with spurious moves first...
+                buddy_contact.state = Contact.voidState
                 -- Regardless of whether we detected a gesture, this is a contact lift, so it's curtains for us!
                 gesture_detector:dropContact(self)
                 return ges_ev
