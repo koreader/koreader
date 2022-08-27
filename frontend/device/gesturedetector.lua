@@ -740,14 +740,13 @@ function Contact:panState()
                 -- Neuter its buddy
                 -- NOTE: Similar trickery as in handlePan to deal with rotate,
                 --       without the panState check for self, because we're obviously in panState...
-                if buddy_contact.state == Contact.holdState or
-                   buddy_contact.state == Contact.tapState or
-                   (buddy_contact.state == Contact.voidState and buddy_contact.mt_immobile) then
-                    buddy_contact.mt_gesture = "rotate"
-                    logger.dbg("Flagged slot", buddy_contact.slot, "as part of a rotate release")
-                else
+                if buddy_contact.state == Contact.panState or
+                   (buddy_contact.state == Contact.voidState and not buddy_contact.mt_immobile) then
                     buddy_contact.mt_gesture = "swipe"
                     logger.dbg("Flagged slot", buddy_contact.slot, "as part of a swipe")
+                else
+                    buddy_contact.mt_gesture = "rotate"
+                    logger.dbg("Flagged slot", buddy_contact.slot, "as part of a rotate release")
                 end
                 buddy_contact.state = Contact.voidState
 
@@ -949,6 +948,15 @@ function Contact:handlePan()
         -- NOTE: Small trickery for rotate, which requires both contacts to be in very specific states.
         --       We merge tapState with holdState because it's likely that the hold hasn't taken yet,
         --       and it never will after that because we switch to voidState ;).
+        if buddy_contact.state == Contact.panState or
+           (buddy_contact.state == Contact.voidState and not buddy_contact.mt_immobile) then
+            buddy_contact.mt_gesture = "pan"
+            logger.dbg("Flagged slot", buddy_contact.slot, "as part of a pan")
+        else
+            buddy_contact.mt_gesture = "rotate"
+            logger.dbg("Flagged slot", buddy_contact.slot, "as part of a rotate")
+        end
+        --[[
         if (buddy_contact.state == Contact.holdState or
            buddy_contact.state == Contact.tapState or
            (buddy_contact.state == Contact.voidState and buddy_contact.mt_immobile)) and
@@ -959,6 +967,7 @@ function Contact:handlePan()
             buddy_contact.mt_gesture = "pan"
             logger.dbg("Flagged slot", buddy_contact.slot, "as part of a pan")
         end
+        --]]
         buddy_contact.state = Contact.voidState
 
         return self:handleTwoFingerPan(buddy_contact)
