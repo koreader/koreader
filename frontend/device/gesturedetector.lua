@@ -830,6 +830,7 @@ function Contact:voidState()
                 -- FIXME: Would it be safer to forcibly mangle it into a lift by updating its current_tev.id to -1?
                 --        That's re: panState possibly cancelling the gesture returned by handleTwoFingerPan based on the mt gesture,
                 --        and, err, not even going through that but handlePan first if it's not a lift...
+                --        The issue with not returning a gesture would be that we do *NOT* drop the contact, which leaves it orphaned...
                 local ges_ev = buddy_contact:panState()
                 if ges_ev then
                     -- If we got a gesture, this slot is done!
