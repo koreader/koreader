@@ -109,10 +109,9 @@ function GestureDetector:new(o)
 end
 
 function GestureDetector:init()
-    local scaler = self.screen:getDPI() / 167
     -- distance parameters
-    self.TWO_FINGER_TAP_REGION = 20 * scaler
-    self.DOUBLE_TAP_DISTANCE = 50 * scaler
+    self.TWO_FINGER_TAP_REGION = self.screen:scaleByDPI(20)
+    self.DOUBLE_TAP_DISTANCE = self.screen:scaleByDPI(50)
     self.SINGLE_TAP_BOUNCE_DISTANCE = self.DOUBLE_TAP_DISTANCE
     self.PAN_THRESHOLD = self.DOUBLE_TAP_DISTANCE
     self.MULTISWIPE_THRESHOLD = self.DOUBLE_TAP_DISTANCE
