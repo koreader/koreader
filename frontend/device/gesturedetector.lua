@@ -824,8 +824,8 @@ function Contact:voidState()
                 --       it won't go through MT codepaths at all, and you'll end up with a single swipe,
                 --       and if it lifts even later, we'd have to deal with spurious moves first...
                 --       If the gesture *succeeds*, both contacts will be dropped,
-                --       but the id will be stuck on -1 until an actual ABS_MT_TRACKING_ID input event is consumed,
-                --       and that means initialState will drop the spurious moves automagically.
+                --       but the id will be stuck on -1 until an actual ABS_MT_TRACKING_ID input event is consumed (because
+                --       current_tev is a stable ref), and that means initialState will drop the spurious moves automagically.
                 --       This is a tiny bit iffy (mostly because bogus drivers that repeat ABS_MT_TRACKING_ID do exist),
                 --       but works out well enough for the platform most likely to require this hack in the first plcae: Android.
                 buddy_contact.state = Contact.voidState
