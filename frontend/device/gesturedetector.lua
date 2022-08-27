@@ -118,7 +118,7 @@ function GestureDetector:init()
 end
 
 -- Contact object, it'll keep track of everything we need for a single contact across its lifetime
--- (which should be a single gesture, i.e., from this contact's down to up (or it's *effective* up for double-taps)).
+-- i.e., from this contact's down to up (or its *effective* up for double-taps, e.g., when the tap or double_tap is emitted).
 -- We'll identify contacts by their slot numbers, and store 'em in GestureDetector's active_contacts table (hash).
 local Contact = {} -- Class object is empty, as we do *NOT* want inheritance outside of methods.
 function Contact:new(o)
