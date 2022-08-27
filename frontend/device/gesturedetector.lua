@@ -754,7 +754,7 @@ function Contact:panState()
                 local ges_ev = self:handleTwoFingerPan(buddy_contact)
                 if ges_ev then
                     if buddy_contact.mt_gesture == "swipe" then
-                        -- Only accept gestures that require both contacts to have been lifted (FIXME: Already taken care of in handleTwoFingerPan)
+                        -- Only accept gestures that require both contacts to have been lifted
                         if ges_ev.ges == "two_finger_pan" then
                             ges_ev.ges = "two_finger_swipe"
                         elseif ges_ev.ges == "inward_pan" then
