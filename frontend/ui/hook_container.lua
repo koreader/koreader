@@ -50,10 +50,10 @@ function HookContainer:registerWidget(name, widget)
     self:_assertIsValidName(name)
     assert(type(widget) == "table")
     -- *That* is the function we actually register and need to unregister later, so keep a ref to it...
-    local hook_func = function()
+    local hook_func = function(args)
         local f = widget["on" .. name]
         self:_assertIsValidFunction(f)
-        f(widget)
+        f(widget, args)
     end
     self:register(name, hook_func)
     local original_close_widget = widget.onCloseWidget
@@ -86,15 +86,16 @@ end
 
 --- Execute all registered functions of name. Must be called with self.
 -- @tparam string name The name of the hook. Can only be an non-empty string.
+-- @param args Any kind of arguments sending to the functions.
 -- @treturn number The number of functions have been executed.
-function HookContainer:execute(name)
+function HookContainer:execute(name, args)
     self:_assertIsValidName(name)
     if self[name] == nil or #self[name] == 0 then
         return 0
     end
 
     for _, f in ipairs(self[name]) do
-        f()
+        f(args)
     end
     return #self[name]
 end
