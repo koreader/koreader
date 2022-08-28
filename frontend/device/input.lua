@@ -369,7 +369,6 @@ function Input:adjustKindleOasisOrientation(ev)
 end
 
 function Input:setTimeout(slot, ges, cb, origin, delay)
-    logger.dbg("Input:setTimeout", slot or "N/A", ges or "N/A", cb or "N/A", origin or "N/A", delay or "N/A")
     local item = {
         slot     = slot,
         gesture  = ges,
@@ -395,7 +394,6 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         -- This ensures perfect accuracy, and allows it to be computed in the event's own timescale.
         local sec, usec = time.split_s_us(deadline)
         timerfd = input.setTimer(clock_id, sec, usec)
-        logger.dbg("Input:setTimeout: created timerfd:", timerfd)
     end
     if timerfd then
             -- It worked, tweak the table a bit to make it clear the deadline will be handled by the kernel
@@ -420,36 +418,28 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
     table.sort(self.timer_callbacks, function(v1, v2)
         return v1.deadline < v2.deadline
     end)
-    logger.dbg("Input:setTimeout: #self.timer_callbacks =", #self.timer_callbacks)
 end
 
 -- Clear all timeouts for a specific slot (and a specific gesture, if ges is set)
 function Input:clearTimeout(slot, ges)
-    logger.dbg("Input:clearTimeout", slot or "N/A", ges or "N/A")
     for i = #self.timer_callbacks, 1, -1 do
         local item = self.timer_callbacks[i]
         if item.slot == slot and (not ges or item.gesture == ges) then
             -- If the timerfd backend is in use, close the fd and free the list's node, too.
             if item.timerfd then
-                logger.dbg(string.format("[Input:clearTimeout] Will clearTimer for timerfd: %s on slot %d at idx %d", item.timerfd, item.slot, i))
                 input.clearTimer(item.timerfd)
-                logger.dbg("Did clearTimer")
             end
             table.remove(self.timer_callbacks, i)
         end
     end
-    logger.dbg("Input:clearTimeout: #self.timer_callbacks =", #self.timer_callbacks)
 end
 
 function Input:clearTimeouts()
-    logger.dbg("Input:clearTimeouts")
     -- If the timerfd backend is in use, close the fds, too
     if input.setTimer then
-        for i, item in ipairs(self.timer_callbacks) do
+        for _, item in ipairs(self.timer_callbacks) do
             if item.timerfd then
-                logger.dbg(string.format("[Input:clearTimeouts] Will clearTimer for timerfd: %s on slot %d at idx %d", item.timerfd, item.slot, i))
                 input.clearTimer(item.timerfd)
-                logger.dbg("Did clearTimer")
             end
         end
     end
@@ -478,7 +468,6 @@ function Input:handleKeyBoardEv(ev)
                 -- meaning self.MTSlots has *just* been cleared by our last EV_SYN:SYN_REPORT handler...
                 -- So, poke at the actual data to find the slots that are currently active (i.e., in the down state),
                 -- and re-populate a minimal self.MTSlots array that simply switches them to the up state ;).
-                logger.dbg("Input:handleKeyBoardEv: BTN_TOUCH:0 in its own input frame")
                 for _, slot in pairs(self.ev_slots) do
                     if slot.id ~= -1 then
                         table.insert(self.MTSlots, slot)
@@ -489,7 +478,6 @@ function Input:handleKeyBoardEv(ev)
                 -- Unlikely, given what we mentioned above...
                 -- Note that, funnily enough, its EV_KEY:BTN_TOUCH:1 counterpart
                 -- *can* be in the same initial event stream as the EV_ABS batch...
-                logger.dbg("Input:handleKeyBoardEv: BTN_TOUCH:0 in an existing input frame")
                 for _, MTSlot in ipairs(self.MTSlots) do
                     self:setMtSlot(MTSlot.slot, "id", -1)
                 end
@@ -693,7 +681,6 @@ end.  Upon receiving an MT event, one simply updates the appropriate
 attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
-    --logger.dbg("Input:handleTouchEv", ev)
     if ev.type == C.EV_ABS then
         -- NOTE: Ideally, an input frame starts with either ABS_MT_SLOT or ABS_MT_TRACKING_ID,
         --       but they *both* may be omitted if the last contact point just moved without lift.
@@ -1047,7 +1034,6 @@ function Input:newFrame()
 end
 
 function Input:addSlot(value)
-    logger.dbg("Input:addSlot creating storage for slot", value)
     self:initMtSlot(value)
     table.insert(self.MTSlots, self:getMtSlot(value))
     self.active_slots[value] = true
@@ -1058,14 +1044,10 @@ function Input:addSlotIfChanged(value)
     if self.cur_slot ~= value then
         -- We've already seen that slot in this frame, don't insert a duplicate reference!
         if self.active_slots[value] then
-            logger.dbg("Input:addSlotIfChanged reusing storage for existing slot", value)
             self.cur_slot = value
         else
-            logger.dbg("Input:addSlotIfChanged creating storage for slot", value)
             self:addSlot(value)
         end
-    else
-        logger.dbg("Input:addSlotIfChanged reusing storage for slot", value)
     end
 end
 
@@ -1157,7 +1139,9 @@ function Input:waitEvent(now, deadline)
                         -- Deadline hasn't been blown yet, honor it.
                         poll_timeout = poll_deadline - now
                     else
-                        -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
+                        -- We've already blown the deadline: make select return immediately (most likely straight to timeout).
+                        -- NOTE: With the timerfd backend, this is sometimes a tad optimistic,
+                        --       as we may in fact retry for a few iterations while waiting for the timerfd to actually expire.
                         poll_timeout = 0
                     end
                 end
@@ -1165,7 +1149,6 @@ function Input:waitEvent(now, deadline)
                 local timerfd
                 local sec, usec = time.split_s_us(poll_timeout)
                 ok, ev, timerfd = input.waitForEvent(sec, usec)
-                logger.dbg("Input: w/ pending timers, waitForEvent( ", sec, usec, ") returned:", ok, type(ev) == "table" and "ev table" or ev, timerfd)
                 -- We got an actual input event, go and process it
                 if ok then break end
 
@@ -1191,7 +1174,6 @@ function Input:waitEvent(now, deadline)
                     end
 
                     if consume_callback then
-                        logger.dbg("Input: We have a callback to consume, timerfd?", timerfd or "no")
                         local touch_ges
                         local timer_idx = 1
                         if timerfd then
@@ -1202,7 +1184,6 @@ function Input:waitEvent(now, deadline)
                                 if item.timerfd == timerfd then
                                     -- In the vast majority of cases, we should find our match on the first entry ;).
                                     timer_idx = i
-                                    logger.dbg(string.format("[Input:waitEvent] Found timerfd: %s for slot %d at index %d", timerfd, item.slot, i))
                                     touch_ges = item.callback()
                                     break
                                 end
@@ -1212,25 +1193,20 @@ function Input:waitEvent(now, deadline)
                             -- because the blown deadline means we'll have asked waitForEvent to return immediately.
                             touch_ges = self.timer_callbacks[1].callback()
                         end
-                        logger.dbg("[Input:waitEvent] touch_ges is", touch_ges and touch_ges.ges or "nil")
 
-                        -- Cleanup; GestureDetector has guards in place to avoid double frees because of the callback.
+                        -- Cleanup after the timer callback.
+                        -- GestureDetector has guards in place to avoid double frees in case the callback itself
+                        -- affected the timerfd or timer_callbacks list (e.g., by dropping a contact).
                         if timerfd then
-                            logger.dbg(string.format("[Input:waitEvent] Will clearTimer for timerfd: %s for slot %d at index %d", timerfd, self.timer_callbacks[timer_idx].slot, timer_idx))
                             input.clearTimer(timerfd)
-                            logger.dbg("Did clearTimer")
                         end
                         table.remove(self.timer_callbacks, timer_idx)
-                        logger.dbg("[Input:waitEvent] Popped idx", timer_idx, "#self.timer_callbacks =", #self.timer_callbacks)
 
                         if touch_ges then
-                            logger.dbg("Input: cb yielded a gesture")
                             self:gestureAdjustHook(touch_ges)
                             return {
                                 Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges))
                             }
-                        else
-                            logger.dbg("Input: cb did NOT yield a gesture ;'(")
                         end -- if touch_ges
                     end -- if poll_deadline reached
                 else
@@ -1260,7 +1236,6 @@ function Input:waitEvent(now, deadline)
 
             local sec, usec = time.split_s_us(poll_timeout)
             ok, ev = input.waitForEvent(sec, usec)
-            logger.dbg("Input: w/o pending timers, waitForEvent( ", sec, usec, ") returned:", ok, type(ev) == "table" and "ev table" or ev)
         end -- if #timer_callbacks > 0
 
         -- Handle errors
