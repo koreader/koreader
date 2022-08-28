@@ -16,6 +16,7 @@ describe("device module", function()
                     getRotationMode = function() return 0 end,
                     getScreenMode = function() return "portrait" end,
                     setRotationMode = function() end,
+                    scaleByDPI = function(this, dp) return math.ceil(dp * this:getDPI() / 160) end,
                 }
             end
         }
