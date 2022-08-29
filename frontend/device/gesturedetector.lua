@@ -783,7 +783,7 @@ function Contact:panState(keep_contact)
             end
         elseif self.down then
             -- If the contact lift is not a swipe, then it's a pan.
-            return self:handlePanRelease()
+            return self:handlePanRelease(keep_contact)
         else
             -- Huh, caught a *second* contact lift for this contact? (should never happen).
             logger.warn("Contact:panState Cancelled a gesture")
@@ -1135,7 +1135,7 @@ end
 --[[--
 Emits the pan_release & two_finger_pan_release gestures. Contact is up (but down is still true) and in panState.
 --]]
-function Contact:handlePanRelease()
+function Contact:handlePanRelease(keep_contact)
     local slot = self.slot
     logger.dbg("Contact:handlePanRelease for slot", slot)
     local tev = self.current_tev
@@ -1165,7 +1165,10 @@ function Contact:handlePanRelease()
         logger.dbg("Contact:handlePanRelease: two_finger_pan_release detected")
         pan_ev.ges = "two_finger_pan_release"
         -- Don't drop buddy, voidState will handle it
-        gesture_detector:dropContact(self)
+        -- NOTE: This is yet another rotate hack, emanating from voidState -> panState.
+        if not keep_contact then
+            gesture_detector:dropContact(self)
+        end
         return pan_ev
     elseif self.down then
         logger.dbg("Contact:handlePanRelease: pan release detected")
