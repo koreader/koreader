@@ -557,13 +557,14 @@ function Contact:tapState(new_tap)
             return self:handleDoubleTap()
         else
             -- Huh, caught a *second* contact lift for this contact? (should never happen).
-            logger.warn("Contact:tapState Cancelled a gesture in slot", slot)
+            logger.warn("Contact:tapState Cancelled a gesture")
             gesture_detector:dropContact(self)
         end
     else
         -- If we're pending a double_tap timer, flag the contact as down again.
         if self.pending_double_tap_timer then
             self.down = true
+            logger.dbg("Contact:tapState: Contact down")
         end
         -- See if we need to do something with the move/hold
         return self:handleNonTap(new_tap)
@@ -582,7 +583,7 @@ function Contact:handleDoubleTap()
     -- If we don't actually detect two distinct taps (i.e., down -> up -> down -> up), then it's a hover, ignore it.
     -- (Without a timer, these get dropped in initialState).
     if self.pending_double_tap_timer and self.down == false then
-        logger.dbg("Contact:handleDoubleTap: Ignoring consecutive hover event")
+        logger.dbg("Contact:handleDoubleTap Ignored a hover event")
         return
     end
 
@@ -599,7 +600,7 @@ function Contact:handleDoubleTap()
     -- (so, double tap is triggered when: ges_tap_interval <= delay < ges_double_tap_interval).
     if tap_interval ~= 0 and gesture_detector.previous_tap[slot] ~= nil and
        gesture_detector:isTapBounce(gesture_detector.previous_tap[slot], cur_tap, tap_interval) then
-        logger.dbg("Contact:handleDoubleTap: Stopped a tap bounce")
+        logger.dbg("Contact:handleDoubleTap Stopped a tap bounce")
         -- Simply ignore it, and drop this slot as this is a contact lift.
         gesture_detector:dropContact(self)
         return
@@ -620,9 +621,9 @@ function Contact:handleDoubleTap()
     if not gesture_detector.input.disable_double_tap and self.pending_double_tap_timer and
        gesture_detector:isDoubleTap(gesture_detector.previous_tap[slot], cur_tap) then
         -- It is a double tap
-        gesture_detector:dropContact(self)
         ges_ev.ges = "double_tap"
-        logger.dbg("Contact:handleDoubleTap: double_tap detected")
+        logger.dbg("Contact:handleDoubleTap: double_tap detected", ges_ev.pos)
+        gesture_detector:dropContact(self)
         return ges_ev
     end
 
@@ -780,7 +781,7 @@ function Contact:panState()
             return self:handlePanRelease()
         else
             -- Huh, caught a *second* contact lift for this contact? (should never happen).
-            logger.warn("Contact:panState Cancelled a gesture in slot", slot)
+            logger.warn("Contact:panState Cancelled a gesture")
             gesture_detector:dropContact(self)
         end
     else
@@ -814,8 +815,8 @@ function Contact:voidState()
                 -- NOTE: As usual, rotate requires some trickery,
                 --       because it's the only gesture that requires both slots to be in *different* states...
                 --       (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
-                logger.dbg("Contact:voidState Deferring slot", slot, "to panState via its buddy", buddy_slot, "to handle MT contact lift for gesture", self.mt_gesture)
-                -- NOTE: To avoid further issues if the lifts are staggered, we'll force lift buddy now,
+                logger.dbg("Contact:voidState Deferring to panState via buddy slot", buddy_slot, "to handle MT contact lift for a rotate")
+                -- NOTE: To avoid further issues if the lifts are staggered, we'll forcibly lift buddy now,
                 --       to make sure panState tries for the rotate gesture *now*...
                 buddy_contact.current_tev.id = -1
                 local ges_ev = buddy_contact:panState()
@@ -827,7 +828,7 @@ function Contact:voidState()
                 --       but the id will be stuck on -1 until an actual ABS_MT_TRACKING_ID input event is consumed (because
                 --       current_tev is a stable ref), and that means initialState will drop the spurious moves automagically.
                 --       This is a tiny bit iffy (mostly because bogus drivers that repeat ABS_MT_TRACKING_ID do exist),
-                --       but works out well enough for the platform most likely to require this hack in the first plcae: Android.
+                --       but works out well enough for the platform most likely to require this hack in the first place: Android.
                 buddy_contact.state = Contact.voidState
                 -- Regardless of whether we detected a gesture, this is a contact lift, so it's curtains for us!
                 gesture_detector:dropContact(self)
@@ -1158,7 +1159,7 @@ function Contact:handlePanRelease()
         return pan_ev
     else
         -- Huh, caught a *second* contact lift for this contact? (should never happen).
-        logger.warn("Contact:handlePanRelease Cancelled a gesture in slot", slot)
+        logger.warn("Contact:handlePanRelease Cancelled a gesture")
         gesture_detector:dropContact(self)
     end
 end
@@ -1223,7 +1224,7 @@ function Contact:holdState(new_hold)
                 -- NOTE: We're setup as the hold in a rotate gesture, and we were lifted *before* our pan buddy,
                 --       do a bit of gymnastics, because the trigger contact for a rotate *needs* to be the pan...
                 --       This is a snow protocol special :/.
-                logger.dbg("Contact:holdState We're setup as a rotate pivot, checking...")
+                logger.dbg("Contact:holdState: Early lift as a rotate pivot, trying for a rotate...")
                 local ges_ev = buddy_contact:handleTwoFingerPan(self)
                 if ges_ev then
                     if ges_ev.ges ~= "rotate" then
@@ -1280,7 +1281,7 @@ function Contact:holdState(new_hold)
             }
         else
             -- Huh, caught a *second* contact lift for this contact? (should never happen).
-            logger.warn("Contact:holdState Cancelled a gesture in slot", slot)
+            logger.warn("Contact:holdState Cancelled a gesture")
             gesture_detector:dropContact(self)
         end
     elseif tev.id ~= -1 and ((math.abs(tev.x - self.initial_tev.x) >= gesture_detector.PAN_THRESHOLD) or
@@ -1289,7 +1290,7 @@ function Contact:holdState(new_hold)
         local ges_ev = self:handlePan()
         if ges_ev ~= nil then
             if ges_ev.ges == "two_finger_hold_pan" then
-                -- Only send it once per pair
+                -- Only send it once per pair (err, FIXME?)
                 if not (buddy_contact and buddy_contact.mt_gesture == "hold_pan" and self.mt_gesture == "hold_pan") then
                     ges_ev = nil
                 end
