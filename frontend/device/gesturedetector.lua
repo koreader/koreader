@@ -821,22 +821,29 @@ function Contact:voidState()
                 --       because it's the only gesture that requires both slots to be in *different* states...
                 --       (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
                 logger.dbg("Contact:voidState Deferring to panState via buddy slot", buddy_slot, "to handle MT contact lift for a rotate")
-                -- NOTE: To avoid further issues if the lifts are staggered, we'll forcibly lift buddy for this single call,
-                --       to make sure panState tries for the rotate gesture *now*,
-                --       while asking it *not* to drop itself just now if it's not an actual contact lift so that...
+                local ges_ev
                 local buddy_tid = buddy_contact.current_tev.id
-                buddy_contact.current_tev.id = -1
-                local ges_ev = buddy_contact:panState(buddy_tid ~= -1)
-                --       ...we can then send it to the void.
-                --       Whether the gesture fails or not, it'll be in voidState and only dropped on actual contact lift,
-                --       regardless of whether the driver repeats ABS_MT_TRACKING_ID values or not.
-                --       Otherwise, if it only lifts on the next input frame,
-                --       it won't go through MT codepaths at all, and you'll end up with a single swipe,
-                --       and if it lifts even later, we'd have to deal with spurious moves first, probably leading into a tap...
-                --       If the gesture *succeeds*, both contacts will be dropped whenever they're actually lifted,
-                --       thanks to the temporary tracking id switcheroo...
-                buddy_contact.state = Contact.voidState
-                buddy_contact.current_tev.id = buddy_tid
+                if buddy_tid == -1 then
+                    -- It's an actual lift for buddy, so we can just send it along, panState will drop the contact.
+                    ges_ev = buddy_contact:panState()
+                else
+                    -- But *this* means the lifts are staggered, and we, the hold pivot, were lifted *first*.
+                    -- To avoid further issues, we'll forcibly lift buddy for this single call,
+                    -- to make sure panState tries for the rotate gesture *now*,
+                    -- while asking it *not* to drop itself just now (as it's not an actual contact lift just yet) so that...
+                    buddy_contact.current_tev.id = -1
+                    ges_ev = buddy_contact:panState(true)
+                    -- ...we can then send it to the void.
+                    -- Whether the gesture fails or not, it'll be in voidState and only dropped on actual contact lift,
+                    -- regardless of whether the driver repeats ABS_MT_TRACKING_ID values or not.
+                    -- Otherwise, if it only lifts on the next input frame,
+                    -- it won't go through MT codepaths at all, and you'll end up with a single swipe,
+                    -- and if it lifts even later, we'd have to deal with spurious moves first, probably leading into a tap...
+                    -- If the gesture *succeeds*, the buddy contact will be dropped whenever it's actually lifted,
+                    -- thanks to the temporary tracking id switcheroo & voidState...
+                    buddy_contact.state = Contact.voidState
+                    buddy_contact.current_tev.id = buddy_tid
+                end
                 -- Regardless of whether we detected a gesture, this is a contact lift, so it's curtains for us!
                 gesture_detector:dropContact(self)
                 return ges_ev
