@@ -535,7 +535,7 @@ function Contact:tapState(new_tap)
                     time = tev.timev,
                 }
             else
-                logger.dbg("Two finger tap failed to pass the two_finger_tap constraints")
+                logger.dbg("Two-contact tap failed to pass the two_finger_tap constraints")
                 -- We blew the gesture position/time constraints,
                 -- neuter buddy and send a single tap on this slot.
                 buddy_contact.state = Contact.voidState
@@ -599,7 +599,7 @@ function Contact:handleDoubleTap()
     -- (so, double tap is triggered when: ges_tap_interval <= delay < ges_double_tap_interval).
     if tap_interval ~= 0 and gesture_detector.previous_tap[slot] ~= nil and
        gesture_detector:isTapBounce(gesture_detector.previous_tap[slot], cur_tap, tap_interval) then
-        logger.dbg("tap bounce detected in slot", slot)
+        logger.dbg("Contact:handleDoubleTap: Stopped a tap bounce")
         -- Simply ignore it, and drop this slot as this is a contact lift.
         gesture_detector:dropContact(self)
         return
@@ -622,17 +622,17 @@ function Contact:handleDoubleTap()
         -- It is a double tap
         gesture_detector:dropContact(self)
         ges_ev.ges = "double_tap"
-        logger.dbg("double tap detected in slot", slot)
+        logger.dbg("Contact:handleDoubleTap: double_tap detected")
         return ges_ev
     end
 
     -- Remember this tap
     gesture_detector.previous_tap[slot] = cur_tap
-    logger.dbg("Set previous_tap for slot", slot, cur_tap)
+    logger.dbg("Set previous_tap to", cur_tap)
 
     if gesture_detector.input.disable_double_tap then
         -- We can send the event immediately (no need for the timer stuff needed for double tap support)
-        logger.dbg("single tap detected in slot", slot, ges_ev.pos)
+        logger.dbg("Contact:handleDoubleTap: single tap detected", ges_ev.pos)
         gesture_detector:dropContact(self)
         return ges_ev
     end
@@ -640,7 +640,7 @@ function Contact:handleDoubleTap()
     -- Double tap enabled: we can't send this single tap immediately as it may be the start of a double tap.
     -- We'll send it as a single tap after a timer if no second tap happened in the double tap delay.
     if not self.pending_double_tap_timer then
-        logger.dbg("set up double_tap timer for slot", slot)
+        logger.dbg("set up double_tap timer")
         self.pending_double_tap_timer = true
         -- setTimeout will handle computing the deadline in the least lossy way possible given the platform.
         gesture_detector.input:setTimeout(slot, "double_tap", function()
@@ -659,7 +659,7 @@ function Contact:handleDoubleTap()
     -- Regardless of the timer shenanigans, it's at the very least a contact lift,
     -- but we can't quite call dropContact yet, as it would cancel the timer.
     self.down = false
-    logger.dbg("Contact:handleDoubleTap Contact lift for slot", slot)
+    logger.dbg("Contact:handleDoubleTap: Contact lift")
 end
 
 --[[--
@@ -675,7 +675,7 @@ function Contact:handleNonTap(new_tap)
     -- If we haven't yet fired the hold timer, do so first and foremost, as hold_pan handling *requires* a hold.
     -- We only do this on the first contact down.
     if new_tap and not self.pending_hold_timer then
-        logger.dbg("set up hold timer for slot", slot)
+        logger.dbg("set up hold timer")
         self.pending_hold_timer = true
         gesture_detector.input:setTimeout(slot, "hold", function()
             -- If this contact is still active & alive and its timer hasn't been cancelled,
@@ -906,7 +906,7 @@ function Contact:handleSwipe()
         logger.dbg("multiswipe", multiswipe_directions)
     end
 
-    logger.dbg("swipe", swipe_direction, swipe_distance, "detected in slot", slot)
+    logger.dbg("Contact:handleSwipe: swipe", swipe_direction, swipe_distance, "detected")
     gesture_detector:dropContact(self)
     return {
         ges = ges,
@@ -1070,7 +1070,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
         --       Things get wildly more difficult on an Android phone, where you can easily add ~10° of noise to those results.
         --       TL;DR: We just chuck those as misdetections instead of adding brittle heuristics to correct course ;).
         local angle = gesture_detector:getRotate(rstart_pos, tstart_pos, tend_pos)
-        logger.dbg("rotate", angle, "detected")
+        logger.dbg("Contact:handleTwoFingerPan: rotate", angle, "detected")
         return {
             ges = "rotate",
             pos = rstart_pos,
@@ -1112,7 +1112,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
             logger.dbg("Flagged buddy slot", buddy_contact.slot, "as a two_finger_hold_pan")
         end
 
-        logger.dbg(ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
+        logger.dbg("Contact:handleTwoFingerPan:", ges_ev.ges, ges_ev.direction, ges_ev.distance, "detected")
         return ges_ev
     end
 end
@@ -1147,13 +1147,13 @@ function Contact:handlePanRelease()
         buddy_contact.mt_gesture = "pan_release"
         logger.dbg("Flagged buddy slot", buddy_contact.slot, "as part of a two_finger_pan_release")
 
-        logger.dbg("two_finger_pan_release detected")
+        logger.dbg("Contact:handlePanRelease: two_finger_pan_release detected")
         pan_ev.ges = "two_finger_pan_release"
         -- Don't drop buddy, voidState will handle it
         gesture_detector:dropContact(self)
         return pan_ev
     elseif self.down then
-        logger.dbg("pan release detected in slot", slot)
+        logger.dbg("Contact:handlePanRelease: pan release detected")
         gesture_detector:dropContact(self)
         return pan_ev
     else
@@ -1266,7 +1266,7 @@ function Contact:holdState(new_hold)
             }
         elseif self.down then
             -- Contact lift, emit a hold_release
-            logger.dbg("hold_release detected in slot", slot)
+            logger.dbg("hold_release detected")
             gesture_detector:dropContact(self)
             return {
                 ges = "hold_release",
