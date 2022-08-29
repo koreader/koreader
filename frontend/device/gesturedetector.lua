@@ -562,7 +562,7 @@ function Contact:tapState(new_tap)
         end
     else
         -- If we're pending a double_tap timer, flag the contact as down again.
-        if self.pending_double_tap_timer then
+        if self.pending_double_tap_timer and self.down == false then
             self.down = true
             logger.dbg("Contact:tapState: Contact down")
         end
