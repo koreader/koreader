@@ -719,7 +719,7 @@ end
 --[[--
 Handles the full panel of pans & swipes, including their two-finger variants.
 --]]
-function Contact:panState()
+function Contact:panState(keep_contact)
     local slot = self.slot
     local tev = self.current_tev
     local buddy_contact = self.buddy_contact
@@ -770,8 +770,13 @@ function Contact:panState()
                     end
                 end
 
-                -- Don't drop buddy, voidState will handle it
-                gesture_detector:dropContact(self)
+                -- Don't drop buddy, voidState will handle it.
+                -- NOTE: This is a hack for inverted rotate lifts when we faked a lift from voidState.
+                --       When `keep_contact` is true, this isn't an actual contact lift,
+                --       so we don't want to destroy the contact just yet...
+                if not keep_contact then
+                    gesture_detector:dropContact(self)
+                end
                 return ges_ev
             elseif self.down then
                 return self:handleSwipe()
@@ -816,20 +821,22 @@ function Contact:voidState()
                 --       because it's the only gesture that requires both slots to be in *different* states...
                 --       (The trigger contact *has* to be the panning one; while we're the held one in this scenario).
                 logger.dbg("Contact:voidState Deferring to panState via buddy slot", buddy_slot, "to handle MT contact lift for a rotate")
-                -- NOTE: To avoid further issues if the lifts are staggered, we'll forcibly lift buddy now,
-                --       to make sure panState tries for the rotate gesture *now*...
+                -- NOTE: To avoid further issues if the lifts are staggered, we'll forcibly lift buddy for this single call,
+                --       to make sure panState tries for the rotate gesture *now*,
+                --       while asking it *not* to drop itself just now if it's not an actual contact lift so that...
+                local buddy_tid = buddy_contact.current_tev.id
                 buddy_contact.current_tev.id = -1
-                local ges_ev = buddy_contact:panState()
-                --       ... and then send it to the void, so that there aren't any issues if the gesture fails,
-                --       and the the lifts are staggered, because if it only lifts on the next input frame,
+                local ges_ev = buddy_contact:panState(buddy_tid ~= -1)
+                --       ...we can then send it to the void.
+                --       Whether the gesture fails or not, it'll be in voidState and only dropped on actual contact lift,
+                --       regardless of whether the driver repeats ABS_MT_TRACKING_ID values or not.
+                --       Otherwise, if it only lifts on the next input frame,
                 --       it won't go through MT codepaths at all, and you'll end up with a single swipe,
-                --       and if it lifts even later, we'd have to deal with spurious moves first...
-                --       If the gesture *succeeds*, both contacts will be dropped,
-                --       but the id will be stuck on -1 until an actual ABS_MT_TRACKING_ID input event is consumed (because
-                --       current_tev is a stable ref), and that means initialState will drop the spurious moves automagically.
-                --       This is a tiny bit iffy (mostly because bogus drivers that repeat ABS_MT_TRACKING_ID do exist),
-                --       but works out well enough for the platform most likely to require this hack in the first place: Android.
+                --       and if it lifts even later, we'd have to deal with spurious moves first, probably leading into a tap...
+                --       If the gesture *succeeds*, both contacts will be dropped whenever they're actually lifted,
+                --       thanks to the temporary tracking id switcheroo...
                 buddy_contact.state = Contact.voidState
+                buddy_contact.current_tev.id = buddy_tid
                 -- Regardless of whether we detected a gesture, this is a contact lift, so it's curtains for us!
                 gesture_detector:dropContact(self)
                 return ges_ev
