@@ -242,7 +242,7 @@ function Remarkable:setDeviceSpecificEventHandlers(UIManager)
         self:_afterResume()
     end
     UIManager.event_handlers["PowerPress"] = function()
-        UIManager:scheduleIn(2, UIManager..poweroff_action)
+        UIManager:scheduleIn(2, UIManager.poweroff_action)
     end
     UIManager.event_handlers["PowerRelease"] = function()
         if not UIManager._entered_poweroff_stage then
@@ -253,12 +253,6 @@ function Remarkable:setDeviceSpecificEventHandlers(UIManager)
             else
                 UIManager.event_handlers["Suspend"]()
             end
-        end
-    end
-    UIManager.event_handlers["__default__"] = function(input_event)
-        -- Same as in Kobo: we want to ignore keys during suspension
-        if not self.screen_saver_mode then
-            UIManager:sendEvent(input_event)
         end
     end
 end
