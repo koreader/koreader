@@ -310,11 +310,11 @@ describe("device module", function()
         end)
 
         it("Cervantes", function()
-            io.open = function(filename, mode)
-                if filename == "/usr/bin/ntxinfo" then
+            io.popen = function(filename, mode)
+                if filename:find("/usr/bin/ntxinfo") then
                     return {
                         read = function()
-                            return "68" -- Cervantes4
+                            return 68 -- Cervantes4
                         end,
                         close = function() end
                     }
