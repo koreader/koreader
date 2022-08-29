@@ -1289,12 +1289,7 @@ function Contact:holdState(new_hold)
         -- We've moved enough to count as a pan, defer to the pan handler, but stay in holdState
         local ges_ev = self:handlePan()
         if ges_ev ~= nil then
-            if ges_ev.ges == "two_finger_hold_pan" then
-                -- Only send it once per pair (err, FIXME?)
-                if not (buddy_contact and buddy_contact.mt_gesture == "hold_pan" and self.mt_gesture == "hold_pan") then
-                    ges_ev = nil
-                end
-            else
+            if ges_ev.ges ~= "two_finger_hold_pan" then
                 ges_ev.ges = "hold_pan"
             end
         end
