@@ -392,7 +392,7 @@ function Contact:initialState()
         else
             self.id = tev.id
             if tev.x and tev.y then
-                -- Contact down, user starts a new touch motion
+                -- Contact down, user started a new touch motion
                 if not self.down then
                     self.down = true
                     -- NOTE: We can't use a simple reference, because tev is actually Input's self.ev_slots[slot],
@@ -554,7 +554,7 @@ function Contact:handleDoubleTap()
     local gesture_detector = self.ges_dec
 
     -- If we don't actually detect two distinct taps (i.e., down -> up -> down -> up), then it's a hover, ignore it.
-    -- (Without a timer, these get dropped in initialState).
+    -- (Without a double tap timer involved, these get dropped in initialState).
     if self.pending_double_tap_timer and self.down == false then
         logger.dbg("Contact:handleDoubleTap Ignored a hover event")
         return
@@ -600,7 +600,7 @@ function Contact:handleDoubleTap()
         return ges_ev
     end
 
-    -- Remember this tap
+    -- Remember this tap, now that we're out of the bounce & double_tap windows
     gesture_detector.previous_tap[slot] = cur_tap
 
     if gesture_detector.input.disable_double_tap then
@@ -740,9 +740,9 @@ function Contact:panState(keep_contact)
                 end
 
                 -- Don't drop buddy, voidState will handle it.
-                -- NOTE: This is a hack for inverted rotate lifts when we faked a lift from voidState.
-                --       When `keep_contact` is true, this isn't an actual contact lift,
-                --       so we don't want to destroy the contact just yet...
+                -- NOTE: This is a hack for out of order rotate lifts when we have to fake a lift from voidState:
+                --       when `keep_contact` is true, this isn't an actual contact lift,
+                --       so we can't destroy the contact just yet...
                 if not keep_contact then
                     gesture_detector:dropContact(self)
                 end
@@ -774,7 +774,8 @@ function Contact:voidState()
     local gesture_detector = self.ges_dec
 
     logger.dbg("slot", slot, "in void state...")
-    -- We basically don't do anything but drop the slot on contact lift
+    -- We basically don't do anything but drop the slot on contact lift,
+    -- if need be deferring to the right state when we're part of a MT gesture.
     if tev.id == -1 then
         if self.down and buddy_contact and buddy_contact.down and self.mt_gesture then
             -- If we were lifted before our buddy, and we're part of a MT gesture,
@@ -818,6 +819,7 @@ function Contact:voidState()
                    self.mt_gesture == "hold_release" or self.mt_gesture == "hold_pan_release" then
                 return self:holdState()
             else
+                -- Should absolutely never happen (and, at the time of writing, is technically guaranteed to be unreachable).
                 logger.warn("Contact:voidState Unknown MT gesture", self.mt_gesture, "cannot handle contact lift properly")
                 -- We're still gone, though.
                 gesture_detector:dropContact(self)
@@ -979,8 +981,7 @@ function Contact:handlePan()
 
         if msd_distance > gesture_detector.MULTISWIPE_THRESHOLD then
             local pan_ev_multiswipe = pan_ev
-            -- store a copy of pan_ev without rotation adjustment
-            -- for multiswipe calculations when rotated
+            -- store a copy of pan_ev without rotation adjustment for multiswipe calculations when rotated
             if gesture_detector.screen:getTouchRotation() > gesture_detector.screen.ORIENTATION_PORTRAIT then
                 pan_ev_multiswipe = util.tableDeepCopy(pan_ev)
             end
@@ -1039,7 +1040,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
         -- NOTE: FWIW, on an Elipsa, if we misdetect a pinch (i.e., both fingers moved) for a rotate
         --       because the buddy slot failed to pass the pan threshold, we get a very shallow angle (often < 1°, at most ~2°).
         --       If, on the other hand, we misdetect a rotate that *looked* like a pinch,
-        --       (i.e., a pinch with only one finger moving), we get slightly larger shallow angles (~5°).
+        --       (i.e., a pinch with only one finger moving), we get slightly larger angles (~5°).
         --       Things get wildly more difficult on an Android phone, where you can easily add ~10° of noise to those results.
         --       TL;DR: We just chuck those as misdetections instead of adding brittle heuristics to correct course ;).
         local angle = gesture_detector:getRotate(rstart_pos, tstart_pos, tend_pos)
@@ -1118,7 +1119,7 @@ function Contact:handlePanRelease(keep_contact)
         logger.dbg("Contact:handlePanRelease: two_finger_pan_release detected")
         pan_ev.ges = "two_finger_pan_release"
         -- Don't drop buddy, voidState will handle it
-        -- NOTE: This is yet another rotate hack, emanating from voidState -> panState.
+        -- NOTE: This is yet another rotate hack, emanating from voidState into panState.
         if not keep_contact then
             gesture_detector:dropContact(self)
         end
