@@ -595,7 +595,7 @@ function Contact:handleDoubleTap()
        gesture_detector:isDoubleTap(gesture_detector.previous_tap[slot], cur_tap) then
         -- It is a double tap
         ges_ev.ges = "double_tap"
-        logger.dbg("Contact:handleDoubleTap: double_tap detected", ges_ev.pos)
+        logger.dbg("Contact:handleDoubleTap: double_tap detected @", ges_ev.pos.x, ges_ev.pos.y)
         gesture_detector:dropContact(self)
         return ges_ev
     end
@@ -605,7 +605,7 @@ function Contact:handleDoubleTap()
 
     if gesture_detector.input.disable_double_tap then
         -- We can send the event immediately (no need for the timer stuff needed for double tap support)
-        logger.dbg("Contact:handleDoubleTap: single tap detected", ges_ev.pos)
+        logger.dbg("Contact:handleDoubleTap: single tap detected @", ges_ev.pos.x, ges_ev.pos.y)
         gesture_detector:dropContact(self)
         return ges_ev
     end
@@ -622,7 +622,7 @@ function Contact:handleDoubleTap()
                 if self.state == Contact.tapState then
                     -- A single or double tap will yield a different contact object, by virtue of dropContact and closure magic ;).
                     -- Speaking of closures, this is the original ges_ev from the timer setup.
-                    logger.dbg("double_tap timer detected a single tap in slot", slot, ges_ev.pos)
+                    logger.dbg("double_tap timer detected a single tap in slot", slot, "@", ges_ev.pos.x, ges_ev.pos.y)
                     gesture_detector:dropContact(self)
                     return ges_ev
                 end
