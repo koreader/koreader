@@ -1330,15 +1330,6 @@ function Kobo:setDeviceSpecificEventHandlers(UIManager)
             UIManager.event_handlers["Resume"]()
         end
     end
-    UIManager.event_handlers["__default__"] = function(input_event)
-        -- Suspension in Kobo can be interrupted by screen updates. We ignore user touch input
-        -- in screen_saver_mode so screen updates won't be triggered in suspend mode.
-        -- We should not call self:suspend() in screen_saver_mode lest we stay on forever
-        -- trying to reschedule suspend. Other systems take care of unintended wake-up.
-        if not self.screen_saver_mode then
-            UIManager:sendEvent(input_event)
-        end
-    end
 end
 
 -------------- device probe ------------
