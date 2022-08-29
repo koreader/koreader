@@ -1241,6 +1241,9 @@ function Contact:holdState(new_hold)
                 -- NOTE: We're setup as the hold in a rotate gesture, and we were lifted *before* our pan buddy,
                 --       do a bit of gymnastics, because the trigger contact for a rotate *needs* to be the pan...
                 --       This is a snow protocol special :/.
+                -- NOTE: This is simpler than the elaborate trickery this case involved when dealth with via voidState,
+                --       because it is specifically aimed at the snow protocol, so we *know* both contacts are lifted
+                --       in the same input frame.
                 logger.dbg("Contact:holdState: Early lift as a rotate pivot, trying for a rotate...")
                 local ges_ev = buddy_contact:handleTwoFingerPan(self)
                 if ges_ev then
