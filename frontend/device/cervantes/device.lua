@@ -256,11 +256,11 @@ function Cervantes:setDeviceSpecificEventHandlers(UIManager)
     UIManager.event_handlers["PowerPress"] = function()
         -- Always schedule power off.
         -- Press the power button for 2+ seconds to shutdown directly from suspend.
-        UIManager:scheduleIn(2, self.poweroff_action)
+        UIManager:scheduleIn(2, UIManager.poweroff_action)
     end
     UIManager.event_handlers["PowerRelease"] = function()
         if not self._entered_poweroff_stage then
-            UIManager:unschedule(self.poweroff_action)
+            UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
                 UIManager.event_handlers["Resume"]()
