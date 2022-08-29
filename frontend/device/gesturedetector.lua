@@ -1067,6 +1067,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
         --       because the buddy slot failed to pass the pan threshold, we get a very shallow angle (often < 1°, at most ~2°).
         --       If, on the other hand, we misdetect a rotate that *looked* like a pinch,
         --       (i.e., a pinch with only one finger moving), we get slightly larger shallow angles (~5°).
+        --       Things get wildly more difficult on an Android phone, where you can easily add ~10° of noise to those results.
         --       TL;DR: We just chuck those as misdetections instead of adding brittle heuristics to correct course ;).
         local angle = gesture_detector:getRotate(rstart_pos, tstart_pos, tend_pos)
         logger.dbg("rotate", angle, "detected")
