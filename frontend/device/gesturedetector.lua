@@ -140,7 +140,7 @@ function GestureDetector:newContact(slot)
         id = -1, -- Current ABS_MT_TRACKING_ID value
         initial_tev = nil, -- Copy of the input event table at first contact (i.e., at contact down)
         current_tev = nil, -- Pointer to the current input event table, ref is *stable*, c.f., NOTE in feedEvent below
-        down = false, -- Contact is down (as opposed to up, i.e., lifted)
+        down = false, -- Contact is down (as opposed to up, i.e., lifted). Only really happens for double-tap handling, in every other case the Contact object is destroyed on lift.
         pending_double_tap_timer = false, -- Contact is pending a double_tap timer
         pending_hold_timer = false, -- Contact is pending a hold timer
         mt_gesture = nil, -- Contact is part of a MT gesture (string, gesture name)
