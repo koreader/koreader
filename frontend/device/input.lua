@@ -459,6 +459,7 @@ end
 
 function Input:handleKeyBoardEv(ev)
     -- Detect loss of contact for the "snow" protocol...
+    -- NOTE: Some ST devices may also behave similarly, but we handle those via ABS_PRESSURE
     if self.snow_protocol then
         if ev.code == C.BTN_TOUCH and ev.value == 0 then
             -- Kernel sends it after loss of contact for *all* slots,
@@ -801,18 +802,15 @@ function Input:handleTouchEvLegacy(ev)
     -- Single Touch Protocol. Some devices emit both singletouch and multitouch events.
     -- In those devices the 'handleTouchEv' function doesn't work as expected. Use this function instead.
     if ev.type == C.EV_ABS then
-        if #self.MTSlots == 0 then
-            self:addSlot(self.cur_slot)
-        end
         if ev.code == C.ABS_X then
-            self:setCurrentMtSlot("x", ev.value)
+            self:setCurrentMtSlotChecked("x", ev.value)
         elseif ev.code == C.ABS_Y then
-            self:setCurrentMtSlot("y", ev.value)
+            self:setCurrentMtSlotChecked("y", ev.value)
         elseif ev.code == C.ABS_PRESSURE then
             if ev.value ~= 0 then
-                self:setCurrentMtSlot("id", 1)
+                self:setCurrentMtSlotChecked("id", 1)
             else
-                self:setCurrentMtSlot("id", -1)
+                self:setCurrentMtSlotChecked("id", -1)
             end
         end
     elseif ev.type == C.EV_SYN then
@@ -1041,16 +1039,6 @@ function Input:setupSlotData(value)
     else
         self:addSlotIfChanged(value)
     end
-end
-
-function Input:confirmAbsxy()
-    self:setCurrentMtSlot("x", self.ev_slots[self.cur_slot]["abs_x"])
-    self:setCurrentMtSlot("y", self.ev_slots[self.cur_slot]["abs_y"])
-end
-
-function Input:cleanAbsxy()
-    self:setCurrentMtSlot("abs_x", nil)
-    self:setCurrentMtSlot("abs_y", nil)
 end
 
 function Input:isEvKeyPress(ev)
