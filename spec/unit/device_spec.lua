@@ -2,6 +2,7 @@ describe("device module", function()
     -- luacheck: push ignore
     local mock_fb, mock_input
     local iopen = io.open
+    local ipopen = io.popen
     local osgetenv = os.getenv
     local ffi, C
 
@@ -43,6 +44,7 @@ describe("device module", function()
 
         os.getenv = osgetenv
         io.open = iopen
+        io.popen = ipopen
     end)
 
     describe("kobo", function()
@@ -319,7 +321,7 @@ describe("device module", function()
                         close = function() end
                     }
                 else
-                    return iopen(filename, mode)
+                    return ipopen(filename, mode)
                 end
             end
 
