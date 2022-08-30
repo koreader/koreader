@@ -95,12 +95,12 @@ function ExternalKeyboard:setOTG(role)
     end
 end
 
-function ExternalKeyboard:usbPlugIn()
-    logger.info("ExternalKeyboard:usbPlugIn")
+function ExternalKeyboard:onUsbDevicePlugIn()
+    logger.info("ExternalKeyboard:usbDevicePlugIn")
 end
 
-function ExternalKeyboard:usbPlugOut()
-    logger.info("ExternalKeyboard:usbPlugOut")
+function ExternalKeyboard:onUsbDevicePlugOut()
+    logger.info("ExternalKeyboard:usbDevicePlugOut")
 end
 
 -- koreader-base has assumption that only charging may happen in this mode. Really, it is addition of any device.

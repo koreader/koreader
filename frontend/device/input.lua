@@ -256,6 +256,8 @@ function Input:init()
     self.event_map[10021] = "NotCharging"
     self.event_map[10030] = "WakeupFromSuspend"
     self.event_map[10031] = "ReadyToSuspend"
+    self.event_map[10040] = "UsbDevicePlugIn"
+    self.event_map[10041] = "UsbDevicePlugOut"
 
     -- user custom event map
     local custom_event_map_location = string.format(
@@ -530,6 +532,7 @@ function Input:handleKeyBoardEv(ev)
     -- fake events
     if keycode == "IntoSS" or keycode == "OutOfSS"
     or keycode == "UsbPlugIn" or keycode == "UsbPlugOut"
+    or keycode == "UsbDevicePlugIn" or keycode == "UsbDevicePlugOut"
     or keycode == "Charging" or keycode == "NotCharging"
     or keycode == "WakeupFromSuspend" or keycode == "ReadyToSuspend" then
         return keycode
