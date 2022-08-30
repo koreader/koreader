@@ -722,6 +722,7 @@ function Input:handleTouchEv(ev)
             if tool and tool == 1 then
                 self:setCurrentMtSlot("id", -1)
             end
+        end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
@@ -739,6 +740,7 @@ function Input:handleTouchEv(ev)
         end
     end
 end
+
 function Input:handleTouchEvPhoenix(ev)
     -- Hack on handleTouchEV for the Kobo Aura
     -- It seems to be using a custom protocol:
@@ -798,6 +800,7 @@ function Input:handleTouchEvPhoenix(ev)
         end
     end
 end
+
 function Input:handleTouchEvLegacy(ev)
     -- Single Touch Protocol.
     -- Some devices emit both singletouch and multitouch events,
