@@ -721,22 +721,6 @@ function Input:handleTouchEv(ev)
             if tool and tool == 1 then
                 self:setCurrentMtSlot("id", -1)
             end
-
-        -- Emulate MT protocol on ST Kobos:
-        -- we "confirm" ABS_X, ABS_Y only when ABS_PRESSURE ~= 0
-        elseif ev.code == C.ABS_X then
-            self:setCurrentMtSlotChecked("abs_x", ev.value)
-        elseif ev.code == C.ABS_Y then
-            self:setCurrentMtSlotChecked("abs_y", ev.value)
-        elseif ev.code == C.ABS_PRESSURE then
-            if ev.value ~= 0 then
-                self:setCurrentMtSlot("id", 1)
-                self:confirmAbsxy()
-            else
-                self:cleanAbsxy()
-                self:setCurrentMtSlot("id", -1)
-            end
-        end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
