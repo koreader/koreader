@@ -799,8 +799,9 @@ function Input:handleTouchEvPhoenix(ev)
     end
 end
 function Input:handleTouchEvLegacy(ev)
-    -- Single Touch Protocol. Some devices emit both singletouch and multitouch events.
-    -- In those devices the 'handleTouchEv' function doesn't work as expected. Use this function instead.
+    -- Single Touch Protocol.
+    -- Some devices emit both singletouch and multitouch events,
+    -- on those devices, the 'handleTouchEv' function may not behave as expected. Use this one instead.
     if ev.type == C.EV_ABS then
         if ev.code == C.ABS_X then
             self:setCurrentMtSlotChecked("x", ev.value)
