@@ -614,33 +614,40 @@ end
 
 -- Devices can add additional event handlers by overwriting this method.
 function Device:setDeviceSpecificEventHandlers(UIManager)
-    -- This will be most probably overwritten in the device specific `setDeviceSpecificEventHandlers`
+    -- These will be most probably overwritten in the device specific `setDeviceSpecificEventHandlers`
     UIManager.event_handlers["Suspend"] = function()
-        self.suspend()
+        self:_beforeSuspend(false)
+    end
+    UIManager.event_handlers["Resume"] = function()
+        self:_afterResume(false)
     end
 end
 
 -- The common operations that should be performed before suspending the device.
-function Device:_beforeSuspend()
+function Device:_beforeSuspend(inhibit)
     local Event = require("ui/event")
     local UIManager = require("ui/uimanager")
     UIManager:flushSettings()
     UIManager:broadcastEvent(Event:new("Suspend"))
 
-    -- Block input events unrelated to power management
-    self.input:inhibitInput(true)
+    if inhibit ~= false then
+        -- Block input events unrelated to power management
+        self.input:inhibitInput(true)
 
-    -- Disable key repeat to avoid useless chatter (especially where Sleep Covers are concerned...)
-    self:disableKeyRepeat()
+        -- Disable key repeat to avoid useless chatter (especially where Sleep Covers are concerned...)
+        self:disableKeyRepeat()
+    end
 end
 
 -- The common operations that should be performed after resuming the device.
-function Device:_afterResume()
-    -- Restore key repeat
-    self:restoreKeyRepeat()
+function Device:_afterResume(inhibit)
+    if inhibit ~= false then
+        -- Restore key repeat
+        self:restoreKeyRepeat()
 
-    -- Restore full input handling
-    self.input:inhibitInput(false)
+        -- Restore full input handling
+        self.input:inhibitInput(false)
+    end
 
     local Event = require("ui/event")
     local UIManager = require("ui/uimanager")
