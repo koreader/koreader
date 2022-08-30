@@ -232,7 +232,7 @@ function Remarkable:getDefaultCoverPath()
     return "/usr/share/remarkable/poweroff.png"
 end
 
-function Remarkable:setDeviceSpecificEventHandlers(UIManager)
+function Remarkable:setEventHandlers(UIManager)
     UIManager.event_handlers["Suspend"] = function()
         self:_beforeSuspend()
         self:onPowerEvent("Suspend")

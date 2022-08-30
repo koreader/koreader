@@ -237,7 +237,7 @@ function Cervantes:powerOff()
 end
 
 -- This method is the same as the one in kobo/device.lua except the sleep cover part.
-function Cervantes:setDeviceSpecificEventHandlers(UIManager)
+function Cervantes:setEventHandlers(UIManager)
     -- We do not want auto suspend procedure to waste battery during
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.

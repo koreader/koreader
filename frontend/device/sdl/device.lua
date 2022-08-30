@@ -343,7 +343,7 @@ function Device:toggleFullscreen()
     end
 end
 
-function Device:setDeviceSpecificEventHandlers(UIManager)
+function Device:setEventHandlers(UIManager)
     UIManager.event_handlers["Suspend"] = function()
         self:_beforeSuspend()
         self:simulateSuspend()

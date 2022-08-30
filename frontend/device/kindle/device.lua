@@ -368,7 +368,7 @@ function Kindle:readyToSuspend()
     self.suspend_time = time.boottime_or_realtime_coarse()
 end
 
-function Kindle:setDeviceSpecificEventHandlers(UIManager)
+function Kindle:setEventHandlers(UIManager)
     UIManager.event_handlers["Suspend"] = function()
         self.powerd:toggleSuspend()
     end

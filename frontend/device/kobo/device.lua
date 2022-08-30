@@ -1230,7 +1230,7 @@ function Kobo:isStartupScriptUpToDate()
     return md5.sumFile(current_script) == md5.sumFile(new_script)
 end
 
-function Kobo:setDeviceSpecificEventHandlers(UIManager)
+function Kobo:setEventHandlers(UIManager)
     -- We do not want auto suspend procedure to waste battery during
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.

@@ -188,7 +188,7 @@ function SonyPRSTUX:getDeviceModel()
     return ffi.string("PRS-T2")
 end
 
-function SonyPRSTUX:setDeviceSpecificEventHandlers(UIManager)
+function SonyPRSTUX:setEventHandlers(UIManager)
     UIManager.event_handlers["Suspend"] = function()
         self:_beforeSuspend()
         self:intoScreenSaver()

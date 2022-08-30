@@ -286,7 +286,7 @@ describe("device module", function()
             local ReaderUI = require("apps/reader/readerui")
             local device_to_test = require("device/kobo/device")
             local Device = require("device")
-            Device.setDeviceSpecificEventHandlers = device_to_test.setDeviceSpecificEventHandlers
+            Device.setEventHandlers = device_to_test.setEventHandlers
 
             local UIManager = require("ui/uimanager")
             stub(Device, "suspend")
@@ -329,7 +329,7 @@ describe("device module", function()
             local ReaderUI = require("apps/reader/readerui")
             local Device = require("device")
             local device_to_test = require("device/cervantes/device")
-            Device.setDeviceSpecificEventHandlers = device_to_test.setDeviceSpecificEventHandlers
+            Device.setEventHandlers = device_to_test.setEventHandlers
 
             local UIManager = require("ui/uimanager")
 
@@ -360,7 +360,7 @@ describe("device module", function()
             local ReaderUI = require("apps/reader/readerui")
             local Device = require("device")
             local device_to_test = require("device/sdl/device")
-            Device.setDeviceSpecificEventHandlers = device_to_test.setDeviceSpecificEventHandlers
+            Device.setEventHandlers = device_to_test.setEventHandlers
 
             local UIManager = require("ui/uimanager")
 
@@ -410,7 +410,7 @@ describe("device module", function()
             local ReaderUI = require("apps/reader/readerui")
             local Device = require("device")
             local device_to_test = require("device/remarkable/device")
-            Device.setDeviceSpecificEventHandlers = device_to_test.setDeviceSpecificEventHandlers
+            Device.setEventHandlers = device_to_test.setEventHandlers
 
             local UIManager = require("ui/uimanager")
 

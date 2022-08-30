@@ -109,7 +109,7 @@ function UIManager:init()
         end)
     end
 
-    Device:setDeviceEventHandlers(self)
+    Device:_setEventHandlers(self)
 end
 
 --[[--
@@ -1479,7 +1479,7 @@ Executes all the operations of a suspension (i.e., sleep) request.
 This function usually puts the device into suspension.
 ]]
 function UIManager:suspend()
-    -- Should always exist, as defined in `generic/device` or overwritten with `setDeviceSpecificEventHandler`
+    -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
     if self.event_handlers["Suspend"] then
         -- Give the other event handlers a chance to be executed.
         -- `Suspend` and `Resume` events will be sent by the handler
@@ -1488,7 +1488,7 @@ function UIManager:suspend()
 end
 
 function UIManager:reboot()
-    -- Should always exist, as defined in `generic/device` or overwritten with `setDeviceSpecificEventHandler`
+    -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
     if self.event_handlers["Reboot"] then
         -- Give the other event handlers a chance to be executed.
         -- 'Reboot' event will be sent by the handler
@@ -1497,7 +1497,7 @@ function UIManager:reboot()
 end
 
 function UIManager:powerOff()
-    -- Should always exist, as defined in `generic/device` or overwritten with `setDeviceSpecificEventHandler`
+    -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
     if self.event_handlers["PowerOff"] then
         -- Give the other event handlers a chance to be executed.
         -- 'PowerOff' event will be sent by the handler

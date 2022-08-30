@@ -388,7 +388,7 @@ function PocketBook:getDefaultCoverPath()
     return "/mnt/ext1/system/logo/offlogo/cover.bmp"
 end
 
-function PocketBook:setDeviceSpecificEventHandlers(UIManager)
+function PocketBook:setEventHandlers(UIManager)
     -- Only fg/bg state plugin notifiers, not real power event.
     UIManager.event_handlers["Suspend"] = function()
         self:_beforeSuspend()
