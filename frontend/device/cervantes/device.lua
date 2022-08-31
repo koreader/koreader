@@ -39,6 +39,7 @@ local Cervantes = Generic:new{
     isCervantes = yes,
     isAlwaysPortrait = yes,
     isTouchDevice = yes,
+    touch_legacy = true, -- SingleTouch input events
     touch_switch_xy = true,
     touch_mirrored_x = true,
     hasOTAUpdates = yes,
@@ -116,7 +117,7 @@ function Cervantes:initEventAdjustHooks()
         )
     end
 
-    if not self:hasMultitouch() then
+    if self.touch_legacy then
         self.input.handleTouchEv = self.input.handleTouchEvLegacy
     end
 end
