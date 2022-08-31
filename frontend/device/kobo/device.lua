@@ -791,10 +791,10 @@ function Kobo:initEventAdjustHooks()
 
     if self.touch_snow_protocol then
         self.input.snow_protocol = true
-    end
-
-    if self.touch_phoenix_protocol then
+    elseif self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
+    elseif not self:hasMultitouch() then
+        self.input.handleTouchEv = self.input.handleTouchEvLegacy
     end
 
     -- Accelerometer on the Forma
