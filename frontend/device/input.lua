@@ -56,6 +56,10 @@ local MSC_RAW_GSENSOR_LANDSCAPE_LEFT            = 0x1a
 local MSC_RAW_GSENSOR_BACK                      = 0x1b
 local MSC_RAW_GSENSOR_FRONT                     = 0x1c
 
+-- Based on ABS_MT_TOOL_TYPE values on Elan panels
+local TOOL_TYPE_FINGER = 0
+local TOOL_TYPE_PEN    = 1
+
 -- For debug logging of ev.type
 local linux_evdev_type_map = {
     [C.EV_SYN] = "EV_SYN",
@@ -459,6 +463,7 @@ end
 
 function Input:handleKeyBoardEv(ev)
     -- Detect loss of contact for the "snow" protocol...
+    -- NOTE: Some ST devices may also behave similarly, but we handle those via ABS_PRESSURE
     if self.snow_protocol then
         if ev.code == C.BTN_TOUCH and ev.value == 0 then
             -- Kernel sends it after loss of contact for *all* slots,
@@ -484,6 +489,26 @@ function Input:handleKeyBoardEv(ev)
             end
 
             return
+        end
+    elseif self.wacom_protocol then
+        if ev.code == C.BTN_TOOL_PEN then
+            -- Always send pen data to slot 0
+            self:setupSlotData(0)
+            if ev.value == 1 then
+                self:setCurrentMtSlot("tool", TOOL_TYPE_PEN)
+            else
+                self:setCurrentMtSlot("tool", TOOL_TYPE_FINGER)
+            end
+        elseif ev.code == C.BTN_TOUCH then
+            -- Much like on snow, use this to detect contact down & lift,
+            -- as ABS_PRESSURE may be entirely omitted from hover events,
+            -- and ABS_DISTANCE is not very clear cut...
+            self:setupSlotData(0)
+            if ev.value == 1 then
+                self:setCurrentMtSlot("id", 0)
+            else
+                self:setCurrentMtSlot("id", -1)
+            end
         end
     end
 
@@ -711,29 +736,14 @@ function Input:handleTouchEv(ev)
         elseif ev.code == C.ABS_MT_TOOL_TYPE then
             -- NOTE: On the Elipsa: Finger == 0; Pen == 1
             self:setCurrentMtSlot("tool", ev.value)
-        elseif ev.code == C.ABS_MT_POSITION_X then
+        elseif ev.code == C.ABS_MT_POSITION_X or ev.code == C.ABS_X then
             self:setCurrentMtSlotChecked("x", ev.value)
-        elseif ev.code == C.ABS_MT_POSITION_Y then
+        elseif ev.code == C.ABS_MT_POSITION_Y or ev.code == C.ABS_Y then
             self:setCurrentMtSlotChecked("y", ev.value)
         elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
             -- Drop hovering *pen* events
             local tool = self:getCurrentMtSlotData("tool")
-            if tool and tool == 1 then
-                self:setCurrentMtSlot("id", -1)
-            end
-
-        -- Emulate MT protocol on ST Kobos:
-        -- we "confirm" ABS_X, ABS_Y only when ABS_PRESSURE ~= 0
-        elseif ev.code == C.ABS_X then
-            self:setCurrentMtSlotChecked("abs_x", ev.value)
-        elseif ev.code == C.ABS_Y then
-            self:setCurrentMtSlotChecked("abs_y", ev.value)
-        elseif ev.code == C.ABS_PRESSURE then
-            if ev.value ~= 0 then
-                self:setCurrentMtSlot("id", 1)
-                self:confirmAbsxy()
-            else
-                self:cleanAbsxy()
+            if tool and tool == TOOL_TYPE_PEN then
                 self:setCurrentMtSlot("id", -1)
             end
         end
@@ -754,6 +764,7 @@ function Input:handleTouchEv(ev)
         end
     end
 end
+
 function Input:handleTouchEvPhoenix(ev)
     -- Hack on handleTouchEV for the Kobo Aura
     -- It seems to be using a custom protocol:
@@ -813,22 +824,21 @@ function Input:handleTouchEvPhoenix(ev)
         end
     end
 end
+
 function Input:handleTouchEvLegacy(ev)
-    -- Single Touch Protocol. Some devices emit both singletouch and multitouch events.
-    -- In those devices the 'handleTouchEv' function doesn't work as expected. Use this function instead.
+    -- Single Touch Protocol.
+    -- Some devices emit both singletouch and multitouch events,
+    -- on those devices, the 'handleTouchEv' function may not behave as expected. Use this one instead.
     if ev.type == C.EV_ABS then
-        if #self.MTSlots == 0 then
-            self:addSlot(self.cur_slot)
-        end
         if ev.code == C.ABS_X then
-            self:setCurrentMtSlot("x", ev.value)
+            self:setCurrentMtSlotChecked("x", ev.value)
         elseif ev.code == C.ABS_Y then
-            self:setCurrentMtSlot("y", ev.value)
+            self:setCurrentMtSlotChecked("y", ev.value)
         elseif ev.code == C.ABS_PRESSURE then
             if ev.value ~= 0 then
-                self:setCurrentMtSlot("id", 1)
+                self:setCurrentMtSlotChecked("id", 1)
             else
-                self:setCurrentMtSlot("id", -1)
+                self:setCurrentMtSlotChecked("id", -1)
             end
         end
     elseif ev.type == C.EV_SYN then
@@ -1057,16 +1067,6 @@ function Input:setupSlotData(value)
     else
         self:addSlotIfChanged(value)
     end
-end
-
-function Input:confirmAbsxy()
-    self:setCurrentMtSlot("x", self.ev_slots[self.cur_slot]["abs_x"])
-    self:setCurrentMtSlot("y", self.ev_slots[self.cur_slot]["abs_y"])
-end
-
-function Input:cleanAbsxy()
-    self:setCurrentMtSlot("abs_x", nil)
-    self:setCurrentMtSlot("abs_y", nil)
 end
 
 function Input:isEvKeyPress(ev)
