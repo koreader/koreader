@@ -194,6 +194,7 @@ local Input = {
         Ctrl = false,
         Shift = false,
         Sym = false,
+        Meta = false,
     },
 
     -- repeat state:

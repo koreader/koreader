@@ -11,11 +11,11 @@ return {
     [14] = "Backspace",
     [15] = "Tab",
     [28] = "Press",  -- Enter
-    [29] = "Ctrl", -- Left Ctrl
-    [42] = "Shift",
+    [29] = "LCtrl",
+    [42] = "LShift",
     [43] = "\\",
     [54] = "RShift",
-    [56] = "Alt",
+    [56] = "LAlt",
     [58] = "CapsLock",
     [57] = " ",
     [59] = "F1",
@@ -65,7 +65,8 @@ return {
     [115] = "VPlus",
     [116] = "Power",
     [119] = "Pause",
-    [125] = "Meta", -- Win
+    [125] = "LMeta", -- Meta, Win, Cmd, etc.
+    [126] = "RMeta",
     [127] = "Compose",
     [139] = "Menu",
 }

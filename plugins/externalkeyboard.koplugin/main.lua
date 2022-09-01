@@ -176,6 +176,7 @@ function ExternalKeyboard:findAndSetupKeyboard()
         Device.input.event_map = event_map
         Device.keyboard_layout = require("device/kindle/keyboard_layout") -- TODO: replace with with independent layout.
         Device.hasKeyboard = yes
+        -- TODO: map left and right modifiers to Shift, Ctrl, Etc.
         -- The FocusManager initializes some values with if device hasDPad. Later, if we set hasDPad, logic that expects those values fails.
         -- Device.hasDPad = yes  -- Most keyboards have directional keys. In the future the find-keyboard can detect it with the capabilities file.
 
