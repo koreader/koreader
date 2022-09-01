@@ -1,11 +1,15 @@
+local Event = require("ui/event")
 local FindKeyboard = require("find-keyboard")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Device =  require("device")
 local InfoMessage = require("ui/widget/infomessage")
+local InputText = require("ui/widget/inputtext")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local event_map_keyboard = require("event_map_keyboard")
+local util = require("util")
 local _ = require("gettext")
 
 -- The include/linux/usb/role.h calls the USB roles "host" and "device". The Chipidea driver calls them "host" and "gadget".
@@ -30,13 +34,18 @@ else
     return { disabled = true }
 end
 
+local function yes() return true end
+local function no() return false end  -- luacheck: ignore
+
 local ExternalKeyboard = WidgetContainer:new{
     name = "external_keyboard",
     is_doc_only = false,
+    original_device_values = nil,
 }
 
 function ExternalKeyboard:init()
     self.ui.menu:registerToMainMenu(self)
+    print("input_invert_page_turn_keys = " .. tostring(G_reader_settings:isTrue("input_invert_page_turn_keys")))
     if G_reader_settings:isTrue("external_keyboard_otg_always") then
         self:setOTG(USB_ROLE_HOST)
     end
@@ -97,20 +106,82 @@ end
 
 function ExternalKeyboard:onUsbDevicePlugIn()
     logger.info("ExternalKeyboard:usbDevicePlugIn")
+    -- local event_path = FindKeyboard:find()
+
+    -- if event_path then
+    --     Device.input.open(event_path)
+    --     UIManager:show(InfoMessage:new{
+    --         text = _("Keyboard connected"),
+    --         timeout = 1,
+    --     })
+    -- end
 end
 
 function ExternalKeyboard:onUsbDevicePlugOut()
     logger.info("ExternalKeyboard:usbDevicePlugOut")
+    if self.original_device_values then
+        Device.input.event_map = self.original_device_values.event_map
+        Device.keyboard_layout = self.original_device_values.keyboard_layout
+        Device.hasKeyboard = self.original_device_values.hasKeyboard
+        Device.hasDPad = self.original_device_values.hasDPad
+    end
+
+    -- Broadcasting events throught UIManager would only get to InputText if there is an active widget on the window stack.
+    -- So, calling a static function is the only choice.
+    -- InputText.setKeyboard(require("ui/widget/virtualkeyboard"))
+    -- Update the existing input widgets. It must be issued after the static state of InputText is updated.
+    UIManager:broadcastEvent(Event:new("PhysicalKeyboardDisconnected"))
+
 end
 
--- koreader-base has assumption that only charging may happen in this mode. Really, it is addition of any device.
+-- After charging event a usbPlugIn may follow.
 function ExternalKeyboard:onCharging()
-    logger.info(debug.traceback())
     logger.info("ExternalKeyboard:onCharging")
 end
 
 function ExternalKeyboard:onNotCharging()
     logger.info("ExternalKeyboard:onNotCharging")
+end
+
+
+-- The keyboard events with the same key codes would override the original events.
+-- That may cause embedded buttons to lose their original function and produce letters.
+-- Can we tell from which device a key press comes? The koreader-base passes values of input_event which do not have file descriptors.
+function ExternalKeyboard:findAndSetupKeyboard()
+    local event_path = FindKeyboard:find()
+    UIManager:show(InfoMessage:new{
+        text = "Event path: " .. tostring(event_path),
+        timeout = 1,
+    })
+    if event_path then
+        local ok, fd = pcall(Device.input.open, event_path)
+        if not ok then
+            UIManager:show(InfoMessage:new{
+                text = "Error opening the keyboard device " .. event_path .. ":\n" .. tostring(fd),
+            })
+            return
+        end
+
+        -- The setting for input_invert_page_turn_keys wouldn't mess up the new event map. Device module applies it on initialization, not dynamically.
+        self.original_device_values = {
+            event_map = Device.input.event_map,
+            keyboard_layout = Device.keyboard_layout,
+            hasKeyboard = Device.hasKeyboard,
+            hasDPad = Device.hasDPad,
+        }
+        -- Avoid mutating the original event map.
+        local event_map = {}
+        util.tableMerge(event_map, Device.input.event_map)
+        util.tableMerge(event_map, event_map_keyboard)
+        Device.input.event_map = event_map
+        Device.keyboard_layout = require("device/kindle/keyboard_layout") -- TODO: replace with with independent layout.
+        Device.hasKeyboard = yes
+        -- The FocusManager initializes some values with if device hasDPad. Later, if we set hasDPad, logic that expects those values fails.
+        -- Device.hasDPad = yes  -- Most keyboards have directional keys. In the future the find-keyboard can detect it with the capabilities file.
+
+        -- InputText.setKeyboard(require("ui/widget/physicalkeyboard"))
+        UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
+    end
 end
 
 function ExternalKeyboard:showDialog()
@@ -130,14 +201,7 @@ function ExternalKeyboard:showDialog()
         end,
         choice2_text = _("Find Keyboard"),
         choice2_callback = function()
-            local event_path = FindKeyboard:find()
-            UIManager:show(InfoMessage:new{
-                text = "Event path: " .. tostring(event_path),
-            })
-            if event_path then
-                Device.input.open(event_path)
-                logger.info("Device event_map: " .. tostring(Device.input.event_map))
-            end
+            self:findAndSetupKeyboard()
         end,
     }
     UIManager:show(confirm_box)
