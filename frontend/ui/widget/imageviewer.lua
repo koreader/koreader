@@ -625,8 +625,8 @@ function ImageViewer:onZoomIn(inc)
     end
     if not inc then inc = 0.2 end -- default for key zoom event
     self.scale_factor = self.scale_factor + inc
-    -- Avoid excessive zoom by halving the increase if we go too hight, and clamp the result
-    if self.scale_factor > 100 then -- avoid excessive zoom
+    -- Avoid excessive zoom by halving the increase if we go too high, and clamp the result
+    if self.scale_factor > 100 then
         self.scale_factor = math.min((self.scale_factor - inc) + inc/2, 100)
     end
     self:update()

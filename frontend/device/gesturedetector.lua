@@ -652,7 +652,7 @@ function Contact:handleNonTap(new_tap)
         self.pending_hold_timer = true
         gesture_detector.input:setTimeout(slot, "hold", function()
             -- If this contact is still active & alive and its timer hasn't been cancelled,
-            -- (e.g., it hasn't gone through dropContact because a contact lift yet),
+            -- (e.g., it hasn't gone through dropContact because of a contact lift yet),
             -- then check that we're still in a stationary contact down state (i.e., tapState).
             -- NOTE: We need to check that the current contact in this slot is *still* the same object first, because closure ;).
             if self == gesture_detector:getContact(slot) and self.pending_hold_timer then
