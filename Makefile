@@ -112,7 +112,7 @@ ifdef WIN32
 endif
 ifdef SHIP_SHARED_STL
 	@echo "[*] Install C++ runtime..."
-	cp -L --remove-destination $(SHARED_STL_LIB) $(INSTALL_DIR)/koreader/libs/
+	cp -fL $(SHARED_STL_LIB) $(INSTALL_DIR)/koreader/libs/
 	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader/libs/$(notdir $(SHARED_STL_LIB))
 endif
 	@echo "[*] Install plugins"
