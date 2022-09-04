@@ -642,15 +642,14 @@ function Kobo:init()
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
     self.input.open("fake_events")
 
+    -- Input handling on Kobo is a thing of nightmares, start by setting up the actual evdev handler...
+    self:setTouchEventHandler()
+    -- And then handle the extra shenanigans if necessary.
     if not self.needsTouchScreenProbe() then
         self:initEventAdjustHooks()
     else
         -- If touch probe is required, we postpone EventAdjustHook to *after* self:touchScreenProbe runs,
         -- because some of it depends on its results...
-        -- We *do* need a sane input handler first, otherwise we won't be able to grok the ST protocol ;).
-        if not self:hasMultitouch() then
-            self.input.handleTouchEv = self.input.handleTouchEvLegacy
-        end
         self.touchScreenProbe = function()
             -- Only run the probe one ;).
             if G_reader_settings:hasNot("kobo_touch_switch_xy") then
@@ -771,6 +770,16 @@ end
 
 function Kobo:supportsScreensaver() return true end
 
+function Kobo:setTouchEventHandler()
+    if self.touch_snow_protocol then
+        self.input.snow_protocol = true
+    elseif self.touch_phoenix_protocol then
+        self.input.handleTouchEv = self.input.handleTouchEvPhoenix
+    elseif not self:hasMultitouch() then
+        self.input.handleTouchEv = self.input.handleTouchEvLegacy
+    end
+end
+
 function Kobo:initEventAdjustHooks()
     -- NOTE: On trilogy, adjustTouchSwitchXY needs to be called before adjustTouchMirrorX
     if self.touch_switch_xy then
@@ -783,14 +792,6 @@ function Kobo:initEventAdjustHooks()
             --- @fixme what if we change the screen portrait mode?
             self.screen:getWidth()
         )
-    end
-
-    if self.touch_snow_protocol then
-        self.input.snow_protocol = true
-    elseif self.touch_phoenix_protocol then
-        self.input.handleTouchEv = self.input.handleTouchEvPhoenix
-    elseif not self:hasMultitouch() then
-        self.input.handleTouchEv = self.input.handleTouchEvLegacy
     end
 
     -- Accelerometer on the Forma
