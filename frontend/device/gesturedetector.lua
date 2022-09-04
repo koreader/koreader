@@ -498,17 +498,18 @@ function Contact:tapState(new_tap)
                     h = 0,
                 }
                 local tap_span = pos0:distance(pos1)
-                logger.dbg("two_finger_tap detected with span", tap_span)
+                local tap_pos = pos0:midpoint(pos1)
+                logger.dbg("two_finger_tap detected @", tap_pos.x, tap_pos.y, "with span", tap_span)
                 -- Don't drop buddy, voidState will handle it
                 gesture_detector:dropContact(self)
                 return {
                     ges = "two_finger_tap",
-                    pos = pos0:midpoint(pos1),
+                    pos = tap_pos,
                     span = tap_span,
                     time = tev.timev,
                 }
             else
-                logger.dbg("Two-contact tap failed to pass the two_finger_tap constraints")
+                logger.dbg("Contact:tapState: Two-contact tap failed to pass the two_finger_tap constraints -> single tap @", tev.x, tev.y)
                 -- We blew the gesture position/time constraints,
                 -- neuter buddy and send a single tap on this slot.
                 buddy_contact.state = Contact.voidState
@@ -661,7 +662,7 @@ function Contact:handleNonTap(new_tap)
                     -- NOTE: If we happened to have moved enough, holdState will generate a hold_pan on the *next* event,
                     --       but for now, the initial hold is mandatory.
                     --       On the other hand, if we're *already* in pan state, we stay there and *never* switch to hold.
-                    logger.dbg("hold timer detected a hold gesture in slot", slot)
+                    logger.dbg("hold timer tripped a switch to hold state in slot", slot)
                     return self:switchState(Contact.holdState, true)
                 end
             end
@@ -1167,14 +1168,16 @@ function Contact:holdState(new_hold)
                 h = 0,
             }
             local tap_span = pos0:distance(pos1)
-            logger.dbg("two_finger_hold detected with span", tap_span)
+            local tap_pos = pos0:midpoint(pos1)
+            logger.dbg("two_finger_hold detected @", tap_pos.x, tap_pos.y, "with span", tap_span)
             return {
                 ges = "two_finger_hold",
-                pos = pos0:midpoint(pos1),
+                pos = tap_pos,
                 span = tap_span,
                 time = tev.timev,
             }
         elseif self.down then
+            logger.dbg("hold detected @", tev.x, tev.y)
             return {
                 ges = "hold",
                 pos = Geom:new{
@@ -1235,7 +1238,7 @@ function Contact:holdState(new_hold)
             }
         elseif self.down then
             -- Contact lift, emit a hold_release
-            logger.dbg("hold_release detected")
+            logger.dbg("hold_release detected @", tev.x, tev.y)
             gesture_detector:dropContact(self)
             return {
                 ges = "hold_release",
