@@ -652,7 +652,7 @@ function Kobo:init()
         -- If touch probe is required, we postpone EventAdjustHook to *after* self:touchScreenProbe runs,
         -- because some of it depends on its results...
         self.touchScreenProbe = function()
-            -- Only run the probe one ;).
+            -- Only run the probe once ;).
             if G_reader_settings:hasNot("kobo_touch_switch_xy") then
                 local TouchProbe = require("tools/kobo_touch_probe")
                 local UIManager = require("ui/uimanager")
