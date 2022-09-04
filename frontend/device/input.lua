@@ -850,6 +850,7 @@ function Input:handleTouchEvLegacy(ev)
             -- On Kobo Mk. 3 devices, the frame that reports a contact lift *actually* does the coordinates transform for us...
             -- Unfortunately, our own transforms are not stateful, so, just revert 'em here,
             -- since we can't simply avoid not doing 'em for that frame...
+            -- c.f., https://github.com/koreader/koreader/issues/2128#issuecomment-1236289909 for logs on a Touch B
             if self.touch_kobo_mk3_protocol then
                 if self:getCurrentMtSlotData("id") == "-1" then
                     -- Technically, it's the frame where ABS_PRESSURE is set to 0 ;).
