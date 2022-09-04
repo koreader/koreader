@@ -790,7 +790,7 @@ function Kobo:initEventAdjustHooks()
     if self.touch_mirrored_x then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
-            --- @fixme what if we change the screen portrait mode?
+            --- NOTE: This is safe, we enforce the canonical portrait rotation on startup.
             self.screen:getWidth()
         )
     end
