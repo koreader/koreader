@@ -645,21 +645,22 @@ function Kobo:init()
     if not self.needsTouchScreenProbe() then
         self:initEventAdjustHooks()
     else
-        -- if touch probe is required, we postpone EventAdjustHook
-        -- initialization to when self:touchScreenProbe is called
+        -- If touch probe is required, we postpone EventAdjustHook to *after* self:touchScreenProbe runs,
+        -- because some of it depends on its results...
+        -- We *do* need a sane input handler first, otherwise we won't be able to grok the ST protocol ;).
+        if not self:hasMultitouch() then
+            self.input.handleTouchEv = self.input.handleTouchEvLegacy
+        end
         self.touchScreenProbe = function()
-            -- if user has not set KOBO_TOUCH_MIRRORED yet
-            if KOBO_TOUCH_MIRRORED == nil then
-                -- and has no probe before
-                if G_reader_settings:hasNot("kobo_touch_switch_xy") then
-                    local TouchProbe = require("tools/kobo_touch_probe")
-                    local UIManager = require("ui/uimanager")
-                    UIManager:show(TouchProbe:new{})
-                    UIManager:run()
-                    -- assuming TouchProbe sets kobo_touch_switch_xy config
-                end
-                self.touch_switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
+            -- Only run the probe one ;).
+            if G_reader_settings:hasNot("kobo_touch_switch_xy") then
+                local TouchProbe = require("tools/kobo_touch_probe")
+                local UIManager = require("ui/uimanager")
+                UIManager:show(TouchProbe:new{})
+                UIManager:run()
+                -- If all goes well, we should now have a kobo_touch_switch_xy setting.
             end
+            self.touch_switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
             self:initEventAdjustHooks()
         end
     end
@@ -771,13 +772,8 @@ end
 function Kobo:supportsScreensaver() return true end
 
 function Kobo:initEventAdjustHooks()
-    -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
-    -- actually did in its original implementation was to switch X/Y.
-    -- NOTE: for kobo touch, adjustTouchSwitchXY needs to be called before
-    -- adjustTouchMirrorX
-    if (self.touch_switch_xy and not KOBO_TOUCH_MIRRORED)
-            or (not self.touch_switch_xy and KOBO_TOUCH_MIRRORED)
-    then
+    -- NOTE: On trilogy, adjustTouchSwitchXY needs to be called before adjustTouchMirrorX
+    if self.touch_switch_xy then
         self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
     end
 
