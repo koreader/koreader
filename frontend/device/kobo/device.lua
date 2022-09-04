@@ -1278,5 +1278,5 @@ elseif codename == "cadmus" then
 elseif codename == "io" then
     return KoboIo
 else
-    error("unrecognized Kobo model "..codename)
+    error("unrecognized Kobo model ".. codename .. " with device id " .. product_id)
 end

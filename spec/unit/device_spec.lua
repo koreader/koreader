@@ -77,7 +77,7 @@ describe("device module", function()
                 if key == "PRODUCT" then
                     return "trilogy"
                 elseif key == "MODEL_NUMBER" then
-                    return 320
+                    return "320"
                 else
                     return osgetenv(key)
                 end
@@ -126,7 +126,7 @@ describe("device module", function()
                 if key == "PRODUCT" then
                     return "trilogy"
                 elseif key == "MODEL_NUMBER" then
-                    return 320
+                    return "320"
                 else
                     return osgetenv(key)
                 end
