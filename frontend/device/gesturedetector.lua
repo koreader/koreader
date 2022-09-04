@@ -1215,11 +1215,9 @@ function Contact:holdState(new_hold)
             elseif self.mt_gesture == "hold_pan" or self.mt_gesture == "pan" then
                 self.mt_gesture = "hold_pan_release"
                 buddy_contact.mt_gesture = "hold_pan_release"
-                logger.dbg("two_finger_hold_pan_release detected")
             else
                 self.mt_gesture = "hold_release"
                 buddy_contact.mt_gesture = "hold_release"
-                logger.dbg("two_finger_hold_release detected")
             end
             -- Neuter its buddy
             buddy_contact.state = Contact.voidState
