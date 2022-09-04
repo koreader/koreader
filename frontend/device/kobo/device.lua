@@ -649,7 +649,7 @@ function Kobo:init()
     if not self.needsTouchScreenProbe() then
         self:initEventAdjustHooks()
     else
-        -- If touch probe is required, we postpone EventAdjustHook to *after* self:touchScreenProbe runs,
+        -- If touch probe is required, we postpone EventAdjustHook to *after* it has run,
         -- because some of it depends on its results...
         self.touchScreenProbe = function()
             -- Only run the probe once ;).
