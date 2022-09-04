@@ -341,17 +341,17 @@ function Input:adjustTouchScale(ev, by)
     end
 end
 
-function Input:adjustTouchMirrorX(ev, width)
+function Input:adjustTouchMirrorX(ev, max_x)
     if ev.type == C.EV_ABS
     and (ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X) then
-        ev.value = width - ev.value
+        ev.value = max_x - ev.value
     end
 end
 
-function Input:adjustTouchMirrorY(ev, height)
+function Input:adjustTouchMirrorY(ev, max_y)
     if ev.type == C.EV_ABS
     and (ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y) then
-        ev.value = height - ev.value
+        ev.value = max_y - ev.value
     end
 end
 
