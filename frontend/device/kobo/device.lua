@@ -2,6 +2,7 @@ local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
 local WakeupMgr = require("device/wakeupmgr")
 local ffiUtil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -642,24 +643,24 @@ function Kobo:init()
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
     self.input.open("fake_events")
 
+    -- Input handling on Kobo is a thing of nightmares, start by setting up the actual evdev handler...
+    self:setTouchEventHandler()
+    -- And then handle the extra shenanigans if necessary.
     if not self.needsTouchScreenProbe() then
         self:initEventAdjustHooks()
     else
-        -- if touch probe is required, we postpone EventAdjustHook
-        -- initialization to when self:touchScreenProbe is called
+        -- If touch probe is required, we postpone EventAdjustHook to *after* it has run,
+        -- because some of it depends on its results...
         self.touchScreenProbe = function()
-            -- if user has not set KOBO_TOUCH_MIRRORED yet
-            if KOBO_TOUCH_MIRRORED == nil then
-                -- and has no probe before
-                if G_reader_settings:hasNot("kobo_touch_switch_xy") then
-                    local TouchProbe = require("tools/kobo_touch_probe")
-                    local UIManager = require("ui/uimanager")
-                    UIManager:show(TouchProbe:new{})
-                    UIManager:run()
-                    -- assuming TouchProbe sets kobo_touch_switch_xy config
-                end
-                self.touch_switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
+            -- Only run the probe once ;).
+            if G_reader_settings:hasNot("kobo_touch_switch_xy") then
+                local TouchProbe = require("tools/kobo_touch_probe")
+                local UIManager = require("ui/uimanager")
+                UIManager:show(TouchProbe:new{})
+                UIManager:run()
+                -- If all goes well, we should now have a kobo_touch_switch_xy setting.
             end
+            self.touch_switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
             self:initEventAdjustHooks()
         end
     end
@@ -770,25 +771,7 @@ end
 
 function Kobo:supportsScreensaver() return true end
 
-function Kobo:initEventAdjustHooks()
-    -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
-    -- actually did in its original implementation was to switch X/Y.
-    -- NOTE: for kobo touch, adjustTouchSwitchXY needs to be called before
-    -- adjustTouchMirrorX
-    if (self.touch_switch_xy and not KOBO_TOUCH_MIRRORED)
-            or (not self.touch_switch_xy and KOBO_TOUCH_MIRRORED)
-    then
-        self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
-    end
-
-    if self.touch_mirrored_x then
-        self.input:registerEventAdjustHook(
-            self.input.adjustTouchMirrorX,
-            --- @fixme what if we change the screen portrait mode?
-            self.screen:getWidth()
-        )
-    end
-
+function Kobo:setTouchEventHandler()
     if self.touch_snow_protocol then
         self.input.snow_protocol = true
     elseif self.touch_phoenix_protocol then
@@ -797,7 +780,7 @@ function Kobo:initEventAdjustHooks()
         self.input.handleTouchEv = self.input.handleTouchEvLegacy
     end
 
-    -- Accelerometer on the Forma
+    -- Accelerometer
     if self.misc_ntx_gsensor_protocol then
         if G_reader_settings:isTrue("input_ignore_gsensor") then
             self.input.isNTXAccelHooked = false
@@ -808,14 +791,31 @@ function Kobo:initEventAdjustHooks()
     end
 end
 
+function Kobo:initEventAdjustHooks()
+    -- NOTE: On trilogy, adjustTouchSwitchXY needs to be called before adjustTouchMirrorX
+    if self.touch_switch_xy then
+        self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
+    end
+
+    if self.touch_mirrored_x then
+        self.input:registerEventAdjustHook(
+            self.input.adjustTouchMirrorX,
+            --- NOTE: This is safe, we enforce the canonical portrait rotation on startup.
+            self.screen:getWidth()
+        )
+    end
+end
+
 local function getCodeName()
     -- Try to get it from the env first
     local codename = os.getenv("PRODUCT")
     -- If that fails, run the script ourselves
     if not codename then
         local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "re")
-        codename = std_out:read("*line")
-        std_out:close()
+        if std_out then
+            codename = std_out:read("*line")
+            std_out:close()
+        end
     end
     return codename
 end
@@ -824,6 +824,7 @@ function Kobo:getFirmwareVersion()
     local version_file = io.open("/mnt/onboard/.kobo/version", "re")
     if not version_file then
         self.firmware_rev = "none"
+        return
     end
     local version_str = version_file:read("*line")
     version_file:close()

@@ -9,7 +9,6 @@ globals = {
 
 read_globals = {
     "_ENV",
-    "KOBO_TOUCH_MIRRORED",
     "KOBO_SYNC_BRIGHTNESS_WITH_NICKEL",
     "DHINTCOUNT",
     "DRENDER_MODE",
