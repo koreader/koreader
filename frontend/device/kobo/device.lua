@@ -2,6 +2,7 @@ local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
 local WakeupMgr = require("device/wakeupmgr")
 local ffiUtil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -811,8 +812,10 @@ local function getCodeName()
     -- If that fails, run the script ourselves
     if not codename then
         local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "re")
-        codename = std_out:read("*line")
-        std_out:close()
+        if std_out then
+            codename = std_out:read("*line")
+            std_out:close()
+        end
     end
     return codename
 end
@@ -821,6 +824,7 @@ function Kobo:getFirmwareVersion()
     local version_file = io.open("/mnt/onboard/.kobo/version", "re")
     if not version_file then
         self.firmware_rev = "none"
+        return
     end
     local version_str = version_file:read("*line")
     version_file:close()
