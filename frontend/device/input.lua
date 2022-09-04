@@ -852,7 +852,7 @@ function Input:handleTouchEvLegacy(ev)
             -- since we can't simply avoid not doing 'em for that frame...
             -- c.f., https://github.com/koreader/koreader/issues/2128#issuecomment-1236289909 for logs on a Touch B
             if self.touch_kobo_mk3_protocol then
-                if self:getCurrentMtSlotData("id") == "-1" then
+                if self:getCurrentMtSlotData("id") == -1 then
                     -- Technically, it's the frame where ABS_PRESSURE is set to 0 ;).
                     local y = 599 - self:getCurrentMtSlotData("x") -- Mk. 3 devices are all 600x800, so just hard-code it here.
                     local x = self:getCurrentMtSlotData("y")
