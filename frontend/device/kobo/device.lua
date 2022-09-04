@@ -779,6 +779,16 @@ function Kobo:setTouchEventHandler()
     elseif not self:hasMultitouch() then
         self.input.handleTouchEv = self.input.handleTouchEvLegacy
     end
+
+    -- Accelerometer on the Forma
+    if self.misc_ntx_gsensor_protocol then
+        if G_reader_settings:isTrue("input_ignore_gsensor") then
+            self.input.isNTXAccelHooked = false
+        else
+            self.input.handleMiscEv = self.input.handleMiscEvNTX
+            self.input.isNTXAccelHooked = true
+        end
+    end
 end
 
 function Kobo:initEventAdjustHooks()
@@ -793,16 +803,6 @@ function Kobo:initEventAdjustHooks()
             --- NOTE: This is safe, we enforce the canonical portrait rotation on startup.
             self.screen:getWidth()
         )
-    end
-
-    -- Accelerometer on the Forma
-    if self.misc_ntx_gsensor_protocol then
-        if G_reader_settings:isTrue("input_ignore_gsensor") then
-            self.input.isNTXAccelHooked = false
-        else
-            self.input.handleMiscEv = self.input.handleMiscEvNTX
-            self.input.isNTXAccelHooked = true
-        end
     end
 end
 
