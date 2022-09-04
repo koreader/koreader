@@ -847,6 +847,19 @@ function Input:handleTouchEvLegacy(ev)
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
             end
 
+            -- On Kobo Mk. 3 devices, the frame that reports a contact lift *actually* does the coordinates transform for us...
+            -- Unfortunately, our own transforms are not stateful, so, just revert 'em here,
+            -- since we can't simply avoid not doing 'em for that frame...
+            if self.touch_kobo_mk3_protocol then
+                if self:getCurrentMtSlotData("id") == "-1" then
+                    -- Technically, it's the frame where ABS_PRESSURE is set to 0 ;).
+                    local y = 599 - self:getCurrentMtSlotData("x") -- Mk. 3 devices are all 600x800, so just hard-code it here.
+                    local x = self:getCurrentMtSlotData("y")
+                    self:setCurrentMtSlot("x", x)
+                    self:setCurrentMtSlot("y", y)
+                end
+            end
+
             -- feed ev in all slots to state machine
             local touch_gestures = self.gesture_detector:feedEvent(self.MTSlots)
             self:newFrame()

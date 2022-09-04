@@ -122,11 +122,16 @@ local Kobo = Generic:new{
     unexpected_wakeup_count = 0
 }
 
--- Kobo Touch:
-local KoboTrilogy = Kobo:new{
-    model = "Kobo_trilogy",
-    needsTouchScreenProbe = yes,
-    touch_switch_xy = false,
+-- Kobo Touch A/B:
+local KoboTrilogyAB = Kobo:new{
+    model = "Kobo_trilogy_AB",
+    touch_kobo_mk3_protocol = true,
+    hasKeys = yes,
+    hasMultitouch = no,
+}
+-- Kobo Touch C:
+local KoboTrilogyC = Kobo:new{
+    model = "Kobo_trilogy_C",
     hasKeys = yes,
     hasMultitouch = no,
 }
@@ -646,24 +651,7 @@ function Kobo:init()
     -- Input handling on Kobo is a thing of nightmares, start by setting up the actual evdev handler...
     self:setTouchEventHandler()
     -- And then handle the extra shenanigans if necessary.
-    if not self.needsTouchScreenProbe() then
-        self:initEventAdjustHooks()
-    else
-        -- If touch probe is required, we postpone EventAdjustHook to *after* it has run,
-        -- because some of it depends on its results...
-        self.touchScreenProbe = function()
-            -- Only run the probe once ;).
-            if G_reader_settings:hasNot("kobo_touch_switch_xy") then
-                local TouchProbe = require("tools/kobo_touch_probe")
-                local UIManager = require("ui/uimanager")
-                UIManager:show(TouchProbe:new{})
-                UIManager:run()
-                -- If all goes well, we should now have a kobo_touch_switch_xy setting.
-            end
-            self.touch_switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
-            self:initEventAdjustHooks()
-        end
-    end
+    self:initEventAdjustHooks()
 
     -- See if the device supports key repeat
     self:getKeyRepeat()
@@ -778,6 +766,9 @@ function Kobo:setTouchEventHandler()
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
     elseif not self:hasMultitouch() then
         self.input.handleTouchEv = self.input.handleTouchEvLegacy
+        if self.touch_kobo_mk3_protocol then
+            self.input.touch_kobo_mk3_protocol = true
+        end
     end
 
     -- Accelerometer
@@ -792,7 +783,7 @@ function Kobo:setTouchEventHandler()
 end
 
 function Kobo:initEventAdjustHooks()
-    -- NOTE: On trilogy, adjustTouchSwitchXY needs to be called before adjustTouchMirrorX
+    -- NOTE: adjustTouchSwitchXY needs to be called before adjustTouchMirrorX
     if self.touch_switch_xy then
         self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
     end
@@ -801,7 +792,7 @@ function Kobo:initEventAdjustHooks()
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
             --- NOTE: This is safe, we enforce the canonical portrait rotation on startup.
-            self.screen:getWidth()
+            (self.screen:getWidth() - 1)
         )
     end
 end
@@ -1252,8 +1243,10 @@ elseif codename == "kraken" then
     return KoboKraken
 elseif codename == "phoenix" then
     return KoboPhoenix
-elseif codename == "trilogy" then
-    return KoboTrilogy
+elseif codename == "trilogy" and product_id == "310" then
+    return KoboTrilogyAB
+elseif codename == "trilogy" and product_id == "320" then
+    return KoboTrilogyC
 elseif codename == "pixie" then
     return KoboPixie
 elseif codename == "alyssum" then
