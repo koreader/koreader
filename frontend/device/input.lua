@@ -454,7 +454,7 @@ end
 -- Reset the gesture parsing state to a blank slate
 function Input:resetState()
     if self.gesture_detector then
-        self.gesture_detector:clearStates()
+        self.gesture_detector:dropContacts()
         -- Resets the clock source probe
         self.gesture_detector:resetClockSource()
     end
@@ -1139,7 +1139,9 @@ function Input:waitEvent(now, deadline)
                         -- Deadline hasn't been blown yet, honor it.
                         poll_timeout = poll_deadline - now
                     else
-                        -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
+                        -- We've already blown the deadline: make select return immediately (most likely straight to timeout).
+                        -- NOTE: With the timerfd backend, this is sometimes a tad optimistic,
+                        --       as we may in fact retry for a few iterations while waiting for the timerfd to actually expire.
                         poll_timeout = 0
                     end
                 end
@@ -1192,19 +1194,14 @@ function Input:waitEvent(now, deadline)
                             touch_ges = self.timer_callbacks[1].callback()
                         end
 
-                        -- NOTE: If it was a timerfd, we *may* also need to close the fd.
-                        --       GestureDetector only calls Input:setTimeout for "hold" & "double_tap" gestures.
-                        --       For double taps, the callback itself doesn't interact with the timer_callbacks list,
-                        --       but for holds, it *will* call GestureDetector:clearState on "hold_release" (and *only* then),
-                        --       and *that* already takes care of pop'ping the (hold) timer and closing the fd,
-                        --       via Input:clearTimeout(slot, "hold")...
-                        if not touch_ges or touch_ges.ges ~= "hold_release" then
-                            -- That leaves explicit cleanup to every other case (i.e., nil or every other gesture)
-                            if timerfd then
-                                input.clearTimer(timerfd)
-                            end
-                            table.remove(self.timer_callbacks, timer_idx)
+                        -- Cleanup after the timer callback.
+                        -- GestureDetector has guards in place to avoid double frees in case the callback itself
+                        -- affected the timerfd or timer_callbacks list (e.g., by dropping a contact).
+                        if timerfd then
+                            input.clearTimer(timerfd)
                         end
+                        table.remove(self.timer_callbacks, timer_idx)
+
                         if touch_ges then
                             self:gestureAdjustHook(touch_ges)
                             return {

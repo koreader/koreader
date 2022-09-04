@@ -1590,17 +1590,16 @@ function UIManager:widgetInvert(widget, x, y, w, h)
 end
 
 function UIManager:setInputTimeout(timeout)
-    self.INPUT_TIMEOUT = timeout or 200*1000
+    self.INPUT_TIMEOUT = timeout or (200*1000)
 end
 
 function UIManager:resetInputTimeout()
     self.INPUT_TIMEOUT = nil
 end
 
+-- NOTE: The Event hook mechanism used to dispatch for *every* event, and would actually pass the event along.
+--       We've simplified that to once per input frame, and without passing anything (as we, in fact, have never made use of it).
 function UIManager:handleInputEvent(input_event)
-    if input_event.handler ~= "onInputError" then
-        self.event_hook:execute("InputEvent", input_event)
-    end
     local handler = self.event_handlers[input_event]
     if handler then
         handler(input_event)
@@ -1611,6 +1610,9 @@ end
 
 -- Process all pending events on all registered ZMQs.
 function UIManager:processZMQs()
+    if self._zeromqs[1] then
+        self.event_hook:execute("InputEvent")
+    end
     for _, zeromq in ipairs(self._zeromqs) do
         for input_event in zeromq.waitEvent, zeromq do
             self:handleInputEvent(input_event)
@@ -1689,6 +1691,11 @@ function UIManager:handleInput()
 
     -- delegate each input event to handler
     if input_events then
+        -- Dispatch event hooks first, as some plugins (*cough* AutoSuspend *cough*)
+        -- rely on it to react properly to the actual event...
+        if input_events[1] then
+            self.event_hook:execute("InputEvent")
+        end
         -- Handle the full batch of events
         for __, ev in ipairs(input_events) do
             self:handleInputEvent(ev)
@@ -1853,12 +1860,12 @@ end
 function UIManager:_standbyTransition()
     if self._prevent_standby_count == 0 and self._prev_prevent_standby_count > 0 then
         -- edge prevent->allow
-        logger.dbg("allow standby")
+        logger.dbg("UIManager:_standbyTransition -> AllowStandby")
         Device:setAutoStandby(true)
         self:broadcastEvent(Event:new("AllowStandby"))
     elseif self._prevent_standby_count > 0 and self._prev_prevent_standby_count == 0 then
         -- edge allow->prevent
-        logger.dbg("prevent standby")
+        logger.dbg("UIManager:_standbyTransition -> PreventStandby")
         Device:setAutoStandby(false)
         self:broadcastEvent(Event:new("PreventStandby"))
     end

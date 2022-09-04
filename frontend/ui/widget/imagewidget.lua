@@ -31,8 +31,8 @@ local logger = require("logger")
 
 -- DPI_SCALE can't change without a restart, so let's compute it now
 local function get_dpi_scale()
-    local size_scale = math.min(Screen:getWidth(), Screen:getHeight())/600
-    local dpi_scale = Screen:getDPI() / 167
+    local size_scale = math.min(Screen:getWidth(), Screen:getHeight()) / 600
+    local dpi_scale = Screen:scaleByDPI(1)
     return math.pow(2, math.max(0, math.log((size_scale+dpi_scale)/2)/0.69))
 end
 local DPI_SCALE = get_dpi_scale()

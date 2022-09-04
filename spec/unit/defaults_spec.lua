@@ -8,7 +8,7 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(101, #Defaults.defaults_name)
+        assert.is_same(99, #Defaults.defaults_name)
     end)
 
     it("should save changes to defaults.persistent.lua", function()
@@ -16,18 +16,18 @@ describe("defaults module", function()
         os.remove(persistent_filename)
 
         -- To see indices and help updating this when new settings are added:
-        -- for i=1, 101 do print(i.." ".. Defaults.defaults_name[i]) end
+        -- for i=1, 99 do print(i.." ".. Defaults.defaults_name[i]) end
 
         -- not in persistent but checked in defaults
-        Defaults.changed[20] = true
-        Defaults.changed[50] = true
-        Defaults.changed[56] = true
-        Defaults.changed[85] = true
+        Defaults.changed[18] = true
+        Defaults.changed[48] = true
+        Defaults.changed[54] = true
+        Defaults.changed[83] = true
         Defaults:saveSettings()
-        assert.is_same(101, #Defaults.defaults_name)
-        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[86])
-        assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[50])
-        assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[20])
+        assert.is_same(99, #Defaults.defaults_name)
+        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[84])
+        assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[48])
+        assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[18])
         dofile(persistent_filename)
         assert.is_same(DCREREADER_CONFIG_WORD_SPACING_LARGE, { [1] = 100, [2] = 90 })
         assert.is_same(DTAP_ZONE_BACKWARD, { ["y"] = 0, ["x"] = 0, ["h"] = 1, ["w"] = 0.25 })
@@ -36,15 +36,15 @@ describe("defaults module", function()
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[56] = true
-        Defaults.defaults_value[56] = {
+        Defaults.changed[54] = true
+        Defaults.defaults_value[54] = {
             y = 0,
             x = 0,
             h = 0.25,
             w = 0.75
         }
-        Defaults.changed[86] = true
-        Defaults.defaults_value[86] = {
+        Defaults.changed[84] = true
+        Defaults.defaults_value[84] = {
             y = 10,
             x = 10.125,
             h = 20.25,
@@ -85,8 +85,8 @@ DHINTCOUNT = 2
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[58] = true
-        Defaults.defaults_value[58] = 1
+        Defaults.changed[56] = true
+        Defaults.defaults_value[56] = 1
         Defaults:saveSettings()
         dofile(persistent_filename)
         assert.Equals(DCREREADER_VIEW_MODE, "page")
