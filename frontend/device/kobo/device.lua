@@ -780,7 +780,7 @@ function Kobo:setTouchEventHandler()
         self.input.handleTouchEv = self.input.handleTouchEvLegacy
     end
 
-    -- Accelerometer on the Forma
+    -- Accelerometer
     if self.misc_ntx_gsensor_protocol then
         if G_reader_settings:isTrue("input_ignore_gsensor") then
             self.input.isNTXAccelHooked = false
