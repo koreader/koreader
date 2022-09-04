@@ -1226,14 +1226,27 @@ function Contact:holdState(new_hold)
 
             -- Don't drop buddy, voidState will handle it
             gesture_detector:dropContact(self)
+
+            local pos0 = Geom:new{
+                x = tev.x,
+                y = tev.y,
+                w = 0,
+                h = 0,
+            }
+            local pos1 = Geom:new{
+                x = buddy_contact.current_tev.x,
+                y = buddy_contact.current_tev.y,
+                w = 0,
+                h = 0,
+            }
+            local ges_type = self.mt_gesture == "hold_pan_release" and "two_finger_hold_pan_release" or "two_finger_hold_release"
+            local tap_span = pos0:distance(pos1)
+            local tap_pos = pos0:midpoint(pos1)
+            logger.dbg(ges_type, "detected @", tap_pos.x, tap_pos.y, "with span", tap_span)
             return {
-                ges = self.mt_gesture == "hold_pan_release" and "two_finger_hold_pan_release" or "two_finger_hold_release",
-                pos = Geom:new{
-                    x = tev.x,
-                    y = tev.y,
-                    w = 0,
-                    h = 0,
-                },
+                ges = ges_type,
+                pos = tap_pos,
+                span = tap_span,
                 time = tev.timev,
             }
         elseif self.down then
