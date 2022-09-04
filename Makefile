@@ -110,6 +110,11 @@ ifdef WIN32
 	@echo "[*] Install runtime libraries for win32..."
 	cd $(INSTALL_DIR)/koreader && cp ../../$(WIN32_DIR)/*.dll .
 endif
+ifdef SHIP_SHARED_STL
+	@echo "[*] Install C++ runtime..."
+	cp -fL $(SHARED_STL_LIB) $(INSTALL_DIR)/koreader/libs/
+	$(STRIP) --strip-unneeded $(INSTALL_DIR)/koreader/libs/$(notdir $(SHARED_STL_LIB))
+endif
 	@echo "[*] Install plugins"
 	@# TODO: link istead of cp?
 	$(RCP) plugins/. $(INSTALL_DIR)/koreader/plugins/.
