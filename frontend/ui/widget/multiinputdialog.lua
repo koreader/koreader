@@ -212,6 +212,14 @@ function MultiInputDialog:getFields()
     return fields
 end
 
+function MultiInputDialog:getInputFields()
+    local fields = {}
+    for i=1, #input_field do
+        table.insert(fields, input_field[i])
+    end
+    return fields
+end
+
 function MultiInputDialog:onSwitchFocus(inputbox)
     -- unfocus current inputbox
     self._input_widget:unfocus()
