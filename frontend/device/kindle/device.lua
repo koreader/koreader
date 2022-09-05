@@ -301,7 +301,7 @@ function Kindle:outofScreenSaver()
                 local Geom = require("ui/geometry")
                 local screen_height = self.screen:getHeight()
                 local refresh_height = math.ceil(screen_height / 10)
-                UIManager:scheduleIn(1.5, function() UIManager:setDirty("all", "ui", Geom:new{x=0, y=screen_height - 1 - refresh_height, w=self.screen:getWidth(), h=refresh_height}) end)
+                UIManager:scheduleIn(5, function() UIManager:setDirty("all", "ui", Geom:new{x=0, y=screen_height - 1 - refresh_height, w=self.screen:getWidth(), h=refresh_height}) end)
             end
         else
             -- Stop awesome again if need be...
