@@ -1082,7 +1082,7 @@ local kindle_sn = kindle_sn_fd:read("*line")
 kindle_sn_fd:close()
 -- NOTE: Attempt to sanely differentiate v1 from v2,
 --       c.f., https://github.com/NiLuJe/FBInk/commit/8a1161734b3f5b4461247af461d26987f6f1632e
-local kindle_sn_lead = string.sub(kindle_sn,1,1)
+local kindle_sn_lead = string.sub(kindle_sn, 1, 1)
 
 -- NOTE: Update me when new devices come out :)
 --       c.f., https://wiki.mobileread.com/wiki/Kindle_Serial_Numbers for identified variants
@@ -1157,5 +1157,5 @@ else
     end
 end
 
-local kindle_sn_prefix = string.sub(kindle_sn,1,6)
-error("unknown Kindle model: "..kindle_sn_prefix)
+local kindle_sn_prefix = string.sub(kindle_sn, 1, 6)
+error("unknown Kindle model: " .. kindle_sn_prefix)
