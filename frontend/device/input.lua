@@ -839,26 +839,25 @@ function Input:handleTouchEvLegacy(ev)
                 self:setCurrentMtSlotChecked("id", 1)
             else
                 self:setCurrentMtSlotChecked("id", -1)
+
+                -- On Kobo Mk. 3 devices, the frame that reports a contact lift *actually* does the coordinates transform for us...
+                -- Unfortunately, our own transforms are not stateful, so, just revert 'em here,
+                -- since we can't simply avoid not doing 'em for that frame...
+                -- c.f., https://github.com/koreader/koreader/issues/2128#issuecomment-1236289909 for logs on a Touch B
+                -- NOTE: We can afford to do this here instead of on SYN_REPORT because the kernel *always*
+                --       reports ABS_PRESSURE after ABS_X/ABS_Y.
+                if self.touch_kobo_mk3_protocol then
+                    local y = 599 - self:getCurrentMtSlotData("x") -- Mk. 3 devices are all 600x800, so just hard-code it here.
+                    local x = self:getCurrentMtSlotData("y")
+                    self:setCurrentMtSlot("x", x)
+                    self:setCurrentMtSlot("y", y)
+                end
             end
         end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", time.timeval(ev.time))
-            end
-
-            -- On Kobo Mk. 3 devices, the frame that reports a contact lift *actually* does the coordinates transform for us...
-            -- Unfortunately, our own transforms are not stateful, so, just revert 'em here,
-            -- since we can't simply avoid not doing 'em for that frame...
-            -- c.f., https://github.com/koreader/koreader/issues/2128#issuecomment-1236289909 for logs on a Touch B
-            if self.touch_kobo_mk3_protocol then
-                if self:getCurrentMtSlotData("id") == -1 then
-                    -- Technically, it's the frame where ABS_PRESSURE is set to 0 ;).
-                    local y = 599 - self:getCurrentMtSlotData("x") -- Mk. 3 devices are all 600x800, so just hard-code it here.
-                    local x = self:getCurrentMtSlotData("y")
-                    self:setCurrentMtSlot("x", x)
-                    self:setCurrentMtSlot("y", y)
-                end
             end
 
             -- feed ev in all slots to state machine
