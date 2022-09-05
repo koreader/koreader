@@ -204,6 +204,19 @@ function Kindle:supportsScreensaver()
     end
 end
 
+function Kindle:init()
+    -- Check if the device supports deep sleep/quick boot
+    local f = io.open("/sys/devices/platform/falconblk/uevent", "re")
+    if f then
+        self.canDeepSleep = true
+        f:close()
+    else
+        self.canDeepSleep = false
+    end
+
+    Generic.init(self)
+end
+
 function Kindle:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
 
@@ -274,10 +287,21 @@ function Kindle:outofScreenSaver()
         if self:supportsScreensaver() then
             local Screensaver = require("ui/screensaver")
             local widget_was_closed = Screensaver:close()
+            local UIManager = require("ui/uimanager")
             if widget_was_closed then
                 -- And redraw everything in case the framework managed to screw us over...
-                local UIManager = require("ui/uimanager")
                 UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
+            end
+
+            -- If the device supports deep sleep, and we woke up from hibernation (which kicks in at the 1H mark),
+            -- chuck an extra tiny refresh to get rid of the "waking up" banner if the above refresh was too early...
+            if self.canDeepSleep and self.last_suspend_time > time.s(60 * 60) then
+                logger.dbg("It appears we woke up from hibernation :}")
+                -- The banner on a 1236x1648 PW5 is 1235x125; we refresh the bottom 10% of the screen to be safe.
+                local Geom = require("ui/geometry")
+                local screen_height = self.screen.getHeight()
+                local refresh_height = math.ceil(screen_height / 10)
+                UIManager:scheduleIn(1.5, function() UIManager:setDirty("all", "ui", Geom:new{x=0, y=screen_height - 1 - refresh_height, w=self.screen.getWidth(), h=refresh_height}) end)
             end
         else
             -- Stop awesome again if need be...
