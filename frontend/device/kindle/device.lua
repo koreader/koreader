@@ -216,8 +216,8 @@ function Kindle:init()
             "SELECT EXISTS(SELECT value FROM properties WHERE handlerId = 'dcc' AND name = 'hibernate.enabled' AND value = 0);"
         ))
         -- Check the actual delay while we're there...
-        local hibernation_delay = appreg:rowexec(
-            "SELECT value FROM properties WHERE handlerId = 'dcc' AND name = 'hibernate.s2h.rtc.secs'") or
+        local hibernation_delay =
+            appreg:rowexec("SELECT value FROM properties WHERE handlerId = 'dcc' AND name = 'hibernate.s2h.rtc.secs'") or
             appreg:rowexec("SELECT value FROM properties WHERE handlerId = 'dcd' AND name = 'hibernate.s2h.rtc.secs'") or
             3600
         appreg:close()
