@@ -1,5 +1,6 @@
 local Generic = require("device/generic/device")
 local time = require("ui/time")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 local function yes() return true end
@@ -113,7 +114,6 @@ end
 Test if a kindle device has *received* Special Offers (FW < 5.x)
 --]]
 local function hasSpecialOffers()
-    local lfs = require("libs/libkoreader-lfs")
     if lfs.attributes("/mnt/us/system/.assets", "mode") == "directory" then
         return true
     else
@@ -206,10 +206,8 @@ end
 
 function Kindle:init()
     -- Check if the device supports deep sleep/quick boot
-    local f = io.open("/sys/devices/platform/falconblk/uevent", "re")
-    if f then
+    if lfs.attributes("/sys/devices/platform/falconblk/uevent", "mode") == "file" then
         self.canDeepSleep = true
-        f:close()
     else
         self.canDeepSleep = false
     end
@@ -220,7 +218,6 @@ end
 function Kindle:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
 
-    local lfs = require("libs/libkoreader-lfs")
     -- Prefer using the setdate wrapper if possible, as it will poke the native UI, too.
     if lfs.attributes("/usr/sbin/setdate", "mode") == "file" then
         local t = os.date("*t") -- Start with now to make sure we have a full table
@@ -296,12 +293,21 @@ function Kindle:outofScreenSaver()
             -- If the device supports deep sleep, and we woke up from hibernation (which kicks in at the 1H mark),
             -- chuck an extra tiny refresh to get rid of the "waking up" banner if the above refresh was too early...
             if self.canDeepSleep and self.last_suspend_time > time.s(60 * 60) then
-                logger.dbg("It appears we woke up from hibernation :}")
-                -- The banner on a 1236x1648 PW5 is 1235x125; we refresh the bottom 10% of the screen to be safe.
-                local Geom = require("ui/geometry")
-                local screen_height = self.screen:getHeight()
-                local refresh_height = math.ceil(screen_height / 10)
-                UIManager:scheduleIn(5, function() UIManager:setDirty("all", "ui", Geom:new{x=0, y=screen_height - 1 - refresh_height, w=self.screen:getWidth(), h=refresh_height}) end)
+                logger.dbg("We might be waking up from hibernation")
+                if lfs.attributes("/var/local/system/powerd/hibernate_session_tracker", "mode") == "file" then
+                    local mtime = lfs.attributes("/var/local/system/powerd/hibernate_session_tracker", "modification")
+                    local now = os.time()
+                    logger.dbg("System did indeed wake up from hibernation @", mtime, "vs. now:", now)
+                    if math.abs(now - mtime) <= 60 then
+                        -- That was less than a minute ago, assume we're golden
+                        logger.dbg("It appears we woke up from hibernation :}")
+                        -- The banner on a 1236x1648 PW5 is 1235x125; we refresh the bottom 10% of the screen to be safe.
+                        local Geom = require("ui/geometry")
+                        local screen_height = self.screen:getHeight()
+                        local refresh_height = math.ceil(screen_height / 10)
+                        UIManager:scheduleIn(1.5, function() UIManager:setDirty("all", "ui", Geom:new{x=0, y=screen_height - 1 - refresh_height, w=self.screen:getWidth(), h=refresh_height}) end)
+                    end
+                end
             end
         else
             -- Stop awesome again if need be...
@@ -607,11 +613,6 @@ function Kindle4:init()
     Kindle.init(self)
 end
 
--- luacheck: push
--- luacheck: ignore
-local ABS_MT_POSITION_X = 53
-local ABS_MT_POSITION_Y = 54
--- luacheck: pop
 function KindleTouch:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
