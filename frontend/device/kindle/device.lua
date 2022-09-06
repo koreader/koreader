@@ -215,12 +215,18 @@ function Kindle:init()
         local hibernation_disabled = tonumber(appreg:rowexec(
             "SELECT EXISTS(SELECT value FROM properties WHERE handlerId = 'dcc' AND name = 'hibernate.enabled' AND value = 0);"
         ))
+        -- Check the actual delay while we're there...
+        local hibernation_delay = appreg:rowexec(
+            "SELECT value FROM properties WHERE handlerId = 'dcc' AND name = 'hibernate.s2h.rtc.secs'") or
+            appreg:rowexec("SELECT value FROM properties WHERE handlerId = 'dcd' AND name = 'hibernate.s2h.rtc.secs'") or
+            3600
         appreg:close()
         if hibernation_disabled == 1 then
             self.canDeepSleep = false
         else
             self.canDeepSleep = true
-            logger.dbg("Kindle: Device supports hibernation")
+            self.hibernationDelay = tonumber(hibernation_delay)
+            logger.dbg("Kindle: Device supports hibernation, enters hibernation after", self.hibernationDelay, "seconds in suspend")
         end
     else
         self.canDeepSleep = false
@@ -306,7 +312,7 @@ function Kindle:outofScreenSaver()
 
             -- If the device supports deep sleep, and we woke up from hibernation (which kicks in at the 1H mark),
             -- chuck an extra tiny refresh to get rid of the "waking up" banner if the above refresh was too early...
-            if self.canDeepSleep and self.last_suspend_time > time.s(60 * 60) then
+            if self.canDeepSleep and self.last_suspend_time > time.s(self.hibernationDelay) then
                 if lfs.attributes("/var/local/system/powerd/hibernate_session_tracker", "mode") == "file" then
                     local mtime = lfs.attributes("/var/local/system/powerd/hibernate_session_tracker", "modification")
                     local now = os.time()
