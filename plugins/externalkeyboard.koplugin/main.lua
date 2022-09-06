@@ -45,18 +45,46 @@ local ExternalKeyboard = WidgetContainer:new{
 
 function ExternalKeyboard:init()
     self.ui.menu:registerToMainMenu(self)
-    print("input_invert_page_turn_keys = " .. tostring(G_reader_settings:isTrue("input_invert_page_turn_keys")))
-    if G_reader_settings:isTrue("external_keyboard_otg_always") then
+    if G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
         self:setOTG(USB_ROLE_HOST)
     end
 end
 
 function ExternalKeyboard:addToMainMenu(menu_items)
-    menu_items.otg_keyboard = {
+    menu_items.external_keyboard = {
         text = _("External Keyboard"),
-        callback = function()
-            return self:showDialog()
-        end,
+        sub_item_table = {
+            {
+                text = _("Enable OTG mode to connect peripherals"),
+                keep_menu_open = true,
+                checked_func = function()
+                    return self:getOtgRole() == USB_ROLE_HOST
+                end,
+                callback = function(touchmenu_instance)
+                    local role = self:getOtgRole()
+                    local new_role = (role == USB_ROLE_DEVICE) and USB_ROLE_HOST or USB_ROLE_DEVICE
+                    self:setOTG(new_role)
+                    touchmenu_instance:updateItems()
+                end,
+            },
+            {
+                text = _("Automatically enable OTG mode on start"),
+                keep_menu_open = true,
+                checked_func = function()
+                     return G_reader_settings:isTrue("external_keyboard_otg_mode_on_start")
+                end,
+                callback = function(touchmenu_instance)
+                    G_reader_settings:flipNilOrFalse("external_keyboard_otg_mode_on_start")
+                end,
+            },
+            {
+                text = _("Help"),
+                keep_menu_open = true,
+                callback = function()
+                    self:showHelp()
+                end,
+            },
+        }
     }
 end
 
@@ -185,27 +213,15 @@ function ExternalKeyboard:findAndSetupKeyboard()
     end
 end
 
-function ExternalKeyboard:showDialog()
-    local role = self:getOtgRole()
-    local new_role = (role == USB_ROLE_DEVICE) and USB_ROLE_HOST or USB_ROLE_DEVICE
+function ExternalKeyboard:showHelp()
+	UIManager:show(InfoMessage:new {
+		text = _([[
+Note that in the OTG mode the device would not be recognized as a USB drive by a computer.
 
-    local confirm_box = MultiConfirmBox:new{
-        text = role == USB_ROLE_DEVICE and _("The USB configuration in the regular mode.\nDo you want to switch USB to OTG mode to connect an external keyboard?")
-        or _("The USB configuration is in the OTG mode.\nDo you want to switch USB to the regular mode?"),
-        choice1_text = _("Yes"),
-        choice1_callback = function()
-            -- G_reader_settings:saveSetting("external_keyboard_otg_always", check_button_always.checked)
-            self:setOTG(new_role)
-            UIManager:show(InfoMessage:new{
-                text = new_role == USB_ROLE_DEVICE and _("OTG is disabled") or _("OTG is enabled"),
-            })
-        end,
-        choice2_text = _("Find Keyboard"),
-        choice2_callback = function()
-            self:findAndSetupKeyboard()
-        end,
-    }
-    UIManager:show(confirm_box)
+Troubleshooting:
+- If the keyboard is not recognized after plugging it in, try switching the USB mode to regular and back to OTG again.
+]]),
+	})
 end
 
 return ExternalKeyboard
