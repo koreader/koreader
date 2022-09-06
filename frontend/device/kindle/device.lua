@@ -293,19 +293,25 @@ function Kindle:outofScreenSaver()
             -- If the device supports deep sleep, and we woke up from hibernation (which kicks in at the 1H mark),
             -- chuck an extra tiny refresh to get rid of the "waking up" banner if the above refresh was too early...
             if self.canDeepSleep and self.last_suspend_time > time.s(60 * 60) then
-                logger.dbg("We might be waking up from hibernation")
                 if lfs.attributes("/var/local/system/powerd/hibernate_session_tracker", "mode") == "file" then
                     local mtime = lfs.attributes("/var/local/system/powerd/hibernate_session_tracker", "modification")
                     local now = os.time()
-                    logger.dbg("System did indeed wake up from hibernation @", mtime, "vs. now:", now)
                     if math.abs(now - mtime) <= 60 then
-                        -- That was less than a minute ago, assume we're golden
-                        logger.dbg("It appears we woke up from hibernation :}")
+                        -- That was less than a minute ago, assume we're golden.
+                        logger.dbg("Kindle: Woke up from hibernation")
                         -- The banner on a 1236x1648 PW5 is 1235x125; we refresh the bottom 10% of the screen to be safe.
                         local Geom = require("ui/geometry")
                         local screen_height = self.screen:getHeight()
                         local refresh_height = math.ceil(screen_height / 10)
-                        UIManager:scheduleIn(1.5, function() UIManager:setDirty("all", "ui", Geom:new{x=0, y=screen_height - 1 - refresh_height, w=self.screen:getWidth(), h=refresh_height}) end)
+                        local refresh_region = Geom:new{
+                            x = 0,
+                            y = screen_height - 1 - refresh_height,
+                            w = self.screen:getWidth(),
+                            h = refresh_height
+                        }
+                        UIManager:scheduleIn(1.5, function()
+                            UIManager:setDirty("all", "ui", refresh_region)
+                        end)
                     end
                 end
             end
