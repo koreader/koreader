@@ -207,7 +207,21 @@ end
 function Kindle:init()
     -- Check if the device supports deep sleep/quick boot
     if lfs.attributes("/sys/devices/platform/falconblk/uevent", "mode") == "file" then
-        self.canDeepSleep = true
+        -- Now, poke the appreg db to see if it's actually *enabled*...
+        -- NOTE: The setting is only available on registered devices, as such, it *can* be missing,
+        --       which is why we check for it existing and being *disabled*, as that ensures user interaction.
+        local SQ3 = require("lua-ljsqlite3/init")
+        local appreg = SQ3.open("/var/local/appreg.db", "ro")
+        local hibernation_disabled = tonumber(appreg:rowexec(
+            "SELECT EXISTS(SELECT value FROM properties WHERE handlerId = 'dcc' AND name = 'hibernate.enabled' AND value = 0);"
+        ))
+        appreg:close()
+        if hibernation_disabled == 1 then
+            self.canDeepSleep = false
+        else
+            self.canDeepSleep = true
+            logger.dbg("Kindle: Device supports hibernation")
+        end
     else
         self.canDeepSleep = false
     end
