@@ -132,18 +132,10 @@ function ExternalKeyboard:setOTG(role)
     end
 end
 
-function ExternalKeyboard:onUsbDevicePlugIn()
+ExternalKeyboard.onUsbDevicePlugIn = UIManager:debounce(0.5, false, function(self)
     logger.info("ExternalKeyboard:usbDevicePlugIn")
-    -- local event_path = FindKeyboard:find()
-
-    -- if event_path then
-    --     Device.input.open(event_path)
-    --     UIManager:show(InfoMessage:new{
-    --         text = _("Keyboard connected"),
-    --         timeout = 1,
-    --     })
-    -- end
-end
+    self:findAndSetupKeyboard()
+end)
 
 function ExternalKeyboard:onUsbDevicePlugOut()
     logger.info("ExternalKeyboard:usbDevicePlugOut")
@@ -177,10 +169,6 @@ end
 -- Can we tell from which device a key press comes? The koreader-base passes values of input_event which do not have file descriptors.
 function ExternalKeyboard:findAndSetupKeyboard()
     local event_path = FindKeyboard:find()
-    UIManager:show(InfoMessage:new{
-        text = "Event path: " .. tostring(event_path),
-        timeout = 1,
-    })
     if event_path then
         local ok, fd = pcall(Device.input.open, event_path)
         if not ok then
@@ -205,10 +193,13 @@ function ExternalKeyboard:findAndSetupKeyboard()
         Device.keyboard_layout = require("device/kindle/keyboard_layout") -- TODO: replace with with independent layout.
         Device.hasKeyboard = yes
         -- TODO: map left and right modifiers to Shift, Ctrl, Etc.
-        -- The FocusManager initializes some values with if device hasDPad. Later, if we set hasDPad, logic that expects those values fails.
+        -- The FocusManager initializes some values with if device hasDPad. Later, if we set hasDPad, the logic that expects those values fails.
         -- Device.hasDPad = yes  -- Most keyboards have directional keys. In the future the find-keyboard can detect it with the capabilities file.
 
-        -- InputText.setKeyboard(require("ui/widget/physicalkeyboard"))
+        UIManager:show(InfoMessage:new{
+            text = _("Keyboard connected"),
+            timeout = 1,
+        })
         UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
     end
 end

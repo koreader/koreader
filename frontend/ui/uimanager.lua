@@ -356,6 +356,49 @@ function UIManager:tickAfterNext(action)
 end
 --]]
 
+function UIManager:debounce(seconds, immediate, action)
+    -- Ported from underscore.js
+    local n = nil
+    local va = nil
+    local previous_call_at = nil
+    local is_scheduled = false
+    local result = nil
+
+    local scheduled_action
+    scheduled_action = function()
+        local passed_from_last_call = time:now() - previous_call_at
+        if seconds > passed_from_last_call then
+            self:scheduleIn(seconds - passed_from_last_call, scheduled_action)
+            is_scheduled = true
+        else
+            is_scheduled = false
+            if not immediate then
+                result = action(unpack(va, 1, n))
+            end
+            if not is_scheduled then
+                -- This check is needed because action can recursively call debounced_action_wrapper
+                n = nil
+                va = nil
+            end
+        end
+    end
+    local debounced_action_wrapper = function(...)
+        n = select('#', ...)
+        va = {...}
+        previous_call_at = time:now()
+        if not is_scheduled then
+            self:scheduleIn(seconds, scheduled_action)
+            is_scheduled = true
+            if immediate then
+                result = action(unpack(va, 1, n))
+            end
+        end
+        return result
+    end
+
+    return debounced_action_wrapper
+end
+
 --[[--
 Unschedules a previously scheduled task.
 
