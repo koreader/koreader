@@ -79,7 +79,8 @@ local settingsList = {
     restart = {category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart()},
     reboot = {category="none", event="Reboot", title=_("Reboot the device"), device=true, condition=Device:canReboot()},
     poweroff = {category="none", event="PowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(), separator=true},
-    toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true, separator=true},
+    toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true},
+    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page turn buttons"), device=true, condition=Device:hasKeys(), separator=true},
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
     iterate_rotation = {category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true},
@@ -231,6 +232,7 @@ local dispatcher_menu_order = {
     "poweroff",
 
     "toggle_hold_corners",
+    "swap_page_turn_buttons",
     "toggle_gsensor",
     "rotation_mode",
     "toggle_rotation",
