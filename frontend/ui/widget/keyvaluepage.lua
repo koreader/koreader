@@ -16,7 +16,7 @@ Example:
         },
          title_bar_left_icon = "appbar.menu",
          onTitleBarLeftButtonTap = function()
-            -- Do something on left icon callbac
+            -- Do something on left icon callback
          end
     }
     UIManager:show(Foo)
