@@ -313,6 +313,11 @@ function DeviceListener:onToggleNoFlashOnSecondChapterPage()
     _toggleSetting("no_refresh_on_second_chapter_page")
 end
 
+function DeviceListener:onSwapPageTurnButtons()
+    _toggleSetting("input_invert_page_turn_keys")
+    Device:invertButtons()
+end
+
 if Device:canReboot() then
     function DeviceListener:onReboot()
         UIManager:show(ConfirmBox:new{

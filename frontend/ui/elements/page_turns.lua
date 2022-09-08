@@ -161,8 +161,7 @@ if Device:hasKeys() then
             return G_reader_settings:isTrue("input_invert_page_turn_keys")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
-            Device:invertButtons()
+            UIManager:broadcastEvent(Event:new("SwapPageTurnButtons"))
         end,
     })
 end
