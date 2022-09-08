@@ -437,6 +437,10 @@ function NewsDownloader:deserializeXMLString(xml_str)
     local libxml = require("lib/xml")
     -- Instantiate the object that parses the XML file as a Lua table.
     local xmlhandler = treehdl.simpleTreeHandler()
+
+    -- Remove UTF-8 byte order mark, as it will cause LuaXML to fail
+    xml_str = xml_str:gsub("^\xef\xbb\xbf", "", 1)
+
     -- Instantiate the object that parses the XML to a Lua table.
     local ok = pcall(function()
             libxml.xmlParser(xmlhandler):parse(xml_str)

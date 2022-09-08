@@ -113,7 +113,7 @@ function Cervantes:initEventAdjustHooks()
     if self.touch_mirrored_x then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
-            self.screen:getWidth()
+            (self.screen:getWidth() - 1)
         )
     end
 

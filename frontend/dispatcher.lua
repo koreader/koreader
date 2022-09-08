@@ -82,7 +82,8 @@ local settingsList = {
     toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true, separator=true},
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
-    iterate_rotation = {category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true, separator=true},
+    iterate_rotation = {category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true},
+    iterate_rotation_ccw = {category="none", event="IterateRotation", arg=true, title=_("Rotate by 90° CCW"), device=true, separator=true},
 
     -- General
     reading_progress = {category="none", event="ShowReaderProgress", title=_("Reading progress"), general=true},
@@ -133,6 +134,7 @@ local settingsList = {
     toggle_bookmark = {category="none", event="ToggleBookmark", title=_("Toggle bookmark"), reader=true},
     toggle_page_change_animation = {category="none", event="TogglePageChangeAnimation", title=_("Toggle page turn animations"), reader=true, condition=Device:canDoSwipeAnimation()},
     toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, separator=true},
+    swap_page_turn_buttons = {category="none", event="SwapPageTurnButtons", title=_("Invert page turn buttons"), reader=true, condition=Device:hasKeys(), separator=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true},
     page_jmp = {category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), reader=true},
@@ -235,6 +237,7 @@ local dispatcher_menu_order = {
     "toggle_rotation",
     "invert_rotation",
     "iterate_rotation",
+    "iterate_rotation_ccw",
 
     "wifi_on",
     "wifi_off",
@@ -315,6 +318,7 @@ local dispatcher_menu_order = {
     "toggle_page_flipping",
     "toggle_reflow",
     "toggle_inverse_reading_order",
+    "swap_page_turn_buttons",
     "zoom",
     "zoom_factor_change",
     "cycle_highlight_action",

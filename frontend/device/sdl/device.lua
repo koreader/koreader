@@ -304,7 +304,7 @@ function Device:init()
         self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
-            self.screen:getScreenWidth()
+            (self.screen:getScreenWidth() - 1)
         )
     end
 

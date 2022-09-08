@@ -2,6 +2,7 @@ local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
 local WakeupMgr = require("device/wakeupmgr")
 local ffiUtil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -35,7 +36,7 @@ local function checkStandby()
     end
     local mode = f:read()
     logger.dbg("Kobo: available power states", mode)
-    if mode:find("standby") then
+    if mode and mode:find("standby") then
         logger.dbg("Kobo: standby state allowed")
         return yes
     end
@@ -121,11 +122,16 @@ local Kobo = Generic:new{
     unexpected_wakeup_count = 0
 }
 
--- Kobo Touch:
-local KoboTrilogy = Kobo:new{
-    model = "Kobo_trilogy",
-    needsTouchScreenProbe = yes,
-    touch_switch_xy = false,
+-- Kobo Touch A/B:
+local KoboTrilogyAB = Kobo:new{
+    model = "Kobo_trilogy_AB",
+    touch_kobo_mk3_protocol = true,
+    hasKeys = yes,
+    hasMultitouch = no,
+}
+-- Kobo Touch C:
+local KoboTrilogyC = Kobo:new{
+    model = "Kobo_trilogy_C",
     hasKeys = yes,
     hasMultitouch = no,
 }
@@ -642,27 +648,10 @@ function Kobo:init()
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
     self.input.open("fake_events")
 
-    if not self.needsTouchScreenProbe() then
-        self:initEventAdjustHooks()
-    else
-        -- if touch probe is required, we postpone EventAdjustHook
-        -- initialization to when self:touchScreenProbe is called
-        self.touchScreenProbe = function()
-            -- if user has not set KOBO_TOUCH_MIRRORED yet
-            if KOBO_TOUCH_MIRRORED == nil then
-                -- and has no probe before
-                if G_reader_settings:hasNot("kobo_touch_switch_xy") then
-                    local TouchProbe = require("tools/kobo_touch_probe")
-                    local UIManager = require("ui/uimanager")
-                    UIManager:show(TouchProbe:new{})
-                    UIManager:run()
-                    -- assuming TouchProbe sets kobo_touch_switch_xy config
-                end
-                self.touch_switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
-            end
-            self:initEventAdjustHooks()
-        end
-    end
+    -- Input handling on Kobo is a thing of nightmares, start by setting up the actual evdev handler...
+    self:setTouchEventHandler()
+    -- And then handle the extra shenanigans if necessary.
+    self:initEventAdjustHooks()
 
     -- See if the device supports key repeat
     self:getKeyRepeat()
@@ -770,34 +759,19 @@ end
 
 function Kobo:supportsScreensaver() return true end
 
-function Kobo:initEventAdjustHooks()
-    -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
-    -- actually did in its original implementation was to switch X/Y.
-    -- NOTE: for kobo touch, adjustTouchSwitchXY needs to be called before
-    -- adjustTouchMirrorX
-    if (self.touch_switch_xy and not KOBO_TOUCH_MIRRORED)
-            or (not self.touch_switch_xy and KOBO_TOUCH_MIRRORED)
-    then
-        self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
-    end
-
-    if self.touch_mirrored_x then
-        self.input:registerEventAdjustHook(
-            self.input.adjustTouchMirrorX,
-            --- @fixme what if we change the screen portrait mode?
-            self.screen:getWidth()
-        )
-    end
-
+function Kobo:setTouchEventHandler()
     if self.touch_snow_protocol then
         self.input.snow_protocol = true
-    end
-
-    if self.touch_phoenix_protocol then
+    elseif self.touch_phoenix_protocol then
         self.input.handleTouchEv = self.input.handleTouchEvPhoenix
+    elseif not self:hasMultitouch() then
+        self.input.handleTouchEv = self.input.handleTouchEvLegacy
+        if self.touch_kobo_mk3_protocol then
+            self.input.touch_kobo_mk3_protocol = true
+        end
     end
 
-    -- Accelerometer on the Forma
+    -- Accelerometer
     if self.misc_ntx_gsensor_protocol then
         if G_reader_settings:isTrue("input_ignore_gsensor") then
             self.input.isNTXAccelHooked = false
@@ -808,14 +782,31 @@ function Kobo:initEventAdjustHooks()
     end
 end
 
+function Kobo:initEventAdjustHooks()
+    -- NOTE: adjustTouchSwitchXY needs to be called before adjustTouchMirrorX
+    if self.touch_switch_xy then
+        self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
+    end
+
+    if self.touch_mirrored_x then
+        self.input:registerEventAdjustHook(
+            self.input.adjustTouchMirrorX,
+            --- NOTE: This is safe, we enforce the canonical portrait rotation on startup.
+            (self.screen:getWidth() - 1)
+        )
+    end
+end
+
 local function getCodeName()
     -- Try to get it from the env first
     local codename = os.getenv("PRODUCT")
     -- If that fails, run the script ourselves
     if not codename then
         local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "re")
-        codename = std_out:read("*line")
-        std_out:close()
+        if std_out then
+            codename = std_out:read("*line")
+            std_out:close()
+        end
     end
     return codename
 end
@@ -824,6 +815,7 @@ function Kobo:getFirmwareVersion()
     local version_file = io.open("/mnt/onboard/.kobo/version", "re")
     if not version_file then
         self.firmware_rev = "none"
+        return
     end
     local version_str = version_file:read("*line")
     version_file:close()
@@ -1353,8 +1345,10 @@ elseif codename == "kraken" then
     return KoboKraken
 elseif codename == "phoenix" then
     return KoboPhoenix
-elseif codename == "trilogy" then
-    return KoboTrilogy
+elseif codename == "trilogy" and product_id == "310" then
+    return KoboTrilogyAB
+elseif codename == "trilogy" and product_id == "320" then
+    return KoboTrilogyC
 elseif codename == "pixie" then
     return KoboPixie
 elseif codename == "alyssum" then
@@ -1386,5 +1380,5 @@ elseif codename == "cadmus" then
 elseif codename == "io" then
     return KoboIo
 else
-    error("unrecognized Kobo model "..codename)
+    error("unrecognized Kobo model ".. codename .. " with device id " .. product_id)
 end

@@ -56,6 +56,10 @@ local MSC_RAW_GSENSOR_LANDSCAPE_LEFT            = 0x1a
 local MSC_RAW_GSENSOR_BACK                      = 0x1b
 local MSC_RAW_GSENSOR_FRONT                     = 0x1c
 
+-- Based on ABS_MT_TOOL_TYPE values on Elan panels
+local TOOL_TYPE_FINGER = 0
+local TOOL_TYPE_PEN    = 1
+
 -- For debug logging of ev.type
 local linux_evdev_type_map = {
     [C.EV_SYN] = "EV_SYN",
@@ -337,17 +341,17 @@ function Input:adjustTouchScale(ev, by)
     end
 end
 
-function Input:adjustTouchMirrorX(ev, width)
+function Input:adjustTouchMirrorX(ev, max_x)
     if ev.type == C.EV_ABS
     and (ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X) then
-        ev.value = width - ev.value
+        ev.value = max_x - ev.value
     end
 end
 
-function Input:adjustTouchMirrorY(ev, height)
+function Input:adjustTouchMirrorY(ev, max_y)
     if ev.type == C.EV_ABS
     and (ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y) then
-        ev.value = height - ev.value
+        ev.value = max_y - ev.value
     end
 end
 
@@ -450,7 +454,7 @@ end
 -- Reset the gesture parsing state to a blank slate
 function Input:resetState()
     if self.gesture_detector then
-        self.gesture_detector:clearStates()
+        self.gesture_detector:dropContacts()
         -- Resets the clock source probe
         self.gesture_detector:resetClockSource()
     end
@@ -459,6 +463,7 @@ end
 
 function Input:handleKeyBoardEv(ev)
     -- Detect loss of contact for the "snow" protocol...
+    -- NOTE: Some ST devices may also behave similarly, but we handle those via ABS_PRESSURE
     if self.snow_protocol then
         if ev.code == C.BTN_TOUCH and ev.value == 0 then
             -- Kernel sends it after loss of contact for *all* slots,
@@ -484,6 +489,26 @@ function Input:handleKeyBoardEv(ev)
             end
 
             return
+        end
+    elseif self.wacom_protocol then
+        if ev.code == C.BTN_TOOL_PEN then
+            -- Always send pen data to slot 0
+            self:setupSlotData(0)
+            if ev.value == 1 then
+                self:setCurrentMtSlot("tool", TOOL_TYPE_PEN)
+            else
+                self:setCurrentMtSlot("tool", TOOL_TYPE_FINGER)
+            end
+        elseif ev.code == C.BTN_TOUCH then
+            -- Much like on snow, use this to detect contact down & lift,
+            -- as ABS_PRESSURE may be entirely omitted from hover events,
+            -- and ABS_DISTANCE is not very clear cut...
+            self:setupSlotData(0)
+            if ev.value == 1 then
+                self:setCurrentMtSlot("id", 0)
+            else
+                self:setCurrentMtSlot("id", -1)
+            end
         end
     end
 
@@ -711,29 +736,14 @@ function Input:handleTouchEv(ev)
         elseif ev.code == C.ABS_MT_TOOL_TYPE then
             -- NOTE: On the Elipsa: Finger == 0; Pen == 1
             self:setCurrentMtSlot("tool", ev.value)
-        elseif ev.code == C.ABS_MT_POSITION_X then
+        elseif ev.code == C.ABS_MT_POSITION_X or ev.code == C.ABS_X then
             self:setCurrentMtSlotChecked("x", ev.value)
-        elseif ev.code == C.ABS_MT_POSITION_Y then
+        elseif ev.code == C.ABS_MT_POSITION_Y or ev.code == C.ABS_Y then
             self:setCurrentMtSlotChecked("y", ev.value)
         elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
             -- Drop hovering *pen* events
             local tool = self:getCurrentMtSlotData("tool")
-            if tool and tool == 1 then
-                self:setCurrentMtSlot("id", -1)
-            end
-
-        -- Emulate MT protocol on ST Kobos:
-        -- we "confirm" ABS_X, ABS_Y only when ABS_PRESSURE ~= 0
-        elseif ev.code == C.ABS_X then
-            self:setCurrentMtSlotChecked("abs_x", ev.value)
-        elseif ev.code == C.ABS_Y then
-            self:setCurrentMtSlotChecked("abs_y", ev.value)
-        elseif ev.code == C.ABS_PRESSURE then
-            if ev.value ~= 0 then
-                self:setCurrentMtSlot("id", 1)
-                self:confirmAbsxy()
-            else
-                self:cleanAbsxy()
+            if tool and tool == TOOL_TYPE_PEN then
                 self:setCurrentMtSlot("id", -1)
             end
         end
@@ -754,6 +764,7 @@ function Input:handleTouchEv(ev)
         end
     end
 end
+
 function Input:handleTouchEvPhoenix(ev)
     -- Hack on handleTouchEV for the Kobo Aura
     -- It seems to be using a custom protocol:
@@ -813,22 +824,34 @@ function Input:handleTouchEvPhoenix(ev)
         end
     end
 end
+
 function Input:handleTouchEvLegacy(ev)
-    -- Single Touch Protocol. Some devices emit both singletouch and multitouch events.
-    -- In those devices the 'handleTouchEv' function doesn't work as expected. Use this function instead.
+    -- Single Touch Protocol.
+    -- Some devices emit both singletouch and multitouch events,
+    -- on those devices, the 'handleTouchEv' function may not behave as expected. Use this one instead.
     if ev.type == C.EV_ABS then
-        if #self.MTSlots == 0 then
-            self:addSlot(self.cur_slot)
-        end
         if ev.code == C.ABS_X then
-            self:setCurrentMtSlot("x", ev.value)
+            self:setCurrentMtSlotChecked("x", ev.value)
         elseif ev.code == C.ABS_Y then
-            self:setCurrentMtSlot("y", ev.value)
+            self:setCurrentMtSlotChecked("y", ev.value)
         elseif ev.code == C.ABS_PRESSURE then
             if ev.value ~= 0 then
-                self:setCurrentMtSlot("id", 1)
+                self:setCurrentMtSlotChecked("id", 1)
             else
-                self:setCurrentMtSlot("id", -1)
+                self:setCurrentMtSlotChecked("id", -1)
+
+                -- On Kobo Mk. 3 devices, the frame that reports a contact lift *actually* does the coordinates transform for us...
+                -- Unfortunately, our own transforms are not stateful, so, just revert 'em here,
+                -- since we can't simply avoid not doing 'em for that frame...
+                -- c.f., https://github.com/koreader/koreader/issues/2128#issuecomment-1236289909 for logs on a Touch B
+                -- NOTE: We can afford to do this here instead of on SYN_REPORT because the kernel *always*
+                --       reports ABS_PRESSURE after ABS_X/ABS_Y.
+                if self.touch_kobo_mk3_protocol then
+                    local y = 599 - self:getCurrentMtSlotData("x") -- Mk. 3 devices are all 600x800, so just hard-code it here.
+                    local x = self:getCurrentMtSlotData("y")
+                    self:setCurrentMtSlot("x", x)
+                    self:setCurrentMtSlot("y", y)
+                end
             end
         end
     elseif ev.type == C.EV_SYN then
@@ -1059,16 +1082,6 @@ function Input:setupSlotData(value)
     end
 end
 
-function Input:confirmAbsxy()
-    self:setCurrentMtSlot("x", self.ev_slots[self.cur_slot]["abs_x"])
-    self:setCurrentMtSlot("y", self.ev_slots[self.cur_slot]["abs_y"])
-end
-
-function Input:cleanAbsxy()
-    self:setCurrentMtSlot("abs_x", nil)
-    self:setCurrentMtSlot("abs_y", nil)
-end
-
 function Input:isEvKeyPress(ev)
     return ev.value == EVENT_VALUE_KEY_PRESS
 end
@@ -1139,7 +1152,9 @@ function Input:waitEvent(now, deadline)
                         -- Deadline hasn't been blown yet, honor it.
                         poll_timeout = poll_deadline - now
                     else
-                        -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
+                        -- We've already blown the deadline: make select return immediately (most likely straight to timeout).
+                        -- NOTE: With the timerfd backend, this is sometimes a tad optimistic,
+                        --       as we may in fact retry for a few iterations while waiting for the timerfd to actually expire.
                         poll_timeout = 0
                     end
                 end
@@ -1192,19 +1207,14 @@ function Input:waitEvent(now, deadline)
                             touch_ges = self.timer_callbacks[1].callback()
                         end
 
-                        -- NOTE: If it was a timerfd, we *may* also need to close the fd.
-                        --       GestureDetector only calls Input:setTimeout for "hold" & "double_tap" gestures.
-                        --       For double taps, the callback itself doesn't interact with the timer_callbacks list,
-                        --       but for holds, it *will* call GestureDetector:clearState on "hold_release" (and *only* then),
-                        --       and *that* already takes care of pop'ping the (hold) timer and closing the fd,
-                        --       via Input:clearTimeout(slot, "hold")...
-                        if not touch_ges or touch_ges.ges ~= "hold_release" then
-                            -- That leaves explicit cleanup to every other case (i.e., nil or every other gesture)
-                            if timerfd then
-                                input.clearTimer(timerfd)
-                            end
-                            table.remove(self.timer_callbacks, timer_idx)
+                        -- Cleanup after the timer callback.
+                        -- GestureDetector has guards in place to avoid double frees in case the callback itself
+                        -- affected the timerfd or timer_callbacks list (e.g., by dropping a contact).
+                        if timerfd then
+                            input.clearTimer(timerfd)
                         end
+                        table.remove(self.timer_callbacks, timer_idx)
+
                         if touch_ges then
                             self:gestureAdjustHook(touch_ges)
                             return {

@@ -134,7 +134,7 @@ local PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT = 7
 local PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT = 3
 
 -- android: guidelines for rounded corner margins
-local material_pixels = 16 * math.floor(Screen:getDPI() / 160)
+local material_pixels = Screen:scaleByDPI(16)
 
 -- functions that generates footer text for each mode
 local footerTextGeneratorMap = {

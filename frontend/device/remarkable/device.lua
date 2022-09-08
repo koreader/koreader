@@ -143,6 +143,7 @@ function Remarkable:init()
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/remarkable/event_map"),
+        wacom_protocol = true,
     }
 
     self.input.open(self.input_wacom) -- Wacom
