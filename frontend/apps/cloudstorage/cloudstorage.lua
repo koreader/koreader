@@ -65,6 +65,14 @@ function CloudStorage:init()
     end
 end
 
+function CloudStorage:getPasswordOrDropBoxAccessToken(server)
+    if server.type == "dropbox" and server.address ~= nil and server.address ~= "" then
+        return DropBox:getAccessToken(server.password, server.address)
+    else
+        return server.password
+    end
+end
+
 function CloudStorage:genItemTableFromRoot()
     local item_table = {}
     local added_servers = self.cs_settings:readSetting("cs_servers") or {}
@@ -82,7 +90,7 @@ function CloudStorage:genItemTableFromRoot()
             sync_dest_folder = server.sync_dest_folder,
             callback = function()
                 self.type = server.type
-                self.password = server.password
+                self.password = self:getPasswordOrDropBoxAccessToken(server)
                 self.address = server.address
                 self.username = server.username
                 self:openCloudServer(server.url)
@@ -97,16 +105,17 @@ function CloudStorage:genItemTable(item)
     local added_servers = self.cs_settings:readSetting("cs_servers") or {}
     for _, server in ipairs(added_servers) do
         if server.name == item.text and server.password == item.password and server.type == item.type then
+            local password_token = self:getPasswordOrDropBoxAccessToken(item)
             table.insert(item_table, {
                 text = server.name,
                 address = server.address,
                 username = server.username,
-                password = server.password,
+                password = password_token,
                 type = server.type,
                 url = server.url,
                 callback = function()
                     self.type = server.type
-                    self.password = server.password
+                    self.password = password_token
                     self.address = server.address
                     self.username = server.username
                     self:openCloudServer(server.url)
@@ -453,6 +462,7 @@ function CloudStorage:synchronizeCloud(item)
 end
 
 function CloudStorage:downloadListFiles(item)
+    self.password = self:getPasswordOrDropBoxAccessToken(item)
     local local_files = {}
     local path = item.sync_dest_folder
     local UI = require("ui/trapper")
@@ -468,7 +478,7 @@ function CloudStorage:downloadListFiles(item)
             end
         end
     end
-    local remote_files = DropBox:showFiles(item.sync_source_folder, item.password)
+    local remote_files = DropBox:showFiles(item.sync_source_folder, self.password)
     if #remote_files == 0 then
         UI:clear()
         return false
@@ -499,7 +509,7 @@ function CloudStorage:downloadListFiles(item)
             if not go_on then
                 break
             end
-            response = DropBox:downloadFileNoUI(file.url, item.password, item.sync_dest_folder .. "/" .. file.text)
+            response = DropBox:downloadFileNoUI(file.url, self.password, item.sync_dest_folder .. "/" .. file.text)
             if response then
                 success_files = success_files + 1
             else
@@ -790,7 +800,7 @@ end
 
 function CloudStorage:infoServer(item)
     if item.type == "dropbox" then
-        DropBox:info(item.password)
+        DropBox:info(self:getPasswordOrDropBoxAccessToken(item))
     elseif item.type == "ftp" then
         Ftp:info(item)
     elseif item.type == "webdav" then
