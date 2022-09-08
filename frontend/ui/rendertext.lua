@@ -161,7 +161,7 @@ end
 -- @treturn RenderTextSize
 function RenderText:sizeUtf8Text(x, width, face, text, kerning, bold)
     if not text then
-        logger.warn("sizeUtf8Text called without text");
+        logger.warn("sizeUtf8Text called without text")
         return { x = 0, y_top = 0, y_bottom = 0 }
     end
 
@@ -209,7 +209,7 @@ end
 -- @return int width of rendered bitmap
 function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bold, fgcolor, width, char_pads)
     if not text then
-        logger.warn("renderUtf8Text called without text");
+        logger.warn("renderUtf8Text called without text")
         return 0
     end
 

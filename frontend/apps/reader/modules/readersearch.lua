@@ -363,7 +363,7 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     Device:setIgnoreInput(true)
     local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits)
     Device:setIgnoreInput(false)
-    local regex_retval = regex and self.ui.document:getAndClearRegexSearchError();
+    local regex_retval = regex and self.ui.document:getAndClearRegexSearchError()
     if regex and regex_retval ~= 0 then
         local error_message
         if SRELL_ERROR_CODES[regex_retval] then

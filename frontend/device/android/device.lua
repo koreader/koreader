@@ -454,7 +454,7 @@ function Device:test()
 end
 
 function Device:exit()
-    android.LOGI(string.format("Stopping %s main activity", android.prop.name));
+    android.LOGI(string.format("Stopping %s main activity", android.prop.name))
     android.lib.ANativeActivity_finish(android.app.activity)
 end
 

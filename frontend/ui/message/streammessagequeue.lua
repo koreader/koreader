@@ -13,7 +13,7 @@ local StreamMessageQueue = MessageQueue:new{
 }
 
 function StreamMessageQueue:start()
-    self.context = czmq.zctx_new();
+    self.context = czmq.zctx_new()
     self.socket = czmq.zsocket_new(self.context, C.ZMQ_STREAM)
     self.poller = czmq.zpoller_new(self.socket, nil)
     local endpoint = string.format("tcp://%s:%d", self.host, self.port)

@@ -22,7 +22,7 @@ end
 
 function SwitchPlugin:new(o)
     o = self:extend(o)
-    assert(type(o.name) == "string", "name is required");
+    assert(type(o.name) == "string", "name is required")
     o.settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/" .. o.name .. ".lua")
     o.settings_id = 0
     SwitchPlugin._init(o)

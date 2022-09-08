@@ -875,8 +875,7 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
                 -- being shown: having them identical will hide that.
             end
         end,
-        close_discarded_notif_text = NOT_MODIFIED_MSG;
-
+        close_discarded_notif_text = NOT_MODIFIED_MSG,
     }
     UIManager:show(editor)
     editor:onShowKeyboard(true)
