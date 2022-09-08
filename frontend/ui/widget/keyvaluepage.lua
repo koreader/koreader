@@ -445,8 +445,8 @@ function KeyValuePage:init()
         close_callback = function() self:onClose() end,
         left_icon = self.title_bar_left_icon,
         left_icon_tap_callback = function()
-            if self.onTitleBarLeftButtonTap then
-                self.onTitleBarLeftButtonTap()
+            if self.onTitleBarLeftButtonTap and type(self.onTitleBarLeftButtonTap) == "function" then
+                self:onTitleBarLeftButtonTap()
             end
         end
     }
