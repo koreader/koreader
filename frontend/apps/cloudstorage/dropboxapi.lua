@@ -13,12 +13,40 @@ local _ = require("gettext")
 local DropBoxApi = {
 }
 
+local API_TOKEN = "https://api.dropbox.com/oauth2/token"
 local API_URL_INFO = "https://api.dropboxapi.com/2/users/get_current_account"
 local API_LIST_FOLDER = "https://api.dropboxapi.com/2/files/list_folder"
 local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
 local API_UPLOAD_FILE = "https://content.dropboxapi.com/2/files/upload"
 local API_CREATE_FOLDER = "https://api.dropboxapi.com/2/files/create_folder_v2"
 local API_LIST_ADD_FOLDER = "https://api.dropboxapi.com/2/files/list_folder/continue"
+
+function DropBoxApi:getAccessToken(refresh_token, app_key_secret_b64)
+    local sink = {}
+    local data = "grant_type=refresh_token&refresh_token=" .. refresh_token
+    local request = {
+        url     = API_TOKEN,
+        method  = "POST",
+        headers = {
+            ["Authorization"] = "Basic " .. app_key_secret_b64,
+            ["Content-Type"] = "application/x-www-form-urlencoded",
+            ["Content-Length"] = string.len(data),
+        },
+        source  = ltn12.source.string(data),
+        sink    = ltn12.sink.table(sink),
+    }
+    socketutil:set_timeout()
+    local code = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
+    if code == 200 then
+        local response = table.concat(sink)
+        if response ~= "" then
+            local _, result = pcall(JSON.decode, response)
+            return result["access_token"]
+        end
+    end
+    logger.info("Dropbox: cannot get access token")
+end
 
 function DropBoxApi:fetchInfo(token)
     local sink = {}
