@@ -17,7 +17,6 @@ local dbg = require("dbg")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local logger = require("logger")
 
 local Keyboard
 local FocusManagerInstance = FocusManager:new{}
@@ -73,10 +72,8 @@ function InputText:initEventListener() end
 function InputText:onFocus() end
 function InputText:onUnfocus() end
 
--- only use PhysicalKeyboard if the device does not have touch screen
-if Device:isTouchDevice() or Device:hasDPad() then
-    Keyboard = require("ui/widget/virtualkeyboard")
-    if Device:isTouchDevice() then
+local function initTouchEvents()
+    if Device.isTouchDevice() then
         function InputText:initEventListener()
             self.ges_events = {
                 TapTextBox = {
@@ -283,7 +280,10 @@ if Device:isTouchDevice() or Device:hasDPad() then
             return false
         end
     end
-    if Device:hasDPad() then
+end
+
+local function initDPadEvents()
+    if Device.hasDPad() then 
         function InputText:onFocus()
             -- Event called by the focusmanager
             if self.parent.onSwitchFocus then
@@ -301,9 +301,22 @@ if Device:isTouchDevice() or Device:hasDPad() then
             return true
         end
     end
-else
-    Keyboard = require("ui/widget/physicalkeyboard")
 end
+
+-- only use PhysicalKeyboard if the device does not have touch screen
+function InputText.initInputEvents()
+    FocusManagerInstance = FocusManager:new{}
+
+    if Device:isTouchDevice() or Device:hasDPad() then
+        Keyboard = require("ui/widget/virtualkeyboard")
+        initTouchEvents()
+        initDPadEvents()
+    else
+        Keyboard = require("ui/widget/physicalkeyboard")
+    end
+end
+
+InputText.initInputEvents()
 
 function InputText:checkTextEditability()
     -- The split of the 'text' string to a table of utf8 chars may not be
@@ -611,18 +624,15 @@ function InputText:onKeyPress(key)
     else
         handled = false
     end
-    if not handled and (Device.hasKeyboard() or Device:hasDPad()) then
+    if not handled and Device:hasDPad() then
         -- FocusManager may turn on alternative key maps.
         -- These key map maybe single text keys.
         -- It will cause unexpected focus move instead of enter text to InputText
-        local is_alternative_key = false
-        if Device:hasDPad() then
-            is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
-            if not is_alternative_key and Device:isSDL() then
-                -- SDL already insert char via TextInput event
-                -- Stop event propagate to FocusManager
-                return true
-            end
+        local is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
+        if not is_alternative_key and Device:isSDL() then
+            -- SDL already insert char via TextInput event
+            -- Stop event propagate to FocusManager
+            return true
         end
         -- if it is single text char, insert it
         local key_code = key.key -- is in upper case
