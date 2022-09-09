@@ -872,10 +872,8 @@ function Kobo:checkUnexpectedWakeup()
     else
         -- We've hit an early resume, assume this is unexpected (as we only run if Kobo:resume hasn't already).
         logger.dbg("Kobo suspend: checking unexpected wakeup number", self.unexpected_wakeup_count)
-        if self.unexpected_wakeup_count == 0 or self.unexpected_wakeup_count > 20 then
-            -- Don't put device back to sleep under the following two cases:
-            --   1. a resume event triggered Kobo:resume() function
-            --   2. trying to put device back to sleep more than 20 times after unexpected wakeup
+        if self.unexpected_wakeup_count > 20 then
+            -- If we've failed to put the device back to sleep over 20 consecutive times, we give up.
             -- Broadcast a specific event, so that AutoSuspend can pick up the baton...
             local Event = require("ui/event")
             UIManager:broadcastEvent(Event:new("UnexpectedWakeupLimit"))
@@ -886,8 +884,6 @@ function Kobo:checkUnexpectedWakeup()
         self:suspend()
     end
 end
-
-function Kobo:getUnexpectedWakeup() return self.unexpected_wakeup_count end
 
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
@@ -1042,10 +1038,8 @@ function Kobo:suspend()
     -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep
     --       things tidy and easier to follow
 
-    -- Kobo:resume() will reset unexpected_wakeup_count = 0 to signal an
-    -- expected wakeup, which gets checked in checkUnexpectedWakeup().
+    -- Kobo:resume() will reset unexpected_wakeup_count and unschedule the check to signal a sane wakeup.
     self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
-    -- We're assuming Kobo:resume() will be called in the next 15 seconds in ordrer to cancel that check.
     logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
     UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
 end
@@ -1089,7 +1083,9 @@ end
 
 function Kobo:usbPlugOut()
     -- Reset the unexpected wakeup shenanigans, since we're no longer charging, meaning power savings are now critical again ;).
-    self.unexpected_wakeup_count = 0
+    -- NOTE: We don't reset it to 0 to avoid tripping an early UnexpectedWakeupLimit.
+    --       (ALso, because, semantically, only resume should ever clear this).
+    self.unexpected_wakeup_count = 1
 end
 
 function Kobo:saveSettings()
