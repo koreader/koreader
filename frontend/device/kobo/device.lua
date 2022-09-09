@@ -1082,7 +1082,7 @@ function Kobo:resume()
 end
 
 function Kobo:usbPlugOut()
-    -- Rewind the unexpected wakeup shenanigans, since we're no longer charging, meaning power savings are now critical again ;).
+    -- Rewind the unexpected wakeup counter, since we're no longer charging, meaning power savings are now critical again ;).
     -- NOTE: We don't reset it to 0 because, semantically, only resume should ever be allowed to do so.
     if self.unexpected_wakeup_count > 0 then
         self.unexpected_wakeup_count = 1
