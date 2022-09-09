@@ -1084,7 +1084,9 @@ end
 function Kobo:usbPlugOut()
     -- Reset the unexpected wakeup shenanigans, since we're no longer charging, meaning power savings are now critical again ;).
     -- NOTE: We don't reset it to 0 because, semantically, only resume should ever be allowed to do so.
-    self.unexpected_wakeup_count = 1
+    if self.unexpected_wakeup_count > 0 then
+        self.unexpected_wakeup_count = 1
+    end
 end
 
 function Kobo:saveSettings()
