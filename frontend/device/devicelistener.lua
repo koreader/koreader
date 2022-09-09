@@ -1,4 +1,3 @@
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -316,18 +315,6 @@ end
 function DeviceListener:onSwapPageTurnButtons()
     _toggleSetting("input_invert_page_turn_keys")
     Device:invertButtons()
-end
-
-if Device:canReboot() then
-    function DeviceListener:onReboot()
-        UIManager:show(ConfirmBox:new{
-            text = _("Are you sure you want to reboot the device?"),
-            ok_text = _("Reboot"),
-            ok_callback = function()
-                UIManager:nextTick(UIManager.reboot_action)
-            end,
-        })
-    end
 end
 
 function DeviceListener:onRestart()
