@@ -1,3 +1,4 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -327,6 +328,7 @@ if Device:canReboot() then
             end,
         })
     end
+end
 
 function DeviceListener:onRestart()
     self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
