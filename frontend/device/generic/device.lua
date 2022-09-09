@@ -284,7 +284,7 @@ function Device:onPowerEvent(ev)
             -- Already in screen saver mode, no need to update UI/state before
             -- suspending the hardware. This usually happens when sleep cover
             -- is closed after the device was sent to suspend state.
-            logger.dbg("Already in screen saver mode, suspending...")
+            logger.dbg("Already in screen saver mode, going back to suspend...")
             self:rescheduleSuspend()
         end
     -- else we were not in screensaver mode
