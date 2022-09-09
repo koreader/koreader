@@ -847,6 +847,14 @@ local function getProductId()
     return product_id
 end
 
+-- NOTE: We overload this to make sure checkUnexpectedWakeup doesn't trip *before* the newly scheduled suspend
+function Kobo:rescheduleSuspend()
+    local UIManager = require("ui/uimanager")
+    UIManager:unschedule(self.suspend)
+    UIManager:unschedule(self.checkUnexpectedWakeup)
+    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
+end
+
 function Kobo:checkUnexpectedWakeup()
     local UIManager = require("ui/uimanager")
     -- Just in case another event like SleepCoverClosed also scheduled a suspend
