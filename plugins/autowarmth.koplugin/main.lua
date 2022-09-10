@@ -784,11 +784,11 @@ function AutoWarmth:getWarmthMenu()
         return {
             mode = mode,
             text_func = function()
-                if Device:hasNaturalLight() then
+                if Device:hasNaturalLight() and self.control_warmth then
                     if self.warmth[num] <= 100 then
                         return T(_("%1: %2 %"), text, self.warmth[num])
                     else
-                        return T(_("%1: 100 % + ☾"), text)
+                        return T(_("%1: 100 % %2"), text, self.control_nightmode and "+ ☾" or "")
                     end
                 else
                     if self.warmth[num] <= 100 then
@@ -960,12 +960,12 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
 
         if not t[num] then -- entry deactivated
             return retval .. "\n"
-        elseif Device:hasNaturalLight() then
+        elseif Device:hasNaturalLight() and self.control_warmth then
             if self.current_times_h[num] == t[num] then
                 if self.warmth[num] <= 100 then
                     return retval .. " (💡" .. self.warmth[num] .."%)\n"
                 else
-                    return retval .. " (💡100% + ☾)\n"
+                    return retval .. " (💡100%" .. (self.control_nightmode and " + ☾" or "") .. ")\n"
                 end
             else
                 return retval .. "\n"
