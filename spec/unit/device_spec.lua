@@ -2,6 +2,7 @@ describe("device module", function()
     -- luacheck: push ignore
     local mock_fb, mock_input
     local iopen = io.open
+    local ipopen = io.popen
     local osgetenv = os.getenv
     local ffi, C
 
@@ -43,6 +44,7 @@ describe("device module", function()
 
         os.getenv = osgetenv
         io.open = iopen
+        io.popen = ipopen
     end)
 
     describe("kobo", function()
@@ -163,36 +165,6 @@ describe("device module", function()
             -- reset eventAdjustHook
             kobo_dev.input.eventAdjustHook = function() end
         end)
-
-        it("should flush book settings before suspend", function()
-            local sample_pdf = "spec/front/unit/data/tall.pdf"
-            local ReaderUI = require("apps/reader/readerui")
-            local Device = require("device")
-
-            NickelConf.frontLightLevel.get.returns(1)
-            NickelConf.frontLightState.get.returns(0)
-
-            local UIManager = require("ui/uimanager")
-            stub(Device, "suspend")
-            stub(Device.powerd, "beforeSuspend")
-            stub(Device, "isKobo")
-
-            Device.isKobo.returns(true)
-            UIManager:init()
-
-            ReaderUI:doShowReader(sample_pdf)
-            local readerui = ReaderUI._getRunningInstance()
-            stub(readerui, "onFlushSettings")
-            UIManager.event_handlers["PowerPress"]()
-            UIManager.event_handlers["PowerRelease"]()
-            assert.stub(readerui.onFlushSettings).was_called()
-
-            Device.suspend:revert()
-            Device.powerd.beforeSuspend:revert()
-            Device.isKobo:revert()
-            readerui.onFlushSettings:revert()
-            readerui:onClose()
-        end)
     end)
 
     describe("kindle", function()
@@ -298,6 +270,170 @@ describe("device module", function()
 
             mock_ffi_input.waitForEvent:revert()
             UIManager.onRotation:revert()
+        end)
+    end)
+
+    describe("Flush book Settings for", function()
+        it("Kobo", function()
+            os.getenv.invokes(function(key)
+                if key == "PRODUCT" then
+                    return "trilogy"
+                else
+                    return osgetenv(key)
+                end
+            end)
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
+            local device_to_test = require("device/kobo/device")
+            local Device = require("device")
+            Device.setEventHandlers = device_to_test.setEventHandlers
+
+            local UIManager = require("ui/uimanager")
+            stub(Device, "suspend")
+            stub(Device.powerd, "beforeSuspend")
+            stub(Device, "isKobo")
+
+            Device.isKobo.returns(true)
+            UIManager:init()
+
+            ReaderUI:doShowReader(sample_pdf)
+            local readerui = ReaderUI._getRunningInstance()
+            stub(readerui, "onFlushSettings")
+            UIManager.event_handlers["PowerPress"]()
+            UIManager.event_handlers["PowerRelease"]()
+            assert.stub(readerui.onFlushSettings).was_called()
+
+            Device.suspend:revert()
+            Device.powerd.beforeSuspend:revert()
+            Device.isKobo:revert()
+            readerui.onFlushSettings:revert()
+            Device.screen_saver_mode = false
+            readerui:onClose()
+        end)
+
+        it("Cervantes", function()
+            io.popen = function(filename, mode)
+                if filename:find("/usr/bin/ntxinfo") then
+                    return {
+                        read = function()
+                            return 68 -- Cervantes4
+                        end,
+                        close = function() end
+                    }
+                else
+                    return ipopen(filename, mode)
+                end
+            end
+
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
+            local Device = require("device")
+            local device_to_test = require("device/cervantes/device")
+            Device.setEventHandlers = device_to_test.setEventHandlers
+
+            local UIManager = require("ui/uimanager")
+
+            stub(Device, "suspend")
+            stub(Device.powerd, "beforeSuspend")
+            stub(Device, "isCervantes")
+
+            Device.isCervantes.returns(true)
+            UIManager:init()
+
+            ReaderUI:doShowReader(sample_pdf)
+            local readerui = ReaderUI._getRunningInstance()
+            stub(readerui, "onFlushSettings")
+            UIManager.event_handlers["PowerPress"]()
+            UIManager.event_handlers["PowerRelease"]()
+            assert.stub(readerui.onFlushSettings).was_called()
+
+            Device.suspend:revert()
+            Device.powerd.beforeSuspend:revert()
+            Device.isCervantes:revert()
+            Device.screen_saver_mode = false
+            readerui.onFlushSettings:revert()
+            readerui:onClose()
+        end)
+
+        it("SDL", function()
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
+            local Device = require("device")
+            local device_to_test = require("device/sdl/device")
+            Device.setEventHandlers = device_to_test.setEventHandlers
+
+            local UIManager = require("ui/uimanager")
+
+            stub(Device, "suspend")
+            stub(Device.powerd, "beforeSuspend")
+            stub(Device, "isSDL")
+
+            Device.isSDL.returns(true)
+            UIManager:init()
+
+            ReaderUI:doShowReader(sample_pdf)
+            local readerui = ReaderUI._getRunningInstance()
+            stub(readerui, "onFlushSettings")
+            UIManager.event_handlers["PowerPress"]()
+            UIManager.event_handlers["PowerRelease"]()
+            assert.stub(readerui.onFlushSettings).was_called()
+
+            Device.suspend:revert()
+            Device.powerd.beforeSuspend:revert()
+            Device.isSDL:revert()
+            Device.screen_saver_mode = false
+            readerui.onFlushSettings:revert()
+            readerui:onClose()
+        end)
+
+        it("Remarkable", function()
+            io.open = function(filename, mode)
+                if filename == "/usr/bin/xochitl" then
+                    return {
+                        read = function()
+                            return true
+                        end,
+                        close = function() end
+                    }
+                elseif filename == "/sys/devices/soc0/machine" then
+                    return {
+                        read = function()
+                            return "reMarkable", "generic"
+                        end,
+                        close = function() end
+                    }
+                else
+                    return iopen(filename, mode)
+                end
+            end
+            local sample_pdf = "spec/front/unit/data/tall.pdf"
+            local ReaderUI = require("apps/reader/readerui")
+            local Device = require("device")
+            local device_to_test = require("device/remarkable/device")
+            Device.setEventHandlers = device_to_test.setEventHandlers
+
+            local UIManager = require("ui/uimanager")
+
+            stub(Device, "suspend")
+            stub(Device.powerd, "beforeSuspend")
+            stub(Device, "isRemarkable")
+
+            Device.isRemarkable.returns(true)
+            UIManager:init()
+
+            ReaderUI:doShowReader(sample_pdf)
+            local readerui = ReaderUI._getRunningInstance()
+            stub(readerui, "onFlushSettings")
+            UIManager.event_handlers["PowerPress"]()
+            UIManager.event_handlers["PowerRelease"]()
+            assert.stub(readerui.onFlushSettings).was_called()
+
+            Device.suspend:revert()
+            Device.powerd.beforeSuspend:revert()
+            Device.isRemarkable:revert()
+            Device.screen_saver_mode = false
+            readerui.onFlushSettings:revert()
+            readerui:onClose()
         end)
     end)
     -- luacheck: pop
