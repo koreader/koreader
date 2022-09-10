@@ -887,6 +887,7 @@ function AutoWarmth:getWarmthMenu()
                     G_reader_settings:makeTrue("autowarmth_control_warmth")
                     G_reader_settings:makeTrue("autowarmth_control_nightmode")
                 end
+                self:scheduleMidnightUpdate()
                 if touchmenu_instance then self:updateItems(touchmenu_instance) end
             end,
             keep_menu_open = true,
