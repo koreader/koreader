@@ -34,6 +34,24 @@ Install the prerequisites using DNF:
 sudo dnf install libstdc++-static SDL SDL-devel patch wget unzip git cmake luarocks autoconf nasm ragel gcc
 ```
 
+### Arch
+
+Install the prerequisites using PACMAN:
+
+```sh
+# The following may not be a complete list of required packages
+sudo pacman -S luarocks git ncurses
+```
+
+Also some manual changes have to be done:
+
+Arch only provides ncurses 6 now, but koreader needs `libncurses.so.5` and `libtinfo.so.5` but `ncurses` by default does not link them, so it has to be done manually:
+
+```sh
+sudo ln -sf /lib/libncursesw.so.6 /lib/libncurses.so.5
+sudo ln -sf /lib/libncursesw.so.6 /lib/libtinfo.so.5
+```
+
 ### macOS
 
 Install the prerequisites using [Homebrew](https://brew.sh/):
