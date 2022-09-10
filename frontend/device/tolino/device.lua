@@ -17,7 +17,12 @@ end
 -- Tolino Vision 5, hardware model "E70K00"
 local TolinoE70K00 = TolinoDevice:new{
     model = "Tolino_E70K00",
-    hasEinkScreen = yes
+    hasEinkScreen = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/lm3630a_led",
+        frontlight_red = "/sys/class/backlight/lm3630a_leda",
+        frontlight_green = "/sys/class/backlight/lm3630a_ledb",
+    },
 }
 
 if android.prop.hardwareType == "E70K00" then
