@@ -23,6 +23,6 @@ local TolinoVision5 = TolinoDevice:new{
 if android.prop.hardwareType == "E70K00" then
     return TolinoVision5
 else
-    logger.warn("unrecognized Tolino model ".. android.prop.product.hardwareType.. " using android generic")
+    logger.warn("unrecognized Tolino model ".. android.prop.product.hardwareType.. " using generic android")
     return AndroidDevice
 end
