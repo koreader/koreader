@@ -14,14 +14,14 @@ function TolinoDevice:init()
     self.input.event_map = require("device/tolino/event_map")
 end
 
--- Tolino Vision 5
-local TolinoVision5 = TolinoDevice:new{
-    model = "Tolino_vision_5",
+-- Tolino Vision 5, hardware model "E70K00"
+local TolinoE70K00 = TolinoDevice:new{
+    model = "Tolino_E70K00",
     hasEinkScreen = yes
 }
 
 if android.prop.hardwareType == "E70K00" then
-    return TolinoVision5
+    return TolinoE70K00
 else
     logger.warn("unrecognized Tolino model ".. android.prop.product.hardwareType.. " using generic android")
     return AndroidDevice
