@@ -17,6 +17,7 @@ local dbg = require("dbg")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
+local logger = require("logger")
 
 local Keyboard
 local FocusManagerInstance = FocusManager:new{}
@@ -305,12 +306,17 @@ end
 
 -- only use PhysicalKeyboard if the device does not have touch screen
 function InputText.initInputEvents()
+    logger.info("InputText.initInputEvents")
     FocusManagerInstance = FocusManager:new{}
 
     if Device:isTouchDevice() or Device:hasDPad() then
         Keyboard = require("ui/widget/virtualkeyboard")
         initTouchEvents()
         initDPadEvents()
+        if Device:hasKeyboard() then
+            logger.info("InputText.initInputEvents:hasKeyboard")
+            Keyboard = require("ui/widget/physicalkeyboard")
+        end
     else
         Keyboard = require("ui/widget/physicalkeyboard")
     end
@@ -559,6 +565,14 @@ function InputText:initKeyboard()
         keyboard_layer = keyboard_layer,
         inputbox = self,
     }
+end
+
+function InputText:onPhysicalKeyboardConnected()
+    -- self:init()
+end
+
+function InputText:onPhysicalKeyboardDisconnected()
+    -- self:init()
 end
 
 function InputText:unfocus()

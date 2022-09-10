@@ -114,11 +114,13 @@ function PhysicalKeyboard:onKeyPress(ev)
     if key == "Back" then
         logger.warn("TODO: exit keyboard")
     elseif key == "Del" then
+        logger.info("PhysicalKeyboard:del")
         self.inputbox:delChar()
     else
         if self.key_transformer then
             key = self.key_transformer[key]
         end
+        logger.info("PhysicalKeyboard:addChars")
         self.inputbox:addChars(key)
     end
 end

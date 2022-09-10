@@ -137,8 +137,9 @@ ExternalKeyboard.onUsbDevicePlugIn = UIManager:debounce(0.5, false, function(sel
     self:findAndSetupKeyboard()
 end)
 
-function ExternalKeyboard:onUsbDevicePlugOut()
+ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.1, false, function(self)
     logger.info("ExternalKeyboard:usbDevicePlugOut")
+    -- TODO: It may be another device disconnected. Check that the device event file is gone before cleaning up.
     if self.original_device_values then
         Device.input.event_map = self.original_device_values.event_map
         Device.keyboard_layout = self.original_device_values.keyboard_layout
@@ -150,9 +151,9 @@ function ExternalKeyboard:onUsbDevicePlugOut()
     -- So, calling a static function is the only choice.
     -- InputText.setKeyboard(require("ui/widget/virtualkeyboard"))
     -- Update the existing input widgets. It must be issued after the static state of InputText is updated.
+    InputText.initInputEvents()
     UIManager:broadcastEvent(Event:new("PhysicalKeyboardDisconnected"))
-
-end
+end)
 
 -- After charging event a usbPlugIn may follow.
 function ExternalKeyboard:onCharging()
@@ -194,12 +195,13 @@ function ExternalKeyboard:findAndSetupKeyboard()
         Device.hasKeyboard = yes
         -- TODO: map left and right modifiers to Shift, Ctrl, Etc.
         -- The FocusManager initializes some values with if device hasDPad. Later, if we set hasDPad, the logic that expects those values fails.
-        -- Device.hasDPad = yes  -- Most keyboards have directional keys. In the future the find-keyboard can detect it with the capabilities file.
+        Device.hasDPad = yes  -- Most keyboards have directional keys. In the future the find-keyboard can detect it with the capabilities file.
 
         UIManager:show(InfoMessage:new{
             text = _("Keyboard connected"),
             timeout = 1,
         })
+        InputText.initInputEvents()
         UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
     end
 end
