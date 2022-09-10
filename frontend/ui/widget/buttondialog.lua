@@ -19,18 +19,12 @@ A button dialog widget that shows a grid of buttons.
                     callback = function()
 
                     end,
-                    hold_callback = function()
-
-                    end
                 },
                 {
                     text = "First row, right side",
                     callback = function()
 
                     end,
-                    hold_callback = function()
-
-                    end
                 }
             },
             {
@@ -39,9 +33,6 @@ A button dialog widget that shows a grid of buttons.
                     callback = function()
 
                     end,
-                    hold_callback = function()
-
-                    end
                 }
             },
             {
@@ -50,18 +41,12 @@ A button dialog widget that shows a grid of buttons.
                     callback = function()
 
                     end,
-                    hold_callback = function()
-
-                    end
                 },
                 {
                     text = "Third row, right side",
                     callback = function()
-
+                    
                     end,
-                    hold_callback = function()
-
-                    end
                 }
             }
         }
