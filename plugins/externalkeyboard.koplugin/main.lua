@@ -181,7 +181,8 @@ end
 -- That may cause embedded buttons to lose their original function and produce letters.
 -- Can we tell from which device a key press comes? The koreader-base passes values of input_event which do not have file descriptors.
 function ExternalKeyboard:findAndSetupKeyboard()
-    local event_path = FindKeyboard:find()
+    local event_path, has_dpad = FindKeyboard:find()
+    logger.info("findAndSetupKeyboard " .. tostring(event_path) .. " " .. tostring(has_dpad))
     if event_path then
         local ok, fd = pcall(Device.input.open, event_path)
         if not ok then
@@ -200,7 +201,7 @@ function ExternalKeyboard:findAndSetupKeyboard()
             hasKeyboard = Device.hasKeyboard,
             hasDPad = Device.hasDPad,
         }
-        -- Avoid mutating the original event map.
+        -- Using a new table avoids mutating the original event map.
         local event_map = {}
         util.tableMerge(event_map, Device.input.event_map)
         util.tableMerge(event_map, event_map_keyboard)
@@ -208,8 +209,9 @@ function ExternalKeyboard:findAndSetupKeyboard()
         Device.keyboard_layout = require("device/kindle/keyboard_layout") -- TODO: replace with with independent layout.
         Device.hasKeyboard = yes
         -- TODO: map left and right modifiers to Shift, Ctrl, Etc.
-        -- The FocusManager initializes some values with if device hasDPad. Later, if we set hasDPad, the logic that expects those values fails.
-        Device.hasDPad = yes  -- Most keyboards have directional keys. In the future the find-keyboard can detect it with the capabilities file.
+        if has_dpad then
+            Device.hasDPad = yes
+        end
 
         UIManager:show(InfoMessage:new{
             text = _("Keyboard connected"),

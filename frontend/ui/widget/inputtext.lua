@@ -315,7 +315,7 @@ function InputText.initInputEvents()
         initDPadEvents()
         if Device:hasKeyboard() then
             logger.info("InputText.initInputEvents:hasKeyboard")
-            Keyboard = require("ui/widget/physicalkeyboard")
+            -- Keyboard = require("ui/widget/physicalkeyboard")
         end
     else
         Keyboard = require("ui/widget/physicalkeyboard")
