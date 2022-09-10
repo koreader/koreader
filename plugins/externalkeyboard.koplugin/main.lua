@@ -142,9 +142,16 @@ ExternalKeyboard.onUsbDevicePlugIn = UIManager:debounce(0.5, false, function(sel
     self:findAndSetupKeyboard()
 end)
 
-ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.1, false, function(self)
+ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.5, false, function(self)
     logger.info("ExternalKeyboard:usbDevicePlugOut")
-    -- TODO: It may be another device disconnected. Check that the device event file is gone before cleaning up.
+    if not self.keyboard_file_path or lfs.attributes(self.keyboard_file_path, "mode") ~= nil then
+        -- Another device may have been disconnected.
+        return
+    end
+
+    self.keyboard_fd = nil
+    self.keyboard_file_path = nil
+
     if self.original_device_values then
         Device.input.event_map = self.original_device_values.event_map
         Device.keyboard_layout = self.original_device_values.keyboard_layout
@@ -183,6 +190,8 @@ function ExternalKeyboard:findAndSetupKeyboard()
             })
             return
         end
+        self.keyboard_fd = fd
+        self.keyboard_file_path = event_path
 
         -- The setting for input_invert_page_turn_keys wouldn't mess up the new event map. Device module applies it on initialization, not dynamically.
         self.original_device_values = {
