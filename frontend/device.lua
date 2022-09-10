@@ -1,10 +1,15 @@
-local isAndroid, _ = pcall(require, "android")
+local isAndroid, android = pcall(require, "android")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("ffi/util")
 
 local function probeDevice()
     if isAndroid then
         util.noSDL()
+
+        if android.prop.model == "tolino" then
+            return require("device/tolino/device")
+        end
+
         return require("device/android/device")
     end
 
