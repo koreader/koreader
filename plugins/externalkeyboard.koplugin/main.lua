@@ -45,8 +45,13 @@ local ExternalKeyboard = WidgetContainer:new{
 
 function ExternalKeyboard:init()
     self.ui.menu:registerToMainMenu(self)
-    if G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
+    local role = self:getOtgRole()
+    if role == USB_ROLE_DEVICE and G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
         self:setOTG(USB_ROLE_HOST)
+        role = USB_ROLE_HOST
+    end
+    if role == USB_ROLE_HOST then
+        self:findAndSetupKeyboard()
     end
 end
 
