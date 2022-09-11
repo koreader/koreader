@@ -12,24 +12,28 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
 local MovableContainer = require("ui/widget/container/movablecontainer")
+local Notification = require("ui/widget/notification")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local T = require("ffi/util").template
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
 local TextViewer = InputContainer:new{
-    modal = true,
     title = nil,
     text = nil,
     width = nil,
@@ -56,6 +60,9 @@ local TextViewer = InputContainer:new{
     text_padding = Size.padding.large,
     text_margin = Size.margin.small,
     button_padding = Size.padding.default,
+    -- Bottom row with Close, Find buttons. Also added when no caller's buttons defined.
+    add_default_buttons = nil,
+    default_hold_callback = nil, -- on each default button
 }
 
 function TextViewer:init()
@@ -112,17 +119,67 @@ function TextViewer:init()
         show_parent = self,
     }
 
-    local buttons = self.buttons_table or
+    local default_buttons =
         {
             {
-                {
-                    text = _("Close"),
-                    callback = function()
-                        self:onClose()
-                    end,
-                },
+                text = _("Close"),
+                callback = function()
+                    self:onClose()
+                end,
+                hold_callback = self.default_hold_callback,
+            },
+            {
+                text = _("Find"),
+                callback = function()
+                    local input_dialog
+                    input_dialog = InputDialog:new{
+                        title = _("Enter text to search for"),
+                        input = self.search_value,
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(input_dialog)
+                                    end,
+                                },
+                                {
+                                    text = _("Find first"),
+                                    callback = function()
+                                        self:findCallback(input_dialog, true)
+                                    end,
+                                },
+                                {
+                                    text = _("Find next"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        self:findCallback(input_dialog)
+                                    end,
+                                },
+                            },
+                        },
+                    }
+
+                    self.check_button_case = CheckButton:new{
+                        text = _("Case sensitive"),
+                        checked = self.case_sensitive,
+                        parent = input_dialog,
+                        callback = function()
+                            self.case_sensitive = self.check_button_case.checked
+                        end,
+                    }
+                    input_dialog:addWidget(self.check_button_case)
+
+                    UIManager:show(input_dialog)
+                    input_dialog:onShowKeyboard()
+                end,
+                hold_callback = self.default_hold_callback,
             },
         }
+    local buttons = self.buttons_table or { default_buttons }
+    if self.add_default_buttons then
+        table.insert(buttons, default_buttons)
+    end
     local button_table = ButtonTable:new{
         width = self.width - 2*self.button_padding,
         buttons = buttons,
@@ -242,6 +299,24 @@ function TextViewer:onSwipe(arg, ges)
     end
     -- Let our MovableContainer handle swipe outside of text
     return self.movable:onMovableSwipe(arg, ges)
+end
+
+function TextViewer:findCallback(input_dialog, find_first)
+    self.search_value = input_dialog:getInputText()
+    if self.search_value == "" then return end
+    UIManager:close(input_dialog)
+    local start_pos = find_first and 1 or (self.scroll_text_w:getCharPos() or 0) + 1
+    local char_pos = util.stringSearch(self.text, self.search_value, self.case_sensitive, start_pos)
+    local msg
+    if char_pos > 0 then
+        self.scroll_text_w:moveCursorToCharPos(char_pos)
+        msg = T(_("Found, screen line %1."), self.scroll_text_w:getCharPosLineNum())
+    else
+        msg = _("Not found.")
+    end
+    UIManager:show(Notification:new{
+        text = msg,
+    })
 end
 
 return TextViewer
