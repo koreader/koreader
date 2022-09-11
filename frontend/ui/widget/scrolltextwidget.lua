@@ -144,6 +144,11 @@ function ScrollTextWidget:getCharPos()
     return self.text_widget:getCharPos()
 end
 
+function ScrollTextWidget:getCharPosLineNum(charpos)
+    local _, _, line_num = self.text_widget:_getXYForCharPos(charpos)
+    return line_num -- screen line number
+end
+
 function ScrollTextWidget:updateScrollBar(is_partial)
     local low, high = self.text_widget:getVisibleHeightRatios()
     if low ~= self.prev_low or high ~= self.prev_high then
