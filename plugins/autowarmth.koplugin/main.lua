@@ -829,7 +829,7 @@ function AutoWarmth:getWarmthMenu()
                     })
                 else
                     UIManager:show(ConfirmBox:new{
-                        text = _("Nightmode"),
+                        text = _("Night mode"),
                         ok_text = _("Set"),
                         ok_callback = function()
                             self.warmth[num] = 110
