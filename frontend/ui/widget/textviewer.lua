@@ -319,7 +319,7 @@ function TextViewer:findCallback(input_dialog, find_first)
     local char_pos = util.stringSearch(self.text, self.search_value, self.case_sensitive, start_pos)
     local msg
     if char_pos > 0 then
-        self.scroll_text_w:moveCursorToCharPos(char_pos)
+        self.scroll_text_w:moveCursorToCharPos(char_pos, true)
         msg = T(_("Found, screen line %1."), self.scroll_text_w:getCharPosLineNum())
     else
         msg = _("Not found.")
