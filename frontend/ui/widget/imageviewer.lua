@@ -75,6 +75,7 @@ local ImageViewer = InputContainer:new{
     _image_wg = nil,
     _images_list = nil,
     _images_list_disposable = nil,
+    _scaled_image_func = nil,
 
 }
 
@@ -146,6 +147,12 @@ function ImageViewer:init()
         -- also swap disposable status
         self._images_list_disposable = self.image_disposable
         self.image_disposable = self._images_list.image_disposable
+    end
+    -- If self.image is a function (scalable SVG image object provided by crengine),
+    -- it can be used to get the perfect bb for any scale_factor
+    if type(self.image) == "function" then
+        self._scaled_image_func = self.image
+        self.image = self._scaled_image_func(1) -- native image size, that we need to know
     end
 
     -- Widget layout
@@ -410,6 +417,16 @@ function ImageViewer:_new_image_wg()
         rotation_angle = rotate_clockwise and 90 or 270
     end
 
+    if self._scaled_image_func then
+        local scale_factor_used
+        self.image, scale_factor_used = self._scaled_image_func(self.scale_factor, max_image_w, max_image_h)
+        if self.scale_factor == 0 then
+            -- onZoomIn/Out need to know the current scale factor, that they won't be
+            -- able to fetch from _image_wg as we force it to be 1. So, remember it.
+            self._scale_factor_0 = scale_factor_used
+        end
+    end
+
     self._image_wg = ImageWidget:new{
         file = self.file,
         image = self.image,
@@ -418,7 +435,7 @@ function ImageViewer:_new_image_wg()
         width = max_image_w,
         height = max_image_h,
         rotation_angle = rotation_angle,
-        scale_factor = self.scale_factor,
+        scale_factor = self._scaled_image_func and 1 or self.scale_factor,
         center_x_ratio = self._center_x_ratio,
         center_y_ratio = self._center_y_ratio,
     }
@@ -621,7 +638,7 @@ end
 function ImageViewer:onZoomIn(inc)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
-        self.scale_factor = self._image_wg:getScaleFactor()
+        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
     if not inc then inc = 0.2 end -- default for key zoom event
     self.scale_factor = self.scale_factor + inc
@@ -636,7 +653,7 @@ end
 function ImageViewer:onZoomOut(dec)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
-        self.scale_factor = self._image_wg:getScaleFactor()
+        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
     if not dec then dec = 0.2 end -- default for key zoom event
     self.scale_factor = self.scale_factor - dec
@@ -724,6 +741,10 @@ function ImageViewer:onCloseWidget()
     if self._images_list and self._images_list_disposable and self._images_list.free then
         logger.dbg("ImageViewer:onCloseWidget: free self._images_list", self._images_list)
         self._images_list:free()
+    end
+    if self._scaled_image_func then
+        self._scaled_image_func(false) -- invoke :free() on the creimage object
+        self._scaled_image_func = nil
     end
 
     -- Those, on the other hand, are always initialized, but may not actually be in our widget tree right now,
