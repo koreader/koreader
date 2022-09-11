@@ -7,12 +7,8 @@ A button dialog widget that shows a grid of buttons.
             {
                 {
                     text = "First row, left side",
-                    callback = function()
-
-                    end,
-                    hold_callback = function()
-
-                    end
+                    callback = function() end,
+                    hold_callback = function() end
                 },
                 {
                     text = "First row, middle",
