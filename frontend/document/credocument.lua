@@ -539,13 +539,39 @@ function CreDocument:getCoverPageImage()
     end
 end
 
-function CreDocument:getImageFromPosition(pos, want_frames)
-    local data, size = self._document:getImageDataFromPosition(pos.x, pos.y)
+function CreDocument:getImageFromPosition(pos, want_frames, accept_cre_scalable_image)
+    local data, size, cre_img = self._document:getImageDataFromPosition(pos.x, pos.y, accept_cre_scalable_image)
     if data and size then
         logger.dbg("CreDocument: got image data from position", data, size)
         local image = RenderImage:renderImageData(data, size, want_frames)
         C.free(data) -- free the userdata we got from crengine
         return image
+    end
+    if cre_img then
+        -- The image is a scalable image (SVG), and we got an image object from crengine, that
+        -- can draw itself at any requested scale factor: returns a function, that will be used
+        -- by ImageViewer to get the perfect bb.
+        return function(scale, w, h)
+            logger.dbg("CreImage: scaling for", scale, w, h)
+            if not cre_img then
+                return
+            end
+            if scale == false then -- used to signal we are done with the object
+                cre_img:free()
+                cre_img = false
+                return
+            end
+            -- scale will be used if non-0, otherwise the bb will be made to fit in w/h,
+            -- keeping the original aspect ratio
+            local image_data, image_w, image_h, image_scale = cre_img:renderScaled(scale, w, h)
+            if image_data then
+                -- This data is held in the cre_img object, so this bb is only
+                -- valid as long as this object is alive, and until the next
+                -- call to this function that will replace this data.
+                local bb = Blitbuffer.new(image_w, image_h, Blitbuffer.TYPE_BBRGB32, image_data)
+                return bb, image_scale
+            end
+        end
     end
 end
 

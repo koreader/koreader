@@ -1008,7 +1008,9 @@ function ReaderHighlight:onHold(arg, ges)
     -- check if we were holding on an image
     -- we provide want_frames=true, so we get a list of images for
     -- animated GIFs (supported by ImageViewer)
-    local image = self.ui.document:getImageFromPosition(self.hold_pos, true)
+    -- We provide accept_cre_scalable_image=true to get, if the image is a SVG image,
+    -- a function that ImageViewer can use to get a perfect bb at any scale factor.
+    local image = self.ui.document:getImageFromPosition(self.hold_pos, true, true)
     if image then
         logger.dbg("hold on image")
         local ImageViewer = require("ui/widget/imageviewer")
