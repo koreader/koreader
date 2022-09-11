@@ -1707,6 +1707,30 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
     end
 end
 
+-- Update view to show the line with charpos not far than 5 lines away
+-- from the middle of the screen, and draw the cursor.
+function TextBoxWidget:moveCursorToCharPosMiddle(charpos)
+    local old_virtual_line_num = self.virtual_line_num
+    self.for_measurement_only = true
+    self:moveCursorToCharPos(charpos)
+    self.for_measurement_only = false
+    local _, _, screen_line_num = self:_getXYForCharPos(charpos)
+    new_virtual_line_num = self.virtual_line_num + screen_line_num - self.lines_per_page / 2
+    local max_virtual_line_num = #self.vertical_string_list - self.lines_per_page + 1
+    if new_virtual_line_num < 1 then
+        new_virtual_line_num = 1
+    elseif new_virtual_line_num > max_virtual_line_num then
+        new_virtual_line_num = max_virtual_line_num
+    end
+    if math.abs(new_virtual_line_num - old_virtual_line_num) > 5 then
+        self.virtual_line_num = new_virtual_line_num
+    else
+        self.virtual_line_num = old_virtual_line_num
+    end
+    self:_updateLayout()
+    self:moveCursorToCharPos(charpos)
+end
+
 function TextBoxWidget:moveCursorToXY(x, y, restrict_to_view)
     if restrict_to_view then
         -- Wrap y to current view (when getting coordinates from gesture)
