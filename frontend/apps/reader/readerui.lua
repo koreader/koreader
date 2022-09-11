@@ -122,6 +122,7 @@ function ReaderUI:init()
 
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "open file browser" }
+        self.key_events.Reload = { {"F5"}, doc = "reload document" }
     end
 
     -- a view container (so it must be child #1!)
@@ -809,6 +810,10 @@ function ReaderUI:onHome()
     self:onClose()
     self:showFileManager()
     return true
+end
+
+function ReaderUI:onReload()
+    self:reloadDocument()
 end
 
 function ReaderUI:reloadDocument(after_close_callback)
