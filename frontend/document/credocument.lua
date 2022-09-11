@@ -1402,6 +1402,7 @@ function CreDocument:register(registry)
     registry:addProvider("prc", "application/vnd.palm", self)
     registry:addProvider("rtf", "application/rtf", self, 90)
     registry:addProvider("rtf.zip", "application/rtf+zip", self, 90) -- Alternative mimetype for OPDS.
+    registry:addProvider("svg", "image/svg+xml", self, 90)
     registry:addProvider("tcr", "application/tcr", self)
     registry:addProvider("txt", "text/plain", self, 90)
     registry:addProvider("txt.zip", "application/zip", self, 90)
