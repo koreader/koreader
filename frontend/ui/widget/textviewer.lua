@@ -173,11 +173,19 @@ function TextViewer:init()
                     UIManager:show(input_dialog)
                     input_dialog:onShowKeyboard()
                 end,
-                hold_callback = self.default_hold_callback,
+                hold_callback = function()
+                    if self.search_value then -- Find next
+                        self:findCallback()
+                    else
+                        if self.default_hold_callback then
+                            self.default_hold_callback()
+                        end
+                    end
+                end,
             },
         }
-    local buttons = self.buttons_table or { default_buttons }
-    if self.add_default_buttons then
+    local buttons = self.buttons_table or {}
+    if self.add_default_buttons or not self.buttons_table then
         table.insert(buttons, default_buttons)
     end
     local button_table = ButtonTable:new{
@@ -302,9 +310,11 @@ function TextViewer:onSwipe(arg, ges)
 end
 
 function TextViewer:findCallback(input_dialog, find_first)
-    self.search_value = input_dialog:getInputText()
-    if self.search_value == "" then return end
-    UIManager:close(input_dialog)
+    if input_dialog then
+        self.search_value = input_dialog:getInputText()
+        if self.search_value == "" then return end
+        UIManager:close(input_dialog)
+    end
     local start_pos = find_first and 1 or (self.scroll_text_w:getCharPos() or 0) + 1
     local char_pos = util.stringSearch(self.text, self.search_value, self.case_sensitive, start_pos)
     local msg
