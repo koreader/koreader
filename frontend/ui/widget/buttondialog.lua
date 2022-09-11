@@ -12,37 +12,27 @@ A button dialog widget that shows a grid of buttons.
                 },
                 {
                     text = "First row, middle",
-                    callback = function()
-
-                    end,
+                    callback = function() end
                 },
                 {
                     text = "First row, right side",
-                    callback = function()
-
-                    end,
+                    callback = function() end
                 }
             },
             {
                 {
                     text = "Second row, full span",
-                    callback = function()
-
-                    end,
+                    callback = function() end
                 }
             },
             {
                 {
                     text = "Third row, left side",
-                    callback = function()
-
-                    end,
+                    callback = function() end
                 },
                 {
                     text = "Third row, right side",
-                    callback = function()
-                    
-                    end,
+                    callback = function() end
                 }
             }
         }
