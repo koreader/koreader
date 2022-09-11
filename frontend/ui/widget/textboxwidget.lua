@@ -1389,6 +1389,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
         end
     end
     local y = (ln - self.virtual_line_num) * self.line_height_px
+    local screen_line_num = ln - self.virtual_line_num + 1
 
     -- Find the x offset in the current line.
 
@@ -1441,7 +1442,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
             end
         end
         -- logger.dbg("_getXYForCharPos(", charpos, "):", x, y)
-        return x, y
+        return x, y, screen_line_num
     end
 
     -- Only when not self.use_xtext:
@@ -1458,7 +1459,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
     -- Cursor can be drawn at x, it will be on the left of the char pointed by charpos
     -- (x=0 for first char of line - for end of line, it will be before the \n, the \n
     -- itself being not displayed)
-    return x, y
+    return x, y, screen_line_num
 end
 
 -- Return the charpos at provided coordinates (relative to current view,
@@ -1565,11 +1566,6 @@ local CURSOR_USE_REFRESH_FUNCS = G_reader_settings:nilOrTrue("ui_cursor_use_refr
 -- Update charpos to the one provided; if out of current view, update
 -- virtual_line_num to move it to view, and draw the cursor
 function TextBoxWidget:moveCursorToCharPos(charpos)
-    if not self.editable then
-        -- we shouldn't have been called if not editable
-        logger.warn("TextBoxWidget:moveCursorToCharPos called, but not editable")
-        return
-    end
     self.charpos = charpos
     self.prev_virtual_line_num = self.virtual_line_num
     local x, y = self:_getXYForCharPos() -- we can get y outside current view
