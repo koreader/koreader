@@ -936,16 +936,16 @@ function Menu:init()
         }
     end
 
-    if self.is_enable_shortcut then
-        self.key_events.SelectByShortCut = { {self.item_shortcuts} }
-        if Device:hasDPad() then
-            -- we won't catch presses to "Right", leave that to MenuItem.
-            self.key_events.FocusRight = nil
-            -- shortcut icon is not needed for touch device
-            self.key_events.Right = {
-                {"Right"}, doc = "hold  menu item"
-            }
+    if Device:hasDPad() then
+        -- we won't catch presses to "Right", leave that to MenuItem.
+        self.key_events.FocusRight = nil
+        -- shortcut icon is not needed for touch device
+        if self.is_enable_shortcut then
+            self.key_events.SelectByShortCut = { {self.item_shortcuts} }
         end
+        self.key_events.Right = {
+            {"Right"}, doc = "hold  menu item"
+        }
     end
 
     if #self.item_table > 0 then

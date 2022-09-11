@@ -36,9 +36,7 @@ function FocusManager:init()
     self.key_events = nil
     self.builtin_key_events = nil
     self.extra_key_events = nil
-    logger.info("FocusManager:init")
     if Device:hasDPad() then
-        logger.info("FocusManager:Device:hasDPad")
         local event_keys = {}
         -- these will all generate the same event, just with different arguments
         table.insert(event_keys, {"FocusUp",    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} } })
@@ -255,17 +253,15 @@ function FocusManager:onFocusMove(args)
 end
 
 function FocusManager:onPhysicalKeyboardConnected()
-    -- Re-initialize with new keys info.
+    -- Re-initialize with new keys info. It's called without "self:" in case descendants override init.
     FocusManager.init(self)
-    -- Re-initialize descendant of FocusManager.
+    -- This may be the same function as called above or descendant of FocusManager.
     self:init()
-    logger.info("FocusManager:onPhysicalKeyboardConnected", debug.getinfo(self.init, "S").short_src)
 end
 
 function FocusManager:onPhysicalKeyboardDisconnected()
     FocusManager.init(self)
     self:init()
-    logger.info("FocusManager:onPhysicalKeyboardDisconnected")
 end
 
 -- constant, used to reset focus widget after layout recreation

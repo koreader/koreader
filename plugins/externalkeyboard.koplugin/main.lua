@@ -46,6 +46,7 @@ local ExternalKeyboard = WidgetContainer:new{
 function ExternalKeyboard:init()
     self.ui.menu:registerToMainMenu(self)
     local role = self:getOtgRole()
+    logger.dbg("ExternalKeyboard: role", role)
     if role == USB_ROLE_DEVICE and G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
         self:setOTG(USB_ROLE_HOST)
         role = USB_ROLE_HOST
@@ -122,14 +123,13 @@ function ExternalKeyboard:getOtgRole()
     if file then
         local debug_role = file:read("l")
         file:close()
-        logger.info("ExternalKeyboard:getOtgRole " .. debug_role)
         return self:chipideaRoleToUSBRole(debug_role)
     end
     return role
 end
 
 function ExternalKeyboard:setOTG(role)
-    logger.info("ExternalKeyboard:setOTG setting to " .. role)
+    logger.dbg("ExternalKeyboard:setOTG setting to", role)
     local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "w")
     if file then
         file:write(self:USBRoleToChipideaRole(role))
@@ -138,16 +138,16 @@ function ExternalKeyboard:setOTG(role)
 end
 
 ExternalKeyboard.onUsbDevicePlugIn = UIManager:debounce(0.5, false, function(self)
-    logger.info("ExternalKeyboard:usbDevicePlugIn")
     self:findAndSetupKeyboard()
 end)
 
 ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.5, false, function(self)
-    logger.info("ExternalKeyboard:usbDevicePlugOut")
     if not self.keyboard_file_path or lfs.attributes(self.keyboard_file_path, "mode") ~= nil then
         -- Another device may have been disconnected.
         return
     end
+
+    logger.dbg("ExternalKeyboard: onUsbDevicePlugOut")
 
     self.keyboard_fd = nil
     self.keyboard_file_path = nil
@@ -167,59 +167,49 @@ ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.5, false, function(se
     UIManager:broadcastEvent(Event:new("PhysicalKeyboardDisconnected"))
 end)
 
--- After charging event a usbPlugIn may follow.
-function ExternalKeyboard:onCharging()
-    logger.info("ExternalKeyboard:onCharging")
-end
-
-function ExternalKeyboard:onNotCharging()
-    logger.info("ExternalKeyboard:onNotCharging")
-end
-
-
 -- The keyboard events with the same key codes would override the original events.
 -- That may cause embedded buttons to lose their original function and produce letters.
 -- Can we tell from which device a key press comes? The koreader-base passes values of input_event which do not have file descriptors.
 function ExternalKeyboard:findAndSetupKeyboard()
     local event_path, has_dpad = FindKeyboard:find()
-    logger.info("findAndSetupKeyboard " .. tostring(event_path) .. " " .. tostring(has_dpad))
-    if event_path then
-        local ok, fd = pcall(Device.input.open, event_path)
-        if not ok then
-            UIManager:show(InfoMessage:new{
-                text = "Error opening the keyboard device " .. event_path .. ":\n" .. tostring(fd),
-            })
-            return
-        end
-        self.keyboard_fd = fd
-        self.keyboard_file_path = event_path
-
-        -- The setting for input_invert_page_turn_keys wouldn't mess up the new event map. Device module applies it on initialization, not dynamically.
-        self.original_device_values = {
-            event_map = Device.input.event_map,
-            keyboard_layout = Device.keyboard_layout,
-            hasKeyboard = Device.hasKeyboard,
-            hasDPad = Device.hasDPad,
-        }
-        -- Using a new table avoids mutating the original event map.
-        local event_map = {}
-        util.tableMerge(event_map, Device.input.event_map)
-        util.tableMerge(event_map, event_map_keyboard)
-        Device.input.event_map = event_map
-        Device.keyboard_layout = require("device/kindle/keyboard_layout") -- TODO: replace with with independent layout.
-        Device.hasKeyboard = yes
-        -- TODO: map left and right modifiers to Shift, Ctrl, Etc.
-        if has_dpad then
-            Device.hasDPad = yes
-        end
-
-        UIManager:show(InfoMessage:new{
-            text = _("Keyboard connected"),
-            timeout = 1,
-        })
-        InputText.initInputEvents()
-        UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
+    if event_path == nil then
+        return
     end
+
+    logger.dbg("ExternalKeyboard:findAndSetupKeyboard found event path", event_path, "has_dpad", has_dpad)
+    local ok, fd = pcall(Device.input.open, event_path)
+    if not ok then
+        UIManager:show(InfoMessage:new{
+            text = "Error opening the keyboard device " .. event_path .. ":\n" .. tostring(fd),
+        })
+        return
+    end
+    self.keyboard_fd = fd
+    self.keyboard_file_path = event_path
+
+    -- The setting for input_invert_page_turn_keys wouldn't mess up the new event map. Device module applies it on initialization, not dynamically.
+    self.original_device_values = {
+        event_map = Device.input.event_map,
+        keyboard_layout = Device.keyboard_layout,
+        hasKeyboard = Device.hasKeyboard,
+        hasDPad = Device.hasDPad,
+    }
+    -- Using a new table avoids mutating the original event map.
+    local event_map = {}
+    util.tableMerge(event_map, Device.input.event_map)
+    util.tableMerge(event_map, event_map_keyboard)
+    Device.input.event_map = event_map
+    Device.hasKeyboard = yes
+    if has_dpad then
+        Device.hasDPad = yes
+    end
+
+    UIManager:show(InfoMessage:new{
+        text = _("Keyboard connected"),
+        timeout = 1,
+    })
+    InputText.initInputEvents()
+    UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
 end
 
 function ExternalKeyboard:showHelp()
