@@ -389,7 +389,7 @@ function PdfDocument:register(registry)
     registry:addProvider("png", "image/png", self, 90)
     registry:addProvider("pnm", "image/x‑portable‑bitmap", self, 90)
     registry:addProvider("ppm", "image/x‑portable‑bitmap", self, 90)
-    registry:addProvider("svg", "image/svg+xml", self, 90)
+    registry:addProvider("svg", "image/svg+xml", self, 80)
     registry:addProvider("tif", "image/tiff", self, 90)
     registry:addProvider("tiff", "image/tiff", self, 90)
     -- Windows Media Photo == JPEG XR
