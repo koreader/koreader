@@ -62,7 +62,14 @@ Building for Android requires `openjdk-8-jdk` and `p7zip-full`.
 For both Ubuntu and Debian, install the packages:
 
 ```
-sudo apt-get install openjdk-8-jdk p7zip-full
+sudo apt-get install openjdk-8-jdk p7zip-full ncurses
+```
+
+Note: In case a more up-to-date package manager is used (like Arch), then it may be necessary to link the following files because `ncurses` by default does not provide those anymore but are necessary for `android-ndk-r15c`:
+
+```sh
+sudo ln -sf ./libncursesw.so.6.3 ./libncurses.so.5
+sudo ln -sf ./libncursesw.so.6.3 ./libtinfo.so.5
 ```
 
 #### for Debian
