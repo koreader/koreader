@@ -131,9 +131,17 @@ local Device = Generic:new{
 function Device:init()
     self.screen = require("ffi/framebuffer_android"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/android/powerd"):new{device = self}
+
+    local event_map = require("device/android/event_map")
+
+    if android.prop.model == "tolino" then
+        android_eventmap[21] = "LPgBack" -- changed for Tolino Buttons (up key)
+        android_eventmap[22] = "LPgFwd" -- changed for Tolino Buttons (down key)
+    end
+
     self.input = require("device/input"):new{
         device = self,
-        event_map = require("device/android/event_map"),
+        event_map = event_map,
         handleMiscEv = function(this, ev)
             local Event = require("ui/event")
             local UIManager = require("ui/uimanager")
