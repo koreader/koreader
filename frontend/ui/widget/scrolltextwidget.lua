@@ -192,8 +192,12 @@ function ScrollTextWidget:resetScroll()
     self.v_scroll_bar.enable = visible_line_count < total_line_count
 end
 
-function ScrollTextWidget:moveCursorToCharPos(charpos)
-    self.text_widget:moveCursorToCharPos(charpos)
+function ScrollTextWidget:moveCursorToCharPos(charpos, middle)
+    if middle then
+        self.text_widget:moveCursorToCharPosMiddle(charpos)
+    else
+        self.text_widget:moveCursorToCharPos(charpos)
+    end
     self:updateScrollBar()
 end
 
