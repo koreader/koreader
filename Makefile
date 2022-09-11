@@ -366,6 +366,10 @@ androidupdate: all
 	# in runtime luajit-launcher's libluajit.so will be loaded
 	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
 
+	# needs to be done because otherwise "luajit" is not included in the android build
+	cp $(ANDROID_LAUNCHER_DIR)/jni/luajit/luajit/src/luajit $(INSTALL_DIR)/koreader/luajit
+	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
+
         # fresh APK assets
 	rm -rfv $(ANDROID_ASSETS) $(ANDROID_LIBS_ROOT)
 	mkdir -p $(ANDROID_ASSETS) $(ANDROID_LIBS_ABI)
