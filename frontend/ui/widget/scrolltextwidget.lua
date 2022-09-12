@@ -144,6 +144,10 @@ function ScrollTextWidget:getCharPos()
     return self.text_widget:getCharPos()
 end
 
+function ScrollTextWidget:getCharPosAtXY(x, y)
+    return self.text_widget:getCharPosAtXY(x, y)
+end
+
 function ScrollTextWidget:getCharPosLineNum(charpos)
     local _, _, line_num = self.text_widget:_getXYForCharPos(charpos)
     return line_num -- screen line number
@@ -192,9 +196,9 @@ function ScrollTextWidget:resetScroll()
     self.v_scroll_bar.enable = visible_line_count < total_line_count
 end
 
-function ScrollTextWidget:moveCursorToCharPos(charpos, middle)
-    if middle then
-        self.text_widget:moveCursorToCharPosMiddle(charpos)
+function ScrollTextWidget:moveCursorToCharPos(charpos, centered_lines_count)
+    if centered_lines_count then
+        self.text_widget:moveCursorToCharPosKeepingViewCentered(charpos, centered_lines_count)
     else
         self.text_widget:moveCursorToCharPos(charpos)
     end
