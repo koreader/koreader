@@ -1363,6 +1363,7 @@ end
 
 -- Return the coordinates (relative to current view, so negative y is possible)
 -- of the left of char at charpos (use self.charpos if none provided)
+-- and the number of the line with charpos on the screen
 function TextBoxWidget:_getXYForCharPos(charpos)
     if not charpos then
         charpos = self.charpos
@@ -1707,9 +1708,9 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
     end
 end
 
--- Update view to show the line with charpos not far than 5 lines away
--- from the middle of the screen, and draw the cursor.
-function TextBoxWidget:moveCursorToCharPosMiddle(charpos)
+-- Update view to show the line with charpos not far than <centered_lines_count> lines away
+-- from the center of the screen, and draw the cursor.
+function TextBoxWidget:moveCursorToCharPosKeepingViewCentered(charpos, centered_lines_count)
     local old_virtual_line_num = self.virtual_line_num
     self.for_measurement_only = true
     self:moveCursorToCharPos(charpos)
@@ -1722,7 +1723,7 @@ function TextBoxWidget:moveCursorToCharPosMiddle(charpos)
     elseif new_virtual_line_num > max_virtual_line_num then
         new_virtual_line_num = max_virtual_line_num
     end
-    if math.abs(new_virtual_line_num - old_virtual_line_num) > 5 then
+    if math.abs(new_virtual_line_num - old_virtual_line_num) > centered_lines_count then
         self.virtual_line_num = new_virtual_line_num
     else
         self.virtual_line_num = old_virtual_line_num
