@@ -160,14 +160,16 @@ end
 
 function DropBox:info(token)
     local info = DropBoxApi:fetchInfo(token)
-    local account_type = "Dropbox "
-    if info.account_type then
-        account_type = account_type .. info.account_type[".tag"]
+    if info then
+        local account_type = "Dropbox "
+        if info.account_type then
+            account_type = account_type .. info.account_type[".tag"]
+        end
+        local name = info.name and info.name.display_name
+        local info_text = T(_"Type: %1\nName: %2\nEmail: %3\nCountry: %4",
+                account_type, name, info.email, info.country)
+        UIManager:show(InfoMessage:new{text = info_text})
     end
-    local name = info.name and info.name.display_name
-    local info_text = T(_"Type: %1\nName: %2\nEmail: %3\nCountry: %4",
-            account_type, name, info.email, info.country)
-    UIManager:show(InfoMessage:new{text = info_text})
 end
 
 return DropBox
