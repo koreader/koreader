@@ -76,7 +76,7 @@ function TextViewer:init()
     }
     self.width = self.width or Screen:getWidth() - Screen:scaleBySize(30)
     self.height = self.height or Screen:getHeight() - Screen:scaleBySize(30)
-    
+
     self._find_next = false
     self._old_virtual_line_num = 1
 
