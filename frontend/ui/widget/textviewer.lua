@@ -63,6 +63,7 @@ local TextViewer = InputContainer:new{
     -- Bottom row with Close, Find buttons. Also added when no caller's buttons defined.
     add_default_buttons = nil,
     default_hold_callback = nil, -- on each default button
+    find_centered_lines_count = 5, -- line with find results to be not far from the center
 }
 
 function TextViewer:init()
@@ -75,6 +76,9 @@ function TextViewer:init()
     }
     self.width = self.width or Screen:getWidth() - Screen:scaleBySize(30)
     self.height = self.height or Screen:getHeight() - Screen:scaleBySize(30)
+    
+    self._find_next = false
+    self._old_virtual_line_num = 1
 
     if Device:hasKeys() then
         self.key_events = {
@@ -131,51 +135,15 @@ function TextViewer:init()
             {
                 text = _("Find"),
                 callback = function()
-                    local input_dialog
-                    input_dialog = InputDialog:new{
-                        title = _("Enter text to search for"),
-                        input = self.search_value,
-                        buttons = {
-                            {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(input_dialog)
-                                    end,
-                                },
-                                {
-                                    text = _("Find first"),
-                                    callback = function()
-                                        self:findCallback(input_dialog, true)
-                                    end,
-                                },
-                                {
-                                    text = _("Find next"),
-                                    is_enter_default = true,
-                                    callback = function()
-                                        self:findCallback(input_dialog)
-                                    end,
-                                },
-                            },
-                        },
-                    }
-
-                    self.check_button_case = CheckButton:new{
-                        text = _("Case sensitive"),
-                        checked = self.case_sensitive,
-                        parent = input_dialog,
-                        callback = function()
-                            self.case_sensitive = self.check_button_case.checked
-                        end,
-                    }
-                    input_dialog:addWidget(self.check_button_case)
-
-                    UIManager:show(input_dialog)
-                    input_dialog:onShowKeyboard()
+                    if self._find_next then
+                        self:findCallback()
+                    else
+                        self:findDialog()
+                    end
                 end,
                 hold_callback = function()
-                    if self.search_value then -- Find next
-                        self:findCallback()
+                    if self._find_next then
+                        self:findDialog()
                     else
                         if self.default_hold_callback then
                             self.default_hold_callback()
@@ -309,20 +277,77 @@ function TextViewer:onSwipe(arg, ges)
     return self.movable:onMovableSwipe(arg, ges)
 end
 
-function TextViewer:findCallback(input_dialog, find_first)
+function TextViewer:findDialog()
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title = _("Enter text to search for"),
+        input = self.search_value,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Find first"),
+                    callback = function()
+                        self._find_next = false
+                        self:findCallback(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Find next"),
+                    is_enter_default = true,
+                    callback = function()
+                        self._find_next = true
+                        self:findCallback(input_dialog)
+                    end,
+                },
+            },
+        },
+    }
+    self.check_button_case = CheckButton:new{
+        text = _("Case sensitive"),
+        checked = self.case_sensitive,
+        parent = input_dialog,
+        callback = function()
+            self.case_sensitive = self.check_button_case.checked
+        end,
+    }
+    input_dialog:addWidget(self.check_button_case)
+
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
+function TextViewer:findCallback(input_dialog)
     if input_dialog then
         self.search_value = input_dialog:getInputText()
         if self.search_value == "" then return end
         UIManager:close(input_dialog)
     end
-    local start_pos = find_first and 1 or (self.scroll_text_w:getCharPos() or 0) + 1
+    local start_pos = 1
+    if self._find_next then
+        local charpos, new_virtual_line_num = self.scroll_text_w:getCharPos()
+        if math.abs(new_virtual_line_num - self._old_virtual_line_num) > self.find_centered_lines_count then
+            start_pos = self.scroll_text_w:getCharPosAtXY(0, 0) -- first char of the top line
+        else
+            start_pos = (charpos or 0) + 1 -- previous search result
+        end
+    end
     local char_pos = util.stringSearch(self.text, self.search_value, self.case_sensitive, start_pos)
     local msg
     if char_pos > 0 then
-        self.scroll_text_w:moveCursorToCharPos(char_pos, true)
+        self.scroll_text_w:moveCursorToCharPos(char_pos, self.find_centered_lines_count)
         msg = T(_("Found, screen line %1."), self.scroll_text_w:getCharPosLineNum())
+        self._find_next = true
+        self._old_virtual_line_num = select(2, self.scroll_text_w:getCharPos())
     else
         msg = _("Not found.")
+        self._find_next = false
+        self._old_virtual_line_num = 1
     end
     UIManager:show(Notification:new{
         text = msg,
