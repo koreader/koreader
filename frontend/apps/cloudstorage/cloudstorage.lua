@@ -11,6 +11,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
+local NetworkMgr = require("ui/network/manager")
 local PathChooser = require("ui/widget/pathchooser")
 local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
@@ -150,7 +151,6 @@ end
 
 function CloudStorage:openCloudServer(url)
     local tbl, e
-    local NetworkMgr = require("ui/network/manager")
     if self.type == "dropbox" then
         if NetworkMgr:willRerunWhenOnline(function() self:openCloudServer(url) end) then
             return
@@ -432,6 +432,9 @@ function CloudStorage:onMenuHold(item)
 end
 
 function CloudStorage:synchronizeCloud(item)
+    if NetworkMgr:willRerunWhenOnline(function() self:synchronizeCloud(item) end) then
+        return
+    end
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
         Trapper:setPausedText("Download paused.\nDo you want to continue or abort downloading files?")
@@ -800,7 +803,13 @@ end
 
 function CloudStorage:infoServer(item)
     if item.type == "dropbox" then
-        DropBox:info(self:getPasswordOrDropBoxAccessToken(item))
+        if NetworkMgr:willRerunWhenOnline(function() self:infoServer(item) end) then
+            return
+        end
+        local token = self:getPasswordOrDropBoxAccessToken(item)
+        if token then
+            DropBox:info(token)
+        end
     elseif item.type == "ftp" then
         Ftp:info(item)
     elseif item.type == "webdav" then
