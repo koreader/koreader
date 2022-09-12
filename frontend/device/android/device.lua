@@ -135,8 +135,8 @@ function Device:init()
     local event_map = require("device/android/event_map")
 
     if android.prop.model == "tolino" then
-        android_eventmap[21] = "LPgBack" -- changed for Tolino Buttons (up key)
-        android_eventmap[22] = "LPgFwd" -- changed for Tolino Buttons (down key)
+        event_map[21] = "LPgBack" -- changed for Tolino Buttons (up key)
+        event_map[22] = "LPgFwd" -- changed for Tolino Buttons (down key)
     end
 
     self.input = require("device/input"):new{
