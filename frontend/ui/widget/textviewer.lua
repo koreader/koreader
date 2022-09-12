@@ -78,6 +78,7 @@ function TextViewer:init()
     self.height = self.height or Screen:getHeight() - Screen:scaleBySize(30)
 
     self._find_next = false
+    self._find_next_button = false
     self._old_virtual_line_num = 1
 
     if Device:hasKeys() then
@@ -134,6 +135,7 @@ function TextViewer:init()
             },
             {
                 text = _("Find"),
+                id = "find",
                 callback = function()
                     if self._find_next then
                         self:findCallback()
@@ -156,14 +158,14 @@ function TextViewer:init()
     if self.add_default_buttons or not self.buttons_table then
         table.insert(buttons, default_buttons)
     end
-    local button_table = ButtonTable:new{
+    self.button_table = ButtonTable:new{
         width = self.width - 2*self.button_padding,
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
     }
 
-    local textw_height = self.height - titlebar:getHeight() - button_table:getSize().h
+    local textw_height = self.height - titlebar:getHeight() - self.button_table:getSize().h
 
     self.scroll_text_w = ScrollTextWidget:new{
         text = self.text,
@@ -203,9 +205,9 @@ function TextViewer:init()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = button_table:getSize().h,
+                    h = self.button_table:getSize().h,
                 },
-                button_table,
+                self.button_table,
             }
         }
     }
@@ -352,6 +354,15 @@ function TextViewer:findCallback(input_dialog)
     UIManager:show(Notification:new{
         text = msg,
     })
+    if self._find_next_button ~= self._find_next then
+        self._find_next_button = self._find_next
+        local button_text = self._find_next and _("Find next") or _("Find")
+        local find_button = self.button_table:getButtonById("find")
+        find_button:setText(button_text, find_button.width)
+        UIManager:setDirty(self, function()
+            return "ui", find_button.dimen
+        end)
+    end
 end
 
 return TextViewer
