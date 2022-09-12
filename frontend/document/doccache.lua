@@ -5,7 +5,9 @@
 local Cache = require("cache")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local md5 = require("ffi/sha2").md5
 
 local function calcCacheMemSize()
     local min = DGLOBAL_CACHE_SIZE_MINIMUM
@@ -13,23 +15,22 @@ local function calcCacheMemSize()
     local calc = Cache:_calcFreeMem() * (DGLOBAL_CACHE_FREE_PROPORTION or 0)
     return math.min(max, math.max(min, calc))
 end
-local cache_size = calcCacheMemSize()
-
+local doccache_size = calcCacheMemSize()
 
 local function computeCacheSize()
-    local mb_size = cache_size / 1024 / 1024
+    local mb_size = doccache_size / 1024 / 1024
 
     -- If we end up with a not entirely ridiculous cache size, use that...
     if mb_size >= 8 then
         logger.dbg(string.format("Allocating a %dMB budget for the global document cache", mb_size))
-        return cache_size
+        return doccache_size
     else
         return nil
     end
 end
 
 local function computeCacheSlots()
-    local mb_size = cache_size / 1024 / 1024
+    local mb_size = doccache_size / 1024 / 1024
 
     --- ...otherwise, effectively disable the cache by making it single slot...
     if mb_size < 8 then
@@ -50,5 +51,84 @@ local DocCache = Cache:new{
     disk_cache = true,
     cache_path = DataStorage:getDataDir() .. "/cache/",
 }
+
+-- A DocCache hash is a pipe separated string, the second token is always the filename.
+local function getFilenameFromCacheHash(hash)
+    local i = 0
+    local filename
+    for token in string.gmatch(hash, "[^|]+") do
+        i = i + 1
+        if i == 2 then
+            filename = token
+        elseif i > 2 then
+            break
+        end
+    end
+
+    return filename
+end
+
+function DocCache:serialize(doc_file)
+    if not self.disk_cache then
+        return
+    end
+
+    -- Calculate the current disk cache size
+    local cached_size = 0
+    local sorted_caches = {}
+    for _, file in pairs(self.cached) do
+        table.insert(sorted_caches, {file=file, time=lfs.attributes(file, "access")})
+        cached_size = cached_size + (lfs.attributes(file, "size") or 0)
+    end
+    table.sort(sorted_caches, function(v1, v2) return v1.time > v2.time end)
+
+    -- Only serialize the second most recently used cache item (as the MRU would be the *hinted* page) for the current document.
+    if doc_file then
+        local mru_key
+        local mru_found = 0
+        for key, item in self.cache:pairs() do
+            -- Only dump cache items that actually request persistence
+            if item.persistent and item.dump then
+                -- Check that it matches our actual document by parsing the hash.
+                if getFilenameFromCacheHash(key) == doc_file then
+                    mru_key = key
+                    mru_found = mru_found + 1
+                    if mru_found >= 2 then
+                        -- We found the second MRU item, i.e., the *displayed* page
+                        break
+                    end
+                end
+            end
+        end
+        if mru_key then
+            local cache_full_path = self.cache_path .. md5(mru_key)
+            local cache_file_exists = lfs.attributes(cache_full_path)
+
+            if not cache_file_exists then
+                logger.dbg("Dumping cache item", mru_key)
+                local cache_item = self.cache:get(mru_key)
+                local cache_size = cache_item:dump(cache_full_path)
+                if cache_size then
+                    cached_size = cached_size + cache_size
+                end
+            end
+        end
+    end
+
+    -- Allocate the same amount of storage to the disk cache than the memory cache
+    while cached_size > self.size do
+        -- discard the least recently used cache
+        local discarded = table.remove(sorted_caches)
+        if discarded then
+            cached_size = cached_size - lfs.attributes(discarded.file, "size")
+            os.remove(discarded.file)
+        else
+            logger.warn("Cache accounting is broken")
+            break
+        end
+    end
+    -- We may have updated the disk cache's content, so refresh its state
+    self:refreshSnapshot()
+end
 
 return DocCache

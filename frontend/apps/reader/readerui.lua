@@ -761,9 +761,9 @@ function ReaderUI:onClose(full_refresh)
     if self.dialog ~= self then
         self:saveSettings()
     end
-    -- Serialize the most recently displayed page for later launch
-    DocCache:serialize()
     if self.document ~= nil then
+        -- Serialize the most recently displayed page for later launch
+        DocCache:serialize(self.document.file)
         logger.dbg("closing document")
         self:notifyCloseDocument()
     end
