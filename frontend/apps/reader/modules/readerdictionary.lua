@@ -771,12 +771,9 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
         -- We must ensure we will have some output to be readable (if no
         -- definition found, sdcv will output some message on stderr, and
         -- let stdout empty) by appending an "echo":
-        --cmd = cmd .. "; echo"
-        -- For when you desperately want to know why the fuck Android is broken.
-        cmd = cmd .. " 2>&1"
-        logger.dbg("ReaderDictionary:rawSdcv:", cmd)
-         -- NOTE: Bionic doesn't support rpath, but does honor LD_LIBRARY_PATH...
-        --        Give it a shove so it can actually find the STL.
+        cmd = cmd .. "; echo"
+        -- NOTE: Bionic doesn't support rpath, but does honor LD_LIBRARY_PATH...
+        --       Give it a shove so it can actually find the STL.
         if Device:isAndroid() then
             C.setenv("LD_LIBRARY_PATH", "./libs", 1)
         end
@@ -785,7 +782,6 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
             -- NOTE: It's unset by default, so this is perfectly fine.
             C.unsetenv("LD_LIBRARY_PATH")
         end
-        logger.dbg("ReaderDictionary:rawSdcv returned:", results_str)
         lookup_cancelled = not completed
         if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
             -- sdcv can return multiple results if we passed multiple words to
