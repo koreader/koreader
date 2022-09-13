@@ -1716,7 +1716,7 @@ function TextBoxWidget:moveCursorToCharPosKeepingViewCentered(charpos, centered_
     self:moveCursorToCharPos(charpos)
     self.for_measurement_only = false
     local _, _, screen_line_num = self:_getXYForCharPos(charpos)
-    local new_virtual_line_num = self.virtual_line_num + screen_line_num - self.lines_per_page / 2
+    local new_virtual_line_num = self.virtual_line_num + screen_line_num - math.floor(self.lines_per_page / 2)
     local max_virtual_line_num = #self.vertical_string_list - self.lines_per_page + 1
     if new_virtual_line_num < 1 then
         new_virtual_line_num = 1
