@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220819
+local CURRENT_MIGRATION_DATE = 20220913
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -432,6 +432,17 @@ if last_migration_date < 20220819 then
             end
         end
         G_reader_settings:saveSetting("opds_servers", opds_servers)
+    end
+end
+
+-- Fontlist, cache format change (#9513)
+if last_migration_date < 20220913 then
+    logger.info("Performing one-time migration for 20220913")
+
+    local cache_path = DataStorage:getDataDir() .. "/cache/fontlist"
+    local ok, err = os.remove(cache_path .. "/fontinfo.dat")
+    if not ok then
+       logger.warn("os.remove:", err)
     end
 end
 
