@@ -3,6 +3,7 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 ]]
 
 local BaseUtil = require("ffi/util")
+local Utf8Proc = require("ffi/utf8proc")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = BaseUtil.template
@@ -1332,6 +1333,41 @@ end
 -- @treturn bool true on success
 function util.stringEndsWith(str, ending)
    return ending == "" or str:sub(-#ending) == ending
+end
+
+--- Search a string in a text.
+-- @string or table txt Text (char list) to search in
+-- @string str String to search for
+-- @boolean case_sensitive
+-- @number start_pos Position number in text to start search from
+-- @treturn number Position number or 0 if not found
+function util.stringSearch(txt, str, case_sensitive, start_pos)
+    if not case_sensitive then
+        str = Utf8Proc.lowercase(util.fixUtf8(str, "?"))
+    end
+    local txt_charlist = type(txt) == "table" and txt or util.splitToChars(txt)
+    local str_charlist = util.splitToChars(str)
+    local str_len = #str_charlist
+    local char_pos, found = 0, 0
+    for i = start_pos - 1, #txt_charlist - str_len do
+        for j = 1, str_len do
+            local char_txt = txt_charlist[i + j]
+            local char_str = str_charlist[j]
+            if not case_sensitive then
+                char_txt = Utf8Proc.lowercase(util.fixUtf8(char_txt, "?"))
+            end
+            if char_txt ~= char_str then
+                found = 0
+                break
+            end
+            found = found + 1
+        end
+        if found == str_len then
+            char_pos = i + 1
+            break
+        end
+    end
+    return char_pos
 end
 
 local WrappedFunction_mt = {

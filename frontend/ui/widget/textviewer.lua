@@ -12,24 +12,28 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
 local MovableContainer = require("ui/widget/container/movablecontainer")
+local Notification = require("ui/widget/notification")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local T = require("ffi/util").template
+local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
 local TextViewer = InputContainer:new{
-    modal = true,
     title = nil,
     text = nil,
     width = nil,
@@ -56,6 +60,10 @@ local TextViewer = InputContainer:new{
     text_padding = Size.padding.large,
     text_margin = Size.margin.small,
     button_padding = Size.padding.default,
+    -- Bottom row with Close, Find buttons. Also added when no caller's buttons defined.
+    add_default_buttons = nil,
+    default_hold_callback = nil, -- on each default button
+    find_centered_lines_count = 5, -- line with find results to be not far from the center
 }
 
 function TextViewer:init()
@@ -68,6 +76,10 @@ function TextViewer:init()
     }
     self.width = self.width or Screen:getWidth() - Screen:scaleBySize(30)
     self.height = self.height or Screen:getHeight() - Screen:scaleBySize(30)
+
+    self._find_next = false
+    self._find_next_button = false
+    self._old_virtual_line_num = 1
 
     if Device:hasKeys() then
         self.key_events = {
@@ -112,25 +124,48 @@ function TextViewer:init()
         show_parent = self,
     }
 
-    local buttons = self.buttons_table or
+    local default_buttons =
         {
             {
-                {
-                    text = _("Close"),
-                    callback = function()
-                        self:onClose()
-                    end,
-                },
+                text = _("Close"),
+                callback = function()
+                    self:onClose()
+                end,
+                hold_callback = self.default_hold_callback,
+            },
+            {
+                text = _("Find"),
+                id = "find",
+                callback = function()
+                    if self._find_next then
+                        self:findCallback()
+                    else
+                        self:findDialog()
+                    end
+                end,
+                hold_callback = function()
+                    if self._find_next then
+                        self:findDialog()
+                    else
+                        if self.default_hold_callback then
+                            self.default_hold_callback()
+                        end
+                    end
+                end,
             },
         }
-    local button_table = ButtonTable:new{
+    local buttons = self.buttons_table or {}
+    if self.add_default_buttons or not self.buttons_table then
+        table.insert(buttons, default_buttons)
+    end
+    self.button_table = ButtonTable:new{
         width = self.width - 2*self.button_padding,
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
     }
 
-    local textw_height = self.height - titlebar:getHeight() - button_table:getSize().h
+    local textw_height = self.height - titlebar:getHeight() - self.button_table:getSize().h
 
     self.scroll_text_w = ScrollTextWidget:new{
         text = self.text,
@@ -170,9 +205,9 @@ function TextViewer:init()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
-                    h = button_table:getSize().h,
+                    h = self.button_table:getSize().h,
                 },
-                button_table,
+                self.button_table,
             }
         }
     }
@@ -242,6 +277,92 @@ function TextViewer:onSwipe(arg, ges)
     end
     -- Let our MovableContainer handle swipe outside of text
     return self.movable:onMovableSwipe(arg, ges)
+end
+
+function TextViewer:findDialog()
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title = _("Enter text to search for"),
+        input = self.search_value,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Find first"),
+                    callback = function()
+                        self._find_next = false
+                        self:findCallback(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Find next"),
+                    is_enter_default = true,
+                    callback = function()
+                        self._find_next = true
+                        self:findCallback(input_dialog)
+                    end,
+                },
+            },
+        },
+    }
+    self.check_button_case = CheckButton:new{
+        text = _("Case sensitive"),
+        checked = self.case_sensitive,
+        parent = input_dialog,
+        callback = function()
+            self.case_sensitive = self.check_button_case.checked
+        end,
+    }
+    input_dialog:addWidget(self.check_button_case)
+
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
+function TextViewer:findCallback(input_dialog)
+    if input_dialog then
+        self.search_value = input_dialog:getInputText()
+        if self.search_value == "" then return end
+        UIManager:close(input_dialog)
+    end
+    local start_pos = 1
+    if self._find_next then
+        local charpos, new_virtual_line_num = self.scroll_text_w:getCharPos()
+        if math.abs(new_virtual_line_num - self._old_virtual_line_num) > self.find_centered_lines_count then
+            start_pos = self.scroll_text_w:getCharPosAtXY(0, 0) -- first char of the top line
+        else
+            start_pos = (charpos or 0) + 1 -- previous search result
+        end
+    end
+    local char_pos = util.stringSearch(self.text, self.search_value, self.case_sensitive, start_pos)
+    local msg
+    if char_pos > 0 then
+        self.scroll_text_w:moveCursorToCharPos(char_pos, self.find_centered_lines_count)
+        msg = T(_("Found, screen line %1."), self.scroll_text_w:getCharPosLineNum())
+        self._find_next = true
+        self._old_virtual_line_num = select(2, self.scroll_text_w:getCharPos())
+    else
+        msg = _("Not found.")
+        self._find_next = false
+        self._old_virtual_line_num = 1
+    end
+    UIManager:show(Notification:new{
+        text = msg,
+    })
+    if self._find_next_button ~= self._find_next then
+        self._find_next_button = self._find_next
+        local button_text = self._find_next and _("Find next") or _("Find")
+        local find_button = self.button_table:getButtonById("find")
+        find_button:setText(button_text, find_button.width)
+        UIManager:setDirty(self, function()
+            return "ui", find_button.dimen
+        end)
+    end
 end
 
 return TextViewer
