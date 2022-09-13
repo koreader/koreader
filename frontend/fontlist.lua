@@ -173,7 +173,7 @@ function FontList:getFontList()
 
     local t, err = cache:load()
     if not t then
-        logger.info(cache.path, err, "initializing it")
+        logger.info(cache.path, err, "-> initializing it")
 
         -- Create new subdirectory
         lfs.mkdir(self.cachedir)
