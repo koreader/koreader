@@ -4,6 +4,7 @@ local FT = require("ffi/freetype")
 local HB = require("ffi/harfbuzz")
 local Persist = require("persist")
 local util = require("util")
+local lfs = require("lfs")
 local logger = require("logger")
 local dbg = require("dbg")
 
@@ -90,11 +91,11 @@ local kindle_fonts_blacklist = {
 
 local function isInFontsBlacklist(f)
     -- write test for this
-    return CanvasContext.isKindle() and kindle_fonts_blacklist[f]
+    return CanvasContext:isKindle() and kindle_fonts_blacklist[f]
 end
 
 local function getExternalFontDir()
-    if CanvasContext.hasSystemFonts() then
+    if CanvasContext:hasSystemFonts() then
         return require("frontend/ui/elements/font_settings"):getPath()
     else
         return os.getenv("EXT_FONT_DIR")
