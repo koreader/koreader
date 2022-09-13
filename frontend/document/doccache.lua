@@ -52,23 +52,7 @@ local DocCache = Cache:new{
     cache_path = DataStorage:getDataDir() .. "/cache/",
 }
 
--- A DocCache hash is a pipe separated string, the second token is always the filename.
-local function getFilenameFromCacheHash(hash)
-    local i = 0
-    local filename
-    for token in string.gmatch(hash, "[^|]+") do
-        i = i + 1
-        if i == 2 then
-            filename = token
-        elseif i > 2 then
-            break
-        end
-    end
-
-    return filename
-end
-
-function DocCache:serialize(doc_file)
+function DocCache:serialize(doc_path)
     if not self.disk_cache then
         return
     end
@@ -83,20 +67,17 @@ function DocCache:serialize(doc_file)
     table.sort(sorted_caches, function(v1, v2) return v1.time > v2.time end)
 
     -- Only serialize the second most recently used cache item (as the MRU would be the *hinted* page) for the current document.
-    if doc_file then
+    if doc_path then
         local mru_key
         local mru_found = 0
         for key, item in self.cache:pairs() do
-            -- Only dump cache items that actually request persistence
-            if item.persistent and item.dump then
-                -- Check that it matches our actual document by parsing the hash.
-                if getFilenameFromCacheHash(key) == doc_file then
-                    mru_key = key
-                    mru_found = mru_found + 1
-                    if mru_found >= 2 then
-                        -- We found the second MRU item, i.e., the *displayed* page
-                        break
-                    end
+            -- Only dump cache items that actually request persistence and match the current document.
+            if item.persistent and item.dump and item.doc_path == doc_path then
+                mru_key = key
+                mru_found = mru_found + 1
+                if mru_found >= 2 then
+                    -- We found the second MRU item, i.e., the *displayed* page
+                    break
                 end
             end
         end
