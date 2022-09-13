@@ -66,17 +66,18 @@ function DocCache:serialize(doc_path)
     end
     table.sort(sorted_caches, function(v1, v2) return v1.time > v2.time end)
 
-    -- Only serialize the second most recently used cache item (as the MRU would be the *hinted* page) for the current document.
+    -- Rewind a bit in order to serialize the currently *displayed* page for the current document,
+    -- as the actual MRU item would be the most recently *hinted* page, which wouldn't be helpful ;).
     if doc_path then
         local mru_key
         local mru_found = 0
         for key, item in self.cache:pairs() do
-            -- Only dump cache items that actually request persistence and match the current document.
+            -- Only dump items that actually request persistence and match the current document.
             if item.persistent and item.dump and item.doc_path == doc_path then
                 mru_key = key
                 mru_found = mru_found + 1
-                if mru_found >= 2 then
-                    -- We found the second MRU item, i.e., the *displayed* page
+                if mru_found >= (1 + DHINTCOUNT) then
+                    -- We found the right item, i.e., the *displayed* page
                     break
                 end
             end
