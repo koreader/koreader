@@ -445,6 +445,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
     -- prepare cache item with contained blitbuffer
     tile = TileCacheItem:new{
         persistent = true,
+        doc_path = self.file,
         created_ts = os.time(),
         excerpt = size,
         pageno = pageno,

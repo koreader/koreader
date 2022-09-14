@@ -37,6 +37,15 @@ The following key is required for a device object:
 function CanvasContext:init(device)
     self.device = device
     self.screen = device.screen
+    -- NOTE: These work because they don't actually require accessing the Device object itself,
+    --       as opposed to more dynamic methods like the Screen ones we handle properly later...
+    --       By which I mean when one naively calls CanvasContext:isKindle(), it calls
+    --       device.isKindle(CanvasContext), whereas when one calls Device:isKindle(), it calls
+    --       Device.isKindle(Device).
+    --       In the latter case, self is sane, but *NOT* in the former.
+    --       TL;DR: The methods assigned below must *never* access self.
+    --              (Or programmers would have to be careful to call them through CanvasContext as functions,
+    --              and not methods, which is clunky, error-prone, and unexpected).
     self.isAndroid = device.isAndroid
     self.isDesktop = device.isDesktop
     self.isEmulator = device.isEmulator
@@ -44,7 +53,7 @@ function CanvasContext:init(device)
     self.isPocketBook = device.isPocketBook
     self.should_restrict_JIT = device.should_restrict_JIT
     self.hasSystemFonts = device.hasSystemFonts
-    self:setColorRenderingEnabled(device.screen.isColorEnabled())
+    self:setColorRenderingEnabled(device.screen:isColorEnabled())
 
     -- NOTE: At 32bpp, Kobo's fb is BGR, not RGB. Handle the conversion in MuPDF if needed.
     if device:hasBGRFrameBuffer() then
@@ -54,7 +63,7 @@ function CanvasContext:init(device)
 
     -- This one may be called by a subprocess, and would crash on Android when
     -- calling android.isEink() which is only allowed from the main thread.
-    local hasEinkScreen = device.hasEinkScreen()
+    local hasEinkScreen = device:hasEinkScreen()
     self.hasEinkScreen = function() return hasEinkScreen end
 
     self.canHWDither = device.canHWDither

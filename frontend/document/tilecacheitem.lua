@@ -19,6 +19,7 @@ function TileCacheItem:totable()
         excerpt = self.excerpt,
         created_ts = self.created_ts,
         persistent = self.persistent,
+        doc_path = self.doc_path,
         bb = {
             w = self.bb.w,
             h = self.bb.h,
@@ -56,6 +57,7 @@ function TileCacheItem:fromtable(t)
     self.excerpt = t.excerpt
     self.created_ts = t.created_ts
     self.persistent = t.persistent
+    self.doc_path = t.doc_path
     self.bb = Blitbuffer.fromstring(t.bb.w, t.bb.h, t.bb.fmt, t.bb.data, t.bb.stride, t.bb.rotation, t.bb.inverse)
 end
 

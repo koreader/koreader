@@ -16,6 +16,8 @@ local NetworkMgr = require("ui/network/manager")
 local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
+local ffi = require("ffi")
+local C = ffi.C
 local ffiUtil  = require("ffi/util")
 local logger = require("logger")
 local time = require("ui/time")
@@ -770,7 +772,16 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
         -- definition found, sdcv will output some message on stderr, and
         -- let stdout empty) by appending an "echo":
         cmd = cmd .. "; echo"
+        -- NOTE: Bionic doesn't support rpath, but does honor LD_LIBRARY_PATH...
+        --       Give it a shove so it can actually find the STL.
+        if Device:isAndroid() then
+            C.setenv("LD_LIBRARY_PATH", "./libs", 1)
+        end
         local completed, results_str = Trapper:dismissablePopen(cmd, lookup_progress_msg)
+        if Device:isAndroid() then
+            -- NOTE: It's unset by default, so this is perfectly fine.
+            C.unsetenv("LD_LIBRARY_PATH")
+        end
         lookup_cancelled = not completed
         if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
             -- sdcv can return multiple results if we passed multiple words to

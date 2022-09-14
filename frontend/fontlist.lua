@@ -4,6 +4,7 @@ local FT = require("ffi/freetype")
 local HB = require("ffi/harfbuzz")
 local Persist = require("persist")
 local util = require("util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local dbg = require("dbg")
 
@@ -90,11 +91,11 @@ local kindle_fonts_blacklist = {
 
 local function isInFontsBlacklist(f)
     -- write test for this
-    return CanvasContext.isKindle() and kindle_fonts_blacklist[f]
+    return CanvasContext:isKindle() and kindle_fonts_blacklist[f]
 end
 
 local function getExternalFontDir()
-    if CanvasContext.hasSystemFonts() then
+    if CanvasContext:hasSystemFonts() then
         return require("frontend/ui/elements/font_settings"):getPath()
     else
         return os.getenv("EXT_FONT_DIR")
@@ -140,7 +141,7 @@ local font_exts = {
 function FontList:_readList(dir, mark)
     util.findFiles(dir, function(path, file, attr)
         -- See if we're interested
-        if file:sub(1,1) == "." then return end
+        if file:sub(1, 1) == "." then return end
         local file_type = file:lower():match(".+%.([^.]+)") or ""
         if not font_exts[file_type] then return end
 
@@ -163,15 +164,16 @@ function FontList:_readList(dir, mark)
 end
 
 function FontList:getFontList()
-    if #self.fontlist > 0 then return self.fontlist end
+    if self.fontlist[1] then return self.fontlist end
 
     local cache = Persist:new{
-        path = self.cachedir .. "/fontinfo.dat"
+        path = self.cachedir .. "/fontinfo.dat",
+        codec = dbg.is_verbose and "dump" or "zstd",
     }
 
     local t, err = cache:load()
     if not t then
-        logger.info(cache.path, err, "initializing it")
+        logger.info(cache.path, err, "-> initializing it")
 
         -- Create new subdirectory
         lfs.mkdir(self.cachedir)
@@ -183,7 +185,7 @@ function FontList:getFontList()
 
     self:_readList(self.fontdir, mark)
     -- multiple paths should be joined with semicolon
-    for dir in string.gmatch(getExternalFontDir() or "", "([^;]+)") do
+    for dir in string.gmatch(getExternalFontDir() or "", "[^;]+") do
         self:_readList(dir, mark)
     end
 
@@ -200,12 +202,13 @@ function FontList:getFontList()
         cache:save(self.fontinfo)
     elseif mark.cache_dirty then
         -- otherwise dump the db in binary (more compact), and only if something has changed
+        -- NOTE: The luajit/zstd codecs *ignore* the as_bytecode argument, as they *only* support bytecode ;).
         cache:save(self.fontinfo, true)
     end
 
     local names = self.fontnames
-    for _,coll in pairs(self.fontinfo) do
-        for _,v in ipairs(coll) do
+    for _, coll in pairs(self.fontinfo) do
+        for _, v in ipairs(coll) do
             local nlist = names[v.name] or {}
             assert(v.name)
             if #nlist == 0 then
@@ -237,7 +240,7 @@ function FontList:getFontArgFunc()
     require("document/credocument"):engineInit()
     local toggle = {}
     local face_list = cre.getFontFaces()
-    for k,v in ipairs(face_list) do
+    for _, v in ipairs(face_list) do
         table.insert(toggle, FontList:getLocalizedFontName(cre.getFontFaceFilenameAndFaceIndex(v)) or v)
     end
     return face_list, toggle

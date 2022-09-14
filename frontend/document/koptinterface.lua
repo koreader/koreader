@@ -285,6 +285,7 @@ function KoptInterface:getCachedContext(doc, pageno)
         self.last_context_size = fullwidth * fullheight + 3072 -- estimation
         DocCache:insert(hash, ContextCacheItem:new{
             persistent = true,
+            doc_path = doc.file,
             size = self.last_context_size,
             kctx = kc
         })
@@ -411,6 +412,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         -- prepare cache item with contained blitbuffer
         local tile = TileCacheItem:new{
             persistent = true,
+            doc_path = doc.file,
             excerpt = Geom:new{
                 x = 0, y = 0,
                 w = fullwidth,
@@ -576,6 +578,7 @@ function KoptInterface:getNativeTextBoxes(doc, pageno)
             kc = self:createContext(doc, pageno)
             DocCache:insert(kctx_hash, ContextCacheItem:new{
                 persistent = true,
+                doc_path = doc.file,
                 size = self.last_context_size or self.default_context_size,
                 kctx = kc,
             })
