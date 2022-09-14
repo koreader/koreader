@@ -702,6 +702,13 @@ To:
             touchmenu_instance:updateItems()
         end,
     })
+    table.insert(self.menu_items.developer_options.sub_item_table, {
+        text = _("Dump the fontlist cache"),
+        callback = function()
+            local FontList = require("fontlist")
+            FontList:dumpFontList()
+        end,
+    })
 
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
