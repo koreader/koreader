@@ -6,7 +6,6 @@ local Persist = require("persist")
 local util = require("util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local dbg = require("dbg")
 
 local FontList = {
     fontdir = "./fonts",
