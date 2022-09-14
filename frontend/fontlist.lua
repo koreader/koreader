@@ -226,10 +226,11 @@ function FontList:dumpFontList()
     local f = io.open(path, "w")
     if f ~= nil then
         os.setlocale('C', 'numeric')
-        f:write("-- we can read Lua syntax here!\nreturn ")
+        f:write("return ")
         f:write(dump(self.fontinfo, nil, true))
-        f:write("\n")
         f:close()
+    else
+        return
     end
 
     -- FontList
@@ -237,11 +238,20 @@ function FontList:dumpFontList()
     f = io.open(path, "w")
     if f ~= nil then
         os.setlocale('C', 'numeric')
-        f:write("-- we can read Lua syntax here!\nreturn ")
+        f:write("return ")
         f:write(dump(self.fontlist, nil, true))
-        f:write("\n")
         f:close()
+    else
+        return
     end
+
+    local InfoMessage = require("ui/widget/infomessage")
+    local UIManager = require("ui/uimanager")
+    local _ = require("gettext")
+    local T = require("ffi/util").template
+    UIManager:show(InfoMessage:new{
+        text = T(_("Fontlist data has been dumped in:\n%1"), self.cachedir)
+    })
 end
 
 -- Try to determine the localized font name
