@@ -6,7 +6,6 @@ local Persist = require("persist")
 local util = require("util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local dbg = require("dbg")
 
 local FontList = {
     fontdir = "./fonts",
@@ -168,7 +167,7 @@ function FontList:getFontList()
 
     local cache = Persist:new{
         path = self.cachedir .. "/fontinfo.dat",
-        codec = dbg.is_verbose and "dump" or "zstd",
+        codec = "zstd",
     }
 
     local t, err = cache:load()
@@ -197,13 +196,9 @@ function FontList:getFontList()
         end
     end
 
-    if dbg.is_verbose then
-        -- when verbose debug is on, always dump the cache in plain text (to inspect the db output)
+    -- Update the on-disk cache if necessary
+    if mark.cache_dirty then
         cache:save(self.fontinfo)
-    elseif mark.cache_dirty then
-        -- otherwise dump the db in binary (more compact), and only if something has changed
-        -- NOTE: The luajit/zstd codecs *ignore* the as_bytecode argument, as they *only* support bytecode ;).
-        cache:save(self.fontinfo, true)
     end
 
     local names = self.fontnames
@@ -212,7 +207,7 @@ function FontList:getFontList()
             local nlist = names[v.name] or {}
             assert(v.name)
             if #nlist == 0 then
-                logger.dbg("FONTNAMES ADD: ", v.name)
+                logger.dbg("FontList registered:", v.name)
             end
             names[v.name] = nlist
             table.insert(nlist, v)
@@ -221,6 +216,42 @@ function FontList:getFontList()
 
     table.sort(self.fontlist)
     return self.fontlist
+end
+
+function FontList:dumpFontList()
+    local dump = require("dump")
+
+    -- FontInfo
+    local path = self.cachedir .. "/fontinfo_dump.lua"
+    local f = io.open(path, "w")
+    if f ~= nil then
+        os.setlocale('C', 'numeric')
+        f:write("return ")
+        f:write(dump(self.fontinfo, nil, true))
+        f:close()
+    else
+        return
+    end
+
+    -- FontList
+    path = self.cachedir .. "/fontlist_dump.lua"
+    f = io.open(path, "w")
+    if f ~= nil then
+        os.setlocale('C', 'numeric')
+        f:write("return ")
+        f:write(dump(self.fontlist, nil, true))
+        f:close()
+    else
+        return
+    end
+
+    local InfoMessage = require("ui/widget/infomessage")
+    local UIManager = require("ui/uimanager")
+    local _ = require("gettext")
+    local T = require("ffi/util").template
+    UIManager:show(InfoMessage:new{
+        text = T(_("Fontlist data has been dumped in:\n%1"), self.cachedir)
+    })
 end
 
 -- Try to determine the localized font name
