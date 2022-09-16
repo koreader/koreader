@@ -640,7 +640,6 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
             else
                 UIManager:show(InfoMessage:new {
                     text = T(_("Invalid protocol:\n%1"), parsed.scheme),
-                    timeout = 3,
                 })
             end
 
@@ -663,7 +662,6 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
                     text = T(_("Could not save file to:\n%1\n%2"),
                         BD.filepath(local_path),
                         status or code or "network unreachable"),
-                    timeout = 3,
                 })
             end
         end)
@@ -718,7 +716,6 @@ function OPDSBrowser:streamPages(item, remote_url, count)
             else
                 UIManager:show(InfoMessage:new {
                     text = T(_("Invalid protocol:\n%1"), parsed.scheme),
-                    timeout = 3,
                 })
             end
 
