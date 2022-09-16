@@ -28,6 +28,7 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local logger = require("logger")
+local _ = require("gettext")
 
 -- DPI_SCALE can't change without a restart, so let's compute it now
 local function get_dpi_scale()
@@ -333,7 +334,20 @@ function ImageWidget:_render()
     elseif self.scale_factor ~= 1 then
         -- scale by scale_factor (not needed if scale_factor == 1)
         logger.dbg("ImageWidget: scaling by", self.scale_factor)
-        self._bb = RenderImage:scaleBlitBuffer(self._bb, bb_w * self.scale_factor, bb_h * self.scale_factor, self._bb_disposable)
+        local _bb = RenderImage:scaleBlitBuffer(self._bb, bb_w * self.scale_factor, bb_h * self.scale_factor, self._bb_disposable)
+        if _bb then
+            self._bb = _bb
+        else
+            -- Icon is from https://freesvg.org/tango-system-search-icon-vector-drawing
+            self._bb = RenderImage:renderImageFile("resources/icons/system-search.svg", false, 200, 200)
+
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{
+                show_icon = true,
+                text = _("Maximum zoom reached. Please zoom out again."),
+            })
+        end
+
         self._bb_disposable = true -- new bb will have to be freed
     end
     bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
