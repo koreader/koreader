@@ -338,8 +338,7 @@ function ImageWidget:_render()
         if _bb then
             self._bb = _bb
         else
-            -- Icon is from https://freesvg.org/tango-system-search-icon-vector-drawing
-            self._bb = RenderImage:renderImageFile("resources/icons/system-search.svg", false, 200, 200)
+            self._bb = RenderImage:renderImageFile("resources/icons/src/appbar.magnify.zoom.svg", false, 200, 200)
 
             local InfoMessage = require("ui/widget/infomessage")
             UIManager:show(InfoMessage:new{
