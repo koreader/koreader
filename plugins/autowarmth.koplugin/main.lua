@@ -682,7 +682,7 @@ function AutoWarmth:getScheduleMenu()
         return {
             mode = mode,
             text_func = function()
-                return T(_"%1: %2", text,
+                return T(_("%1: %2"), text,
                     self:hoursToClock(self.scheduler_times[num]))
             end,
             checked_func = function()
