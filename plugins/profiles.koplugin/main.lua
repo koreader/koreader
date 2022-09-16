@@ -202,7 +202,7 @@ function Profiles:getSubMenuItems()
         }
         local edit_actions_sub_items = {}
         Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k)
-        table.insert(sub_items, 5, { 
+        table.insert(sub_items, 5, {
             text = _("Edit actions"),
             sub_item_table = edit_actions_sub_items,
         })
