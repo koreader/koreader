@@ -55,6 +55,7 @@ end
 function Version:getShortVersion()
     if not self.short then
         local rev = self:getCurrentRevision()
+        if (not rev or rev == "") then return "unknown" end
         local year, month, point, revision = rev:match("v(%d%d%d%d)%.(%d%d)%.?(%d?%d?)-?(%d*)")
         self.short = year .. "." .. month
         if point and point ~= "" then
