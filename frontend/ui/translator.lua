@@ -386,7 +386,7 @@ function Translator:loadPage(text, target_lang, source_lang)
 
     -- raise error message when network is unavailable
     if headers == nil then
-        error("Network is unreachable")
+        error(status or code or "network unreachable")
     end
 
     if code ~= 200 then

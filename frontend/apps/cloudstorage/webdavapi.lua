@@ -95,6 +95,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     if headers == nil then
+        logger.dbg("WebDavApi:listFolder: No response:", status or code)
         return nil
     elseif code < 200 or code > 299 then
         -- got a response, but it wasn't a success (e.g. auth failure)
@@ -176,7 +177,7 @@ function WebDavApi:downloadFile(file_url, user, pass, local_path)
     socketutil:reset_timeout()
     if code ~= 200 then
         logger.warn("WebDavApi: Download failure:", status or code or "network unreachable")
-        logger.dbg("WebDavApi: Request response:", headers)
+        logger.dbg("WebDavApi: Response headers:", headers)
     end
     return code
 end

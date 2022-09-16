@@ -298,11 +298,11 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     }
     logger.dbg("Request:", request)
     -- Fire off the request and wait to see what we get back.
-    local code, headers = socket.skip(1, http.request(request))
+    local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     -- Check the response and raise error message when network is unavailable.
     if headers == nil then
-        error(code)
+        error(status or code or "network unreachable")
     end
     -- Below are numerous if cases to handle different response codes.
     if code == 200 then
@@ -362,7 +362,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         -- This block handles all other requests and supplies the user with a generic
         -- error message and no more information than the code.
         UIManager:show(InfoMessage:new{
-            text = T(_("Cannot get catalog. Server response code %1."), code),
+            text = T(_("Cannot get catalog. Server response status: %1."), status or code),
         })
     end
 end
