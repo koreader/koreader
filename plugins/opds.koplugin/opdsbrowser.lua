@@ -658,7 +658,7 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
             else
                 util.removeFile(local_path)
                 logger.dbg("OPDSBrowser:downloadFile: Request failed:", status or code)
-                logger.dbg("OPDSBrowser:downloadFile: Request response:", headers)
+                logger.dbg("OPDSBrowser:downloadFile: Response headers:", headers)
                 UIManager:show(InfoMessage:new {
                     text = T(_("Could not save file to:\n%1\n%2"),
                         BD.filepath(local_path),
@@ -730,7 +730,7 @@ function OPDSBrowser:streamPages(item, remote_url, count)
                 return page_bb
             else
                 logger.dbg("OPDSBrowser:streamPages: Request failed:", status or code)
-                logger.dbg("OPDSBrowser:streamPages: Request response:", headers)
+                logger.dbg("OPDSBrowser:streamPages: Response headers:", headers)
                 local error_bb = RenderImage:renderImageFile("resources/koreader.png", false)
                 return error_bb
             end

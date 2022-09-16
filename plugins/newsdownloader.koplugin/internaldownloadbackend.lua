@@ -31,7 +31,7 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
             return self:getResponseAsString(redirected_url, redirectCount + 1)
         else
             logger.dbg("InternalDownloadBackend: Unhandled response status:", status or code)
-            logger.dbg("InternalDownloadBackend: Full response:", headers)
+            logger.dbg("InternalDownloadBackend: Response headers:", headers)
             error("InternalDownloadBackend: Don't know how to handle HTTP response status:", status or code)
         end
     end

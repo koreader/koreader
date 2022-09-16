@@ -1113,7 +1113,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         logger.dbg("file downloaded to", download_location)
     else
         logger.dbg("ReaderDictionary: Request failed:", status or code)
-        logger.dbg("ReaderDictionary: Request response:", headers)
+        logger.dbg("ReaderDictionary: Response headers:", headers)
         UIManager:show(InfoMessage:new{
             text = _("Could not save file to:\n") .. BD.filepath(download_location),
             --timeout = 3,

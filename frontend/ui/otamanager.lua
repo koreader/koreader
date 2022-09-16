@@ -168,7 +168,7 @@ function OTAManager:checkUpdate()
     socketutil:reset_timeout()
     if code ~= 200 then
         logger.warn("cannot find update file:", status or code or "network unreachable")
-        logger.dbg("Request response:", headers)
+        logger.dbg("Response headers:", headers)
         return
     end
     -- parse OTA package version

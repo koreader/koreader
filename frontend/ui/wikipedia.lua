@@ -138,7 +138,7 @@ local function getUrlContent(url, timeout, maxtime)
     end
     if not code or code < 200 or code > 299 then -- all 200..299 HTTP codes are OK
         logger.warn("HTTP status not okay:", status or code or "network unreachable")
-        logger.dbg("Request response:", headers)
+        logger.dbg("Response headers:", headers)
         return false, "Remote server error or unavailable"
     end
     if headers and headers["content-length"] then

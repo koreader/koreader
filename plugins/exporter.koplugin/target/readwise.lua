@@ -35,7 +35,7 @@ local function makeRequest(endpoint, method, request_body, token)
 
     if code ~= 200 then
         logger.warn("Readwise: HTTP response code <> 200. Response status:", status or code or "network unreachable")
-        logger.dbg("Request response:", headers)
+        logger.dbg("Response headers:", headers)
         return nil, status
     end
 

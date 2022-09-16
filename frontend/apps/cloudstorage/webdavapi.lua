@@ -99,7 +99,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     elseif code < 200 or code > 299 then
         -- got a response, but it wasn't a success (e.g. auth failure)
         logger.dbg("WebDavApi:listFolder: Request failed:", status or code)
-        logger.dbg("WebDavApi:listFolder: Request response:", headers)
+        logger.dbg("WebDavApi:listFolder: Response headers:", headers)
         logger.dbg("WebDavApi:listFolder: Response body:", table.concat(sink))
         return nil
     end
