@@ -49,9 +49,9 @@ local function dispatcherRegisterProfile(name, unregister)
         Dispatcher:removeAction("profile_menu_"..name)
     else
         Dispatcher:registerAction("profile_exec_"..name,
-            {category="none", event="ProfileExecute", arg=name, title=T(_("Profile execute: %1"), name), general=true})
+            {category="none", event="ProfileExecute", arg=name, title=T(_("Profile \u{F144} %1"), name), general=true})
         Dispatcher:registerAction("profile_menu_"..name,
-            {category="none", event="ProfileShowMenu", arg=name, title=T(_("Profile show menu: %1"), name), general=true})
+            {category="none", event="ProfileShowMenu", arg=name, title=T(_("Profile \u{F0CA} %1"), name), general=true})
     end
 end
 
@@ -92,6 +92,8 @@ function Profiles:getSubMenuItems()
         },
     }
     for k, v in FFIUtil.orderedPairs(self.data) do
+        local edit_actions_sub_items = {}
+        Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k)
         local sub_items = {
             {
                 text = _("Execute"),
@@ -141,7 +143,10 @@ function Profiles:getSubMenuItems()
                 end,
                 separator = true,
             },
-            -- "Edit actions"
+            {
+                text = _("Edit actions"),
+                sub_item_table = edit_actions_sub_items,
+            },
             {
                 text = _("Sort actions"),
                 checked_func = function()
@@ -200,12 +205,6 @@ function Profiles:getSubMenuItems()
                 end,
             },
         }
-        local edit_actions_sub_items = {}
-        Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k)
-        table.insert(sub_items, 5, {
-            text = _("Edit actions"),
-            sub_item_table = edit_actions_sub_items,
-        })
         table.insert(sub_item_table, {
             text = k,
             hold_keep_menu_open = false,
@@ -241,16 +240,16 @@ function Profiles:onProfileShowMenu(name)
     local actions_list = self:getActionsList(name)
     local quickmenu
     local buttons = {}
-    for i = 1, #actions_list do
+    for _, v in ipairs(actions_list) do
         table.insert(buttons, {{
-            text = actions_list[i].text,
+            text = v.text,
             align = "left",
             font_face = "smallinfofont",
             font_size = 22,
             font_bold = false,
             callback = function()
                 UIManager:close(quickmenu)
-                local action = actions_list[i].label
+                local action = v.label
                 Dispatcher:execute({[action] = profile[action]})
             end,
         }})
@@ -281,8 +280,8 @@ function Profiles:sortActions(name, touchmenu_instance)
             else
                 self.data[name].settings = {["actions_order"] = {}}
             end
-            for i = 1, #sort_widget.item_table do
-                self.data[name].settings.actions_order[i] = sort_widget.item_table[i].label
+            for i, v in ipairs(sort_widget.item_table) do
+                self.data[name].settings.actions_order[i] = v.label
             end
             touchmenu_instance:updateItems()
             self.updated = true
