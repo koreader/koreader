@@ -331,7 +331,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     elseif code == 301 then -- Page has permanently moved
         UIManager:show(InfoMessage:new{
             text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."),
-                     BD.url(headers['Location'])),
+                     BD.url(headers.location)),
         })
     elseif code == 302
         and item_url:match("^https")
@@ -624,10 +624,10 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
             logger.dbg("Downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
 
-            local code, headers
+            local code, headers, status
             if parsed.scheme == "http" or parsed.scheme == "https" then
                 socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-                code, headers = socket.skip(1, http.request {
+                code, headers, status = socket.skip(1, http.request {
                     url         = remote_url,
                     headers     = {
                         ["Accept-Encoding"] = "identity",
@@ -657,8 +657,12 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
                 })
             else
                 util.removeFile(local_path)
+                logger.dbg("Download failed:", status or code)
+                logger.dbg("Request response:", headers)
                 UIManager:show(InfoMessage:new {
-                    text = _("Could not save file to:\n") .. BD.filepath(local_path),
+                    text = T(_("Could not save file to:\n%1\n%2"),
+                        BD.filepath(local_path),
+                        status or code or "network unreachable"),
                     timeout = 3,
                 })
             end
