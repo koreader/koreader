@@ -386,11 +386,12 @@ function Translator:loadPage(text, target_lang, source_lang)
 
     -- raise error message when network is unavailable
     if headers == nil then
-        error("Network is unreachable")
+        error(status or code or "network unreachable")
     end
 
     if code ~= 200 then
-        logger.warn("translator HTTP status not okay:", status)
+        logger.warn("translator HTTP status not okay:", status or code or "network unreachable")
+        logger.dbg("Response headers:", headers)
         return
     end
 

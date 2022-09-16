@@ -103,14 +103,14 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
        code == socketutil.SSL_HANDSHAKE_CODE or
        code == socketutil.SINK_TIMEOUT_CODE
     then
-        logger.warn("request interrupted:", code)
+        logger.warn("request interrupted:", status or code)
         return false, code
     end
     if headers == nil then
-        logger.warn("No HTTP headers:", code, status)
+        logger.warn("No HTTP headers:", status or code or "network unreachable")
         return false, "Network or remote server unavailable"
     end
-    if not code or string.sub(code, 1, 1) ~= "2" then -- all 200..299 HTTP codes are OK
+    if not code or code < 200 or code > 299 then -- all 200..299 HTTP codes are OK
         if code and code > 299 and code < 400  and headers and headers.location then -- handle 301, 302...
            local redirected_url = headers.location
            local parsed_redirect_location = socket_url.parse(redirected_url)
@@ -122,9 +122,9 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
            logger.dbg("getUrlContent: Redirecting to url: ", redirected_url)
            return getUrlContent(redirected_url, timeout, maxtime, redirectCount + 1)
         else
-           error("EpubDownloadBackend: Don't know how to handle HTTP response status: ", status)
+           error("EpubDownloadBackend: Don't know how to handle HTTP response status:", status or code)
         end
-        logger.warn("HTTP status not okay:", code, status)
+        logger.warn("HTTP status not okay:", status or code)
         return false, "Remote server error or unavailable"
     end
     if headers and headers["content-length"] then

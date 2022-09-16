@@ -298,11 +298,11 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     }
     logger.dbg("Request:", request)
     -- Fire off the request and wait to see what we get back.
-    local code, headers = socket.skip(1, http.request(request))
+    local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     -- Check the response and raise error message when network is unavailable.
     if headers == nil then
-        error(code)
+        error(status or code or "network unreachable")
     end
     -- Below are numerous if cases to handle different response codes.
     if code == 200 then
@@ -331,7 +331,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     elseif code == 301 then -- Page has permanently moved
         UIManager:show(InfoMessage:new{
             text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."),
-                     BD.url(headers['Location'])),
+                     BD.url(headers.location)),
         })
     elseif code == 302
         and item_url:match("^https")
@@ -362,7 +362,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         -- This block handles all other requests and supplies the user with a generic
         -- error message and no more information than the code.
         UIManager:show(InfoMessage:new{
-            text = T(_("Cannot get catalog. Server response code %1."), code),
+            text = T(_("Cannot get catalog. Server response status: %1."), status or code),
         })
     end
 end
@@ -624,10 +624,10 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
             logger.dbg("Downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
 
-            local code, headers
+            local code, headers, status
             if parsed.scheme == "http" or parsed.scheme == "https" then
                 socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-                code, headers = socket.skip(1, http.request {
+                code, headers, status = socket.skip(1, http.request {
                     url         = remote_url,
                     headers     = {
                         ["Accept-Encoding"] = "identity",
@@ -640,7 +640,6 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
             else
                 UIManager:show(InfoMessage:new {
                     text = T(_("Invalid protocol:\n%1"), parsed.scheme),
-                    timeout = 3,
                 })
             end
 
@@ -657,9 +656,12 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
                 })
             else
                 util.removeFile(local_path)
+                logger.dbg("OPDSBrowser:downloadFile: Request failed:", status or code)
+                logger.dbg("OPDSBrowser:downloadFile: Response headers:", headers)
                 UIManager:show(InfoMessage:new {
-                    text = _("Could not save file to:\n") .. BD.filepath(local_path),
-                    timeout = 3,
+                    text = T(_("Could not save file to:\n%1\n%2"),
+                        BD.filepath(local_path),
+                        status or code or "network unreachable"),
                 })
             end
         end)
@@ -698,10 +700,10 @@ function OPDSBrowser:streamPages(item, remote_url, count)
             logger.dbg("Streaming page from", page_url)
             local parsed = url.parse(page_url)
 
-            local code
+            local code, headers, status
             if parsed.scheme == "http" or parsed.scheme == "https" then
                 socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-                code = socket.skip(1, http.request {
+                code, headers, status = socket.skip(1, http.request {
                     url         = page_url,
                     headers     = {
                         ["Accept-Encoding"] = "identity",
@@ -714,7 +716,6 @@ function OPDSBrowser:streamPages(item, remote_url, count)
             else
                 UIManager:show(InfoMessage:new {
                     text = T(_("Invalid protocol:\n%1"), parsed.scheme),
-                    timeout = 3,
                 })
             end
 
@@ -725,6 +726,8 @@ function OPDSBrowser:streamPages(item, remote_url, count)
                              or RenderImage:renderImageFile("resources/koreader.png", false)
                 return page_bb
             else
+                logger.dbg("OPDSBrowser:streamPages: Request failed:", status or code)
+                logger.dbg("OPDSBrowser:streamPages: Response headers:", headers)
                 local error_bb = RenderImage:renderImageFile("resources/koreader.png", false)
                 return error_bb
             end

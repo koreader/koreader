@@ -30,11 +30,12 @@ local function makeRequest(endpoint, method, request_body, token)
             ["Authorization"] = "Token " .. token
         },
     }
-    local code, _, status = socket.skip(1, http.request(request))
+    local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
     if code ~= 200 then
-        logger.warn("Readwise: HTTP response code <> 200. Response status: ", status)
+        logger.warn("Readwise: HTTP response code <> 200. Response status:", status or code or "network unreachable")
+        logger.dbg("Response headers:", headers)
         return nil, status
     end
 

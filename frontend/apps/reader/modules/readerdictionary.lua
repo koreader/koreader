@@ -1104,14 +1104,16 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     end
 
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local c = socket.skip(1, http.request{
+    local code, headers, status = socket.skip(1, http.request{
         url     = dict.url,
         sink    = ltn12.sink.file(io.open(download_location, "w")),
     })
     socketutil:reset_timeout()
-    if c == 200 then
+    if code == 200 then
         logger.dbg("file downloaded to", download_location)
     else
+        logger.dbg("ReaderDictionary: Request failed:", status or code)
+        logger.dbg("ReaderDictionary: Response headers:", headers)
         UIManager:show(InfoMessage:new{
             text = _("Could not save file to:\n") .. BD.filepath(download_location),
             --timeout = 3,
