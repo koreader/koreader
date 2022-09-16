@@ -631,11 +631,11 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
-    local code, resp_headers = socket.skip(1, http.request(request))
+    local code, resp_headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     -- raise error message when network is unavailable
     if resp_headers == nil then
-        logger.dbg("Wallabag: Server error: ", code)
+        logger.dbg("Wallabag: Server error:", status or code)
         return nil, "network_error"
     end
     if code == 200 then
@@ -665,12 +665,14 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
             local entry_mode = lfs.attributes(filepath, "mode")
             if entry_mode == "file" then
                 os.remove(filepath)
-                logger.dbg("Wallabag: Removed failed download: ", filepath)
+                logger.dbg("Wallabag: Removed failed download:", filepath)
             end
         elseif not quiet then
             UIManager:show(InfoMessage:new{
                 text = _("Communication with server failed."), })
         end
+        logger.dbg("Wallabag: Request failed:", status or code)
+        logger.dbg("Wallabag: Request response:", resp_headers)
         return nil, "http_error", code
     end
 end
@@ -709,7 +711,7 @@ function Wallabag:synchronize()
     if self.access_token ~= "" then
         local articles = self:getArticleList()
         if articles then
-            logger.dbg("Wallabag: number of articles: ", #articles)
+            logger.dbg("Wallabag: number of articles:", #articles)
 
             info = InfoMessage:new{ text = _("Downloading articles…") }
             UIManager:show(info)

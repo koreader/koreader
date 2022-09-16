@@ -657,8 +657,8 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
                 })
             else
                 util.removeFile(local_path)
-                logger.dbg("Download failed:", status or code)
-                logger.dbg("Request response:", headers)
+                logger.dbg("OPDSBrowser:downloadFile: Request failed:", status or code)
+                logger.dbg("OPDSBrowser:downloadFile: Request response:", headers)
                 UIManager:show(InfoMessage:new {
                     text = T(_("Could not save file to:\n%1\n%2"),
                         BD.filepath(local_path),
@@ -702,10 +702,10 @@ function OPDSBrowser:streamPages(item, remote_url, count)
             logger.dbg("Streaming page from", page_url)
             local parsed = url.parse(page_url)
 
-            local code
+            local code, headers, status
             if parsed.scheme == "http" or parsed.scheme == "https" then
                 socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-                code = socket.skip(1, http.request {
+                code, headers, status = socket.skip(1, http.request {
                     url         = page_url,
                     headers     = {
                         ["Accept-Encoding"] = "identity",
@@ -729,6 +729,8 @@ function OPDSBrowser:streamPages(item, remote_url, count)
                              or RenderImage:renderImageFile("resources/koreader.png", false)
                 return page_bb
             else
+                logger.dbg("OPDSBrowser:streamPages: Request failed:", status or code)
+                logger.dbg("OPDSBrowser:streamPages: Request response:", headers)
                 local error_bb = RenderImage:renderImageFile("resources/koreader.png", false)
                 return error_bb
             end

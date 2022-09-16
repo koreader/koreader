@@ -390,7 +390,8 @@ function Translator:loadPage(text, target_lang, source_lang)
     end
 
     if code ~= 200 then
-        logger.warn("translator HTTP status not okay:", status)
+        logger.warn("translator HTTP status not okay:", status or code or "network unreachable")
+        logger.dbg("Request response:", headers)
         return
     end
 

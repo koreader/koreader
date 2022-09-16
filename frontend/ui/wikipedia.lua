@@ -133,11 +133,12 @@ local function getUrlContent(url, timeout, maxtime)
         return false, code
     end
     if headers == nil then
-        logger.warn("No HTTP headers:", code, status)
+        logger.warn("No HTTP headers:", status or code or "network unreachable")
         return false, "Network or remote server unavailable"
     end
-    if not code or string.sub(code, 1, 1) ~= "2" then -- all 200..299 HTTP codes are OK
-        logger.warn("HTTP status not okay:", code, status)
+    if not code or code < 200 or code > 299 then -- all 200..299 HTTP codes are OK
+        logger.warn("HTTP status not okay:", status or code or "network unreachable")
+        logger.dbg("Request response:", headers)
         return false, "Remote server error or unavailable"
     end
     if headers and headers["content-length"] then
