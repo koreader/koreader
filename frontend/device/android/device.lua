@@ -131,9 +131,18 @@ local Device = Generic:new{
 function Device:init()
     self.screen = require("ffi/framebuffer_android"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/android/powerd"):new{device = self}
+
+    local event_map = require("device/android/event_map")
+
+    if android.prop.is_tolino then
+        -- dpad left/right as page back/forward
+        event_map[21] = "LPgBack"
+        event_map[22] = "LPgFwd"
+    end
+
     self.input = require("device/input"):new{
         device = self,
-        event_map = require("device/android/event_map"),
+        event_map = event_map,
         handleMiscEv = function(this, ev)
             local Event = require("ui/event")
             local UIManager = require("ui/uimanager")
