@@ -80,11 +80,12 @@ function Button:init()
         self.padding_v = self.padding
     end
 
-    local is_left = self.align == "left"
-    local r_margin = is_left and (2 * Size.padding.large) or 0
+    local is_left_aligned = self.align == "left"
+    local right_margin = is_left_aligned and (2 * Size.padding.large) or 0
 
     if self.text then
-        local max_width = self.max_width and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize - r_margin or nil
+        local max_width = self.max_width
+            and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize - right_margin or nil
         self.label_widget = TextWidget:new{
             text = self.text,
             max_width = max_width,
@@ -147,7 +148,7 @@ function Button:init()
         self.width = widget_size.w
     end
     -- set FrameContainer content
-    if is_left then
+    if is_left_aligned then
         self.label_container = LeftContainer:new{
             dimen = Geom:new{
                 w = self.width - 4 * Size.padding.large,
