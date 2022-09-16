@@ -682,7 +682,7 @@ function AutoWarmth:getScheduleMenu()
         return {
             mode = mode,
             text_func = function()
-                return string.format("%s: %s", text,
+                return T(_"%1: %2", text,
                     self:hoursToClock(self.scheduler_times[num]))
             end,
             checked_func = function()
@@ -786,15 +786,15 @@ function AutoWarmth:getWarmthMenu()
             text_func = function()
                 if Device:hasNaturalLight() and self.control_warmth then
                     if self.warmth[num] <= 100 then
-                        return string.format("%s: %d %%", text, self.warmth[num])
+                        return T(_("%1: %2 %"), text, self.warmth[num])
                     else
-                        return string.format("%s: 100 %% %s", text, self.control_nightmode and "+ ☾" or "")
+                        return T(_("%1: 100 % %2"), text, self.control_nightmode and "+ ☾" or "")
                     end
                 else
                     if self.warmth[num] <= 100 then
-                        return string.format("%s: ☼", text)
+                        return T(_("%1: ☼"), text)
                     else
-                        return string.format("%s: ☾", text)
+                        return T(_("%1: ☾"), text)
                     end
                 end
             end,
