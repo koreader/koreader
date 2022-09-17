@@ -425,7 +425,7 @@ function ImageWidget:getScaleFactorExtrema()
             bpp = 4
         end
 
-        max_area = math.floor(0.15 * memfree / bpp)
+        max_area = math.floor(0.25 * memfree / bpp)
     else
         -- Best effort...
         max_area = screen_area * 30
