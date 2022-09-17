@@ -398,7 +398,7 @@ function ImageWidget:getScaleFactorExtrema()
         return self._min_scale_factor, self._max_scale_factor
     end
 
-    -- Compute dynamic limits for the scale factor, based on the screen's area
+    -- Compute dynamic limits for the scale factor, based on the screen's area and available mmeory (if possible).
     -- Extrema eyeballed to be somewhat sensible given our usual screen dimensions and available RAM.
     local util = require("util")
     local memfree, memtotal = util.calcFreeMem()
@@ -408,7 +408,7 @@ function ImageWidget:getScaleFactorExtrema()
     local min_area = math.ceil(screen_area / 10000)
     local max_area
     if memfree then
-        -- If we have access to memory statistics, limit the requested bb size to 15% of the available RAM.
+        -- If we have access to memory statistics, limit the requested bb size to 25% of the available RAM.
         local bbtype = self._bb:getType()
         local bpp
         if bbtype == Blitbuffer.TYPE_BB8 then
@@ -427,7 +427,7 @@ function ImageWidget:getScaleFactorExtrema()
 
         max_area = math.floor(0.25 * memfree / bpp)
     else
-        -- Best effort...
+        -- Best effort (might be too low on low dpi devices, and too high on high DPI ones ;))...
         max_area = screen_area * 30
     end
 
