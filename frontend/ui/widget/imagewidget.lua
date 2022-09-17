@@ -427,8 +427,15 @@ function ImageWidget:getScaleFactorExtrema()
 
         max_area = math.floor(0.25 * memfree / bpp)
     else
-        -- Best effort (might be too low on low dpi devices, and too high on high DPI ones ;))...
-        max_area = screen_area * 30
+        -- Best effort, trying to account for DPI...
+        local dpi = Screen:getDPI()
+        if dpi <= 212 then
+            max_area = screen_area * 45
+        elseif dpi <= 265 then
+            max_area = screen_area * 25
+        else
+            max_area = screen_area * 15
+        end
     end
 
     local area = self._img_w * self._img_h
