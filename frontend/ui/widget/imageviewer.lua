@@ -734,7 +734,6 @@ function ImageViewer:onPinch(_, ges)
     elseif ges.direction == "horizontal" then
         dec = ges.distance / Screen:getWidth()
     else
-        -- Diagonal, so, compute the length of the screen's diagonal
         local tl = Geom:new{ x = 0, y = 0 }
         local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
         dec = ges.distance / tl:distance(br)
