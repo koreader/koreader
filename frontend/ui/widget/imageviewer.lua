@@ -642,10 +642,12 @@ function ImageViewer:onZoomIn(inc)
     end
 
     if not inc then inc = 0.2 end -- default for key zoom event
-    local _, max_factor = self._image_wg:getScaleFactorExtrema()
+    if not self._max_scale_factor then
+        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
+    end
 
     -- Clamp to sane values
-    local new_factor = math.min(self.scale_factor + inc, max_factor)
+    local new_factor = math.min(self.scale_factor + inc, self._max_scale_factor)
     if new_factor ~= self.scale_factor then
         self.scale_factor = new_factor
         self:update()
@@ -660,10 +662,14 @@ function ImageViewer:onZoomOut(dec)
     end
 
     if not dec then dec = 0.2 end -- default for key zoom event
-    local min_factor, _ = self._image_wg:getScaleFactorExtrema()
+    -- We destroy ImageWidget on update, so only request this the first time,
+    -- in order to avoid jitter in the results given differing memory consumption at different zoom levels...
+    if not self._min_scale_factor then
+        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
+    end
 
     -- Clamp to sane values
-    local new_factor = math.max(self.scale_factor - dec, min_factor)
+    local new_factor = math.max(self.scale_factor - dec, self._min_scale_factor)
     if new_factor ~= self.scale_factor then
         self.scale_factor = new_factor
         self:update()
