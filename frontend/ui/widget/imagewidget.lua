@@ -387,6 +387,25 @@ function ImageWidget:getScaleFactor()
     return self.scale_factor
 end
 
+function ImageWidget:getScaleFactorExtrema()
+    if self._min_scale_factor and self._max_scale_factor then
+        return self._min_scale_factor, self._max_scale_factor
+    end
+
+    -- Compute dynamic limits for the scale factor, based on the screen's area
+    local screen_area = Screen:getWidth() * Screen:getHeight()
+    -- Extrema eyeballed to be somewhat sensible given our usual screen dimensions and available RAM.
+    -- FIXME: Use 15% of the available RAM instead tailored for the bb bitdepth (if RAM checks are possible)
+    local max_area = screen_area * 45
+    local min_area = math.ceil(screen_area / 10000)
+
+    local area = self._bb:getWidth() * self._bb:getHeight()
+    self._min_scale_factor = 1 / math.sqrt(area / min_area)
+    self._max_scale_factor = math.sqrt(max_area / area)
+
+    return self._min_scale_factor, self._max_scale_factor
+end
+
 function ImageWidget:getPanByCenterRatio(x, y)
     -- returns center ratio (without limits check) we would get with this panBy
     local center_x_ratio = (x + self._offset_x + self.width/2) / self._bb_w
@@ -513,6 +532,8 @@ function ImageWidget:free()
     -- self._render() is called again (happens with iconbutton,
     -- avoids x2 x2 x2 if high dpi and icon scaled x8 after 3 calls)
     self.scale_factor = self._initial_scale_factor
+    self._min_scale_factor = nil
+    self._max_scale_factor = nil
 end
 
 function ImageWidget:onCloseWidget()

@@ -640,13 +640,16 @@ function ImageViewer:onZoomIn(inc)
         -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
+
     if not inc then inc = 0.2 end -- default for key zoom event
-    self.scale_factor = self.scale_factor + inc
-    -- Avoid excessive zoom by halving the increase if we go too high, and clamp the result
-    if self.scale_factor > 100 then
-        self.scale_factor = math.min((self.scale_factor - inc) + inc/2, 100)
+    local _, max_factor = self._image_wg:getScaleFactorExtrema()
+
+    -- Clamp to sane values
+    local new_factor = math.min(self.scale_factor + inc, max_factor)
+    if new_factor ~= self.scale_factor then
+        self.scale_factor = new_factor
+        self:update()
     end
-    self:update()
     return true
 end
 
@@ -655,13 +658,16 @@ function ImageViewer:onZoomOut(dec)
         -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
+
     if not dec then dec = 0.2 end -- default for key zoom event
-    self.scale_factor = self.scale_factor - dec
-    -- Avoid excessive unzoom by halving the decrease if we go too low, and clamp the result
-    if self.scale_factor < 0.01 then
-        self.scale_factor = math.max(0.01, (self.scale_factor + dec) - dec/2)
+    local min_factor, _ = self._image_wg:getScaleFactorExtrema()
+
+    -- Clamp to sane values
+    local new_factor = math.max(self.scale_factor - dec, min_factor)
+    if new_factor ~= self.scale_factor then
+        self.scale_factor = new_factor
+        self:update()
     end
-    self:update()
     return true
 end
 
