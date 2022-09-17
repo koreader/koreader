@@ -398,9 +398,20 @@ function WordInfoDialog:init()
         end
     }
 
+    local buttons = {{reset_button, remove_button}}
+    if self.show_parent.item.last_due_time then
+        table.insert(buttons, {{
+            text = _("Undo study"),
+            callback = function()
+                self.undo_callback()
+                UIManager:close(self)
+            end
+        }})
+    end
+
     local focus_button = ButtonTable:new{
         width = width,
-        buttons = {{reset_button, remove_button}},
+        buttons = buttons,
         show_parent = self
     }
 
@@ -815,6 +826,19 @@ function VocabItemWidget:resetProgress()
     self.item.review_count = 0
     self.item.due_time = os.time()
     self.item.review_time = self.item.due_time
+    self.item.last_due_time = nil
+    self:initItemWidget()
+    UIManager:setDirty(self.show_parent, function()
+        return "ui", self[1].dimen end)
+end
+
+function VocabItemWidget:undo()
+    self.item.review_count = self.item.last_review_count or self.item.review_count
+    self.item.review_time = self.item.last_review_time or self.item.review_time
+    self.item.due_time = self.item.last_due_time or self.item.due_time
+    self.item.last_review_count = nil
+    self.item.last_review_time = nil
+    self.item.last_due_time = nil
     self:initItemWidget()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self[1].dimen end)
@@ -838,6 +862,9 @@ function VocabItemWidget:showMore()
         end,
         reset_callback = function()
             self:resetProgress()
+        end,
+        undo_callback = function()
+            self:undo()
         end,
         show_parent = self
     }
