@@ -24,6 +24,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -39,6 +40,7 @@ local Button = InputContainer:new{
     icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
     icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     icon_rotation_angle = 0,
+    align = "center", -- or "left"
     preselect = false,
     callback = nil,
     enabled = true,
@@ -78,8 +80,12 @@ function Button:init()
         self.padding_v = self.padding
     end
 
+    local is_left_aligned = self.align == "left"
+    local right_margin = is_left_aligned and (2 * Size.padding.large) or 0
+
     if self.text then
-        local max_width = self.max_width and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize or nil
+        local max_width = self.max_width
+            and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize - right_margin or nil
         self.label_widget = TextWidget:new{
             text = self.text,
             max_width = max_width,
@@ -142,6 +148,23 @@ function Button:init()
         self.width = widget_size.w
     end
     -- set FrameContainer content
+    if is_left_aligned then
+        self.label_container = LeftContainer:new{
+            dimen = Geom:new{
+                w = self.width - 4 * Size.padding.large,
+                h = widget_size.h
+            },
+            self.label_widget,
+        }
+    else
+        self.label_container = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = widget_size.h
+            },
+            self.label_widget,
+        }
+    end
     self.frame = FrameContainer:new{
         margin = self.margin,
         show_parent = self.show_parent,
@@ -152,13 +175,7 @@ function Button:init()
         padding_bottom = self.padding_v,
         padding_left = self.padding_h,
         padding_right = self.padding_h,
-        CenterContainer:new{
-            dimen = Geom:new{
-                w = self.width,
-                h = widget_size.h
-            },
-            self.label_widget,
-        }
+        self.label_container
     }
     if self.preselect then
         self.frame.invert = true
