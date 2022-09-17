@@ -297,7 +297,6 @@ function ImageWidget:_render()
     -- Store the dimensions of the actual image, before any kind of scaling
     self._img_w = bb_w
     self._img_h = bb_h
-    logger.dbg("ImageWidget:_render: bb dims", bb_w, bb_h)
 
     -- scale_for_dpi setting: update scale_factor (even if not set) with it
     if self.scale_for_dpi and not self.already_scaled_for_dpi then
@@ -402,7 +401,6 @@ function ImageWidget:getScaleFactorExtrema()
     -- Extrema eyeballed to be somewhat sensible given our usual screen dimensions and available RAM.
     local util = require("util")
     local memfree, memtotal = util.calcFreeMem()
-    logger.dbg("memavailable:", memfree, "memtotal:", memtotal)
 
     local screen_area = Screen:getWidth() * Screen:getHeight()
     local min_area = math.ceil(screen_area / 10000)
@@ -439,10 +437,8 @@ function ImageWidget:getScaleFactorExtrema()
     end
 
     local area = self._img_w * self._img_h
-    logger.dbg("ImageWidget:getScaleFactorExtrema: bb dims:", self._img_w, self._img_h)
     self._min_scale_factor = 1 / math.sqrt(area / min_area)
     self._max_scale_factor = math.sqrt(max_area / area)
-    logger.dbg("ImageWidget:getScaleFactorExtrema:", self._min_scale_factor, self._max_scale_factor)
 
     return self._min_scale_factor, self._max_scale_factor
 end
