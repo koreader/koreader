@@ -43,16 +43,16 @@ function Profiles:onFlushSettings()
     end
 end
 
-local function dispatcherRegisterProfile(name, unregister)
-    if unregister then
-        Dispatcher:removeAction("profile_exec_"..name)
-        Dispatcher:removeAction("profile_menu_"..name)
-    else
-        Dispatcher:registerAction("profile_exec_"..name,
-            {category="none", event="ProfileExecute", arg=name, title=T(_("Profile \u{F144} %1"), name), general=true})
-        Dispatcher:registerAction("profile_menu_"..name,
-            {category="none", event="ProfileShowMenu", arg=name, title=T(_("Profile \u{F0CA} %1"), name), general=true})
-    end
+local function dispatcherRegisterProfile(name)
+    Dispatcher:registerAction("profile_exec_"..name,
+        {category="none", event="ProfileExecute", arg=name, title=T(_("Profile \u{F144} %1"), name), general=true})
+    Dispatcher:registerAction("profile_menu_"..name,
+        {category="none", event="ProfileShowMenu", arg=name, title=T(_("Profile \u{F0CA} %1"), name), general=true})
+end
+
+local function dispatcherRemoveProfile(name)
+    Dispatcher:removeAction("profile_exec_"..name)
+    Dispatcher:removeAction("profile_menu_"..name)
 end
 
 function Profiles:onDispatcherRegisterActions()
@@ -177,7 +177,21 @@ function Profiles:getSubMenuItems()
                         self.data[k] = nil
                         self.updated = true
                         self:renameAutostart(k, new_name)
-                        dispatcherRegisterProfile(k, true)
+                        dispatcherRemoveProfile(k)
+                        dispatcherRegisterProfile(new_name)
+                        touchmenu_instance.item_table = self:getSubMenuItems()
+                        touchmenu_instance:updateItems()
+                      end
+                    self:editProfileName(editCallback, k)
+                end,
+            },
+            {
+                text = _("Copy"),
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local function editCallback(new_name)
+                        self.data[new_name] = util.tableDeepCopy(v)
+                        self.updated = true
                         dispatcherRegisterProfile(new_name)
                         touchmenu_instance.item_table = self:getSubMenuItems()
                         touchmenu_instance:updateItems()
@@ -197,7 +211,7 @@ function Profiles:getSubMenuItems()
                             self.data[k] = nil
                             self.updated = true
                             self:renameAutostart(k)
-                            dispatcherRegisterProfile(k, true)
+                            dispatcherRemoveProfile(k)
                             touchmenu_instance.item_table = self:getSubMenuItems()
                             touchmenu_instance:updateItems()
                         end,
