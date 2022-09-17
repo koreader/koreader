@@ -834,7 +834,7 @@ end
 
 function VocabItemWidget:undo()
     self.item.review_count = self.item.last_review_count or self.item.review_count
-    self.item.review_time = self.item.last_review_time or self.item.review_time
+    self.item.review_time = self.item.last_review_time
     self.item.due_time = self.item.last_due_time or self.item.due_time
     self.item.last_review_count = nil
     self.item.last_review_time = nil
