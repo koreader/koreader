@@ -393,15 +393,43 @@ function ImageWidget:getScaleFactorExtrema()
     end
 
     -- Compute dynamic limits for the scale factor, based on the screen's area
-    local screen_area = Screen:getWidth() * Screen:getHeight()
     -- Extrema eyeballed to be somewhat sensible given our usual screen dimensions and available RAM.
-    -- FIXME: Use 15% of the available RAM instead tailored for the bb bitdepth (if RAM checks are possible)
-    local max_area = screen_area * 45
+    local util = require("util")
+    local memfree, memtotal = util._calcFreeMem()
+    logger.dbg("memavailable:", memfree, "memtotal:", memtotal)
+
+    local screen_area = Screen:getWidth() * Screen:getHeight()
     local min_area = math.ceil(screen_area / 10000)
+    local max_area
+    if memfree then
+        -- If we have access to memory statistics, limit the requested bb size to 15% of the available RAM.
+        local bbtype = self._bb:getType()
+        local bpp
+        if bbtype == Blitbuffer.TYPE_BB8 then
+            bpp = 1
+        elseif bbtype == Blitbuffer.TYPE_BB8A then
+            bpp = 2
+        elseif bbtype == Blitbuffer.TYPE_BBRGB24 then
+            bpp = 3
+        elseif bbtype == Blitbuffer.TYPE_BBRGB32 then
+            bpp = 4
+        elseif bbtype == Blitbuffer.TYPE_BB4 then
+            bpp = 1
+        else
+            bpp = 4
+        end
+
+        max_area = math.floor(0.15 * memfree / bpp)
+    else
+        -- Best effort...
+        max_area = screen_area * 30
+    end
+
 
     local area = self._bb:getWidth() * self._bb:getHeight()
     self._min_scale_factor = 1 / math.sqrt(area / min_area)
     self._max_scale_factor = math.sqrt(max_area / area)
+    logger.dbg("ImageWidget:getScaleFactorExtrema:", self._min_scale_factor, self._max_scale_factor)
 
     return self._min_scale_factor, self._max_scale_factor
 end
