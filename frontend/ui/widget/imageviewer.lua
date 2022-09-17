@@ -636,6 +636,7 @@ end
 
 -- Zoom events
 function ImageViewer:onZoomIn(inc)
+    logger.dbg("ImageViewer:onZoomIn", inc)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
@@ -662,6 +663,7 @@ function ImageViewer:onZoomIn(inc)
 end
 
 function ImageViewer:onZoomOut(dec)
+    logger.dbg("ImageViewer:onZoomOut", dec)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
@@ -697,7 +699,17 @@ function ImageViewer:onSpread(_, ges)
         self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
     end
     -- Set some zoom increase value from pinch distance
-    local inc = ges.distance / Screen:getWidth()
+    local inc
+    if ges.direction == "vertical" then
+        inc = ges.distance / Screen:getHeight()
+    elseif ges.direction == "horizontal" then
+        inc = ges.distance / Screen:getWidth()
+    else
+        -- Diagonal, so, compute the length of the screen's diagonal
+        local tl = Geom:new{ x = 0, y = 0 }
+        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+        inc = ges.distance / tl:distance(br)
+    end
     self:onZoomIn(inc)
     return true
 end
@@ -705,7 +717,17 @@ end
 function ImageViewer:onPinch(_, ges)
     -- With Pinch, unlike Spread, it feels more natural if we keep the same center point.
     -- Set some zoom decrease value from pinch distance
-    local dec = ges.distance / Screen:getWidth()
+    local dec
+    if ges.direction == "vertical" then
+        dec = ges.distance / Screen:getHeight()
+    elseif ges.direction == "horizontal" then
+        dec = ges.distance / Screen:getWidth()
+    else
+        -- Diagonal, so, compute the length of the screen's diagonal
+        local tl = Geom:new{ x = 0, y = 0 }
+        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+        dec = ges.distance / tl:distance(br)
+    end
     self:onZoomOut(dec)
     return true
 end
