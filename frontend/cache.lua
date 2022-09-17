@@ -154,7 +154,7 @@ end
 
 -- Terribly crappy workaround: evict half the cache if we appear to be redlining on free RAM...
 function Cache:memoryPressureCheck()
-    local memfree, memtotal = util._calcFreeMem()
+    local memfree, memtotal = util.calcFreeMem()
 
     -- Nonsensical values? (!Linux), skip this.
     if memtotal == nil then
