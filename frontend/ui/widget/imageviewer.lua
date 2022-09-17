@@ -651,6 +651,12 @@ function ImageViewer:onZoomIn(inc)
     if new_factor ~= self.scale_factor then
         self.scale_factor = new_factor
         self:update()
+    else
+        if self.scale_factor == self._max_scale_factor then
+            logger.dbg("ImageViewer:onZoomIn: Hit the max scaling factor:", self.scale_factor)
+        else
+            logger.dbg("ImageViewer:onZoomIn: No change in scaling factor:", self.scale_factor)
+        end
     end
     return true
 end
@@ -673,6 +679,12 @@ function ImageViewer:onZoomOut(dec)
     if new_factor ~= self.scale_factor then
         self.scale_factor = new_factor
         self:update()
+    else
+        if self.scale_factor == self._min_scale_factor then
+            logger.dbg("ImageViewer:onZoomOut: Hit the min scaling factor:", self.scale_factor)
+        else
+            logger.dbg("ImageViewer:onZoomOut: No change in scaling factor:", self.scale_factor)
+        end
     end
     return true
 end
