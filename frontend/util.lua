@@ -838,11 +838,11 @@ function util:calcFreeMem()
 
     if memavailable then
         -- Leave a bit of margin, and report 85% of that...
-        return math.floor(memavailable * 0.85) * 1024, memtotal * 1024
+        return lshift(math.floor(memavailable * 0.85), 10), lshift(memtotal, 10)
     else
         -- Crappy Free + Buffers + Cache version, because the zoneinfo approach is a tad hairy...
         -- So, leave an even larger margin, and only report 75% of that...
-        return math.floor((memfree + buffers + cached) * 0.75) * 1024, memtotal * 1024
+        return lshift(math.floor((memfree + buffers + cached) * 0.75), 10), lshift(memtotal, 10)
     end
 end
 
