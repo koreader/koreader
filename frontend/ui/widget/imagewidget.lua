@@ -116,6 +116,8 @@ local ImageWidget = Widget:new{
 
     _bb = nil,
     _bb_disposable = true, -- whether we should free() our _bb
+    _img_w = nil,
+    _img_h = nil,
     _bb_w = nil,
     _bb_h = nil,
 }
@@ -292,6 +294,10 @@ function ImageWidget:_render()
     end
 
     local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
+    -- Store the dimensions of the actual image, before any kind of scaling
+    self._img_w = bb_w
+    self._img_h = bb_h
+    logger.dbg("ImageWidget:_render: bb dims", bb_w, bb_h)
 
     -- scale_for_dpi setting: update scale_factor (even if not set) with it
     if self.scale_for_dpi and not self.already_scaled_for_dpi then
@@ -425,8 +431,8 @@ function ImageWidget:getScaleFactorExtrema()
         max_area = screen_area * 30
     end
 
-
-    local area = self._bb:getWidth() * self._bb:getHeight()
+    local area = self._img_w * self._img_h
+    logger.dbg("ImageWidget:getScaleFactorExtrema: bb dims:", self._img_w, self._img_h)
     self._min_scale_factor = 1 / math.sqrt(area / min_area)
     self._max_scale_factor = math.sqrt(max_area / area)
     logger.dbg("ImageWidget:getScaleFactorExtrema:", self._min_scale_factor, self._max_scale_factor)
@@ -560,8 +566,6 @@ function ImageWidget:free()
     -- self._render() is called again (happens with iconbutton,
     -- avoids x2 x2 x2 if high dpi and icon scaled x8 after 3 calls)
     self.scale_factor = self._initial_scale_factor
-    self._min_scale_factor = nil
-    self._max_scale_factor = nil
 end
 
 function ImageWidget:onCloseWidget()
