@@ -75,7 +75,7 @@ function ButtonDialogTitle:init()
                         bordersize = 0,
                         TextBoxWidget:new{
                             text = self.title,
-                            width = self.width * 0.9,
+                            width = math.floor(self.width * 0.9),
                             face = self.use_info_style and self.info_face or self.title_face,
                             alignment = self.title_align or "left",
                         },
