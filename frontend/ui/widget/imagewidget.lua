@@ -450,7 +450,8 @@ function ImageWidget:recomputeScaleFactor(scaling)
     local req_height = self._bb:getHeight() * scaling
     logger.dbg("From", self._bb:getWidth(), self._bb:getHeight(), "to", req_width, req_height)
 
-    -- Best fit (in most cases, we're operating on a best-fit scale factor already, so both sides should match).
+    -- Best fit (in most cases, and certainly in all cases where manual zooming is involved,
+    -- we're operating on a best-fit w/ AR preserved scale factor already, so both sides should match).
     return math.min(req_width / self._img_w, req_height / self._img_h)
 end
 
