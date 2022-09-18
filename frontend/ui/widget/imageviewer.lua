@@ -677,13 +677,13 @@ function ImageViewer:onZoomOut(dec)
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
 
-    if not dec or dec > 1 then
+    if not dec then
         -- default for key zoom event
         dec = 0.2
     end
 
     -- Compute new scale factor for rescaled image dimensions
-    local new_factor = self._image_wg:recomputeScaleFactor(dec)
+    local new_factor = self._image_wg:recomputeScaleFactor(1 - dec)
 
     if not self._min_scale_factor then
         self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
@@ -710,14 +710,17 @@ function ImageViewer:onSpread(_, ges)
     if self._image_wg then
         self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
     end
-    -- Set some zoom increase value from pinch distance, relative to the current (i.e., scaled) image size
+    -- Set some zoom increase value from pinch distance, relative to the screen size
     local inc
     if ges.direction == "vertical" then
-        inc = ges.distance / self._image_wg:getCurrentHeight()
+        inc = ges.distance / Screen:getHeight()
     elseif ges.direction == "horizontal" then
-        inc = ges.distance / self._image_wg:getCurrentWidth()
+        inc = ges.distance / Screen:getWidth()
     else
-        inc = ges.distance / self._image_wg:getCurrentDiagonal()
+        -- Diagonal, so, compute the length of the screen's diagonal
+        local tl = Geom:new{ x = 0, y = 0 }
+        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+        inc = ges.distance / tl:distance(br)
     end
     self:onZoomIn(inc)
     return true
@@ -728,11 +731,13 @@ function ImageViewer:onPinch(_, ges)
     -- Set some zoom decrease value from pinch distance
     local dec
     if ges.direction == "vertical" then
-        dec = ges.distance / self._image_wg:getCurrentHeight()
+        dec = ges.distance / Screen:getHeight()
     elseif ges.direction == "horizontal" then
-        dec = ges.distance / self._image_wg:getCurrentWidth()
+        dec = ges.distance / Screen:getWidth()
     else
-        dec = ges.distance / self._image_wg:getCurrentDiagonal()
+        local tl = Geom:new{ x = 0, y = 0 }
+        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+        dec = ges.distance / tl:distance(br)
     end
     self:onZoomOut(dec)
     return true

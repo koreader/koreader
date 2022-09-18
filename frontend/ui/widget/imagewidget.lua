@@ -445,27 +445,11 @@ end
 
 -- Compute a new best-fit scale factor for a given image rescale percentage
 function ImageWidget:recomputeScaleFactor(scaling)
-    logger.dbg("ImageWidget:recomputeScaleFactor by", scaling)
     local req_width = self._bb:getWidth() * scaling
     local req_height = self._bb:getHeight() * scaling
-    logger.dbg("From", self._bb:getWidth(), self._bb:getHeight(), "to", req_width, req_height)
 
     -- Best fit
     return math.min(req_width / self._img_w, req_height / self._img_h)
-end
-
-function ImageWidget:getCurrentWidth()
-    return self._bb:getWidth()
-end
-
-function ImageWidget:getCurrentHeight()
-    return self._bb:getHeight()
-end
-
-function ImageWidget:getCurrentDiagonal()
-    local tl = Geom:new{ x = 0, y = 0 }
-    local br = Geom:new{ x = self._bb:getWidth() - 1, y = self._bb:getHeight() - 1}
-    return tl:distance(br)
 end
 
 function ImageWidget:getPanByCenterRatio(x, y)
