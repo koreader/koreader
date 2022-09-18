@@ -401,7 +401,7 @@ function WordInfoDialog:init()
     local buttons = {{reset_button, remove_button}}
     if self.show_parent.item.last_due_time then
         table.insert(buttons, {{
-            text = _("Undo study"),
+            text = _("Undo study status"),
             callback = function()
                 self.undo_callback()
                 UIManager:close(self)
