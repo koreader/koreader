@@ -468,7 +468,6 @@ function ImageWidget:getCurrentDiagonal()
     return tl:distance(br)
 end
 
-
 function ImageWidget:getPanByCenterRatio(x, y)
     -- returns center ratio (without limits check) we would get with this panBy
     local center_x_ratio = (x + self._offset_x + self.width/2) / self._bb_w

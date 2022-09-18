@@ -713,14 +713,22 @@ function ImageViewer:onSpread(_, ges)
     if self._image_wg then
         self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
     end
-    -- Set some zoom increase value from pinch distance, relative to the screen size
+    -- Set some zoom increase value from pinch distance.
+    -- Making it relatuve to the smallest of the currently scaled image or the Screen makes it slightly less annoying
+    -- when approaching both very small scale_factors (where the image dimensions are many times smaller than the screen),
+    -- meaning it takes less zoom steps to get it back to a sensible size;
+    -- *and* large scale factors (where the image dimensions are larer than the screen),
+    -- meaning zoom steps are, again, slightly more potent.
     local inc
     if ges.direction == "vertical" then
-        inc = ges.distance / self._image_wg:getCurrentHeight()
+        inc = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
     elseif ges.direction == "horizontal" then
-        inc = ges.distance / self._image_wg:getCurrentWidth()
+        inc = ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth())
     else
-        inc = ges.distance / self._image_wg:getCurrentDiagonal()
+        local tl = Geom:new{ x = 0, y = 0 }
+        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+        local screen_diag = tl:distance(br)
+        inc = ges.distance / math.min(screen_diag, self._image_wg:getCurrentDiagonal())
     end
     self:onZoomIn(inc)
     return true
@@ -731,11 +739,14 @@ function ImageViewer:onPinch(_, ges)
     -- Set some zoom decrease value from pinch distance
     local dec
     if ges.direction == "vertical" then
-        dec = ges.distance / self._image_wg:getCurrentHeight()
+        dec = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
     elseif ges.direction == "horizontal" then
-        dec = ges.distance / self._image_wg:getCurrentWidth()
+        dec = ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth())
     else
-        dec = ges.distance / self._image_wg:getCurrentDiagonal()
+        local tl = Geom:new{ x = 0, y = 0 }
+        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+        local screen_diag = tl:distance(br)
+        dec = ges.distance / math.min(screen_diag, self._image_wg:getCurrentDiagonal())
     end
     self:onZoomOut(dec)
     return true
