@@ -680,6 +680,9 @@ function ImageViewer:onZoomOut(dec)
     if not dec then
         -- default for key zoom event
         dec = 0.2
+    elseif dec > 1 then
+        -- Just halve the dimensions when requesting a large zoom out
+        dec = 0.5
     end
 
     -- Compute new scale factor for rescaled image dimensions
@@ -713,14 +716,11 @@ function ImageViewer:onSpread(_, ges)
     -- Set some zoom increase value from pinch distance, relative to the screen size
     local inc
     if ges.direction == "vertical" then
-        inc = ges.distance / Screen:getHeight()
+        inc = ges.distance / self._image_wg:getCurrentHeight()
     elseif ges.direction == "horizontal" then
-        inc = ges.distance / Screen:getWidth()
+        inc = ges.distance / self._image_wg:getCurrentWidth()
     else
-        -- Diagonal, so, compute the length of the screen's diagonal
-        local tl = Geom:new{ x = 0, y = 0 }
-        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
-        inc = ges.distance / tl:distance(br)
+        inc = ges.distance / self._image_wg:getCurrentDiagonal()
     end
     self:onZoomIn(inc)
     return true
@@ -731,13 +731,11 @@ function ImageViewer:onPinch(_, ges)
     -- Set some zoom decrease value from pinch distance
     local dec
     if ges.direction == "vertical" then
-        dec = ges.distance / Screen:getHeight()
+        dec = ges.distance / self._image_wg:getCurrentHeight()
     elseif ges.direction == "horizontal" then
-        dec = ges.distance / Screen:getWidth()
+        dec = ges.distance / self._image_wg:getCurrentWidth()
     else
-        local tl = Geom:new{ x = 0, y = 0 }
-        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
-        dec = ges.distance / tl:distance(br)
+        dec = ges.distance / self._image_wg:getCurrentDiagonal()
     end
     self:onZoomOut(dec)
     return true

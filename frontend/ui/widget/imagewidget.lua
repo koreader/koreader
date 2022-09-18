@@ -454,6 +454,21 @@ function ImageWidget:recomputeScaleFactor(scaling)
     return math.min(req_width / self._img_w, req_height / self._img_h)
 end
 
+function ImageWidget:getCurrentWidth()
+    return self._bb:getWidth()
+end
+
+function ImageWidget:getCurrentHeight()
+    return self._bb:getHeight()
+end
+
+function ImageWidget:getCurrentDiagonal()
+    local tl = Geom:new{ x = 0, y = 0 }
+    local br = Geom:new{ x = self._bb:getWidth() - 1, y = self._bb:getHeight() - 1}
+    return tl:distance(br)
+end
+
+
 function ImageWidget:getPanByCenterRatio(x, y)
     -- returns center ratio (without limits check) we would get with this panBy
     local center_x_ratio = (x + self._offset_x + self.width/2) / self._bb_w
