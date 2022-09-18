@@ -455,6 +455,10 @@ function ImageWidget:recomputeScaleFactor(scaling)
     return math.min(req_width / self._img_w, req_height / self._img_h)
 end
 
+-- As opposed to what we've stored in self._img_w & self._img_h on decode,
+-- which hold the source image dimensions (i.e., before scaling),
+-- these return the dimensions of the currently displayed bb (i.e., post scaling),
+-- and it is *not* constrained to the Screen dimensions (or this bb's viewport).
 function ImageWidget:getCurrentWidth()
     return self._bb:getWidth()
 end
