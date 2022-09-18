@@ -637,7 +637,6 @@ end
 
 -- Zoom events
 function ImageViewer:onZoomIn(inc)
-    logger.dbg("ImageViewer:onZoomIn", inc)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
@@ -672,7 +671,6 @@ function ImageViewer:onZoomIn(inc)
 end
 
 function ImageViewer:onZoomOut(dec)
-    logger.dbg("ImageViewer:onZoomOut", dec)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
