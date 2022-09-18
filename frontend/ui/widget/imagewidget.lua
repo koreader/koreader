@@ -338,7 +338,7 @@ function ImageWidget:_render()
     elseif self.scale_factor ~= 1 then
         -- scale by scale_factor (not needed if scale_factor == 1)
         logger.dbg("ImageWidget: scaling by", self.scale_factor)
-        self._bb = RenderImage:scaleBlitBuffer(self._bb, bb_w * self.scale_factor, bb_h * self.scale_factor, self._bb_disposable)
+        self._bb = RenderImage:scaleBlitBuffer(self._bb, math.floor(bb_w * self.scale_factor), math.floor(bb_h * self.scale_factor), self._bb_disposable)
         self._bb_disposable = true -- new bb will have to be freed
     end
     bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
@@ -365,8 +365,8 @@ function ImageWidget:_render()
             self.center_y_ratio = 0.5 + self._max_off_center_y_ratio
         end
         -- set offsets to reflect center ratio, whether oversized or not
-        self._offset_x = self.center_x_ratio * bb_w - self.width/2
-        self._offset_y = self.center_y_ratio * bb_h - self.height/2
+        self._offset_x = math.floor(self.center_x_ratio * bb_w - self.width/2)
+        self._offset_y = math.floor(self.center_y_ratio * bb_h - self.height/2)
         logger.dbg("ImageWidget: initial offsets", self._offset_x, self._offset_y)
     end
 
@@ -491,8 +491,8 @@ function ImageWidget:panBy(x, y)
         self.center_y_ratio = 0.5 + self._max_off_center_y_ratio
     end
     -- new offsets that reflect this new center ratio
-    local new_offset_x = self.center_x_ratio * self._bb_w - self.width/2
-    local new_offset_y = self.center_y_ratio * self._bb_h - self.height/2
+    local new_offset_x = math.floor(self.center_x_ratio * self._bb_w - self.width/2)
+    local new_offset_y = math.floor(self.center_y_ratio * self._bb_h - self.height/2)
     -- only trigger screen refresh it we actually pan
     if new_offset_x ~= self._offset_x or new_offset_y ~= self._offset_y then
         self._offset_x = new_offset_x
