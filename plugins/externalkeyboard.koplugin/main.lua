@@ -11,6 +11,9 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local event_map_keyboard = require("event_map_keyboard")
 local util = require("util")
 local _ = require("gettext")
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/posix_h")
 
 -- The include/linux/usb/role.h calls the USB roles "host" and "device". The Chipidea driver calls them "host" and "gadget".
 -- This plugin sticks to Linux naming except when interacting with Chipidea drivers.
@@ -41,12 +44,14 @@ local ExternalKeyboard = WidgetContainer:new{
     name = "external_keyboard",
     is_doc_only = false,
     original_device_values = nil,
+    keyboard_fds = {},
 }
 
 function ExternalKeyboard:init()
     self.ui.menu:registerToMainMenu(self)
     local role = self:getOtgRole()
     logger.dbg("ExternalKeyboard: role", role)
+
     if role == USB_ROLE_DEVICE and G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
         self:setOTG(USB_ROLE_HOST)
         role = USB_ROLE_HOST
@@ -142,16 +147,23 @@ ExternalKeyboard.onUsbDevicePlugIn = UIManager:debounce(0.5, false, function(sel
 end)
 
 ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.5, false, function(self)
-    if not self.keyboard_file_path or lfs.attributes(self.keyboard_file_path, "mode") ~= nil then
-        -- Another device may have been disconnected.
+    logger.dbg("ExternalKeyboard: onUsbDevicePlugOut")
+
+    local is_any_disconnected = false
+    -- Check that a keyboard really was disconnected. It could've been another USB device.
+    for event_path, fd in ipairs(self.keyboard_fds) do
+        if lfs.attributes(event_path, "mode") == nil then
+            is_any_disconnected = true
+        end
+    end
+
+    if not is_any_disconnected then
         return
     end
 
-    logger.dbg("ExternalKeyboard: onUsbDevicePlugOut")
+    logger.dbg("ExternalKeyboard: USB keyboard was disconnected")
 
-    self.keyboard_fd = nil
-    self.keyboard_file_path = nil
-
+    self.keyboard_fds = {}
     if self.original_device_values then
         Device.input.event_map = self.original_device_values.event_map
         Device.keyboard_layout = self.original_device_values.keyboard_layout
@@ -171,45 +183,57 @@ end)
 -- That may cause embedded buttons to lose their original function and produce letters.
 -- Can we tell from which device a key press comes? The koreader-base passes values of input_event which do not have file descriptors.
 function ExternalKeyboard:findAndSetupKeyboard()
-    local event_path, has_dpad = FindKeyboard:find()
-    if event_path == nil then
-        return
+    local keyboards = FindKeyboard:find()
+    local is_new_keyboard_setup = false
+    local has_dpad_func = Device.hasDPad
+
+    -- A USB keyboard may be recognized as several devices under a hub. And several of them may
+    -- have keyboard capabilities set. Yet, only one would emit the events. The solution is to open all of them.
+    for __, keyboard_info in ipairs(keyboards) do
+        logger.dbg("ExternalKeyboard:findAndSetupKeyboard found event path", keyboard_info.event_path, "has_dpad", keyboard_info.has_dpad)
+        -- Check if the event file already was open.
+        if self.keyboard_fds[keyboard_info.event_path] == nil then
+            local ok, fd = pcall(Device.input.open, keyboard_info.event_path)
+            if not ok then
+                UIManager:show(InfoMessage:new{
+                    text = "Error opening the keyboard device " .. keyboard_info.event_path .. ":\n" .. tostring(fd),
+                })
+                return
+            end
+
+            is_new_keyboard_setup = true
+            self.keyboard_fds[keyboard_info.event_path] = fd
+
+            if keyboard_info.has_dpad then
+                has_dpad_func = yes
+            end
+        end
     end
 
-    logger.dbg("ExternalKeyboard:findAndSetupKeyboard found event path", event_path, "has_dpad", has_dpad)
-    local ok, fd = pcall(Device.input.open, event_path)
-    if not ok then
+    if is_new_keyboard_setup then
+        -- The setting for input_invert_page_turn_keys wouldn't mess up the new event map. Device module applies it on initialization, not dynamically.
+        self.original_device_values = {
+            event_map = Device.input.event_map,
+            keyboard_layout = Device.keyboard_layout,
+            hasKeyboard = Device.hasKeyboard,
+            hasDPad = Device.hasDPad,
+        }
+
+        -- Using a new table avoids mutating the original event map.
+        local event_map = {}
+        util.tableMerge(event_map, Device.input.event_map)
+        util.tableMerge(event_map, event_map_keyboard)
+        Device.input.event_map = event_map
+        Device.hasKeyboard = yes
+        Device.hasDPad = has_dpad_func
+
         UIManager:show(InfoMessage:new{
-            text = "Error opening the keyboard device " .. event_path .. ":\n" .. tostring(fd),
+            text = _("Keyboard connected"),
+            timeout = 1,
         })
-        return
+        InputText.initInputEvents()
+        UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
     end
-    self.keyboard_fd = fd
-    self.keyboard_file_path = event_path
-
-    -- The setting for input_invert_page_turn_keys wouldn't mess up the new event map. Device module applies it on initialization, not dynamically.
-    self.original_device_values = {
-        event_map = Device.input.event_map,
-        keyboard_layout = Device.keyboard_layout,
-        hasKeyboard = Device.hasKeyboard,
-        hasDPad = Device.hasDPad,
-    }
-    -- Using a new table avoids mutating the original event map.
-    local event_map = {}
-    util.tableMerge(event_map, Device.input.event_map)
-    util.tableMerge(event_map, event_map_keyboard)
-    Device.input.event_map = event_map
-    Device.hasKeyboard = yes
-    if has_dpad then
-        Device.hasDPad = yes
-    end
-
-    UIManager:show(InfoMessage:new{
-        text = _("Keyboard connected"),
-        timeout = 1,
-    })
-    InputText.initInputEvents()
-    UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
 end
 
 function ExternalKeyboard:showHelp()

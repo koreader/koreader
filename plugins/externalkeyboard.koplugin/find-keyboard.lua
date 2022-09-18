@@ -30,7 +30,7 @@ end
 
 local function count_set_bits_in_array(arr)
     local count = 0
-    for i, number in ipairs(arr) do
+    for __, number in ipairs(arr) do
         local count_in_number = count_set_bits(number)
         count = count + count_in_number
     end
@@ -67,27 +67,35 @@ end
 local function analyze_key_capabilities(long_bitmap_arr)
     -- The heuristic is that a keyboard has at least as many keys as there are alphabet letters and some more.
     local keyboard_min_number_keys = 28
-    local ones_count = count_set_bits_in_array(long_bitmap_arr)
-    local is_keyboard = ones_count >= keyboard_min_number_keys
+    local keys_count = count_set_bits_in_array(long_bitmap_arr)
 
+    local is_keyboard = keys_count >= keyboard_min_number_keys
     local has_dpad = is_capabilities_bit_set(long_bitmap_arr, KEY_UP) or
         is_capabilities_bit_set(long_bitmap_arr, BTN_DPAD_UP)
-    return is_keyboard, has_dpad
+
+    return {
+        is_keyboard = is_keyboard,
+        has_dpad = has_dpad,
+    }
 end
 
 function FindKeyboard:find()
+    local keyboards = {}
     for event_file_name in lfs.dir("/sys/class/input/") do
         if event_file_name:match("event.*") then
             local capabilities_long_bitmap_arr = read_key_capabilities("/sys/class/input/" .. event_file_name)
             if capabilities_long_bitmap_arr then
-                local is_keyboard, has_dpad = analyze_key_capabilities(capabilities_long_bitmap_arr)
-                if is_keyboard then
-                    return ("/dev/input/" .. event_file_name), has_dpad
+                local keyboard_info = analyze_key_capabilities(capabilities_long_bitmap_arr)
+                if keyboard_info.is_keyboard then
+                    table.insert(keyboards, {
+                        event_path = "/dev/input/" .. event_file_name,
+                        has_dpad = keyboard_info.has_dpad
+                    })
                 end
             end
         end
     end
-    return nil
+    return keyboards
 end
 
 return FindKeyboard
