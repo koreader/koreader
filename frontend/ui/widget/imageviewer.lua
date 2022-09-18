@@ -649,7 +649,7 @@ function ImageViewer:onZoomIn(inc)
     end
 
     -- Compute new scale factor for rescaled image dimensions
-    local new_factor = self._image_wg:recomputeScaleFactor(1 + inc)
+    local new_factor = self.scale_factor * (1 + inc)
 
     -- We destroy ImageWidget on update, so only request this the first time,
     -- in order to avoid jitter in the results given differing memory consumption at different zoom levels...
@@ -688,7 +688,7 @@ function ImageViewer:onZoomOut(dec)
     end
 
     -- Compute new scale factor for rescaled image dimensions
-    local new_factor = self._image_wg:recomputeScaleFactor(1 - dec)
+    local new_factor = self.scale_factor * (1 - dec)
 
     if not self._min_scale_factor then
         self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()

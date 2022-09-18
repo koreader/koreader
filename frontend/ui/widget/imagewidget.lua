@@ -443,18 +443,6 @@ function ImageWidget:getScaleFactorExtrema()
     return self._min_scale_factor, self._max_scale_factor
 end
 
--- Compute a new best-fit scale factor for a given image rescale percentage
-function ImageWidget:recomputeScaleFactor(scaling)
-    logger.dbg("ImageWidget:recomputeScaleFactor by", scaling)
-    local req_width = self._bb:getWidth() * scaling
-    local req_height = self._bb:getHeight() * scaling
-    logger.dbg("From", self._bb:getWidth(), self._bb:getHeight(), "to", req_width, req_height)
-
-    -- Best fit (in most cases, and certainly in all cases where manual zooming is involved,
-    -- we're operating on a best-fit w/ AR preserved scale factor already, so both sides should match).
-    return math.min(req_width / self._img_w, req_height / self._img_h)
-end
-
 -- As opposed to what we've stored in self._img_w & self._img_h on decode,
 -- which hold the source image dimensions (i.e., before scaling),
 -- these return the dimensions of the currently displayed bb (i.e., post scaling),
