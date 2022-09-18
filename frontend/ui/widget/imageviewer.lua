@@ -681,8 +681,11 @@ function ImageViewer:onZoomOut(dec)
         -- default for key zoom event
         dec = 0.2
     elseif dec > 1 then
-        -- Just halve the dimensions when requesting a large zoom out
-        dec = 0.5
+        -- We can't go above 1 because maths, so go with an 80% reduction instead
+        dec = 0.8
+    elseif dec > 0.8 then
+        -- Larger reductions tend to be fairly jarring, so limit to 75%
+        dec = 0.75
     end
 
     -- Compute new scale factor for rescaled image dimensions
