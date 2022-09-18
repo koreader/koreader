@@ -717,11 +717,11 @@ function ImageViewer:onSpread(_, ges)
         self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
     end
     -- Set some zoom increase value from pinch distance.
-    -- Making it relatuve to the smallest of the currently scaled image or the Screen makes it slightly less annoying
+    -- Making it relative to the smallest dimension between the currently scaled image or the Screen makes it less annoying
     -- when approaching both very small scale_factors (where the image dimensions are many times smaller than the screen),
-    -- meaning it takes less zoom steps to get it back to a sensible size;
-    -- *and* large scale factors (where the image dimensions are larer than the screen),
-    -- meaning zoom steps are, again, slightly more potent.
+    -- meaning using the image dimensions here takes less zoom steps to get it back to a sensible size;
+    -- *and* large scale factors (where the image dimensions are larger than the screen),
+    -- meaning using the screen dimensions here makes zoom steps, again, slightly more potent.
     local inc
     if ges.direction == "vertical" then
         inc = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
