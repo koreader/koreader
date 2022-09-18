@@ -550,18 +550,19 @@ function ImageViewer:onSwipe(_, ges)
     local distance = ges.distance
     local sq_distance = math.sqrt(distance*distance/2)
     if direction == "north" then
-        if ges.pos.x < Screen:getWidth() * 1/16 or ges.pos.x > Screen:getWidth() * 15/16 then
+        if ges.pos.x < Screen:getWidth() * 1/8 or ges.pos.x > Screen:getWidth() * 7/8 then
             -- allow for zooming with vertical swipe on screen sides
             -- (for devices without multi touch where pinch and spread don't work)
-            local inc = ges.distance / Screen:getHeight()
+            -- c.f., onSpread for details about the choice between screen & scaled images height.
+            local inc = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
             self:onZoomIn(inc)
         else
             self:panBy(0, distance)
         end
     elseif direction == "south" then
-        if ges.pos.x < Screen:getWidth() * 1/16 or ges.pos.x > Screen:getWidth() * 15/16 then
+        if ges.pos.x < Screen:getWidth() * 1/8 or ges.pos.x > Screen:getWidth() * 7/8 then
             -- allow for zooming with vertical swipe on screen sides
-            local dec = ges.distance / Screen:getHeight()
+            local dec = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
             self:onZoomOut(dec)
         elseif self.scale_factor == 0 then
             -- When scaled to fit (on initial launch, or after one has tapped
