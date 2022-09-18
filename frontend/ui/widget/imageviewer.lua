@@ -647,13 +647,16 @@ function ImageViewer:onZoomIn(inc)
         inc = 0.2
     end
 
+    -- Compute new scale factor for rescaled image dimensions
+    local new_factor = self._image_wg:recomputeScaleFactor(1 + inc)
+
     -- We destroy ImageWidget on update, so only request this the first time,
     -- in order to avoid jitter in the results given differing memory consumption at different zoom levels...
     if not self._max_scale_factor then
         self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
     end
     -- Clamp to sane values
-    local new_factor = math.min(self.scale_factor + inc, self._max_scale_factor)
+    new_factor = math.min(self.scale_factor + inc, self._max_scale_factor)
     if new_factor ~= self.scale_factor then
         self.scale_factor = new_factor
         self:update()
@@ -677,18 +680,16 @@ function ImageViewer:onZoomOut(dec)
     if not dec then
         -- default for key zoom event
         dec = 0.2
-    else
-        -- NOTE: Slow down actual zoom outs by making the decrease relative to the current scaling factor
-        if self.scale_factor < 1.0 then
-            dec = dec * self.scale_factor
-        end
     end
+
+    -- Compute new scale factor for rescaled image dimensions
+    local new_factor = self._image_wg:recomputeScaleFactor(1 - dec)
 
     if not self._min_scale_factor then
         self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
     end
     -- Clamp to sane values
-    local new_factor = math.max(self.scale_factor - dec, self._min_scale_factor)
+    new_factor = math.max(new_factor, self._min_scale_factor)
     if new_factor ~= self.scale_factor then
         self.scale_factor = new_factor
         self:update()
@@ -709,7 +710,7 @@ function ImageViewer:onSpread(_, ges)
     if self._image_wg then
         self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
     end
-    -- Set some zoom increase value from pinch distance
+    -- Set some zoom increase value from pinch distance, relative to the screen size
     local inc
     if ges.direction == "vertical" then
         inc = ges.distance / Screen:getHeight()

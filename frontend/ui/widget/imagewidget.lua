@@ -443,6 +443,15 @@ function ImageWidget:getScaleFactorExtrema()
     return self._min_scale_factor, self._max_scale_factor
 end
 
+-- Compute a new best-fit scale factor for a given image rescale percentage
+function ImageWidget:recomputeScaleFactor(scaling)
+    local req_width = self._bb:getWidth() * scaling
+    local req_height = self._bb:getHeight() * scaling
+
+    -- Best fit
+    return math.min(req_width / self._img_w, req_height / self._img_h)
+end
+
 function ImageWidget:getPanByCenterRatio(x, y)
     -- returns center ratio (without limits check) we would get with this panBy
     local center_x_ratio = (x + self._offset_x + self.width/2) / self._bb_w
