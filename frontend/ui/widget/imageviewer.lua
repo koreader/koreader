@@ -656,7 +656,7 @@ function ImageViewer:onZoomIn(inc)
         self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
     end
     -- Clamp to sane values
-    new_factor = math.min(self.scale_factor + inc, self._max_scale_factor)
+    new_factor = math.min(new_factor, self._max_scale_factor)
     if new_factor ~= self.scale_factor then
         self.scale_factor = new_factor
         self:update()
