@@ -148,27 +148,6 @@ function Profiles:getSubMenuItems()
                 sub_item_table = edit_actions_sub_items,
             },
             {
-                text = _("Sort actions"),
-                checked_func = function()
-                    local settings = self.data[k].settings
-                    return settings and settings.actions_order
-                end,
-                callback = function(touchmenu_instance)
-                    self:sortActions(k, touchmenu_instance)
-                end,
-                hold_callback = function(touchmenu_instance)
-                    if self.data[k].settings and self.data[k].settings.actions_order then
-                        self.data[k].settings.actions_order = nil
-                        if #self.data[k].settings == 0 then
-                            self.data[k].settings = nil
-                        end
-                        self.updated = true
-                        touchmenu_instance:updateItems()
-                    end
-                end,
-                separator = true,
-            },
-            {
                 text = T(_("Rename: %1"), k),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
@@ -237,15 +216,7 @@ function Profiles:getSubMenuItems()
 end
 
 function Profiles:onProfileExecute(name)
-    local profile = self.data[name]
-    if profile and profile.settings and profile.settings.actions_order then
-        self:syncOrder(name)
-        for _, action in ipairs(profile.settings.actions_order) do
-            Dispatcher:execute({[action] = profile[action]})
-        end
-    else
-        Dispatcher:execute(profile)
-    end
+    Dispatcher:execute(self.data[name])
 end
 
 function Profiles:onProfileShowMenu(name)
@@ -278,30 +249,6 @@ function Profiles:onProfileShowMenu(name)
         buttons = buttons,
     }
     UIManager:show(quickmenu)
-end
-
-function Profiles:sortActions(name, touchmenu_instance)
-    local profile = self.data[name]
-    local actions_list = self:getActionsList(name)
-    local SortWidget = require("ui/widget/sortwidget")
-    local sort_widget
-    sort_widget = SortWidget:new{
-        title = _("Sort actions"),
-        item_table = actions_list,
-        callback = function()
-            if profile.settings then
-                self.data[name].settings.actions_order = {}
-            else
-                self.data[name].settings = {["actions_order"] = {}}
-            end
-            for i, v in ipairs(sort_widget.item_table) do
-                self.data[name].settings.actions_order[i] = v.label
-            end
-            touchmenu_instance:updateItems()
-            self.updated = true
-        end
-    }
-    UIManager:show(sort_widget)
 end
 
 function Profiles:editProfileName(editCallback, old_name)
