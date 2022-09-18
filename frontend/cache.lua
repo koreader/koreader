@@ -8,8 +8,6 @@ local lru = require("ffi/lru")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
 
-local rshift = bit.rshift
-
 local CanvasContext = require("document/canvascontext")
 if CanvasContext.should_restrict_JIT then
     jit.off(true, true)
@@ -166,8 +164,8 @@ function Cache:memoryPressureCheck()
     if free_fraction < 0.20 then
         logger.warn(string.format("Running low on memory (~%d%%, ~%.2f/%d MiB), evicting half of the cache...",
                                   free_fraction * 100,
-                                  rshift(rshift(memfree, 10), 10),
-                                  rshift(rshift(memtotal, 10), 10)))
+                                  memfree / (1024 * 1024),
+                                  memtotal / (1024 * 1024)))
         self.cache:chop()
 
         -- And finish by forcing a GC sweep now...
