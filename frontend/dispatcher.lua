@@ -205,6 +205,8 @@ local settingsList = {
     kopt_auto_straighten = {category="absolutenumber", paging=true},
     kopt_detect_indent = {category="configurable", paging=true, condition=false},
     kopt_max_columns = {category="configurable", paging=true},
+
+    settings = nil, -- reserved for per instance dispatcher settings
 }
 
 -- array for item order in menu
@@ -495,6 +497,79 @@ function Dispatcher:getNameFromItem(item, settings)
     return T(settingsList[item].title, amount)
 end
 
+function Dispatcher:addToSortList(location, settings, item)
+    if location[settings] then
+        if not location[settings].settings then location[settings].settings = {} end
+        if not location[settings].settings.order or item == nil then
+            location[settings].settings.order = {}
+            for k in pairs(location[settings]) do
+                if settingsList[k] ~= nil then
+                    table.insert(location[settings].settings.order, k)
+                end
+            end
+        else
+            table.insert(location[settings].settings.order, item)
+        end
+    end
+end
+
+function Dispatcher:removeFromSortList(location, settings, item)
+    if location[settings] and location[settings].settings then
+        if location[settings].settings.order then
+            if item then
+                local k = util.arrayContains(location[settings].settings.order, item)
+                if k then table.remove(location[settings].settings.order, k) end
+            else
+                location[settings].settings.order = {}
+            end
+            if next(location[settings].settings.order) == nil then
+                location[settings].settings.order = nil
+                if next(location[settings].settings) == nil then
+                    location[settings].settings = nil
+                end
+            end
+        end
+    end
+end
+
+function Dispatcher:getActionsList(location, settings)
+    local item_table = {}
+    if not location[settings] then return item_table end
+    if location[settings].settings == nil or location[settings].settings.order == nil then
+        Dispatcher:addToSortList(location, settings)
+    end
+    for _, item in ipairs(location[settings].settings.order) do
+        if settingsList[item] ~= nil and (settingsList[item].condition == nil or settingsList[item].condition == true) then
+            table.insert(item_table, {text = Dispatcher:getNameFromItem(item, location[settings]), key = item})
+        end
+    end
+    return item_table
+end
+
+function Dispatcher:sortActions(caller, location, settings, touchmenu_instance)
+    local actions_list = Dispatcher:getActionsList(location, settings)
+    local SortWidget = require("ui/widget/sortwidget")
+    local sort_widget
+    sort_widget = SortWidget:new{
+        title = _("Sort"),
+        item_table = actions_list,
+        callback = function()
+            if location[settings] and next(location[settings]) ~= nil then
+                if  not location[settings].settings then
+                    location[settings].settings = {}
+                end
+                location[settings].settings.order = {}
+                for i, v in ipairs(sort_widget.item_table) do
+                    location[settings].settings.order[i] = v.key
+                end
+            end
+            if touchmenu_instance then  touchmenu_instance:updateItems() end
+            caller.updated = true
+        end
+    }
+    UIManager:show(sort_widget)
+end
+
 function Dispatcher:addItem(caller, menu, location, settings, section)
     for _, k in ipairs(dispatcher_menu_order) do
         if settingsList[k][section] == true and
@@ -512,8 +587,10 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                          end
                          if location[settings][k] then
                              location[settings][k] = nil
+                             Dispatcher:removeFromSortList(location, settings, k)
                          else
                              location[settings][k] = true
+                             Dispatcher:addToSortList(location, settings, k)
                          end
                          caller.updated = true
                          if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -549,6 +626,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                                     location[settings] = {}
                                 end
                                 location[settings][k] = spin.value
+                                Dispatcher:addToSortList(location, settings, k)
                                 caller.updated = true
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -560,6 +638,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
                             location[settings][k] = nil
+                            Dispatcher:removeFromSortList(location, settings, k)
                             caller.updated = true
                         end
                         if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -597,6 +676,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                                     location[settings] = {}
                                 end
                                 location[settings][k] = spin.value
+                                Dispatcher:addToSortList(location, settings, k)
                                 caller.updated = true
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -608,6 +688,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
                             location[settings][k] = nil
+                            Dispatcher:removeFromSortList(location, settings, k)
                             caller.updated = true
                         end
                         if touchmenu_instance then
@@ -634,6 +715,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                                 location[settings] = {}
                             end
                             location[settings][k] = settingsList[k].args[i]
+                            Dispatcher:addToSortList(location, settings, k)
                             caller.updated = true
                         end,
                     })
@@ -650,6 +732,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
                             location[settings][k] = nil
+                            Dispatcher:removeFromSortList(location, settings, k)
                             caller.updated = true
                         end
                         if touchmenu_instance then
@@ -676,6 +759,27 @@ example usage:
 --]]--
 function Dispatcher:addSubMenu(caller, menu, location, settings)
     Dispatcher:init()
+    table.insert(menu, {
+        text = _("Sort"),
+        checked_func = function()
+            return location[settings] ~= nil
+            and location[settings].settings ~= nil
+            and location[settings].settings.order ~= nil
+        end,
+        callback = function(touchmenu_instance)
+            Dispatcher:sortActions(caller, location, settings, touchmenu_instance)
+        end,
+        hold_callback = function(touchmenu_instance)
+            if location[settings]
+            and location[settings].settings
+            and location[settings].settings.order then
+                Dispatcher:removeFromSortList(location, settings)
+                self.updated = true
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end
+        end,
+        separator = true,
+    })
     table.insert(menu, {
         text = _("Nothing"),
         separator = true,
@@ -716,6 +820,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
                     for k, _ in pairs(location[settings]) do
                         if settingsList[k] ~= nil and settingsList[k][section[1]] == true then
                             location[settings][k] = nil
+                            Dispatcher:removeFromSortList(location, settings, k)
                             caller.updated = true
                         end
                     end
@@ -727,6 +832,14 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     end
 end
 
+local function iter_func(settings)
+    if settings and settings.settings and settings.settings.order then
+        return ipairs(settings.settings.order)
+    else
+        return pairs(settings)
+    end
+end
+
 --[[--
 Calls the events in a settings list
 arguments are:
@@ -735,7 +848,11 @@ arguments are:
     3) optionally a `gestures`object
 --]]--
 function Dispatcher:execute(settings, gesture)
-    for k, v in pairs(settings) do
+    for k, v in iter_func(settings) do
+        if type(k) == "number" then
+            k = v
+            v = settings[k]
+        end
         if settingsList[k] ~= nil and (settingsList[k].condition == nil or settingsList[k].condition == true) then
             Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
             if settingsList[k].configurable then

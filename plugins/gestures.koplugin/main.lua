@@ -185,13 +185,19 @@ function Gestures:init()
     self:initGesture()
 end
 
-local gestureTextFunc = function(item)
+local function gestureTextFunc(settings)
     local action_name = _("Pass through")
-    if item then
-        local sub_item = next(item)
-        if sub_item == nil then return _("Nothing") end
-        action_name = Dispatcher:getNameFromItem(sub_item, location, ges)
-        if next(item, sub_item) ~= nil then
+    if settings then
+        local count = util.tableSize(settings)
+        if count == 0 then return _("Nothing") end
+        if count > 1 and settings.settings ~= nil then
+            count = count - 1
+        end
+        if count == 1 then
+            local item = next(settings)
+            if item == "settings" then item = next(settings, item) end
+            action_name = Dispatcher:getNameFromItem(item, settings)
+        else
             action_name = _("Many")
         end
     end
