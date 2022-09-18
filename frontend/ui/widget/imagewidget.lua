@@ -445,8 +445,10 @@ end
 
 -- Compute a new best-fit scale factor for a given image rescale percentage
 function ImageWidget:recomputeScaleFactor(scaling)
+    logger.dbg("ImageWidget:recomputeScaleFactor by", scaling)
     local req_width = self._bb:getWidth() * scaling
     local req_height = self._bb:getHeight() * scaling
+    logger.dbg("From", self._bb:getWidth(), self._bb:getHeight(), "to", req_width, req_height)
 
     -- Best fit
     return math.min(req_width / self._img_w, req_height / self._img_h)
