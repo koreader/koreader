@@ -680,11 +680,9 @@ function ImageViewer:onZoomOut(dec)
     if not dec then
         -- default for key zoom event
         dec = 0.2
-    elseif dec > 1 then
-        -- We can't go above 1 because maths, so go with an 80% reduction instead
-        dec = 0.8
     elseif dec > 0.8 then
-        -- Larger reductions tend to be fairly jarring, so limit to 75%
+        -- Larger reductions tend to be fairly jarring, so limit to 75%.
+        -- (Also, we can't go above 1 because maths).
         dec = 0.75
     end
 
