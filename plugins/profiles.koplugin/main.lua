@@ -339,23 +339,16 @@ end
 
 function Profiles:getActionsList(name)
     local profile = self.data[name]
-    local function getActionFullName (profile_name, action_name)
-        local location = {} -- make this as expected by Dispatcher:getNameFromItem()
-        if type(profile_name[action_name]) ~= "boolean" then
-            location[action_name] = {[action_name] = profile_name[action_name]}
-        end
-        return Dispatcher:getNameFromItem(action_name, location, action_name)
-    end
     local actions_list = {}
     if profile and profile.settings and profile.settings.actions_order then
         self:syncOrder(name)
         for _, action in ipairs(profile.settings.actions_order) do
-            table.insert(actions_list, {text = getActionFullName(profile, action), label = action})
+            table.insert(actions_list, {text = Dispatcher:getNameFromItem(action, profile), label = action})
         end
     else
         for action in pairs(profile) do
             if action ~= "settings" then
-                table.insert(actions_list, {text = getActionFullName(profile, action), label = action})
+                table.insert(actions_list, {text = Dispatcher:getNameFromItem(action, profile), label = action})
             end
         end
     end

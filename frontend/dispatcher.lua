@@ -479,13 +479,13 @@ function Dispatcher:removeAction(name)
 end
 
 -- Returns a display name for the item.
-function Dispatcher:getNameFromItem(item, location, settings)
+function Dispatcher:getNameFromItem(item, settings)
     if settingsList[item] == nil then
         return _("Unknown item")
     end
     local amount
-    if location[settings] ~= nil and location[settings][item] ~= nil then
-        amount = location[settings][item]
+    if settings ~= nil and settings[item] ~= nil then
+        amount = settings[item]
     end
     if amount == nil
         or (amount == 0 and settingsList[item].category == "incrementalnumber")
@@ -523,7 +523,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return Dispatcher:getNameFromItem(k, location, settings)
+                        return Dispatcher:getNameFromItem(k, location[settings])
                     end,
                     checked_func = function()
                     return location[settings] ~= nil and location[settings][k] ~= nil
@@ -542,7 +542,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
                             default_value = settingsList[k].default,
-                            title_text = Dispatcher:getNameFromItem(k, location, settings),
+                            title_text = Dispatcher:getNameFromItem(k, location[settings]),
                             ok_always_enabled = true,
                             callback = function(spin)
                                 if location[settings] == nil then
@@ -569,7 +569,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
             elseif settingsList[k].category == "incrementalnumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return Dispatcher:getNameFromItem(k, location, settings)
+                        return Dispatcher:getNameFromItem(k, location[settings])
                     end,
                     checked_func = function()
                     return location[settings] ~= nil and location[settings][k] ~= nil
@@ -589,7 +589,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = Dispatcher:getNameFromItem(k, location, settings),
+                            title_text = Dispatcher:getNameFromItem(k, location[settings]),
                             info_text = _([[If called by a gesture the amount of the gesture will be used]]),
                             ok_always_enabled = true,
                             callback = function(spin)
@@ -640,7 +640,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                 end
                 table.insert(menu, {
                     text_func = function()
-                        return Dispatcher:getNameFromItem(k, location, settings)
+                        return Dispatcher:getNameFromItem(k, location[settings])
                     end,
                     checked_func = function()
                         return location[settings] ~= nil and location[settings][k] ~= nil

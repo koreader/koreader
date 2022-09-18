@@ -185,8 +185,7 @@ function Gestures:init()
     self:initGesture()
 end
 
-local gestureTextFunc = function(location, ges)
-    local item = location[ges]
+local gestureTextFunc = function(item)
     local action_name = _("Pass through")
     if item then
         local sub_item = next(item)
@@ -201,14 +200,14 @@ end
 
 function Gestures:gestureTitleFunc(ges)
     local title = gestures_list[ges] or self:friendlyMultiswipeName(ges)
-    return T(_("%1   (%2)"), title, gestureTextFunc(self.gestures, ges))
+    return T(_("%1   (%2)"), title, gestureTextFunc(self.gestures[ges]))
 end
 
 function Gestures:genMenu(ges)
     local sub_items = {}
     if gestures_list[ges] ~= nil then
         table.insert(sub_items, {
-            text = T(_("%1 (default)"), gestureTextFunc(self.defaults, ges)),
+            text = T(_("%1 (default)"), gestureTextFunc(self.defaults[ges])),
             keep_menu_open = true,
             separator = true,
             checked_func = function()
