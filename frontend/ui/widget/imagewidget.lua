@@ -397,7 +397,7 @@ function ImageWidget:getScaleFactorExtrema()
         return self._min_scale_factor, self._max_scale_factor
     end
 
-    -- Compute dynamic limits for the scale factor, based on the screen's area and available mmeory (if possible).
+    -- Compute dynamic limits for the scale factor, based on the screen's area and available memory (if possible).
     -- Extrema eyeballed to be somewhat sensible given our usual screen dimensions and available RAM.
     local util = require("util")
     local memfree, _ = util.calcFreeMem()
