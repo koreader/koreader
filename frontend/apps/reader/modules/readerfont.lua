@@ -26,6 +26,8 @@ local ReaderFont = InputContainer:new{
     -- default gamma from crengine's lvfntman.cpp
     gamma_index = nil,
     steps = {0,1,1,1,1,1,2,2,2,3,3,3,4,4,5},
+    -- FRONTLIGHT_SENSITIVITY_DECREASE defaults to 2,
+    -- because two-finger gestures report a distance set to the sum of the travel of *both* fingers.
     gestureScale = Screen:getWidth() * FRONTLIGHT_SENSITIVITY_DECREASE,
 }
 
