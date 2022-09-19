@@ -158,11 +158,12 @@ end)
 
 ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.5, false, function(self)
     logger.dbg("ExternalKeyboard: onUsbDevicePlugOut")
-
     local is_any_disconnected = false
-    -- Check that a keyboard really was disconnected. It could've been another USB device.
-    for event_path, fd in ipairs(self.keyboard_fds) do
-        if lfs.attributes(event_path, "mode") == nil then
+    -- Check that a keyboard really was disconnected. Another USB device could've been unplugged.
+    for event_path, fd in pairs(self.keyboard_fds) do
+        local event_file_attrs = lfs.attributes(event_path, "mode")
+        logger.dbg("ExternalKeyboard: checked if event file exists. path:", event_path, "file mode:", tostring(event_file_attrs))
+        if event_file_attrs == nil then
             is_any_disconnected = true
         end
     end
