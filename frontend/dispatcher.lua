@@ -736,7 +736,7 @@ arguments are:
 --]]--
 function Dispatcher:execute(settings, gesture)
     for k, v in pairs(settings) do
-        if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
+        if settingsList[k] ~= nil and (settingsList[k].condition == nil or settingsList[k].condition == true) then
             Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
             if settingsList[k].configurable then
                 local value = v
