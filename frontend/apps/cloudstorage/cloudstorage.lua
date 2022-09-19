@@ -524,14 +524,14 @@ function CloudStorage:synchronizeSettings(item)
                     text = _("Choose Dropbox folder"),
                     callback = function()
                         UIManager:close(syn_dialog)
-                        require("ui/cloudmgr"):new{
+                        require("ui/downloadmgr"):new{
                             item = item,
                             onConfirm = function(path)
                                 self:updateSyncFolder(item, path)
                                 item.sync_source_folder = path
                                 self:synchronizeSettings(item)
                             end,
-                        }:chooseDir()
+                        }:chooseCloudDir()
                     end,
                 },
             },
