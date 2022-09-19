@@ -553,7 +553,7 @@ function ImageViewer:onSwipe(_, ges)
         if ges.pos.x < Screen:getWidth() * 1/8 or ges.pos.x > Screen:getWidth() * 7/8 then
             -- allow for zooming with vertical swipe on screen sides
             -- (for devices without multi touch where pinch and spread don't work)
-            -- c.f., onSpread for details about the choice between screen & scaled images height.
+            -- c.f., onSpread for details about the choice between screen & scaled image height.
             local inc = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
             self:onZoomIn(inc)
         else
@@ -715,7 +715,7 @@ function ImageViewer:onSpread(_, ges)
     end
     -- Set some zoom increase value from pinch distance.
     -- Making it relative to the smallest dimension between the currently scaled image or the Screen makes it less annoying
-    -- when approaching both very small scale_factors (where the image dimensions are many times smaller than the screen),
+    -- when approaching both very small scale factors (where the image dimensions are many times smaller than the screen),
     -- meaning using the image dimensions here takes less zoom steps to get it back to a sensible size;
     -- *and* large scale factors (where the image dimensions are larger than the screen),
     -- meaning using the screen dimensions here makes zoom steps, again, slightly more potent.
