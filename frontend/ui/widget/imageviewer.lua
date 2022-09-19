@@ -637,6 +637,7 @@ end
 
 -- Zoom events
 function ImageViewer:onZoomIn(inc)
+    logger.dbg("ImageViewer:onZoomIn", inc)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
@@ -671,6 +672,7 @@ function ImageViewer:onZoomIn(inc)
 end
 
 function ImageViewer:onZoomOut(dec)
+    logger.dbg("ImageViewer:onZoomOut", dec)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
@@ -706,6 +708,97 @@ function ImageViewer:onZoomOut(dec)
     return true
 end
 
+function ImageViewer:onZoomToHeight(height)
+    logger.dbg("ImageViewer:onZoomToHeight", height)
+    if self.scale_factor == 0 then
+        -- Get the scale_factor made out for best fit
+        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
+    end
+
+    local new_factor = height / self._image_wg._img_h
+
+    if not self._min_scale_factor or not self._max_scale_factor then
+        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
+    end
+    -- Clamp to sane values
+    new_factor = math.min(new_factor, self._max_scale_factor)
+    new_factor = math.max(new_factor, self._min_scale_factor)
+    if new_factor ~= self.scale_factor then
+        self.scale_factor = new_factor
+        self:update()
+    else
+        if self.scale_factor == self._min_scale_factor then
+            logger.dbg("ImageViewer:onZoomOut: Hit the min scaling factor:", self.scale_factor)
+        else
+            logger.dbg("ImageViewer:onZoomOut: No change in scaling factor:", self.scale_factor)
+        end
+    end
+    return true
+end
+
+function ImageViewer:onZoomToWidth(width)
+    logger.dbg("ImageViewer:onZoomToWidth", width)
+    if self.scale_factor == 0 then
+        -- Get the scale_factor made out for best fit
+        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
+    end
+
+    local new_factor = width / self._image_wg._img_w
+
+    if not self._min_scale_factor or not self._max_scale_factor then
+        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
+    end
+    -- Clamp to sane values
+    new_factor = math.min(new_factor, self._max_scale_factor)
+    new_factor = math.max(new_factor, self._min_scale_factor)
+    if new_factor ~= self.scale_factor then
+        self.scale_factor = new_factor
+        self:update()
+    else
+        if self.scale_factor == self._min_scale_factor then
+            logger.dbg("ImageViewer:onZoomOut: Hit the min scaling factor:", self.scale_factor)
+        else
+            logger.dbg("ImageViewer:onZoomOut: No change in scaling factor:", self.scale_factor)
+        end
+    end
+    return true
+end
+
+function ImageViewer:onZoomToDiagonal(d)
+    logger.dbg("ImageViewer:onZoomToDiagonal", d)
+    if self.scale_factor == 0 then
+        -- Get the scale_factor made out for best fit
+        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
+    end
+    -- Enter trig! c.f., https://math.stackexchange.com/a/3369637
+    local r = self._image_wg:getCurrentWidth() / self._image_wg:getCurrentHeight()
+    local h = math.sqrt(math.pow(d, 2) / (math.pow(r, 2) + 1))
+    local w = h * r
+    logger.dbg("Current factor:", self.scale_factor)
+    logger.dbg("Current: w =", self._image_wg:getCurrentWidth(), "h =", self._image_wg:getCurrentHeight(), "d =", self._image_wg:getCurrentDiagonal(), "r =", self._image_wg:getCurrentWidth() / self._image_wg:getCurrentHeight())
+    logger.dbg("New: w =", w, "h =", h, "d =", d, "r =", w / h)
+
+    local new_factor = math.min(w / self._image_wg._img_w, h / self._image_wg._img_h)
+
+    if not self._min_scale_factor or not self._max_scale_factor then
+        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
+    end
+    -- Clamp to sane values
+    new_factor = math.min(new_factor, self._max_scale_factor)
+    new_factor = math.max(new_factor, self._min_scale_factor)
+    if new_factor ~= self.scale_factor then
+        self.scale_factor = new_factor
+        self:update()
+    else
+        if self.scale_factor == self._min_scale_factor then
+            logger.dbg("ImageViewer:onZoomOut: Hit the min scaling factor:", self.scale_factor)
+        else
+            logger.dbg("ImageViewer:onZoomOut: No change in scaling factor:", self.scale_factor)
+        end
+    end
+    return true
+end
+
 function ImageViewer:onSpread(_, ges)
     -- We get the position where spread was done
     -- First, get center ratio we would have had if we did a pan to there,
@@ -719,36 +812,57 @@ function ImageViewer:onSpread(_, ges)
     -- meaning using the image dimensions here takes less zoom steps to get it back to a sensible size;
     -- *and* large scale factors (where the image dimensions are larger than the screen),
     -- meaning using the screen dimensions here makes zoom steps, again, slightly more potent.
-    local inc
     if ges.direction == "vertical" then
-        inc = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
+        if ges.distance > self._image_wg:getCurrentHeight() then
+            self:onZoomToHeight(ges.distance)
+        else
+            self:onZoomIn(ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight()))
+        end
     elseif ges.direction == "horizontal" then
-        inc = ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth())
+        if ges.distance > self._image_wg:getCurrentWidth() then
+            self:onZoomToWidth(ges.distance)
+        else
+            self:onZoomIn(ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth()))
+        end
     else
-        local tl = Geom:new{ x = 0, y = 0 }
-        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
-        local screen_diag = tl:distance(br)
-        inc = ges.distance / math.min(screen_diag, self._image_wg:getCurrentDiagonal())
+        if ges.distance > self._image_wg:getCurrentDiagonal() then
+            self:onZoomToDiagonal(ges.distance)
+        else
+            local tl = Geom:new{ x = 0, y = 0 }
+            local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+            local screen_diag = tl:distance(br)
+            self:onZoomIn(ges.distance / math.min(screen_diag, self._image_wg:getCurrentDiagonal()))
+        end
     end
-    self:onZoomIn(inc)
     return true
 end
 
 function ImageViewer:onPinch(_, ges)
     -- With Pinch, unlike Spread, it feels more natural if we keep the same center point.
     -- Set some zoom decrease value from pinch distance
-    local dec
     if ges.direction == "vertical" then
-        dec = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
+        -- FIXME: Only if image is smaller than the screen?
+        if ges.distance < self._image_wg:getCurrentHeight() then
+            self:onZoomToHeight(ges.distance)
+        else
+            self:onZoomOut(ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight()))
+        end
     elseif ges.direction == "horizontal" then
-        dec = ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth())
+        if ges.distance < self._image_wg:getCurrentWidth() then
+            self:onZoomToWidth(ges.distance)
+        else
+            self:onZoomOut(ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth()))
+        end
     else
-        local tl = Geom:new{ x = 0, y = 0 }
-        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
-        local screen_diag = tl:distance(br)
-        dec = ges.distance / math.min(screen_diag, self._image_wg:getCurrentDiagonal())
+        if ges.distance < self._image_wg:getCurrentDiagonal() then
+            self:onZoomToDiagonal(ges.distance)
+        else
+            local tl = Geom:new{ x = 0, y = 0 }
+            local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+            local screen_diag = tl:distance(br)
+            self:onZoomOut(ges.distance / math.min(screen_diag, self._image_wg:getCurrentDiagonal()))
+        end
     end
-    self:onZoomOut(dec)
     return true
 end
 
