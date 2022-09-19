@@ -774,7 +774,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             and location[settings].settings
             and location[settings].settings.order then
                 Dispatcher:removeFromSortList(location, settings)
-                self.updated = true
+                caller.updated = true
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end
         end,
