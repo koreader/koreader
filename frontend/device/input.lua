@@ -645,6 +645,7 @@ function Input:handlePowerManagementOnlyEv(ev)
     -- Fake events
     if keycode == "IntoSS" or keycode == "OutOfSS"
     or keycode == "UsbPlugIn" or keycode == "UsbPlugOut"
+    or keycode == "UsbDevicePlugIn" or keycode == "UsbDevicePlugOut"
     or keycode == "Charging" or keycode == "NotCharging"
     or keycode == "WakeupFromSuspend" or keycode == "ReadyToSuspend" then
         return keycode
