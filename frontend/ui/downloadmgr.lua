@@ -18,7 +18,6 @@ Example:
     end
 ]]
 
-local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local PathChooser = require("ui/widget/pathchooser")
 local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
@@ -58,7 +57,7 @@ function DownloadMgr:chooseDir(dir)
 end
 
 function DownloadMgr:chooseCloudDir()
-    local cloud_storage = CloudStorage:new{
+    local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{
         item = self.item,
         onConfirm = function(dir_path)
             self.onConfirm(dir_path)
