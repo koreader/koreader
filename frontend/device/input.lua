@@ -176,6 +176,14 @@ local Input = {
         },
     },
 
+    fake_event_set = {
+        IntoSS = true, OutOfSS = true,
+        UsbPlugIn = true, UsbPlugOut = true,
+        Charging = true, NotCharging = true,
+        WakeupFromSuspend = true, ReadyToSuspend = true,
+        UsbDevicePlugIn = true, UsbDevicePlugOut = true,
+    },
+
     -- NOTE: When looking at the device in Portrait mode, that's assuming PgBack is on TOP, and PgFwd on the BOTTOM
     rotation_map = {
         [framebuffer.ORIENTATION_PORTRAIT] = {},
@@ -530,12 +538,7 @@ function Input:handleKeyBoardEv(ev)
         keycode = self.rotation_map[self.device.screen:getRotationMode()][keycode]
     end
 
-    -- fake events
-    if keycode == "IntoSS" or keycode == "OutOfSS"
-    or keycode == "UsbPlugIn" or keycode == "UsbPlugOut"
-    or keycode == "UsbDevicePlugIn" or keycode == "UsbDevicePlugOut"
-    or keycode == "Charging" or keycode == "NotCharging"
-    or keycode == "WakeupFromSuspend" or keycode == "ReadyToSuspend" then
+    if self.fake_event_set[keycode] ~= nil then
         return keycode
     end
 
@@ -642,12 +645,7 @@ function Input:handlePowerManagementOnlyEv(ev)
         return keycode
     end
 
-    -- Fake events
-    if keycode == "IntoSS" or keycode == "OutOfSS"
-    or keycode == "UsbPlugIn" or keycode == "UsbPlugOut"
-    or keycode == "UsbDevicePlugIn" or keycode == "UsbDevicePlugOut"
-    or keycode == "Charging" or keycode == "NotCharging"
-    or keycode == "WakeupFromSuspend" or keycode == "ReadyToSuspend" then
+    if self.fake_event_set[keycode] ~= nil then
         return keycode
     end
 
