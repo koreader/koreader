@@ -813,20 +813,20 @@ function ImageViewer:onSpread(_, ges)
     -- *and* large scale factors (where the image dimensions are larger than the screen),
     -- meaning using the screen dimensions here makes zoom steps, again, slightly more potent.
     if ges.direction == "vertical" then
-        if ges.distance > self._image_wg:getCurrentHeight() then
-            self:onZoomToHeight(ges.distance)
+        if ges.span > self._image_wg:getCurrentHeight() then
+            self:onZoomToHeight(ges.span)
         else
             self:onZoomIn(ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight()))
         end
     elseif ges.direction == "horizontal" then
-        if ges.distance > self._image_wg:getCurrentWidth() then
-            self:onZoomToWidth(ges.distance)
+        if ges.span > self._image_wg:getCurrentWidth() then
+            self:onZoomToWidth(ges.span)
         else
             self:onZoomIn(ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth()))
         end
     else
-        if ges.distance > self._image_wg:getCurrentDiagonal() then
-            self:onZoomToDiagonal(ges.distance)
+        if ges.span > self._image_wg:getCurrentDiagonal() then
+            self:onZoomToDiagonal(ges.span)
         else
             local tl = Geom:new{ x = 0, y = 0 }
             local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
@@ -842,20 +842,20 @@ function ImageViewer:onPinch(_, ges)
     -- Set some zoom decrease value from pinch distance
     if ges.direction == "vertical" then
         -- FIXME: Only if image is smaller than the screen?
-        if ges.distance < self._image_wg:getCurrentHeight() then
-            self:onZoomToHeight(ges.distance)
+        if ges.span < self._image_wg:getCurrentHeight() then
+            self:onZoomToHeight(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight()))
         end
     elseif ges.direction == "horizontal" then
-        if ges.distance < self._image_wg:getCurrentWidth() then
-            self:onZoomToWidth(ges.distance)
+        if ges.span < self._image_wg:getCurrentWidth() then
+            self:onZoomToWidth(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth()))
         end
     else
-        if ges.distance < self._image_wg:getCurrentDiagonal() then
-            self:onZoomToDiagonal(ges.distance)
+        if ges.span < self._image_wg:getCurrentDiagonal() then
+            self:onZoomToDiagonal(ges.span)
         else
             local tl = Geom:new{ x = 0, y = 0 }
             local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
