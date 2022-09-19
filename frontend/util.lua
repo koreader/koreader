@@ -755,6 +755,97 @@ function util.getFilesystemType(path)
     return type
 end
 
+-- For documentation purposes, here's a battle-tested shell version of calcFreeMem,
+-- our simplified Lua version follows...
+--[[
+    if grep -q 'MemAvailable' /proc/meminfo ; then
+        # We'll settle for 85% of available memory to leave a bit of breathing room
+        tmpfs_size="$(awk '/MemAvailable/ {printf "%d", $2 * 0.85}' /proc/meminfo)"
+    elif grep -q 'Inactive(file)' /proc/meminfo ; then
+        # Basically try to emulate the kernel's computation, c.f., https://unix.stackexchange.com/q/261247
+        # Again, 85% of available memory
+        tmpfs_size="$(awk -v low=$(grep low /proc/zoneinfo | awk '{k+=$2}END{printf "%d", k}') \
+            '{a[$1]=$2}
+            END{
+                printf "%d", (a["MemFree:"]+a["Active(file):"]+a["Inactive(file):"]+a["SReclaimable:"]-(12*low))*0.85;
+            }' /proc/meminfo)"
+    else
+        # Ye olde crap workaround of Free + Buffers + Cache...
+        # Take it with a grain of salt, and settle for 80% of that...
+        tmpfs_size="$(awk \
+            '{a[$1]=$2}
+            END{
+                printf "%d", (a["MemFree:"]+a["Buffers:"]+a["Cached:"])*0.80;
+            }' /proc/meminfo)"
+    fi
+--]]
+
+--- Computes the currently available memory
+---- @treturn tuple of ints: memavailable, memtotal (or nil, nil on unsupported platforms).
+function util:calcFreeMem()
+    local memtotal, memfree, memavailable, buffers, cached
+
+    local meminfo = io.open("/proc/meminfo", "r")
+    if meminfo then
+        for line in meminfo:lines() do
+            if not memtotal then
+                memtotal = line:match("^MemTotal:%s-(%d+) kB")
+                if memtotal then
+                    -- Next!
+                    goto continue
+                end
+            end
+
+            if not memfree then
+                memfree = line:match("^MemFree:%s-(%d+) kB")
+                if memfree then
+                    -- Next!
+                    goto continue
+                end
+            end
+
+            if not memavailable then
+                memavailable = line:match("^MemAvailable:%s-(%d+) kB")
+                if memavailable then
+                    -- Best case scenario, we're done :)
+                    break
+                end
+            end
+
+            if not buffers then
+                buffers = line:match("^Buffers:%s-(%d+) kB")
+                if buffers then
+                    -- Next!
+                    goto continue
+                end
+            end
+
+            if not cached then
+                cached = line:match("^Cached:%s-(%d+) kB")
+                if cached then
+                    -- Ought to be the last entry we care about, we're done
+                    break
+                end
+            end
+
+            ::continue::
+        end
+        meminfo:close()
+    else
+        -- Not on Linux?
+        return nil, nil
+    end
+
+    if memavailable then
+        -- Leave a bit of margin, and report 85% of that...
+        return math.floor(memavailable * 0.85) * 1024, memtotal * 1024
+    else
+        -- Crappy Free + Buffers + Cache version, because the zoneinfo approach is a tad hairy...
+        -- So, leave an even larger margin, and only report 75% of that...
+        return math.floor((memfree + buffers + cached) * 0.75) * 1024, memtotal * 1024
+    end
+end
+
 --- Recursively scan directory for files inside
 -- @string path
 -- @func callback(fullpath, name, attr)

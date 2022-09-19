@@ -116,6 +116,8 @@ local ImageWidget = Widget:new{
 
     _bb = nil,
     _bb_disposable = true, -- whether we should free() our _bb
+    _img_w = nil,
+    _img_h = nil,
     _bb_w = nil,
     _bb_h = nil,
 }
@@ -292,6 +294,9 @@ function ImageWidget:_render()
     end
 
     local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
+    -- Store the dimensions of the actual image, before any kind of scaling
+    self._img_w = bb_w
+    self._img_h = bb_h
 
     -- scale_for_dpi setting: update scale_factor (even if not set) with it
     if self.scale_for_dpi and not self.already_scaled_for_dpi then
@@ -333,7 +338,7 @@ function ImageWidget:_render()
     elseif self.scale_factor ~= 1 then
         -- scale by scale_factor (not needed if scale_factor == 1)
         logger.dbg("ImageWidget: scaling by", self.scale_factor)
-        self._bb = RenderImage:scaleBlitBuffer(self._bb, bb_w * self.scale_factor, bb_h * self.scale_factor, self._bb_disposable)
+        self._bb = RenderImage:scaleBlitBuffer(self._bb, math.floor(bb_w * self.scale_factor), math.floor(bb_h * self.scale_factor), self._bb_disposable)
         self._bb_disposable = true -- new bb will have to be freed
     end
     bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
@@ -360,8 +365,8 @@ function ImageWidget:_render()
             self.center_y_ratio = 0.5 + self._max_off_center_y_ratio
         end
         -- set offsets to reflect center ratio, whether oversized or not
-        self._offset_x = self.center_x_ratio * bb_w - self.width/2
-        self._offset_y = self.center_y_ratio * bb_h - self.height/2
+        self._offset_x = math.floor(self.center_x_ratio * bb_w - self.width/2)
+        self._offset_y = math.floor(self.center_y_ratio * bb_h - self.height/2)
         logger.dbg("ImageWidget: initial offsets", self._offset_x, self._offset_y)
     end
 
@@ -387,6 +392,75 @@ function ImageWidget:getScaleFactor()
     return self.scale_factor
 end
 
+function ImageWidget:getScaleFactorExtrema()
+    if self._min_scale_factor and self._max_scale_factor then
+        return self._min_scale_factor, self._max_scale_factor
+    end
+
+    -- Compute dynamic limits for the scale factor, based on the screen's area and available memory (if possible).
+    -- Extrema eyeballed to be somewhat sensible given our usual screen dimensions and available RAM.
+    local util = require("util")
+    local memfree, _ = util.calcFreeMem()
+
+    local screen_area = Screen:getWidth() * Screen:getHeight()
+    local min_area = math.ceil(screen_area / 10000)
+    local max_area
+    if memfree then
+        -- If we have access to memory statistics, limit the requested bb size to 25% of the available RAM.
+        local bbtype = self._bb:getType()
+        local bpp
+        if bbtype == Blitbuffer.TYPE_BB8 then
+            bpp = 1
+        elseif bbtype == Blitbuffer.TYPE_BB8A then
+            bpp = 2
+        elseif bbtype == Blitbuffer.TYPE_BBRGB24 then
+            bpp = 3
+        elseif bbtype == Blitbuffer.TYPE_BBRGB32 then
+            bpp = 4
+        elseif bbtype == Blitbuffer.TYPE_BB4 then
+            bpp = 1
+        else
+            bpp = 4
+        end
+
+        max_area = math.floor(0.25 * memfree / bpp)
+    else
+        -- Best effort, trying to account for DPI...
+        local dpi = Screen:getDPI()
+        if dpi <= 212 then
+            max_area = screen_area * 45
+        elseif dpi <= 265 then
+            max_area = screen_area * 25
+        else
+            max_area = screen_area * 15
+        end
+    end
+
+    local area = self._img_w * self._img_h
+    self._min_scale_factor = 1 / math.sqrt(area / min_area)
+    self._max_scale_factor = math.sqrt(max_area / area)
+
+    return self._min_scale_factor, self._max_scale_factor
+end
+
+-- As opposed to what we've stored in self._img_w & self._img_h on decode,
+-- which hold the source image dimensions (i.e., before scaling),
+-- these return the dimensions of the currently displayed bb (i.e., post scaling),
+-- and it is *not* constrained to the Screen dimensions (or this bb's viewport).
+function ImageWidget:getCurrentWidth()
+    return self._bb:getWidth()
+end
+
+function ImageWidget:getCurrentHeight()
+    return self._bb:getHeight()
+end
+
+function ImageWidget:getCurrentDiagonal()
+    local tl = Geom:new{ x = 0, y = 0 }
+    local br = Geom:new{ x = self._bb:getWidth() - 1, y = self._bb:getHeight() - 1}
+    return tl:distance(br)
+end
+
 function ImageWidget:getPanByCenterRatio(x, y)
     -- returns center ratio (without limits check) we would get with this panBy
     local center_x_ratio = (x + self._offset_x + self.width/2) / self._bb_w
@@ -410,8 +484,8 @@ function ImageWidget:panBy(x, y)
         self.center_y_ratio = 0.5 + self._max_off_center_y_ratio
     end
     -- new offsets that reflect this new center ratio
-    local new_offset_x = self.center_x_ratio * self._bb_w - self.width/2
-    local new_offset_y = self.center_y_ratio * self._bb_h - self.height/2
+    local new_offset_x = math.floor(self.center_x_ratio * self._bb_w - self.width/2)
+    local new_offset_y = math.floor(self.center_y_ratio * self._bb_h - self.height/2)
     -- only trigger screen refresh it we actually pan
     if new_offset_x ~= self._offset_x or new_offset_y ~= self._offset_y then
         self._offset_x = new_offset_x
