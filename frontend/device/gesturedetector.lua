@@ -1067,6 +1067,14 @@ function Contact:handleTwoFingerPan(buddy_contact)
             ges = "two_finger_pan",
             -- Use midpoint of tstart and rstart as swipe start point
             pos = tstart_pos:midpoint(rstart_pos),
+            -- Use the the sum of both contacts' travel for the distance:
+            -- there's going to be some overlap (on sane symmetric gestures,
+            -- it's going to be almost the double of a similar one contact swipe),
+            -- but it's easier to deal with than trying to compute the longest path *across* the two fingers,
+            -- e.g., in [--s1----s2--e1---e2-], s1 to e2, which is NOT max(s1 to e1, s2 to e2)
+            -- (that's just the longest distance of *one* finger among the two).
+            -- Code that consumes such gestures usually corrects for that
+            -- (c.f., the very unfortunately named FRONTLIGHT_SENSITIVITY_DECREASE global constant).
             distance = tpan_dis + rpan_dis,
             direction = tpan_dir,
             time = self.current_tev.timev,
@@ -1078,7 +1086,10 @@ function Contact:handleTwoFingerPan(buddy_contact)
                 ges_ev.ges = "outward_pan"
             end
             ges_ev.direction = gesture_detector.DIRECTION_TABLE[tpan_dir]
-            ges_ev.distance = end_distance
+            -- As mentioned above, distance is the sum of both contacts' travel,
+            -- but we also want to know the distance between the two contacts on lift,
+            -- to be able to do fancy zooming based on that interval...
+            ges_ev.span = end_distance
         elseif self.state == Contact.holdState then
             ges_ev.ges = "two_finger_hold_pan"
             -- Flag 'em for holdState to discriminate with two_finger_hold_release
