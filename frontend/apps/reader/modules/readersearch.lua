@@ -304,8 +304,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 },
                 {
                     icon = "appbar.search",
-                    icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8),
-                    icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8),
+                    icon_size_factor = 0.8,
                     callback = function()
                         self.search_dialog:onClose()
                         self.last_search_text = text
