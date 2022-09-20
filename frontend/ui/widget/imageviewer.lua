@@ -786,10 +786,13 @@ function ImageViewer:onPinch(_, ges)
     -- As for the actual zoom methods, the same general principle applies,
     -- except that we don't want to use the "snap to" method when the image is larger than the screen,
     -- otherwise we'd lose granularity in this case.
+    -- We also prevent "snap to" pinches if it would go below 50% of the current dimension,
+    -- as large "snap to" pinches are much easier to trigger than their matching spread counterpart,
+    -- especially on large screens.
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
         local screen_h = Screen:getHeight()
-        if (0.9 * ges.span) < img_h and img_h < screen_h then
+        if (0.9 * ges.span) < img_h and ges.span > (0.5 * img_h) and img_h < screen_h then
             self:onZoomToHeight(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_h, img_h))
@@ -797,7 +800,7 @@ function ImageViewer:onPinch(_, ges)
     elseif ges.direction == "horizontal" then
         local img_w = self._image_wg:getCurrentWidth()
         local screen_w = Screen:getWidth()
-        if (0.9 * ges.span) < img_w and img_w < screen_w then
+        if (0.9 * ges.span) < img_w and ges.span > (0.5 * img_w) and img_w < screen_w then
             self:onZoomToWidth(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_w, img_w))
@@ -807,7 +810,7 @@ function ImageViewer:onPinch(_, ges)
         local tl = Geom:new{ x = 0, y = 0 }
         local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
         local screen_d = tl:distance(br)
-        if (0.9 * ges.span) < img_d and img_d <= screen_d then
+        if (0.9 * ges.span) < img_d and ges.span > (0.5 * img_d) and img_d <= screen_d then
             self:onZoomToDiagonal(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_d, img_d))
