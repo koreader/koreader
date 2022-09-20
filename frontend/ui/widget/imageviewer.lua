@@ -722,6 +722,7 @@ function ImageViewer:onZoomToDiagonal(d)
     local h = math.sqrt(math.pow(d, 2) / (math.pow(r, 2) + 1))
     local w = h * r
 
+    -- Matches ImageWidget's best-fit computation in _render
     local new_factor = math.min(w / self._image_wg:getOriginalWidth(), h / self._image_wg:getOriginalHeight())
     self:_applyNewScaleFactor(new_factor)
     return true
