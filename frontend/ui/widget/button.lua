@@ -37,8 +37,9 @@ local Button = InputContainer:new{
     text = nil, -- mandatory (unless icon is provided)
     text_func = nil,
     icon = nil,
-    icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
-    icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
+    icon_width = nil,
+    icon_height = nil,
+    icon_size_factor = 1, -- scale the default icon size
     icon_rotation_angle = 0,
     align = "center", -- or "left"
     preselect = false,
@@ -55,6 +56,7 @@ local Button = InputContainer:new{
     padding_v = nil,
     width = nil,
     max_width = nil,
+    width_factor = nil, -- used by ButtonTable: the ratio of the button width to the buttontable width
     avoid_text_truncation = true,
     text_font_face = "cfont",
     text_font_size = 20,
@@ -135,6 +137,9 @@ function Button:init()
             end
         end
     else
+        local icon_side = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.icon_size_factor)
+        self.icon_width = self.icon_width or icon_side -- default icons are square
+        self.icon_height = self.icon_height or icon_side
         self.label_widget = IconWidget:new{
             icon = self.icon,
             rotation_angle = self.icon_rotation_angle,
