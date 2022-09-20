@@ -134,7 +134,7 @@ function ReaderDictionary:init()
             if f then
                 local content = f:read("*all")
                 f:close()
-                local dictname = content:match("\nbookname=(.-)\n")
+                local dictname = content:match("\nbookname=(.-)\r?\n")
                 local is_html = content:find("sametypesequence=h", 1, true) ~= nil
                 -- sdcv won't use dict that don't have a bookname=
                 if dictname then
