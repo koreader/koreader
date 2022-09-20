@@ -740,7 +740,8 @@ function ImageViewer:onSpread(_, ges)
     -- (e.g., we've spread outward, and fingers are now outside of the image's bounds),
     -- we just jump directly to making said dimension match said distance,
     -- with the intent of making the image dimensions "snap" to the fingers.
-    -- We shave 10% off the gesture span, hoping that it'll make for a less frustrating experience when close to the image dims.
+    -- We shave 10% off the gesture span, hoping that it'll make for a less frustrating experience when close to the image dims,
+    -- and to avoid potentially triggering a small zoom-in with a spread, or a small zoom-out with a pinch ;).
     -- Otherwise, we compute a scaling percentage (which will *modify* the current scaling factor),
     -- based on the gesture distance (it's the sum of the travel of both fingers).
     -- In this last case, making this distance relative to the smallest dimension between
