@@ -22,8 +22,6 @@ local ButtonTable = FocusManager:new{
     padding = Size.padding.default,
 
     zero_sep = false,
-    button_font_face = "cfont",
-    button_font_size = 20,
 }
 
 function ButtonTable:init()
@@ -55,6 +53,7 @@ function ButtonTable:init()
                 icon = btn_entry.icon,
                 icon_width = btn_entry.icon_width,
                 icon_height = btn_entry.icon_height,
+                align = btn_entry.align,
                 enabled = btn_entry.enabled,
                 callback = btn_entry.callback,
                 hold_callback = btn_entry.hold_callback,
@@ -65,8 +64,9 @@ function ButtonTable:init()
                 margin = 0,
                 padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
                 padding_h = 0, -- allow text to take more of the horizontal space
-                text_font_face = self.button_font_face,
-                text_font_size = self.button_font_size,
+                text_font_face = btn_entry.font_face,
+                text_font_size = btn_entry.font_size,
+                text_font_bold = btn_entry.font_bold,
                 show_parent = self.show_parent,
             }
             if btn_entry.id then

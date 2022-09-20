@@ -1116,6 +1116,14 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/001/stardict-comn_dictd03_magus-2.4.2.tar.gz"
     },
     {
+        name = "Русский Викисловарь",
+        lang_in = "Russian",
+        lang_out = "Russian",
+        entries = 334418,
+        license = "CC-BY-SA/GFDL (dual-licensed)",
+        url = "https://github.com/Vuizur/ruwiktionary-htmldump-parser/raw/master/Russian-Russian-dict.tar.gz"
+    },
+    {
         name = "Русско-Белорусский математический словарь",
         lang_in = "Russian",
         lang_out = "Belarusian",

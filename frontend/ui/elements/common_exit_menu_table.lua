@@ -39,7 +39,7 @@ if Device:canReboot() then
         text = _("Reboot the device"),
         keep_menu_open = true,
         callback = function()
-            UIManager:broadcastEvent(Event:new("Reboot"))
+            UIManager:reboot()
         end
     }
 end
@@ -48,7 +48,7 @@ if Device:canPowerOff() then
         text = _("Power off"),
         keep_menu_open = true,
         callback = function()
-            UIManager:broadcastEvent(Event:new("PowerOff"))
+            UIManager:powerOff()
         end
     }
 end

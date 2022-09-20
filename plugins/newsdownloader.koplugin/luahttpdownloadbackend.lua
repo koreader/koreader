@@ -7,7 +7,7 @@ local LuaHttpDownloadBackend = {}
 function LuaHttpDownloadBackend:getResponseAsString(url)
    local _, stream = assert(http_request.new_from_uri(url):go())
    local body = assert(stream:get_body_as_string())
-   logger.dbg("Response body :", body)
+   logger.dbg("Response body:", body)
    return body
 end
 

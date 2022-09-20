@@ -386,11 +386,12 @@ function Translator:loadPage(text, target_lang, source_lang)
 
     -- raise error message when network is unavailable
     if headers == nil then
-        error("Network is unreachable")
+        error(status or code or "network unreachable")
     end
 
     if code ~= 200 then
-        logger.warn("translator HTTP status not okay:", status)
+        logger.warn("translator HTTP status not okay:", status or code or "network unreachable")
+        logger.dbg("Response headers:", headers)
         return
     end
 
@@ -578,38 +579,10 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
     -- table.insert(output, require("dump")(result)) -- for debugging
     local text_all = table.concat(output, "\n")
     local textviewer
-    local buttons_table = {
-        {
-            {
-                text = _("Close"),
-                is_enter_default = true,
-                callback = function()
-                    textviewer:onClose()
-                end,
-            },
-        },
-    }
-    if Device:hasClipboard() then
-        table.insert(buttons_table, 1,
-            {
-                {
-                    text = _("Copy main translation"),
-                    callback = function()
-                        Device.input.setClipboardText(text_main)
-                    end,
-                },
-                {
-                    text = _("Copy all"),
-                    callback = function()
-                        Device.input.setClipboardText(text_all)
-                    end,
-                },
-            }
-        )
-    end
+    local buttons_table = {}
     if from_highlight then
         local ui = require("apps/reader/readerui").instance
-        table.insert(buttons_table, 1,
+        table.insert(buttons_table,
             {
                 {
                     text = _("Save main translation to note"),
@@ -640,6 +613,24 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
             }
         )
     end
+    if Device:hasClipboard() then
+        table.insert(buttons_table,
+            {
+                {
+                    text = _("Copy main translation"),
+                    callback = function()
+                        Device.input.setClipboardText(text_main)
+                    end,
+                },
+                {
+                    text = _("Copy all"),
+                    callback = function()
+                        Device.input.setClipboardText(text_all)
+                    end,
+                },
+            }
+        )
+    end
     textviewer = TextViewer:new{
         title = T(_("Translation from %1"), self:getLanguageName(source_lang, "?")),
         title_multilines = true,
@@ -648,6 +639,7 @@ function Translator:_showTranslation(text, target_lang, source_lang, from_highli
         text = text_all,
         height = math.floor(Screen:getHeight() * 0.8),
         justified = G_reader_settings:nilOrTrue("dict_justify"),
+        add_default_buttons = true,
         buttons_table = buttons_table,
         close_callback = function()
             if from_highlight then

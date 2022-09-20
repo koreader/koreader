@@ -464,7 +464,7 @@ function Wallabag:getArticleList()
             -- we may have hit the last page, there are no more articles
             logger.dbg("Wallabag: couldn't get page #", page)
             break -- exit while loop
-        elseif err then
+        elseif err or articles_json == nil then
             -- another error has occured. Don't proceed with downloading
             -- or deleting articles
             logger.warn("Wallabag: download of page #", page, "failed with", err, code)
@@ -484,7 +484,7 @@ function Wallabag:getArticleList()
         new_article_list = self:filterIgnoredTags(new_article_list)
 
         -- Append the filtered list to the final article list
-        for i, article in ipairs(new_article_list) do
+        for _, article in ipairs(new_article_list) do
             if #article_list == self.articles_per_sync then
                 logger.dbg("Wallabag: hit the article target", self.articles_per_sync)
                 break
@@ -631,11 +631,11 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
-    local code, resp_headers = socket.skip(1, http.request(request))
+    local code, resp_headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     -- raise error message when network is unavailable
     if resp_headers == nil then
-        logger.dbg("Wallabag: Server error: ", code)
+        logger.dbg("Wallabag: Server error:", status or code)
         return nil, "network_error"
     end
     if code == 200 then
@@ -665,12 +665,14 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
             local entry_mode = lfs.attributes(filepath, "mode")
             if entry_mode == "file" then
                 os.remove(filepath)
-                logger.dbg("Wallabag: Removed failed download: ", filepath)
+                logger.dbg("Wallabag: Removed failed download:", filepath)
             end
         elseif not quiet then
             UIManager:show(InfoMessage:new{
                 text = _("Communication with server failed."), })
         end
+        logger.dbg("Wallabag: Request failed:", status or code)
+        logger.dbg("Wallabag: Response headers:", resp_headers)
         return nil, "http_error", code
     end
 end
@@ -709,7 +711,7 @@ function Wallabag:synchronize()
     if self.access_token ~= "" then
         local articles = self:getArticleList()
         if articles then
-            logger.dbg("Wallabag: number of articles: ", #articles)
+            logger.dbg("Wallabag: number of articles:", #articles)
 
             info = InfoMessage:new{ text = _("Downloading articles…") }
             UIManager:show(info)

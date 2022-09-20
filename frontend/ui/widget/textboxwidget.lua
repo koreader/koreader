@@ -1363,6 +1363,7 @@ end
 
 -- Return the coordinates (relative to current view, so negative y is possible)
 -- of the left of char at charpos (use self.charpos if none provided)
+-- and the number of the line with charpos on the screen
 function TextBoxWidget:_getXYForCharPos(charpos)
     if not charpos then
         charpos = self.charpos
@@ -1389,6 +1390,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
         end
     end
     local y = (ln - self.virtual_line_num) * self.line_height_px
+    local screen_line_num = ln - self.virtual_line_num + 1
 
     -- Find the x offset in the current line.
 
@@ -1441,7 +1443,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
             end
         end
         -- logger.dbg("_getXYForCharPos(", charpos, "):", x, y)
-        return x, y
+        return x, y, screen_line_num
     end
 
     -- Only when not self.use_xtext:
@@ -1458,7 +1460,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
     -- Cursor can be drawn at x, it will be on the left of the char pointed by charpos
     -- (x=0 for first char of line - for end of line, it will be before the \n, the \n
     -- itself being not displayed)
-    return x, y
+    return x, y, screen_line_num
 end
 
 -- Return the charpos at provided coordinates (relative to current view,
@@ -1565,11 +1567,6 @@ local CURSOR_USE_REFRESH_FUNCS = G_reader_settings:nilOrTrue("ui_cursor_use_refr
 -- Update charpos to the one provided; if out of current view, update
 -- virtual_line_num to move it to view, and draw the cursor
 function TextBoxWidget:moveCursorToCharPos(charpos)
-    if not self.editable then
-        -- we shouldn't have been called if not editable
-        logger.warn("TextBoxWidget:moveCursorToCharPos called, but not editable")
-        return
-    end
     self.charpos = charpos
     self.prev_virtual_line_num = self.virtual_line_num
     local x, y = self:_getXYForCharPos() -- we can get y outside current view
@@ -1709,6 +1706,30 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
             end
         end
     end
+end
+
+-- Update view to show the line with charpos not far than <centered_lines_count> lines away
+-- from the center of the screen, and draw the cursor.
+function TextBoxWidget:moveCursorToCharPosKeepingViewCentered(charpos, centered_lines_count)
+    local old_virtual_line_num = self.virtual_line_num
+    self.for_measurement_only = true
+    self:moveCursorToCharPos(charpos)
+    self.for_measurement_only = false
+    local _, _, screen_line_num = self:_getXYForCharPos(charpos)
+    local new_virtual_line_num = self.virtual_line_num + screen_line_num - math.floor(self.lines_per_page / 2)
+    local max_virtual_line_num = #self.vertical_string_list - self.lines_per_page + 1
+    if new_virtual_line_num < 1 then
+        new_virtual_line_num = 1
+    elseif new_virtual_line_num > max_virtual_line_num then
+        new_virtual_line_num = max_virtual_line_num
+    end
+    if math.abs(new_virtual_line_num - old_virtual_line_num) > centered_lines_count then
+        self.virtual_line_num = new_virtual_line_num
+    else
+        self.virtual_line_num = old_virtual_line_num
+    end
+    self:_updateLayout()
+    self:moveCursorToCharPos(charpos)
 end
 
 function TextBoxWidget:moveCursorToXY(x, y, restrict_to_view)

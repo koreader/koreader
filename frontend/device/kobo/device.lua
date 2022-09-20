@@ -35,12 +35,12 @@ local function checkStandby()
         return no
     end
     local mode = f:read()
-    logger.dbg("Kobo: available power states", mode)
+    logger.dbg("Kobo: available power states:", mode)
     if mode and mode:find("standby") then
-        logger.dbg("Kobo: standby state allowed")
+        logger.dbg("Kobo: standby state is supported")
         return yes
     end
-    logger.dbg("Kobo: standby state not allowed")
+    logger.dbg("Kobo: standby state is unsupported")
     return no
 end
 
@@ -847,6 +847,14 @@ local function getProductId()
     return product_id
 end
 
+-- NOTE: We overload this to make sure checkUnexpectedWakeup doesn't trip *before* the newly scheduled suspend
+function Kobo:rescheduleSuspend()
+    local UIManager = require("ui/uimanager")
+    UIManager:unschedule(self.suspend)
+    UIManager:unschedule(self.checkUnexpectedWakeup)
+    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
+end
+
 function Kobo:checkUnexpectedWakeup()
     local UIManager = require("ui/uimanager")
     -- Just in case another event like SleepCoverClosed also scheduled a suspend
@@ -864,10 +872,8 @@ function Kobo:checkUnexpectedWakeup()
     else
         -- We've hit an early resume, assume this is unexpected (as we only run if Kobo:resume hasn't already).
         logger.dbg("Kobo suspend: checking unexpected wakeup number", self.unexpected_wakeup_count)
-        if self.unexpected_wakeup_count == 0 or self.unexpected_wakeup_count > 20 then
-            -- Don't put device back to sleep under the following two cases:
-            --   1. a resume event triggered Kobo:resume() function
-            --   2. trying to put device back to sleep more than 20 times after unexpected wakeup
+        if self.unexpected_wakeup_count > 20 then
+            -- If we've failed to put the device back to sleep over 20 consecutive times, we give up.
             -- Broadcast a specific event, so that AutoSuspend can pick up the baton...
             local Event = require("ui/event")
             UIManager:broadcastEvent(Event:new("UnexpectedWakeupLimit"))
@@ -878,8 +884,6 @@ function Kobo:checkUnexpectedWakeup()
         self:suspend()
     end
 end
-
-function Kobo:getUnexpectedWakeup() return self.unexpected_wakeup_count end
 
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
@@ -1034,10 +1038,8 @@ function Kobo:suspend()
     -- NOTE: We unflag /sys/power/state-extended in Kobo:resume() to keep
     --       things tidy and easier to follow
 
-    -- Kobo:resume() will reset unexpected_wakeup_count = 0 to signal an
-    -- expected wakeup, which gets checked in checkUnexpectedWakeup().
+    -- Kobo:resume() will reset unexpected_wakeup_count and unschedule the check to signal a sane wakeup.
     self.unexpected_wakeup_count = self.unexpected_wakeup_count + 1
-    -- We're assuming Kobo:resume() will be called in the next 15 seconds in ordrer to cancel that check.
     logger.dbg("Kobo suspend: scheduling unexpected wakeup guard")
     UIManager:scheduleIn(15, self.checkUnexpectedWakeup, self)
 end
@@ -1080,8 +1082,11 @@ function Kobo:resume()
 end
 
 function Kobo:usbPlugOut()
-    -- Reset the unexpected wakeup shenanigans, since we're no longer charging, meaning power savings are now critical again ;).
-    self.unexpected_wakeup_count = 0
+    -- Rewind the unexpected wakeup counter, since we're no longer charging, meaning power savings are now critical again ;).
+    -- NOTE: We don't reset it to 0 because, semantically, only resume should ever be allowed to do so.
+    if self.unexpected_wakeup_count > 0 then
+        self.unexpected_wakeup_count = 1
+    end
 end
 
 function Kobo:saveSettings()
@@ -1228,6 +1233,108 @@ function Kobo:isStartupScriptUpToDate()
 
     local md5 = require("ffi/MD5")
     return md5.sumFile(current_script) == md5.sumFile(new_script)
+end
+
+function Kobo:setEventHandlers(UIManager)
+    -- We do not want auto suspend procedure to waste battery during
+    -- suspend. So let's unschedule it when suspending, and restart it after
+    -- resume. Done via the plugin's onSuspend/onResume handlers.
+    UIManager.event_handlers["Suspend"] = function()
+        self:_beforeSuspend()
+        self:onPowerEvent("Suspend")
+    end
+    UIManager.event_handlers["Resume"] = function()
+        -- MONOTONIC doesn't tick during suspend,
+        -- invalidate the last battery capacity pull time so that we get up to date data immediately.
+        self:getPowerDevice():invalidateCapacityCache()
+
+        self:onPowerEvent("Resume")
+        self:_afterResume()
+    end
+    UIManager.event_handlers["PowerPress"] = function()
+        -- Always schedule power off.
+        -- Press the power button for 2+ seconds to shutdown directly from suspend.
+        UIManager:scheduleIn(2, UIManager.poweroff_action)
+    end
+    UIManager.event_handlers["PowerRelease"] = function()
+        if not self._entered_poweroff_stage then
+            UIManager:unschedule(UIManager.poweroff_action)
+            -- resume if we were suspended
+            if self.screen_saver_mode then
+                UIManager.event_handlers["Resume"]()
+            else
+                UIManager.event_handlers["Suspend"]()
+            end
+        end
+    end
+    UIManager.event_handlers["Light"] = function()
+        self:getPowerDevice():toggleFrontlight()
+    end
+    -- USB plug events with a power-only charger
+    UIManager.event_handlers["Charging"] = function()
+        self:_beforeCharging()
+        -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
+        if self.screen_saver_mode then
+           UIManager.event_handlers["Suspend"]()
+        end
+    end
+    UIManager.event_handlers["NotCharging"] = function()
+        -- We need to put the device into suspension, other things need to be done before it.
+        self:usbPlugOut()
+        self:_afterNotCharging()
+        if self.screen_saver_mode then
+           UIManager.event_handlers["Suspend"]()
+        end
+    end
+    -- USB plug events with a data-aware host
+    UIManager.event_handlers["UsbPlugIn"] = function()
+        self:_beforeCharging()
+        -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
+        if self.screen_saver_mode then
+            UIManager.event_handlers["Suspend"]()
+        else
+            -- Potentially start an USBMS session
+            local MassStorage = require("ui/elements/mass_storage")
+            MassStorage:start()
+        end
+    end
+    UIManager.event_handlers["UsbPlugOut"] = function()
+        -- We need to put the device into suspension, other things need to be done before it.
+        self:usbPlugOut()
+        self:_afterNotCharging()
+        if self.screen_saver_mode then
+            UIManager.event_handlers["Suspend"]()
+        else
+            -- Potentially dismiss the USBMS ConfirmBox
+            local MassStorage = require("ui/elements/mass_storage")
+            MassStorage:dismiss()
+        end
+    end
+    -- Sleep Cover handling
+    if G_reader_settings:isTrue("ignore_power_sleepcover") then
+        -- NOTE: The hardware event itself will wake the kernel up if it's in suspend (:/).
+        --       Let the unexpected wakeup guard handle that.
+        UIManager.event_handlers["SleepCoverClosed"] = nil
+        UIManager.event_handlers["SleepCoverOpened"] = nil
+    elseif G_reader_settings:isTrue("ignore_open_sleepcover") then
+        -- Just ignore wakeup events, and do NOT set is_cover_closed,
+        -- so device/generic/device will let us use the power button to wake ;).
+        UIManager.event_handlers["SleepCoverClosed"] = function()
+            UIManager.event_handlers["Suspend"]()
+        end
+        UIManager.event_handlers["SleepCoverOpened"] = function()
+            self.is_cover_closed = false
+        end
+    else
+        UIManager.event_handlers["SleepCoverClosed"] = function()
+            self.is_cover_closed = true
+            UIManager.event_handlers["Suspend"]()
+        end
+        UIManager.event_handlers["SleepCoverOpened"] = function()
+            self.is_cover_closed = false
+            UIManager.event_handlers["Resume"]()
+        end
+    end
 end
 
 -------------- device probe ------------

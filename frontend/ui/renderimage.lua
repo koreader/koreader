@@ -67,6 +67,12 @@ function RenderImage:renderImageData(data, size, want_frames, width, height)
             return image
         end
         -- fallback to rendering with MuPDF
+    elseif header == "<svg" or header == "<?xm" then
+        logger.dbg("possible SVG file provided, renderImageData: using crengine")
+        local image = self:renderSVGImageDataWithCRengine(data, size, width, height)
+        if image then
+            return image
+        end
     end
     logger.dbg("renderImageData: using MuPDF")
     return self:renderImageDataWithMupdf(data, size, width, height)
@@ -89,6 +95,25 @@ function RenderImage:renderImageDataWithMupdf(data, size, width, height)
     end
     return image
 end
+
+--- Renders SVG image data as a BlitBuffer with CRengine (and extended LunaSVG)
+--
+-- @tparam data string or userdata (pointer) with image bytes
+-- @int size size of data
+-- @int width requested width
+-- @int height requested height
+-- @treturn BlitBuffer
+function RenderImage:renderSVGImageDataWithCRengine(data, size, width, height)
+    require("document/credocument"):engineInit()
+    local image_data, image_w, image_h = cre.renderImageData(data, size, width, height)
+    if not image_data then
+        logger.warn("failed rendering image (SVG/CRengine)")
+        return
+    end
+    local image = Blitbuffer.new(image_w, image_h, Blitbuffer.TYPE_BBRGB32, image_data)
+    return image
+end
+
 
 --- Renders image data as a BlitBuffer with GifLib
 --

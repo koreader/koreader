@@ -161,13 +161,14 @@ function OTAManager:checkUpdate()
     -- download zsync file from OTA server
     logger.dbg("downloading update file", ota_update_file)
     socketutil:set_timeout()
-    local code, _, status = socket.skip(1, http.request{
+    local code, headers, status = socket.skip(1, http.request{
         url     = ota_update_file,
         sink    = ltn12.sink.file(io.open(local_update_file, "w")),
     })
     socketutil:reset_timeout()
     if code ~= 200 then
         logger.warn("cannot find update file:", status or code or "network unreachable")
+        logger.dbg("Response headers:", headers)
         return
     end
     -- parse OTA package version

@@ -122,6 +122,7 @@ function ReaderUI:init()
 
     if Device:hasKeys() then
         self.key_events.Home = { {"Home"}, doc = "open file browser" }
+        self.key_events.Reload = { {"F5"}, doc = "reload document" }
     end
 
     -- a view container (so it must be child #1!)
@@ -760,9 +761,9 @@ function ReaderUI:onClose(full_refresh)
     if self.dialog ~= self then
         self:saveSettings()
     end
-    -- Serialize the most recently displayed page for later launch
-    DocCache:serialize()
     if self.document ~= nil then
+        -- Serialize the most recently displayed page for later launch
+        DocCache:serialize(self.document.file)
         logger.dbg("closing document")
         self:notifyCloseDocument()
     end
@@ -809,6 +810,10 @@ function ReaderUI:onHome()
     self:onClose()
     self:showFileManager()
     return true
+end
+
+function ReaderUI:onReload()
+    self:reloadDocument()
 end
 
 function ReaderUI:reloadDocument(after_close_callback)

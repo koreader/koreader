@@ -4,8 +4,8 @@ local FT = require("ffi/freetype")
 local HB = require("ffi/harfbuzz")
 local Persist = require("persist")
 local util = require("util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local dbg = require("dbg")
 
 local FontList = {
     fontdir = "./fonts",
@@ -90,11 +90,11 @@ local kindle_fonts_blacklist = {
 
 local function isInFontsBlacklist(f)
     -- write test for this
-    return CanvasContext.isKindle() and kindle_fonts_blacklist[f]
+    return CanvasContext:isKindle() and kindle_fonts_blacklist[f]
 end
 
 local function getExternalFontDir()
-    if CanvasContext.hasSystemFonts() then
+    if CanvasContext:hasSystemFonts() then
         return require("frontend/ui/elements/font_settings"):getPath()
     else
         return os.getenv("EXT_FONT_DIR")
@@ -140,7 +140,7 @@ local font_exts = {
 function FontList:_readList(dir, mark)
     util.findFiles(dir, function(path, file, attr)
         -- See if we're interested
-        if file:sub(1,1) == "." then return end
+        if file:sub(1, 1) == "." then return end
         local file_type = file:lower():match(".+%.([^.]+)") or ""
         if not font_exts[file_type] then return end
 
@@ -163,15 +163,16 @@ function FontList:_readList(dir, mark)
 end
 
 function FontList:getFontList()
-    if #self.fontlist > 0 then return self.fontlist end
+    if self.fontlist[1] then return self.fontlist end
 
     local cache = Persist:new{
-        path = self.cachedir .. "/fontinfo.dat"
+        path = self.cachedir .. "/fontinfo.dat",
+        codec = "zstd",
     }
 
     local t, err = cache:load()
     if not t then
-        logger.info(cache.path, err, "initializing it")
+        logger.info(cache.path, err, "-> initializing it")
 
         -- Create new subdirectory
         lfs.mkdir(self.cachedir)
@@ -183,7 +184,7 @@ function FontList:getFontList()
 
     self:_readList(self.fontdir, mark)
     -- multiple paths should be joined with semicolon
-    for dir in string.gmatch(getExternalFontDir() or "", "([^;]+)") do
+    for dir in string.gmatch(getExternalFontDir() or "", "[^;]+") do
         self:_readList(dir, mark)
     end
 
@@ -195,21 +196,18 @@ function FontList:getFontList()
         end
     end
 
-    if dbg.is_verbose then
-        -- when verbose debug is on, always dump the cache in plain text (to inspect the db output)
+    -- Update the on-disk cache if necessary
+    if mark.cache_dirty then
         cache:save(self.fontinfo)
-    elseif mark.cache_dirty then
-        -- otherwise dump the db in binary (more compact), and only if something has changed
-        cache:save(self.fontinfo, true)
     end
 
     local names = self.fontnames
-    for _,coll in pairs(self.fontinfo) do
-        for _,v in ipairs(coll) do
+    for _, coll in pairs(self.fontinfo) do
+        for _, v in ipairs(coll) do
             local nlist = names[v.name] or {}
             assert(v.name)
             if #nlist == 0 then
-                logger.dbg("FONTNAMES ADD: ", v.name)
+                logger.dbg("FontList registered:", v.name)
             end
             names[v.name] = nlist
             table.insert(nlist, v)
@@ -218,6 +216,42 @@ function FontList:getFontList()
 
     table.sort(self.fontlist)
     return self.fontlist
+end
+
+function FontList:dumpFontList()
+    local dump = require("dump")
+
+    -- FontInfo
+    local path = self.cachedir .. "/fontinfo_dump.lua"
+    local f = io.open(path, "w")
+    if f ~= nil then
+        os.setlocale('C', 'numeric')
+        f:write("return ")
+        f:write(dump(self.fontinfo, nil, true))
+        f:close()
+    else
+        return
+    end
+
+    -- FontList
+    path = self.cachedir .. "/fontlist_dump.lua"
+    f = io.open(path, "w")
+    if f ~= nil then
+        os.setlocale('C', 'numeric')
+        f:write("return ")
+        f:write(dump(self.fontlist, nil, true))
+        f:close()
+    else
+        return
+    end
+
+    local InfoMessage = require("ui/widget/infomessage")
+    local UIManager = require("ui/uimanager")
+    local _ = require("gettext")
+    local T = require("ffi/util").template
+    UIManager:show(InfoMessage:new{
+        text = T(_("Fontlist data has been dumped in:\n%1"), self.cachedir)
+    })
 end
 
 -- Try to determine the localized font name
@@ -237,7 +271,7 @@ function FontList:getFontArgFunc()
     require("document/credocument"):engineInit()
     local toggle = {}
     local face_list = cre.getFontFaces()
-    for k,v in ipairs(face_list) do
+    for _, v in ipairs(face_list) do
         table.insert(toggle, FontList:getLocalizedFontName(cre.getFontFaceFilenameAndFaceIndex(v)) or v)
     end
     return face_list, toggle

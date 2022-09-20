@@ -133,11 +133,12 @@ local function getUrlContent(url, timeout, maxtime)
         return false, code
     end
     if headers == nil then
-        logger.warn("No HTTP headers:", code, status)
+        logger.warn("No HTTP headers:", status or code or "network unreachable")
         return false, "Network or remote server unavailable"
     end
-    if not code or string.sub(code, 1, 1) ~= "2" then -- all 200..299 HTTP codes are OK
-        logger.warn("HTTP status not okay:", code, status)
+    if not code or code < 200 or code > 299 then -- all 200..299 HTTP codes are OK
+        logger.warn("HTTP status not okay:", status or code or "network unreachable")
+        logger.dbg("Response headers:", headers)
         return false, "Remote server error or unavailable"
     end
     if headers and headers["content-length"] then
@@ -708,9 +709,14 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
         --   https://wikimedia.org/api/rest_v1/#!/Math/get_media_math_render_format_hash
         -- We tweak the url now (and fix the mimetype below), before checking for
         -- duplicates in seen_images.
-        -- Think about disabling that when nanosvg gets better!
+        -- As of mid 2022, crengine has switched from using NanoSVG to LunaSVG extended,
+        -- which makes it able to render such Wikipedia SVGs correctly.
+        -- We need to keep the style= attribute, which usually specifies width and height
+        -- in 'ex' units, and a vertical-align we want to keep to align baselines.
+        local keep_style
         if src:find("/math/render/svg/") then
-            src = src:gsub("/math/render/svg/", "/math/render/png/")
+            -- src = src:gsub("/math/render/svg/", "/math/render/png/") -- no longer needed
+            keep_style = true
         end
         local cur_image
         if seen_images[src] then -- already seen
@@ -722,7 +728,9 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
             end
             local ext = src_ext:match(".*%.(%S%S%S?%S?%S?)$") -- extensions are only 2 to 5 chars
             if ext == nil or ext == "" then
-                if src_ext:find("/math/render/png/") then -- tweaked above
+                if src_ext:find("/math/render/svg/") then
+                    ext = "svg"
+                elseif src_ext:find("/math/render/png/") then
                     ext = "png"
                 else
                     -- we won't know what mimetype to use, ignore it
@@ -780,6 +788,9 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
             table.insert(style_props, string.format("height: %spx", cur_image.height))
         end
         local style = table.concat(style_props, "; ")
+        if keep_style then -- for /math/render/svg/
+            style = img_tag:match([[style="([^"]*)"]])
+        end
         return string.format([[<img src="%s" style="%s" alt=""/>]], cur_image.imgpath, style)
     end
     html = html:gsub("(<%s*img [^>]*>)", processImg)

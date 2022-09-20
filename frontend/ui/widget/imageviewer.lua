@@ -75,6 +75,7 @@ local ImageViewer = InputContainer:new{
     _image_wg = nil,
     _images_list = nil,
     _images_list_disposable = nil,
+    _scaled_image_func = nil,
 
 }
 
@@ -146,6 +147,12 @@ function ImageViewer:init()
         -- also swap disposable status
         self._images_list_disposable = self.image_disposable
         self.image_disposable = self._images_list.image_disposable
+    end
+    -- If self.image is a function (scalable SVG image object provided by crengine),
+    -- it can be used to get the perfect bb for any scale_factor
+    if type(self.image) == "function" then
+        self._scaled_image_func = self.image
+        self.image = self._scaled_image_func(1) -- native image size, that we need to know
     end
 
     -- Widget layout
@@ -410,6 +417,16 @@ function ImageViewer:_new_image_wg()
         rotation_angle = rotate_clockwise and 90 or 270
     end
 
+    if self._scaled_image_func then
+        local scale_factor_used
+        self.image, scale_factor_used = self._scaled_image_func(self.scale_factor, max_image_w, max_image_h)
+        if self.scale_factor == 0 then
+            -- onZoomIn/Out need to know the current scale factor, that they won't be
+            -- able to fetch from _image_wg as we force it to be 1. So, remember it.
+            self._scale_factor_0 = scale_factor_used
+        end
+    end
+
     self._image_wg = ImageWidget:new{
         file = self.file,
         image = self.image,
@@ -418,7 +435,7 @@ function ImageViewer:_new_image_wg()
         width = max_image_w,
         height = max_image_h,
         rotation_angle = rotation_angle,
-        scale_factor = self.scale_factor,
+        scale_factor = self._scaled_image_func and 1 or self.scale_factor,
         center_x_ratio = self._center_x_ratio,
         center_y_ratio = self._center_y_ratio,
     }
@@ -533,18 +550,19 @@ function ImageViewer:onSwipe(_, ges)
     local distance = ges.distance
     local sq_distance = math.sqrt(distance*distance/2)
     if direction == "north" then
-        if ges.pos.x < Screen:getWidth() * 1/16 or ges.pos.x > Screen:getWidth() * 15/16 then
+        if ges.pos.x < Screen:getWidth() * 1/8 or ges.pos.x > Screen:getWidth() * 7/8 then
             -- allow for zooming with vertical swipe on screen sides
             -- (for devices without multi touch where pinch and spread don't work)
-            local inc = ges.distance / Screen:getHeight()
+            -- c.f., onSpread for details about the choice between screen & scaled image height.
+            local inc = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
             self:onZoomIn(inc)
         else
             self:panBy(0, distance)
         end
     elseif direction == "south" then
-        if ges.pos.x < Screen:getWidth() * 1/16 or ges.pos.x > Screen:getWidth() * 15/16 then
+        if ges.pos.x < Screen:getWidth() * 1/8 or ges.pos.x > Screen:getWidth() * 7/8 then
             -- allow for zooming with vertical swipe on screen sides
-            local dec = ges.distance / Screen:getHeight()
+            local dec = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
             self:onZoomOut(dec)
         elseif self.scale_factor == 0 then
             -- When scaled to fit (on initial launch, or after one has tapped
@@ -621,30 +639,70 @@ end
 function ImageViewer:onZoomIn(inc)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
-        self.scale_factor = self._image_wg:getScaleFactor()
+        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
-    if not inc then inc = 0.2 end -- default for key zoom event
-    self.scale_factor = self.scale_factor + inc
-    -- Avoid excessive zoom by halving the increase if we go too high, and clamp the result
-    if self.scale_factor > 100 then
-        self.scale_factor = math.min((self.scale_factor - inc) + inc/2, 100)
+
+    if not inc then
+        -- default for key zoom event
+        inc = 0.2
     end
-    self:update()
+
+    -- Compute new scale factor for rescaled image dimensions
+    local new_factor = self.scale_factor * (1 + inc)
+
+    -- We destroy ImageWidget on update, so only request this the first time,
+    -- in order to avoid jitter in the results given differing memory consumption at different zoom levels...
+    if not self._max_scale_factor then
+        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
+    end
+    -- Clamp to sane values
+    new_factor = math.min(new_factor, self._max_scale_factor)
+    if new_factor ~= self.scale_factor then
+        self.scale_factor = new_factor
+        self:update()
+    else
+        if self.scale_factor == self._max_scale_factor then
+            logger.dbg("ImageViewer:onZoomIn: Hit the max scaling factor:", self.scale_factor)
+        else
+            logger.dbg("ImageViewer:onZoomIn: No change in scaling factor:", self.scale_factor)
+        end
+    end
     return true
 end
 
 function ImageViewer:onZoomOut(dec)
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
-        self.scale_factor = self._image_wg:getScaleFactor()
+        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
-    if not dec then dec = 0.2 end -- default for key zoom event
-    self.scale_factor = self.scale_factor - dec
-    -- Avoid excessive unzoom by halving the decrease if we go too low, and clamp the result
-    if self.scale_factor < 0.01 then
-        self.scale_factor = math.max(0.01, (self.scale_factor + dec) - dec/2)
+
+    if not dec then
+        -- default for key zoom event
+        dec = 0.2
+    elseif dec >= 0.75 then
+        -- Larger reductions tend to be fairly jarring, so limit to 75%.
+        -- (Also, we can't go above 1 because maths).
+        dec = 0.75
     end
-    self:update()
+
+    -- Compute new scale factor for rescaled image dimensions
+    local new_factor = self.scale_factor * (1 - dec)
+
+    if not self._min_scale_factor then
+        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
+    end
+    -- Clamp to sane values
+    new_factor = math.max(new_factor, self._min_scale_factor)
+    if new_factor ~= self.scale_factor then
+        self.scale_factor = new_factor
+        self:update()
+    else
+        if self.scale_factor == self._min_scale_factor then
+            logger.dbg("ImageViewer:onZoomOut: Hit the min scaling factor:", self.scale_factor)
+        else
+            logger.dbg("ImageViewer:onZoomOut: No change in scaling factor:", self.scale_factor)
+        end
+    end
     return true
 end
 
@@ -655,8 +713,23 @@ function ImageViewer:onSpread(_, ges)
     if self._image_wg then
         self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
     end
-    -- Set some zoom increase value from pinch distance
-    local inc = ges.distance / Screen:getWidth()
+    -- Set some zoom increase value from pinch distance.
+    -- Making it relative to the smallest dimension between the currently scaled image or the Screen makes it less annoying
+    -- when approaching both very small scale factors (where the image dimensions are many times smaller than the screen),
+    -- meaning using the image dimensions here takes less zoom steps to get it back to a sensible size;
+    -- *and* large scale factors (where the image dimensions are larger than the screen),
+    -- meaning using the screen dimensions here makes zoom steps, again, slightly more potent.
+    local inc
+    if ges.direction == "vertical" then
+        inc = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
+    elseif ges.direction == "horizontal" then
+        inc = ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth())
+    else
+        local tl = Geom:new{ x = 0, y = 0 }
+        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+        local screen_diag = tl:distance(br)
+        inc = ges.distance / math.min(screen_diag, self._image_wg:getCurrentDiagonal())
+    end
     self:onZoomIn(inc)
     return true
 end
@@ -664,7 +737,17 @@ end
 function ImageViewer:onPinch(_, ges)
     -- With Pinch, unlike Spread, it feels more natural if we keep the same center point.
     -- Set some zoom decrease value from pinch distance
-    local dec = ges.distance / Screen:getWidth()
+    local dec
+    if ges.direction == "vertical" then
+        dec = ges.distance / math.min(Screen:getHeight(), self._image_wg:getCurrentHeight())
+    elseif ges.direction == "horizontal" then
+        dec = ges.distance / math.min(Screen:getWidth(), self._image_wg:getCurrentWidth())
+    else
+        local tl = Geom:new{ x = 0, y = 0 }
+        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+        local screen_diag = tl:distance(br)
+        dec = ges.distance / math.min(screen_diag, self._image_wg:getCurrentDiagonal())
+    end
     self:onZoomOut(dec)
     return true
 end
@@ -724,6 +807,10 @@ function ImageViewer:onCloseWidget()
     if self._images_list and self._images_list_disposable and self._images_list.free then
         logger.dbg("ImageViewer:onCloseWidget: free self._images_list", self._images_list)
         self._images_list:free()
+    end
+    if self._scaled_image_func then
+        self._scaled_image_func(false) -- invoke :free() on the creimage object
+        self._scaled_image_func = nil
     end
 
     -- Those, on the other hand, are always initialized, but may not actually be in our widget tree right now,

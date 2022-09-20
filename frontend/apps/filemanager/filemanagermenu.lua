@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
@@ -702,11 +701,18 @@ To:
             touchmenu_instance:updateItems()
         end,
     })
+    table.insert(self.menu_items.developer_options.sub_item_table, {
+        text = _("Dump the fontlist cache"),
+        callback = function()
+            local FontList = require("fontlist")
+            FontList:dumpFontList()
+        end,
+    })
 
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
-            local cloud_storage = CloudStorage:new{}
+            local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{}
             UIManager:show(cloud_storage)
             local filemanagerRefresh = function() self.ui:onRefresh() end
             function cloud_storage:onClose()
