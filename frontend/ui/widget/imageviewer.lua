@@ -806,12 +806,20 @@ function ImageViewer:onSpread(_, ges)
     if self._image_wg then
         self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
     end
-    -- Set some zoom increase value from pinch distance.
-    -- Making it relative to the smallest dimension between the currently scaled image or the Screen makes it less annoying
-    -- when approaching both very small scale factors (where the image dimensions are many times smaller than the screen),
+    -- We'll zoom slightly differently depending on what the gesture looks like, relative to the current size of the image:
+    -- If, at the end of the gesture, the distance between the two fingers is larger than the image's dimension,
+    -- (e.g., we've spread outward, and fingers are now outside of the image's bounds),
+    -- we just jump directly to making said dimension match said distance,
+    -- with the intent of making the image dimensions "snap" to the fingers.
+    -- Otherwise, we compute a scaling percentage (which will *modify* the current scaling factor),
+    -- based on the gesture distance (it's the sum of the travel of both fingers).
+    -- In this last case, making this distance relative to the smallest dimension between
+    -- the currently scaled image or the Screen makes it less annoying when approaching both very small scale factors
+    -- (where the image dimensions are many times smaller than the screen),
     -- meaning using the image dimensions here takes less zoom steps to get it back to a sensible size;
     -- *and* large scale factors (where the image dimensions are larger than the screen),
     -- meaning using the screen dimensions here makes zoom steps, again, slightly more potent.
+    -- Note that, in the first case, you're very likely to end up in the first branch instead (i.e., the "snap to" zoom).
     if ges.direction == "vertical" then
         if ges.span > self._image_wg:getCurrentHeight() then
             self:onZoomToHeight(ges.span)

@@ -461,6 +461,21 @@ function ImageWidget:getCurrentDiagonal()
     return tl:distance(br)
 end
 
+-- And now, getters for the original, unscaled dimensions.
+function ImageWidget:getOriginalWidth()
+    return self._img_w
+end
+
+function ImageWidget:getOriginalHeight()
+    return self._img_h
+end
+
+function ImageWidget:getOriginalDiagonal()
+    local tl = Geom:new{ x = 0, y = 0 }
+    local br = Geom:new{ x = self._img_w - 1, y = self._img_h - 1}
+    return tl:distance(br)
+end
+
 function ImageWidget:getPanByCenterRatio(x, y)
     -- returns center ratio (without limits check) we would get with this panBy
     local center_x_ratio = (x + self._offset_x + self.width/2) / self._bb_w
