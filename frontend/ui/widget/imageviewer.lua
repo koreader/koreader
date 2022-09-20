@@ -637,6 +637,11 @@ end
 
 -- Zoom events
 function ImageViewer:_applyNewScaleFactor(new_factor)
+    if self.scale_factor == 0 then
+        -- Get the scale_factor made out for best fit
+        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
+    end
+
     -- We destroy ImageWidget on update, so only request this the first time,
     -- in order to avoid jitter in the results given differing memory consumption at different zoom levels...
     if not self._min_scale_factor or not self._max_scale_factor then
@@ -662,7 +667,6 @@ end
 function ImageViewer:onZoomIn(inc)
     logger.dbg("ImageViewer:onZoomIn", inc)
     if self.scale_factor == 0 then
-        -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
 
@@ -698,10 +702,6 @@ end
 
 function ImageViewer:onZoomToHeight(height)
     logger.dbg("ImageViewer:onZoomToHeight", height)
-    if self.scale_factor == 0 then
-        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
-    end
-
     local new_factor = height / self._image_wg:getOriginalHeight()
     self:_applyNewScaleFactor(new_factor)
     return true
@@ -709,10 +709,6 @@ end
 
 function ImageViewer:onZoomToWidth(width)
     logger.dbg("ImageViewer:onZoomToWidth", width)
-    if self.scale_factor == 0 then
-        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
-    end
-
     local new_factor = width / self._image_wg:getOriginalWidth()
     self:_applyNewScaleFactor(new_factor)
     return true
@@ -720,16 +716,11 @@ end
 
 function ImageViewer:onZoomToDiagonal(d)
     logger.dbg("ImageViewer:onZoomToDiagonal", d)
-    if self.scale_factor == 0 then
-        -- Get the scale_factor made out for best fit
-        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
-    end
     -- It's trigonometry time!
     -- c.f., https://math.stackexchange.com/a/3369637
     local r = self._image_wg:getCurrentWidth() / self._image_wg:getCurrentHeight()
     local h = math.sqrt(math.pow(d, 2) / (math.pow(r, 2) + 1))
     local w = h * r
-    logger.dbg("Current factor:", self.scale_factor)
     logger.dbg("Current: w =", self._image_wg:getCurrentWidth(), "h =", self._image_wg:getCurrentHeight(), "d =", self._image_wg:getCurrentDiagonal(), "r =", self._image_wg:getCurrentWidth() / self._image_wg:getCurrentHeight())
     logger.dbg("New: w =", w, "h =", h, "d =", d, "r =", w / h)
 
