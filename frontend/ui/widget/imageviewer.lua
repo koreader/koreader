@@ -739,6 +739,7 @@ function ImageViewer:onSpread(_, ges)
     -- (e.g., we've spread outward, and fingers are now outside of the image's bounds),
     -- we just jump directly to making said dimension match said distance,
     -- with the intent of making the image dimensions "snap" to the fingers.
+    -- We shave 10% off the gesture span, hoping that it'll make for a less frustrating experience when close to the image dims.
     -- Otherwise, we compute a scaling percentage (which will *modify* the current scaling factor),
     -- based on the gesture distance (it's the sum of the travel of both fingers).
     -- In this last case, making this distance relative to the smallest dimension between
@@ -751,7 +752,7 @@ function ImageViewer:onSpread(_, ges)
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
         local screen_h = Screen:getHeight()
-        if ges.span > img_h then
+        if (0.9 * ges.span) > img_h then
             self:onZoomToHeight(ges.span)
         else
             self:onZoomIn(ges.distance / math.min(screen_h, img_h))
@@ -759,7 +760,7 @@ function ImageViewer:onSpread(_, ges)
     elseif ges.direction == "horizontal" then
         local img_w = self._image_wg:getCurrentWidth()
         local screen_w = Screen:getWidth()
-        if ges.span > img_w then
+        if (0.9 * ges.span) > img_w then
             self:onZoomToWidth(ges.span)
         else
             self:onZoomIn(ges.distance / math.min(screen_w, img_w))
@@ -769,7 +770,7 @@ function ImageViewer:onSpread(_, ges)
         local tl = Geom:new{ x = 0, y = 0 }
         local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
         local screen_d = tl:distance(br)
-        if ges.span > img_d then
+        if (0.9 * ges.span) > img_d then
             self:onZoomToDiagonal(ges.span)
         else
             self:onZoomIn(ges.distance / math.min(screen_d, img_d))
@@ -786,7 +787,7 @@ function ImageViewer:onPinch(_, ges)
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
         local screen_h = Screen:getHeight()
-        if ges.span < img_h and img_h <= screen_h then
+        if (0.9 * ges.span) < img_h and img_h <= screen_h then
             self:onZoomToHeight(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_h, img_h))
@@ -794,7 +795,7 @@ function ImageViewer:onPinch(_, ges)
     elseif ges.direction == "horizontal" then
         local img_w = self._image_wg:getCurrentWidth()
         local screen_w = Screen:getWidth()
-        if ges.span < img_w and img_w <= screen_w then
+        if (0.9 * ges.span) < img_w and img_w <= screen_w then
             self:onZoomToWidth(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_w, img_w))
@@ -804,7 +805,7 @@ function ImageViewer:onPinch(_, ges)
         local tl = Geom:new{ x = 0, y = 0 }
         local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
         local screen_d = tl:distance(br)
-        if ges.span < img_d and img_d <= screen_d then
+        if (0.9 * ges.span) < img_d and img_d <= screen_d then
             self:onZoomToDiagonal(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_d, img_d))
