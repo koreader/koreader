@@ -636,6 +636,29 @@ function ImageViewer:onPanRelease(_, ges)
 end
 
 -- Zoom events
+function ImageViewer:_applyNewScaleFactor(new_factor)
+    -- We destroy ImageWidget on update, so only request this the first time,
+    -- in order to avoid jitter in the results given differing memory consumption at different zoom levels...
+    if not self._min_scale_factor or not self._max_scale_factor then
+        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
+    end
+    -- Clamp to sane values
+    new_factor = math.min(new_factor, self._max_scale_factor)
+    new_factor = math.max(new_factor, self._min_scale_factor)
+    if new_factor ~= self.scale_factor then
+        self.scale_factor = new_factor
+        self:update()
+    else
+        if self.scale_factor == self._min_scale_factor then
+            logger.dbg("ImageViewer: Hit the min scaling factor:", self.scale_factor)
+        elseif self.scale_factor == self._max_scale_factor then
+            logger.dbg("ImageViewer: Hit the max scaling factor:", self.scale_factor)
+        else
+            logger.dbg("ImageViewer: No change in scaling factor:", self.scale_factor)
+        end
+    end
+end
+
 function ImageViewer:onZoomIn(inc)
     logger.dbg("ImageViewer:onZoomIn", inc)
     if self.scale_factor == 0 then
@@ -650,36 +673,17 @@ function ImageViewer:onZoomIn(inc)
 
     -- Compute new scale factor for rescaled image dimensions
     local new_factor = self.scale_factor * (1 + inc)
-
-    -- We destroy ImageWidget on update, so only request this the first time,
-    -- in order to avoid jitter in the results given differing memory consumption at different zoom levels...
-    if not self._max_scale_factor then
-        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
-    end
-    -- Clamp to sane values
-    new_factor = math.min(new_factor, self._max_scale_factor)
-    if new_factor ~= self.scale_factor then
-        self.scale_factor = new_factor
-        self:update()
-    else
-        if self.scale_factor == self._max_scale_factor then
-            logger.dbg("ImageViewer:onZoomIn: Hit the max scaling factor:", self.scale_factor)
-        else
-            logger.dbg("ImageViewer:onZoomIn: No change in scaling factor:", self.scale_factor)
-        end
-    end
+    self:_applyNewScaleFactor(new_factor)
     return true
 end
 
 function ImageViewer:onZoomOut(dec)
     logger.dbg("ImageViewer:onZoomOut", dec)
     if self.scale_factor == 0 then
-        -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
 
     if not dec then
-        -- default for key zoom event
         dec = 0.2
     elseif dec >= 0.75 then
         -- Larger reductions tend to be fairly jarring, so limit to 75%.
@@ -687,84 +691,30 @@ function ImageViewer:onZoomOut(dec)
         dec = 0.75
     end
 
-    -- Compute new scale factor for rescaled image dimensions
     local new_factor = self.scale_factor * (1 - dec)
-
-    if not self._min_scale_factor then
-        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
-    end
-    -- Clamp to sane values
-    new_factor = math.max(new_factor, self._min_scale_factor)
-    if new_factor ~= self.scale_factor then
-        self.scale_factor = new_factor
-        self:update()
-    else
-        if self.scale_factor == self._min_scale_factor then
-            logger.dbg("ImageViewer:onZoomOut: Hit the min scaling factor:", self.scale_factor)
-        else
-            logger.dbg("ImageViewer:onZoomOut: No change in scaling factor:", self.scale_factor)
-        end
-    end
+    self:_applyNewScaleFactor(new_factor)
     return true
 end
 
 function ImageViewer:onZoomToHeight(height)
     logger.dbg("ImageViewer:onZoomToHeight", height)
     if self.scale_factor == 0 then
-        -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
 
     local new_factor = height / self._image_wg:getOriginalHeight()
-
-    if not self._min_scale_factor or not self._max_scale_factor then
-        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
-    end
-    -- Clamp to sane values
-    new_factor = math.min(new_factor, self._max_scale_factor)
-    new_factor = math.max(new_factor, self._min_scale_factor)
-    if new_factor ~= self.scale_factor then
-        self.scale_factor = new_factor
-        self:update()
-    else
-        if self.scale_factor == self._min_scale_factor then
-            logger.dbg("ImageViewer:onZoomToHeight: Hit the min scaling factor:", self.scale_factor)
-        elseif self.scale_factor == self._max_scale_factor then
-            logger.dbg("ImageViewer:onZoomToHeight: Hit the max scaling factor:", self.scale_factor)
-        else
-            logger.dbg("ImageViewer:onZoomToHeight: No change in scaling factor:", self.scale_factor)
-        end
-    end
+    self:_applyNewScaleFactor(new_factor)
     return true
 end
 
 function ImageViewer:onZoomToWidth(width)
     logger.dbg("ImageViewer:onZoomToWidth", width)
     if self.scale_factor == 0 then
-        -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
 
     local new_factor = width / self._image_wg:getOriginalWidth()
-
-    if not self._min_scale_factor or not self._max_scale_factor then
-        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
-    end
-    -- Clamp to sane values
-    new_factor = math.min(new_factor, self._max_scale_factor)
-    new_factor = math.max(new_factor, self._min_scale_factor)
-    if new_factor ~= self.scale_factor then
-        self.scale_factor = new_factor
-        self:update()
-    else
-        if self.scale_factor == self._min_scale_factor then
-            logger.dbg("ImageViewer:onZoomToWidth: Hit the min scaling factor:", self.scale_factor)
-        elseif self.scale_factor == self._max_scale_factor then
-            logger.dbg("ImageViewer:onZoomToWidth: Hit the max scaling factor:", self.scale_factor)
-        else
-            logger.dbg("ImageViewer:onZoomToWidth: No change in scaling factor:", self.scale_factor)
-        end
-    end
+    self:_applyNewScaleFactor(new_factor)
     return true
 end
 
@@ -784,25 +734,7 @@ function ImageViewer:onZoomToDiagonal(d)
     logger.dbg("New: w =", w, "h =", h, "d =", d, "r =", w / h)
 
     local new_factor = math.min(w / self._image_wg:getOriginalWidth(), h / self._image_wg:getOriginalHeight())
-
-    if not self._min_scale_factor or not self._max_scale_factor then
-        self._min_scale_factor, self._max_scale_factor = self._image_wg:getScaleFactorExtrema()
-    end
-    -- Clamp to sane values
-    new_factor = math.min(new_factor, self._max_scale_factor)
-    new_factor = math.max(new_factor, self._min_scale_factor)
-    if new_factor ~= self.scale_factor then
-        self.scale_factor = new_factor
-        self:update()
-    else
-        if self.scale_factor == self._min_scale_factor then
-            logger.dbg("ImageViewer:onZoomToDiagonal: Hit the min scaling factor:", self.scale_factor)
-        elseif self.scale_factor == self._max_scale_factor then
-            logger.dbg("ImageViewer:onZoomToDiagonal: Hit the max scaling factor:", self.scale_factor)
-        else
-            logger.dbg("ImageViewer:onZoomToDiagonal: No change in scaling factor:", self.scale_factor)
-        end
-    end
+    self:_applyNewScaleFactor(new_factor)
     return true
 end
 
