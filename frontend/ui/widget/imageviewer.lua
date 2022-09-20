@@ -718,11 +718,9 @@ function ImageViewer:onZoomToDiagonal(d)
     logger.dbg("ImageViewer:onZoomToDiagonal", d)
     -- It's trigonometry time!
     -- c.f., https://math.stackexchange.com/a/3369637
-    local r = self._image_wg:getCurrentWidth() / self._image_wg:getCurrentHeight()
+    local r = self._image_wg:getOriginalWidth() / self._image_wg:getOriginalHeight()
     local h = math.sqrt(math.pow(d, 2) / (math.pow(r, 2) + 1))
     local w = h * r
-    logger.dbg("Current: w =", self._image_wg:getCurrentWidth(), "h =", self._image_wg:getCurrentHeight(), "d =", self._image_wg:getCurrentDiagonal(), "r =", self._image_wg:getCurrentWidth() / self._image_wg:getCurrentHeight())
-    logger.dbg("New: w =", w, "h =", h, "d =", d, "r =", w / h)
 
     local new_factor = math.min(w / self._image_wg:getOriginalWidth(), h / self._image_wg:getOriginalHeight())
     self:_applyNewScaleFactor(new_factor)
