@@ -787,7 +787,7 @@ function ImageViewer:onPinch(_, ges)
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
         local screen_h = Screen:getHeight()
-        if (0.9 * ges.span) < img_h and img_h <= screen_h then
+        if (0.9 * ges.span) < img_h and img_h < screen_h then
             self:onZoomToHeight(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_h, img_h))
@@ -795,7 +795,7 @@ function ImageViewer:onPinch(_, ges)
     elseif ges.direction == "horizontal" then
         local img_w = self._image_wg:getCurrentWidth()
         local screen_w = Screen:getWidth()
-        if (0.9 * ges.span) < img_w and img_w <= screen_w then
+        if (0.9 * ges.span) < img_w and img_w < screen_w then
             self:onZoomToWidth(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_w, img_w))
