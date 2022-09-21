@@ -15,8 +15,8 @@ local LuaDefaults = LuaSettings:new{
 }
 
 --- Opens a settings file.
-function LuaDefaults:open()
-    local file_path = DataStorage:getDataDir() .. "/defaults.custom.lua"
+function LuaDefaults:open(path)
+    local file_path = path or DataStorage:getDataDir() .. "/defaults.custom.lua"
     local new = {file = file_path}
     local ok, stored
 

@@ -43,8 +43,12 @@ require("dbg"):turnOff()
 local logger = require("logger")
 logger:setLevel(logger.levels.warn)
 
--- global reader settings
+-- global defaults
 local DataStorage = require("datastorage")
+os.remove(DataStorage:getDataDir() .. "/defaults.tests.lua")
+G_defaults = require("luadefaults"):open(DataStorage:getDataDir() .. "/defaults.tests.lua")
+
+-- global reader settings
 os.remove(DataStorage:getDataDir().."/settings.reader.lua")
 G_reader_settings = require("luasettings"):open(".reader")
 
