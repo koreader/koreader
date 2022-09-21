@@ -45,13 +45,13 @@ local ExternalKeyboard = WidgetContainer:new{
 
 function ExternalKeyboard:init()
     self.ui.menu:registerToMainMenu(self)
-    local role = self:getOtgRole()
+    local role = self:getOTGRole()
     logger.dbg("ExternalKeyboard: role", role)
 
     UIManager.event_hook:registerWidget("FakeInputEvent", self)
 
     if role == USB_ROLE_DEVICE and G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
-        self:setOTG(USB_ROLE_HOST)
+        self:setOTGRole(USB_ROLE_HOST)
         role = USB_ROLE_HOST
     end
     if role == USB_ROLE_HOST then
@@ -67,12 +67,12 @@ function ExternalKeyboard:addToMainMenu(menu_items)
                 text = _("Enable OTG mode to connect peripherals"),
                 keep_menu_open = true,
                 checked_func = function()
-                    return self:getOtgRole() == USB_ROLE_HOST
+                    return self:getOTGRole() == USB_ROLE_HOST
                 end,
                 callback = function(touchmenu_instance)
-                    local role = self:getOtgRole()
+                    local role = self:getOTGRole()
                     local new_role = (role == USB_ROLE_DEVICE) and USB_ROLE_HOST or USB_ROLE_DEVICE
-                    self:setOTG(new_role)
+                    self:setOTGRole(new_role)
                     touchmenu_instance:updateItems()
                 end,
             },
@@ -117,7 +117,7 @@ function ExternalKeyboard:USBRoleToChipideaRole(role)
     end
 end
 
-function ExternalKeyboard:getOtgRole()
+function ExternalKeyboard:getOTGRole()
     local role = USB_ROLE_DEVICE
     local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "r")
 
@@ -131,12 +131,22 @@ function ExternalKeyboard:getOtgRole()
     return role
 end
 
-function ExternalKeyboard:setOTG(role)
-    logger.dbg("ExternalKeyboard:setOTG setting to", role)
+function ExternalKeyboard:setOTGRole(role)
+    -- Writing role to file will fail if the role is the same as the current role.
+    -- Check current role before calling.
+    logger.dbg("ExternalKeyboard:setOTGRole setting to", role)
     local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "w")
     if file then
         file:write(self:USBRoleToChipideaRole(role))
         file:close()
+    end
+end
+
+function ExternalKeyboard:onCloseWidget()
+    logger.info("ExternalKeyboard:onCloseWidget")
+    local role = self:getOTGRole()
+    if role == USB_ROLE_HOST then
+        self:setOTGRole(USB_ROLE_DEVICE)
     end
 end
 
