@@ -376,13 +376,11 @@ function ReaderFont:gesToFontSize(ges)
     end
     -- Compute the scaling based on the gesture's direction (for pinch/spread)
     local step
-    if not ges.direction then
-        step = math.ceil(2 * #self.steps * ges.distance / math.min(Screen:getWidth(), Screen:getHeight()))
-    elseif ges.direction == "vertical" then
+    if ges.direction and ges.direction == "vertical" then
         step = math.ceil(2 * #self.steps * ges.distance / Screen:getHeight())
-    elseif ges.direction == "horizontal" then
+    elseif ges.direction and ges.direction == "horizontal" then
         step = math.ceil(2 * #self.steps * ges.distance / Screen:getWidth())
-    elseif ges.direction == "diagonal" then
+    elseif ges.direction and ges.direction == "diagonal" then
         local screen_diagonal = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
         step = math.ceil(2 * #self.steps * ges.distance / screen_diagonal)
     else
