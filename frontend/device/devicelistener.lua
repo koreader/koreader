@@ -83,10 +83,7 @@ if Device:hasFrontlight() then
             end
             local gestureScale
             local scale_multiplier
-            if ges.ges == "two_finger_swipe" then
-                -- for backward compatibility
-                scale_multiplier = FRONTLIGHT_SENSITIVITY_DECREASE * 0.8
-            elseif ges.ges == "swipe" then
+            if ges.ges == "two_finger_swipe" or ges.ges == "swipe" then
                 scale_multiplier = 0.8
             else
                 scale_multiplier = 1

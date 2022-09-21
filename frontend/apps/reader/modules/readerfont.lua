@@ -5,6 +5,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FontList = require("fontlist")
+local Geom = require("ui/geometry")
 local Input = Device.input
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
@@ -26,9 +27,6 @@ local ReaderFont = InputContainer:new{
     -- default gamma from crengine's lvfntman.cpp
     gamma_index = nil,
     steps = {0,1,1,1,1,1,2,2,2,3,3,3,4,4,5},
-    -- FRONTLIGHT_SENSITIVITY_DECREASE defaults to 2,
-    -- because two-finger gestures report a distance set to the sum of the travel of *both* fingers.
-    gestureScale = Screen:getWidth() * FRONTLIGHT_SENSITIVITY_DECREASE,
 }
 
 function ReaderFont:init()
@@ -371,11 +369,28 @@ function ReaderFont:addToMainMenu(menu_items)
 end
 
 function ReaderFont:gesToFontSize(ges)
+    -- Dispatcher feeds us a number, not a gesture
     if type(ges) ~= "table" then return ges end
+
     if ges.distance == nil then
         ges.distance = 1
     end
-    local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
+    -- Compute the scaling based on the gesture's direction (for pinch/spread)
+    local step
+    if not ges.direction then
+        step = math.ceil(2 * #self.steps * ges.distance / math.min(Screen:getWidth(), Screen:getHeight()))
+    elseif ges.direction == "vertical" then
+        step = math.ceil(2 * #self.steps * ges.distance / Screen:getHeight())
+    elseif ges.direction == "horizontal" then
+        step = math.ceil(2 * #self.steps * ges.distance / Screen:getWidth())
+    elseif ges.direction == "diagonal" then
+        local tl = Geom:new{ x = 0, y = 0 }
+        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
+        local screen_diagonal = tl:distance(br)
+        step = math.ceil(2 * #self.steps * ges.distance / screen_diagonal)
+    else
+        step = math.ceil(2 * #self.steps * ges.distance / math.min(Screen:getWidth(), Screen:getHeight()))
+    end
     local delta_int = self.steps[step] or self.steps[#self.steps]
     return delta_int
 end
