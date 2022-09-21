@@ -69,7 +69,12 @@ end
 
 --- Saves a setting.
 function LuaDefaults:saveSetting(key, value)
-    self.rw[key] = value
+    if self.ro[key] == value then
+        -- Only keep actually custom settings in the rw table ;).
+        return self:delSetting(key)
+    else
+        self.rw[key] = value
+    end
     return self
 end
 
