@@ -21,18 +21,16 @@ local userpatch = require("userpatch")
 userpatch.applyPatches(userpatch.early_once)
 userpatch.applyPatches(userpatch.early)
 
--- Load default settings
-require("defaults")
-local DataStorage = require("datastorage")
-pcall(dofile, DataStorage:getDataDir() .. "/defaults.persistent.lua")
-
-
 io.stdout:write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
 io.stdout:flush()
+
+-- Load default settings
+G_defaults = require("luadefaults"):open()
 
 -- Read settings and check for language override
 -- Has to be done before requiring other files because
 -- they might call gettext on load
+local DataStorage = require("datastorage")
 G_reader_settings = require("luasettings"):open(
     DataStorage:getDataDir().."/settings.reader.lua")
 
