@@ -151,7 +151,6 @@ local order = {
         "----------------------------",
         "ignore_hold_corners",
         "screen_disable_double_tab",
-        "snap_to_finger_zoom_gestures",
         "----------------------------",
         "follow_links",
         "----------------------------",

@@ -665,7 +665,6 @@ function ImageViewer:_applyNewScaleFactor(new_factor)
 end
 
 function ImageViewer:onZoomIn(inc)
-    logger.dbg("ImageViewer:onZoomIn", inc)
     if self.scale_factor == 0 then
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
@@ -682,7 +681,6 @@ function ImageViewer:onZoomIn(inc)
 end
 
 function ImageViewer:onZoomOut(dec)
-    logger.dbg("ImageViewer:onZoomOut", dec)
     if self.scale_factor == 0 then
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
@@ -700,22 +698,20 @@ function ImageViewer:onZoomOut(dec)
     return true
 end
 
+--[[
 function ImageViewer:onZoomToHeight(height)
-    logger.dbg("ImageViewer:onZoomToHeight", height)
     local new_factor = height / self._image_wg:getOriginalHeight()
     self:_applyNewScaleFactor(new_factor)
     return true
 end
 
 function ImageViewer:onZoomToWidth(width)
-    logger.dbg("ImageViewer:onZoomToWidth", width)
     local new_factor = width / self._image_wg:getOriginalWidth()
     self:_applyNewScaleFactor(new_factor)
     return true
 end
 
 function ImageViewer:onZoomToDiagonal(d)
-    logger.dbg("ImageViewer:onZoomToDiagonal", d)
     -- It's trigonometry time!
     -- c.f., https://math.stackexchange.com/a/3369637
     local r = self._image_wg:getOriginalWidth() / self._image_wg:getOriginalHeight()
@@ -727,6 +723,7 @@ function ImageViewer:onZoomToDiagonal(d)
     self:_applyNewScaleFactor(new_factor)
     return true
 end
+--]]
 
 function ImageViewer:onSpread(_, ges)
     -- We get the position where spread was done
@@ -735,14 +732,7 @@ function ImageViewer:onSpread(_, ges)
     if self._image_wg then
         self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
     end
-    -- We'll zoom slightly differently depending on what the gesture looks like, relative to the current size of the image:
-    -- If, at the end of the gesture, the distance between the two fingers is larger than the image's dimension,
-    -- (e.g., we've spread outward, and fingers are now outside of the image's bounds),
-    -- we just jump directly to making said dimension match said distance,
-    -- with the intent of making the image dimensions "snap" to the fingers.
-    -- We shave 10% off the gesture span, hoping that it'll make for a less frustrating experience when close to the image dims,
-    -- and to avoid potentially triggering a small zoom-in with a spread, or a small zoom-out with a pinch ;).
-    -- Otherwise, we compute a scaling percentage (which will *modify* the current scaling factor),
+    -- We compute a scaling percentage (which will *modify* the current scaling factor),
     -- based on the gesture distance (it's the sum of the travel of both fingers).
     -- In this last case, making this distance relative to the smallest dimension between
     -- the currently scaled image or the Screen makes it less annoying when approaching both very small scale factors
@@ -750,34 +740,18 @@ function ImageViewer:onSpread(_, ges)
     -- meaning using the image dimensions here takes less zoom steps to get it back to a sensible size;
     -- *and* large scale factors (where the image dimensions are larger than the screen),
     -- meaning using the screen dimensions here makes zoom steps, again, slightly more potent.
-    -- Note that, in the first case, you're very likely to end up in the first branch instead (i.e., the "snap to" zoom).
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
         local screen_h = Screen:getHeight()
-        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
-           ges.span > img_h * 1.1 then
-            self:onZoomToHeight(ges.span)
-        else
-            self:onZoomIn(ges.distance / math.min(screen_h, img_h))
-        end
+        self:onZoomIn(ges.distance / math.min(screen_h, img_h))
     elseif ges.direction == "horizontal" then
         local img_w = self._image_wg:getCurrentWidth()
         local screen_w = Screen:getWidth()
-        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
-           ges.span > img_w * 1.1 then
-            self:onZoomToWidth(ges.span)
-        else
-            self:onZoomIn(ges.distance / math.min(screen_w, img_w))
-        end
+        self:onZoomIn(ges.distance / math.min(screen_w, img_w))
     else
         local img_d = self._image_wg:getCurrentDiagonal()
         local screen_d = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
-        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
-           ges.span > img_d * 1.1 then
-            self:onZoomToDiagonal(ges.span)
-        else
-            self:onZoomIn(ges.distance / math.min(screen_d, img_d))
-        end
+        self:onZoomIn(ges.distance / math.min(screen_d, img_d))
     end
     return true
 end
@@ -787,36 +761,18 @@ function ImageViewer:onPinch(_, ges)
     -- As for the actual zoom methods, the same general principle applies,
     -- except that we don't want to use the "snap to" method when the image is larger than the screen,
     -- otherwise we'd lose granularity in this case.
-    -- We also prevent "snap to" pinches if it would go below 50% of the current dimension,
-    -- as large "snap to" pinches are much easier to trigger than their matching spread counterpart,
-    -- especially on large screens.
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
         local screen_h = Screen:getHeight()
-        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
-           ges.span > img_h * 0.5 and ges.span < img_h and img_h < screen_h then
-            self:onZoomToHeight(ges.span)
-        else
-            self:onZoomOut(ges.distance / math.min(screen_h, img_h))
-        end
+        self:onZoomOut(ges.distance / math.min(screen_h, img_h))
     elseif ges.direction == "horizontal" then
         local img_w = self._image_wg:getCurrentWidth()
         local screen_w = Screen:getWidth()
-        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
-           ges.span > img_w * 0.5 and ges.span < img_w and img_w < screen_w then
-            self:onZoomToWidth(ges.span)
-        else
-            self:onZoomOut(ges.distance / math.min(screen_w, img_w))
-        end
+        self:onZoomOut(ges.distance / math.min(screen_w, img_w))
     else
         local img_d = self._image_wg:getCurrentDiagonal()
         local screen_d = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
-        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
-           ges.span > img_d * 0.5 and ges.span < img_d and img_d < screen_d then
-            self:onZoomToDiagonal(ges.span)
-        else
-            self:onZoomOut(ges.distance / math.min(screen_d, img_d))
-        end
+        self:onZoomOut(ges.distance / math.min(screen_d, img_d))
     end
     return true
 end

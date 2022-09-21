@@ -1085,8 +1085,7 @@ function Contact:handleTwoFingerPan(buddy_contact)
             ges_ev.direction = gesture_detector.DIRECTION_TABLE[tpan_dir]
             -- Use the the sum of both contacts' travel for the distance
             ges_ev.distance = tpan_dis + rpan_dis
-            -- We also want to know the distance between the two contacts on lift & down,
-            -- to be able to do fancy zooming based on that interval...
+            -- Some handlers might also want to know the distance between the two contacts on lift & down.
             ges_ev.span = end_distance
             ges_ev.start_span = start_distance
         elseif self.state == Contact.holdState then

@@ -252,16 +252,6 @@ if Device:isTouchDevice() then
             UIManager:broadcastEvent(Event:new("IgnoreHoldCorners"))
         end,
     }
-    common_settings.snap_to_finger_zoom_gestures = {
-        text = _("Snap to finger zoom gestures"),
-        help_text = _("In the image viewer, snap image dimensions to the gesture's end span on pinch/spread. May be uncomfortable on larger screens."),
-        checked_func = function()
-                return G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrTrue("snap_to_finger_zoom_gestures")
-        end,
-    }
 end
 
 -- NOTE: Allow disabling color if it's mistakenly enabled on a Grayscale screen (after a settings import?)
