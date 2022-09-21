@@ -248,14 +248,14 @@ function ExternalKeyboard:findAndSetupKeyboard()
 end
 
 function ExternalKeyboard:showHelp()
-	UIManager:show(InfoMessage:new {
-		text = _([[
+    UIManager:show(InfoMessage:new {
+        text = _([[
 Note that in the OTG mode the device would not be recognized as a USB drive by a computer.
 
 Troubleshooting:
 - If the keyboard is not recognized after plugging it in, try switching the USB mode to regular and back to OTG again.
 ]]),
-	})
+    })
 end
 
 return ExternalKeyboard
