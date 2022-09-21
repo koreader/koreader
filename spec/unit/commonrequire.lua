@@ -46,6 +46,7 @@ logger:setLevel(logger.levels.warn)
 -- global defaults
 local DataStorage = require("datastorage")
 os.remove(DataStorage:getDataDir() .. "/defaults.tests.lua")
+os.remove(DataStorage:getDataDir() .. "/defaults.tests.lua.old")
 G_defaults = require("luadefaults"):open(DataStorage:getDataDir() .. "/defaults.tests.lua")
 
 -- global reader settings

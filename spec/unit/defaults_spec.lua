@@ -1,9 +1,10 @@
 describe("defaults module", function()
-    local Defaults, DataStorage, lfs
+    local Defaults, DataStorage, lfs, persistent_filename
     setup(function()
         require("commonrequire")
         DataStorage = require("datastorage")
-        Defaults = require("luadefaults"):open()
+        persistent_filename = DataStorage:getDataDir() .. "/defaults.defaults_spec.lua"
+        Defaults = require("luadefaults"):open(persistent_filename)
         lfs = require("libs/libkoreader-lfs")
     end)
 
@@ -13,8 +14,8 @@ describe("defaults module", function()
     end)
 
     it("should save changes to defaults.custom.lua", function()
-        local persistent_filename = DataStorage:getDataDir() .. "/defaults.custom.lua"
         os.remove(persistent_filename)
+        os.remove(persistent_filename .. ".old")
 
         -- This defaults to false
         Defaults:makeTrue("DSHOWOVERLAP")
@@ -32,6 +33,7 @@ describe("defaults module", function()
         Defaults:close()
 
         os.remove(persistent_filename)
+        os.remove(persistent_filename .. ".old")
     end)
 
     it("should delete entry from defaults.custom.lua if value is reverted back to default", function()
