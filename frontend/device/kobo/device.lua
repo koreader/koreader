@@ -449,7 +449,7 @@ local KoboGoldfinch = Kobo:new{
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     display_dpi = 300,
-    -- FIXME: TBD!
+    --- @fixme: to be confirmed!
     hasNaturalLight = yes,
     frontlight_settings = {
         frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
