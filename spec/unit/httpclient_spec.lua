@@ -1,11 +1,14 @@
--- set true to test httpclient
-DUSE_TURBO_LIB = false --luacheck: ignore
-
 describe("HTTP client module #notest #nocov", function()
-    local UIManager
+    local Defaults, UIManager
     setup(function()
         require("commonrequire")
         UIManager = require("ui/uimanager")
+        Defaults = require("luadefaults"):open()
+        -- Set true to test httpclient
+        Defaults:makeFalse("DUSE_TURBO_LIB")
+    end)
+    teardown(function()
+        Defaults:makeFalse("DUSE_TURBO_LIB")
     end)
 
     local requests = 0
