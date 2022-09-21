@@ -636,11 +636,16 @@ function ImageViewer:onPanRelease(_, ges)
 end
 
 -- Zoom events
-function ImageViewer:_applyNewScaleFactor(new_factor)
+function ImageViewer:_refreshScaleFactor()
     if self.scale_factor == 0 then
         -- Get the scale_factor made out for best fit
         self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
     end
+end
+
+function ImageViewer:_applyNewScaleFactor(new_factor)
+    -- Make sure self.scale_factor is up-to-date
+    self:_refreshScaleFactor()
 
     -- We destroy ImageWidget on update, so only request this the first time,
     -- in order to avoid jitter in the results given differing memory consumption at different zoom levels...
@@ -665,9 +670,7 @@ function ImageViewer:_applyNewScaleFactor(new_factor)
 end
 
 function ImageViewer:onZoomIn(inc)
-    if self.scale_factor == 0 then
-        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
-    end
+    self:_refreshScaleFactor()
 
     if not inc then
         -- default for key zoom event
@@ -681,9 +684,7 @@ function ImageViewer:onZoomIn(inc)
 end
 
 function ImageViewer:onZoomOut(dec)
-    if self.scale_factor == 0 then
-        self.scale_factor = self._scale_factor_0 or self._image_wg:getScaleFactor()
-    end
+    self:_refreshScaleFactor()
 
     if not dec then
         dec = 0.2
