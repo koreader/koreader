@@ -156,11 +156,6 @@ function TextViewer:init()
     end
 
     -- buttons
-    local chevron_first = "chevron.first"
-    local chevron_last = "chevron.last"
-    if BD.mirroredUILayout() then
-        chevron_first, chevron_last = chevron_last, chevron_first
-    end
     local default_buttons =
         {
             {
@@ -184,10 +179,8 @@ function TextViewer:init()
                 end,
             },
             {
-                icon = chevron_first,
+                text = "⇱",
                 id = "top",
-                width_factor = 0.17,
-                icon_size_factor = 0.8,
                 callback = function()
                     self.scroll_text_w:scrollToTop()
                 end,
@@ -195,10 +188,8 @@ function TextViewer:init()
                 allow_hold_when_disabled = true,
             },
             {
-                icon = chevron_last,
+                text = "⇲",
                 id = "bottom",
-                width_factor = 0.17,
-                icon_size_factor = 0.8,
                 callback = function()
                     self.scroll_text_w:scrollToBottom()
                 end,
