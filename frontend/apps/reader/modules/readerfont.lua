@@ -26,7 +26,6 @@ local ReaderFont = InputContainer:new{
     -- default gamma from crengine's lvfntman.cpp
     gamma_index = nil,
     steps = {0,1,1,1,1,1,2,2,2,3,3,3,4,4,5},
-    gestureScale = Screen:getWidth() * FRONTLIGHT_SENSITIVITY_DECREASE,
 }
 
 function ReaderFont:init()
@@ -369,11 +368,24 @@ function ReaderFont:addToMainMenu(menu_items)
 end
 
 function ReaderFont:gesToFontSize(ges)
+    -- Dispatcher feeds us a number, not a gesture
     if type(ges) ~= "table" then return ges end
+
     if ges.distance == nil then
         ges.distance = 1
     end
-    local step = math.ceil(2 * #self.steps * ges.distance / self.gestureScale)
+    -- Compute the scaling based on the gesture's direction (for pinch/spread)
+    local step
+    if ges.direction and ges.direction == "vertical" then
+        step = math.ceil(2 * #self.steps * ges.distance / Screen:getHeight())
+    elseif ges.direction and ges.direction == "horizontal" then
+        step = math.ceil(2 * #self.steps * ges.distance / Screen:getWidth())
+    elseif ges.direction and ges.direction == "diagonal" then
+        local screen_diagonal = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
+        step = math.ceil(2 * #self.steps * ges.distance / screen_diagonal)
+    else
+        step = math.ceil(2 * #self.steps * ges.distance / math.min(Screen:getWidth(), Screen:getHeight()))
+    end
     local delta_int = self.steps[step] or self.steps[#self.steps]
     return delta_int
 end

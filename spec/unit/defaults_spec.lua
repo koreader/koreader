@@ -8,7 +8,7 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(99, #Defaults.defaults_name)
+        assert.is_same(98, #Defaults.defaults_name)
     end)
 
     it("should save changes to defaults.persistent.lua", function()
@@ -16,7 +16,7 @@ describe("defaults module", function()
         os.remove(persistent_filename)
 
         -- To see indices and help updating this when new settings are added:
-        -- for i=1, 99 do print(i.." ".. Defaults.defaults_name[i]) end
+        -- for i=1, 98 do print(i.." ".. Defaults.defaults_name[i]) end
 
         -- not in persistent but checked in defaults
         Defaults.changed[18] = true
@@ -24,7 +24,7 @@ describe("defaults module", function()
         Defaults.changed[54] = true
         Defaults.changed[83] = true
         Defaults:saveSettings()
-        assert.is_same(99, #Defaults.defaults_name)
+        assert.is_same(98, #Defaults.defaults_name)
         assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[84])
         assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[48])
         assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[18])

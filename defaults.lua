@@ -215,10 +215,6 @@ DMINIBAR_CONTAINER_HEIGHT = 14  -- Larger means more padding at the bottom, at t
 -- no longer needed
 --DDICT_FONT_SIZE = 20
 
--- Frontlight decrease of sensitivity for two-fingered pan gesture,
--- e.g. 2 changes the sensitivity by 1/2, 3 by 1/3 etc.
-FRONTLIGHT_SENSITIVITY_DECREASE = 2
-
 -- Normally, KOReader will present file lists sorted in case insensitive manner
 -- when presenting an alphatically sorted list. So the Order is "A, b, C, d".
 -- You can switch to a case sensitive sort ("A", "C", "b", "d") by disabling
