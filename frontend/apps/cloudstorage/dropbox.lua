@@ -160,15 +160,16 @@ end
 
 function DropBox:info(token)
     local info = DropBoxApi:fetchInfo(token)
-    if info then
-        local account_type = "Dropbox "
-        if info.account_type then
-            account_type = account_type .. info.account_type[".tag"]
-        end
+    local space_usage = DropBoxApi:fetchInfo(token, true)
+    if info and space_usage then
+        local account_type = info.account_type and info.account_type[".tag"]
         local name = info.name and info.name.display_name
-        local info_text = T(_"Type: %1\nName: %2\nEmail: %3\nCountry: %4",
-                account_type, name, info.email, info.country)
-        UIManager:show(InfoMessage:new{text = info_text})
+        local space_total = space_usage.allocation and space_usage.allocation.allocated
+        UIManager:show(InfoMessage:new{
+            text = T(_"Type: %1\nName: %2\nEmail: %3\nCountry: %4\nSpace total: %5\nSpace used: %6",
+                account_type, name, info.email, info.country,
+                util.getFriendlySize(space_total), util.getFriendlySize(space_usage.used)),
+        })
     end
 end
 
