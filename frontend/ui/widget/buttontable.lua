@@ -45,34 +45,22 @@ function ButtonTable:init()
         local row = self.buttons[i]
         local column_cnt = #row
         local sizer_space = self.sep_width * (column_cnt - 1) + 2
-        -- calculate default width_factor
-        local width_factor_count, width_factor_total = 0, 0
-        for j = 1, column_cnt do
-            local btn_entry_width_factor = row[j].width_factor
-            if btn_entry_width_factor then
-                width_factor_count = width_factor_count + 1
-                width_factor_total = width_factor_total + btn_entry_width_factor
-            end
-        end
-        local width_factor_default = (1 - width_factor_total) / (column_cnt - width_factor_count)
         for j = 1, column_cnt do
             local btn_entry = row[j]
-            local width = math.ceil((self.width - sizer_space) * (btn_entry.width_factor or width_factor_default))
             local button = Button:new{
                 text = btn_entry.text,
                 text_func = btn_entry.text_func,
                 icon = btn_entry.icon,
                 icon_width = btn_entry.icon_width,
                 icon_height = btn_entry.icon_height,
-                icon_size_factor = btn_entry.icon_size_factor,
                 align = btn_entry.align,
                 enabled = btn_entry.enabled,
                 callback = btn_entry.callback,
                 hold_callback = btn_entry.hold_callback,
                 allow_hold_when_disabled = btn_entry.allow_hold_when_disabled,
                 vsync = btn_entry.vsync,
-                width = width,
-                max_width = width - 2*self.sep_width - 2*self.padding,
+                width = math.ceil((self.width - sizer_space)/column_cnt),
+                max_width = math.ceil((self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding),
                 bordersize = 0,
                 margin = 0,
                 padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
