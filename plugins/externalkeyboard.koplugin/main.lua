@@ -1,6 +1,5 @@
 local Event = require("ui/event")
 local FindKeyboard = require("find-keyboard")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Device =  require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local InputText = require("ui/widget/inputtext")
@@ -11,9 +10,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local event_map_keyboard = require("event_map_keyboard")
 local util = require("util")
 local _ = require("gettext")
-local ffi = require("ffi")
-local C = ffi.C
-require("ffi/posix_h")
 
 -- The include/linux/usb/role.h calls the USB roles "host" and "device". The Chipidea driver calls them "host" and "gadget".
 -- This plugin sticks to Linux naming except when interacting with Chipidea drivers.

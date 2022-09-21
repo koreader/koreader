@@ -283,7 +283,7 @@ local function initTouchEvents()
 end
 
 local function initDPadEvents()
-    if Device.hasDPad() then 
+    if Device.hasDPad() then
         function InputText:onFocus()
             -- Event called by the focusmanager
             if self.parent.onSwitchFocus then
