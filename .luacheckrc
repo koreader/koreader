@@ -5,6 +5,7 @@ self = false
 
 globals = {
     "G_reader_settings",
+    "G_defaults",
 }
 
 read_globals = {
