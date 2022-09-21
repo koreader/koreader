@@ -441,6 +441,25 @@ local KoboIo = Kobo:new{
     automagic_sysfs = true,
 }
 
+-- Kobo Clara 2E:
+local KoboGoldfinch = Kobo:new{
+    model = "Kobo_goldfinch",
+    isMk7 = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    hasFrontlight = yes,
+    display_dpi = 300,
+    -- FIXME: TBD!
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
+}
+
 function Kobo:setupChargingLED()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         if self:hasAuxBattery() and self.powerd:isAuxBatteryConnected() then
@@ -1384,6 +1403,8 @@ elseif codename == "cadmus" then
     return KoboCadmus
 elseif codename == "io" then
     return KoboIo
+elseif codename == "goldfinch" then
+    return KoboGoldfinch
 else
     error("unrecognized Kobo model ".. codename .. " with device id " .. product_id)
 end
