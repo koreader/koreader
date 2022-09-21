@@ -726,12 +726,14 @@ end
 --]]
 
 function ImageViewer:onSpread(_, ges)
+    if not self._image_wg then
+        return
+    end
+
     -- We get the position where spread was done
     -- First, get center ratio we would have had if we did a pan to there,
     -- so we can have the zoom centered on there
-    if self._image_wg then
-        self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
-    end
+    self._center_x_ratio, self._center_y_ratio = self._image_wg:getPanByCenterRatio(ges.pos.x - Screen:getWidth()/2, ges.pos.y - Screen:getHeight()/2)
     -- We compute a scaling percentage (which will *modify* the current scaling factor),
     -- based on the gesture distance (it's the sum of the travel of both fingers).
     -- Making this distance relative to the smallest dimension between
@@ -757,6 +759,10 @@ function ImageViewer:onSpread(_, ges)
 end
 
 function ImageViewer:onPinch(_, ges)
+    if not self._image_wg then
+        return
+    end
+
     -- With Pinch, unlike Spread, it feels more natural if we keep the same center point.
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
