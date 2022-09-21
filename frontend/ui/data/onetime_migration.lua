@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220914
+local CURRENT_MIGRATION_DATE = 20220922
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -441,6 +441,26 @@ if last_migration_date < 20220914 then
 
     local cache_path = DataStorage:getDataDir() .. "/cache/fontlist"
     local ok, err = os.remove(cache_path .. "/fontinfo.dat")
+    if not ok then
+       logger.warn("os.remove:", err)
+    end
+end
+
+-- The great defaults.persistent.lua migration to LuaDefaults
+if last_migration_date < 20220922 then
+    logger.info("Performing one-time migration for 20220922")
+
+    local defaults_path = DataStorage:getDataDir() .. "/defaults.persistent.lua"
+    local defaults = {}
+    local load_defaults = loadfile(defaults_path)
+    setfenv(load_defaults, defaults)
+    load_defaults()
+
+    for k, v in pairs(defaults) do
+        G_defaults:saveSetting(k, v)
+    end
+
+    local ok, err = os.remove(defaults_path)
     if not ok then
        logger.warn("os.remove:", err)
     end
