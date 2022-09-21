@@ -460,9 +460,10 @@ if last_migration_date < 20220922 then
         G_defaults:saveSetting(k, v)
     end
 
-    local ok, err = os.remove(defaults_path)
+    local archived_path = DataStorage:getDataDir() .. "/defaults.legacy.lua"
+    local ok, err = os.rename(defaults_path, archived_path)
     if not ok then
-       logger.warn("os.remove:", err)
+       logger.warn("os.rename:", err)
     end
 end
 
