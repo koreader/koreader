@@ -734,7 +734,7 @@ function ImageViewer:onSpread(_, ges)
     end
     -- We compute a scaling percentage (which will *modify* the current scaling factor),
     -- based on the gesture distance (it's the sum of the travel of both fingers).
-    -- In this last case, making this distance relative to the smallest dimension between
+    -- Making this distance relative to the smallest dimension between
     -- the currently scaled image or the Screen makes it less annoying when approaching both very small scale factors
     -- (where the image dimensions are many times smaller than the screen),
     -- meaning using the image dimensions here takes less zoom steps to get it back to a sensible size;
@@ -758,9 +758,6 @@ end
 
 function ImageViewer:onPinch(_, ges)
     -- With Pinch, unlike Spread, it feels more natural if we keep the same center point.
-    -- As for the actual zoom methods, the same general principle applies,
-    -- except that we don't want to use the "snap to" method when the image is larger than the screen,
-    -- otherwise we'd lose granularity in this case.
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
         local screen_h = Screen:getHeight()
