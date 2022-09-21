@@ -754,7 +754,8 @@ function ImageViewer:onSpread(_, ges)
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
         local screen_h = Screen:getHeight()
-        if ges.span > img_h * 1.1 then
+        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
+           ges.span > img_h * 1.1 then
             self:onZoomToHeight(ges.span)
         else
             self:onZoomIn(ges.distance / math.min(screen_h, img_h))
@@ -762,7 +763,8 @@ function ImageViewer:onSpread(_, ges)
     elseif ges.direction == "horizontal" then
         local img_w = self._image_wg:getCurrentWidth()
         local screen_w = Screen:getWidth()
-        if ges.span > img_w * 1.1 then
+        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
+           ges.span > img_w * 1.1 then
             self:onZoomToWidth(ges.span)
         else
             self:onZoomIn(ges.distance / math.min(screen_w, img_w))
@@ -770,7 +772,8 @@ function ImageViewer:onSpread(_, ges)
     else
         local img_d = self._image_wg:getCurrentDiagonal()
         local screen_d = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
-        if (0.9 * ges.span) > img_d then
+        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
+           ges.span > img_d * 1.1 then
             self:onZoomToDiagonal(ges.span)
         else
             self:onZoomIn(ges.distance / math.min(screen_d, img_d))
@@ -790,7 +793,8 @@ function ImageViewer:onPinch(_, ges)
     if ges.direction == "vertical" then
         local img_h = self._image_wg:getCurrentHeight()
         local screen_h = Screen:getHeight()
-        if ges.span > img_h * 0.5 and ges.span < img_h and img_h < screen_h then
+        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
+           ges.span > img_h * 0.5 and ges.span < img_h and img_h < screen_h then
             self:onZoomToHeight(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_h, img_h))
@@ -798,7 +802,8 @@ function ImageViewer:onPinch(_, ges)
     elseif ges.direction == "horizontal" then
         local img_w = self._image_wg:getCurrentWidth()
         local screen_w = Screen:getWidth()
-        if ges.span > img_w * 0.5 and ges.span < img_w and img_w < screen_w then
+        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
+           ges.span > img_w * 0.5 and ges.span < img_w and img_w < screen_w then
             self:onZoomToWidth(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_w, img_w))
@@ -806,7 +811,8 @@ function ImageViewer:onPinch(_, ges)
     else
         local img_d = self._image_wg:getCurrentDiagonal()
         local screen_d = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
-        if ges.span > img_d * 0.5 and ges.span < img_d and img_d < screen_d then
+        if G_reader_settings:nilOrTrue("snap_to_finger_zoom_gestures") and
+           ges.span > img_d * 0.5 and ges.span < img_d and img_d < screen_d then
             self:onZoomToDiagonal(ges.span)
         else
             self:onZoomOut(ges.distance / math.min(screen_d, img_d))
