@@ -185,35 +185,16 @@ function Gestures:init()
     self:initGesture()
 end
 
-local function gestureTextFunc(settings)
-    local action_name = _("Pass through")
-    if settings then
-        local count = util.tableSize(settings)
-        if count == 0 then return _("Nothing") end
-        if count > 1 and settings.settings ~= nil then
-            count = count - 1
-        end
-        if count == 1 then
-            local item = next(settings)
-            if item == "settings" then item = next(settings, item) end
-            action_name = Dispatcher:getNameFromItem(item, settings)
-        else
-            action_name = _("Many")
-        end
-    end
-    return action_name
-end
-
 function Gestures:gestureTitleFunc(ges)
     local title = gestures_list[ges] or self:friendlyMultiswipeName(ges)
-    return T(_("%1   (%2)"), title, gestureTextFunc(self.gestures[ges]))
+    return T(_("%1   (%2)"), title, Dispatcher:menuTextFunc(self.gestures[ges]))
 end
 
 function Gestures:genMenu(ges)
     local sub_items = {}
     if gestures_list[ges] ~= nil then
         table.insert(sub_items, {
-            text = T(_("%1 (default)"), gestureTextFunc(self.defaults[ges])),
+            text = T(_("%1 (default)"), Dispatcher:menuTextFunc(self.defaults[ges])),
             keep_menu_open = true,
             separator = true,
             checked_func = function()

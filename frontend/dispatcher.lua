@@ -537,6 +537,26 @@ function Dispatcher:_removeFromOrder(location, settings, item)
     end
 end
 
+-- Get a textual representation of the enabled actions to display in a menu item.
+function Dispatcher:menuTextFunc(settings)
+    local action_name = _("Pass through")
+    if settings then
+        local count = util.tableSize(settings)
+        if count == 0 then return _("Nothing") end
+        if count > 1 and settings.settings ~= nil then
+            count = count - 1
+        end
+        if count == 1 then
+            local item = next(settings)
+            if item == "settings" then item = next(settings, item) end
+            action_name = Dispatcher:getNameFromItem(item, settings)
+        else
+            action_name = _("Many")
+        end
+    end
+    return action_name
+end
+
 -- Get a list of all enabled actions to display in a menu.
 function Dispatcher:getDisplayList(location, settings)
     local item_table = {}
@@ -553,7 +573,7 @@ function Dispatcher:getDisplayList(location, settings)
 end
 
 -- Display a SortWidget to sort the enable actions execution order.
-function Dispatcher:sortActions(caller, location, settings, touchmenu_instance)
+function Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
     local display_list = Dispatcher:getDisplayList(location, settings)
     local SortWidget = require("ui/widget/sortwidget")
     local sort_widget
@@ -577,7 +597,7 @@ function Dispatcher:sortActions(caller, location, settings, touchmenu_instance)
     UIManager:show(sort_widget)
 end
 
-function Dispatcher:addItem(caller, menu, location, settings, section)
+function Dispatcher:_addItem(caller, menu, location, settings, section)
     for _, k in ipairs(dispatcher_menu_order) do
         if settingsList[k][section] == true and
             (settingsList[k].condition == nil or settingsList[k].condition)
@@ -774,7 +794,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             and location[settings].settings.order ~= nil
         end,
         callback = function(touchmenu_instance)
-            Dispatcher:sortActions(caller, location, settings, touchmenu_instance)
+            Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
         end,
         hold_callback = function(touchmenu_instance)
             if location[settings]
@@ -810,7 +830,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     }
     for _, section in ipairs(section_list) do
         local submenu = {}
-        Dispatcher:addItem(caller, submenu, location, settings, section[1])
+        Dispatcher:_addItem(caller, submenu, location, settings, section[1])
         table.insert(menu, {
             text = section[2],
             checked_func = function()
