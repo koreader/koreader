@@ -456,9 +456,7 @@ function ImageWidget:getCurrentHeight()
 end
 
 function ImageWidget:getCurrentDiagonal()
-    local tl = Geom:new{ x = 0, y = 0 }
-    local br = Geom:new{ x = self._bb:getWidth() - 1, y = self._bb:getHeight() - 1}
-    return tl:distance(br)
+    return math.sqrt(self._bb:getWidth()^2 + self._bb:getHeight()^2)
 end
 
 -- And now, getters for the original, unscaled dimensions.
@@ -471,9 +469,7 @@ function ImageWidget:getOriginalHeight()
 end
 
 function ImageWidget:getOriginalDiagonal()
-    local tl = Geom:new{ x = 0, y = 0 }
-    local br = Geom:new{ x = self._img_w - 1, y = self._img_h - 1}
-    return tl:distance(br)
+    return math.sqrt(self._img_w^2 + self._img_h^2)
 end
 
 function ImageWidget:getPanByCenterRatio(x, y)
