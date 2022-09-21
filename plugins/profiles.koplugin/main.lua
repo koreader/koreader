@@ -165,7 +165,7 @@ function Profiles:getSubMenuItems()
                 end,
             },
             {
-                text = _("Copy"),
+                text = _("Duplicate"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local function editCallback(new_name)
