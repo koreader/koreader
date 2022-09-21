@@ -191,7 +191,7 @@ function ConfigOption:init()
     local default_item_font_size = 16 -- font size for letters, toggles and buttonprogress
     local default_items_spacing = 40  -- spacing between letters (font sizes) and icons
     local default_option_height = 50  -- height of each line
-    local max_icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE)  -- max height of icons
+    local max_icon_height = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE"))  -- max height of icons
     -- The next ones are already scaleBySize()'d:
     local default_option_vpadding = Size.padding.large -- vertical padding at top and bottom
     local default_option_hpadding = Size.padding.fullscreen
@@ -716,7 +716,7 @@ function MenuBar:init()
     local icon_sep_width = Size.padding.button
     local line_thickness = Size.line.thick
     local config_options = self.config_dialog.config_options
-    local icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE)
+    local icon_width = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE"))
     local icon_height = icon_width
     local icons_width = (icon_width + 2*icon_sep_width) * #config_options
     local bar_height = icon_height + 2*Size.padding.default
@@ -1463,16 +1463,16 @@ end
 
 function ConfigDialog:onSwipeCloseMenu(arg, ges_ev)
     local range = Geom:new{
-        x = DTAP_ZONE_CONFIG.x * Screen:getWidth(),
-        y = DTAP_ZONE_CONFIG.y * Screen:getHeight(),
-        w = DTAP_ZONE_CONFIG.w * Screen:getWidth(),
-        h = DTAP_ZONE_CONFIG.h * Screen:getHeight(),
+        x = G_defaults:readSetting("DTAP_ZONE_CONFIG").x * Screen:getWidth(),
+        y = G_defaults:readSetting("DTAP_ZONE_CONFIG").y * Screen:getHeight(),
+        w = G_defaults:readSetting("DTAP_ZONE_CONFIG").w * Screen:getWidth(),
+        h = G_defaults:readSetting("DTAP_ZONE_CONFIG").h * Screen:getHeight(),
     }
     local range_ext = Geom:new{
-        x = DTAP_ZONE_CONFIG_EXT.x * Screen:getWidth(),
-        y = DTAP_ZONE_CONFIG_EXT.y * Screen:getHeight(),
-        w = DTAP_ZONE_CONFIG_EXT.w * Screen:getWidth(),
-        h = DTAP_ZONE_CONFIG_EXT.h * Screen:getHeight(),
+        x = G_defaults:readSetting("G_defaults:readSetting("DTAP_ZONE_CONFIG")_EXT").x * Screen:getWidth(),
+        y = G_defaults:readSetting("G_defaults:readSetting("DTAP_ZONE_CONFIG")_EXT").y * Screen:getHeight(),
+        w = G_defaults:readSetting("G_defaults:readSetting("DTAP_ZONE_CONFIG")_EXT").w * Screen:getWidth(),
+        h = G_defaults:readSetting("G_defaults:readSetting("DTAP_ZONE_CONFIG")_EXT").h * Screen:getHeight(),
     }
     if ges_ev.direction == "south" and (ges_ev.pos:intersectWith(self.dialog_frame.dimen)
         or ges_ev.pos:intersectWith(range) or ges_ev.pos:intersectWith(range_ext)) then

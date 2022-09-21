@@ -93,8 +93,8 @@ function ReaderMenu:onReaderReady()
             id = "readermenu_tap",
             ges = "tap",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
-                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU").h,
             },
             overrides = {
                 "tap_forward",
@@ -106,8 +106,8 @@ function ReaderMenu:onReaderReady()
             id = "readermenu_ext_tap",
             ges = "tap",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU_EXT.x, ratio_y = DTAP_ZONE_MENU_EXT.y,
-                ratio_w = DTAP_ZONE_MENU_EXT.w, ratio_h = DTAP_ZONE_MENU_EXT.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").h,
             },
             overrides = {
                 "readermenu_tap",
@@ -118,8 +118,8 @@ function ReaderMenu:onReaderReady()
             id = "readermenu_swipe",
             ges = "swipe",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
-                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU").h,
             },
             overrides = {
                 "rolling_swipe",
@@ -131,8 +131,8 @@ function ReaderMenu:onReaderReady()
             id = "readermenu_ext_swipe",
             ges = "swipe",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU_EXT.x, ratio_y = DTAP_ZONE_MENU_EXT.y,
-                ratio_w = DTAP_ZONE_MENU_EXT.w, ratio_h = DTAP_ZONE_MENU_EXT.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").h,
             },
             overrides = {
                 "readermenu_swipe",
@@ -143,8 +143,8 @@ function ReaderMenu:onReaderReady()
             id = "readermenu_pan",
             ges = "pan",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
-                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU").h,
             },
             overrides = {
                 "rolling_pan",
@@ -156,8 +156,8 @@ function ReaderMenu:onReaderReady()
             id = "readermenu_ext_pan",
             ges = "pan",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU_EXT.x, ratio_y = DTAP_ZONE_MENU_EXT.y,
-                ratio_w = DTAP_ZONE_MENU_EXT.w, ratio_h = DTAP_ZONE_MENU_EXT.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").h,
             },
             overrides = {
                 "readermenu_pan",

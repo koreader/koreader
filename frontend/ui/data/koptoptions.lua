@@ -86,7 +86,7 @@ local KoptOptions = {
                 toggle = {C_("Page crop", "none"), C_("Page crop", "auto"), C_("Page crop", "semi-auto"), C_("Page crop", "manual")},
                 alternate = false,
                 values = {3, 1, 2, 0},
-                default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_TRIM_PAGE"),
                 enabled_func = function() return Device:isTouchDevice() or Device:hasDPad() end,
                 event = "PageCrop",
                 args = {"none", "auto", "semi-auto", "manual"},
@@ -105,7 +105,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name_text = _("Margin"),
                 toggle = {C_("Page margin", "small"), C_("Page margin", "medium"), C_("Page margin", "large")},
                 values = {0.05, 0.10, 0.25},
-                default_value = DKOPTREADER_CONFIG_PAGE_MARGIN,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_PAGE_MARGIN"),
                 event = "MarginUpdate",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set margins to be applied after page-crop and zoom modes are applied.]]),
@@ -118,7 +118,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 event = "DummyEvent",
                 args = {0, 5, 10, 15, 25},
                 more_options = true,
-                default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_AUTO_STRAIGHTEN"),
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Attempt to automatically straighten tilted source pages.
 Will rotate up to specified value.]]),
@@ -361,7 +361,7 @@ left to right or reverse, top to bottom or reverse.]]),
                 name_text = _("Line Spacing"),
                 toggle = {C_("Line spacing", "small"), C_("Line spacing", "medium"), C_("Line spacing", "large")},
                 values = {1.0, 1.2, 1.4},
-                default_value = DKOPTREADER_CONFIG_LINE_SPACING,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_LINE_SPACING"),
                 advanced = true,
                 enabled_func = function(configurable)
                     -- seems to only work in reflow mode
@@ -382,7 +382,7 @@ left to right or reverse, top to bottom or reverse.]]),
                     "align.justify",
                 },
                 values = {-1,0,1,2,3},
-                default_value = DKOPTREADER_CONFIG_JUSTIFICATION,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_JUSTIFICATION"),
                 advanced = true,
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
@@ -411,7 +411,7 @@ The first option ("auto") tries to automatically align reflowed text as it is in
                 item_font_size = FONT_SCALE_DISPLAY_SIZE,
                 args = FONT_SCALE_FACTORS,
                 values = FONT_SCALE_FACTORS,
-                default_value = DKOPTREADER_CONFIG_FONT_SIZE,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_FONT_SIZE"),
                 event = "FontSizeUpdate",
                 enabled_func = function(configurable, document)
                     if document.is_reflowable then return true end
@@ -445,8 +445,8 @@ The first option ("auto") tries to automatically align reflowed text as it is in
                 name = "word_spacing",
                 name_text = _("Word Gap"),
                 toggle = {C_("Word gap", "small"), C_("Word gap", "auto"), C_("Word gap", "large")},
-                values = DKOPTREADER_CONFIG_WORD_SPACINGS,
-                default_value = DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING,
+                values = G_defaults:readSetting("DKOPTREADER_CONFIG_WORD_SPACINGS"),
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING"),
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,
@@ -459,7 +459,7 @@ The first option ("auto") tries to automatically align reflowed text as it is in
                 name_text = _("Reflow"),
                 toggle = {_("off"), _("on")},
                 values = {0, 1},
-                default_value = DKOPTREADER_CONFIG_TEXT_WRAP,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_TEXT_WRAP"),
                 event = "ReflowUpdated",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Reflow mode extracts text and images from the original document, possibly discarding some formatting, and reflows it on the screen for easier reading.
@@ -478,7 +478,7 @@ Some of the other settings are only available when reflow mode is enabled.]]),
                 -- For pdf reflowing mode (kopt_contrast):
                 values = {1/0.8, 1/1.0, 1/1.5, 1/2.0, 1/4.0, 1/6.0, 1/10.0, 1/50.0},
                 default_pos = 2,
-                default_value = DKOPTREADER_CONFIG_CONTRAST,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_CONTRAST"),
                 event = "GammaUpdate",
                 -- For pdf non-reflowing mode (mupdf):
                 args =   {0.8, 1.0, 1.5, 2.0, 4.0, 6.0, 10.0, 50.0},
@@ -526,7 +526,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                 name_text = C_("Quality", "Render Quality"),
                 toggle = {C_("Quality", "low"), C_("Quality", "default"), C_("Quality", "high")},
                 values={0.5, 1.0, 1.5},
-                default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_RENDER_QUALITY"),
                 advanced = true,
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
@@ -542,11 +542,11 @@ This can also be used to remove some gray background or to convert a grayscale o
             {
                 name = "doc_language",
                 name_text = _("Document Language"),
-                toggle = DKOPTREADER_CONFIG_DOC_LANGS_TEXT,
-                values = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
-                default_value = DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE,
+                toggle = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_LANGS_TEXT"),
+                values = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_LANGS_CODE"),
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE"),
                 event = "DocLangUpdate",
-                args = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
+                args = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_LANGS_CODE"),
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set the language to be used by the OCR engine.]]),
             },
@@ -586,7 +586,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                 name_text = _("Reflow Speckle Ignore Size"),
                 toggle = {_("small"), _("medium"), _("large")},
                 values = {1.0, 3.0, 5.0},
-                default_value = DKOPTREADER_CONFIG_DEFECT_SIZE,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFECT_SIZE"),
                 event = "DefectSizeUpdate",
                 show = false, -- might work somehow, but larger values than 1.0 might easily eat content
                 enabled_func = function(configurable)
@@ -599,7 +599,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                 name_text = _("Indentation"),
                 toggle = {_("off"), _("on")},
                 values = {0, 1},
-                default_value = DKOPTREADER_CONFIG_DETECT_INDENT,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_DETECT_INDENT"),
                 show = false, -- does not work
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
@@ -615,7 +615,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                     "column.three",
                 },
                 values = {1, 2, 3},
-                default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,
+                default_value = G_defaults:readSetting("DKOPTREADER_CONFIG_MAX_COLUMNS"),
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,

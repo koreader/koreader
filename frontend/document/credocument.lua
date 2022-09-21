@@ -164,7 +164,7 @@ function CreDocument:init()
     end
 
     -- This mode must be the same as the default one set as ReaderView.view_mode
-    self._view_mode = DCREREADER_VIEW_MODE == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
+    self._view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE") == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
 
     local ok
     ok, self._document = pcall(cre.newDocView, CanvasContext:getWidth(), CanvasContext:getHeight(), self._view_mode)
@@ -290,7 +290,7 @@ function CreDocument:render()
     -- This is now configurable and done by ReaderRolling:
     -- -- set visible page count in landscape
     -- if math.max(CanvasContext:getWidth(), CanvasContext:getHeight()) / CanvasContext:getDPI()
-    --     < DCREREADER_TWO_PAGE_THRESHOLD then
+    --     < G_defaults:readSetting("DCREREADER_TWO_PAGE_THRESHOLD") then
     --     self:setVisiblePageCount(1)
     -- end
     logger.dbg("CreDocument: rendering document...")

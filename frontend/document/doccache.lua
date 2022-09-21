@@ -11,9 +11,9 @@ local md5 = require("ffi/sha2").md5
 local util = require("util")
 
 local function calcCacheMemSize()
-    local min = DGLOBAL_CACHE_SIZE_MINIMUM
-    local max = DGLOBAL_CACHE_SIZE_MAXIMUM
-    local calc = util.calcFreeMem() * (DGLOBAL_CACHE_FREE_PROPORTION or 0)
+    local min = G_defaults:readSetting("DGLOBAL_CACHE_SIZE_MINIMUM")
+    local max = G_defaults:readSetting("DGLOBAL_CACHE_SIZE_MAXIMUM")
+    local calc = util.calcFreeMem() * (G_defaults:readSetting("DGLOBAL_CACHE_FREE_PROPORTION") or 0)
     return math.min(max, math.max(min, calc))
 end
 local doccache_size = calcCacheMemSize()
@@ -77,7 +77,7 @@ function DocCache:serialize(doc_path)
             if item.persistent and item.dump and item.doc_path == doc_path then
                 mru_key = key
                 mru_found = mru_found + 1
-                if mru_found >= (1 + DHINTCOUNT) then
+                if mru_found >= (1 + G_defaults:readSetting("DHINTCOUNT")) then
                     -- We found the right item, i.e., the *displayed* page
                     break
                 end

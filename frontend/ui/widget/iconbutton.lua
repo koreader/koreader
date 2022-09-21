@@ -19,8 +19,8 @@ local IconButton = InputContainer:new{
     dimen = nil,
     -- show_parent is used for UIManager:setDirty, so we can trigger repaint
     show_parent = nil,
-    width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
-    height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
+    width = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE")), -- our icons are square
+    height = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE")),
     padding = 0,
     padding_top = nil,
     padding_right = nil,

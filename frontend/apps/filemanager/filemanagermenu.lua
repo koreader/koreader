@@ -67,8 +67,8 @@ function FileManagerMenu:initGesListener()
             id = "filemanager_tap",
             ges = "tap",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
-                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU").h,
             },
             handler = function(ges) return self:onTapShowMenu(ges) end,
         },
@@ -76,8 +76,8 @@ function FileManagerMenu:initGesListener()
             id = "filemanager_ext_tap",
             ges = "tap",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU_EXT.x, ratio_y = DTAP_ZONE_MENU_EXT.y,
-                ratio_w = DTAP_ZONE_MENU_EXT.w, ratio_h = DTAP_ZONE_MENU_EXT.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").h,
             },
             overrides = {
                 "filemanager_tap",
@@ -88,8 +88,8 @@ function FileManagerMenu:initGesListener()
             id = "filemanager_swipe",
             ges = "swipe",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU.x, ratio_y = DTAP_ZONE_MENU.y,
-                ratio_w = DTAP_ZONE_MENU.w, ratio_h = DTAP_ZONE_MENU.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU").h,
             },
             overrides = {
                 "rolling_swipe",
@@ -101,8 +101,8 @@ function FileManagerMenu:initGesListener()
             id = "filemanager_ext_swipe",
             ges = "swipe",
             screen_zone = {
-                ratio_x = DTAP_ZONE_MENU_EXT.x, ratio_y = DTAP_ZONE_MENU_EXT.y,
-                ratio_w = DTAP_ZONE_MENU_EXT.w, ratio_h = DTAP_ZONE_MENU_EXT.h,
+                ratio_x = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").y,
+                ratio_w = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MENU_EXT").h,
             },
             overrides = {
                 "filemanager_swipe",

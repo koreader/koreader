@@ -106,7 +106,7 @@ function ReaderDictionary:init()
     if self.ui then
         self.ui.menu:registerToMainMenu(self)
     end
-    self.data_dir = STARDICT_DATA_DIR or
+    self.data_dir = G_defaults:readSetting("STARDICT_DATA_DIR") or
         os.getenv("STARDICT_DATA_DIR") or
         DataStorage:getDataDir() .. "/data/dict"
 

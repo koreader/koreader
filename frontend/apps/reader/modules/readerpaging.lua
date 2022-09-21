@@ -33,7 +33,7 @@ local ReaderPaging = InputContainer:new{
     number_of_pages = 0,
     visible_area = nil,
     page_area = nil,
-    overlap = Screen:scaleBySize(DOVERLAPPIXELS),
+    overlap = Screen:scaleBySize(G_defaults:readSetting("DOVERLAPPIXELS")),
 
     page_flipping_mode = false,
     bookmark_flipping_mode = false,

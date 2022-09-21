@@ -408,7 +408,7 @@ function ImageViewer:_new_image_wg()
         -- in portrait mode, rotate according to this global setting so we are
         -- like in landscape mode
         -- NOTE: This is the sole user of this legacy global left!
-        local rotate_clockwise = DLANDSCAPE_CLOCKWISE_ROTATION
+        local rotate_clockwise = G_defaults:readSetting("DLANDSCAPE_CLOCKWISE_ROTATION")
         if Screen:getWidth() > Screen:getHeight() then
             -- in landscape mode, counter-rotate landscape rotation so we are
             -- back like in portrait mode

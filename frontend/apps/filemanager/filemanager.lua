@@ -120,7 +120,7 @@ function FileManager:setupLayout()
         right_icon_hold_callback = false, -- propagate long-press to dispatcher
     }
 
-    local show_hidden = G_reader_settings:isTrue("show_hidden") or DSHOWHIDDENFILES
+    local show_hidden = G_reader_settings:isTrue("show_hidden") or G_defaults:readSetting("DSHOWHIDDENFILES")
     local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local file_chooser = FileChooser:new{
         -- remember to adjust the height when new item is added to the group

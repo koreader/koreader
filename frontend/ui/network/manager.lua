@@ -707,9 +707,9 @@ function NetworkMgr:setWirelessBackend(name, options)
     require("ui/network/"..name).init(self, options)
 end
 
--- set network proxy if global variable NETWORK_PROXY is defined
-if NETWORK_PROXY then
-    NetworkMgr:setHTTPProxy(NETWORK_PROXY)
+-- set network proxy if global variable G_defaults:readSetting("NETWORK_PROXY") is defined
+if G_defaults:readSetting("NETWORK_PROXY") then
+    NetworkMgr:setHTTPProxy(G_defaults:readSetting("NETWORK_PROXY"))
 end
 
 

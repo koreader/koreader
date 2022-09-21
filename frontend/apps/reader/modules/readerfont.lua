@@ -121,7 +121,7 @@ function ReaderFont:onReadSettings(config)
 
     self.font_size = config:readSetting("font_size")
                   or G_reader_settings:readSetting("copt_font_size")
-                  or DCREREADER_CONFIG_DEFAULT_FONT_SIZE
+                  or G_defaults:readSetting("DCREREADER_CONFIG_DEFAULT_FONT_SIZE")
                   or 22
     self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
 
@@ -157,7 +157,7 @@ function ReaderFont:onReadSettings(config)
 
     self.line_space_percent = config:readSetting("line_space_percent")
                            or G_reader_settings:readSetting("copt_line_spacing")
-                           or DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM
+                           or G_defaults:readSetting("DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM")
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 
     self.gamma_index = config:readSetting("gamma_index")
