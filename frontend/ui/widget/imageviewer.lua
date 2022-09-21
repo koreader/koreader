@@ -719,7 +719,7 @@ function ImageViewer:onZoomToDiagonal(d)
     -- It's trigonometry time!
     -- c.f., https://math.stackexchange.com/a/3369637
     local r = self._image_wg:getOriginalWidth() / self._image_wg:getOriginalHeight()
-    local h = math.sqrt(math.pow(d, 2) / (math.pow(r, 2) + 1))
+    local h = math.sqrt(d^2 / (r^2 + 1))
     local w = h * r
 
     -- Matches ImageWidget's best-fit computation in _render
@@ -769,9 +769,7 @@ function ImageViewer:onSpread(_, ges)
         end
     else
         local img_d = self._image_wg:getCurrentDiagonal()
-        local tl = Geom:new{ x = 0, y = 0 }
-        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
-        local screen_d = tl:distance(br)
+        local screen_d = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
         if (0.9 * ges.span) > img_d then
             self:onZoomToDiagonal(ges.span)
         else
@@ -807,9 +805,7 @@ function ImageViewer:onPinch(_, ges)
         end
     else
         local img_d = self._image_wg:getCurrentDiagonal()
-        local tl = Geom:new{ x = 0, y = 0 }
-        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
-        local screen_d = tl:distance(br)
+        local screen_d = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
         if ges.span > img_d * 0.5 and ges.span < img_d and img_d < screen_d then
             self:onZoomToDiagonal(ges.span)
         else

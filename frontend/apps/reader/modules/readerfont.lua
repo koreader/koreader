@@ -384,9 +384,7 @@ function ReaderFont:gesToFontSize(ges)
     elseif ges.direction == "horizontal" then
         step = math.ceil(2 * #self.steps * ges.distance / Screen:getWidth())
     elseif ges.direction == "diagonal" then
-        local tl = Geom:new{ x = 0, y = 0 }
-        local br = Geom:new{ x = Screen:getWidth() - 1, y = Screen:getHeight() - 1}
-        local screen_diagonal = tl:distance(br)
+        local screen_diagonal = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
         step = math.ceil(2 * #self.steps * ges.distance / screen_diagonal)
     else
         step = math.ceil(2 * #self.steps * ges.distance / math.min(Screen:getWidth(), Screen:getHeight()))
