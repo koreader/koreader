@@ -5,7 +5,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FontList = require("fontlist")
-local Geom = require("ui/geometry")
 local Input = Device.input
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
