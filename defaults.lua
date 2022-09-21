@@ -3,26 +3,9 @@
 -- or go to [Tools] > More tools > Advanced settings in the filemanager.
 
 return {
--- number of page turns between full screen refresh
--- default to do a full refresh on every 6 page turns
--- no longer needed
---DRCOUNTMAX = 6,
-
 -- number of pages for hinting
 -- default to pre-rendering 1 page
 DHINTCOUNT = 1,
-
--- full screen mode, 1 for true, 0 for false
--- no longer needed
---DFULL_SCREEN = 1,
-
--- scroll mode, 1 for true, 0 for false
--- no longer needed
---DSCROLL_MODE = 1,
-
--- default gamma setting:
--- no longer needed
---DGLOBALGAMMA = 1.0,
 
 -- DjVu page rendering mode (used in djvu.c:drawPage())
 -- See comments in djvureader.lua:DJVUReader:select_render_mode()
@@ -84,8 +67,6 @@ DTAP_ZONE_CONFIG_EXT = {x = 1/4, y = 4/5, w = 2/4, h = 1/5}, -- taller, narrower
 DTAP_ZONE_MINIBAR = {x = 0, y = 12/13, w = 1, h = 1/13},
 DTAP_ZONE_FORWARD = {x = 1/4, y = 0, w = 3/4, h = 1},
 DTAP_ZONE_BACKWARD = {x = 0, y = 0, w = 1/4, h = 1},
--- DTAP_ZONE_BOOKMARK = {x = 7/8, y = 0, w = 1/8, h = 1/8}, -- deprecated
--- DTAP_ZONE_FLIPPING = {x = 0, y = 0, w = 1/8, h = 1/8}, -- deprecated
 DTAP_ZONE_TOP_LEFT = {x = 0, y = 0, w = 1/8, h = 1/8},
 DTAP_ZONE_TOP_RIGHT = {x = 7/8, y = 0, w = 1/8, h = 1/8},
 DTAP_ZONE_BOTTOM_LEFT = {x = 0, y = 7/8, w = 1/8, h = 1/8},
@@ -154,11 +135,6 @@ DCREREADER_CONFIG_B_MARGIN_SIZES_HUGE = 70,
 DCREREADER_CONFIG_B_MARGIN_SIZES_X_HUGE = 100,
 DCREREADER_CONFIG_B_MARGIN_SIZES_XX_HUGE = 140,
 
--- crereader font gamma (no longer used)
--- DCREREADER_CONFIG_LIGHTER_FONT_GAMMA = 10,
--- DCREREADER_CONFIG_DEFAULT_FONT_GAMMA = 15,
--- DCREREADER_CONFIG_DARKER_FONT_GAMMA = 25,
-
 -- crereader line space percentage
 DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY = 70,
 DCREREADER_CONFIG_LINE_SPACE_PERCENT_TINY = 75,
@@ -195,51 +171,14 @@ DCREREADER_CONFIG_WORD_EXPANSION_NONE = 0,
 DCREREADER_CONFIG_WORD_EXPANSION_SOME = 5,
 DCREREADER_CONFIG_WORD_EXPANSION_MORE = 15,
 
--- crereader progress bar (no longer needed)
--- 0 for top "full" progress bar
--- 1 for bottom "mini" progress bar
---DCREREADER_PROGRESS_BAR = 1,
-
 -- configure "mini" progress bar
--- no longer needed
---DMINIBAR_TOC_MARKER_WIDTH = 2,   -- Looses usefulness > 3
 DMINIBAR_CONTAINER_HEIGHT = 14,  -- Larger means more padding at the bottom, at the risk of eating into the last line
--- no longer needed
---DMINIBAR_FONT_SIZE = 14,
--- no longer needed
---DMINIBAR_HEIGHT = 7,             -- Should be smaller than DMINIBAR_CONTAINER_HEIGHT
-
--- change this to any numerical value if you want to automatically save settings when turning pages
--- no longer needed (now available in menu as an interval in minutes)
--- DAUTO_SAVE_PAGING_COUNT = nil,
-
--- dictionary font size
--- no longer needed
---DDICT_FONT_SIZE = 20,
 
 -- Normally, KOReader will present file lists sorted in case insensitive manner
 -- when presenting an alphatically sorted list. So the Order is "A, b, C, d".
 -- You can switch to a case sensitive sort ("A", "C", "b", "d") by disabling
 -- insensitive sort
 DALPHA_SORT_CASE_INSENSITIVE = true,
-
--- no longer needed
--- Set a path to a folder that is filled by Calibre (must contain the file metadata.calibre)
--- e.g.
--- "/mnt/sd/.hidden" for Kobo with files in ".hidden" on the SD card
--- "/mnt/onboard/MyPath" for Kobo with files in "MyPath" on the device itself
--- "/mnt/us/documents/" for Kindle files in folder "documents"
---SEARCH_LIBRARY_PATH  = "",
---SEARCH_LIBRARY_PATH2 = "",
---
--- Search parameters
---SEARCH_CASESENSITIVE = false,
---
---SEARCH_AUTHORS = true,
---SEARCH_TITLE = true,
---SEARCH_TAGS = true,
---SEARCH_SERIES = true,
---SEARCH_PATH = true,
 
 -- Light parameter for Kobo
 KOBO_LIGHT_ON_START = -2,           -- -1, -2 or 0-100.
@@ -261,62 +200,4 @@ DUSE_TURBO_LIB = false,
 -- Absolute path to stardict files (override)
 -- By default they're stored in data/dict under dataDir.
 STARDICT_DATA_DIR = nil,
-
--- ####################################################################
--- following features are not supported right now
--- ####################################################################
-
--- set panning distance
---DSHIFT_X = 100,
---DSHIFT_Y = 50,
-
--- step to change zoom manually, default = 16%
---DSTEP_MANUAL_ZOOM = 16,
---DPAN_BY_PAGE = false, -- using shift_[xy] or width/height
---DPAN_MARGIN = 5, -- horizontal margin for two-column zoom (in pixels)
---DPAN_OVERLAP_VERTICAL = 30,
-
--- tile cache configuration:
---DCACHE_MAX_MEMSIZE = 1024*1024*5, -- 5MB tile cache
---DCACHE_MAX_TTL = 20, -- time to live
-
--- renderer cache size
---DCACHE_DOCUMENT_SIZE = 1024*1024*8, -- FIXME random, needs testing
-
--- default value for battery level logging
---DBATTERY_LOGGING = false,
-
-
--- delay for info messages in ms
---DINFO_NODELAY=0,
---DINFO_DELAY=1500,
-
--- toggle defaults
---DUNIREADER_SHOW_OVERLAP_ENABLE = true,
---DUNIREADER_SHOW_LINKS_ENABLE = true,
---DUNIREADER_COMICS_MODE_ENABLE = true,
---DUNIREADER_RTL_MODE_ENABLE = false,
---DUNIREADER_PAGE_MODE_ENABLE = false,
-
---DDJVUREADER_SHOW_OVERLAP_ENABLE = true,
---DDJVUREADER_SHOW_LINKS_ENABLE = false,
---DDJVUREADER_COMICS_MODE_ENABLE = true,
---DDJVUREADER_RTL_MODE_ENABLE = false,
---DDJVUREADER_PAGE_MODE_ENABLE = false,
-
---DKOPTREADER_SHOW_OVERLAP_ENABLE = true,
---DKOPTREADER_SHOW_LINKS_ENABLE = false,
---DKOPTREADER_COMICS_MODE_ENABLE = false,
---DKOPTREADER_RTL_MODE_ENABLE = false,
---DKOPTREADER_PAGE_MODE_ENABLE = false,
-
---DPICVIEWER_SHOW_OVERLAP_ENABLE = false,
---DPICVIEWER_SHOW_LINKS_ENABLE = false,
---DPICVIEWER_COMICS_MODE_ENABLE = true,
---DPICVIEWER_RTL_MODE_ENABLE = false,
---DPICVIEWER_PAGE_MODE_ENABLE = false,
-
-
---DKOPTREADER_CONFIG_MULTI_THREADS = 1,    -- 1 = on, 0 = off
---DKOPTREADER_CONFIG_SCREEN_ROTATION = 0,    -- 0, 90, 180, 270 degrees
 }
