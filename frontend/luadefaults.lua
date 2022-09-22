@@ -68,7 +68,12 @@ function LuaDefaults:readSetting(key, default)
     if not self:hasBeenCustomized(key) then
         self.rw[key] = default
     end
-    return self.rw[key] or self.ro[key]
+
+    if self:hasBeenCustomized(key) then
+        return self.rw[key]
+    else
+        return self.ro[key]
+    end
 end
 
 --- Saves a setting.
