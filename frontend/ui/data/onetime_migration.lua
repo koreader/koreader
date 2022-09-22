@@ -457,7 +457,10 @@ if last_migration_date < 20220922 then
     load_defaults()
 
     for k, v in pairs(defaults) do
-        G_defaults:saveSetting(k, v)
+        -- Don't migrate deprecated settings
+        if G_defaults:has(k) then
+            G_defaults:saveSetting(k, v)
+        end
     end
     G_defaults:flush()
 
