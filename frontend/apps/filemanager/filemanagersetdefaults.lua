@@ -101,6 +101,14 @@ function SetDefaults:init()
                         {
                             cancel_button,
                             {
+                                text = _("Default"),
+                                enabled = self.defaults[k] ~= v,
+                                callback = function()
+                                    self:close()
+                                    self:update_menu_entry(k, v, v, setting_type)
+                                end
+                            },
+                            {
                                 text = "true",
                                 enabled = true,
                                 callback = function()
@@ -148,6 +156,14 @@ function SetDefaults:init()
                         {
                             cancel_button,
                             {
+                                text = _("Default"),
+                                enabled = not util.tableEquals(v, self.defaults[k]),
+                                callback = function()
+                                    self:close()
+                                    self:update_menu_entry(k, v, v, setting_type)
+                                end
+                            },
+                            {
                                 text = _("OK"),
                                 enabled = true,
                                 is_enter_default = true,
@@ -182,6 +198,14 @@ function SetDefaults:init()
                     buttons = {
                         {
                             cancel_button,
+                            {
+                                text = _("Default"),
+                                enabled = self.defaults[k] ~= v,
+                                callback = function()
+                                    self:close()
+                                    self:update_menu_entry(k, v, v, setting_type)
+                                end
+                            },
                             {
                                 text = _("OK"),
                                 is_enter_default = true,
