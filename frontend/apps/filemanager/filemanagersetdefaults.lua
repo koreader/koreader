@@ -57,6 +57,7 @@ function SetDefaults:init()
 
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
+        -- Don't refresh the FM behind us. May leave stray bits of overflowed InputDialog behind in the popout border space.
         covers_fullscreen = true,
     }
 
