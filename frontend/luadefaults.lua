@@ -137,6 +137,10 @@ function LuaDefaults:getDataTables()
     return self.ro, self.rw
 end
 
+function LuaDefaults:readDefaultSetting(key)
+    return self.ro[key]
+end
+
 -- NOP unsupported LuaSettings APIs
 function LuaDefaults:wrap() end
 function LuaDefaults:child() end

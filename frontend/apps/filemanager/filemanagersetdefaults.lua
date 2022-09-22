@@ -106,7 +106,7 @@ function SetDefaults:init()
                                 enabled = self.defaults[k] ~= v,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, v, v, value_type)
+                                    self:update_menu_entry(k, v, G_defaults:readDefaultSetting(k), value_type)
                                 end
                             },
                             {
@@ -161,7 +161,7 @@ function SetDefaults:init()
                                 enabled = not util.tableEquals(v, self.defaults[k]),
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, v, v, value_type)
+                                    self:update_menu_entry(k, v, G_defaults:readDefaultSetting(k), value_type)
                                 end
                             },
                             {
@@ -204,7 +204,7 @@ function SetDefaults:init()
                                 enabled = self.defaults[k] ~= v,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, v, v, value_type)
+                                    self:update_menu_entry(k, v, G_defaults:readDefaultSetting(k), value_type)
                                 end
                             },
                             {
