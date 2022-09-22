@@ -119,10 +119,9 @@ function LuaData:addTableItem(table_name, value)
     }
 end
 
-local _orig_removeTableItem = LuaSettings.removeTableItem
 --- Removes index from table.
 function LuaData:removeTableItem(key, index)
-    _orig_removeTableItem(self, key, index)
+    LuaSettings.removeTableItem(self, key, index)
     self:flush()
     return self
 end
