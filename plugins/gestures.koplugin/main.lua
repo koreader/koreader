@@ -753,30 +753,34 @@ function Gestures:setupGesture(ges)
         ratio_w = dtap_zone_top_right.w,
         ratio_h = dtap_zone_top_right.h,
     }
+    local dtap_zone_bottom_left = G_defaults:readSetting("DTAP_ZONE_BOTTOM_LEFT")
     local zone_bottom_left_corner = {
-        ratio_x = G_defaults:readSetting("DTAP_ZONE_BOTTOM_LEFT").x,
-        ratio_y = G_defaults:readSetting("DTAP_ZONE_BOTTOM_LEFT").y,
-        ratio_w = G_defaults:readSetting("DTAP_ZONE_BOTTOM_LEFT").w,
-        ratio_h = G_defaults:readSetting("DTAP_ZONE_BOTTOM_LEFT").h,
+        ratio_x = dtap_zone_bottom_left.x,
+        ratio_y = dtap_zone_bottom_left.y,
+        ratio_w = dtap_zone_bottom_left.w,
+        ratio_h = dtap_zone_bottom_left.h,
     }
+    local dtap_zone_bottom_right = G_defaults:readSetting("DTAP_ZONE_BOTTOM_RIGHT")
     local zone_bottom_right_corner = {
-        ratio_x = G_defaults:readSetting("DTAP_ZONE_BOTTOM_RIGHT").x,
-        ratio_y = G_defaults:readSetting("DTAP_ZONE_BOTTOM_RIGHT").y,
-        ratio_w = G_defaults:readSetting("DTAP_ZONE_BOTTOM_RIGHT").w,
-        ratio_h = G_defaults:readSetting("DTAP_ZONE_BOTTOM_RIGHT").h,
+        ratio_x = dtap_zone_bottom_right.x,
+        ratio_y = dtap_zone_bottom_right.y,
+        ratio_w = dtap_zone_bottom_right.w,
+        ratio_h = dtap_zone_bottom_right.h,
     }
     -- NOTE: The defaults are effectively mapped to G_defaults:readSetting("DTAP_ZONE_BACKWARD") & G_defaults:readSetting("DTAP_ZONE_FORWARD")
+    local ddouble_tap_zone_prev_chapter = G_defaults:readSetting("DDOUBLE_TAP_ZONE_PREV_CHAPTER")
     local zone_left = {
-        ratio_x = G_defaults:readSetting("DDOUBLE_TAP_ZONE_PREV_CHAPTER").x,
-        ratio_y = G_defaults:readSetting("DDOUBLE_TAP_ZONE_PREV_CHAPTER").y,
-        ratio_w = G_defaults:readSetting("DDOUBLE_TAP_ZONE_PREV_CHAPTER").w,
-        ratio_h = G_defaults:readSetting("DDOUBLE_TAP_ZONE_PREV_CHAPTER").h,
+        ratio_x = ddouble_tap_zone_prev_chapter.x,
+        ratio_y = ddouble_tap_zone_prev_chapter.y,
+        ratio_w = ddouble_tap_zone_prev_chapter.w,
+        ratio_h = ddouble_tap_zone_prev_chapter.h,
     }
+    local ddouble_tap_zone_next_chapter = G_defaults:readSetting("DDOUBLE_TAP_ZONE_NEXT_CHAPTER")
     local zone_right = {
-        ratio_x = G_defaults:readSetting("DDOUBLE_TAP_ZONE_NEXT_CHAPTER").x,
-        ratio_y = G_defaults:readSetting("DDOUBLE_TAP_ZONE_NEXT_CHAPTER").y,
-        ratio_w = G_defaults:readSetting("DDOUBLE_TAP_ZONE_NEXT_CHAPTER").w,
-        ratio_h = G_defaults:readSetting("DDOUBLE_TAP_ZONE_NEXT_CHAPTER").h,
+        ratio_x = ddouble_tap_zone_next_chapter.x,
+        ratio_y = ddouble_tap_zone_next_chapter.y,
+        ratio_w = ddouble_tap_zone_next_chapter.w,
+        ratio_h = ddouble_tap_zone_next_chapter.h,
     }
 
     local overrides_tap_corner

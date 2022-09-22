@@ -820,9 +820,10 @@ end
 
 function ReaderFooter:setupTouchZones()
     if not Device:isTouchDevice() then return end
+    local DTAP_ZONE_MINIBAR = G_defaults:readSetting("DTAP_ZONE_MINIBAR")
     local footer_screen_zone = {
-        ratio_x = G_defaults:readSetting("DTAP_ZONE_MINIBAR").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_MINIBAR").y,
-        ratio_w = G_defaults:readSetting("DTAP_ZONE_MINIBAR").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_MINIBAR").h,
+        ratio_x = DTAP_ZONE_MINIBAR.x, ratio_y = DTAP_ZONE_MINIBAR.y,
+        ratio_w = DTAP_ZONE_MINIBAR.w, ratio_h = DTAP_ZONE_MINIBAR.h,
     }
     self.ui:registerTouchZones({
         {
@@ -996,12 +997,8 @@ function ReaderFooter:addToMainMenu(menu_items)
 
     -- menu item to fake footer tapping when touch area is disabled
     local settings_submenu_num = 1
-    if Geom:new{
-           x = G_defaults:readSetting("DTAP_ZONE_MINIBAR").x,
-           y = G_defaults:readSetting("DTAP_ZONE_MINIBAR").y,
-           w = G_defaults:readSetting("DTAP_ZONE_MINIBAR").w,
-           h = G_defaults:readSetting("DTAP_ZONE_MINIBAR").h
-       }:area() == 0 then
+    local DTAP_ZONE_MINIBAR = G_defaults:readSetting("DTAP_ZONE_MINIBAR")
+    if DTAP_ZONE_MINIBAR.h == 0 or DTAP_ZONE_MINIBAR.w == 0 then
         table.insert(sub_items, {
             text = _("Toggle mode"),
             enabled_func = function()
@@ -2050,7 +2047,7 @@ function ReaderFooter:setTocMarkers(reset)
             self.progress_bar.ticks = {}
             if self.ui.toc then
                 -- filter the ticks to show only those in the current flow
-                for n, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
+                for __, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
                     if self.ui.document:getPageFlow(pageno) == flow then
                         table.insert(self.progress_bar.ticks, self.ui.document:getPageNumberInFlow(pageno))
                     end
@@ -2067,7 +2064,7 @@ function ReaderFooter:setTocMarkers(reset)
                 -- in scroll mode, convert pages to positions
                 if self.ui.toc then
                     self.progress_bar.ticks = {}
-                    for n, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
+                    for __, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
                         local idx = self.ui.toc:getTocIndexByPage(pageno)
                         local pos = self.ui.document:getPosFromXPointer(self.ui.toc.toc[idx].xpointer)
                         table.insert(self.progress_bar.ticks, pos)
@@ -2084,9 +2081,7 @@ function ReaderFooter:setTocMarkers(reset)
 end
 
 -- This is implemented by the Statistics plugin
-function ReaderFooter:getAvgTimePerPage()
-    return
-end
+function ReaderFooter:getAvgTimePerPage() end
 
 function ReaderFooter:getDataFromStatistics(title, pages)
     local sec = _("N/A")

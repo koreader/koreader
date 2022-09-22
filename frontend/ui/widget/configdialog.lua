@@ -1464,17 +1464,19 @@ function ConfigDialog:onTapCloseMenu(arg, ges_ev)
 end
 
 function ConfigDialog:onSwipeCloseMenu(arg, ges_ev)
+    local DTAP_ZONE_CONFIG = G_defaults:readSetting("DTAP_ZONE_CONFIG")
     local range = Geom:new{
-        x = G_defaults:readSetting("DTAP_ZONE_CONFIG").x * Screen:getWidth(),
-        y = G_defaults:readSetting("DTAP_ZONE_CONFIG").y * Screen:getHeight(),
-        w = G_defaults:readSetting("DTAP_ZONE_CONFIG").w * Screen:getWidth(),
-        h = G_defaults:readSetting("DTAP_ZONE_CONFIG").h * Screen:getHeight(),
+        x = DTAP_ZONE_CONFIG.x * Screen:getWidth(),
+        y = DTAP_ZONE_CONFIG.y * Screen:getHeight(),
+        w = DTAP_ZONE_CONFIG.w * Screen:getWidth(),
+        h = DTAP_ZONE_CONFIG.h * Screen:getHeight(),
     }
+    local DTAP_ZONE_CONFIG_EXT = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT")
     local range_ext = Geom:new{
-        x = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").x * Screen:getWidth(),
-        y = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").y * Screen:getHeight(),
-        w = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").w * Screen:getWidth(),
-        h = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").h * Screen:getHeight(),
+        x = DTAP_ZONE_CONFIG_EXT.x * Screen:getWidth(),
+        y = DTAP_ZONE_CONFIG_EXT.y * Screen:getHeight(),
+        w = DTAP_ZONE_CONFIG_EXT.w * Screen:getWidth(),
+        h = DTAP_ZONE_CONFIG_EXT.h * Screen:getHeight(),
     }
     if ges_ev.direction == "south" and (ges_ev.pos:intersectWith(self.dialog_frame.dimen)
         or ges_ev.pos:intersectWith(range) or ges_ev.pos:intersectWith(range_ext)) then

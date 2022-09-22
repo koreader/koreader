@@ -1141,13 +1141,15 @@ function ReaderView:getTapZones()
     local forward_zone, backward_zone
     local tap_zones_type = G_reader_settings:readSetting("page_turns_tap_zones", "default")
     if tap_zones_type == "default" then
+        local DTAP_ZONE_FORWARD = G_defaults:readSetting("DTAP_ZONE_FORWARD")
         forward_zone = {
-            ratio_x = G_defaults:readSetting("DTAP_ZONE_FORWARD").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_FORWARD").y,
-            ratio_w = G_defaults:readSetting("DTAP_ZONE_FORWARD").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_FORWARD").h,
+            ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
+            ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
         }
+        local DTAP_ZONE_BACKWARD = G_defaults:readSetting("DTAP_ZONE_BACKWARD")
         backward_zone = {
-            ratio_x = G_defaults:readSetting("DTAP_ZONE_BACKWARD").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_BACKWARD").y,
-            ratio_w = G_defaults:readSetting("DTAP_ZONE_BACKWARD").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_BACKWARD").h,
+            ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
+            ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
         }
     else -- user defined page turns tap zones
         local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", G_defaults:readSetting("DTAP_ZONE_FORWARD").w)

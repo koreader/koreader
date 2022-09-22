@@ -35,13 +35,17 @@ function ReaderConfig:init()
 end
 
 function ReaderConfig:initGesListener()
+    if not Device:isTouchDevice() then return end
+
+    local DTAP_ZONE_CONFIG = G_defaults:readSetting("DTAP_ZONE_CONFIG")
+    local DTAP_ZONE_CONFIG_EXT = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT")
     self.ui:registerTouchZones({
         {
             id = "readerconfigmenu_tap",
             ges = "tap",
             screen_zone = {
-                ratio_x = G_defaults:readSetting("DTAP_ZONE_CONFIG").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_CONFIG").y,
-                ratio_w = G_defaults:readSetting("DTAP_ZONE_CONFIG").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_CONFIG").h,
+                ratio_x = DTAP_ZONE_CONFIG.x, ratio_y = DTAP_ZONE_CONFIG.y,
+                ratio_w = DTAP_ZONE_CONFIG.w, ratio_h = DTAP_ZONE_CONFIG.h,
             },
             overrides = {
                 "tap_forward",
@@ -53,8 +57,8 @@ function ReaderConfig:initGesListener()
             id = "readerconfigmenu_ext_tap",
             ges = "tap",
             screen_zone = {
-                ratio_x = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").y,
-                ratio_w = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").h,
+                ratio_x = DTAP_ZONE_CONFIG_EXT.x, ratio_y = DTAP_ZONE_CONFIG_EXT.y,
+                ratio_w = DTAP_ZONE_CONFIG_EXT.w, ratio_h = DTAP_ZONE_CONFIG_EXT.h,
             },
             overrides = {
                 "readerconfigmenu_tap",
@@ -65,8 +69,8 @@ function ReaderConfig:initGesListener()
             id = "readerconfigmenu_swipe",
             ges = "swipe",
             screen_zone = {
-                ratio_x = G_defaults:readSetting("DTAP_ZONE_CONFIG").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_CONFIG").y,
-                ratio_w = G_defaults:readSetting("DTAP_ZONE_CONFIG").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_CONFIG").h,
+                ratio_x = DTAP_ZONE_CONFIG.x, ratio_y = DTAP_ZONE_CONFIG.y,
+                ratio_w = DTAP_ZONE_CONFIG.w, ratio_h = DTAP_ZONE_CONFIG.h,
             },
             overrides = {
                 "rolling_swipe",
@@ -78,8 +82,8 @@ function ReaderConfig:initGesListener()
             id = "readerconfigmenu_ext_swipe",
             ges = "swipe",
             screen_zone = {
-                ratio_x = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").y,
-                ratio_w = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").h,
+                ratio_x = DTAP_ZONE_CONFIG_EXT.x, ratio_y = DTAP_ZONE_CONFIG_EXT.y,
+                ratio_w = DTAP_ZONE_CONFIG_EXT.w, ratio_h = DTAP_ZONE_CONFIG_EXT.h,
             },
             overrides = {
                 "readerconfigmenu_swipe",
@@ -90,8 +94,8 @@ function ReaderConfig:initGesListener()
             id = "readerconfigmenu_pan",
             ges = "pan",
             screen_zone = {
-                ratio_x = G_defaults:readSetting("DTAP_ZONE_CONFIG").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_CONFIG").y,
-                ratio_w = G_defaults:readSetting("DTAP_ZONE_CONFIG").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_CONFIG").h,
+                ratio_x = DTAP_ZONE_CONFIG.x, ratio_y = DTAP_ZONE_CONFIG.y,
+                ratio_w = DTAP_ZONE_CONFIG.w, ratio_h = DTAP_ZONE_CONFIG.h,
             },
             overrides = {
                 "rolling_pan",
@@ -103,8 +107,8 @@ function ReaderConfig:initGesListener()
             id = "readerconfigmenu_ext_pan",
             ges = "pan",
             screen_zone = {
-                ratio_x = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").x, ratio_y = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").y,
-                ratio_w = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").w, ratio_h = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").h,
+                ratio_x = DTAP_ZONE_CONFIG_EXT.x, ratio_y = DTAP_ZONE_CONFIG_EXT.y,
+                ratio_w = DTAP_ZONE_CONFIG_EXT.w, ratio_h = DTAP_ZONE_CONFIG_EXT.h,
             },
             overrides = {
                 "readerconfigmenu_pan",
