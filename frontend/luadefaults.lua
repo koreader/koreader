@@ -6,6 +6,7 @@ local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
+local util = require("util")
 local isAndroid, android = pcall(require, "android")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -78,7 +79,7 @@ end
 
 --- Saves a setting.
 function LuaDefaults:saveSetting(key, value)
-    if self.ro[key] == value then
+    if util.tableEquals(self.ro[key], value, true) then
         -- Only keep actually custom settings in the rw table ;).
         return self:delSetting(key)
     else

@@ -164,8 +164,9 @@ function SetDefaults:init()
                                         local key, value = field:match("^[^= ]+"), field:match("[^= ]+$")
                                         new_table[tonumber(key) or key] = tonumber(value) or value
                                     end
-                                    -- TODO: Table compare
-                                    self:update_menu_entry(k, new_table, setting_type)
+                                    if not util.tableEquals(v, new_table) then
+                                        self:update_menu_entry(k, new_table, setting_type)
+                                    end
                                 end,
                             },
                         },
