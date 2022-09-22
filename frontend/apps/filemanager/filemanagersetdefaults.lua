@@ -45,7 +45,11 @@ function SetDefaults:init()
     local ro_defaults, rw_defaults = G_defaults:getDataTables()
     for k, v in pairs(ro_defaults) do
         self.defaults[k] = v
-        self.state[k] = { custom = false, dirty = false }
+        self.state[k] = {
+            custom = false,
+            dirty = false,
+            default_value = v,
+        }
     end
     for k, v in pairs(rw_defaults) do
         self.defaults[k] = v
@@ -103,10 +107,10 @@ function SetDefaults:init()
                             cancel_button,
                             {
                                 text = _("Default"),
-                                enabled = self.defaults[k] ~= v,
+                                enabled = self.defaults[k] ~= self.state[k].default_value,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, v, G_defaults:readDefaultSetting(k), value_type)
+                                    self:update_menu_entry(k, self.state[k].default_value, value_type)
                                 end
                             },
                             {
@@ -114,7 +118,7 @@ function SetDefaults:init()
                                 enabled = true,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, true, v, value_type)
+                                    self:update_menu_entry(k, true, value_type)
                                 end
                             },
                             {
@@ -122,7 +126,7 @@ function SetDefaults:init()
                                 enabled = true,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, false, v, value_type)
+                                    self:update_menu_entry(k, false, value_type)
                                 end
                             },
                         },
@@ -159,10 +163,10 @@ function SetDefaults:init()
                             cancel_button,
                             {
                                 text = _("Default"),
-                                enabled = not util.tableEquals(v, self.defaults[k]),
+                                enabled = not util.tableEquals(self.defaults[k], self.state[k].default_value),
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, v, G_defaults:readDefaultSetting(k), value_type)
+                                    self:update_menu_entry(k, self.state[k].default_value, value_type)
                                 end
                             },
                             {
@@ -176,7 +180,7 @@ function SetDefaults:init()
                                         local key, value = field:match("^[^= ]+"), field:match("[^= ]+$")
                                         new_table[tonumber(key) or key] = tonumber(value) or value
                                     end
-                                    self:update_menu_entry(k, new_table, v, value_type)
+                                    self:update_menu_entry(k, new_table, value_type)
                                 end,
                             },
                         },
@@ -202,10 +206,10 @@ function SetDefaults:init()
                             cancel_button,
                             {
                                 text = _("Default"),
-                                enabled = self.defaults[k] ~= v,
+                                enabled = self.defaults[k] ~= self.state[k].default_value,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, v, G_defaults:readDefaultSetting(k), value_type)
+                                    self:update_menu_entry(k, self.state[k].default_value, value_type)
                                 end
                             },
                             {
@@ -215,7 +219,7 @@ function SetDefaults:init()
                                 callback = function()
                                     self:close()
                                     local new_value = self.set_dialog:getInputValue()
-                                    self:update_menu_entry(k, new_value, v, value_type)
+                                    self:update_menu_entry(k, new_value, value_type)
                                 end,
                             },
                         },
@@ -264,13 +268,13 @@ function SetDefaults:gen_menu_entry(k, v, v_type)
     end
 end
 
-function SetDefaults:update_menu_entry(k, v, default_v, v_type)
+function SetDefaults:update_menu_entry(k, v, v_type)
     local idx = self.state[k].idx
     self.defaults[k] = v
     self.state[k].dirty = true
     self.settings_changed = true
     self.menu_entries[idx].text = self:gen_menu_entry(k, v, v_type)
-    if util.tableEquals(default_v, v) then
+    if util.tableEquals(v, self.state[k].default_value) then
         self.menu_entries[idx].bold = false
     else
         self.menu_entries[idx].bold = true
