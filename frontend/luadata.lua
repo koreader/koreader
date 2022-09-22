@@ -36,7 +36,11 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
     data_env[self.name.."Entry"] = function(table)
         if table.index then
             -- we've got a deleted setting, overwrite with nil
-            if not table.data then new.data[table.index] = nil end
+            if not table.data then
+                new.data[table.index] = nil
+                return
+            end
+
             new.data[table.index] = new.data[table.index] or {}
             local size = util.tableSize(table.data)
             if size == 1 then
@@ -46,8 +50,8 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
             else
                 new.data[table.index] = table.data
             end
-        -- we've got it all at once
         else
+            -- we've got it all at once
             new.data = table
         end
     end
