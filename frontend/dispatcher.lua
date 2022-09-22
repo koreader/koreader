@@ -480,6 +480,14 @@ function Dispatcher:removeAction(name)
     return true
 end
 
+local function iter_func(settings)
+    if settings and settings.settings and settings.settings.order then
+        return ipairs(settings.settings.order)
+    else
+        return pairs(settings)
+    end
+end
+
 -- Returns a display name for the item.
 function Dispatcher:getNameFromItem(item, settings)
     if settingsList[item] == nil then
@@ -558,15 +566,13 @@ function Dispatcher:menuTextFunc(settings)
 end
 
 -- Get a list of all enabled actions to display in a menu.
-function Dispatcher:getDisplayList(location, settings)
+function Dispatcher:getDisplayList(settings)
     local item_table = {}
-    if not location[settings] then return item_table end
-    if location[settings].settings == nil or location[settings].settings.order == nil then
-        Dispatcher:_addToOrder(location, settings)
-    end
-    for _, item in ipairs(location[settings].settings.order) do
+    if not settings then return item_table end
+    for item, v in iter_func(settings) do
+        if type(item) == "number" then item = v end
         if settingsList[item] ~= nil and (settingsList[item].condition == nil or settingsList[item].condition == true) then
-            table.insert(item_table, {text = Dispatcher:getNameFromItem(item, location[settings]), key = item})
+            table.insert(item_table, {text = Dispatcher:getNameFromItem(item, settings), key = item})
         end
     end
     return item_table
@@ -574,7 +580,7 @@ end
 
 -- Display a SortWidget to sort the enable actions execution order.
 function Dispatcher:_sortActions(caller, location, settings, touchmenu_instance)
-    local display_list = Dispatcher:getDisplayList(location, settings)
+    local display_list = Dispatcher:getDisplayList(location[settings])
     local SortWidget = require("ui/widget/sortwidget")
     local sort_widget
     sort_widget = SortWidget:new{
@@ -787,6 +793,29 @@ example usage:
 function Dispatcher:addSubMenu(caller, menu, location, settings)
     Dispatcher:init()
     table.insert(menu, {
+        text = _("Show as QuickMenu"),
+        checked_func = function()
+            return location[settings] ~= nil
+            and location[settings].settings ~= nil
+            and location[settings].settings.show_as_quickmenu
+        end,
+        callback = function()
+            if location[settings] and location[settings].settings then
+                if location[settings].settings.show_as_quickmenu then
+                    location[settings].settings.show_as_quickmenu = nil
+                    if next(location[settings].settings) == nil then
+                        location[settings].settings = nil
+                    end
+                else
+                    location[settings].settings.show_as_quickmenu = true
+                end
+            else
+                location[settings].settings = {["show_as_quickmenu"] = true}
+            end
+            caller.updated = true
+        end,
+    })
+    table.insert(menu, {
         text = _("Sort"),
         checked_func = function()
             return location[settings] ~= nil
@@ -859,12 +888,34 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     end
 end
 
-local function iter_func(settings)
-    if settings and settings.settings and settings.settings.order then
-        return ipairs(settings.settings.order)
-    else
-        return pairs(settings)
+function Dispatcher:_showAsMenu(settings)
+    --if UIManager:getTopWidget() == name then return end
+    local display_list = Dispatcher:getDisplayList(settings)
+    local quickmenu
+    local buttons = {}
+    for _, v in ipairs(display_list) do
+        table.insert(buttons, {{
+            text = v.text,
+            align = "left",
+            font_face = "smallinfofont",
+            font_size = 22,
+            font_bold = false,
+            callback = function()
+                UIManager:close(quickmenu)
+                Dispatcher:execute({[v.key] = settings[v.key]})
+            end,
+        }})
     end
+    local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+    quickmenu = ButtonDialogTitle:new{
+        --name = name,
+        title = "Quick Menu",
+        title_align = "center",
+        width_factor = 0.8,
+        use_info_style = false,
+        buttons = buttons,
+    }
+    UIManager:show(quickmenu)
 end
 
 --[[--
@@ -875,6 +926,9 @@ arguments are:
     3) optionally a `gestures`object
 --]]--
 function Dispatcher:execute(settings, gesture)
+    if settings.settings ~= nil and settings.settings.show_as_quickmenu == true then
+        return Dispatcher:_showAsMenu(settings)
+    end
     for k, v in iter_func(settings) do
         if type(k) == "number" then
             k = v

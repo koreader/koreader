@@ -46,8 +46,8 @@ end
 local function dispatcherRegisterProfile(name)
     Dispatcher:registerAction("profile_exec_"..name,
         {category="none", event="ProfileExecute", arg=name, title=T(_("Profile \u{F144} %1"), name), general=true})
-    Dispatcher:registerAction("profile_menu_"..name,
-        {category="none", event="ProfileShowMenu", arg=name, title=T(_("Profile \u{F0CA} %1"), name), general=true})
+--    Dispatcher:registerAction("profile_menu_"..name,
+--        {category="none", event="ProfileShowMenu", arg=name, title=T(_("Profile \u{F0CA} %1"), name), general=true})
 end
 
 local function dispatcherRemoveProfile(name)
@@ -103,35 +103,6 @@ function Profiles:getSubMenuItems()
                 end,
             },
             {
-                text = _("Show as QuickMenu"),
-                callback = function()
-                    self:onProfileShowMenu(k)
-                end,
-            },
-            {
-                text = _("Show as QuickMenu on long-press"),
-                checked_func = function()
-                    local settings = self.data[k].settings
-                    return settings and settings.long_press_show_menu
-                end,
-                callback = function()
-                    local settings = self.data[k].settings
-                    if settings then
-                        if settings.long_press_show_menu then
-                            settings.long_press_show_menu = nil
-                            if #settings == 0 then
-                                self.data[k].settings = nil
-                            end
-                        else
-                            settings.long_press_show_menu = true
-                        end
-                    else
-                        self.data[k].settings = {["long_press_show_menu"] = true}
-                    end
-                    self.updated = true
-                end,
-            },
-            {
                 text = _("Autostart"),
                 help_text = _("Execute this profile when KOReader is started with 'file browser' or 'last file'."),
                 checked_func = function()
@@ -144,7 +115,7 @@ function Profiles:getSubMenuItems()
                 separator = true,
             },
             {
-                text = _("Edit actions"),
+                text = T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(v)),
                 sub_item_table = edit_actions_sub_items,
             },
             {
@@ -203,12 +174,7 @@ function Profiles:getSubMenuItems()
             hold_keep_menu_open = false,
             sub_item_table = sub_items,
             hold_callback = function()
-                local settings = self.data[k].settings
-                if settings and settings.long_press_show_menu then
-                    self:onProfileShowMenu(k)
-                else
-                    self:onProfileExecute(k)
-                end
+                self:onProfileExecute(k)
             end,
         })
     end
@@ -217,38 +183,6 @@ end
 
 function Profiles:onProfileExecute(name)
     Dispatcher:execute(self.data[name])
-end
-
-function Profiles:onProfileShowMenu(name)
-    if UIManager:getTopWidget() == name then return end
-    local profile = self.data[name]
-    local actions_list = self:getActionsList(name)
-    local quickmenu
-    local buttons = {}
-    for _, v in ipairs(actions_list) do
-        table.insert(buttons, {{
-            text = v.text,
-            align = "left",
-            font_face = "smallinfofont",
-            font_size = 22,
-            font_bold = false,
-            callback = function()
-                UIManager:close(quickmenu)
-                local action = v.label
-                Dispatcher:execute({[action] = profile[action]})
-            end,
-        }})
-    end
-    local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
-    quickmenu = ButtonDialogTitle:new{
-        name = name,
-        title = name,
-        title_align = "center",
-        width_factor = 0.8,
-        use_info_style = false,
-        buttons = buttons,
-    }
-    UIManager:show(quickmenu)
 end
 
 function Profiles:editProfileName(editCallback, old_name)
