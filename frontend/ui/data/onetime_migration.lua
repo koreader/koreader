@@ -453,8 +453,10 @@ if last_migration_date < 20220922 then
     local defaults_path = DataStorage:getDataDir() .. "/defaults.persistent.lua"
     local defaults = {}
     local load_defaults = loadfile(defaults_path)
-    setfenv(load_defaults, defaults)
-    load_defaults()
+    if load_defaults then
+        setfenv(load_defaults, defaults)
+        load_defaults()
+    end
 
     for k, v in pairs(defaults) do
         -- Don't migrate deprecated settings

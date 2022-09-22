@@ -45,8 +45,7 @@ function SetDefaults:init()
     local rw_defaults = G_defaults:getRWData()
     for k, v in pairs(ro_defaults) do
         self.defaults[k] = v
-        self.state[k].custom = false
-        self.state[k].dirty = false
+        self.state[k] = { custom = false, dirty = false }
     end
     for k, v in pairs(rw_defaults) do
         self.defaults[k] = v
