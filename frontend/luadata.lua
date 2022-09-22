@@ -46,11 +46,17 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
                 return
             end
 
-            new.data[table.index] = new.data[table.index] or {}
-            local size = util.tableSize(table.data)
-            if size == 1 then
-                for key, value in pairs(table.data) do
-                    new.data[table.index][key] = value
+            if type(table.data) == "table" then
+                new.data[table.index] = new.data[table.index] or {}
+                local size = util.tableSize(table.data)
+                if size == 1 then
+                    -- It's in incremental array element, insert it in the array at its proper index
+                    for key, value in pairs(table.data) do
+                        new.data[table.index][key] = value
+                    end
+                else
+                    -- It's a complex table, just replace the whole thing
+                    new.data[table.index] = table.data
                 end
             else
                 new.data[table.index] = table.data
