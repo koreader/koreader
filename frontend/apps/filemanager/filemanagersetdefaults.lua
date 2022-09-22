@@ -16,7 +16,7 @@ local Screen = require("device").screen
 local SetDefaults = InputContainer:new{
     defaults = {},
     state = {},
-    results = {},
+    menu_entries = {},
     defaults_menu = {},
     settings_changed = false,
 }
@@ -53,7 +53,7 @@ function SetDefaults:init()
     end
 
     -- For Menu
-    self.results = {}
+    self.menu_entries = {}
 
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
@@ -115,11 +115,11 @@ function SetDefaults:init()
                                         self.defaults[k] = true
                                         self.state[k].dirty = true
                                         self.settings_changed = true
-                                        self.results[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
-                                        self.results[idx].bold = true
+                                        self.menu_entries[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                        self.menu_entries[idx].bold = true
                                     end
                                     self:close()
-                                    self.defaults_menu:switchItemTable("Defaults", self.results, idx)
+                                    self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
                                 end
                             },
                             {
@@ -131,11 +131,11 @@ function SetDefaults:init()
                                         self.defaults[k] = false
                                         self.state[k].dirty = true
                                         self.settings_changed = true
-                                        self.results[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
-                                        self.results[idx].bold = true
+                                        self.menu_entries[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                        self.menu_entries[idx].bold = true
                                     end
                                     self:close()
-                                    self.defaults_menu:switchItemTable("Defaults", self.results, idx)
+                                    self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
                                 end
                             },
                         },
@@ -147,7 +147,7 @@ function SetDefaults:init()
                 self.set_dialog:onShowKeyboard()
             end
 
-            table.insert(self.results, {
+            table.insert(self.menu_entries, {
                 text = self:gen_menu_entry(k, self.defaults[k], setting_type),
                 bold = self.state[k].custom,
                 callback = editBoolean
@@ -184,10 +184,10 @@ function SetDefaults:init()
                                     self.defaults[k] = new_table
                                     self.state[k].dirty = true
                                     self.settings_changed = true
-                                    self.results[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
-                                    self.results[idx].bold = true
+                                    self.menu_entries[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                    self.menu_entries[idx].bold = true
                                     self:close()
-                                    self.defaults_menu:switchItemTable("Defaults", self.results, idx)
+                                    self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
                                 end,
                             },
                         },
@@ -198,7 +198,7 @@ function SetDefaults:init()
                 self.set_dialog:onShowKeyboard()
             end
 
-            table.insert(self.results, {
+            table.insert(self.menu_entries, {
                 text = self:gen_menu_entry(k, self.defaults[k], setting_type),
                 bold = self.state[k].custom,
                 callback = editTable
@@ -222,11 +222,11 @@ function SetDefaults:init()
                                         self.defaults[k] = new_value
                                         self.state[k].dirty = true
                                         self.settings_changed = true
-                                        self.results[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
-                                        self.results[idx].bold = true
+                                        self.menu_entries[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                        self.menu_entries[idx].bold = true
                                     end
                                     self:close()
-                                    self.defaults_menu:switchItemTable("Defaults", self.results, idx)
+                                    self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
                                 end,
                             },
                         },
@@ -238,14 +238,14 @@ function SetDefaults:init()
                 self.set_dialog:onShowKeyboard()
             end
 
-            table.insert(self.results, {
+            table.insert(self.menu_entries, {
                 text = self:gen_menu_entry(k, self.defaults[k], setting_type),
                 bold = self.state[k].custom,
                 callback = editNumStr
             })
         end
     end
-    self.defaults_menu:switchItemTable("Defaults", self.results)
+    self.defaults_menu:switchItemTable("Defaults", self.menu_entries)
     UIManager:show(menu_container)
 end
 
@@ -276,7 +276,7 @@ function SetDefaults:gen_menu_entry(k, v, t)
 end
 
 function SetDefaults:saveSettings()
-    self.results = {}
+    self.menu_entries = {}
 
     -- Update dirty keys for real
     for k, v in pairs(self.defaults) do
