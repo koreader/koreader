@@ -160,17 +160,17 @@ function LuaData:flush()
     if lfs.attributes(self.file, "mode") == "file" then
         for i=1, self.max_backups, 1 do
             if lfs.attributes(self.file..".old."..i, "mode") == "file" then
-                logger.dbg("LuaData: Rename ", self.file .. ".old." .. i, " to ", self.file .. ".old." .. i+1)
+                logger.dbg("LuaData: Rename", self.file .. ".old." .. i, "to", self.file .. ".old." .. i+1)
                 os.rename(self.file, self.file .. ".old." .. i+1)
             else
                 break
             end
         end
-        logger.dbg("LuaData: Rename ", self.file, " to ", self.file .. ".old.1")
+        logger.dbg("LuaData: Rename", self.file, "to", self.file .. ".old.1")
         os.rename(self.file, self.file .. ".old.1")
     end
 
-    logger.dbg("LuaData: Write to ", self.file)
+    logger.dbg("LuaData: Write to", self.file)
     local f_out = io.open(self.file, "w")
     if f_out ~= nil then
         os.setlocale('C', 'numeric')
