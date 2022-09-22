@@ -332,7 +332,7 @@ function util.tableEquals(o1, o2, ignore_mt)
     if not ignore_mt then
         local mt1 = getmetatable(o1)
         if mt1 and mt1.__eq then
-            --compare using built in method
+            -- Compare using built in method
             return o1 == o2
         end
     end
@@ -1356,8 +1356,8 @@ function util.shell_escape(args)
     return table.concat(escaped_args, " ")
 end
 
---- Clear all the elements from a table without reassignment.
---- @table t the table to be cleared
+--- Clear all the elements from an array without reassignment.
+--- @table t the array to be cleared
 function util.clearTable(t)
     local c = #t
     for i = 0, c do t[i] = nil end

@@ -41,8 +41,7 @@ function SetDefaults:init()
     self.dialog_width = math.floor(math.min(self.screen_width, self.screen_height) * 0.95)
 
     -- Keep track of what's an actual default, and what's been customized without actually touching the real data yet...
-    local ro_defaults = G_defaults:getROData()
-    local rw_defaults = G_defaults:getRWData()
+    local ro_defaults, rw_defaults = G_defaults:getDataTables()
     for k, v in pairs(ro_defaults) do
         self.defaults[k] = v
         self.state[k] = { custom = false, dirty = false }
