@@ -129,6 +129,15 @@ function LuaDefaults:isFalse(key)
     end
 end
 
+--- Low-level API for filemanagersetdefaults
+function LuaDefaults:getROData()
+    return self.ro
+end
+
+function LuaDefaults:getRWData()
+    return self.rw
+end
+
 -- NOP unsupported LuaSettings APIs
 function LuaDefaults:wrap() end
 function LuaDefaults:child() end
