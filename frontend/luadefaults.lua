@@ -6,6 +6,7 @@ local DataStorage = require("datastorage")
 local LuaSettings = require("luasettings")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
+local isAndroid, android = pcall(require, "android")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
@@ -41,12 +42,18 @@ function LuaDefaults:open(path)
     end
 
     -- The actual defaults file, on the other hand, is set in stone.
-    file_path = DataStorage:getDataDir() .. "/defaults.lua"
-    ok, stored = pcall(dofile, file_path)
+    -- We just have to deal with some platform shenanigans...
+    local defaults_path = DataStorage:getDataDir() .. "/defaults.lua"
+    if isAndroid then
+        defaults_path = android.dir .. "/defaults.lua"
+    elseif os.getenv("APPIMAGE") then
+        defaults_path = "defaults.lua"
+    end
+    ok, stored = pcall(dofile, defaults_path)
     if ok and stored then
         new.ro = stored
     else
-        error("Failed reading " .. file_path)
+        error("Failed reading " .. defaults_path)
     end
 
     -- TODO Keep ro & rw separate, or merge in a data table? (Would need to be able to flag stuff as dirty so flush knows what to flush).
