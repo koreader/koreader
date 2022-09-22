@@ -105,10 +105,7 @@ function SetDefaults:init()
                                 enabled = true,
                                 callback = function()
                                     self:close()
-
-                                    if v ~= true then
-                                        self:update_menu_entry(k, true, setting_type)
-                                    end
+                                    self:update_menu_entry(k, true, v, setting_type)
                                 end
                             },
                             {
@@ -116,10 +113,7 @@ function SetDefaults:init()
                                 enabled = true,
                                 callback = function()
                                     self:close()
-
-                                    if v ~= false then
-                                        self:update_menu_entry(k, false, setting_type)
-                                    end
+                                    self:update_menu_entry(k, false, v, setting_type)
                                 end
                             },
                         },
@@ -159,15 +153,12 @@ function SetDefaults:init()
                                 is_enter_default = true,
                                 callback = function()
                                     self:close()
-
                                     local new_table = {}
                                     for _, field in ipairs(MultiInputDialog:getFields()) do
                                         local key, value = field:match("^[^= ]+"), field:match("[^= ]+$")
                                         new_table[tonumber(key) or key] = tonumber(value) or value
                                     end
-                                    if not util.tableEquals(v, new_table) then
-                                        self:update_menu_entry(k, new_table, setting_type)
-                                    end
+                                    self:update_menu_entry(k, new_table, v, setting_type)
                                 end,
                             },
                         },
@@ -197,11 +188,8 @@ function SetDefaults:init()
                                 enabled = true,
                                 callback = function()
                                     self:close()
-
                                     local new_value = self.set_dialog:getInputValue()
-                                    if v ~= new_value then
-                                        self:update_menu_entry(k, new_value, setting_type)
-                                    end
+                                    self:update_menu_entry(k, new_value, v, setting_type)
                                 end,
                             },
                         },
@@ -250,13 +238,17 @@ function SetDefaults:gen_menu_entry(k, v, t)
     end
 end
 
-function SetDefaults:update_menu_entry(k, v, t)
+function SetDefaults:update_menu_entry(k, v, default, t)
     local idx = self.state[k].idx
     self.defaults[k] = v
+    if util.tableEquals(default, v) then
+        self.menu_entries[idx].bold = false
+    else
+        self.menu_entries[idx].bold = true
+    end
     self.state[k].dirty = true
     self.settings_changed = true
-    self.menu_entries[idx].text = self:gen_menu_entry(k, self.defaults[k], t)
-    self.menu_entries[idx].bold = true
+    self.menu_entries[idx].text = self:gen_menu_entry(k, v, t)
     self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
 end
 
