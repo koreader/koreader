@@ -115,6 +115,7 @@ function SetDefaults:init()
                                         self.state[k].dirty = true
                                         self.settings_changed = true
                                         self.results[i].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                        self.results[i].bold = true
                                     end
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
@@ -129,6 +130,7 @@ function SetDefaults:init()
                                         self.state[k].dirty = true
                                         self.settings_changed = true
                                         self.results[i].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                        self.results[i].bold = true
                                     end
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
@@ -145,6 +147,7 @@ function SetDefaults:init()
 
             table.insert(self.results, {
                 text = self:gen_menu_entry(k, self.defaults[k], setting_type),
+                bold = self.state[k].custom,
                 callback = editBoolean
             })
         elseif setting_type == "table" then
@@ -179,6 +182,7 @@ function SetDefaults:init()
                                     self.state[k].dirty = true
                                     self.settings_changed = true
                                     self.results[i].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                    self.results[i].bold = true
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
                                 end,
@@ -193,6 +197,7 @@ function SetDefaults:init()
 
             table.insert(self.results, {
                 text = self:gen_menu_entry(k, self.defaults[k], setting_type),
+                bold = self.state[k].custom,
                 callback = editTable
             })
         else
@@ -214,6 +219,7 @@ function SetDefaults:init()
                                         self.state[k].dirty = true
                                         self.settings_changed = true
                                         self.results[i].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                        self.results[i].bold = true
                                     end
                                     self:close()
                                     self.defaults_menu:switchItemTable("Defaults", self.results, i)
@@ -230,6 +236,7 @@ function SetDefaults:init()
 
             table.insert(self.results, {
                 text = self:gen_menu_entry(k, self.defaults[k], setting_type),
+                bold = self.state[k].custom,
                 callback = editNumStr
             })
         end
