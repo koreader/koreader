@@ -5,6 +5,7 @@ Handles append-mostly data such as KOReader's bookmarks and dictionary search hi
 local LuaSettings = require("luasettings")
 local dbg = require("dbg")
 local dump = require("dump")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 
@@ -29,10 +30,10 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
     local new = {file=file_path, data={}}
 
     -- some magic to allow for self-describing function names
-    local _local = {}
-    _local.__index = _local
-    setmetatable(_G, _local)
-    _local[self.name.."Entry"] = function(table)
+    local data_env = {}
+    data_env.__index = data_env
+    setmetatable(data_env, data_env)
+    data_env[self.name.."Entry"] = function(table)
         if table.index then
             -- we've got a deleted setting, overwrite with nil
             if not table.data then new.data[table.index] = nil end
@@ -51,13 +52,15 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
         end
     end
 
-    local ok = false
+    local ok, err
     if lfs.attributes(new.file, "mode") == "file" then
-        ok = pcall(dofile, new.file)
+        ok, err = loadfile(new.file)
         if ok then
-            logger.dbg("data is read from ", new.file)
+            logger.dbg("data is read from", new.file)
+            setfenv(ok, data_env)
+            ok()
         else
-            logger.dbg(new.file, " is invalid, remove.")
+            logger.dbg(new.file, "is invalid, removed.", err)
             os.remove(new.file)
         end
     end
@@ -65,11 +68,14 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
         for i=1, self.max_backups, 1 do
             local backup_file = new.file..".old."..i
             if lfs.attributes(backup_file, "mode") == "file" then
-                if pcall(dofile, backup_file) then
-                    logger.dbg("data is read from ", backup_file)
+                ok, err = loadfile(backup_file)
+                if ok then
+                    logger.dbg("data is read from", backup_file)
+                    setfenv(ok, data_env)
+                    ok()
                     break
                 else
-                    logger.dbg(backup_file, " is invalid, remove.")
+                    logger.dbg(backup_file, "is invalid, removed.", err)
                     os.remove(backup_file)
                 end
             end

@@ -452,8 +452,10 @@ if last_migration_date < 20220922 then
 
     local defaults_path = DataStorage:getDataDir() .. "/defaults.persistent.lua"
     local defaults = {}
-    local load_defaults = loadfile(defaults_path)
-    if load_defaults then
+    local load_defaults, err = loadfile(defaults_path)
+    if not load_defaults then
+        logger.warn("loadfile:", err)
+    else
         setfenv(load_defaults, defaults)
         load_defaults()
     end
@@ -467,7 +469,8 @@ if last_migration_date < 20220922 then
     G_defaults:flush()
 
     local archived_path = DataStorage:getDataDir() .. "/defaults.legacy.lua"
-    local ok, err = os.rename(defaults_path, archived_path)
+    local ok
+    ok, err = os.rename(defaults_path, archived_path)
     if not ok then
        logger.warn("os.rename:", err)
     end
