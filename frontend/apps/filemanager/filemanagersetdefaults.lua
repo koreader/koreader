@@ -96,7 +96,7 @@ function SetDefaults:init()
             local editBoolean = function()
                 self.set_dialog = InputDialog:new{
                     title = k,
-                    input = tostring(v),
+                    input = tostring(self.defaults[k]),
                     buttons = {
                         {
                             cancel_button,
@@ -139,7 +139,7 @@ function SetDefaults:init()
         elseif setting_type == "table" then
             local editTable = function()
                 local fields = {}
-                for key, value in ffiUtil.orderedPairs(v) do
+                for key, value in ffiUtil.orderedPairs(self.defaults[k]) do
                     table.insert(fields, {
                         text = tostring(key) .. " = " .. tostring(value),
                         hint = "",
@@ -187,7 +187,7 @@ function SetDefaults:init()
             local editNumStr = function()
                 self.set_dialog = InputDialog:new{
                     title = k,
-                    input = tostring(v),
+                    input = tostring(self.defaults[k]),
                     buttons = {
                         {
                             cancel_button,
