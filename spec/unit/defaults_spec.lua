@@ -26,7 +26,7 @@ describe("defaults module", function()
         assert.is_true(lfs.attributes(persistent_filename, "mode") == "file")
 
         Defaults = nil
-        Defaults = require("luadefaults"):open()
+        Defaults = require("luadefaults"):open(persistent_filename)
         assert.is_true(Defaults:hasBeenCustomized("DSHOWOVERLAP"))
         assert.is_true(Defaults:isTrue("DSHOWOVERLAP"))
         Defaults:makeFalse("DSHOWOVERLAP")
