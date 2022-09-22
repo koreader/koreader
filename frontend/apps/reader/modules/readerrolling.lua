@@ -9,6 +9,7 @@ local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local time = require("ui/time")
 local _ = require("gettext")
@@ -152,6 +153,7 @@ function ReaderRolling:onReadSettings(config)
     self.ui.document:requestDomVersion(config:readSetting("cre_dom_version"))
     -- If we're using a DOM version without normalized XPointers, some stuff
     -- may need tweaking:
+    local cre = require("document/credocument"):engineInit()
     if config:readSetting("cre_dom_version") < cre.getDomVersionWithNormalizedXPointers() then
         -- Show some warning when styles "display:" have changed that
         -- bookmarks may break
@@ -1272,7 +1274,7 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
         -- Highlights
         if self.view.highlight and self.view.highlight.saved then
             local slots = { "pos0", "pos1" }
-            for page, items in pairs(self.view.highlight.saved) do
+            for _, items in pairs(self.view.highlight.saved) do
                 if items and #items > 0 then
                     for _, highlight in ipairs(items) do
                         for _, slot in ipairs(slots) do

@@ -9,6 +9,7 @@ local Screen = require("device").screen
 local buffer = require("string.buffer")
 local ffi = require("ffi")
 local C = ffi.C
+local cre -- Delayed loading
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local lru = require("ffi/lru")
@@ -107,7 +108,7 @@ end
 
 function CreDocument:engineInit()
     if not engine_initialized then
-        require "libs/libkoreader-cre"
+        cre = require("libs/libkoreader-cre")
         -- initialize cache
         self:cacheInit()
 
@@ -138,6 +139,8 @@ function CreDocument:engineInit()
 
         engine_initialized = true
     end
+
+    return cre
 end
 
 function CreDocument:init()

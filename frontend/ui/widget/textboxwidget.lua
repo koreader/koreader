@@ -30,6 +30,7 @@ local logger = require("logger")
 local dbg = require("dbg")
 local time = require("ui/time")
 local util = require("util")
+local xtext -- Delayed (and optional) loading
 local Screen = require("device").screen
 
 local TextBoxWidget = InputContainer:new{
@@ -244,7 +245,7 @@ end
 
 function TextBoxWidget:_measureWithXText()
     if not self._xtext_loaded then
-        require("libs/libkoreader-xtext")
+        xtext = require("libs/libkoreader-xtext")
         TextBoxWidget._xtext_loaded = true
     end
     if type(self.charlist) == "table" then
@@ -735,7 +736,7 @@ function TextBoxWidget:_shapeLine(line)
 
     line.x_start = pen_x
     local prev_cluster_start_xglyph
-    for i, xglyph in ipairs(xshaping) do
+    for _, xglyph in ipairs(xshaping) do
         xglyph.x0 = pen_x
         pen_x = pen_x + xglyph.x_advance -- advance from Harfbuzz
         if xglyph.can_extend or (use_can_extend_fallback and xglyph.can_extend_fallback) then
@@ -819,7 +820,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
             end
             self:_shapeLine(line)
             if line.xglyphs then -- non-empty line
-                for __, xglyph in ipairs(line.xglyphs) do
+                for _, xglyph in ipairs(line.xglyphs) do
                     if not xglyph.no_drawing then
                         local face = self.face.getFallbackFont(xglyph.font_num) -- callback (not a method)
                         local glyph = RenderText:getGlyphByIndex(face, xglyph.glyph, self.bold)
@@ -1286,7 +1287,7 @@ function TextBoxWidget:scrollLines(nb_lines)
     self:free(false)
     self:_updateLayout()
     if self.editable then
-        local x, y = self:_getXYForCharPos() -- luacheck: no unused
+        local _, y = self:_getXYForCharPos()
         if y < 0 or y >= self.text_height then
             -- move cursor to first line of visible area
             local ln = self.height == nil and 1 or self.virtual_line_num
@@ -1406,7 +1407,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
                 -- Find the last char that is really part of this line
                 charpos = line.end_offset
             end
-            for i, xglyph in ipairs(line.xglyphs) do
+            for _, xglyph in ipairs(line.xglyphs) do
                 if xglyph.is_cluster_start then -- ignore non-start cluster glyphs
                     if charpos >= xglyph.text_index and charpos < xglyph.text_index + xglyph.cluster_len then
                         -- Correct glyph found
@@ -1502,7 +1503,7 @@ function TextBoxWidget:getCharPosAtXY(x, y)
             end
         end
         if line.xglyphs then -- non-empty line
-            for i, xglyph in ipairs(line.xglyphs) do
+            for _, xglyph in ipairs(line.xglyphs) do
                 if xglyph.is_cluster_start then -- ignore non-start cluster glyphs
                     if x < xglyph.x1 then
                         if xglyph.cluster_len <= 1 then
@@ -1854,8 +1855,6 @@ function TextBoxWidget:onHoldWord(callback, ges)
             idx = idx + 1
         end
     end
-
-    return
 end
 
 -- Allow selection of one or more words (with no visual feedback)

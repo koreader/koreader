@@ -14,6 +14,7 @@ local Notification = require("ui/widget/notification")
 local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -97,7 +98,7 @@ function ReaderLink:init()
         end)
     end
     -- For relative local file links
-    local directory, filename = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
+    local directory, __ = util.splitFilePathName(self.ui.document.file) -- luacheck: no unused
     self.document_dir = directory
     -- Migrate these old settings to the new common one
     if G_reader_settings:isTrue("tap_link_footnote_popup")
@@ -388,14 +389,14 @@ function ReaderLink:isXpointerCoherent(a_xpointer)
     -- Get screen coordinates of xpointer
     local screen_y, screen_x = self.ui.document:getScreenPositionFromXPointer(a_xpointer)
     -- Get again link and a_xpointer from this position
-    local re_link_xpointer, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x, y = screen_y}) -- luacheck: no unused
+    local __, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x, y = screen_y})
     -- We should get the same a_xpointer. If not, crengine has messed up
     -- and we should not trust this xpointer to get back to this link.
     if re_a_xpointer ~= a_xpointer then
         -- Try it again with screen_x+1 (in the rare cases where screen_x
         -- fails, screen_x+1 usually works - probably something in crengine,
         -- but easier to workaround here that way)
-        re_link_xpointer, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x+1, y = screen_y}) -- luacheck: no unused
+        __, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x+1, y = screen_y})
         if re_a_xpointer ~= a_xpointer then
             logger.info("not coherent a_xpointer:", a_xpointer)
             return false

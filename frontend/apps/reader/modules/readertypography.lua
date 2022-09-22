@@ -151,6 +151,7 @@ When the book's language tag is not among our presets, no specific features will
             -- Show infos about TextLangMan seen lang_tags and loaded hyph dicts
             local lang_infos = {}
             local seen_hyph_dicts = {} -- to avoid outputing count and size for shared hyph dicts
+            local cre = require("document/credocument"):engineInit()
             local main_lang_tag, main_lang_active_hyph_dict, loaded_lang_infos = cre.getTextLangStatus() -- luacheck: no unused
             -- First output main lang tag
             local main_lang_info = loaded_lang_infos[main_lang_tag]
@@ -360,6 +361,7 @@ When the book's language tag is not among our presets, no specific features will
         end,
         callback = function()
             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+            local cre = require("document/credocument"):engineInit()
             local hyph_alg, alg_left_hyphen_min, alg_right_hyphen_min = cre.getSelectedHyphDict() -- luacheck: no unused
             local hyph_limits_widget = DoubleSpinWidget:new{
                 -- Min (1) and max (10) values are enforced by crengine

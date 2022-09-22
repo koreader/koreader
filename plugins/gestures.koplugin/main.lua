@@ -15,12 +15,13 @@ local LuaSettings = require("luasettings")
 local Screen = require("device").screen
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 local util = require("util")
 local T = FFIUtil.template
 local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
-local logger = require("logger")
 
 if not Device:isTouchDevice() then
     return { disabled = true, }

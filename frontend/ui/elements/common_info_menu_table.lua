@@ -3,6 +3,7 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Version = require("version")
+local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local T = require("ffi/util").template
 

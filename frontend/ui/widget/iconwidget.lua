@@ -5,6 +5,7 @@ Subclass of ImageWidget to show icons
 local DataStorage = require("datastorage")
 local ImageWidget = require("ui/widget/imagewidget")
 local Screen = require("device").screen
+local lfs = require("libs/libkoreader-lfs")
 
 local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 

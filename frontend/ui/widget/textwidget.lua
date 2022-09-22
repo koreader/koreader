@@ -22,6 +22,7 @@ local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
 local dbg = require("dbg")
 local util = require("util")
+local xtext -- Delayed (and optional) loading
 
 local TextWidget = Widget:new{
     text = nil,
@@ -183,7 +184,7 @@ dbg:guard(TextWidget, "updateSize",
 
 function TextWidget:_measureWithXText()
     if not self._xtext_loaded then
-        require("libs/libkoreader-xtext")
+        xtext = require("libs/libkoreader-xtext")
         TextWidget._xtext_loaded = true
     end
     self._xtext = xtext.new(self.text, self.face, self.auto_para_direction,
@@ -357,7 +358,7 @@ function TextWidget:paintTo(bb, x, y)
     end
     local pen_x = 0
     local baseline = self.forced_baseline or self._baseline_h
-    for i, xglyph in ipairs(self._xshaping) do
+    for _, xglyph in ipairs(self._xshaping) do
         if pen_x >= text_width then
             break
         end

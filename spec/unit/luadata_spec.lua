@@ -1,7 +1,8 @@
 describe("luadata module", function()
-    local Settings
+    local Settings, lfs
     setup(function()
         require("commonrequire")
+        lfs = require("libs/libkoreader-lfs")
         Settings = require("frontend/luadata"):open("this-is-not-a-valid-file")
     end)
 

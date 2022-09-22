@@ -9,7 +9,7 @@ local T = ffiUtil.template
 -- Get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
     local t = {}
-    for i, v in ipairs(numbers) do
+    for __, v in ipairs(numbers) do
         -- We turn 17.5 into 17<sup>5</sup>
         table.insert(t, tostring(v%1==0 and v or (v-v%1).."⁵"))
     end
@@ -621,6 +621,7 @@ Note that your selected font size is not affected by this setting.]]),
 - +3 will use the "Bold (700)" variation of a font if available.
 If a font variation is not available, as well as for fractional adjustments, it will be synthesized from the nearest available weight.]]),
                 help_text_func = function(configurable, document)
+                    local cre = require("document/credocument"):engineInit()
                     local font_face = document:getFontFace()
                     local available_weights = prettifyCreWeights(cre.getFontFaceAvailableWeights(font_face))
                     return T(_("The default font '%1' provides the following weight classes: %2."), font_face, table.concat(available_weights, C_("List separator", ", ")))

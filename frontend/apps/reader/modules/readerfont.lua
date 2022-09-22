@@ -12,6 +12,7 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local cre -- Delayed loading
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -52,8 +53,9 @@ function ReaderFont:init()
         separator = true,
     })
     -- Font list
+    cre = require("document/credocument"):engineInit()
     local face_list = cre.getFontFaces()
-    for k,v in ipairs(face_list) do
+    for k, v in ipairs(face_list) do
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
         table.insert(self.face_table, {
             text_func = function()

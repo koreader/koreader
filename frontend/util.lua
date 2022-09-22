@@ -4,6 +4,7 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 
 local BaseUtil = require("ffi/util")
 local Utf8Proc = require("ffi/utf8proc")
+local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = BaseUtil.template
@@ -873,7 +874,6 @@ end
 ---- @string path
 ---- @treturn bool
 function util.isEmptyDir(path)
-    local lfs = require("libs/libkoreader-lfs")
     -- lfs.dir will crash rather than return nil if directory doesn't exist O_o
     local ok, iter, dir_obj = pcall(lfs.dir, path)
     if not ok then return end
@@ -900,7 +900,6 @@ end
 ---- @string path
 ---- @treturn bool
 function util.pathExists(path)
-    local lfs = require("libs/libkoreader-lfs")
     return lfs.attributes(path, "mode") ~= nil
 end
 
@@ -918,7 +917,6 @@ function util.makePath(path)
         return nil, err.." (creating "..path..")"
     end
 
-    local lfs = require("libs/libkoreader-lfs")
     return lfs.mkdir(path)
 end
 
@@ -926,7 +924,6 @@ end
 -- @string path of the file to remove
 -- @treturn bool true on success; nil, err_message on error
 function util.removeFile(file)
-    local lfs = require("libs/libkoreader-lfs")
     if file and lfs.attributes(file, "mode") == "file" then
         return os.remove(file)
     elseif file then
@@ -951,7 +948,6 @@ function util.diskUsage(dir)
         end
     end
     local err = { total = nil, used = nil, available = nil }
-    local lfs = require("libs/libkoreader-lfs")
     if not dir or lfs.attributes(dir, "mode") ~= "directory" then return err end
     local usage = doCommand(dir)
     if not usage then return err end

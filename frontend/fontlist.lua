@@ -268,7 +268,7 @@ function FontList:getLocalizedFontName(file, index)
 end
 
 function FontList:getFontArgFunc()
-    require("document/credocument"):engineInit()
+    local cre = require("document/credocument"):engineInit()
     local toggle = {}
     local face_list = cre.getFontFaces()
     for _, v in ipairs(face_list) do
