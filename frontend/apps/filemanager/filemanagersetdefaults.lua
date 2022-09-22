@@ -96,6 +96,7 @@ function SetDefaults:init()
     local i = 0
     for k, v in util.orderedPairs(self.defaults) do
         i = i + 1
+        self.state[k].idx = i
         local setting_type = type(v)
         if setting_type == "boolean" then
             local editBoolean = function()
@@ -109,30 +110,32 @@ function SetDefaults:init()
                                 text = "true",
                                 enabled = true,
                                 callback = function()
+                                    local idx = self.state[k].idx
                                     if v ~= true then
                                         self.defaults[k] = true
                                         self.state[k].dirty = true
                                         self.settings_changed = true
-                                        self.results[i].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
-                                        self.results[i].bold = true
+                                        self.results[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                        self.results[idx].bold = true
                                     end
                                     self:close()
-                                    self.defaults_menu:switchItemTable("Defaults", self.results, i)
+                                    self.defaults_menu:switchItemTable("Defaults", self.results, idx)
                                 end
                             },
                             {
                                 text = "false",
                                 enabled = true,
                                 callback = function()
+                                    local idx = self.state[k].idx
                                     if v ~= false then
                                         self.defaults[k] = false
                                         self.state[k].dirty = true
                                         self.settings_changed = true
-                                        self.results[i].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
-                                        self.results[i].bold = true
+                                        self.results[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                        self.results[idx].bold = true
                                     end
                                     self:close()
-                                    self.defaults_menu:switchItemTable("Defaults", self.results, i)
+                                    self.defaults_menu:switchItemTable("Defaults", self.results, idx)
                                 end
                             },
                         },
@@ -171,6 +174,7 @@ function SetDefaults:init()
                                 enabled = true,
                                 is_enter_default = true,
                                 callback = function()
+                                    local idx = self.state[k].idx
                                     local new_table = {}
                                     for _, field in ipairs(MultiInputDialog:getFields()) do
                                         local key, value = field:match("^[^= ]+"), field:match("[^= ]+$")
@@ -180,10 +184,10 @@ function SetDefaults:init()
                                     self.defaults[k] = new_table
                                     self.state[k].dirty = true
                                     self.settings_changed = true
-                                    self.results[i].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
-                                    self.results[i].bold = true
+                                    self.results[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                    self.results[idx].bold = true
                                     self:close()
-                                    self.defaults_menu:switchItemTable("Defaults", self.results, i)
+                                    self.defaults_menu:switchItemTable("Defaults", self.results, idx)
                                 end,
                             },
                         },
@@ -212,16 +216,17 @@ function SetDefaults:init()
                                 is_enter_default = true,
                                 enabled = true,
                                 callback = function()
+                                    local idx = self.state[k].idx
                                     local new_value = self.set_dialog:getInputValue()
                                     if v ~= new_value then
                                         self.defaults[k] = new_value
                                         self.state[k].dirty = true
                                         self.settings_changed = true
-                                        self.results[i].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
-                                        self.results[i].bold = true
+                                        self.results[idx].text = self:gen_menu_entry(k, self.defaults[k], setting_type)
+                                        self.results[idx].bold = true
                                     end
                                     self:close()
-                                    self.defaults_menu:switchItemTable("Defaults", self.results, i)
+                                    self.defaults_menu:switchItemTable("Defaults", self.results, idx)
                                 end,
                             },
                         },
