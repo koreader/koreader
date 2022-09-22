@@ -63,11 +63,16 @@ end
 --- Reads a setting, optionally initializing it to a default.
 function LuaDefaults:readSetting(key, default)
     if not default then
-        return self.rw[key] or self.ro[key]
+        if self:hasBeenCustomized(key) then
+            return self.rw[key]
+        else
+            return self.ro[key]
+        end
     end
 
     if not self:hasBeenCustomized(key) then
         self.rw[key] = default
+        return self.rw[key]
     end
 
     if self:hasBeenCustomized(key) then
