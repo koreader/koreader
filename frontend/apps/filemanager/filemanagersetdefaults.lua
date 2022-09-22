@@ -56,14 +56,8 @@ function SetDefaults:init()
 
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
+        covers_fullscreen = true,
     }
-    --- @fixme
-    -- in this use case (an input dialog is closed and the menu container is
-    -- opened immediately) we need to set the full screen dirty because
-    -- otherwise only the input dialog part of the screen is refreshed.
-    menu_container.onShow = function()
-        UIManager:setDirty(nil, "ui")
-    end
 
     self.defaults_menu = Menu:new{
         width = self.screen_width - (Size.margin.fullscreen_popout * 2),
@@ -229,7 +223,6 @@ function SetDefaults:init()
 end
 
 function SetDefaults:close()
-    -- FIXME: Make that one full-screen and remove workaround above
     UIManager:close(self.set_dialog)
 end
 
