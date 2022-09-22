@@ -57,6 +57,7 @@ function ButtonTable:init()
                 enabled = btn_entry.enabled,
                 callback = btn_entry.callback,
                 hold_callback = btn_entry.hold_callback,
+                allow_hold_when_disabled = btn_entry.allow_hold_when_disabled,
                 vsync = btn_entry.vsync,
                 width = math.ceil((self.width - sizer_space)/column_cnt),
                 max_width = math.ceil((self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding),
