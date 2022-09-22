@@ -29,7 +29,12 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
 
     local new = {file=file_path, data={}}
 
-    -- some magic to allow for self-describing function names
+    -- Some magic to allow for self-describing function names:
+    -- We'll use data_env both as the environment when loading the data, *and* its metatable,
+    -- *and* as the target of its index lookup metamethod.
+    -- Its NameEntry field is a function responsible for actually storing the data in the right place in the LuaData object.
+    -- It gets called via __index lookup in the global scope (i.e., the env) when Lua tries to resolve
+    -- the global NameEntry function calls in our stored data.
     local data_env = {}
     data_env.__index = data_env
     setmetatable(data_env, data_env)
@@ -132,6 +137,7 @@ function LuaData:append(data)
     local f_out = io.open(self.file, "a")
     if f_out ~= nil then
         os.setlocale('C', 'numeric')
+        -- NOTE: This is a function call, with a table as its single argument. Parentheses are elided.
         f_out:write(self.name.."Entry")
         f_out:write(dump(data))
         f_out:write("\n")
