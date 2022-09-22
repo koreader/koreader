@@ -6,6 +6,8 @@ local DataStorage = require("datastorage")
 local ImageWidget = require("ui/widget/imagewidget")
 local Screen = require("device").screen
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 -- Directories to look for icons by name, with any of the accepted suffixes
 local ICONS_DIRS = {}
 local user_icons_dir = DataStorage:getDataDir() .. "/icons"
@@ -33,8 +35,8 @@ local IconWidget = ImageWidget:extend{
     -- See ImageWidget for other available options,
     -- we only start with a few different defaults, that can
     -- be overriden by callers.
-    width = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE")), -- our icons are square
-    height = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE")),
+    width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
+    height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     alpha = false, --- @note: Our icons have a transparent background, but, by default, we flatten them at caching time.
                    ---        Our caller may choose to override that by setting this to true, in which case,
                    ---        the alpha layer will be kept intact, and we'll do alpha-blending at blitting time.

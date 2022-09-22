@@ -1,12 +1,14 @@
 local EventListener = require("ui/widget/eventlistener")
 
+local DHINTCOUNT = G_defaults:readSetting("DHINTCOUNT")
+
 local ReaderHinting = EventListener:new{
     hinting_states = {}
 }
 
 function ReaderHinting:onHintPage()
     if not self.view.hinting then return true end
-    for i=1, G_defaults:readSetting("DHINTCOUNT") do
+    for i=1, DHINTCOUNT do
         if self.view.state.page + i <= self.document.info.number_of_pages then
             self.document:hintPage(
                 self.view.state.page + i,

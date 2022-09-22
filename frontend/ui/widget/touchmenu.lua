@@ -34,6 +34,8 @@ local T = require("ffi/util").template
 local Input = Device.input
 local Screen = Device.screen
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 --[[
 TouchMenuItem widget
 --]]
@@ -266,7 +268,7 @@ function TouchMenuBar:init()
     local icon_sep_width = Size.span.vertical_default
     local icons_sep_width = icon_sep_width * (#self.icons + 1)
     -- we assume all icons are of the same width
-    local icon_width = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE"))
+    local icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local icon_height = icon_width
     -- content_width is the width of all the icon images
     local content_width = icon_width * #self.icons + icons_sep_width

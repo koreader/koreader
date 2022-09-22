@@ -10,6 +10,8 @@ local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
 
+local DHINTCOUNT = G_defaults:readSetting("DHINTCOUNT")
+
 local function calcCacheMemSize()
     local min = G_defaults:readSetting("DGLOBAL_CACHE_SIZE_MINIMUM")
     local max = G_defaults:readSetting("DGLOBAL_CACHE_SIZE_MAXIMUM")
@@ -77,7 +79,7 @@ function DocCache:serialize(doc_path)
             if item.persistent and item.dump and item.doc_path == doc_path then
                 mru_key = key
                 mru_found = mru_found + 1
-                if mru_found >= (1 + G_defaults:readSetting("DHINTCOUNT")) then
+                if mru_found >= (1 + DHINTCOUNT) then
                     -- We found the right item, i.e., the *displayed* page
                     break
                 end

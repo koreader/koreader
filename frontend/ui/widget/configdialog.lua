@@ -33,6 +33,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 local OptionTextItem = InputContainer:new{}
 
 function OptionTextItem:init()
@@ -191,7 +193,7 @@ function ConfigOption:init()
     local default_item_font_size = 16 -- font size for letters, toggles and buttonprogress
     local default_items_spacing = 40  -- spacing between letters (font sizes) and icons
     local default_option_height = 50  -- height of each line
-    local max_icon_height = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE"))  -- max height of icons
+    local max_icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE)  -- max height of icons
     -- The next ones are already scaleBySize()'d:
     local default_option_vpadding = Size.padding.large -- vertical padding at top and bottom
     local default_option_hpadding = Size.padding.fullscreen
@@ -716,7 +718,7 @@ function MenuBar:init()
     local icon_sep_width = Size.padding.button
     local line_thickness = Size.line.thick
     local config_options = self.config_dialog.config_options
-    local icon_width = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE"))
+    local icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local icon_height = icon_width
     local icons_width = (icon_width + 2*icon_sep_width) * #config_options
     local bar_height = icon_height + 2*Size.padding.default

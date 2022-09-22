@@ -15,6 +15,8 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 local TitleBar = OverlapGroup:extend{
     width = nil, -- default to screen width
     fullscreen = false, -- larger font and small adjustments if fullscreen
@@ -93,8 +95,8 @@ function TitleBar:init()
         self.width = Screen:getWidth()
     end
 
-    local left_icon_size = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE") * self.left_icon_size_ratio)
-    local right_icon_size = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE") * self.right_icon_size_ratio)
+    local left_icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.left_icon_size_ratio)
+    local right_icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.right_icon_size_ratio)
     self.has_left_icon = false
     self.has_right_icon = false
 

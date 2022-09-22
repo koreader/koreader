@@ -33,12 +33,14 @@ local _ = require("gettext")
 local Screen = Device.screen
 local logger = require("logger")
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 local Button = InputContainer:new{
     text = nil, -- mandatory (unless icon is provided)
     text_func = nil,
     icon = nil,
-    icon_width = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE")), -- our icons are square
-    icon_height = Screen:scaleBySize(G_defaults:readSetting("DGENERIC_ICON_SIZE")),
+    icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
+    icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     icon_rotation_angle = 0,
     align = "center", -- or "left"
     preselect = false,
