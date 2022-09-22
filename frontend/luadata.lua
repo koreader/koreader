@@ -40,7 +40,7 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
     setmetatable(data_env, data_env)
     data_env[self.name.."Entry"] = function(table)
         if table.index then
-            -- we've got a deleted setting, overwrite with nil
+            -- We've got a deleted setting, overwrite with nil and be done with it.
             if not table.data then
                 new.data[table.index] = nil
                 return
@@ -50,7 +50,7 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
                 new.data[table.index] = new.data[table.index] or {}
                 local size = util.tableSize(table.data)
                 if size == 1 then
-                    -- It's in incremental array element, insert it in the array at its proper index
+                    -- It's an incremental array element, insert it in the array at its proper index
                     for key, value in pairs(table.data) do
                         new.data[table.index][key] = value
                     end
@@ -62,7 +62,7 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
                 new.data[table.index] = table.data
             end
         else
-            -- we've got it all at once
+            -- It's an untagged blob, use it as-is
             new.data = table
         end
     end
