@@ -110,7 +110,7 @@ function SetDefaults:init()
                                 text = "true",
                                 enabled = true,
                                 callback = function()
-                                    if v ~= true
+                                    if v ~= true then
                                         self.defaults[k] = true
                                         self.state[k].dirty = true
                                         self.settings_changed = true
