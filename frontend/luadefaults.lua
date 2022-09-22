@@ -56,9 +56,6 @@ function LuaDefaults:open(path)
         error("Failed reading " .. defaults_path)
     end
 
-    -- TODO Keep ro & rw separate, or merge in a data table? (Would need to be able to flag stuff as dirty so flush knows what to flush).
-    --        I guess it'll depend on how much we rely on those, as keeping 'em separate is likely simpler.
-
     return setmetatable(new, {__index = LuaDefaults})
 end
 
