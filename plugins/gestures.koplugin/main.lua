@@ -739,16 +739,14 @@ function Gestures:setupGesture(ges)
         ratio_w = 1, ratio_h = 1/8,
     }
 
-    -- legacy global variable DTAP_ZONE_FLIPPING may still be defined in default.persistent.lua
-    local dtap_zone_top_left = DTAP_ZONE_FLIPPING and DTAP_ZONE_FLIPPING or G_defaults:readSetting("DTAP_ZONE_TOP_LEFT")
+    local dtap_zone_top_left = G_defaults:readSetting("DTAP_ZONE_TOP_LEFT")
     local zone_top_left_corner = {
         ratio_x = dtap_zone_top_left.x,
         ratio_y = dtap_zone_top_left.y,
         ratio_w = dtap_zone_top_left.w,
         ratio_h = dtap_zone_top_left.h,
     }
-    -- legacy global variable DTAP_ZONE_BOOKMARK may still be defined in default.persistent.lua
-    local dtap_zone_top_right = DTAP_ZONE_BOOKMARK and DTAP_ZONE_BOOKMARK or G_defaults:readSetting("DTAP_ZONE_TOP_RIGHT")
+    local dtap_zone_top_right = G_defaults:readSetting("DTAP_ZONE_TOP_RIGHT")
     local zone_top_right_corner = {
         ratio_x = dtap_zone_top_right.x,
         ratio_y = dtap_zone_top_right.y,

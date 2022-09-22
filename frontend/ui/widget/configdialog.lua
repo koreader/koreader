@@ -547,7 +547,7 @@ function ConfigOption:init()
                                         or max_toggle_width
                 local row_count = self.options[c].row_count or 1
                 local toggle_height = Screen:scaleBySize(self.options[c].height
-                                                         or 30 * row_count)
+                                                         or (30 * row_count))
                 if self.options[c].more_options then
                     table.insert(self.options[c].toggle, "⋮")
                     table.insert(self.options[c].args, "⋮")
@@ -1469,10 +1469,10 @@ function ConfigDialog:onSwipeCloseMenu(arg, ges_ev)
         h = G_defaults:readSetting("DTAP_ZONE_CONFIG").h * Screen:getHeight(),
     }
     local range_ext = Geom:new{
-        x = G_defaults:readSetting("G_defaults:readSetting("DTAP_ZONE_CONFIG")_EXT").x * Screen:getWidth(),
-        y = G_defaults:readSetting("G_defaults:readSetting("DTAP_ZONE_CONFIG")_EXT").y * Screen:getHeight(),
-        w = G_defaults:readSetting("G_defaults:readSetting("DTAP_ZONE_CONFIG")_EXT").w * Screen:getWidth(),
-        h = G_defaults:readSetting("G_defaults:readSetting("DTAP_ZONE_CONFIG")_EXT").h * Screen:getHeight(),
+        x = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").x * Screen:getWidth(),
+        y = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").y * Screen:getHeight(),
+        w = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").w * Screen:getWidth(),
+        h = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT").h * Screen:getHeight(),
     }
     if ges_ev.direction == "south" and (ges_ev.pos:intersectWith(self.dialog_frame.dimen)
         or ges_ev.pos:intersectWith(range) or ges_ev.pos:intersectWith(range_ext)) then

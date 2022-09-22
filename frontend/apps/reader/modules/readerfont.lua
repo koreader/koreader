@@ -162,7 +162,6 @@ function ReaderFont:onReadSettings(config)
 
     self.gamma_index = config:readSetting("gamma_index")
                     or G_reader_settings:readSetting("copt_font_gamma")
-                    or DCREREADER_CONFIG_DEFAULT_FONT_GAMMA
                     or 15 -- gamma = 1.0
     self.ui.document:setGammaIndex(self.gamma_index)
 
