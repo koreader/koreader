@@ -13,7 +13,7 @@ local logger = require("logger")
 
 local LuaDefaults = LuaSettings:new{
     ro = nil, -- will contain the defaults.lua k/v pairs (const)
-    rw = nil, -- will only contain user-modified k/v pairs
+    rw = nil, -- will only contain non-defaults user-modified k/v pairs
 }
 
 --- Opens a settings file.
