@@ -15,7 +15,6 @@ local _ = require("gettext")
 local Screen = require("device").screen
 
 local SetDefaults = InputContainer:new{
-    defaults = {},
     state = {},
     menu_entries = {},
     defaults_menu = {},
@@ -44,15 +43,16 @@ function SetDefaults:init()
     -- Keep track of what's an actual default, and what's been customized without actually touching the real data yet...
     local ro_defaults, rw_defaults = G_defaults:getDataTables()
     for k, v in pairs(ro_defaults) do
-        self.defaults[k] = v
         self.state[k] = {
+            idx = 1,
+            value = v,
             custom = false,
             dirty = false,
             default_value = v,
         }
     end
     for k, v in pairs(rw_defaults) do
-        self.defaults[k] = v
+        self.state[k].value = v
         self.state[k].custom = true
     end
 
@@ -93,7 +93,8 @@ function SetDefaults:init()
     }
 
     local i = 0
-    for k, v in ffiUtil.orderedPairs(self.defaults) do
+    for k, t in ffiUtil.orderedPairs(self.state) do
+        local v = t.value
         i = i + 1
         self.state[k].idx = i
         local value_type = type(v)
@@ -101,13 +102,13 @@ function SetDefaults:init()
             local editBoolean = function()
                 self.set_dialog = InputDialog:new{
                     title = k,
-                    input = tostring(self.defaults[k]),
+                    input = tostring(self.state[k].value),
                     buttons = {
                         {
                             cancel_button,
                             {
                                 text = _("Default"),
-                                enabled = self.defaults[k] ~= self.state[k].default_value,
+                                enabled = self.state[k].value ~= self.state[k].default_value,
                                 callback = function()
                                     self:close()
                                     self:update_menu_entry(k, self.state[k].default_value, value_type)
@@ -139,14 +140,14 @@ function SetDefaults:init()
             end
 
             table.insert(self.menu_entries, {
-                text = self:gen_menu_entry(k, self.defaults[k], value_type),
+                text = self:gen_menu_entry(k, self.state[k].value, value_type),
                 bold = self.state[k].custom,
                 callback = editBoolean
             })
         elseif value_type == "table" then
             local editTable = function()
                 local fields = {}
-                for key, value in ffiUtil.orderedPairs(self.defaults[k]) do
+                for key, value in ffiUtil.orderedPairs(self.state[k].value) do
                     table.insert(fields, {
                         text = tostring(key) .. " = " .. tostring(value),
                         input_type = type(value),
@@ -163,7 +164,7 @@ function SetDefaults:init()
                             cancel_button,
                             {
                                 text = _("Default"),
-                                enabled = not util.tableEquals(self.defaults[k], self.state[k].default_value),
+                                enabled = not util.tableEquals(self.state[k].value, self.state[k].default_value),
                                 callback = function()
                                     self:close()
                                     self:update_menu_entry(k, self.state[k].default_value, value_type)
@@ -192,7 +193,7 @@ function SetDefaults:init()
             end
 
             table.insert(self.menu_entries, {
-                text = self:gen_menu_entry(k, self.defaults[k], value_type),
+                text = self:gen_menu_entry(k, self.state[k].value, value_type),
                 bold = self.state[k].custom,
                 callback = editTable
             })
@@ -200,13 +201,13 @@ function SetDefaults:init()
             local editNumStr = function()
                 self.set_dialog = InputDialog:new{
                     title = k,
-                    input = tostring(self.defaults[k]),
+                    input = tostring(self.state[k].value),
                     buttons = {
                         {
                             cancel_button,
                             {
                                 text = _("Default"),
-                                enabled = self.defaults[k] ~= self.state[k].default_value,
+                                enabled = self.state[k].value ~= self.state[k].default_value,
                                 callback = function()
                                     self:close()
                                     self:update_menu_entry(k, self.state[k].default_value, value_type)
@@ -232,7 +233,7 @@ function SetDefaults:init()
             end
 
             table.insert(self.menu_entries, {
-                text = self:gen_menu_entry(k, self.defaults[k], value_type),
+                text = self:gen_menu_entry(k, self.state[k].value, value_type),
                 bold = self.state[k].custom,
                 callback = editNumStr
             })
@@ -270,7 +271,7 @@ end
 
 function SetDefaults:update_menu_entry(k, v, v_type)
     local idx = self.state[k].idx
-    self.defaults[k] = v
+    self.state[k].value = v
     self.state[k].dirty = true
     self.settings_changed = true
     self.menu_entries[idx].text = self:gen_menu_entry(k, v, v_type)
@@ -286,9 +287,9 @@ function SetDefaults:saveSettings()
     self.menu_entries = {}
 
     -- Update dirty keys for real
-    for k, v in pairs(self.defaults) do
-        if self.state[k].dirty then
-            G_defaults:saveSetting(k, v)
+    for k, t in pairs(self.state) do
+        if t.dirty then
+            G_defaults:saveSetting(k, t.value)
         end
     end
 
@@ -298,7 +299,6 @@ function SetDefaults:saveSettings()
         text = _("Default settings saved."),
     })
     self.settings_changed = false
-    self.defaults = {}
     self.state = {}
 end
 
@@ -323,7 +323,6 @@ function SetDefaults:saveBeforeExit(callback)
             cancel_callback = function()
                 logger.info("discard defaults")
                 self.settings_changed = false
-                self.defaults = {}
                 self.state = {}
             end,
         })
