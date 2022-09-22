@@ -1,5 +1,5 @@
 --[[--
-Subclass of LuaSettings dedicated to handle the legacy global constants.
+Subclass of LuaSettings dedicated to handling the legacy global constants.
 ]]
 
 local DataStorage = require("datastorage")
@@ -11,8 +11,8 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 local LuaDefaults = LuaSettings:new{
-    ro = nil,
-    rw = nil,
+    ro = nil, -- will contain the defaults.lua k/v pairs (const)
+    rw = nil, -- will only contain user-modified k/v pairs
 }
 
 --- Opens a settings file.
