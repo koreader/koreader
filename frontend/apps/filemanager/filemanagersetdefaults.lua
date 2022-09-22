@@ -145,6 +145,7 @@ function SetDefaults:init()
                 for key, value in ffiUtil.orderedPairs(self.defaults[k]) do
                     table.insert(fields, {
                         text = tostring(key) .. " = " .. tostring(value),
+                        input_type = type(value),
                         hint = "",
                         padding = Screen:scaleBySize(2),
                         margin = Screen:scaleBySize(2),
