@@ -91,14 +91,14 @@ function SysfsLight:setNaturalBrightness(brightness, warmth)
         if brightness > 0 then
             -- On Nickel, the values for white/red/green are roughly linearly dependent
             -- on the 4th root of brightness and warmth.
-            white = math.min(self.white_gain * math.pow(brightness, self.exponent) *
-                             math.pow(100 - warmth, self.exponent) + self.white_offset, 255)
+            white = math.min(self.white_gain * brightness^self.exponent *
+                             (100 - warmth)^self.exponent + self.white_offset, 255)
         end
         if warmth > 0 then
-            red = math.min(self.red_gain * math.pow(brightness, self.exponent) *
-                           math.pow(warmth, self.exponent) + self.red_offset, 255)
-            green = math.min(self.green_gain * math.pow(brightness, self.exponent) *
-                             math.pow(warmth, self.exponent) + self.green_offset, 255)
+            red = math.min(self.red_gain * brightness^self.exponent *
+                           warmth^self.exponent + self.red_offset, 255)
+            green = math.min(self.green_gain * brightness^self.exponent *
+                             warmth^self.exponent + self.green_offset, 255)
         end
 
         white = math.max(white, 0)

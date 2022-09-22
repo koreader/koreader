@@ -384,7 +384,7 @@ function ReaderScrolling:_setupAction()
         end
 
         -- Decrease velocity at each step
-        self._velocity = self._velocity * math.pow(self.scroll_friction, self._inertial_scroll_interval)
+        self._velocity = self._velocity * self.scroll_friction^self._inertial_scroll_interval
         local dist = math.floor(self._velocity * self._inertial_scroll_interval)
         if math.abs(dist) < self.end_scroll_dist then
             -- Decrease it even more so scrolling stops sooner
