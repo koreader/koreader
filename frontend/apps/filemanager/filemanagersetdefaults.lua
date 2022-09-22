@@ -9,7 +9,8 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util = require("ffi/util")
+local ffiUtil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 
@@ -87,7 +88,7 @@ function SetDefaults:init()
     }
 
     local i = 0
-    for k, v in util.orderedPairs(self.defaults) do
+    for k, v in ffiUtil.orderedPairs(self.defaults) do
         i = i + 1
         self.state[k].idx = i
         local setting_type = type(v)
@@ -138,7 +139,7 @@ function SetDefaults:init()
         elseif setting_type == "table" then
             local editTable = function()
                 local fields = {}
-                for key, value in util.orderedPairs(v) do
+                for key, value in ffiUtil.orderedPairs(v) do
                     table.insert(fields, {
                         text = tostring(key) .. " = " .. tostring(value),
                         hint = "",
