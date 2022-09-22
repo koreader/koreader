@@ -91,8 +91,8 @@ function SetDefaults:init()
     for k, v in ffiUtil.orderedPairs(self.defaults) do
         i = i + 1
         self.state[k].idx = i
-        local setting_type = type(v)
-        if setting_type == "boolean" then
+        local value_type = type(v)
+        if value_type == "boolean" then
             local editBoolean = function()
                 self.set_dialog = InputDialog:new{
                     title = k,
@@ -105,7 +105,7 @@ function SetDefaults:init()
                                 enabled = self.defaults[k] ~= v,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, v, v, setting_type)
+                                    self:update_menu_entry(k, v, v, value_type)
                                 end
                             },
                             {
@@ -113,7 +113,7 @@ function SetDefaults:init()
                                 enabled = true,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, true, v, setting_type)
+                                    self:update_menu_entry(k, true, v, value_type)
                                 end
                             },
                             {
@@ -121,12 +121,12 @@ function SetDefaults:init()
                                 enabled = true,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, false, v, setting_type)
+                                    self:update_menu_entry(k, false, v, value_type)
                                 end
                             },
                         },
                     },
-                    input_type = setting_type,
+                    input_type = value_type,
                     width = self.dialog_width,
                 }
                 UIManager:show(self.set_dialog)
@@ -134,11 +134,11 @@ function SetDefaults:init()
             end
 
             table.insert(self.menu_entries, {
-                text = self:gen_menu_entry(k, self.defaults[k], setting_type),
+                text = self:gen_menu_entry(k, self.defaults[k], value_type),
                 bold = self.state[k].custom,
                 callback = editBoolean
             })
-        elseif setting_type == "table" then
+        elseif value_type == "table" then
             local editTable = function()
                 local fields = {}
                 for key, value in ffiUtil.orderedPairs(self.defaults[k]) do
@@ -160,7 +160,7 @@ function SetDefaults:init()
                                 enabled = not util.tableEquals(v, self.defaults[k]),
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, v, v, setting_type)
+                                    self:update_menu_entry(k, v, v, value_type)
                                 end
                             },
                             {
@@ -174,7 +174,7 @@ function SetDefaults:init()
                                         local key, value = field:match("^[^= ]+"), field:match("[^= ]+$")
                                         new_table[tonumber(key) or key] = tonumber(value) or value
                                     end
-                                    self:update_menu_entry(k, new_table, v, setting_type)
+                                    self:update_menu_entry(k, new_table, v, value_type)
                                 end,
                             },
                         },
@@ -186,7 +186,7 @@ function SetDefaults:init()
             end
 
             table.insert(self.menu_entries, {
-                text = self:gen_menu_entry(k, self.defaults[k], setting_type),
+                text = self:gen_menu_entry(k, self.defaults[k], value_type),
                 bold = self.state[k].custom,
                 callback = editTable
             })
@@ -203,7 +203,7 @@ function SetDefaults:init()
                                 enabled = self.defaults[k] ~= v,
                                 callback = function()
                                     self:close()
-                                    self:update_menu_entry(k, v, v, setting_type)
+                                    self:update_menu_entry(k, v, v, value_type)
                                 end
                             },
                             {
@@ -213,12 +213,12 @@ function SetDefaults:init()
                                 callback = function()
                                     self:close()
                                     local new_value = self.set_dialog:getInputValue()
-                                    self:update_menu_entry(k, new_value, v, setting_type)
+                                    self:update_menu_entry(k, new_value, v, value_type)
                                 end,
                             },
                         },
                     },
-                    input_type = setting_type,
+                    input_type = value_type,
                     width = self.dialog_width,
                 }
                 UIManager:show(self.set_dialog)
@@ -226,7 +226,7 @@ function SetDefaults:init()
             end
 
             table.insert(self.menu_entries, {
-                text = self:gen_menu_entry(k, self.defaults[k], setting_type),
+                text = self:gen_menu_entry(k, self.defaults[k], value_type),
                 bold = self.state[k].custom,
                 callback = editNumStr
             })
@@ -249,11 +249,11 @@ function SetDefaults:ConfirmSave()
     })
 end
 
-function SetDefaults:gen_menu_entry(k, v, t)
+function SetDefaults:gen_menu_entry(k, v, v_type)
     local ret = k .. " = "
-    if t == "boolean" then
+    if v_type == "boolean" then
         return ret .. tostring(v)
-    elseif t == "table" then
+    elseif v_type == "table" then
         return ret .. "{...}"
     elseif tonumber(v) then
         return ret .. tostring(tonumber(v))
@@ -262,13 +262,13 @@ function SetDefaults:gen_menu_entry(k, v, t)
     end
 end
 
-function SetDefaults:update_menu_entry(k, v, default, t)
+function SetDefaults:update_menu_entry(k, v, default_v, v_type)
     local idx = self.state[k].idx
     self.defaults[k] = v
     self.state[k].dirty = true
     self.settings_changed = true
-    self.menu_entries[idx].text = self:gen_menu_entry(k, v, t)
-    if util.tableEquals(default, v) then
+    self.menu_entries[idx].text = self:gen_menu_entry(k, v, v_type)
+    if util.tableEquals(default_v, v) then
         self.menu_entries[idx].bold = false
     else
         self.menu_entries[idx].bold = true
