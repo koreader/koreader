@@ -241,14 +241,14 @@ end
 function SetDefaults:update_menu_entry(k, v, default, t)
     local idx = self.state[k].idx
     self.defaults[k] = v
+    self.state[k].dirty = true
+    self.settings_changed = true
+    self.menu_entries[idx].text = self:gen_menu_entry(k, v, t)
     if util.tableEquals(default, v) then
         self.menu_entries[idx].bold = false
     else
         self.menu_entries[idx].bold = true
     end
-    self.state[k].dirty = true
-    self.settings_changed = true
-    self.menu_entries[idx].text = self:gen_menu_entry(k, v, t)
     self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
 end
 
