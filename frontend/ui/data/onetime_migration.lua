@@ -452,11 +452,10 @@ if last_migration_date < 20220922 then
 
     local defaults_path = DataStorage:getDataDir() .. "/defaults.persistent.lua"
     local defaults = {}
-    local load_defaults, err = loadfile(defaults_path)
+    local load_defaults, err = loadfile(defaults_path, "t", defaults)
     if not load_defaults then
         logger.warn("loadfile:", err)
     else
-        setfenv(load_defaults, defaults)
         load_defaults()
     end
 

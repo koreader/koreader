@@ -69,10 +69,9 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
 
     local ok, err
     if lfs.attributes(new.file, "mode") == "file" then
-        ok, err = loadfile(new.file)
+        ok, err = loadfile(new.file, "t", data_env)
         if ok then
             logger.dbg("data is read from", new.file)
-            setfenv(ok, data_env)
             ok()
         else
             logger.dbg(new.file, "is invalid, removed.", err)
@@ -83,10 +82,9 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
         for i=1, self.max_backups, 1 do
             local backup_file = new.file..".old."..i
             if lfs.attributes(backup_file, "mode") == "file" then
-                ok, err = loadfile(backup_file)
+                ok, err = loadfile(backup_file, "t", data_env)
                 if ok then
                     logger.dbg("data is read from", backup_file)
-                    setfenv(ok, data_env)
                     ok()
                     break
                 else
