@@ -36,7 +36,8 @@ ReaderActivityIndicator = EventListener:new{}
 function ReaderActivityIndicator:isStub() return false end
 
 function ReaderActivityIndicator:init()
-    if (pcall(require, "liblipclua")) then
+    local ok, lipc = pcall(require, "liblipclua")
+    if ok then
         self.lipc_handle = lipc.init("com.github.koreader.activityindicator")
     end
 end

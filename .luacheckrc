@@ -10,7 +10,6 @@ globals = {
 
 read_globals = {
     "_ENV",
-    "lipc",
 }
 
 exclude_files = {
