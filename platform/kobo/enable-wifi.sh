@@ -45,16 +45,41 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
         esac
     fi
 
+    VENDOR_WIFI_PARM=""
+    case "${WIFI_MODULE}" in
+        "moal" )
+            # NXP's moal frontend is used to choose between client, AP & WiFi DIRECT mode.
+            VENDOR_WIFI_PARM="mod_para=nxp/wifi_mod_para_sd8987.conf"
+            ;;
+    esac
+
+    WIFI_PARM=""
+    if [ -n "${WIFI_COUNTRY_CODE_PARM}" ]; then
+        if [ -n "${WIFI_PARM}" ] then
+            WIFI_PARM="${WIFI_PARM} ${WIFI_COUNTRY_CODE_PARM}"
+        else
+            WIFI_PARM="${WIFI_COUNTRY_CODE_PARM}"
+        fi
+    fi
+    if [ -n "${VENDOR_WIFI_PARM}" ]; then
+        if [ -n "${WIFI_PARM}" ] then
+            WIFI_PARM="${WIFI_PARM} ${VENDOR_WIFI_PARM}"
+        else
+            WIFI_PARM="${VENDOR_WIFI_PARM}"
+        fi
+    fi
+
     if [ -e "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko" ]; then
-        if [ -n "${WIFI_COUNTRY_CODE_PARM}" ]; then
-            insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko" "${WIFI_COUNTRY_CODE_PARM}"
+        if [ -n "${WIFI_PARM}" ]; then
+            # shellcheck disable=SC2086
+            insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko" ${WIFI_PARM}
         else
             insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
         fi
     elif [ -e "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" ]; then
         # NOTE: Modules are unsorted on Mk. 8
-        if [ -n "${WIFI_COUNTRY_CODE_PARM}" ]; then
-            insmod "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" "${WIFI_COUNTRY_CODE_PARM}"
+        if [ -n "${WIFI_PARM}" ]; then
+            insmod "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" "${WIFI_PARM}"
         else
             insmod "/drivers/${PLATFORM}/${WIFI_MODULE}.ko"
         fi
