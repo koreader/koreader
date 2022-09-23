@@ -736,7 +736,7 @@ function TextBoxWidget:_shapeLine(line)
 
     line.x_start = pen_x
     local prev_cluster_start_xglyph
-    for _, xglyph in ipairs(xshaping) do
+    for i, xglyph in ipairs(xshaping) do
         xglyph.x0 = pen_x
         pen_x = pen_x + xglyph.x_advance -- advance from Harfbuzz
         if xglyph.can_extend or (use_can_extend_fallback and xglyph.can_extend_fallback) then
@@ -1287,7 +1287,7 @@ function TextBoxWidget:scrollLines(nb_lines)
     self:free(false)
     self:_updateLayout()
     if self.editable then
-        local _, y = self:_getXYForCharPos()
+        local x, y = self:_getXYForCharPos() -- luacheck: no unused
         if y < 0 or y >= self.text_height then
             -- move cursor to first line of visible area
             local ln = self.height == nil and 1 or self.virtual_line_num
@@ -1407,7 +1407,7 @@ function TextBoxWidget:_getXYForCharPos(charpos)
                 -- Find the last char that is really part of this line
                 charpos = line.end_offset
             end
-            for _, xglyph in ipairs(line.xglyphs) do
+            for i, xglyph in ipairs(line.xglyphs) do
                 if xglyph.is_cluster_start then -- ignore non-start cluster glyphs
                     if charpos >= xglyph.text_index and charpos < xglyph.text_index + xglyph.cluster_len then
                         -- Correct glyph found
@@ -1503,7 +1503,7 @@ function TextBoxWidget:getCharPosAtXY(x, y)
             end
         end
         if line.xglyphs then -- non-empty line
-            for _, xglyph in ipairs(line.xglyphs) do
+            for i, xglyph in ipairs(line.xglyphs) do
                 if xglyph.is_cluster_start then -- ignore non-start cluster glyphs
                     if x < xglyph.x1 then
                         if xglyph.cluster_len <= 1 then

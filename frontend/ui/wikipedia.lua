@@ -893,7 +893,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
 ]], page_cleaned, lang:upper(), bookid, lang, koreader_version, meta_cover))
     -- images files
     if include_images then
-        for __, img in ipairs(images) do
+        for inum, img in ipairs(images) do
             table.insert(content_opf_parts, string.format([[    <item id="%s" href="%s" media-type="%s"/>%s]], img.imgid, img.imgpath, img.mimetype, "\n"))
         end
     end
@@ -1144,7 +1144,7 @@ table {
     table.insert(toc_ncx_parts, string.format([[<navPoint id="navpoint-%s" playOrder="%s"><navLabel><text>%s</text></navLabel><content src="content.html"/>]], num, num, page_cleaned))
     table.insert(toc_ncx_parts, np_end)
     -- Wikipedia sections items seem to be already sorted by index, so no need to sort
-    for __, s in ipairs(sections) do
+    for isec, s in ipairs(sections) do
         num = num + 1
         -- Some chars in headings are converted to html entities in the
         -- wikipedia-generated HTML. We need to do the same in TOC links

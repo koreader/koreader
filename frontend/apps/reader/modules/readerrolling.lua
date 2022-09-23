@@ -1274,7 +1274,7 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
         -- Highlights
         if self.view.highlight and self.view.highlight.saved then
             local slots = { "pos0", "pos1" }
-            for _, items in pairs(self.view.highlight.saved) do
+            for page, items in pairs(self.view.highlight.saved) do
                 if items and #items > 0 then
                     for _, highlight in ipairs(items) do
                         for _, slot in ipairs(slots) do

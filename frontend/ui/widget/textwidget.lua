@@ -358,7 +358,7 @@ function TextWidget:paintTo(bb, x, y)
     end
     local pen_x = 0
     local baseline = self.forced_baseline or self._baseline_h
-    for _, xglyph in ipairs(self._xshaping) do
+    for i, xglyph in ipairs(self._xshaping) do
         if pen_x >= text_width then
             break
         end

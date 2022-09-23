@@ -9,7 +9,7 @@ local T = ffiUtil.template
 -- Get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
     local t = {}
-    for __, v in ipairs(numbers) do
+    for i, v in ipairs(numbers) do
         -- We turn 17.5 into 17<sup>5</sup>
         table.insert(t, tostring(v%1==0 and v or (v-v%1).."⁵"))
     end
