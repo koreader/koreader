@@ -55,14 +55,14 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
 
     WIFI_PARM=""
     if [ -n "${WIFI_COUNTRY_CODE_PARM}" ]; then
-        if [ -n "${WIFI_PARM}" ] then
+        if [ -n "${WIFI_PARM}" ]; then
             WIFI_PARM="${WIFI_PARM} ${WIFI_COUNTRY_CODE_PARM}"
         else
             WIFI_PARM="${WIFI_COUNTRY_CODE_PARM}"
         fi
     fi
     if [ -n "${VENDOR_WIFI_PARM}" ]; then
-        if [ -n "${WIFI_PARM}" ] then
+        if [ -n "${WIFI_PARM}" ]; then
             WIFI_PARM="${WIFI_PARM} ${VENDOR_WIFI_PARM}"
         else
             WIFI_PARM="${VENDOR_WIFI_PARM}"
@@ -79,7 +79,8 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     elif [ -e "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" ]; then
         # NOTE: Modules are unsorted on Mk. 8
         if [ -n "${WIFI_PARM}" ]; then
-            insmod "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" "${WIFI_PARM}"
+            # shellcheck disable=SC2086
+            insmod "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" ${WIFI_PARM}
         else
             insmod "/drivers/${PLATFORM}/${WIFI_MODULE}.ko"
         fi
