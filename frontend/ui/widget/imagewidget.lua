@@ -33,7 +33,7 @@ local logger = require("logger")
 local function get_dpi_scale()
     local size_scale = math.min(Screen:getWidth(), Screen:getHeight()) / 600
     local dpi_scale = Screen:scaleByDPI(1)
-    return math.max(0, math.log((size_scale+dpi_scale)/2)/0.69)^2
+    return math.max(0, (math.log((size_scale+dpi_scale)/2)/0.69)^2)
 end
 local DPI_SCALE = get_dpi_scale()
 
