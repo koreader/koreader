@@ -364,6 +364,7 @@ local KoboEuropa = Kobo:new{
     isSunxi = yes,
     hasEclipseWfm = yes,
     canToggleChargingLED = yes,
+    led_uses_channel_3 = true,
     hasFrontlight = yes,
     hasGSensor = yes,
     canToggleGSensor = yes,
@@ -383,6 +384,7 @@ local KoboCadmus = Kobo:new{
     isSunxi = yes,
     hasEclipseWfm = yes,
     canToggleChargingLED = yes,
+    led_uses_channel_3 = true,
     hasFrontlight = yes,
     hasKeys = yes,
     hasGSensor = yes,
@@ -447,6 +449,7 @@ local KoboGoldfinch = Kobo:new{
     isMk7 = yes,
     hasEclipseWfm = yes,
     canToggleChargingLED = yes,
+    led_uses_channel_3 = true,
     hasFrontlight = yes,
     hasGSensor = yes,
     canToggleGSensor = yes,
@@ -1163,13 +1166,13 @@ function Kobo:toggleChargingLED(toggle)
         return false
     end
 
-    -- c.f., strace -fittvyy -e trace=ioctl,file,signal,ipc,desc -s 256 -o /tmp/nickel.log -p $(pidof -s nickel) &
+    -- c.f., strace -fittTvyy -e trace=ioctl,file,signal,ipc,desc -s 256 -o /tmp/nickel.log -p $(pidof -s nickel) &
     -- This was observed on a Forma, so I'm mildly hopeful that it's safe on other Mk. 7 devices ;).
     -- NOTE: ch stands for channel, cur for current, dc for duty cycle. c.f., the driver source.
     if toggle == true then
         -- NOTE: Technically, Nickel forces a toggle off before that, too.
         --       But since we do that on startup, it shouldn't be necessary here...
-        if self:isSunxi() then
+        if self.led_uses_channel_3 then
             f:write("ch 3")
             f:flush()
             f:write("cur 1")
