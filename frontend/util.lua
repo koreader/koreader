@@ -1400,7 +1400,7 @@ function util.checkLuaSyntax(lua_text)
     end
     -- Replace: [string "blah blah..."]:3: '=' expected near '123'
     -- with: Line 3: '=' expected near '123'
-    err = err:gsub("%[string \".-%\"]:", "Line ")
+    err = err and err:gsub("%[string \".-%\"]:", "Line ")
     return err
 end
 
