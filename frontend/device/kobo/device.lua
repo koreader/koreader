@@ -448,16 +448,24 @@ local KoboGoldfinch = Kobo:new{
     hasEclipseWfm = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
+    hasGSensor = yes,
+    canToggleGSensor = yes,
+    misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
-    --- @fixme: to be confirmed!
     hasNaturalLight = yes,
+    --- @fixme: NTXHWConfig says no MSP430 at all, and while it appears to be an LM3630, no mixer? Check if Nickel uses ntx_io ioctls...
+    --          Barring that, white: /sys/class/leds/aw99703-bl_FL1/brightness
+    --                       orange: /sys/class/leds/aw99703-bl_FL2/brightness
+    --          But I'm assuming the mix table is different than on the Aura One...
     frontlight_settings = {
-        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness", -- The path exists nonetheless :?
         frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
         nl_min = 0,
         nl_max = 10,
         nl_inverted = true,
     },
+    battery_sysfs = "/sys/class/power_supply/battery",
+    power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event",
 }
 
 function Kobo:setupChargingLED()
