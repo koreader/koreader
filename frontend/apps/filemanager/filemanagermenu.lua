@@ -424,9 +424,6 @@ To:
         callback = function()
             SetDefaults:ConfirmEdit()
         end,
-        hold_callback = function()
-            SetDefaults:ConfirmSave()
-        end,
     }
     self.menu_items.plugin_management = {
         text = _("Plugin management"),

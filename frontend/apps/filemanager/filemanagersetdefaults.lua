@@ -249,15 +249,6 @@ function SetDefaults:close()
     UIManager:close(self.set_dialog)
 end
 
-function SetDefaults:ConfirmSave()
-    UIManager:show(ConfirmBox:new{
-        text = _('Are you sure you want to save the settings to "defaults.persistent.lua"?'),
-        ok_callback = function()
-            self:saveSettings()
-        end,
-    })
-end
-
 function SetDefaults:gen_menu_entry(k, v, v_type)
     local ret = k .. " = "
     if v_type == "boolean" then
