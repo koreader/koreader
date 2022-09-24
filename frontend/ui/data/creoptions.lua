@@ -586,12 +586,15 @@ Note that your selected font size is not affected by this setting.]]),
                 name_text_hold_callback = optionsutil.showValues,
                 more_options = true,
                 more_options_param = {
-                    -- values table taken from  crengine/crengine/Tools/GammaGen/gammagen.cpp
+                    -- Values table taken from crengine/crengine/Tools/GammaGen/gammagen.cpp.
+                    -- crengine counts the index of the table starting from 0.
+                    -- Index is stored in the settings and passed to crengine as-is.
+                    -- ConfigDialog adds value_table_shift to the index to display the value from the table.
                     value_table = { 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9,
                                     0.95, 0.98, 1, 1.02, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45,
                                     1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9,
                                     3, 3.5, 4, 4.5, 5, 5.5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 },
-                    value_table_shift = 1, -- crengine counts index from 0
+                    value_table_shift = 1,
                 },
             },
             {
