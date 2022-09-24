@@ -15,9 +15,10 @@ local _ = require("gettext")
 local Screen = require("device").screen
 
 local SetDefaults = InputContainer:new{
-    state = {},
-    menu_entries = {},
-    defaults_menu = {},
+    state = nil,
+    menu_entries = nil,
+    defaults_menu = nil,
+    set_dialog = nil,
     settings_changed = false,
 }
 
@@ -41,6 +42,7 @@ function SetDefaults:init()
     self.dialog_width = math.floor(math.min(self.screen_width, self.screen_height) * 0.95)
 
     -- Keep track of what's an actual default, and what's been customized without actually touching the real data yet...
+    self.state = {}
     local ro_defaults, rw_defaults = G_defaults:getDataTables()
     for k, v in pairs(ro_defaults) do
         self.state[k] = {
@@ -285,8 +287,6 @@ function SetDefaults:update_menu_entry(k, v, v_type)
 end
 
 function SetDefaults:saveSettings()
-    self.menu_entries = {}
-
     -- Update dirty keys for real
     for k, t in pairs(self.state) do
         if t.dirty then
@@ -299,8 +299,14 @@ function SetDefaults:saveSettings()
     UIManager:show(InfoMessage:new{
         text = _("Default settings saved."),
     })
+end
+
+function SetDefaults:dtor()
+    self.state = nil
+    self.menu_entries = nil
+    self.defaults_menu = nil
+    self.set_dialog = nil
     self.settings_changed = false
-    self.state = {}
 end
 
 function SetDefaults:saveBeforeExit(callback)
@@ -314,6 +320,7 @@ function SetDefaults:saveBeforeExit(callback)
             ok_text = save_text,
             ok_callback = function()
                 self:saveSettings()
+                self:dtor()
                 if Device:canRestart() then
                     UIManager:restartKOReader()
                 else
@@ -323,8 +330,7 @@ function SetDefaults:saveBeforeExit(callback)
             cancel_text = _("Discard changes"),
             cancel_callback = function()
                 logger.info("discard defaults")
-                self.settings_changed = false
-                self.state = {}
+                self:dtor()
             end,
         })
     end
