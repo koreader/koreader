@@ -280,6 +280,7 @@ function SetDefaults:update_menu_entry(k, v, v_type)
     else
         self.menu_entries[idx].bold = true
     end
+    self.set_dialog = nil
     self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
 end
 
