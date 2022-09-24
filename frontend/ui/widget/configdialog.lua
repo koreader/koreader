@@ -1252,8 +1252,13 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     value_hold_step = values[2] - values[1]
                 end
                 local curr_items = self.configurable[name]
-                local value_index = more_options_param.value_table and curr_items
+                local value_index
                 local default_value = G_reader_settings:readSetting(self.config_options.prefix.."_"..name)
+                if more_options_param.value_table then
+                    local table_shift = more_options_param.value_table_shift or 0
+                    value_index = curr_items + table_shift
+                    default_value = default_value + table_shift
+                end
                 widget = SpinWidget:new{
                     width_factor = more_options_param.widget_width_factor,
                     title_text =  name_text or _("Set value"),
@@ -1276,7 +1281,13 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                         end
                     end,
                     callback = function(spin)
-                        local spin_value = more_options_param.value_table and spin.value_index or spin.value
+                        local spin_value
+                        if more_options_param.value_table then
+                            local table_shift = more_options_param.value_table_shift or 0
+                            spin_value = spin.value_index - table_shift
+                        else
+                            spin_value = spin.value
+                        end
                         self:onConfigChoice(name, spin_value)
                         if event then
                             -- Repainting (with when_applied_callback) if hide_on_picker_show
@@ -1305,10 +1316,16 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             text = T(_("Set default %1 to %2?"), (name_text or ""), value_string),
                             ok_text = T(_("Set as default")),
                             ok_callback = function()
-                                local setting_name = self.config_options.prefix.."_"..name
-                                local spin_value = more_options_param.value_table and spin.value_index or spin.value
-                                G_reader_settings:saveSetting(setting_name, spin_value)
-                                widget.default_value = spin_value
+                                local spin_value
+                                if more_options_param.value_table then
+                                    local table_shift = more_options_param.value_table_shift or 0
+                                    spin_value = spin.value_index - table_shift
+                                    widget.default_value = spin.value_index
+                                else
+                                    spin_value = spin.value
+                                    widget.default_value = spin.value
+                                end
+                                G_reader_settings:saveSetting(self.config_options.prefix.."_"..name, spin_value)
                                 widget:update()
                                 self:update()
                                 UIManager:setDirty(self, function()
