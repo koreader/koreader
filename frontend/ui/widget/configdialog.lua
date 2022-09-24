@@ -1150,12 +1150,10 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                 -- (No support for value_table - add it if needed)
                 local curr_values, default_values
                 if more_options_param.names then -- allows managing 2 different settings
-                    local name1 = more_options_param.names[1]
-                    local name2 = more_options_param.names[2]
-                    curr_values = { self.configurable[name1],
-                                    self.configurable[name2] }
-                    default_values = { G_reader_settings:readSetting(self.config_options.prefix.."_"..name1),
-                                       G_reader_settings:readSetting(self.config_options.prefix.."_"..name2) }
+                    curr_values = { self.configurable[more_options_param.names[1]],
+                                    self.configurable[more_options_param.names[2]] }
+                    default_values = { G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[1]),
+                                       G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[2]) }
                 else
                     curr_values = self.configurable[name]
                     default_values = G_reader_settings:readSetting(self.config_options.prefix.."_"..name)
@@ -1191,8 +1189,8 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     callback = function(left_value, right_value)
                         local value_tables = { left_value, right_value }
                         if more_options_param.names then
-                            self:onConfigChoice(name1, left_value)
-                            self:onConfigChoice(name2, right_value)
+                            self:onConfigChoice(more_options_param.names[1], left_value)
+                            self:onConfigChoice(more_options_param.names[2], right_value)
                         else
                             self:onConfigChoice(name, value_tables)
                         end
@@ -1226,9 +1224,9 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             ok_callback = function()
                                 local setting_name
                                 if more_options_param.names then
-                                    setting_name = self.config_options.prefix.."_"..name1
+                                    setting_name = self.config_options.prefix.."_"..more_options_param.names[1]
                                     G_reader_settings:saveSetting(setting_name, left_value)
-                                    setting_name = self.config_options.prefix.."_"..name2
+                                    setting_name = self.config_options.prefix.."_"..more_options_param.names[2]
                                     G_reader_settings:saveSetting(setting_name, right_value)
                                 else
                                     setting_name = self.config_options.prefix.."_"..name
