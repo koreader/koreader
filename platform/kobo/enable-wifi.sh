@@ -23,7 +23,7 @@ esac
 
 # Load wifi modules and enable wifi.
 if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
-    # 208 is CM_WIFI_CTRL; and, yes, we do mean 0 as it's *NOT* used.
+    # 208 is CM_WIFI_CTRL; and, yes, we do mean 0 as it is *NOT* used.
     ./luajit frontend/device/kobo/ntx_io.lua 208 0
 else
     if ! grep -q "^sdio_wifi_pwr" "/proc/modules"; then
@@ -44,6 +44,7 @@ else
 fi
 # Moar sleep!
 usleep 250000
+
 # NOTE: Used to be exported in WIFI_MODULE_PATH before FW 4.23
 if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     # Set the Wi-Fi regulatory domain properly if necessary...
@@ -64,14 +65,15 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
             # NXP's driver for their 88W8987 RF SoC needs to be told what to choose between client, AP & WiFi DIRECT mode.
             VENDOR_WIFI_PARM="mod_para=nxp/wifi_mod_para_sd8987.conf"
 
-            # And, of cours,e it has submodules for each of those three modes...
+            # And, of course, it requires a submodule...
             WIFI_DEP_MOD="mlan"
             if [ -e "/drivers/${PLATFORM}/wifi/${WIFI_DEP_MOD}.ko" ]; then
                 insmod "/drivers/${PLATFORM}/wifi/${WIFI_DEP_MOD}.ko"
             elif [ -e "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko" ]; then
                 insmod "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko"
             fi
-            usleep 250000
+            # Why, yes, Nickel does sleep for two whole seconds...
+            sleep 2
             ;;
     esac
 
@@ -108,12 +110,23 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
         fi
     fi
 fi
+
+WPA_SUPPLICANT_DRIVER="wext"
 # Race-y as hell, don't try to optimize this!
-sleep 1
+case "${WIFI_MODULE}" in
+    "moal")
+        WPA_SUPPLICANT_DRIVER="nl80211"
+        # Again, same sleepy time as Nickel...
+        sleep 2
+        ;;
+    *)
+        sleep 1
+        ;;
+esac
 
 ifconfig "${INTERFACE}" up
 [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" up
 
 pkill -0 wpa_supplicant ||
     env -u LD_LIBRARY_PATH \
-        wpa_supplicant -D wext -s -i "${INTERFACE}" -c /etc/wpa_supplicant/wpa_supplicant.conf -O /var/run/wpa_supplicant -B
+        wpa_supplicant -D "${WPA_SUPPLICANT_DRIVER}" -s -i "${INTERFACE}" -c /etc/wpa_supplicant/wpa_supplicant.conf -C /var/run/wpa_supplicant -B
