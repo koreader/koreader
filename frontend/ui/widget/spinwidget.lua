@@ -134,12 +134,28 @@ function SpinWidget:update(numberpicker_value, numberpicker_value_index)
                 unit = "\xE2\x80\xAF" .. self.unit -- use Narrow No-Break Space (NNBSP) here
             end
         end
+        local value
+        if self.default_text then
+            value = self.default_text
+        else
+            if self.value_table then
+                value = self.value_table[self.default_value]
+            else
+                value = self.default_value
+            end
+            if self.precision then
+                value = string.format(self.precision, value)
+            end
+        end
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Default value: %1%2"),
-                    self.precision and string.format(self.precision, self.default_value) or self.default_value, unit),
+                text = T(_("Default value: %1%2"), value, unit),
                 callback = function()
-                    value_widget.value = self.default_value
+                    if value_widget.value_table then
+                        value_widget.value_index = self.default_value
+                    else
+                        value_widget.value = self.default_value
+                    end
                     value_widget:update()
                 end,
             },
