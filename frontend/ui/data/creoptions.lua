@@ -576,11 +576,11 @@ Note that your selected font size is not affected by this setting.]]),
                 name = "font_gamma",
                 name_text = _("Contrast"),
                 buttonprogress = true,
-                default_value = 16, -- gamma = 1.0
+                default_value = 15, -- gamma = 1.0
                 default_pos = 2,
-                values = {11, 16, 26, 31, 37, 44, 50, 57},
+                values = {10, 15, 25, 30, 36, 43, 49, 56},
                 event = "SetFontGamma",
-                args = {11, 16, 26, 31, 37, 44, 50, 57},
+                args = {10, 15, 25, 30, 36, 43, 49, 56},
                 -- gamma values for these indexes are:
                 labels = {0.8, 1.0, 1.45, 1.90, 2.50, 4.0, 8.0, 15.0},
                 name_text_hold_callback = optionsutil.showValues,
@@ -591,6 +591,7 @@ Note that your selected font size is not affected by this setting.]]),
                                     0.95, 0.98, 1, 1.02, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45,
                                     1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9,
                                     3, 3.5, 4, 4.5, 5, 5.5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 },
+                    value_table_shift = 1, -- crengine counts index from 0
                 },
             },
             {
