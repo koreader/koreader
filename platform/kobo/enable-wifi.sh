@@ -15,9 +15,12 @@ done
 
 # Some platforms do *NOT* use sdio_wifi_pwr, even when it is physically there...
 SKIP_SDIO_PWR_MODULE=""
+# We also want to choose the wpa_supplicant driver depending on the module...
+WPA_SUPPLICANT_DRIVER="wext"
 case "${WIFI_MODULE}" in
     "moal")
         SKIP_SDIO_PWR_MODULE="1"
+        WPA_SUPPLICANT_DRIVER="nl80211"
         ;;
 esac
 
@@ -72,8 +75,9 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
             elif [ -e "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko" ]; then
                 insmod "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko"
             fi
-            # Why, yes, Nickel does sleep for two whole seconds...
-            sleep 2
+            # NOTE: Nickel sleeps for two whole seconds after each module loading.
+            #       Let's try our usual timing instead...
+            usleep 250000
             ;;
     esac
 
@@ -111,18 +115,9 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     fi
 fi
 
-WPA_SUPPLICANT_DRIVER="wext"
 # Race-y as hell, don't try to optimize this!
-case "${WIFI_MODULE}" in
-    "moal")
-        WPA_SUPPLICANT_DRIVER="nl80211"
-        # Again, same sleepy time as Nickel...
-        sleep 2
-        ;;
-    *)
-        sleep 1
-        ;;
-esac
+# NOTE: We're after a module insert, meaning Nickel sleeps for two whole seconds here.
+sleep 1
 
 ifconfig "${INTERFACE}" up
 [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" up
