@@ -200,10 +200,6 @@ if [ "${VIA_NICKEL}" = "true" ]; then
             ./luajit frontend/device/kobo/ntx_io.lua 126 0
         fi
     fi
-    if grep -q "^sdio_bt_pwr" "/proc/modules"; then
-        # And that's on NXP SoCs
-        rmmod sdio_bt_pwr
-    fi
 
     # Flush disks, might help avoid trashing nickel's DB...
     sync
