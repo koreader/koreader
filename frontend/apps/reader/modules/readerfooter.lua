@@ -2047,7 +2047,7 @@ function ReaderFooter:setTocMarkers(reset)
             self.progress_bar.ticks = {}
             if self.ui.toc then
                 -- filter the ticks to show only those in the current flow
-                for __, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
+                for n, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
                     if self.ui.document:getPageFlow(pageno) == flow then
                         table.insert(self.progress_bar.ticks, self.ui.document:getPageNumberInFlow(pageno))
                     end
@@ -2064,7 +2064,7 @@ function ReaderFooter:setTocMarkers(reset)
                 -- in scroll mode, convert pages to positions
                 if self.ui.toc then
                     self.progress_bar.ticks = {}
-                    for __, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
+                    for n, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
                         local idx = self.ui.toc:getTocIndexByPage(pageno)
                         local pos = self.ui.document:getPosFromXPointer(self.ui.toc.toc[idx].xpointer)
                         table.insert(self.progress_bar.ticks, pos)

@@ -7,7 +7,7 @@ describe("HTTP client module #notest #nocov", function()
         G_defaults:makeFalse("DUSE_TURBO_LIB")
     end)
     teardown(function()
-        G_defaults:makeFalse("DUSE_TURBO_LIB")
+        G_defaults:delSetting("DUSE_TURBO_LIB")
     end)
 
     local requests = 0
