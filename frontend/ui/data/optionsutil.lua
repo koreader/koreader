@@ -90,24 +90,8 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
         end
     elseif option.labels and option.values then
         if option.more_options_param and option.more_options_param.value_table then
-            if option.more_options_param.args_table then
-                for k,v in pairs(option.more_options_param.args_table) do
-                    if v == current then
-                        current = k
-                        break
-                    end
-                end
-            end
             current = option.more_options_param.value_table[current]
             if default then
-                if option.more_options_param.args_table then
-                    for k,v in pairs(option.more_options_param.args_table) do
-                        if v == default then
-                            default = k
-                            break
-                        end
-                    end
-                end
                 default = option.more_options_param.value_table[default]
             end
         else
