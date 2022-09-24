@@ -13,20 +13,33 @@ for fd in /proc/"$$"/fd/*; do
     fi
 done
 
-# Load wifi modules and enable wifi.
-if ! grep -q "^sdio_wifi_pwr" "/proc/modules"; then
-    if [ -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
-        # Handle the shitty DVFS switcheroo...
-        if [ -n "${CPUFREQ_DVFS}" ]; then
-            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-            echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-        fi
+# Some platforms do *NOT* use sdio_wifi_pwr, even when it is physically there...
+SKIP_SDIO_PWR_MODULE=""
+case "${WIFI_MODULE}" in
+    "moal")
+        SKIP_SDIO_PWR_MODULE="1"
+        ;;
+esac
 
-        insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
-    else
-        # Poke the kernel via ioctl on platforms without the dedicated power module...
-        # 208 is CM_WIFI_CTRL
-        ./luajit frontend/device/kobo/ntx_io.lua 208 1
+# Load wifi modules and enable wifi.
+if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
+    # 208 is CM_WIFI_CTRL; and, yes, we do mean 0 as it's *NOT* used.
+    ./luajit frontend/device/kobo/ntx_io.lua 208 0
+else
+    if ! grep -q "^sdio_wifi_pwr" "/proc/modules"; then
+        if [ -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+            # Handle the shitty DVFS switcheroo...
+            if [ -n "${CPUFREQ_DVFS}" ]; then
+                echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+            fi
+
+            insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
+        else
+            # Poke the kernel via ioctl on platforms without the dedicated power module...
+            # 208 is CM_WIFI_CTRL
+            ./luajit frontend/device/kobo/ntx_io.lua 208 1
+        fi
     fi
 fi
 # Moar sleep!
