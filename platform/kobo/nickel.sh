@@ -66,6 +66,16 @@ if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     usleep 250000
     rmmod "${WIFI_MODULE}"
 
+    case "${WIFI_MODULE}" in
+        "moal")
+            WIFI_DEP_MOD="mlan"
+            ;;
+    esac
+    if grep -q "^${WIFI_DEP_MOD}" "/proc/modules"; then
+        usleep 250000
+        rmmod "${WIFI_DEP_MOD}"
+    fi
+
     if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
         if [ -n "${CPUFREQ_DVFS}" ]; then
             echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"

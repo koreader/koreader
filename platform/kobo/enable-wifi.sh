@@ -50,6 +50,15 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
         "moal")
             # NXP's driver for their 88W8987 RF SoC needs to be told what to choose between client, AP & WiFi DIRECT mode.
             VENDOR_WIFI_PARM="mod_para=nxp/wifi_mod_para_sd8987.conf"
+
+            # And, of cours,e it has submodules for each of those three modes...
+            WIFI_DEP_MOD="mlan"
+            if [ -e "/drivers/${PLATFORM}/wifi/${WIFI_DEP_MOD}.ko" ]; then
+                insmod "/drivers/${PLATFORM}/wifi/${WIFI_DEP_MOD}.ko"
+            elif [ -e "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko" ]; then
+                insmod "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko"
+            fi
+            usleep 250000
             ;;
     esac
 

@@ -44,6 +44,18 @@ if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     usleep 250000
     rmmod "${WIFI_MODULE}"
 fi
+
+# Handle dependencies, if any
+case "${WIFI_MODULE}" in
+    "moal")
+        WIFI_DEP_MOD="mlan"
+        ;;
+esac
+if grep -q "^${WIFI_DEP_MOD}" "/proc/modules"; then
+    usleep 250000
+    rmmod "${WIFI_DEP_MOD}"
+fi
+
 if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
     # Handle the shitty DVFS switcheroo...
     if [ -n "${CPUFREQ_DVFS}" ]; then
