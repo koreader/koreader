@@ -116,7 +116,7 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
 fi
 
 # Race-y as hell, don't try to optimize this!
-# NOTE: We're after a module insert, meaning Nickel sleeps for two whole seconds here.
+# NOTE: We're after a module insert, meaning Nickel may sleep for two whole seconds here.
 sleep 1
 
 ifconfig "${INTERFACE}" up
