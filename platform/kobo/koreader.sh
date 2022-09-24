@@ -191,6 +191,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
 
     # If bluetooth is enabled, kill it.
     if [ -e "/sys/devices/platform/bt/rfkill/rfkill0/state" ]; then
+        # That's on sunxi, at least
         IFS= read -r bt_state <"/sys/devices/platform/bt/rfkill/rfkill0/state"
         if [ "${bt_state}" = "1" ]; then
             echo "0" >"/sys/devices/platform/bt/rfkill/rfkill0/state"
@@ -198,6 +199,10 @@ if [ "${VIA_NICKEL}" = "true" ]; then
             # Power the chip down
             ./luajit frontend/device/kobo/ntx_io.lua 126 0
         fi
+    fi
+    if grep -q "^sdio_bt_pwr" "/proc/modules"; then
+        # And that's on NXP SoCs
+        rmmod sdio_bt_pwr
     fi
 
     # Flush disks, might help avoid trashing nickel's DB...
