@@ -33,7 +33,7 @@ else
     rm -f "/tmp/resolv.ko"
 fi
 
-wpa_cli terminate
+wpa_cli -i "${INTERFACE}" terminate
 
 [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" down
 ifconfig "${INTERFACE}" down
