@@ -47,7 +47,7 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
 
     VENDOR_WIFI_PARM=""
     case "${WIFI_MODULE}" in
-        "moal" )
+        "moal")
             # NXP's moal frontend is used to choose between client, AP & WiFi DIRECT mode.
             VENDOR_WIFI_PARM="mod_para=nxp/wifi_mod_para_sd8987.conf"
             ;;
