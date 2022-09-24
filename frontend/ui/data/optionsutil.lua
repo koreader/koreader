@@ -90,9 +90,10 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
         end
     elseif option.labels and option.values then
         if option.more_options_param and option.more_options_param.value_table then
-            current = option.more_options_param.value_table[current]
+            local table_shift = option.more_options_param.value_table_shift or 0
+            current = option.more_options_param.value_table[current + table_shift]
             if default then
-                default = option.more_options_param.value_table[default]
+                default = option.more_options_param.value_table[default + table_shift]
             end
         else
             if default then
