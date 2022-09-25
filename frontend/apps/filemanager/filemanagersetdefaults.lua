@@ -18,7 +18,6 @@ local SetDefaults = InputContainer:new{
     state = nil,
     menu_entries = nil,
     defaults_menu = nil,
-    set_dialog = nil,
     settings_changed = false,
 }
 
@@ -66,6 +65,15 @@ function SetDefaults:init()
         -- Don't refresh the FM behind us. May leave stray bits of overflowed InputDialog behind in the popout border space.
         covers_fullscreen = true,
     }
+    menu_container.onCloseWidget = function()
+        local super = getmetatable(self)
+        if super.onCloseWidget then
+            -- Call our super's method, if any
+            super.onCloseWidget(self)
+        end
+        -- And then do our own cleanup
+        self:dtor()
+    end
 
     self.defaults_menu = Menu:new{
         width = self.screen_width - (Size.margin.fullscreen_popout * 2),
@@ -85,12 +93,13 @@ function SetDefaults:init()
         UIManager:close(menu_container)
     end
 
+    local set_dialog
     local cancel_button = {
         text = _("Cancel"),
         id = "close",
         enabled = true,
         callback = function()
-            self:close()
+            UIManager:close(set_dialog)
         end,
     }
 
@@ -102,7 +111,7 @@ function SetDefaults:init()
         local value_type = type(v)
         if value_type == "boolean" then
             local editBoolean = function()
-                self.set_dialog = InputDialog:new{
+                set_dialog = InputDialog:new{
                     title = k,
                     input = tostring(self.state[k].value),
                     buttons = {
@@ -112,7 +121,7 @@ function SetDefaults:init()
                                 text = _("Default"),
                                 enabled = self.state[k].value ~= self.state[k].default_value,
                                 callback = function()
-                                    self:close()
+                                    UIManager:close(set_dialog)
                                     self:update_menu_entry(k, self.state[k].default_value, value_type)
                                 end
                             },
@@ -120,7 +129,7 @@ function SetDefaults:init()
                                 text = "true",
                                 enabled = true,
                                 callback = function()
-                                    self:close()
+                                    UIManager:close(set_dialog)
                                     self:update_menu_entry(k, true, value_type)
                                 end
                             },
@@ -128,7 +137,7 @@ function SetDefaults:init()
                                 text = "false",
                                 enabled = true,
                                 callback = function()
-                                    self:close()
+                                    UIManager:close(set_dialog)
                                     self:update_menu_entry(k, false, value_type)
                                 end
                             },
@@ -137,8 +146,8 @@ function SetDefaults:init()
                     input_type = value_type,
                     width = self.dialog_width,
                 }
-                UIManager:show(self.set_dialog)
-                self.set_dialog:onShowKeyboard()
+                UIManager:show(set_dialog)
+                set_dialog:onShowKeyboard()
             end
 
             table.insert(self.menu_entries, {
@@ -158,7 +167,7 @@ function SetDefaults:init()
                         margin = Screen:scaleBySize(2),
                     })
                 end
-                self.set_dialog = MultiInputDialog:new{
+                set_dialog = MultiInputDialog:new{
                     title = k,
                     fields = fields,
                     buttons = {
@@ -168,7 +177,7 @@ function SetDefaults:init()
                                 text = _("Default"),
                                 enabled = not util.tableEquals(self.state[k].value, self.state[k].default_value),
                                 callback = function()
-                                    self:close()
+                                    UIManager:close(set_dialog)
                                     self:update_menu_entry(k, self.state[k].default_value, value_type)
                                 end
                             },
@@ -177,7 +186,7 @@ function SetDefaults:init()
                                 enabled = true,
                                 is_enter_default = true,
                                 callback = function()
-                                    self:close()
+                                    UIManager:close(set_dialog)
                                     local new_table = {}
                                     for _, field in ipairs(MultiInputDialog:getFields()) do
                                         local key, value = field:match("^[^= ]+"), field:match("[^= ]+$")
@@ -190,8 +199,8 @@ function SetDefaults:init()
                     },
                     width = self.dialog_width,
                 }
-                UIManager:show(self.set_dialog)
-                self.set_dialog:onShowKeyboard()
+                UIManager:show(set_dialog)
+                set_dialog:onShowKeyboard()
             end
 
             table.insert(self.menu_entries, {
@@ -201,7 +210,7 @@ function SetDefaults:init()
             })
         else
             local editNumStr = function()
-                self.set_dialog = InputDialog:new{
+                set_dialog = InputDialog:new{
                     title = k,
                     input = tostring(self.state[k].value),
                     buttons = {
@@ -211,7 +220,7 @@ function SetDefaults:init()
                                 text = _("Default"),
                                 enabled = self.state[k].value ~= self.state[k].default_value,
                                 callback = function()
-                                    self:close()
+                                    UIManager:close(set_dialog)
                                     self:update_menu_entry(k, self.state[k].default_value, value_type)
                                 end
                             },
@@ -220,8 +229,8 @@ function SetDefaults:init()
                                 is_enter_default = true,
                                 enabled = true,
                                 callback = function()
-                                    self:close()
-                                    local new_value = self.set_dialog:getInputValue()
+                                    UIManager:close(set_dialog)
+                                    local new_value = set_dialog:getInputValue()
                                     self:update_menu_entry(k, new_value, value_type)
                                 end,
                             },
@@ -230,8 +239,8 @@ function SetDefaults:init()
                     input_type = value_type,
                     width = self.dialog_width,
                 }
-                UIManager:show(self.set_dialog)
-                self.set_dialog:onShowKeyboard()
+                UIManager:show(set_dialog)
+                set_dialog:onShowKeyboard()
             end
 
             table.insert(self.menu_entries, {
@@ -243,10 +252,6 @@ function SetDefaults:init()
     end
     self.defaults_menu:switchItemTable("Defaults", self.menu_entries)
     UIManager:show(menu_container)
-end
-
-function SetDefaults:close()
-    UIManager:close(self.set_dialog)
 end
 
 function SetDefaults:gen_menu_entry(k, v, v_type)
@@ -273,7 +278,6 @@ function SetDefaults:update_menu_entry(k, v, v_type)
     else
         self.menu_entries[idx].bold = true
     end
-    self.set_dialog = nil
     self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
 end
 
@@ -296,7 +300,6 @@ function SetDefaults:dtor()
     self.state = nil
     self.menu_entries = nil
     self.defaults_menu = nil
-    self.set_dialog = nil
     self.settings_changed = false
 end
 
@@ -311,7 +314,6 @@ function SetDefaults:saveBeforeExit(callback)
             ok_text = save_text,
             ok_callback = function()
                 self:saveSettings()
-                self:dtor()
                 if Device:canRestart() then
                     UIManager:restartKOReader()
                 else
@@ -321,7 +323,6 @@ function SetDefaults:saveBeforeExit(callback)
             cancel_text = _("Discard changes"),
             cancel_callback = function()
                 logger.info("discard defaults")
-                self:dtor()
             end,
         })
     end
