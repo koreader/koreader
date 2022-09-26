@@ -756,7 +756,7 @@ function Screensaver:show()
                 super.onCloseWidget(this)
             end
             -- self is ScreenSaver (upvalue)
-            self:dtor()
+            self:destructor()
         end
 
         UIManager:show(self.screensaver_widget, "full")
@@ -793,7 +793,7 @@ function Screensaver:close()
     end
 end
 
-function Screensaver:dtor()
+function Screensaver:destructor()
     self.show_message = nil
     self.screensaver_type = nil
     self.prefix = nil

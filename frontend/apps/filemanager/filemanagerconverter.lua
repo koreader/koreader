@@ -117,12 +117,12 @@ function FileConverter:showConvertButtons(file, ui)
             super.onCloseWidget(this)
         end
         -- And then do our own cleanup
-        self:dtor()
+        self:destructor()
     end
     UIManager:show(self.convert_dialog)
 end
 
-function FileConverter:dtor()
+function FileConverter:destructor()
     self.convert_dialog = nil
 end
 
