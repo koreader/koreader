@@ -2,7 +2,6 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -14,28 +13,21 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 
-local SetDefaults = InputContainer:new{
+local SetDefaultsWidget = CenterContainer:extend{
     state = nil,
     menu_entries = nil,
     defaults_menu = nil,
     settings_changed = false,
 }
 
-function SetDefaults:ConfirmEdit()
-    if not SetDefaults.EditConfirmed then
-        UIManager:show(ConfirmBox:new{
-            text = _("Some changes will not work until the next restart. Be careful; the wrong settings might crash KOReader!\nAre you sure you want to continue?"),
-            ok_callback = function()
-                SetDefaults.EditConfirmed = true
-                self:init()
-            end,
-        })
-    else
-        self:init()
-    end
-end
+function SetDefaultsWidget:init()
+    -- We're a CenterContainer, so handle our own stuff first
+    self.dimen = Screen:getSize()
+    -- Don't refresh the FM behind us. May leave stray bits of overflowed InputDialog behind in the popout border space.
+    self.covers_fullscreen = true
+    CenterContainer.init(self)
 
-function SetDefaults:init()
+    -- Then deal with our child widgets and our internal variables
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     self.dialog_width = math.floor(math.min(self.screen_width, self.screen_height) * 0.95)
@@ -57,44 +49,8 @@ function SetDefaults:init()
         self.state[k].custom = true
     end
 
-    -- For Menu
+    -- Prepare our menu entires
     self.menu_entries = {}
-
-    local menu_container = CenterContainer:new{
-        dimen = Screen:getSize(),
-        -- Don't refresh the FM behind us. May leave stray bits of overflowed InputDialog behind in the popout border space.
-        covers_fullscreen = true,
-    }
-    -- NOTE: This is a faux widget, we never properly instantiate it,
-    --       instead, we use the class object/module itself as a singleton.
-    --       As such, we need to cleanup behind us to avoid leaving clutter in said object...
-    menu_container.onCloseWidget = function(this)
-        local super = getmetatable(this)
-        if super.onCloseWidget then
-            -- Call our super's method, if any
-            super.onCloseWidget(this)
-        end
-        -- And then do our own cleanup
-        self:dtor()
-    end
-
-    self.defaults_menu = Menu:new{
-        width = self.screen_width - (Size.margin.fullscreen_popout * 2),
-        height = self.screen_height - (Size.margin.fullscreen_popout * 2),
-        show_parent = menu_container,
-        _manager = self,
-    }
-    -- Prevent menu from closing when editing a value
-    function self.defaults_menu:onMenuSelect(item)
-        item.callback()
-    end
-
-    table.insert(menu_container, self.defaults_menu)
-    self.defaults_menu.close_callback = function()
-        logger.dbg("Closing defaults menu")
-        self:saveBeforeExit()
-        UIManager:close(menu_container)
-    end
 
     local set_dialog
     local cancel_button = {
@@ -253,11 +209,29 @@ function SetDefaults:init()
             })
         end
     end
-    self.defaults_menu:switchItemTable("Defaults", self.menu_entries)
-    UIManager:show(menu_container)
+
+    -- Now that we have stuff to display, instantiate our Menu
+    self.defaults_menu = Menu:new{
+        width = self.screen_width - (Size.margin.fullscreen_popout * 2),
+        height = self.screen_height - (Size.margin.fullscreen_popout * 2),
+        show_parent = self,
+        item_table = self.menu_entries,
+        title = _("Defaults"),
+    }
+    -- Prevent menu from closing when editing a value
+    function self.defaults_menu:onMenuSelect(item)
+        item.callback()
+    end
+    self.defaults_menu.close_callback = function()
+        logger.dbg("Closing defaults menu")
+        self:saveBeforeExit()
+        UIManager:close(self)
+    end
+
+    table.insert(self, self.defaults_menu)
 end
 
-function SetDefaults:gen_menu_entry(k, v, v_type)
+function SetDefaultsWidget:gen_menu_entry(k, v, v_type)
     local ret = k .. " = "
     if v_type == "boolean" then
         return ret .. tostring(v)
@@ -270,7 +244,7 @@ function SetDefaults:gen_menu_entry(k, v, v_type)
     end
 end
 
-function SetDefaults:update_menu_entry(k, v, v_type)
+function SetDefaultsWidget:update_menu_entry(k, v, v_type)
     local idx = self.state[k].idx
     self.state[k].value = v
     self.state[k].dirty = true
@@ -284,14 +258,13 @@ function SetDefaults:update_menu_entry(k, v, v_type)
     self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
 end
 
-function SetDefaults:saveSettings()
+function SetDefaultsWidget:saveSettings()
     -- Update dirty keys for real
     for k, t in pairs(self.state) do
         if t.dirty then
             G_defaults:saveSetting(k, t.value)
         end
     end
-    self.state = nil
 
     -- And flush to disk
     G_defaults:flush()
@@ -300,17 +273,7 @@ function SetDefaults:saveSettings()
     })
 end
 
-function SetDefaults:dtor()
-    if not self.settings_changed then
-        -- saveSettings still needs it
-        self.state = nil
-    end
-    self.menu_entries = nil
-    self.defaults_menu = nil
-    self.settings_changed = false
-end
-
-function SetDefaults:saveBeforeExit(callback)
+function SetDefaultsWidget:saveBeforeExit(callback)
     local save_text = _("Save and quit")
     if Device:canRestart() then
         save_text = _("Save and restart")
@@ -331,9 +294,24 @@ function SetDefaults:saveBeforeExit(callback)
             cancel_text = _("Discard changes"),
             cancel_callback = function()
                 logger.info("discard defaults")
-                self.state = nil
             end,
         })
+    end
+end
+
+local SetDefaults = {}
+
+function SetDefaults:ConfirmEdit()
+    if not SetDefaults.EditConfirmed then
+        UIManager:show(ConfirmBox:new{
+            text = _("Some changes will not work until the next restart. Be careful; the wrong settings might crash KOReader!\nAre you sure you want to continue?"),
+            ok_callback = function()
+                SetDefaults.EditConfirmed = true
+                UIManager:show(SetDefaultsWidget:new{})
+            end,
+        })
+    else
+        UIManager:show(SetDefaultsWidget:new{})
     end
 end
 
