@@ -68,11 +68,11 @@ function SetDefaults:init()
     -- NOTE: This is a faux widget, we never properly instantiate it,
     --       instead, we use the class object/module itself as a singleton.
     --       As such, we need to cleanup behind us to avoid leaving clutter in said object...
-    menu_container.onCloseWidget = function()
-        local super = getmetatable(self)
+    menu_container.onCloseWidget = function(this)
+        local super = getmetatable(this)
         if super.onCloseWidget then
             -- Call our super's method, if any
-            super.onCloseWidget(self)
+            super.onCloseWidget(this)
         end
         -- And then do our own cleanup
         self:dtor()
