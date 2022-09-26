@@ -223,7 +223,6 @@ function SetDefaultsWidget:init()
         item.callback()
     end
     self.defaults_menu.close_callback = function()
-        logger.dbg("Closing defaults menu")
         self:saveBeforeExit()
         UIManager:close(self)
     end
@@ -255,7 +254,7 @@ function SetDefaultsWidget:update_menu_entry(k, v, v_type)
     else
         self.menu_entries[idx].bold = true
     end
-    self.defaults_menu:switchItemTable("Defaults", self.menu_entries, idx)
+    self.defaults_menu:switchItemTable(nil, self.menu_entries, idx)
 end
 
 function SetDefaultsWidget:saveSettings()
