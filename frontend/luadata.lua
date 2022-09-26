@@ -35,6 +35,8 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
     -- Its NameEntry field is a function responsible for actually storing the data in the right place in the LuaData object.
     -- It gets called via __index lookup in the global scope (i.e., the env) when Lua tries to resolve
     -- the global NameEntry function calls in our stored data.
+    -- NOTE: We could also make the metatable's __index field point to a function, and handle the lookup ourselves inside it,
+    --       but using an empty env with loadfile is not a bad idea to begin with anyway ;).
     local data_env = {}
     data_env.__index = data_env
     setmetatable(data_env, data_env)
