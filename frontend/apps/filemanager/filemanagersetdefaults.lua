@@ -223,6 +223,7 @@ function SetDefaultsWidget:init()
         item.callback()
     end
     self.defaults_menu.close_callback = function()
+        logger.dbg("Closing defaults menu")
         self:saveBeforeExit()
         UIManager:close(self)
     end
