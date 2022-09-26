@@ -28,7 +28,7 @@ local WikiReaderWidget = {
 }
 
 local function replace(haystack, needle, replacement)
-	local escapedReplacement = replacement:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", function(c) return "%" .. c end)
+    local escapedReplacement = replacement:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", function(c) return "%" .. c end)
     return haystack:gsub(needle, escapedReplacement)
 end
 
