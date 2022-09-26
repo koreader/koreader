@@ -65,6 +65,9 @@ function SetDefaults:init()
         -- Don't refresh the FM behind us. May leave stray bits of overflowed InputDialog behind in the popout border space.
         covers_fullscreen = true,
     }
+    -- NOTE: This is a faux widget, we never properly instantiate it,
+    --       instead, we use the class object/module itself as a singleton.
+    --       As such, we need to cleanup behind us to avoid leaving clutter in said object...
     menu_container.onCloseWidget = function()
         local super = getmetatable(self)
         if super.onCloseWidget then
