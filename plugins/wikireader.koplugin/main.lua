@@ -10,6 +10,7 @@ local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local PathChooser = require("ui/widget/pathchooser")
 local Device = require("device")
+local escape = require("turbo.escape")
 local util = require("util")
 
 local _ = require("gettext")
@@ -29,24 +30,38 @@ local function file_exists(name)
     if f~=nil then io.close(f) return true else return false end
 end
 
-function WikiReader:startInstance()
-    -- Maybe a bit ugly with this global variable, but it works
-    if WikiReaderInstance == nil then
-        -- Add instance of this to self.ui
-        log("START: starting with binding to ui")
-        WikiReaderInstance = WikiReader:start()
-    else
-        local w = WikiReaderInstance.widget
-        w:gotoTitle(w.history[#w.history])
+function WikiReader:onOpenLocalWikiPage(url)
+    log("Caught onLookupWikipedia", url)
+    local poundLocation = url:find("#")
+    if url:find("^kolocalwiki://") == nil or poundLocation == nil then
         UIManager:show(InfoMessage:new{
-            text = _("Re-opened WikiReader"),
-            timeout = 5
+            text = _("Got passed an invalid WikiReader URL"),
+            timeout = 2
         })
+        return
     end
+    local encoded_db_path = url:sub(15, poundLocation - 1)
+    local db_path = escape.base64_decode(encoded_db_path)
+    local title = url:sub(poundLocation + 1)
+    local widget = self:startWidget(db_path)
+    widget:gotoTitle(title)
 end
 
 function WikiReader:start()
-    local wikireader_db_path = G_reader_settings:readSetting("wikireader_db_path")
+    self:startWidget(nil, "Ebook")
+end
+
+function WikiReader:startWidget(db_path, title)
+    log("Start widget with:", db_path, title, G_reader_settings:readSetting("wikireader_db_path"))
+
+    if self.widget ~= nil then
+        if title ~= nil then
+            self.widget:gotoTitle(title)
+        end
+        return self.widget
+    end
+    -- Init a new widget because we lost a reference to the old one
+    local wikireader_db_path = db_path or G_reader_settings:readSetting("wikireader_db_path")
     if wikireader_db_path == nil then
         UIManager:show(InfoMessage:new{
             text = _("Could not find database, set it in the plugin menu first"),
@@ -61,8 +76,9 @@ function WikiReader:start()
         log("Got wikireader_db_path: ", wikireader_db_path)
         local db_file = wikireader_db_path
         if file_exists(db_file) then
-            self.widget = WikiReaderWidget:new(db_file, "EPUB")
-            return self
+            local widget = WikiReaderWidget:new(db_file, title)
+            self.widget = widget
+            return widget
         else
             UIManager:show(InfoMessage:new{
                 text = _("Did not find database at: ") .. db_file,
@@ -73,26 +89,22 @@ function WikiReader:start()
 end
 
 function WikiReader:onSearchRequest ()
-    local delay = 0.1
-    if WikiReaderInstance == nil then 
-        WikiReader:startInstance()
-        delay = 1
-    end
-
-    UIManager:scheduleIn(delay, function()
-        if WikiReaderInstance ~= nil then
-            WikiReaderInstance.widget:showSearchBox()
-        end
-    end)
+    local widget = self:startWidget()
+    widget:showSearchBox()
 end
 
 function WikiReader:showDBfilePicker()
     local home_dir = G_reader_settings:readSetting("home_dir") or Device.home_dir or "/"
-    
+
     local path_chooser = PathChooser:new{
         title = _("Find and long press zim_articles.db"),
         select_directory = false,
         select_file = true,
+        file_filter = function(filename)
+            local suffix = util.getFileNameSuffix(filename)
+            return suffix == 'db'
+        end,
+
         path = home_dir,
         onConfirm = function(path)
             G_reader_settings:saveSetting("wikireader_db_path", path)
@@ -110,35 +122,26 @@ function WikiReader:getFavoritesTable ()
         text = _("Add current page to favorites"),
         separator = true,
         callback = function(touchmenu_instance)
-            if WikiReaderInstance == nil then 
+            if self.widget == nil then
                 UIManager:show(InfoMessage:new{
                     text = "WikiReader is not openend",
                     timeout = 2
                 })
             else
-                WikiReaderInstance.widget:addCurrentTitleToFavorites()
+                self.widget:addCurrentTitleToFavorites()
             end
-        end    
+        end
     }}
 
     local favorite_titles = G_reader_settings:readSetting("wikireader-favorites") or {}
 
-    for i = 1, #favorite_titles do 
+    for i = 1, #favorite_titles do
         local title = favorite_titles[i]
         table.insert(favorites_table, {
             text = title,
-            callback = function()                
-                local delay = 0.1
-                if WikiReaderInstance == nil then 
-                    WikiReader:startInstance()
-                    delay = 1
-                end
-            
-                UIManager:scheduleIn(delay, function()
-                    if WikiReaderInstance ~= nil then
-                        WikiReaderInstance.widget:gotoTitle(title)
-                    end
-                end)
+            callback = function()
+                local widget = self:startWidget()
+                widget:gotoTitle(title)
             end
         })
     end
@@ -150,21 +153,21 @@ end
 
 function WikiReader:addToMainMenu(menu_items)
     log("WIKI: Adding to menu: " .. _("WikiReader"))
-    
+
     menu_items.wikireader = {
         text = _("WikiReader (Unstable)"),
         sorting_hint = "tools",
         {
             text = _("Open WikiReader"),
-            callback = WikiReader.startInstance,
+            callback = function () WikiReader:start() end,
         },
         {
             text = _("Search WikiReader"),
-            callback = WikiReader.onSearchRequest,
+            callback = function () WikiReader:onSearchRequest() end,
         },
         {
             text = _("Select database"),
-            callback = WikiReader.showDBfilePicker,
+            callback = function () WikiReader:showDBfilePicker() end,
         },
         {
             text = _("Favorites"),
@@ -182,6 +185,6 @@ function WikiReader:addToMainMenu(menu_items)
         }
     }
 end
- 
+
 
 return WikiReader

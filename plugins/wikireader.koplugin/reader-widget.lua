@@ -1,24 +1,20 @@
-local Geom = require("ui/geometry")
-local ConfirmBox = require("ui/widget/confirmbox")
 local logger = require("logger")
 local log = logger.dbg
 
-local Device = require("device")
 local UIManager = require("ui/uimanager")
 local SQ3 = require("lua-ljsqlite3/init")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
-local TouchMenu = require("ui/widget/touchmenu")
 local Screen = require("device").screen
 local Menu = require("ui/widget/menu")
 
 local zstd = require("ffi/zstd")
 local ffi = require("ffi")
+local escape = require("turbo.escape")
 
 local DataStorage = require("datastorage")
 local ReaderUI = require("apps/reader/readerui")
 local FileConverter = require("apps/filemanager/filemanagerconverter")
-local ReaderLink = require("apps/reader/modules/readerlink")
 local ReadHistory = require("readhistory")
 local BaseUtil = require("ffi/util")
 local _ = require("gettext")
@@ -27,9 +23,14 @@ local WikiReaderWidget = {
     name = "wikireader-widget",
     db_conn = nil,
     input_dialog = nil,
-    css = '',
-    history = {},
+    db_path = nil,
+    history = {}
 }
+
+local function replace(haystack, needle, replacement)
+	local escapedReplacement = replacement:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", function(c) return "%" .. c end)
+    return haystack:gsub(needle, escapedReplacement)
+end
 
 function WikiReaderWidget:addCurrentTitleToFavorites()
     local currentTitle = self.history[#self.history]
@@ -41,53 +42,32 @@ function WikiReaderWidget:addCurrentTitleToFavorites()
     log("saved favorites:", newFavorites)
 end
 
-function WikiReaderWidget:overrideLinkHandler()
-    if ReaderUI.instance == nil then
-        log("Got nil readerUI instance, canceling")
-        return
-    end
-    ReaderUI.postInitCallback = {}  -- To make ReaderLink shut up
-    local ui_link_module_instance = ReaderLink:new{
-        dialog = ReaderUI.instance.dialog,
-        view = ReaderUI.instance.view,
-        ui = ReaderUI.instance,
-        document = ReaderUI.instance.document,
-    }
-
-    ReaderLink.original_onGotoLink = ReaderLink.onGotoLink
-
-    function ReaderLink:onGotoLink (link, neglect_current_location, allow_footnote_popup)
-        local link_uri = link["xpointer"]
-        if (link_uri:find("^WikiReader:") ~= nil) then
-            -- This is a wiki reader URL, handle it here
-            local article_title = link_uri:sub(12) -- Remove prefix
-            WikiReaderWidget:gotoTitle(article_title)
-            return true -- Don't propagate
-        else
-            log("Passing forward to original handler")
-            self:original_onGotoLink(link, neglect_current_location, allow_footnote_popup)
-        end
-    end
- 
-    ReaderUI:registerModule("link", ui_link_module_instance)
-    ReaderUI.postInitCallback = nil
-end
-
 function WikiReaderWidget:new(db_file, first_page_title)
     UIManager:show(InfoMessage:new{
         text = _("Opening db: ") .. db_file,
-        timeout = 2 
+        timeout = 2
     })
-    
-    self.db_conn = SQ3.open(db_file)
-    -- Load css
-    self:loadCSS()
+    self.db_path = db_file
     -- First load the first page
-    self:gotoTitle(first_page_title)
-    UIManager:scheduleIn(0.1, function()
-        self:overrideLinkHandler()
-    end)
+    if first_page_title ~= nil then
+        self:gotoTitle(first_page_title)
+    end
+
     return self
+end
+
+function WikiReaderWidget:getDBconn(db_path)
+    if self.db_conn then
+        return self.db_conn
+    end
+    if self.db_path == nil and db_path == nil then
+        log("No db specified")
+    end
+    if db_path ~= nil then
+        self.db_path = db_path
+    end
+    self.db_conn = SQ3.open(self.db_path)
+    return self.db_conn
 end
 
 function WikiReaderWidget:showArticle(id, html)
@@ -103,32 +83,17 @@ function WikiReaderWidget:showArticle(id, html)
     ReadHistory:removeItemByPath(article_filename)
 end
 
-function WikiReaderWidget:loadCSS()
-    -- Curently not supported properly
-    do return end
-    local get_css_stmt = self.db_conn:prepare(
-        "SELECT content_zstd FROM css LIMIT 1;"
-    )
-    local css_row = get_css_stmt:bind():step()
-    local cssBlob = css_row[1]
-    local css_data, css_size = zstd.zstd_uncompress(cssBlob[1], cssBlob[2])
-    local css = ffi.string(css_data, css_size)
-    self.css = css
-end
-
-function WikiReaderWidget:gotoTitle(new_title)
-    local new_title = new_title:gsub("_", " ")
+function WikiReaderWidget:gotoTitle(new_title, db_path)
+    new_title = new_title:gsub("_", " ")
 
     UIManager:show(InfoMessage:new{
         text = _("Searching for title: ") .. new_title,
         timeout = 1
     })
-
-    local get_title_stmt = self.db_conn:prepare(
-        "SELECT id FROM title_2_id WHERE title_lower_case = ?;"
-    )
+    local db_conn = self:getDBconn(db_path)
+    local get_title_stmt = db_conn:prepare("SELECT id FROM title_2_id WHERE title_lower_case = ?;")
     local title_row = get_title_stmt:bind(new_title:lower()):step()
-    
+
     log("Got title row ", title_row)
     if title_row == nil then
         UIManager:show(InfoMessage:new{
@@ -138,7 +103,8 @@ function WikiReaderWidget:gotoTitle(new_title)
     else
         local id = title_row[1]
         -- Try to get the html from the row using the id
-        local get_page_content_stmt = self.db_conn:prepare("SELECT id, title, page_content_zstd FROM articles WHERE id = ?;")
+        local get_page_content_stmt = db_conn:prepare(
+            "SELECT id, title, page_content_zstd FROM articles WHERE id = ?;")
         local article_row = get_page_content_stmt:bind(id):step()
         log("Got article_row row ", article_row)
         if article_row == nil then
@@ -167,32 +133,35 @@ function WikiReaderWidget:gotoTitle(new_title)
                     -- We are going to the last page, so remove the title from the history
                     table.remove(self.history, #self.history)
                 end
-            else 
+            else
                 table.insert(self.history, new_title)
             end
             if new_title == current_title then
                 -- Not sure how, but we are going to the same page. remove the same title from history
                 table.remove(self.history, #self.history)
             end
-            local actual_previous_title = self.history[#self.history - 1]
-            if actual_previous_title then
-                local go_back_anchor = "<h3><a href=\"" .. actual_previous_title .. _("\">Go back to ") .. actual_previous_title:gsub("_", " ") .. "</a></h3>"
-                html = html:gsub("</h1>", "</h1>" .. go_back_anchor, 1)
-            end
 
-            log("replacing href's")
-            html = html:gsub('<a%s+href="', '<a href="WikiReader:')
-            html = html:gsub('<a%s+href=\'', '<a href=\'WikiReader:')
-            -- Now add css to html, if any
-            local head_index = html:find("</head>")
-            if head_index ~= nil and self.css ~= nil and false then
-                html = html:sub(1, head_index - 1) .. "<style>" .. self.css .. "</style>" .. html:sub(head_index)
-            end
-            
+            html = self:transformHTML(html)
             self:showArticle(id, html)
             log("History after load ", self.history)
         end
     end
+end
+
+function WikiReaderWidget:transformHTML(html)
+    local actual_previous_title = self.history[#self.history - 1]
+    if actual_previous_title then
+        local go_back_anchor = "<h3><a href=\"" .. actual_previous_title .. _("\">Go back to ") ..
+                                   actual_previous_title:gsub("_", " ") .. "</a></h3>"
+        html = html:gsub("</h1>", "</h1>" .. go_back_anchor, 1)
+    end
+
+    -- Encode the db path in the URL, URL escaping doesn't work for some reason, so use base64
+    local prefix = "kolocalwiki://" .. escape.base64_encode(self.db_path) .. "#" -- Title will be after the hashtag
+    log("replacing href's", prefix)
+    html = replace(html, '<a%s+href="', '<a href="' .. prefix)
+    html = replace(html, '<a%s+href=\'', '<a href=\'' .. prefix)
+    return html
 end
 
 
@@ -202,18 +171,13 @@ function WikiReaderWidget:createInputDialog(title, buttons)
         input = "",
         input_hint = "",
         input_type = "text",
-        buttons = {
-            buttons,
-            {
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(self.input_dialog)
-                    end,
-                },
-            },
-        }
+        buttons = {buttons, {{
+            text = _("Cancel"),
+            id = "close",
+            callback = function()
+                UIManager:close(self.input_dialog)
+            end
+        }}}
     }
 end
 
@@ -224,7 +188,7 @@ function WikiReaderWidget:showSearchResultsMenu(search_results)
         local search_result = search_results[i]
         local new_table_item = {
             text = search_result.title,
-            callback = function ()
+            callback = function()
                 if self.searchResultMenu ~= nil then
                     self.searchResultMenu:onClose()
                     self.searchResultMenu = nil
@@ -241,15 +205,13 @@ function WikiReaderWidget:showSearchResultsMenu(search_results)
         item_table = menu_items,
         is_enable_shortcut = false,
         width = Screen:getWidth(),
-        height = Screen:getHeight(),
+        height = Screen:getHeight()
     }
     UIManager:show(self.searchResultMenu)
 end
 
-
-
-function WikiReaderWidget:exhaustiveSearch(title, max_num_search_results)
-    local title = title:gsub("_", " ")
+function WikiReaderWidget:exhaustiveSearch(title, max_num_search_results, db_path)
+    title = title:gsub("_", " ")
     local lowercase_title = title:lower()
     max_num_search_results = max_num_search_results or 50
 
@@ -260,9 +222,10 @@ function WikiReaderWidget:exhaustiveSearch(title, max_num_search_results)
 
     log("Got title:", lowercase_title)
 
-    local get_title_stmt = self.db_conn:prepare(full_db_search_sql)
+    local db_conn = self:getDBconn(db_path)
+    local get_title_stmt = db_conn:prepare(full_db_search_sql)
     local get_title_binding = get_title_stmt:bind(lowercase_title, max_num_search_results)
-    
+
     local search_results = {}
     for i = 1, max_num_search_results do
         local title_row = get_title_binding:step()
@@ -278,7 +241,9 @@ end
 
 function WikiReaderWidget:showSearchBox()
     local search_callback = function(is_exhaustive)
-        if self.input_dialog:getInputText() == "" then return end
+        if self.input_dialog:getInputText() == "" then
+            return
+        end
 
         UIManager:close(self.input_dialog)
         local title = self.input_dialog:getInputText()
@@ -291,19 +256,20 @@ function WikiReaderWidget:showSearchBox()
         end
     end
 
-    local buttons = {
-        {
-            text = _("Search"),
-            callback = function() search_callback(false) end
-        },
-        {
-            text = _("Exhaustive Search (slow)"),
-            callback = function() search_callback(true) end
-        }
-    }
+    local buttons = {{
+        text = _("Search"),
+        callback = function()
+            search_callback(false)
+        end
+    }, {
+        text = _("Exhaustive Search (slow)"),
+        callback = function()
+            search_callback(true)
+        end
+    }}
 
     self:createInputDialog(_("Search Wikipedia"), buttons)
-    
+
     UIManager:show(self.input_dialog)
     self.input_dialog:onShowKeyboard()
 end
