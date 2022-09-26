@@ -55,7 +55,7 @@ end
 
 function FileConverter:_mdFileToHtml(file, title)
     local f = io.open(file, "rb")
-    if f == nil
+    if f == nil then
         return
     end
     local content = f:read("*all")
