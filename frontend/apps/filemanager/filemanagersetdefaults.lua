@@ -291,6 +291,7 @@ function SetDefaults:saveSettings()
             G_defaults:saveSetting(k, t.value)
         end
     end
+    self.state = nil
 
     -- And flush to disk
     G_defaults:flush()
@@ -300,7 +301,10 @@ function SetDefaults:saveSettings()
 end
 
 function SetDefaults:dtor()
-    self.state = nil
+    if not self.settings_changed then
+        -- saveSettings still needs it
+        self.state = nil
+    end
     self.menu_entries = nil
     self.defaults_menu = nil
     self.settings_changed = false
@@ -313,6 +317,7 @@ function SetDefaults:saveBeforeExit(callback)
     end
     if self.settings_changed then
         UIManager:show(ConfirmBox:new{
+            dismissable = false,
             text = _("KOReader needs to be restarted to apply the new default settings."),
             ok_text = save_text,
             ok_callback = function()
@@ -326,6 +331,7 @@ function SetDefaults:saveBeforeExit(callback)
             cancel_text = _("Discard changes"),
             cancel_callback = function()
                 logger.info("discard defaults")
+                self.state = nil
             end,
         })
     end
