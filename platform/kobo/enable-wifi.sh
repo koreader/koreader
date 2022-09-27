@@ -59,6 +59,9 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
             "8821cs")
                 WIFI_COUNTRY_CODE_PARM="rtw_country_code=${WIFI_COUNTRY_CODE}"
                 ;;
+            "moal")
+                WIFI_COUNTRY_CODE_PARM="reg_alpha2=${WIFI_COUNTRY_CODE}"
+                ;;
         esac
     fi
 
@@ -75,9 +78,8 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
             elif [ -e "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko" ]; then
                 insmod "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko"
             fi
-            # NOTE: Nickel sleeps for two whole seconds after each module loading.
-            #       Let's try our usual timing instead...
-            usleep 250000
+            # NOTE: This chip appears to be extra bitchy, so, let's mimic Nickel's sleep patterns to the T...
+            sleep 2
             ;;
     esac
 
@@ -117,7 +119,14 @@ fi
 
 # Race-y as hell, don't try to optimize this!
 # NOTE: We're after a module insert, meaning Nickel may sleep for two whole seconds here.
-sleep 1
+case "${WIFI_MODULE}" in
+    "moal")
+        sleep 2
+        ;;
+    *)
+        sleep 1
+        ;;
+esac
 
 ifconfig "${INTERFACE}" up
 [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" up
