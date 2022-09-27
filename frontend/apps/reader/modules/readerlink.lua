@@ -890,8 +890,8 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         local shortest_dist = nil
         for _, link in ipairs(links) do
             if not internal_links_only or link.page then
-                local start_dist = math.pow(link.x0 - pos_x, 2) + math.pow(link.y0 - pos_y, 2)
-                local end_dist = math.pow(link.x1 - pos_x, 2) + math.pow(link.y1 - pos_y, 2)
+                local start_dist = (link.x0 - pos_x)^2 + (link.y0 - pos_y)^2
+                local end_dist = (link.x1 - pos_x)^2 + (link.y1 - pos_y)^2
                 local min_dist = math.min(start_dist, end_dist)
                 if shortest_dist == nil or min_dist < shortest_dist then
                     -- onGotoLink()'s GotoPage event needs the link
@@ -980,17 +980,17 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
                         -- and we compute each part individually
                         -- First, vertical distance (squared)
                         if pos_y < segment.y0 then -- above the segment height
-                            segment_dist = math.pow(segment.y0 - pos_y, 2)
+                            segment_dist = (segment.y0 - pos_y)^2
                         elseif pos_y > segment.y1 then -- below the segment height
-                            segment_dist = math.pow(pos_y - segment.y1, 2)
+                            segment_dist = (pos_y - segment.y1)^2
                         else -- gesture pos is on the segment height, no vertical distance
                             segment_dist = 0
                         end
                         -- Next, horizontal distance (squared)
                         if pos_x < segment.x0 then -- on the left of segment: calc dist to x0
-                            segment_dist = segment_dist + math.pow(segment.x0 - pos_x, 2)
+                            segment_dist = segment_dist + (segment.x0 - pos_x)^2
                         elseif pos_x > segment.x1 then -- on the right of segment : calc dist to x1
-                            segment_dist = segment_dist + math.pow(pos_x - segment.x1, 2)
+                            segment_dist = segment_dist + (pos_x - segment.x1)^2
                         -- else -- gesture pos is in the segment width, no horizontal distance
                         end
                         if shortest_dist == nil or segment_dist < shortest_dist then
@@ -1013,8 +1013,8 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
                     -- We used to just check distance from start_x and end_x, and
                     -- we could miss a tap in the middle of a long link.
                     -- (also start_y = end_y = the top of the rect for a link on a single line)
-                    local start_dist = math.pow(link.start_x - pos_x, 2) + math.pow(link.start_y - pos_y, 2)
-                    local end_dist = math.pow(link.end_x - pos_x, 2) + math.pow(link.end_y - pos_y, 2)
+                    local start_dist = (link.start_x - pos_x)^2 + (link.start_y - pos_y)^2
+                    local end_dist = (link.end_x - pos_x)^2 + (link.end_y - pos_y)^2
                     local min_dist = math.min(start_dist, end_dist)
                     if shortest_dist == nil or min_dist < shortest_dist then
                         selected_link = link
@@ -1050,7 +1050,7 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         end
     end
     if selected_link then
-        if max_distance and selected_distance2 and selected_distance2 > math.pow(max_distance, 2) then
+        if max_distance and selected_distance2 and selected_distance2 > max_distance^2 then
             logger.dbg("nearest link is further than max distance, ignoring it")
         else
             return self:onGotoLink(selected_link, false, isFootnoteLinkInPopupEnabled())
