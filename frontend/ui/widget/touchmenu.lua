@@ -34,6 +34,8 @@ local T = require("ffi/util").template
 local Input = Device.input
 local Screen = Device.screen
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 --[[
 TouchMenuItem widget
 --]]

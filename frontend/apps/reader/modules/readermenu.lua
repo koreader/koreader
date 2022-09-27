@@ -88,6 +88,8 @@ function ReaderMenu:onReaderReady()
     self.onGesture = nil
     if not Device:isTouchDevice() then return end
 
+    local DTAP_ZONE_MENU = G_defaults:readSetting("DTAP_ZONE_MENU")
+    local DTAP_ZONE_MENU_EXT = G_defaults:readSetting("DTAP_ZONE_MENU_EXT")
     self.ui:registerTouchZones({
         {
             id = "readermenu_tap",

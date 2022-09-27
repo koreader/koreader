@@ -217,6 +217,7 @@ function FootnoteWidget:init()
 
     local font_css = ""
     if G_reader_settings:isTrue("footnote_popup_use_book_font") then
+        local cre = require("document/credocument"):engineInit()
         -- Note: we can't provide any base weight (as supported by crengine), as MuPDF
         -- will use the bold font for anything with a weight > 400. We can only use the
         -- font as-is, without its natural weight tweaked.

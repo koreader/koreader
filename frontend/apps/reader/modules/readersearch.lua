@@ -12,6 +12,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
     case_insensitive = true, -- default to case insensitive

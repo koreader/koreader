@@ -4,6 +4,7 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 
 local BaseUtil = require("ffi/util")
 local Utf8Proc = require("ffi/utf8proc")
+local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = BaseUtil.template
@@ -332,7 +333,7 @@ function util.tableEquals(o1, o2, ignore_mt)
     if not ignore_mt then
         local mt1 = getmetatable(o1)
         if mt1 and mt1.__eq then
-            --compare using built in method
+            -- Compare using built in method
             return o1 == o2
         end
     end
@@ -873,7 +874,6 @@ end
 ---- @string path
 ---- @treturn bool
 function util.isEmptyDir(path)
-    local lfs = require("libs/libkoreader-lfs")
     -- lfs.dir will crash rather than return nil if directory doesn't exist O_o
     local ok, iter, dir_obj = pcall(lfs.dir, path)
     if not ok then return end
@@ -900,7 +900,6 @@ end
 ---- @string path
 ---- @treturn bool
 function util.pathExists(path)
-    local lfs = require("libs/libkoreader-lfs")
     return lfs.attributes(path, "mode") ~= nil
 end
 
@@ -918,7 +917,6 @@ function util.makePath(path)
         return nil, err.." (creating "..path..")"
     end
 
-    local lfs = require("libs/libkoreader-lfs")
     return lfs.mkdir(path)
 end
 
@@ -926,7 +924,6 @@ end
 -- @string path of the file to remove
 -- @treturn bool true on success; nil, err_message on error
 function util.removeFile(file)
-    local lfs = require("libs/libkoreader-lfs")
     if file and lfs.attributes(file, "mode") == "file" then
         return os.remove(file)
     elseif file then
@@ -951,7 +948,6 @@ function util.diskUsage(dir)
         end
     end
     local err = { total = nil, used = nil, available = nil }
-    local lfs = require("libs/libkoreader-lfs")
     if not dir or lfs.attributes(dir, "mode") ~= "directory" then return err end
     local usage = doCommand(dir)
     if not usage then return err end
@@ -1356,8 +1352,8 @@ function util.shell_escape(args)
     return table.concat(escaped_args, " ")
 end
 
---- Clear all the elements from a table without reassignment.
---- @table t the table to be cleared
+--- Clear all the elements from an array without reassignment.
+--- @table t the array to be cleared
 function util.clearTable(t)
     local c = #t
     for i = 0, c do t[i] = nil end
@@ -1404,7 +1400,7 @@ function util.checkLuaSyntax(lua_text)
     end
     -- Replace: [string "blah blah..."]:3: '=' expected near '123'
     -- with: Line 3: '=' expected near '123'
-    err = err:gsub("%[string \".-%\"]:", "Line ")
+    err = err and err:gsub("%[string \".-%\"]:", "Line ")
     return err
 end
 

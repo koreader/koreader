@@ -62,6 +62,8 @@ end
 function FileManagerMenu:initGesListener()
     if not Device:isTouchDevice() then return end
 
+    local DTAP_ZONE_MENU = G_defaults:readSetting("DTAP_ZONE_MENU")
+    local DTAP_ZONE_MENU_EXT = G_defaults:readSetting("DTAP_ZONE_MENU_EXT")
     self:registerTouchZones({
         {
             id = "filemanager_tap",
@@ -421,9 +423,6 @@ To:
         text = _("Advanced settings"),
         callback = function()
             SetDefaults:ConfirmEdit()
-        end,
-        hold_callback = function()
-            SetDefaults:ConfirmSave()
         end,
     }
     self.menu_items.plugin_management = {

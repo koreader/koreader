@@ -30,6 +30,7 @@ local logger = require("logger")
 local dbg = require("dbg")
 local time = require("ui/time")
 local util = require("util")
+local xtext -- Delayed (and optional) loading
 local Screen = require("device").screen
 
 local TextBoxWidget = InputContainer:new{
@@ -244,7 +245,7 @@ end
 
 function TextBoxWidget:_measureWithXText()
     if not self._xtext_loaded then
-        require("libs/libkoreader-xtext")
+        xtext = require("libs/libkoreader-xtext")
         TextBoxWidget._xtext_loaded = true
     end
     if type(self.charlist) == "table" then
@@ -819,7 +820,7 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
             end
             self:_shapeLine(line)
             if line.xglyphs then -- non-empty line
-                for __, xglyph in ipairs(line.xglyphs) do
+                for _, xglyph in ipairs(line.xglyphs) do
                     if not xglyph.no_drawing then
                         local face = self.face.getFallbackFont(xglyph.font_num) -- callback (not a method)
                         local glyph = RenderText:getGlyphByIndex(face, xglyph.glyph, self.bold)
@@ -1854,8 +1855,6 @@ function TextBoxWidget:onHoldWord(callback, ges)
             idx = idx + 1
         end
     end
-
-    return
 end
 
 -- Allow selection of one or more words (with no visual feedback)

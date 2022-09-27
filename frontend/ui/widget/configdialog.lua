@@ -33,6 +33,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 local OptionTextItem = InputContainer:new{}
 
 function OptionTextItem:init()
@@ -547,7 +549,7 @@ function ConfigOption:init()
                                         or max_toggle_width
                 local row_count = self.options[c].row_count or 1
                 local toggle_height = Screen:scaleBySize(self.options[c].height
-                                                         or 30 * row_count)
+                                                         or (30 * row_count))
                 if self.options[c].more_options then
                     table.insert(self.options[c].toggle, "⋮")
                     table.insert(self.options[c].args, "⋮")
@@ -1458,12 +1460,14 @@ function ConfigDialog:onTapCloseMenu(arg, ges_ev)
 end
 
 function ConfigDialog:onSwipeCloseMenu(arg, ges_ev)
+    local DTAP_ZONE_CONFIG = G_defaults:readSetting("DTAP_ZONE_CONFIG")
     local range = Geom:new{
         x = DTAP_ZONE_CONFIG.x * Screen:getWidth(),
         y = DTAP_ZONE_CONFIG.y * Screen:getHeight(),
         w = DTAP_ZONE_CONFIG.w * Screen:getWidth(),
         h = DTAP_ZONE_CONFIG.h * Screen:getHeight(),
     }
+    local DTAP_ZONE_CONFIG_EXT = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT")
     local range_ext = Geom:new{
         x = DTAP_ZONE_CONFIG_EXT.x * Screen:getWidth(),
         y = DTAP_ZONE_CONFIG_EXT.y * Screen:getHeight(),

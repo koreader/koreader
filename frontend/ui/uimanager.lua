@@ -1433,7 +1433,7 @@ function UIManager:onRotation()
 end
 
 function UIManager:initLooper()
-    if DUSE_TURBO_LIB and not self.looper then
+    if G_defaults:readSetting("DUSE_TURBO_LIB") and not self.looper then
         TURBO_SSL = true -- luacheck: ignore
         __TURBO_USE_LUASOCKET__ = true -- luacheck: ignore
         local turbo = require("turbo")

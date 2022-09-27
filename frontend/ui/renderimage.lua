@@ -104,7 +104,7 @@ end
 -- @int height requested height
 -- @treturn BlitBuffer
 function RenderImage:renderSVGImageDataWithCRengine(data, size, width, height)
-    require("document/credocument"):engineInit()
+    local cre = require("document/credocument"):engineInit()
     local image_data, image_w, image_h = cre.renderImageData(data, size, width, height)
     if not image_data then
         logger.warn("failed rendering image (SVG/CRengine)")

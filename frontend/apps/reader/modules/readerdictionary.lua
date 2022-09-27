@@ -19,6 +19,7 @@ local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
 local C = ffi.C
 local ffiUtil  = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local time = require("ui/time")
 local util  = require("util")
@@ -106,7 +107,7 @@ function ReaderDictionary:init()
     if self.ui then
         self.ui.menu:registerToMainMenu(self)
     end
-    self.data_dir = STARDICT_DATA_DIR or
+    self.data_dir = G_defaults:readSetting("STARDICT_DATA_DIR") or
         os.getenv("STARDICT_DATA_DIR") or
         DataStorage:getDataDir() .. "/data/dict"
 
@@ -1051,7 +1052,6 @@ function ReaderDictionary:downloadDictionaryPrep(dict, size)
     local dummy, filename = util.splitFilePathName(dict.url)
     local download_location = string.format("%s/%s", self.data_dir, filename)
 
-    local lfs = require("libs/libkoreader-lfs")
     if lfs.attributes(download_location) then
         UIManager:show(ConfirmBox:new{
             text =  _("File already exists. Overwrite?"),

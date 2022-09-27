@@ -441,7 +441,7 @@ local ReaderFooter = WidgetContainer:extend{
     progress_percentage = 0.0,
     footer_text = nil,
     text_font_face = "ffont",
-    height = Screen:scaleBySize(DMINIBAR_CONTAINER_HEIGHT),
+    height = Screen:scaleBySize(G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT")),
     horizontal_margin = Size.span.horizontal_default,
     bottom_padding = Size.padding.tiny,
     settings = {},
@@ -477,7 +477,7 @@ ReaderFooter.default_settings = {
     toc_markers_width = 2, -- unscaled_size_check: ignore
     text_font_size = 14, -- unscaled_size_check: ignore
     text_font_bold = false,
-    container_height = DMINIBAR_CONTAINER_HEIGHT,
+    container_height = G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT"),
     container_bottom_padding = 1, -- unscaled_size_check: ignore
     progress_margin_width = Screen:scaleBySize(Device:isAndroid() and material_pixels or 10), -- default margin (like self.horizontal_margin)
     progress_bar_min_width_pct = 20,
@@ -820,6 +820,7 @@ end
 
 function ReaderFooter:setupTouchZones()
     if not Device:isTouchDevice() then return end
+    local DTAP_ZONE_MINIBAR = G_defaults:readSetting("DTAP_ZONE_MINIBAR")
     local footer_screen_zone = {
         ratio_x = DTAP_ZONE_MINIBAR.x, ratio_y = DTAP_ZONE_MINIBAR.y,
         ratio_w = DTAP_ZONE_MINIBAR.w, ratio_h = DTAP_ZONE_MINIBAR.h,
@@ -996,12 +997,8 @@ function ReaderFooter:addToMainMenu(menu_items)
 
     -- menu item to fake footer tapping when touch area is disabled
     local settings_submenu_num = 1
-    if Geom:new{
-           x = DTAP_ZONE_MINIBAR.x,
-           y = DTAP_ZONE_MINIBAR.y,
-           w = DTAP_ZONE_MINIBAR.w,
-           h = DTAP_ZONE_MINIBAR.h
-       }:area() == 0 then
+    local DTAP_ZONE_MINIBAR = G_defaults:readSetting("DTAP_ZONE_MINIBAR")
+    if DTAP_ZONE_MINIBAR.h == 0 or DTAP_ZONE_MINIBAR.w == 0 then
         table.insert(sub_items, {
             text = _("Toggle mode"),
             enabled_func = function()
@@ -1250,7 +1247,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         value = container_height,
                         value_min = 7,
                         value_max = 98,
-                        default_value = DMINIBAR_CONTAINER_HEIGHT,
+                        default_value = G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT"),
                         ok_text = _("Set height"),
                         title_text = _("Container height"),
                         keep_shown_on_apply = true,
@@ -2084,9 +2081,7 @@ function ReaderFooter:setTocMarkers(reset)
 end
 
 -- This is implemented by the Statistics plugin
-function ReaderFooter:getAvgTimePerPage()
-    return
-end
+function ReaderFooter:getAvgTimePerPage() end
 
 function ReaderFooter:getDataFromStatistics(title, pages)
     local sec = _("N/A")
@@ -2296,7 +2291,7 @@ function ReaderFooter:onReadSettings(config)
     if not self.ui.document.info.has_pages then
         local h_margins = config:readSetting("copt_h_page_margins")
                        or G_reader_settings:readSetting("copt_h_page_margins")
-                       or DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+                       or G_defaults:readSetting("DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM")
         self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
     end
 end

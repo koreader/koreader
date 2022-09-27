@@ -33,6 +33,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local logger = require("logger")
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 local Button = InputContainer:new{
     text = nil, -- mandatory (unless icon is provided)
     text_func = nil,

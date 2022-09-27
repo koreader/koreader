@@ -34,6 +34,7 @@ end
 -- if reload==true, force a reload
 -- Unload is done automatically when a new dictionary is loaded.
 function ReaderUserHyph:loadDictionary(name, reload, no_scrubbing)
+    local cre = require("document/credocument"):engineInit()
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
         logger.dbg("set user hyphenation dict", name, reload, no_scrubbing)
         local ret = cre.setUserHyphenationDict(name, reload)
@@ -265,6 +266,7 @@ function ReaderUserHyph:modifyUserEntry(word)
         word = Utf8Proc.normalize_NFC(word)
     end
 
+    local cre = require("document/credocument"):engineInit()
     local suggested_hyphenation = cre.getHyphenationForWord(word)
 
     -- word may have some strange punctuation marks (as the upper dot),

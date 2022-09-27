@@ -12,6 +12,7 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local cre -- Delayed loading
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -52,8 +53,9 @@ function ReaderFont:init()
         separator = true,
     })
     -- Font list
+    cre = require("document/credocument"):engineInit()
     local face_list = cre.getFontFaces()
-    for k,v in ipairs(face_list) do
+    for k, v in ipairs(face_list) do
         local font_filename, font_faceindex, is_monospace = cre.getFontFaceFilenameAndFaceIndex(v)
         table.insert(self.face_table, {
             text_func = function()
@@ -121,7 +123,7 @@ function ReaderFont:onReadSettings(config)
 
     self.font_size = config:readSetting("font_size")
                   or G_reader_settings:readSetting("copt_font_size")
-                  or DCREREADER_CONFIG_DEFAULT_FONT_SIZE
+                  or G_defaults:readSetting("DCREREADER_CONFIG_DEFAULT_FONT_SIZE")
                   or 22
     self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
 
@@ -157,12 +159,11 @@ function ReaderFont:onReadSettings(config)
 
     self.line_space_percent = config:readSetting("line_space_percent")
                            or G_reader_settings:readSetting("copt_line_spacing")
-                           or DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM
+                           or G_defaults:readSetting("DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM")
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 
     self.gamma_index = config:readSetting("gamma_index")
                     or G_reader_settings:readSetting("copt_font_gamma")
-                    or DCREREADER_CONFIG_DEFAULT_FONT_GAMMA
                     or 15 -- gamma = 1.0
     self.ui.document:setGammaIndex(self.gamma_index)
 

@@ -9,6 +9,7 @@ local Screen = require("device").screen
 local buffer = require("string.buffer")
 local ffi = require("ffi")
 local C = ffi.C
+local cre -- Delayed loading
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local lru = require("ffi/lru")
@@ -107,7 +108,7 @@ end
 
 function CreDocument:engineInit()
     if not engine_initialized then
-        require "libs/libkoreader-cre"
+        cre = require("libs/libkoreader-cre")
         -- initialize cache
         self:cacheInit()
 
@@ -116,9 +117,9 @@ function CreDocument:engineInit()
 
         -- we need to initialize the CRE font list
         local fonts = FontList:getFontList()
-        for _k, _v in ipairs(fonts) do
-            if not _v:find("/urw/") and not _v:find("/nerdfonts/symbols.ttf") then
-                local ok, err = pcall(cre.registerFont, _v)
+        for k, v in ipairs(fonts) do
+            if not v:find("/urw/") and not v:find("/nerdfonts/symbols.ttf") then
+                local ok, err = pcall(cre.registerFont, v)
                 if not ok then
                     logger.err("failed to register crengine font:", err)
                 end
@@ -138,6 +139,8 @@ function CreDocument:engineInit()
 
         engine_initialized = true
     end
+
+    return cre
 end
 
 function CreDocument:init()
@@ -164,7 +167,7 @@ function CreDocument:init()
     end
 
     -- This mode must be the same as the default one set as ReaderView.view_mode
-    self._view_mode = DCREREADER_VIEW_MODE == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
+    self._view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE") == "scroll" and self.SCROLL_VIEW_MODE or self.PAGE_VIEW_MODE
 
     local ok
     ok, self._document = pcall(cre.newDocView, CanvasContext:getWidth(), CanvasContext:getHeight(), self._view_mode)
@@ -290,7 +293,7 @@ function CreDocument:render()
     -- This is now configurable and done by ReaderRolling:
     -- -- set visible page count in landscape
     -- if math.max(CanvasContext:getWidth(), CanvasContext:getHeight()) / CanvasContext:getDPI()
-    --     < DCREREADER_TWO_PAGE_THRESHOLD then
+    --     < G_defaults:readSetting("DCREREADER_TWO_PAGE_THRESHOLD") then
     --     self:setVisiblePageCount(1)
     -- end
     logger.dbg("CreDocument: rendering document...")

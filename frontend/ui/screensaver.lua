@@ -240,11 +240,12 @@ end
 
 function Screensaver:chooseFolder()
     local buttons = {}
+    local choose_dialog
     table.insert(buttons, {
         {
             text = _("Choose screensaver folder"),
             callback = function()
-                UIManager:close(self.choose_dialog)
+                UIManager:close(choose_dialog)
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
                         logger.dbg("set screensaver directory to", path)
@@ -262,27 +263,28 @@ function Screensaver:chooseFolder()
         {
             text = _("Close"),
             callback = function()
-                UIManager:close(self.choose_dialog)
+                UIManager:close(choose_dialog)
             end,
         }
     })
     local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
                          or _("N/A")
-    self.choose_dialog = ButtonDialogTitle:new{
+    choose_dialog = ButtonDialogTitle:new{
         title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
     }
-    UIManager:show(self.choose_dialog)
+    UIManager:show(choose_dialog)
 end
 
 function Screensaver:chooseFile(document_cover)
     local text = document_cover and _("Choose document cover") or _("Choose screensaver image")
     local buttons = {}
+    local choose_dialog
     table.insert(buttons, {
         {
             text = text,
             callback = function()
-                UIManager:close(self.choose_dialog)
+                UIManager:close(choose_dialog)
                 local PathChooser = require("ui/widget/pathchooser")
                 local path_chooser = PathChooser:new{
                     select_directory = false,
@@ -319,7 +321,7 @@ function Screensaver:chooseFile(document_cover)
         {
             text = _("Close"),
             callback = function()
-                UIManager:close(self.choose_dialog)
+                UIManager:close(choose_dialog)
             end,
         }
     })
@@ -329,11 +331,11 @@ function Screensaver:chooseFile(document_cover)
                                     or _("N/A")
     local title = document_cover and T(_("Current screensaver document cover:\n%1"), BD.filepath(screensaver_document_cover))
         or T(_("Current screensaver image:\n%1"), BD.filepath(screensaver_image))
-    self.choose_dialog = ButtonDialogTitle:new{
+    choose_dialog = ButtonDialogTitle:new{
         title = title,
         buttons = buttons
     }
-    UIManager:show(self.choose_dialog)
+    UIManager:show(choose_dialog)
 end
 
 function Screensaver:isExcluded()
@@ -362,7 +364,8 @@ function Screensaver:setMessage()
     local InputDialog = require("ui/widget/inputdialog")
     local screensaver_message = G_reader_settings:readSetting("screensaver_message")
                              or self.default_screensaver_message
-    self.input_dialog = InputDialog:new{
+    local input_dialog
+    input_dialog = InputDialog:new{
         title = "Screensaver message",
         description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series\n  %h time left in chapter\n  %H time left in document"),
         input = screensaver_message,
@@ -372,22 +375,22 @@ function Screensaver:setMessage()
                     text = _("Cancel"),
                     id = "close",
                     callback = function()
-                        UIManager:close(self.input_dialog)
+                        UIManager:close(input_dialog)
                     end,
                 },
                 {
                     text = _("Set message"),
                     is_enter_default = true,
                     callback = function()
-                        G_reader_settings:saveSetting("screensaver_message", self.input_dialog:getInputText())
-                        UIManager:close(self.input_dialog)
+                        G_reader_settings:saveSetting("screensaver_message", input_dialog:getInputText())
+                        UIManager:close(input_dialog)
                     end,
                 },
             },
         },
     }
-    UIManager:show(self.input_dialog)
-    self.input_dialog:onShowKeyboard()
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
 end
 
 function Screensaver:setStretchLimit(touchmenu_instance)
@@ -462,29 +465,24 @@ function Screensaver:setup(event, fallback_message)
         end
     end
 
-    -- Reset state
-    self.lastfile = nil
-    self.image = nil
-    self.image_file = nil
-
     -- Check lastfile and setup the requested mode's resources, or a fallback mode if the required resources are unavailable.
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI:_getRunningInstance()
-    self.lastfile = G_reader_settings:readSetting("lastfile")
+    local lastfile = G_reader_settings:readSetting("lastfile")
     if self.screensaver_type == "document_cover" then
         -- Set lastfile to the document of which we want to show the cover.
-        self.lastfile = G_reader_settings:readSetting("screensaver_document_cover")
+        lastfile = G_reader_settings:readSetting("screensaver_document_cover")
         self.screensaver_type = "cover"
     end
     if self.screensaver_type == "cover" then
-        self.lastfile = self.lastfile ~= nil and self.lastfile or G_reader_settings:readSetting("lastfile")
+        lastfile = lastfile ~= nil and lastfile or G_reader_settings:readSetting("lastfile")
         local excluded
-        if DocSettings:hasSidecarFile(self.lastfile) then
+        if DocSettings:hasSidecarFile(lastfile) then
             local doc_settings
             if ui and ui.doc_settings then
                 doc_settings = ui.doc_settings
             else
-                doc_settings = DocSettings:open(self.lastfile)
+                doc_settings = DocSettings:open(lastfile)
             end
             excluded = doc_settings:isTrue("exclude_screensaver")
         else
@@ -492,12 +490,12 @@ function Screensaver:setup(event, fallback_message)
             excluded = false
         end
         if not excluded then
-            if self.lastfile and lfs.attributes(self.lastfile, "mode") == "file" then
+            if lastfile and lfs.attributes(lastfile, "mode") == "file" then
                 if ui and ui.document then
                     local doc = ui.document
                     self.image = doc:getCoverPageImage()
                 else
-                    local doc = DocumentRegistry:openDocument(self.lastfile)
+                    local doc = DocumentRegistry:openDocument(lastfile)
                     if doc.loadDocument then -- CreDocument
                         doc:loadDocument(false) -- load only metadata
                     end
@@ -516,7 +514,7 @@ function Screensaver:setup(event, fallback_message)
         end
     end
     if self.screensaver_type == "bookstatus" then
-        if self.lastfile and lfs.attributes(self.lastfile, "mode") == "file" then
+        if lastfile and lfs.attributes(lastfile, "mode") == "file" then
             if not ui then
                 self.screensaver_type = "disable"
                 self.show_message = true
@@ -748,19 +746,26 @@ function Screensaver:show()
         }
         self.screensaver_widget.modal = true
         self.screensaver_widget.dithered = true
+
+        -- NOTE: ScreenSaver itself is not a widget, so make sure we cleanup behind us...
+        self.screensaver_widget.onCloseWidget = function(this)
+            -- this is self.screensaver_widget (i.e., an object instantiated from ScreenSaverWidget)
+            local super = getmetatable(this)
+            -- super is the class object of self.screensaver_widget (i.e., ScreenSaverWidget)
+            if super.onCloseWidget then
+                super.onCloseWidget(this)
+            end
+            -- self is ScreenSaver (upvalue)
+            self:cleanup()
+        end
+
         UIManager:show(self.screensaver_widget, "full")
     end
 end
 
 function Screensaver:close_widget()
-    logger.dbg("close screensaver")
     if self.screensaver_widget then
         UIManager:close(self.screensaver_widget)
-        self.screensaver_widget = nil
-    end
-
-    if self.delayed_close then
-        self.delayed_close = nil
     end
 end
 
@@ -786,6 +791,21 @@ function Screensaver:close()
     else
         logger.dbg("tap to exit from screensaver")
     end
+end
+
+function Screensaver:cleanup()
+    self.show_message = nil
+    self.screensaver_type = nil
+    self.prefix = nil
+    self.fallback_message = nil
+    self.overlay_message = nil
+    self.screensaver_background = nil
+
+    self.image = nil
+    self.image_file = nil
+
+    self.delayed_close = nil
+    self.screensaver_widget = nil
 end
 
 return Screensaver

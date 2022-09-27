@@ -35,6 +35,10 @@ function ReaderConfig:init()
 end
 
 function ReaderConfig:initGesListener()
+    if not Device:isTouchDevice() then return end
+
+    local DTAP_ZONE_CONFIG = G_defaults:readSetting("DTAP_ZONE_CONFIG")
+    local DTAP_ZONE_CONFIG_EXT = G_defaults:readSetting("DTAP_ZONE_CONFIG_EXT")
     self.ui:registerTouchZones({
         {
             id = "readerconfigmenu_tap",

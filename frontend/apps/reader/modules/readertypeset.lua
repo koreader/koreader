@@ -90,13 +90,13 @@ function ReaderTypeset:onReadSettings(config)
     -- set page margins
     local h_margins = config:readSetting("copt_h_page_margins")
                    or G_reader_settings:readSetting("copt_h_page_margins")
-                   or DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+                   or G_defaults:readSetting("DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM")
     local t_margin = config:readSetting("copt_t_page_margin")
                   or G_reader_settings:readSetting("copt_t_page_margin")
-                  or DCREREADER_CONFIG_T_MARGIN_SIZES_LARGE
+                  or G_defaults:readSetting("DCREREADER_CONFIG_T_MARGIN_SIZES_LARGE")
     local b_margin = config:readSetting("copt_b_page_margin")
                   or G_reader_settings:readSetting("copt_b_page_margin")
-                  or DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE
+                  or G_defaults:readSetting("DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE")
     self.unscaled_margins = { h_margins[1], t_margin, h_margins[2], b_margin }
     self:onSetPageMargins(self.unscaled_margins)
     self.sync_t_b_page_margins = config:readSetting("copt_sync_t_b_page_margins")

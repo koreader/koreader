@@ -39,7 +39,7 @@ local ReaderView = OverlapGroup:extend{
         offset = nil,
         bbox = nil,
     },
-    outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR / 15),
+    outer_page_color = Blitbuffer.gray(G_defaults:readSetting("DOUTER_PAGE_COLOR") / 15),
     -- highlight with "lighten" or "underscore" or "strikeout" or "invert"
     highlight = {
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
@@ -57,7 +57,7 @@ local ReaderView = OverlapGroup:extend{
     note_mark_pos_x2 = nil, -- page 2 in two-page mode
     -- PDF/DjVu continuous paging
     page_scroll = nil,
-    page_bgcolor = Blitbuffer.gray(DBACKGROUND_COLOR / 15),
+    page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") / 15),
     page_states = {},
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = {
@@ -65,9 +65,9 @@ local ReaderView = OverlapGroup:extend{
         color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) / 15),
     },
     -- DjVu page rendering mode (used in djvu.c:drawPage())
-    render_mode = DRENDER_MODE, -- default to COLOR
+    render_mode = G_defaults:readSetting("DRENDER_MODE"), -- default to COLOR
     -- Crengine view mode
-    view_mode = DCREREADER_VIEW_MODE, -- default to page mode
+    view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE"), -- default to page mode
     hinting = true,
 
     -- visible area within current viewing page
@@ -883,7 +883,7 @@ function ReaderView:onReadSettings(config)
         end
     end
     self.inverse_reading_order = config:isTrue("inverse_reading_order") or G_reader_settings:isTrue("inverse_reading_order")
-    self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or DSHOWOVERLAP
+    self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
                                               or G_reader_settings:readSetting("kopt_page_gap_height")
@@ -1141,16 +1141,18 @@ function ReaderView:getTapZones()
     local forward_zone, backward_zone
     local tap_zones_type = G_reader_settings:readSetting("page_turns_tap_zones", "default")
     if tap_zones_type == "default" then
+        local DTAP_ZONE_FORWARD = G_defaults:readSetting("DTAP_ZONE_FORWARD")
         forward_zone = {
             ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
             ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
         }
+        local DTAP_ZONE_BACKWARD = G_defaults:readSetting("DTAP_ZONE_BACKWARD")
         backward_zone = {
             ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
             ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
         }
     else -- user defined page turns tap zones
-        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", DTAP_ZONE_FORWARD.w)
+        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", G_defaults:readSetting("DTAP_ZONE_FORWARD").w)
         local tap_zone_backward_w = 1 - tap_zone_forward_w
         if tap_zones_type == "left_right" then
             forward_zone = {

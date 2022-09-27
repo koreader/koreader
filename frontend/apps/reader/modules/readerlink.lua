@@ -14,6 +14,7 @@ local Notification = require("ui/widget/notification")
 local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -465,7 +466,7 @@ function ReaderLink:showLinkBox(link, allow_footnote_popup)
         if sbox then
             UIManager:show(LinkBox:new{
                 box = sbox,
-                timeout = FOLLOW_LINK_TIMEOUT,
+                timeout = G_defaults:readSetting("FOLLOW_LINK_TIMEOUT"),
                 callback = function()
                     self:onGotoLink(link.link, false, allow_footnote_popup)
                 end
