@@ -138,7 +138,7 @@ function DateTimeWidget:init()
 end
 
 function DateTimeWidget:createLayout()
-    -- Empty table w/ the NOP methods
+    -- Empty table w/ the methods we use NOP'ed
     local dummy_widget = {}
     function dummy_widget:free() end
     function dummy_widget:getValue() end
