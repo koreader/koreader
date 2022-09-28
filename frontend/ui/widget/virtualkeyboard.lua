@@ -316,7 +316,7 @@ function VirtualKey:genKeyboardLayoutKeyChars()
 end
 
 -- NOTE: We currently don't ever set want_flash to true (c.f., our invert method).
-function VirtualKey:update_keyboard(want_flash, want_fast)
+function VirtualKey:update_keyboard(want_flash, want_a2)
     -- NOTE: We use "a2" for the highlights.
     --       We flash the *full* keyboard when we release a hold.
     if want_flash then
@@ -325,7 +325,7 @@ function VirtualKey:update_keyboard(want_flash, want_fast)
         end)
     else
         local refresh_type = "ui"
-        if want_fast then
+        if want_a2 then
             refresh_type = "a2"
         end
         -- Only repaint the key itself, not the full board...
