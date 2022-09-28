@@ -66,14 +66,6 @@ function CloudStorage:init()
     end
 end
 
-function CloudStorage:getPasswordOrDropBoxAccessToken(server)
-    if server.type == "dropbox" and server.address ~= nil and server.address ~= "" then
-        return DropBox:getAccessToken(server.password, server.address)
-    else
-        return server.password
-    end
-end
-
 function CloudStorage:genItemTableFromRoot()
     local item_table = {}
     local added_servers = self.cs_settings:readSetting("cs_servers") or {}
@@ -91,7 +83,7 @@ function CloudStorage:genItemTableFromRoot()
             sync_dest_folder = server.sync_dest_folder,
             callback = function()
                 self.type = server.type
-                self.password = self:getPasswordOrDropBoxAccessToken(server)
+                self.password = server.password
                 self.address = server.address
                 self.username = server.username
                 self:openCloudServer(server.url)
@@ -106,7 +98,6 @@ function CloudStorage:genItemTable(item)
     local added_servers = self.cs_settings:readSetting("cs_servers") or {}
     for _, server in ipairs(added_servers) do
         if server.name == item.text and server.password == item.password and server.type == item.type then
-            local password_token = self:getPasswordOrDropBoxAccessToken(item)
             table.insert(item_table, {
                 text = server.name,
                 address = server.address,
@@ -116,7 +107,7 @@ function CloudStorage:genItemTable(item)
                 url = server.url,
                 callback = function()
                     self.type = server.type
-                    self.password = password_token
+                    self.password = server.password
                     self.address = server.address
                     self.username = server.username
                     self:openCloudServer(server.url)
@@ -149,13 +140,30 @@ function CloudStorage:selectCloudType()
     return true
 end
 
+function CloudStorage:generateDropBoxAccessToken()
+    if self.username or self.address == nil or self.address == "" then
+        -- short-lived token has been generated already in this session
+        -- or we have long-lived token in self.password
+        return true
+    else
+        local token = DropBox:getAccessToken(self.password, self.address)
+        if token then
+            self.password = token -- short-lived token
+            self.username = true -- flag
+            return true
+        end
+    end
+end
+
 function CloudStorage:openCloudServer(url)
     local tbl, e
     if self.type == "dropbox" then
         if NetworkMgr:willRerunWhenOnline(function() self:openCloudServer(url) end) then
             return
         end
-        tbl, e = DropBox:run(url, self.password, self.choose_folder_mode)
+        if self:generateDropBoxAccessToken() then
+            tbl, e = DropBox:run(url, self.password, self.choose_folder_mode)
+        end
     elseif self.type == "ftp" then
         if NetworkMgr:willRerunWhenConnected(function() self:openCloudServer(url) end) then
             return
@@ -435,37 +443,40 @@ function CloudStorage:synchronizeCloud(item)
     if NetworkMgr:willRerunWhenOnline(function() self:synchronizeCloud(item) end) then
         return
     end
+    self.password = item.password
+    self.address = item.address
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
         Trapper:setPausedText("Download paused.\nDo you want to continue or abort downloading files?")
-        local ok, downloaded_files, failed_files = pcall(self.downloadListFiles, self, item)
-        if ok and downloaded_files then
-            if not failed_files then failed_files = 0 end
-            local text
-            if downloaded_files == 0 and failed_files == 0 then
-                text = _("No files to download from Dropbox.")
-            else
-                text = T(N_("Successfully downloaded 1 file from Dropbox to local storage.", "Successfully downloaded %1 files from Dropbox to local storage.", downloaded_files), downloaded_files)
-                if failed_files > 0 then
-                    text = text .. "\n" .. T(N_("Failed to download 1 file.", "Failed to download %1 files.", failed_files), failed_files)
+        if self:generateDropBoxAccessToken() then
+            local ok, downloaded_files, failed_files = pcall(self.downloadListFiles, self, item)
+            if ok and downloaded_files then
+                if not failed_files then failed_files = 0 end
+                local text
+                if downloaded_files == 0 and failed_files == 0 then
+                    text = _("No files to download from Dropbox.")
+                else
+                    text = T(N_("Successfully downloaded 1 file from Dropbox to local storage.", "Successfully downloaded %1 files from Dropbox to local storage.", downloaded_files), downloaded_files)
+                    if failed_files > 0 then
+                        text = text .. "\n" .. T(N_("Failed to download 1 file.", "Failed to download %1 files.", failed_files), failed_files)
+                    end
                 end
+                UIManager:show(InfoMessage:new{
+                    text = text,
+                    timeout = 3,
+                })
+            else
+                Trapper:reset() -- close any last widget not cleaned if error
+                UIManager:show(InfoMessage:new{
+                    text = _("No files to download from Dropbox.\nPlease check your configuration and connection."),
+                    timeout = 3,
+                })
             end
-            UIManager:show(InfoMessage:new{
-                text = text,
-                timeout = 3,
-            })
-        else
-            Trapper:reset() -- close any last widget not cleaned if error
-            UIManager:show(InfoMessage:new{
-                text = _("No files to download from Dropbox.\nPlease check your configuration and connection."),
-                timeout = 3,
-            })
         end
     end)
 end
 
 function CloudStorage:downloadListFiles(item)
-    self.password = self:getPasswordOrDropBoxAccessToken(item)
     local local_files = {}
     local path = item.sync_dest_folder
     local UI = require("ui/trapper")
@@ -806,9 +817,10 @@ function CloudStorage:infoServer(item)
         if NetworkMgr:willRerunWhenOnline(function() self:infoServer(item) end) then
             return
         end
-        local token = self:getPasswordOrDropBoxAccessToken(item)
-        if token then
-            DropBox:info(token)
+        self.password = item.password
+        self.address = item.address
+        if self:generateDropBoxAccessToken() then
+            DropBox:info(self.password)
         end
     elseif item.type == "ftp" then
         Ftp:info(item)
