@@ -10,7 +10,7 @@ local ffi = require("ffi")
 local C = ffi.C
 local pdf = nil
 
-local PdfDocument = Document:new{
+local PdfDocument = Document:extend{
     _document = false,
     is_pdf = true,
     dc_null = DrawContext.new(),

@@ -18,7 +18,7 @@ local time = require("ui/time")
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
 
-local CreDocument = Document:new{
+local CreDocument = Document:extend{
     -- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
     SCROLL_VIEW_MODE = 0,
     PAGE_VIEW_MODE = 1,
