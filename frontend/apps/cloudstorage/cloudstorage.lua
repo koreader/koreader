@@ -102,7 +102,7 @@ function CloudStorage:genItemTable(item)
                 text = server.name,
                 address = server.address,
                 username = server.username,
-                password = password_token,
+                password = server.password,
                 type = server.type,
                 url = server.url,
                 callback = function()
