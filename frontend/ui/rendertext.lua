@@ -13,10 +13,6 @@ local band = bit.band
 local bor = bit.bor
 local lshift = bit.lshift
 
-if Device.should_restrict_JIT then
-    jit.off(true, true)
-end
-
 --[[
 @TODO: all these functions should probably be methods on Face objects
 ]]--

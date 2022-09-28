@@ -17,10 +17,6 @@ local Geom = require("ui/geometry")
 local Widget = require("ui/widget/widget")
 local Device = require("device")
 
-if Device.should_restrict_JIT then
-    jit.off(true, true)
-end
-
 local WidgetContainer = Widget:extend{}
 
 function WidgetContainer:init()

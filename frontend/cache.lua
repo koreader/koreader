@@ -8,11 +8,6 @@ local lru = require("ffi/lru")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
 
-local CanvasContext = require("document/canvascontext")
-if CanvasContext.should_restrict_JIT then
-    jit.off(true, true)
-end
-
 local Cache = {
     -- Cache configuration:
     -- Max storage space, in bytes...
