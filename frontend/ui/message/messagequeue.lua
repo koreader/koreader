@@ -7,8 +7,8 @@ local czmq = ffi.load("libs/libczmq.so.1")
 
 local MessageQueue = {}
 
-function MessageQueue:extend(baseclass)
-    local o = baseclass or {}
+function MessageQueue:extend(subclass)
+    local o = subclass or {}
     setmetatable(o, self)
     self.__index = self
     return o
