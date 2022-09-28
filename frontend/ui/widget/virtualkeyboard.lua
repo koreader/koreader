@@ -317,8 +317,8 @@ end
 
 -- NOTE: We currently don't ever set want_flash to true (c.f., our invert method).
 function VirtualKey:update_keyboard(want_flash, want_fast)
-    -- NOTE: We mainly use "fast" when inverted & "ui" when not, with a cherry on top:
-    --       we flash the *full* keyboard instead when we release a hold.
+    -- NOTE: We use "a2" for the highlights.
+    --       We flash the *full* keyboard when we release a hold.
     if want_flash then
         UIManager:setDirty(self.keyboard, function()
             return "flashui", self.keyboard[1][1].dimen
@@ -326,7 +326,7 @@ function VirtualKey:update_keyboard(want_flash, want_fast)
     else
         local refresh_type = "ui"
         if want_fast then
-            refresh_type = "fast"
+            refresh_type = "a2"
         end
         -- Only repaint the key itself, not the full board...
         UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
@@ -446,7 +446,7 @@ function VirtualKey:invert(invert, hold)
     else
         self[1].inner_bordersize = 0
     end
-    self:update_keyboard(hold, false)
+    self:update_keyboard(hold, true)
 end
 
 VirtualKeyPopup = FocusManager:new{
