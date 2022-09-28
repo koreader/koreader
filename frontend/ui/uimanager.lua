@@ -944,7 +944,7 @@ function UIManager:getElapsedTimeSinceBoot()
 end
 
 -- precedence of refresh modes:
-local refresh_modes = { fast = 1, ui = 2, partial = 3, flashui = 4, flashpartial = 5, full = 6 }
+local refresh_modes = { fast = 1, ui = 2, partial = 3, ["[ui]"] = 4, ["[partial]"] = 5, flashui = 6, flashpartial = 7, full = 8 }
 -- NOTE: We might want to introduce a "force_fast" that points to fast, but has the highest priority,
 --       for the few cases where we might *really* want to enforce fast (for stuff like panning or skimming?).
 -- refresh methods in framebuffer implementation
@@ -952,6 +952,8 @@ local refresh_methods = {
     fast = "refreshFast",
     ui = "refreshUI",
     partial = "refreshPartial",
+    ["[ui]"] = "refreshNoMergeUI",
+    ["[partial]"] = "refreshNoMergePartial",
     flashui = "refreshFlashUI",
     flashpartial = "refreshFlashPartial",
     full = "refreshFull",
@@ -992,7 +994,7 @@ Widgets call this in their `paintTo()` method in order to notify
 UIManager that a certain part of the screen is to be refreshed.
 
 @string mode
-    refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"`)
+    refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`)
 @param region
     A rectangle @{ui.geometry.Geom|Geom} object that specifies the region to be updated.
     Optional, update will affect whole screen if not specified.
