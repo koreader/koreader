@@ -62,6 +62,7 @@ if [ -n "${WIFI_DEP_MOD}" ]; then
 fi
 
 if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
+    usleep 250000
     ./luajit frontend/device/kobo/ntx_io.lua 208 0
 else
     if grep -q "^sdio_wifi_pwr" "/proc/modules"; then

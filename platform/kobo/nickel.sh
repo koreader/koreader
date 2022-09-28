@@ -82,7 +82,8 @@ if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     fi
 
     if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
-        ./luajit frontend/device/kobo/ntx_io.lua 208 0
+        usleep 250000
+        "${KOREADER_DIR}"/luajit "${KOREADER_DIR}"/frontend/device/kobo/ntx_io.lua 208 0
     else
         if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
             if [ -n "${CPUFREQ_DVFS}" ]; then
