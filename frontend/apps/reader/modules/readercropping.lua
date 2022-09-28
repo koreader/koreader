@@ -13,7 +13,7 @@ local Device = require("device")
 local Screen = Device.screen
 local _ = require("gettext")
 
-local ReaderCropping = InputContainer:new{}
+local ReaderCropping = InputContainer:extend{}
 
 function ReaderCropping:onPageCrop(mode)
     self.ui:handleEvent(Event:new("CloseConfigMenu"))

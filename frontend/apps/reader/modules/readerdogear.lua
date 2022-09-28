@@ -8,7 +8,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 
-local ReaderDogear = InputContainer:new{}
+local ReaderDogear = InputContainer:extend{}
 
 function ReaderDogear:init()
     -- This image could be scaled for DPI (with scale_for_dpi=true, scale_factor=0.7),

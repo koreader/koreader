@@ -27,7 +27,7 @@ local function copyPageState(page_state)
 end
 
 
-local ReaderPaging = InputContainer:new{
+local ReaderPaging = InputContainer:extend{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     current_page = 0,
     number_of_pages = 0,

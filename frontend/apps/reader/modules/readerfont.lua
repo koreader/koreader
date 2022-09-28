@@ -19,7 +19,7 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local optionsutil = require("ui/data/optionsutil")
 
-local ReaderFont = InputContainer:new{
+local ReaderFont = InputContainer:extend{
     font_face = nil,
     font_size = nil,
     line_space_percent = nil,

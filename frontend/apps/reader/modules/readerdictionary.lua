@@ -60,7 +60,7 @@ local function getIfosInDir(path)
     return ifos
 end
 
-local ReaderDictionary = InputContainer:new{
+local ReaderDictionary = InputContainer:extend{
     data_dir = nil,
     dict_window_list = {},
     lookup_msg = _("Searching dictionary for:\n%1"),

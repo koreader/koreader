@@ -2,7 +2,7 @@ local EventListener = require("ui/widget/eventlistener")
 
 local DHINTCOUNT = G_defaults:readSetting("DHINTCOUNT")
 
-local ReaderHinting = EventListener:new{
+local ReaderHinting = EventListener:extend{
     hinting_states = {}
 }
 

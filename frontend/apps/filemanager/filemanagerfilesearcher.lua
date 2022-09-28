@@ -17,7 +17,7 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
-local FileSearcher = InputContainer:new{
+local FileSearcher = InputContainer:extend{
     dirs = {},
     files = {},
     results = {},

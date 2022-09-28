@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local ReaderStatus = InputContainer:new {
+local ReaderStatus = InputContainer:extend{
     document = nil,
     summary = {
         rating = 0,
@@ -19,7 +19,7 @@ local ReaderStatus = InputContainer:new {
         modified = "",
     },
     enabled = true,
-    total_pages = 0
+    total_pages = 0,
 }
 
 function ReaderStatus:init()

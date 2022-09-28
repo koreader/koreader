@@ -14,7 +14,7 @@ local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local ReaderZooming = InputContainer:new{
+local ReaderZooming = InputContainer:extend{
     zoom = 1.0,
     available_zoom_modes = {
         "page",
