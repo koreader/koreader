@@ -6,7 +6,6 @@ local bit = require("bit")
 local Font = require("ui/font")
 local Cache = require("cache")
 local Blitbuffer = require("ffi/blitbuffer")
-local Device = require("device")
 local logger = require("logger")
 
 local band = bit.band
