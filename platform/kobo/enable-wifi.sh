@@ -24,10 +24,10 @@ case "${WIFI_MODULE}" in
         ;;
 esac
 
-# Load wifi modules and enable wifi.
+# Power up WiFi chip, Load wifi modules and enable wifi.
 if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
-    # 208 is CM_WIFI_CTRL; and, yes, we do mean 0 as it is *NOT* used.
-    ./luajit frontend/device/kobo/ntx_io.lua 208 0
+    # 208 is CM_WIFI_CTRL
+    ./luajit frontend/device/kobo/ntx_io.lua 208 1
 else
     if ! grep -q "^sdio_wifi_pwr" "/proc/modules"; then
         if [ -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
@@ -78,8 +78,9 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
             elif [ -e "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko" ]; then
                 insmod "/drivers/${PLATFORM}/${WIFI_DEP_MOD}.ko"
             fi
-            # NOTE: This chip appears to be extra bitchy, so, let's mimic Nickel's sleep patterns to the T...
-            sleep 2
+            # NOTE: Nickel sleeps for two whole seconds after each module loading.
+            #       Let's try our usual timing instead...
+            usleep 250000
             ;;
     esac
 
@@ -121,6 +122,7 @@ fi
 # NOTE: We're after a module insert, meaning Nickel may sleep for two whole seconds here.
 case "${WIFI_MODULE}" in
     "moal")
+        # NOTE: Bringup may be genuinely slower than usual with this SoC, so, mimic Nickel's sleep patterns.
         sleep 2
         ;;
     *)
