@@ -122,7 +122,7 @@ fi
 # NOTE: We're after a module insert, meaning Nickel may sleep for two whole seconds here.
 case "${WIFI_MODULE}" in
     "moal")
-        # NOTE: Bringup may be genuinely slower than usual with this SoC, so, mimic Nickel's sleep patterns.
+        # NOTE: Bringup may be genuinely slower than usual with this chip, so, mimic Nickel's sleep patterns.
         sleep 2
         ;;
     *)
