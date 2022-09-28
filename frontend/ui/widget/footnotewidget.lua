@@ -112,7 +112,7 @@ body > section > title {
 -- body { background-color: #eeeeee; }
 
 -- Widget to display footnote HTML content
-local FootnoteWidget = InputContainer:new{
+local FootnoteWidget = InputContainer:extend{
     html = nil,
     css = nil,
     -- font_face can't really be overriden, it needs to be known by MuPDF

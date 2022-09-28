@@ -30,7 +30,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- BookMapRow (reused by PageBrowserWidget)
-local BookMapRow = InputContainer:new{
+local BookMapRow = InputContainer:extend{
     width = nil,
     height = nil,
     pages_frame_border = Size.border.default,
@@ -517,7 +517,7 @@ function BookMapRow:paintTo(bb, x, y)
 end
 
 -- BookMapWidget: shows a map of content, including TOC, boomarks, read pages, non-linear flows...
-local BookMapWidget = InputContainer:new{
+local BookMapWidget = InputContainer:extend{
     title = _("Book map"),
     -- Focus page: show the BookMapRow containing this page
     -- in the middle of screen

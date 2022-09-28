@@ -33,7 +33,7 @@ local util = require("util")
 local xtext -- Delayed (and optional) loading
 local Screen = require("device").screen
 
-local TextBoxWidget = InputContainer:new{
+local TextBoxWidget = InputContainer:extend{
     text = nil,
     editable = false, -- Editable flag for whether drawing the cursor or not.
     justified = false, -- Should text be justified (spaces widened to fill width)

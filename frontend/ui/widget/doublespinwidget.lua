@@ -20,7 +20,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local DoubleSpinWidget = FocusManager:new{
+local DoubleSpinWidget = FocusManager:extend{
     title_text = "",
     title_face = Font:getFace("x_smalltfont"),
     info_text = nil,

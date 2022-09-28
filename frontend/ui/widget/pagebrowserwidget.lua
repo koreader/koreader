@@ -28,7 +28,7 @@ local BookMapWidget = require("ui/widget/bookmapwidget")
 local BookMapRow = BookMapWidget.BookMapRow
 
 -- PageBrowserWidget: shows thumbnails of pages
-local PageBrowserWidget = InputContainer:new{
+local PageBrowserWidget = InputContainer:extend{
     title = _("Page browser"),
     -- Focus page: will be put at the best place in the thumbnail grid
     -- (that is, the grid will pick thumbnails from pages before and

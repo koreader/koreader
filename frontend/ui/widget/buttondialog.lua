@@ -12,7 +12,7 @@ local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = require("device").screen
 
-local ButtonDialog = InputContainer:new{
+local ButtonDialog = InputContainer:extend{
     buttons = nil,
     tap_close_callback = nil,
     alpha = nil, -- passed to MovableContainer

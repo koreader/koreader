@@ -26,7 +26,7 @@ to not get stuck in an invalid position.
 but notice that this does _not_ do the layout for you,
 it rather defines an abstract layout.
 ]]
-local FocusManager = InputContainer:new{
+local FocusManager = InputContainer:extend{
     selected = nil, -- defaults to x=1, y=1
     layout = nil, -- mandatory
     movement_allowed = { x = true, y = true },

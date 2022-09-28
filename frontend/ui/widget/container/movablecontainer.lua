@@ -23,7 +23,7 @@ local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local logger = require("logger")
 
-local MovableContainer = InputContainer:new{
+local MovableContainer = InputContainer:extend{
     -- Alpha value for subwidget transparency
     -- 0 = fully invisible, 1 = fully opaque (0.6 / 0.7 / 0.8 are some interesting values)
     alpha = nil,

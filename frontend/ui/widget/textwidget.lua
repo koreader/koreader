@@ -24,7 +24,7 @@ local dbg = require("dbg")
 local util = require("util")
 local xtext -- Delayed (and optional) loading
 
-local TextWidget = Widget:new{
+local TextWidget = Widget:extend{
     text = nil,
     face = nil,
     bold = false, -- use bold=true to use a real bold font (or synthetized if not available),

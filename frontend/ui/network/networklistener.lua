@@ -9,7 +9,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local NetworkListener = InputContainer:new{}
+local NetworkListener = InputContainer:extend{}
 
 function NetworkListener:onToggleWifi()
     if not NetworkMgr:isWifiOn() then

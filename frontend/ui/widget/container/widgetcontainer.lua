@@ -21,7 +21,7 @@ if Device.should_restrict_JIT then
     jit.off(true, true)
 end
 
-local WidgetContainer = Widget:new()
+local WidgetContainer = Widget:extend{}
 
 function WidgetContainer:init()
     if self.dimen then

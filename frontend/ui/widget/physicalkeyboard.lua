@@ -17,7 +17,7 @@ local logger = require("logger")
 local util = require("util")
 local Screen = Device.screen
 
-local PhysicalNumericKey = WidgetContainer:new{
+local PhysicalNumericKey = WidgetContainer:extend{
     key = nil,
     label = nil,
     physical_key_label = nil,
@@ -67,7 +67,7 @@ end
 
 -- start of PhysicalKeyboard
 
-local PhysicalKeyboard = InputContainer:new{
+local PhysicalKeyboard = InputContainer:extend{
     is_always_active = true,
     inputbox = nil,  -- expect ui/widget/inputtext instance
     bordersize = Size.border.button,

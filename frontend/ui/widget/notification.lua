@@ -39,7 +39,7 @@ local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE + SOURCE_DISPATCHER
 local SOURCE_DEFAULT = SOURCE_SOME + SOURCE_BOTTOM_MENU_MORE + SOURCE_BOTTOM_MENU_PROGRESS
 local SOURCE_ALL = SOURCE_BOTTOM_MENU + SOURCE_DISPATCHER + SOURCE_OTHER
 
-local Notification = InputContainer:new{
+local Notification = InputContainer:extend{
     face = Font:getFace("x_smallinfofont"),
     text = "Null Message",
     margin = Size.margin.default,

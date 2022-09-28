@@ -40,7 +40,7 @@ local T = FFIUtil.template
 --[[--
 Widget that displays a shortcut icon for menu item.
 --]]
-local ItemShortCutIcon = WidgetContainer:new{
+local ItemShortCutIcon = WidgetContainer:extend{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
     bordersize = Size.border.default,
@@ -88,7 +88,7 @@ end
 --[[
 Widget that displays an item for menu
 --]]
-local MenuItem = InputContainer:new{
+local MenuItem = InputContainer:extend{
     text = nil,
     bidi_wrap_func = nil,
     show_parent = nil,
@@ -565,7 +565,7 @@ end
 --[[
 Widget that displays menu
 --]]
-local Menu = FocusManager:new{
+local Menu = FocusManager:extend{
     show_parent = nil,
 
     title = "No Title",

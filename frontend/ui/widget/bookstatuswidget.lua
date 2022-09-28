@@ -32,14 +32,14 @@ local T = require("ffi/util").template
 local stats_book = {}
 
 --[[
---Save into sdr folder addtional section
+-- Stored in the sidecar metadata, in a dedicated table:
 ["summary"] = {
     ["rating"] = 5,
     ["note"] = "Some text",
     ["status"] = "Reading"
     ["modified"] = "24.01.2016"
 },]]
-local BookStatusWidget = FocusManager:new{
+local BookStatusWidget = FocusManager:extend{
     padding = Size.padding.fullscreen,
     settings = nil,
     thumbnail = nil,

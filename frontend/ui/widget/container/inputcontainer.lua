@@ -38,7 +38,7 @@ if Device.should_restrict_JIT then
     jit.off(true, true)
 end
 
-local InputContainer = WidgetContainer:new{
+local InputContainer = WidgetContainer:extend{
     vertical_align = "top",
 }
 

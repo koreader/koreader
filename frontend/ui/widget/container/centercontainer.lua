@@ -4,7 +4,7 @@ CenterContainer centers its content (1 widget) within its own dimensions
 
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local CenterContainer = WidgetContainer:new()
+local CenterContainer = WidgetContainer:extend{}
 
 function CenterContainer:paintTo(bb, x, y)
     local content_size = self[1]:getSize()

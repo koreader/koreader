@@ -4,7 +4,7 @@ local Geom = require("ui/geometry")
 --[[
 FixedTextWidget
 --]]
-local FixedTextWidget = TextWidget:new{}
+local FixedTextWidget = TextWidget:extend{}
 
 function FixedTextWidget:updateSize()
     TextWidget.updateSize(self)

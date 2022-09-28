@@ -74,7 +74,7 @@ local function obtainIP()
 end
 
 
-local MinimalPaginator = Widget:new{
+local MinimalPaginator = Widget:extend{
     width = nil,
     height = nil,
     progress = nil,
@@ -100,7 +100,7 @@ end
 function MinimalPaginator:setProgress(progress) self.progress = progress end
 
 
-local NetworkItem = InputContainer:new{
+local NetworkItem = InputContainer:extend{
     dimen = nil,
     height = Screen:scaleBySize(44),
     icon_size = Screen:scaleBySize(32),
@@ -384,7 +384,7 @@ function NetworkItem:onTapSelect(arg, ges_ev)
 end
 
 
-local NetworkSetting = InputContainer:new{
+local NetworkSetting = InputContainer:extend{
     width = nil,
     height = nil,
     -- sample network_list entry: {

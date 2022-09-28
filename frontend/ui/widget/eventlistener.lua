@@ -9,10 +9,15 @@ will call a method "onEventName" for an event with name
 
 local EventListener = {}
 
-function EventListener:new(new_o)
-    local o = new_o or {}
+function EventListener:extend(baseclass)
+    local o = baseclass or {}
     setmetatable(o, self)
     self.__index = self
+    return o
+end
+
+function EventListener:new(o)
+    o = self:extend(o)
     if o.init then o:init() end
     return o
 end
