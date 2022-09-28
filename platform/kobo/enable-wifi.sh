@@ -24,7 +24,7 @@ case "${WIFI_MODULE}" in
         ;;
 esac
 
-# Power up WiFi chip, Load wifi modules and enable wifi.
+# Power up WiFi chip
 if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
     # 208 is CM_WIFI_CTRL
     ./luajit frontend/device/kobo/ntx_io.lua 208 1
@@ -48,6 +48,7 @@ fi
 # Moar sleep!
 usleep 250000
 
+# Load WiFi modules
 # NOTE: Used to be exported in WIFI_MODULE_PATH before FW 4.23
 if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     # Set the Wi-Fi regulatory domain properly if necessary...
@@ -130,6 +131,7 @@ case "${WIFI_MODULE}" in
         ;;
 esac
 
+# Bring the network interface up & setup WiFi
 ifconfig "${INTERFACE}" up
 [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" up
 
