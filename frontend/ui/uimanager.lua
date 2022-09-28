@@ -416,12 +416,12 @@ Here's a quick rundown of what each refreshtype should be used for:
              Can be promoted to flashing after `FULL_REFRESH_COUNT` refreshes.
              Don't abuse to avoid spurious flashes.
              In practice, this means this should mostly always be limited to ReaderUI.
-* `[partial]`: variant of partial that asks the driver not to merge this update with surrounding updates.
+* `[partial]`: variant of partial that asks the driver not to merge this update with surrounding ones.
                Equivalent to partial on platforms where this distinction is not implemented.
 * `ui`: medium fidelity refresh (e.g., mixed content).
         Should apply to most UI elements.
         When in doubt, use this.
-* `[ui]`: variant of ui that asks the driver not to merge this update with surrounding updates.
+* `[ui]`: variant of ui that asks the driver not to merge this update with surrounding ones.
           Equivalent to ui on platforms where this distinction is not implemented.
 * `fast`: low fidelity refresh (e.g., monochrome content (technically, from any to B&W)).
           Should apply to most highlighting effects achieved through inversion.
