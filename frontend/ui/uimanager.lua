@@ -951,7 +951,7 @@ end
 
 -- precedence of refresh modes:
 local refresh_modes = { a2 = 1, fast = 2, ui = 3, partial = 4, ["[ui]"] = 5, ["[partial]"] = 6, flashui = 7, flashpartial = 8, full = 9 }
--- NOTE: We might want to introduce a "force_fast" that points to fast, but has the highest priority,
+-- NOTE: We might want to introduce a "force_a2" that points to fast, but has the highest priority,
 --       for the few cases where we might *really* want to enforce fast (for stuff like panning or skimming?).
 -- refresh methods in framebuffer implementation
 local refresh_methods = {
