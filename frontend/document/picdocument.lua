@@ -3,7 +3,7 @@ local DrawContext = require("ffi/drawcontext")
 local CanvasContext = require("document/canvascontext")
 local pic = nil
 
-local PicDocument = Document:new{
+local PicDocument = Document:extend{
     _document = false,
     is_pic = true,
     dc_null = DrawContext.new(),

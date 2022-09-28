@@ -40,10 +40,15 @@ local Document = {
 
 }
 
-function Document:new(from_o)
+function Document:extend(from_o)
     local o = from_o or {}
     setmetatable(o, self)
     self.__index = self
+    return o
+end
+
+function Document:new(o)
+    o = self:extend(o)
     if o._init then o:_init() end
     if o.init then o:init() end
     return o
@@ -51,7 +56,7 @@ end
 
 -- base document initialization should be called on each document init
 function Document:_init()
-    self.configurable = Configurable:new()
+    self.configurable = Configurable:new{}
     self.info = {
         -- whether the document is pageable
         has_pages = false,
