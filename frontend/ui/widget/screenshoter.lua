@@ -9,7 +9,7 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local Screenshoter = InputContainer:new{
+local Screenshoter = InputContainer:extend{
     prefix = 'Screenshot',
 }
 

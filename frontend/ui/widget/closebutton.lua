@@ -19,7 +19,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local TextWidget = require("ui/widget/textwidget")
 local Screen = require("device").screen
 
-local CloseButton = InputContainer:new{
+local CloseButton = InputContainer:extend{
     overlap_align = "right",
     window = nil,
     padding_left = Screen:scaleBySize(14), -- for larger touch area

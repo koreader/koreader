@@ -4,7 +4,7 @@ local Font = require("ui/font")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local TextWidget = require("ui/widget/textwidget")
 
-local RadioMark = InputContainer:new{
+local RadioMark = InputContainer:extend{
     checkable = true, -- empty space when false
     checked = false,
     enabled = true,

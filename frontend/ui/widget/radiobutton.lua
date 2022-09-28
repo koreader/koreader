@@ -27,7 +27,7 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 
-local RadioButton = InputContainer:new{
+local RadioButton = InputContainer:extend{
     checkable = true,
     checked = false,
     enabled = true,

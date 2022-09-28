@@ -11,7 +11,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 
-local SwitchPlugin = WidgetContainer:new()
+local SwitchPlugin = WidgetContainer:extend{}
 
 function SwitchPlugin:extend(o)
     o = o or {}

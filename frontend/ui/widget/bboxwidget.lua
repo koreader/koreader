@@ -12,7 +12,7 @@ local Screen = Device.screen
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 
-local BBoxWidget = InputContainer:new{
+local BBoxWidget = InputContainer:extend{
     page_bbox = nil,
     screen_bbox = nil,
     linesize = Size.line.thick,

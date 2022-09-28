@@ -17,7 +17,7 @@ local UIManager = require("ui/uimanager")
 local Input = Device.input
 local Screen = Device.screen
 
-local ScrollTextWidget = InputContainer:new{
+local ScrollTextWidget = InputContainer:extend{
     text = nil,
     charlist = nil,
     charpos = nil,

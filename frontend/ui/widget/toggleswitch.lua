@@ -23,13 +23,13 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local ToggleLabel = TextWidget:new{
+local ToggleLabel = TextWidget:extend{
     bold = true,
     bgcolor = Blitbuffer.COLOR_WHITE,
     fgcolor = Blitbuffer.COLOR_BLACK,
 }
 
-local ToggleSwitch = FocusManager:new{
+local ToggleSwitch = FocusManager:extend{
     width = Screen:scaleBySize(216),
     height = Size.item.height_default,
     bgcolor = Blitbuffer.COLOR_WHITE, -- unfocused item color

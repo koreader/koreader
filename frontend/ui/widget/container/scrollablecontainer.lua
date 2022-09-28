@@ -24,7 +24,7 @@ local VerticalScrollBar = require("ui/widget/verticalscrollbar")
 local Screen = Device.screen
 local logger = require("logger")
 
-local ScrollableContainer = InputContainer:new{
+local ScrollableContainer = InputContainer:extend{
     -- Events to ignore (ie: ignore_events={"hold", "hold_release"})
     ignore_events = nil,
     scroll_bar_width = Screen:scaleBySize(6),

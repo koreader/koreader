@@ -6,7 +6,7 @@ local BD = require("ui/bidi")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
 
-local HorizontalGroup = WidgetContainer:new{
+local HorizontalGroup = WidgetContainer:extend{
     align = "center",
     allow_mirroring = true,
     _size = nil,

@@ -19,7 +19,7 @@ Example:
 local Blitbuffer = require("ffi/blitbuffer")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local AlphaContainer = WidgetContainer:new{
+local AlphaContainer = WidgetContainer:extend{
     alpha = 1,
     -- we cache a blitbuffer object for re-use here:
     private_bb = nil,

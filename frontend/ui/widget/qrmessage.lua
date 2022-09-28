@@ -30,7 +30,7 @@ local Input = Device.input
 local Screen = Device.screen
 local Size = require("ui/size")
 
-local QRMessage = InputContainer:new{
+local QRMessage = InputContainer:extend{
     modal = true,
     timeout = nil, -- in seconds
     text = nil,  -- The text to encode.

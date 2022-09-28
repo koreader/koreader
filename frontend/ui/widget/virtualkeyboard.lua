@@ -31,7 +31,7 @@ local DEFAULT_LABEL_SIZE = 22
 
 local VirtualKeyPopup
 
-local VirtualKey = InputContainer:new{
+local VirtualKey = InputContainer:extend{
     key = nil,
     icon = nil,
     label = nil,
@@ -726,7 +726,7 @@ function VirtualKeyPopup:init()
     end)
 end
 
-local VirtualKeyboard = FocusManager:new{
+local VirtualKeyboard = FocusManager:extend{
     name = "VirtualKeyboard",
     modal = true,
     disable_double_tap = true,

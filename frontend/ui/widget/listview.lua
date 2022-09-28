@@ -46,7 +46,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Size = require("ui/size")
 local VerticalGroup = require("ui/widget/verticalgroup")
 
-local ListView = InputContainer:new{
+local ListView = InputContainer:extend{
     width = nil,
     height = nil,
     padding = nil,

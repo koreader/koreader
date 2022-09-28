@@ -5,7 +5,7 @@ RightContainer aligns its content (1 widget) at the right of its own dimensions
 local BD = require("ui/bidi")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local RightContainer = WidgetContainer:new{
+local RightContainer = WidgetContainer:extend{
     allow_mirroring = true,
 }
 

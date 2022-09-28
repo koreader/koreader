@@ -37,7 +37,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 local Screen = require("device").screen
 
-local MultiConfirmBox = InputContainer:new{
+local MultiConfirmBox = InputContainer:extend{
     modal = true,
     text = _("no text"),
     face = Font:getFace("infofont"),

@@ -19,9 +19,9 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local Keyboard
-local FocusManagerInstance = FocusManager:new{}
+local FocusManagerInstance -- Delayed instantiation
 
-local InputText = InputContainer:new{
+local InputText = InputContainer:extend{
     text = "",
     hint = "demo hint",
     input_type = nil, -- "number" or anything else
@@ -616,6 +616,9 @@ function InputText:onKeyPress(key)
         -- FocusManager may turn on alternative key maps.
         -- These key map maybe single text keys.
         -- It will cause unexpected focus move instead of enter text to InputText
+        if not FocusManagerInstance then
+            FocusManagerInstance = FocusManager:new{}
+        end
         local is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
         if not is_alternative_key and Device:isSDL() then
             -- SDL already insert char via TextInput event

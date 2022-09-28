@@ -7,7 +7,7 @@ local zmq = ffi.load("libs/libzmq.so.4")
 local czmq = ffi.load("libs/libczmq.so.1")
 local C = ffi.C
 
-local StreamMessageQueue = MessageQueue:new{
+local StreamMessageQueue = MessageQueue:extend{
     host = nil,
     port = nil,
 }

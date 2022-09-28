@@ -39,7 +39,7 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
-local ConfirmBox = InputContainer:new{
+local ConfirmBox = InputContainer:extend{
     modal = true,
     keep_dialog_open = false,
     text = _("no text"),

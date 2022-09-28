@@ -5,7 +5,7 @@ A layout widget that puts objects above each other.
 local BD = require("ui/bidi")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local OverlapGroup = WidgetContainer:new{
+local OverlapGroup = WidgetContainer:extend{
     -- Note: we default to allow_mirroring = true.
     -- When using LeftContainer, RightContainer or HorizontalGroup
     -- in an OverlapGroup, mostly when they take the whole width,

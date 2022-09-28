@@ -26,7 +26,7 @@ local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local SortItemWidget = InputContainer:new{
+local SortItemWidget = InputContainer:extend{
     item = nil,
     face = Font:getFace("smallinfofont"),
     width = nil,
@@ -116,7 +116,7 @@ function SortItemWidget:onHold()
     return true
 end
 
-local SortWidget = FocusManager:new{
+local SortWidget = FocusManager:extend{
     title = "",
     width = nil,
     height = nil,

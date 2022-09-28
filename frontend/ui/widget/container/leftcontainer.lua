@@ -5,7 +5,7 @@ LeftContainer aligns its content (1 widget) at the left of its own dimensions
 local BD = require("ui/bidi")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local LeftContainer = WidgetContainer:new{
+local LeftContainer = WidgetContainer:extend{
     allow_mirroring = true,
 }
 

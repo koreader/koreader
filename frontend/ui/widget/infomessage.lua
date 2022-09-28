@@ -44,7 +44,7 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
-local InfoMessage = InputContainer:new{
+local InfoMessage = InputContainer:extend{
     modal = true,
     face = Font:getFace("infofont"),
     text = "",

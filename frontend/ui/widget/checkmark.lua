@@ -21,7 +21,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local TextWidget = require("ui/widget/textwidget")
 
-local CheckMark = InputContainer:new{
+local CheckMark = InputContainer:extend{
     checkable = true,
     checked = false,
     enabled = true,

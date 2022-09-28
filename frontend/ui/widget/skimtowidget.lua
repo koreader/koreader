@@ -20,7 +20,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local SkimToWidget = FocusManager:new{}
+local SkimToWidget = FocusManager:extend{}
 
 function SkimToWidget:init()
     local screen_width = Screen:getWidth()

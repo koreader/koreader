@@ -25,7 +25,7 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
 
-local FrontLightWidget = FocusManager:new{
+local FrontLightWidget = FocusManager:extend{
     name = "FrontLightWidget",
     width = nil,
     height = nil,

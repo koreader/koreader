@@ -24,7 +24,7 @@ local Geom = require("ui/geometry")
 local Size = require("ui/size")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local FrameContainer = WidgetContainer:new{
+local FrameContainer = WidgetContainer:extend{
     background = nil,
     color = Blitbuffer.COLOR_BLACK,
     margin = 0,

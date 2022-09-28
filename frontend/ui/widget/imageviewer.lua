@@ -24,7 +24,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local ImageViewer = InputContainer:new{
+local ImageViewer = InputContainer:extend{
     -- Allow for providing same different input types as ImageWidget :
     -- a path to a file
     file = nil,

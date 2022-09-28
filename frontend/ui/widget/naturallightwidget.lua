@@ -19,7 +19,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local NaturalLightWidget = InputContainer:new{
+local NaturalLightWidget = InputContainer:extend{
     is_always_active = true,
     width = nil,
     height = nil,

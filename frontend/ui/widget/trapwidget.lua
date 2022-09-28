@@ -25,7 +25,7 @@ local UIManager = require("ui/uimanager")
 local Input = Device.input
 local Screen = Device.screen
 
-local TrapWidget = InputContainer:new{
+local TrapWidget = InputContainer:extend{
     modal = true,
     dismiss_callback = function() end,
     text = nil, -- will be invisible if no message given

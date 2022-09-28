@@ -15,7 +15,7 @@ local VerticalScrollBar = require("ui/widget/verticalscrollbar")
 local Input = Device.input
 local Screen = Device.screen
 
-local ScrollHtmlWidget = InputContainer:new{
+local ScrollHtmlWidget = InputContainer:extend{
     html_body = nil,
     css = nil,
     default_font_size = Screen:scaleBySize(24), -- same as infofont

@@ -17,7 +17,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local RadioButtonWidget = FocusManager:new{
+local RadioButtonWidget = FocusManager:extend{
     title_text = "",
     info_text = nil,
     width = nil,

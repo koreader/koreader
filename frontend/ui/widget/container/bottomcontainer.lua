@@ -6,7 +6,7 @@ dimensions
 local Geom = require("ui/geometry")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local BottomContainer = WidgetContainer:new()
+local BottomContainer = WidgetContainer:extend{}
 
 function BottomContainer:paintTo(bb, x, y)
     local contentSize = self[1]:getSize()

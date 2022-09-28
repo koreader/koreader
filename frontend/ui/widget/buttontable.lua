@@ -10,7 +10,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local Geom = require("ui/geometry")
 local Screen = Device.screen
 
-local ButtonTable = FocusManager:new{
+local ButtonTable = FocusManager:extend{
     width = nil,
     buttons = {
         {

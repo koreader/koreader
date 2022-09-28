@@ -7,7 +7,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Size = require("ui/size")
 local Screen = require("device").screen
 
-local HorizontalScrollBar = InputContainer:new{
+local HorizontalScrollBar = InputContainer:extend{
     enable = true,
     low = 0,
     high = 1,

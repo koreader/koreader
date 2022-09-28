@@ -16,7 +16,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local ButtonDialogTitle = InputContainer:new{
+local ButtonDialogTitle = InputContainer:extend{
     title = nil,
     title_align = nil,
     title_face = Font:getFace("x_smalltfont"),

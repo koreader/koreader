@@ -47,7 +47,7 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local KeyValueItem = InputContainer:new{
+local KeyValueItem = InputContainer:extend{
     key = nil,
     value = nil,
     value_lang = nil,
@@ -273,7 +273,7 @@ function KeyValueItem:onShowKeyValue()
 end
 
 
-local KeyValuePage = FocusManager:new{
+local KeyValuePage = FocusManager:extend{
     title = "",
     width = nil,
     height = nil,

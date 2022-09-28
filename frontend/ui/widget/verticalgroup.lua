@@ -5,7 +5,7 @@ A layout widget that puts objects under each other.
 local BD = require("ui/bidi")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local VerticalGroup = WidgetContainer:new{
+local VerticalGroup = WidgetContainer:extend{
     align = "center",
     allow_mirroring = true,
     _size = nil,
