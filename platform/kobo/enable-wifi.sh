@@ -69,7 +69,7 @@ if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     VENDOR_WIFI_PARM=""
     case "${WIFI_MODULE}" in
         "moal")
-            # NXP's driver for their 88W8987 RF SoC needs to be told what to choose between client, AP & WiFi DIRECT mode.
+            # NXP's driver for the Marvell 88W8987 RF SoC needs to be told what to choose between client, AP & WiFi DIRECT mode.
             VENDOR_WIFI_PARM="mod_para=nxp/wifi_mod_para_sd8987.conf"
 
             # And, of course, it requires a submodule...
