@@ -66,21 +66,41 @@ if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     usleep 250000
     rmmod "${WIFI_MODULE}"
 
-    if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
-        if [ -n "${CPUFREQ_DVFS}" ]; then
-            echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-            # Leave Nickel in its usual state, don't try to use conservative
-            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-            cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+    WIFI_DEP_MOD=""
+    SKIP_SDIO_PWR_MODULE=""
+    case "${WIFI_MODULE}" in
+        "moal")
+            WIFI_DEP_MOD="mlan"
+            SKIP_SDIO_PWR_MODULE="1"
+            ;;
+    esac
+    if [ -n "${WIFI_DEP_MOD}" ]; then
+        if grep -q "^${WIFI_DEP_MOD}" "/proc/modules"; then
+            usleep 250000
+            rmmod "${WIFI_DEP_MOD}"
         fi
-        usleep 250000
-        rmmod sdio_wifi_pwr
     fi
 
-    # Poke the kernel via ioctl on platforms without the dedicated power module...
-    if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+    if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
         usleep 250000
         "${KOREADER_DIR}"/luajit "${KOREADER_DIR}"/frontend/device/kobo/ntx_io.lua 208 0
+    else
+        if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
+            if [ -n "${CPUFREQ_DVFS}" ]; then
+                echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+                # Leave Nickel in its usual state, don't try to use conservative
+                echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+            fi
+            usleep 250000
+            rmmod sdio_wifi_pwr
+        fi
+
+        # Poke the kernel via ioctl on platforms without the dedicated power module...
+        if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+            usleep 250000
+            "${KOREADER_DIR}"/luajit "${KOREADER_DIR}"/frontend/device/kobo/ntx_io.lua 208 0
+        fi
     fi
 fi
 
