@@ -126,7 +126,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no refresh will be enqueued at this time.
 
 @param widget a @{ui.widget.widget|widget} object
-@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @int x horizontal screen offset (optional, `0` if omitted)
 @int y vertical screen offset (optional, `0` if omitted)
@@ -181,7 +181,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no extra refresh will be enqueued at this time, leaving only those from the uncovered widgets.
 
 @param widget a @{ui.widget.widget|widget} object
-@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @bool refreshdither `true` if the refresh requires dithering (optional, requires refreshtype to be set)
 @see setDirty
@@ -423,11 +423,13 @@ Here's a quick rundown of what each refreshtype should be used for:
         When in doubt, use this.
 * `[ui]`: variant of ui that asks the driver not to merge this update with surrounding updates.
           Equivalent to ui on platforms where this distinction is not implemented.
-* `fast`: low fidelity refresh (e.g., monochrome content).
+* `fast`: low fidelity refresh (e.g., monochrome content (technically, from any to B&W)).
           Should apply to most highlighting effects achieved through inversion.
           Note that if your highlighted element contains text,
           you might want to keep the unhighlight refresh as `"ui"` instead, for crisper text.
           (Or optimize that refresh away entirely, if you can get away with it).
+* `a2`:   low fidelity refresh (e.g., monochrome content (technically, from B&W to B&W only)).
+          Should be limited to very specific use-cases (e.g., keyboard)
 * `flashui`: like `ui`, but flashing.
              Can be used when showing a UI element for the first time, or when closing one, to avoid ghosting.
 * `flashpartial`: like `partial`, but flashing (and not counting towards flashing promotions).
@@ -505,7 +507,7 @@ UIManager:setDirty(self.widget, "partial", Geom:new{x=10,y=10,w=100,h=50})
 UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen end)
 
 @param widget a window-level widget object, `"all"`, or `nil`
-@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"` (or a lambda, see description above)
+@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"` (or a lambda, see description above)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, omitting it means the region will cover the full screen)
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
@@ -948,11 +950,12 @@ function UIManager:getElapsedTimeSinceBoot()
 end
 
 -- precedence of refresh modes:
-local refresh_modes = { fast = 1, ui = 2, partial = 3, ["[ui]"] = 4, ["[partial]"] = 5, flashui = 6, flashpartial = 7, full = 8 }
+local refresh_modes = { a2 = 1, fast = 2, ui = 3, partial = 4, ["[ui]"] = 5, ["[partial]"] = 6, flashui = 7, flashpartial = 8, full = 9 }
 -- NOTE: We might want to introduce a "force_fast" that points to fast, but has the highest priority,
 --       for the few cases where we might *really* want to enforce fast (for stuff like panning or skimming?).
 -- refresh methods in framebuffer implementation
 local refresh_methods = {
+    a2 = "refreshA2",
     fast = "refreshFast",
     ui = "refreshUI",
     partial = "refreshPartial",
@@ -998,7 +1001,7 @@ Widgets call this in their `paintTo()` method in order to notify
 UIManager that a certain part of the screen is to be refreshed.
 
 @string mode
-    refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`)
+    refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"`, `"a2"`)
 @param region
     A rectangle @{ui.geometry.Geom|Geom} object that specifies the region to be updated.
     Optional, update will affect whole screen if not specified.
