@@ -2,7 +2,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Device = require("device")
 local _ = require("gettext")
 
-local ReaderPanning = InputContainer:new{
+local ReaderPanning = InputContainer:extend{
     -- defaults
     panning_steps = {
         normal = 50,

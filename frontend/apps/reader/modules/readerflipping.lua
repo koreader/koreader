@@ -4,7 +4,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local Screen = require("device").screen
 
-local ReaderFlipping = InputContainer:new{
+local ReaderFlipping = InputContainer:extend{
     orig_reflow_mode = 0,
 }
 

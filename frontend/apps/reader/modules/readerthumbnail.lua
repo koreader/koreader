@@ -18,7 +18,7 @@ local _ = require("gettext")
 -- It handles launching via the menu or Dispatcher/Gestures two fullscreen
 -- widgets related to showing pages and thumbnails that will make use of
 -- its services: BookMap and PageBrowser.
-local ReaderThumbnail = InputContainer:new{}
+local ReaderThumbnail = InputContainer:extend{}
 
 function ReaderThumbnail:init()
     if not Device:isTouchDevice() then

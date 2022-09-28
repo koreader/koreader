@@ -13,7 +13,7 @@ local Screen = Device.screen
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local ReaderMenu = InputContainer:new{
+local ReaderMenu = InputContainer:extend{
     tab_item_table = nil,
     menu_items = {},
     registered_widgets = {},

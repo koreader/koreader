@@ -31,7 +31,7 @@ local DISPLAY_PREFIX = {
     bookmark = "\u{F097}\u{2002}", -- "empty bookmark"
 }
 
-local ReaderBookmark = InputContainer:new{
+local ReaderBookmark = InputContainer:extend{
     bookmarks_items_per_page_default = 14,
     bookmarks = nil,
 }

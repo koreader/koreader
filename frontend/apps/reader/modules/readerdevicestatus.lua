@@ -10,7 +10,7 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 
-local ReaderDeviceStatus = InputContainer:new{
+local ReaderDeviceStatus = InputContainer:extend{
     battery_confirm_box = nil,
     memory_confirm_box = nil,
 }

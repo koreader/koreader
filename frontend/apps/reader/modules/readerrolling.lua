@@ -39,7 +39,7 @@ local band = bit.band
     it in explicit page turning. And use that xpointer for non-page-turning
     rendering.
 --]]
-local ReaderRolling = InputContainer:new{
+local ReaderRolling = InputContainer:extend{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     rendering_hash = 0,
     current_pos = 0,

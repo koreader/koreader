@@ -20,7 +20,7 @@ local N_ = _.ngettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local ReaderToc = InputContainer:new{
+local ReaderToc = InputContainer:extend{
     toc = nil,
     toc_depth = nil,
     ticks = nil,

@@ -6,8 +6,7 @@ local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local ReaderGoto = InputContainer:new{
-}
+local ReaderGoto = InputContainer:extend{}
 
 function ReaderGoto:init()
     self.ui.menu:registerToMainMenu(self)

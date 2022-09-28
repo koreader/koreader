@@ -12,7 +12,7 @@ local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
-local ReaderTypography = InputContainer:new{}
+local ReaderTypography = InputContainer:extend{}
 
 -- This is used to migrate old hyph settings, and to show the currently
 -- used hyph dict language in the hyphenation menu.

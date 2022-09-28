@@ -66,7 +66,7 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = ffiUtil.template
 
-local ReaderUI = InputContainer:new{
+local ReaderUI = InputContainer:extend{
     name = "ReaderUI",
     active_widgets = {},
 

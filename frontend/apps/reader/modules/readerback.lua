@@ -13,7 +13,7 @@ local _ = require("gettext")
 -- additionally handles a location stack for each visited page or
 -- page view change (when scrolling in a same page)
 
-local ReaderBack = EventListener:new{
+local ReaderBack = EventListener:extend{
     location_stack = {},
     -- a limit not intended to be a practical limit but just a failsafe
     max_stack = 5000,

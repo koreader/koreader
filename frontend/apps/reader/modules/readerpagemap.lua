@@ -17,7 +17,7 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local ReaderPageMap = InputContainer:new{
+local ReaderPageMap = InputContainer:extend{
     label_font_face = "ffont",
     label_default_font_size = 14,
     -- Black so it's readable (and non-gray-flashing on GloHD)

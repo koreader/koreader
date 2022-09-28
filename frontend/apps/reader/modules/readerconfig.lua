@@ -8,7 +8,7 @@ local CreOptions = require("ui/data/creoptions")
 local KoptOptions = require("ui/data/koptoptions")
 local _ = require("gettext")
 
-local ReaderConfig = InputContainer:new{
+local ReaderConfig = InputContainer:extend{
     last_panel_index = 1,
 }
 

@@ -16,7 +16,7 @@ local SCROLL_METHOD_CLASSIC = "classic"
 local SCROLL_METHOD_TURBO = "turbo"
 local SCROLL_METHOD_ON_RELEASE = "on_release"
 
-local ReaderScrolling = InputContainer:new{
+local ReaderScrolling = InputContainer:extend{
     -- Available scrolling methods (make them available to other reader modules)
     SCROLL_METHOD_CLASSIC = SCROLL_METHOD_CLASSIC,
     SCROLL_METHOD_TURBO = SCROLL_METHOD_TURBO,
