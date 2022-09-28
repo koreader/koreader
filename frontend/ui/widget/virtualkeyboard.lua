@@ -330,10 +330,14 @@ function VirtualKey:update_keyboard(want_flash, want_fast)
         end
         -- Only repaint the key itself, not the full board...
         UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(nil, function()
-            logger.dbg("update key region", self[1].dimen)
-            return refresh_type, self[1].dimen
-        end)
+        logger.dbg("update key", self.key)
+        UIManager:setDirty(nil, refresh_type, self[1].dimen)
+
+        -- NOTE: On MTK, we'd have to forcibly stall a bit for the highlights to actually show.
+        --[[
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC(3000)
+        --]]
     end
 end
 
