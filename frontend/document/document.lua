@@ -40,8 +40,8 @@ local Document = {
 
 }
 
-function Document:extend(from_o)
-    local o = from_o or {}
+function Document:extend(subclass)
+    local o = subclass or {}
     setmetatable(o, self)
     self.__index = self
     return o

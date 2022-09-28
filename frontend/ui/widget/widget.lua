@@ -20,11 +20,11 @@ local Widget = EventListener:extend{}
 Use this method to define a widget subclass that's inherited from a base class widget.
 It only setups the metatable (or prototype chain) and will not initiate a real instance, i.e. call self:init().
 
-@tparam Widget baseclass
+@tparam table subclass
 @treturn Widget
 ]]
-function Widget:extend(baseclass)
-    local o = baseclass or {}
+function Widget:extend(subclass)
+    local o = subclass or {}
     setmetatable(o, self)
     self.__index = self
     return o
@@ -34,7 +34,7 @@ end
 Use this method to initiate an instance of a class.
 Do NOT use it for class definitions because it also calls self:init().
 
-@tparam Widget o
+@tparam table o
 @treturn Widget
 ]]
 function Widget:new(o)
