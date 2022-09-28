@@ -34,10 +34,6 @@ local Device = require("device")
 local Screen = Device.screen
 local _ = require("gettext")
 
-if Device.should_restrict_JIT then
-    jit.off(true, true)
-end
-
 local InputContainer = WidgetContainer:extend{
     vertical_align = "top",
 }
