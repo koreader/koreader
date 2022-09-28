@@ -126,7 +126,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no refresh will be enqueued at this time.
 
 @param widget a @{ui.widget.widget|widget} object
-@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @int x horizontal screen offset (optional, `0` if omitted)
 @int y vertical screen offset (optional, `0` if omitted)
@@ -181,7 +181,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no extra refresh will be enqueued at this time, leaving only those from the uncovered widgets.
 
 @param widget a @{ui.widget.widget|widget} object
-@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @bool refreshdither `true` if the refresh requires dithering (optional, requires refreshtype to be set)
 @see setDirty
@@ -416,9 +416,13 @@ Here's a quick rundown of what each refreshtype should be used for:
              Can be promoted to flashing after `FULL_REFRESH_COUNT` refreshes.
              Don't abuse to avoid spurious flashes.
              In practice, this means this should mostly always be limited to ReaderUI.
+* `[partial]`: variant of partial that asks the driver not to merge this update with surrounding updates.
+               Equivalent to partial on platforms where this distinction is not implemented.
 * `ui`: medium fidelity refresh (e.g., mixed content).
         Should apply to most UI elements.
         When in doubt, use this.
+* `[ui]`: variant of ui that asks the driver not to merge this update with surrounding updates.
+          Equivalent to ui on platforms where this distinction is not implemented.
 * `fast`: low fidelity refresh (e.g., monochrome content).
           Should apply to most highlighting effects achieved through inversion.
           Note that if your highlighted element contains text,
@@ -501,7 +505,7 @@ UIManager:setDirty(self.widget, "partial", Geom:new{x=10,y=10,w=100,h=50})
 UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen end)
 
 @param widget a window-level widget object, `"all"`, or `nil`
-@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (or a lambda, see description above)
+@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"[partial]"`, `"[ui]"`, `"partial"`, `"ui"`, `"fast"` (or a lambda, see description above)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, omitting it means the region will cover the full screen)
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
