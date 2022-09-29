@@ -1,6 +1,6 @@
----------------------------------
--- General input method engine --
----------------------------------
+-----------------------------------------
+-- General Chinese input method engine --
+-----------------------------------------
 local logger = require("logger")
 local util = require("util")
 
@@ -172,7 +172,8 @@ function IME:getCandidates(code)
             return
         elseif wildcard_count ~= 0 then
             if #code == #self.last_key then -- only index change, no new stroke
-                return self:getCandiWithWildcard(code)
+                local last_candi = _stack[#_stack].candi
+                return self:getCandiWithWildcard(code), last_candi
             else
                 self:reset_status()
                 self.last_key = code:gsub(self.W, self.iter_map_last_key)
@@ -207,7 +208,7 @@ function IME:getHintChars()
     if self:show_candi_callback() and -- shows candidates
         #imex.candi ~= 0 and -- has candidates
         ( #imex.code > 1 or imex.index > 1 ) and -- more than one key
-        ( #imex.candi > 1 or has_wildcard ) then -- one candidate but use wildcard, or more candidates
+        ( #imex.candi > 1 or has_wildcard and imex.candi[1] ~= (imex.last_candi or {})[1] ) then -- one candidate but use wildcard, or more candidates
         hint_chars = hint_chars .. "["
         if #imex.candi > 1 then
             local remainder
@@ -262,7 +263,7 @@ function IME:wrappedDelChar(inputbox)
         -- last char has over one input strokes
         imex.code = string.sub(imex.code, 1, -2)
         imex.index = 1
-        imex.candi = self:getCandidates(imex.code)
+        imex.candi, imex.last_candi = self:getCandidates(imex.code)
         imex.char = imex.candi[1]
         self:refreshHintChars(inputbox)
     elseif #_stack > 1 then
@@ -287,7 +288,7 @@ function IME:wrappedAddChars(inputbox, char)
                 return
             elseif imex.index - self.last_index > #imex.candi then
                 self.last_index = self.last_index + #imex.candi
-                imex.candi = self:getCandidates(imex.code)
+                imex.candi,imex.last_candi = self:getCandidates(imex.code)
                 imex.char = imex.candi[1]
             else
                 imex.char = imex.candi[imex.index - self.last_index]
@@ -319,14 +320,15 @@ function IME:wrappedAddChars(inputbox, char)
         if key then
             imex.index = 1
             self:reset_status()
-            local new_candi = self:getCandidates(imex.code..key)
+            local new_candi
+            new_candi,imex.last_candi = self:getCandidates(imex.code..key)
             if new_candi and #new_candi > 0 then
                 imex.code = imex.code .. key
                 imex.char = new_candi[1]
                 imex.candi = new_candi
                 self:refreshHintChars(inputbox)
             else
-                new_candi = self:getCandidates(key) or {} -- single stroke
+                new_candi,imex.last_candi = self:getCandidates(key) or {},nil -- single stroke
                 table.insert(_stack, {code=key, index=1, char=new_candi[1], candi=new_candi})
                 self:refreshHintChars(inputbox)
             end
