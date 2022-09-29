@@ -129,7 +129,7 @@ local Device = {
     canExternalDictLookup = no,
 }
 
-function Device:new(o)
+function Device:extend(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self

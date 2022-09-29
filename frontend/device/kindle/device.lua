@@ -141,7 +141,7 @@ local function frameworkStopped()
     end
 end
 
-local Kindle = Generic:new{
+local Kindle = Generic:extend{
     model = "Kindle",
     isKindle = yes,
     -- NOTE: We can cheat by adding a platform-specific entry here, because the only code that will check for this is here.
@@ -411,7 +411,7 @@ function Kindle:ambientBrightnessLevel()
     return 4
 end
 
-local Kindle2 = Kindle:new{
+local Kindle2 = Kindle:extend{
     model = "Kindle2",
     isREAGL = no,
     hasKeyboard = yes,
@@ -424,7 +424,7 @@ local Kindle2 = Kindle:new{
     supportsScreensaver = yes, -- The first ad-supported device was the K3
 }
 
-local KindleDXG = Kindle:new{
+local KindleDXG = Kindle:extend{
     model = "KindleDXG",
     isREAGL = no,
     hasKeyboard = yes,
@@ -437,7 +437,7 @@ local KindleDXG = Kindle:new{
     supportsScreensaver = yes, -- The first ad-supported device was the K3
 }
 
-local Kindle3 = Kindle:new{
+local Kindle3 = Kindle:extend{
     model = "Kindle3",
     isREAGL = no,
     hasKeyboard = yes,
@@ -449,7 +449,7 @@ local Kindle3 = Kindle:new{
     isSpecialOffers = hasSpecialOffers(),
 }
 
-local Kindle4 = Kindle:new{
+local Kindle4 = Kindle:extend{
     model = "Kindle4",
     isREAGL = no,
     hasKeys = yes,
@@ -461,7 +461,7 @@ local Kindle4 = Kindle:new{
     isSpecialOffers = hasSpecialOffers(),
 }
 
-local KindleTouch = Kindle:new{
+local KindleTouch = Kindle:extend{
     model = "KindleTouch",
     isREAGL = no,
     isTouchDevice = yes,
@@ -469,7 +469,7 @@ local KindleTouch = Kindle:new{
     touch_dev = "/dev/input/event3",
 }
 
-local KindlePaperWhite = Kindle:new{
+local KindlePaperWhite = Kindle:extend{
     model = "KindlePaperWhite",
     isREAGL = no,
     isTouchDevice = yes,
@@ -479,7 +479,7 @@ local KindlePaperWhite = Kindle:new{
     touch_dev = "/dev/input/event0",
 }
 
-local KindlePaperWhite2 = Kindle:new{
+local KindlePaperWhite2 = Kindle:extend{
     model = "KindlePaperWhite2",
     isTouchDevice = yes,
     hasFrontlight = yes,
@@ -488,13 +488,13 @@ local KindlePaperWhite2 = Kindle:new{
     touch_dev = "/dev/input/event1",
 }
 
-local KindleBasic = Kindle:new{
+local KindleBasic = Kindle:extend{
     model = "KindleBasic",
     isTouchDevice = yes,
     touch_dev = "/dev/input/event1",
 }
 
-local KindleVoyage = Kindle:new{
+local KindleVoyage = Kindle:extend{
     model = "KindleVoyage",
     isTouchDevice = yes,
     hasFrontlight = yes,
@@ -504,7 +504,7 @@ local KindleVoyage = Kindle:new{
     touch_dev = "/dev/input/event1",
 }
 
-local KindlePaperWhite3 = Kindle:new{
+local KindlePaperWhite3 = Kindle:extend{
     model = "KindlePaperWhite3",
     isTouchDevice = yes,
     hasFrontlight = yes,
@@ -513,7 +513,7 @@ local KindlePaperWhite3 = Kindle:new{
     touch_dev = "/dev/input/event1",
 }
 
-local KindleOasis = Kindle:new{
+local KindleOasis = Kindle:extend{
     model = "KindleOasis",
     isTouchDevice = yes,
     hasFrontlight = yes,
@@ -529,7 +529,7 @@ local KindleOasis = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-imx-i2c.1-event",
 }
 
-local KindleOasis2 = Kindle:new{
+local KindleOasis2 = Kindle:extend{
     model = "KindleOasis2",
     isZelda = yes,
     isTouchDevice = yes,
@@ -540,7 +540,7 @@ local KindleOasis2 = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }
 
-local KindleOasis3 = Kindle:new{
+local KindleOasis3 = Kindle:extend{
     model = "KindleOasis3",
     isZelda = yes,
     isTouchDevice = yes,
@@ -553,13 +553,13 @@ local KindleOasis3 = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }
 
-local KindleBasic2 = Kindle:new{
+local KindleBasic2 = Kindle:extend{
     model = "KindleBasic2",
     isTouchDevice = yes,
     touch_dev = "/dev/input/event0",
 }
 
-local KindlePaperWhite4 = Kindle:new{
+local KindlePaperWhite4 = Kindle:extend{
     model = "KindlePaperWhite4",
     isRex = yes,
     isTouchDevice = yes,
@@ -571,7 +571,7 @@ local KindlePaperWhite4 = Kindle:new{
     touch_dev = "/dev/input/event2",
 }
 
-local KindleBasic3 = Kindle:new{
+local KindleBasic3 = Kindle:extend{
     model = "KindleBasic3",
     isRex = yes,
     -- NOTE: Apparently, the KT4 doesn't actually support the fancy nightmode waveforms, c.f., ko/#5076
@@ -582,7 +582,7 @@ local KindleBasic3 = Kindle:new{
     touch_dev = "/dev/input/event2",
 }
 
-local KindlePaperWhite5 = Kindle:new{
+local KindlePaperWhite5 = Kindle:extend{
     model = "KindlePaperWhite5",
     isMTK = yes,
     isTouchDevice = yes,

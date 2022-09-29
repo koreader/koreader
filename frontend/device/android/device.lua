@@ -67,7 +67,7 @@ local external = require("device/thirdparty"):new{
     end,
 }
 
-local Device = Generic:new{
+local Device = Generic:extend{
     isAndroid = yes,
     model = android.prop.product,
     hasKeys = yes,

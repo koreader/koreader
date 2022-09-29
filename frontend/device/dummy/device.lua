@@ -4,7 +4,7 @@ local logger = require("logger")
 local function yes() return true end
 local function no() return false end
 
-local Device = Generic:new{
+local Device = Generic:extend{
     model = "dummy",
     hasKeyboard = no,
     hasKeys = no,
