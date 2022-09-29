@@ -26,14 +26,13 @@ local Dbg = {
     -- set to nil so first debug:turnOff call won't be skipped
     is_on = nil,
     is_verbose = nil,
-    ev_log = nil,
 }
 
 local Dbg_mt = {}
 
 local function LvDEBUG(lv, ...)
     local line = ""
-    for i,v in ipairs({...}) do
+    for _, v in ipairs({...}) do
         if type(v) == "table" then
             line = line .. " " .. dump(v, lv)
         else
@@ -75,19 +74,6 @@ function Dbg:turnOn()
         assert(check, msg)
         return check
     end
-
-    -- create or clear ev log file
-    --- @note: On Linux, use CLOEXEC to avoid polluting the fd table of our child processes.
-    ---        Otherwise, it can be problematic w/ wpa_supplicant & USBMS...
-    ---        Note that this is entirely undocumented, but at least LuaJIT passes the mode as-is to fopen, so, we're good.
-    local open_flags = "w"
-    if jit.os == "Linux" then
-        -- Oldest Kindle devices are too old to support O_CLOEXEC...
-        if os.getenv("KINDLE_LEGACY") ~= "yes" then
-            open_flags = "we"
-        end
-    end
-    self.ev_log = io.open("ev.log", open_flags)
 end
 
 --- Turn off debug mode.
@@ -101,10 +87,6 @@ function Dbg:turnOff()
     Dbg.dassert = function(check)
         return check
     end
-    if self.ev_log then
-        self.ev_log:close()
-        self.ev_log = nil
-    end
 end
 
 --- Turn on verbose mode.
@@ -117,17 +99,6 @@ end
 function Dbg:v(...)
     if self.is_verbose then
         LvDEBUG(math.huge, ...)
-    end
-end
-
---- Log @{ui.event|Event} to dedicated log file.
-function Dbg:logEv(ev)
-    local ev_value = tostring(ev.value)
-    local log = ev.type.."|"..ev.code.."|"
-                ..ev_value.."|"..ev.time.sec.."|"..ev.time.usec.."\n"
-    if self.ev_log then
-        self.ev_log:write(log)
-        self.ev_log:flush()
     end
 end
 
