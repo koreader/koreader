@@ -60,7 +60,7 @@ local function log(log_lvl, dump_lvl, ...)
             return android.LOGE(table.concat(line, " "))
         end
     else
-        return io.stdout:write(os.date("%x-%X "), LOG_PREFIX[log_lvl], table.concat(line, " "), "\n")
+        return io.write(os.date("%x-%X "), LOG_PREFIX[log_lvl], table.concat(line, " "), "\n")
     end
 end
 

@@ -42,7 +42,7 @@ local function LvDEBUG(lv, ...)
     if isAndroid then
         return android.LOGV(table.concat(line, " "))
     else
-        return io.stdout:write(os.date("%x-%X DEBUG "), table.concat(line, " "), "\n")
+        return io.write(os.date("%x-%X DEBUG "), table.concat(line, " "), "\n")
     end
 end
 

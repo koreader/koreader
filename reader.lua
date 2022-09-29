@@ -9,7 +9,7 @@ void setlinebuf(struct _IO_FILE *);
 ]]
 C.setlinebuf(C.stdout)
 
-io.stdout:write([[
+io.write([[
 ---------------------------------------------
                 launching...
   _  _____  ____                _
@@ -30,7 +30,7 @@ local userpatch = require("userpatch")
 userpatch.applyPatches(userpatch.early_once)
 userpatch.applyPatches(userpatch.early)
 
-io.stdout:write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
+io.write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
 
 -- Load default settings
 G_defaults = require("luadefaults"):open()
