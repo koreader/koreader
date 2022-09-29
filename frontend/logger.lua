@@ -51,25 +51,24 @@ local function log(log_lvl, dump_lvl, ...)
     end
     if isAndroid then
         if log_lvl == "dbg" then
-            android.LOGV(table.concat(line, " "))
+            return android.LOGV(table.concat(line, " "))
         elseif log_lvl == "info" then
-            android.LOGI(table.concat(line, " "))
+            return android.LOGI(table.concat(line, " "))
         elseif log_lvl == "warn" then
-            android.LOGW(table.concat(line, " "))
+            return android.LOGW(table.concat(line, " "))
         elseif log_lvl == "err" then
-            android.LOGE(table.concat(line, " "))
+            return android.LOGE(table.concat(line, " "))
         end
     else
-        io.stdout:write(os.date("%x-%X "), LOG_PREFIX[log_lvl], table.concat(line, " "), "\n")
-        io.stdout:flush()
+        return io.stdout:write(os.date("%x-%X "), LOG_PREFIX[log_lvl], table.concat(line, " "), "\n")
     end
 end
 
 local LVL_FUNCTIONS = {
-    dbg  = function(...) log("dbg", DEFAULT_DUMP_LVL, ...) end,
-    info = function(...) log("info", DEFAULT_DUMP_LVL, ...) end,
-    warn = function(...) log("warn", DEFAULT_DUMP_LVL, ...) end,
-    err  = function(...) log("err", DEFAULT_DUMP_LVL, ...) end,
+    dbg  = function(...) return log("dbg", DEFAULT_DUMP_LVL, ...) end,
+    info = function(...) return log("info", DEFAULT_DUMP_LVL, ...) end,
+    warn = function(...) return log("warn", DEFAULT_DUMP_LVL, ...) end,
+    err  = function(...) return log("err", DEFAULT_DUMP_LVL, ...) end,
 }
 
 

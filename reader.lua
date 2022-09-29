@@ -1,4 +1,14 @@
 #!./luajit
+
+-- Enforce line-buffering for stdout
+local ffi = require("ffi")
+local C = ffi.C
+ffi.cdef[[
+extern struct _IO_FILE *stdout;
+void setlinebuf(struct _IO_FILE *);
+]]
+C.setlinebuf(C.stdout)
+
 io.stdout:write([[
 ---------------------------------------------
                 launching...
@@ -11,7 +21,6 @@ io.stdout:write([[
  It's a scroll... It's a codex... It's KOReader!
 
  [*] Current time: ]], os.date("%x-%X"), "\n")
-io.stdout:flush()
 
 -- Set up Lua and ffi search paths
 require("setupkoenv")

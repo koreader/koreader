@@ -40,10 +40,9 @@ local function LvDEBUG(lv, ...)
         end
     end
     if isAndroid then
-        android.LOGV(table.concat(line, " "))
+        return android.LOGV(table.concat(line, " "))
     else
-        io.stdout:write(os.date("%x-%X DEBUG "), table.concat(line, " "), "\n")
-        io.stdout:flush()
+        return io.stdout:write(os.date("%x-%X DEBUG "), table.concat(line, " "), "\n")
     end
 end
 
@@ -54,7 +53,7 @@ function Dbg:turnOn()
     self.is_on = true
     logger:setLevel(logger.levels.dbg)
 
-    Dbg_mt.__call = function(_, ...) LvDEBUG(math.huge, ...) end
+    Dbg_mt.__call = function(_, ...) return LvDEBUG(math.huge, ...) end
     --- Pass a guard function to detect bad input values.
     Dbg.guard = function(_, mod, method, pre_guard, post_guard)
         local old_method = mod[method]
@@ -99,13 +98,13 @@ end
 --- Simple table dump.
 function Dbg:v(...)
     if self.is_verbose then
-        LvDEBUG(math.huge, ...)
+        return LvDEBUG(math.huge, ...)
     end
 end
 
 --- Simple traceback.
 function Dbg:traceback()
-    LvDEBUG(math.huge, debug.traceback())
+    return LvDEBUG(math.huge, debug.traceback())
 end
 
 setmetatable(Dbg, Dbg_mt)
