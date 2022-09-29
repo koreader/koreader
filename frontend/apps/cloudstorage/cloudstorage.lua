@@ -757,6 +757,7 @@ function CloudStorage:editCloudServer(item)
                 if server.name == updated_config.text and server.password == updated_config.password then
                     server.name = fields[1]
                     server.password = fields[2]
+                    server.address = fields[3]
                     cs_servers[i] = server
                     break
                 end
