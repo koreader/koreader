@@ -135,7 +135,7 @@ If refreshtype is omitted, no refresh will be enqueued at this time.
 ]]
 function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     if not widget then
-        logger.dbg("widget not exist to be shown")
+        logger.dbg("attempted to show a nil widget")
         return
     end
     logger.dbg("show widget:", widget.id or widget.name or tostring(widget))
@@ -188,7 +188,7 @@ If refreshtype is omitted, no extra refresh will be enqueued at this time, leavi
 ]]
 function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     if not widget then
-        logger.dbg("widget to be closed does not exist")
+        logger.dbg("attempted to close a nil widget")
         return
     end
     logger.dbg("close widget:", widget.name or widget.id or tostring(widget))
@@ -204,38 +204,39 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     local start_idx = 1
     -- Then remove all references to that widget on stack and refresh.
     for i = #self._window_stack, 1, -1 do
-        if self._window_stack[i].widget == widget then
-            self._dirty[self._window_stack[i].widget] = nil
+        local w = self._window_stack[i].widget
+        if w == widget then
+            self._dirty[w] = nil
             table.remove(self._window_stack, i)
             dirty = true
         else
             -- If anything else on the stack not already hidden by (i.e., below) a fullscreen widget was dithered, honor the hint
-            if self._window_stack[i].widget.dithered and not is_covered then
+            if w.dithered and not is_covered then
                 refreshdither = true
-                logger.dbg("Lower widget", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "was dithered, honoring the dithering hint")
+                logger.dbg("Lower widget", w.name or w.id or tostring(w), "was dithered, honoring the dithering hint")
             end
 
             -- Remember the uppermost widget that covers the full screen, so we don't bother calling setDirty on hidden (i.e., lower) widgets in the following dirty loop.
             -- _repaint already does that later on to skip the actual paintTo calls, so this ensures we limit the refresh queue to stuff that will actually get painted.
-            if not is_covered and self._window_stack[i].widget.covers_fullscreen then
+            if not is_covered and w.covers_fullscreen then
                 is_covered = true
                 start_idx = i
-                logger.dbg("Lower widget", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "covers the full screen")
+                logger.dbg("Lower widget", w.name or w.id or tostring(w), "covers the full screen")
                 if i > 1 then
                     logger.dbg("not refreshing", i-1, "covered widget(s)")
                 end
             end
 
             -- Set double tap to how the topmost specifying widget wants it
-            if requested_disable_double_tap == nil and self._window_stack[i].widget.disable_double_tap ~= nil then
-                requested_disable_double_tap = self._window_stack[i].widget.disable_double_tap
+            if requested_disable_double_tap == nil and w.disable_double_tap ~= nil then
+                requested_disable_double_tap = w.disable_double_tap
             end
         end
     end
     if requested_disable_double_tap ~= nil then
         Input.disable_double_tap = requested_disable_double_tap
     end
-    if #self._window_stack > 0 then
+    if self._window_stack[1] then
         -- set tap interval override to what the topmost widget specifies (when it doesn't, nil restores the default)
         Input.tap_interval_override = self._window_stack[#self._window_stack].widget.tap_interval_override
     end
@@ -515,10 +516,11 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
     if widget then
         if widget == "all" then
             -- special case: set all top-level widgets as being "dirty".
-            for i = 1, #self._window_stack do
-                self._dirty[self._window_stack[i].widget] = true
+            for _, window in ipairs(self._window_stack) do
+                local w = window.widget
+                self._dirty[w] = true
                 -- If any of 'em were dithered, honor their dithering hint
-                if self._window_stack[i].widget.dithered then
+                if w.dithered then
                     -- NOTE: That works when refreshtype is NOT a function,
                     --       which is why _repaint does another pass of this check ;).
                     logger.dbg("setDirty on all widgets: found a dithered widget, infecting the refresh queue")
@@ -534,16 +536,17 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             -- NOTE: We only ever check the dirty flag on top-level widgets, so only set it there!
             --       Enable verbose debug to catch misbehaving widgets via our post-guard.
             for i = #self._window_stack, 1, -1 do
+                local w = self._window_stack[i].widget
                 if handle_alpha then
-                    self._dirty[self._window_stack[i].widget] = true
-                    logger.dbg("setDirty: Marking as dirty widget:", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "because it's below translucent widget:", widget.name or widget.id or tostring(widget))
+                    self._dirty[w] = true
+                    logger.dbg("setDirty: Marking as dirty widget:", w.name or w.id or tostring(w), "because it's below translucent widget:", widget.name or widget.id or tostring(widget))
                     -- Stop flagging widgets at the uppermost one that covers the full screen
-                    if self._window_stack[i].widget.covers_fullscreen then
+                    if w.covers_fullscreen then
                         break
                     end
                 end
 
-                if self._window_stack[i].widget == widget then
+                if w == widget then
                     self._dirty[widget] = true
 
                     -- We've got a match, now check if it's translucent...
@@ -690,14 +693,16 @@ end
 
 --- Get top widget (name if possible, ref otherwise).
 function UIManager:getTopWidget()
-    local top = self._window_stack[#self._window_stack]
-    if not top or not top.widget then
+    if self._window_stack[1] == nil then
+        -- No widgets in the stack, bye!
         return nil
     end
-    if top.widget.name then
-        return top.widget.name
+
+    local widget = self._window_stack[#self._window_stack].widget
+    if widget.name then
+        return widget.name
     end
-    return top.widget
+    return widget
 end
 
 --[[--
@@ -716,19 +721,16 @@ function UIManager:getSecondTopmostWidget()
     -- Because everything is terrible, you can actually instantiate multiple VirtualKeyboards,
     -- and they'll stack at the top, so, loop until we get something that *isn't* VK...
     for i = #self._window_stack - 1, 1, -1 do
-        local sec = self._window_stack[i]
-        if not sec or not sec.widget then
-            return nil
-        end
+        local widget = self._window_stack[i].widget
 
-        if sec.widget.name then
-            if sec.widget.name ~= "VirtualKeyboard" then
-                return sec.widget.name
+        if widget.name then
+            if widget.name ~= "VirtualKeyboard" then
+                return widget.name
             end
             -- Meaning if name is set, and is set to VK => continue, as we want the *next* widget.
             -- I *really* miss the continue keyword, Lua :/.
         else
-            return sec.widget
+            return widget
         end
     end
 
@@ -738,9 +740,10 @@ end
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack.
 function UIManager:isSubwidgetShown(widget, max_depth)
     for i = #self._window_stack, 1, -1 do
-        local matched, depth = util.arrayReferences(self._window_stack[i].widget, widget, max_depth)
+        local w = self._window_stack[i].widget
+        local matched, depth = util.arrayReferences(w, widget, max_depth)
         if matched then
-            return matched, depth, self._window_stack[i].widget
+            return matched, depth, w
         end
     end
     return false
@@ -797,25 +800,30 @@ which itself will take care of propagating an event to its members.
 @param event an @{ui.event.Event|Event} object
 ]]
 function UIManager:sendEvent(event)
-    if #self._window_stack == 0 then return end
+    if self._window_stack[1] == nil then
+        -- No widgets in the stack!
+        return
+    end
 
     -- The top widget gets to be the first to get the event
-    local top_widget = self._window_stack[#self._window_stack]
+    local top_widget = self._window_stack[#self._window_stack].widget
 
     -- A toast widget gets closed by any event, and
     -- lets the event be handled by a lower widget
     -- (Notification is our single widget with toast=true)
-    while top_widget.widget.toast do -- close them all
-        self:close(top_widget.widget)
-        if #self._window_stack == 0 then return end
-        top_widget = self._window_stack[#self._window_stack]
+    while top_widget.toast do -- close them all
+        self:close(top_widget)
+        if self._window_stack[1] == nil then
+            return
+        end
+        top_widget = self._window_stack[#self._window_stack].widget
     end
 
-    if top_widget.widget:handleEvent(event) then
+    if top_widget:handleEvent(event) then
         return
     end
-    if top_widget.widget.active_widgets then
-        for _, active_widget in ipairs(top_widget.widget.active_widgets) do
+    if top_widget.active_widgets then
+        for _, active_widget in ipairs(top_widget.active_widgets) do
             if active_widget:handleEvent(event) then return end
         end
     end
@@ -830,20 +838,20 @@ function UIManager:sendEvent(event)
     local checked_widgets = {top_widget}
     local i = #self._window_stack
     while i > 0 do
-        local widget = self._window_stack[i]
+        local widget = self._window_stack[i].widget
         if checked_widgets[widget] == nil then
             checked_widgets[widget] = true
             -- Widget's active widgets have precedence to handle this event
             -- NOTE: While FileManager only has a single (screenshotter), ReaderUI has a few active_widgets.
-            if widget.widget.active_widgets then
-                for _, active_widget in ipairs(widget.widget.active_widgets) do
+            if widget.active_widgets then
+                for _, active_widget in ipairs(widget.active_widgets) do
                     if active_widget:handleEvent(event) then return end
                 end
             end
-            if widget.widget.is_always_active then
+            if widget.is_always_active then
                 -- Widget itself is flagged always active, let it handle the event
                 -- NOTE: is_always_active widgets currently are widgets that want to show a VirtualKeyboard or listen to Dispatcher events
-                if widget.widget:handleEvent(event) then return end
+                if widget:handleEvent(event) then return end
             end
             i = #self._window_stack
         else
@@ -863,10 +871,10 @@ function UIManager:broadcastEvent(event)
     local checked_widgets = {}
     local i = #self._window_stack
     while i > 0 do
-        local widget = self._window_stack[i]
+        local widget = self._window_stack[i].widget
         if checked_widgets[widget] == nil then
             checked_widgets[widget] = true
-            widget.widget:handleEvent(event)
+            widget:handleEvent(event)
             i = #self._window_stack
         else
             i = i - 1
@@ -955,15 +963,15 @@ local refresh_modes = { a2 = 1, fast = 2, ui = 3, partial = 4, ["[ui]"] = 5, ["[
 --       for the few cases where we might *really* want to enforce fast (for stuff like panning or skimming?).
 -- refresh methods in framebuffer implementation
 local refresh_methods = {
-    a2 = "refreshA2",
-    fast = "refreshFast",
-    ui = "refreshUI",
-    partial = "refreshPartial",
-    ["[ui]"] = "refreshNoMergeUI",
-    ["[partial]"] = "refreshNoMergePartial",
-    flashui = "refreshFlashUI",
-    flashpartial = "refreshFlashPartial",
-    full = "refreshFull",
+    a2 = Screen.refreshA2,
+    fast = Screen.refreshFast,
+    ui = Screen.refreshUI,
+    partial = Screen.refreshPartial,
+    ["[ui]"] = Screen.refreshNoMergeUI,
+    ["[partial]"] = Screen.refreshNoMergePartial,
+    flashui = Screen.refreshFlashUI,
+    flashpartial = Screen.refreshFlashPartial,
+    full = Screen.refreshFull,
 }
 
 --[[
@@ -1080,16 +1088,16 @@ function UIManager:_refresh(mode, region, dither)
     --       (e.g., multiple setDirty calls queued when showing/closing a widget because of update mechanisms),
     --       as well as a few actually effective merges
     --       (e.g., the disappearance of a selection HL with the following menu update).
-    for i = 1, #self._refresh_stack do
+    for i, refresh in ipairs(self._refresh_stack) do
         -- Check for collision with refreshes that are already enqueued
         -- NOTE: intersect *means* intersect: we won't merge edge-to-edge regions (but the EPDC probably will).
-        if region:intersectWith(self._refresh_stack[i].region) then
+        if region:intersectWith(refresh.region) then
             -- combine both refreshes' regions
-            local combined = region:combine(self._refresh_stack[i].region)
+            local combined = region:combine(refresh.region)
             -- update the mode, if needed
-            mode = update_mode(mode, self._refresh_stack[i].mode)
+            mode = update_mode(mode, refresh.mode)
             -- dithering hints are viral, one is enough to infect the whole queue
-            dither = update_dither(dither, self._refresh_stack[i].dither)
+            dither = update_dither(dither, refresh.dither)
             -- remove colliding refresh
             table.remove(self._refresh_stack, i)
             -- and try again with combined data
@@ -1143,26 +1151,27 @@ function UIManager:_repaint()
     --]]
 
     for i = start_idx, #self._window_stack do
-        local widget = self._window_stack[i]
+        local window = self._window_stack[i]
+        local widget = window.widget
         -- paint if current widget or any widget underneath is dirty
-        if dirty or self._dirty[widget.widget] then
+        if dirty or self._dirty[widget] then
             -- pass hint to widget that we got when setting widget dirty
             -- the widget can use this to decide which parts should be refreshed
-            logger.dbg("painting widget:", widget.widget.name or widget.widget.id or tostring(widget))
+            logger.dbg("painting widget:", widget.name or widget.id or tostring(widget))
             Screen:beforePaint()
             -- NOTE: Nothing actually seems to use the final argument?
             --       Could be used by widgets to know whether they're being repainted because they're actually dirty (it's true),
             --       or because something below them was (it's nil).
-            widget.widget:paintTo(Screen.bb, widget.x, widget.y, self._dirty[widget.widget])
+            widget:paintTo(Screen.bb, window.x, window.y, self._dirty[widget])
 
             -- and remove from list after painting
-            self._dirty[widget.widget] = nil
+            self._dirty[widget] = nil
 
             -- trigger a repaint for every widget above us, too
             dirty = true
 
             -- if any of 'em were dithered, we'll want to dither the final refresh
-            if widget.widget.dithered then
+            if widget.dithered then
                 logger.dbg("_repaint: it was dithered, infecting the refresh queue")
                 dithered = true
             end
@@ -1174,13 +1183,15 @@ function UIManager:_repaint()
         local refreshtype, region, dither = refreshfunc()
         -- honor dithering hints from *anywhere* in the dirty stack
         dither = update_dither(dither, dithered)
-        if refreshtype then self:_refresh(refreshtype, region, dither) end
+        if refreshtype then
+            self:_refresh(refreshtype, region, dither)
+        end
     end
     self._refresh_func_stack = {}
 
     -- we should have at least one refresh if we did repaint.  If we don't, we
     -- add one now and log a warning if we are debugging
-    if dirty and #self._refresh_stack == 0 then
+    if dirty and self._refresh_stack[1] == nil then
         logger.dbg("no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
         self:_refresh("partial")
     end
@@ -1196,7 +1207,7 @@ function UIManager:_repaint()
         dbg:v("triggering refresh", refresh)
         -- Remember the refresh region
         self._last_refresh_region = refresh.region
-        Screen[refresh_methods[refresh.mode]](Screen,
+        refresh_methods[refresh.mode](Screen,
             refresh.region.x, refresh.region.y,
             refresh.region.w, refresh.region.h,
             refresh.dither)
@@ -1354,7 +1365,7 @@ function UIManager:handleInput()
         --dbg("---------------------------------------------------")
 
         -- stop when we have no window to show
-        if #self._window_stack == 0 and not self._run_forever then
+        if self._window_stack[1] == nil and not self._run_forever then
             logger.info("no dialog left to show")
             self:quit()
             return nil
@@ -1374,7 +1385,7 @@ function UIManager:handleInput()
     local wait_us = self.INPUT_TIMEOUT
 
     -- If we have any ZMQs registered, ZMQ_TIMEOUT is another upper bound.
-    if #self._zeromqs > 0 then
+    if self._zeromqs[1] then
         wait_us = math.min(wait_us or math.huge, self.ZMQ_TIMEOUT)
     end
 
@@ -1489,28 +1500,28 @@ This function usually puts the device into suspension.
 ]]
 function UIManager:suspend()
     -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
-    if self.event_handlers["Suspend"] then
+    if self.event_handlers.Suspend then
         -- Give the other event handlers a chance to be executed.
         -- `Suspend` and `Resume` events will be sent by the handler
-        UIManager:nextTick(self.event_handlers["Suspend"])
+        UIManager:nextTick(self.event_handlers.Suspend)
     end
 end
 
 function UIManager:reboot()
     -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
-    if self.event_handlers["Reboot"] then
+    if self.event_handlers.Reboot then
         -- Give the other event handlers a chance to be executed.
         -- 'Reboot' event will be sent by the handler
-        UIManager:nextTick(self.event_handlers["Reboot"])
+        UIManager:nextTick(self.event_handlers.Reboot)
     end
 end
 
 function UIManager:powerOff()
     -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
-    if self.event_handlers["PowerOff"] then
+    if self.event_handlers.PowerOff then
         -- Give the other event handlers a chance to be executed.
         -- 'PowerOff' event will be sent by the handler
-        UIManager:nextTick(self.event_handlers["PowerOff"])
+        UIManager:nextTick(self.event_handlers.PowerOff)
     end
 end
 
