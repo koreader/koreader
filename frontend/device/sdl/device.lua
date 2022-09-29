@@ -344,20 +344,20 @@ function Device:toggleFullscreen()
 end
 
 function Device:setEventHandlers(UIManager)
-    UIManager.event_handlers["Suspend"] = function()
+    UIManager.event_handlers.Suspend = function()
         self:_beforeSuspend()
         self:simulateSuspend()
     end
-    UIManager.event_handlers["Resume"] = function()
+    UIManager.event_handlers.Resume = function()
         self:simulateResume()
         self:_afterResume()
     end
-    UIManager.event_handlers["PowerRelease"] = function()
+    UIManager.event_handlers.PowerRelease = function()
         -- Resume if we were suspended
         if self.screen_saver_mode then
-            UIManager.event_handlers["Resume"]()
+            UIManager.event_handlers.Resume()
         else
-            UIManager.event_handlers["Suspend"]()
+            UIManager.event_handlers.Suspend()
         end
     end
 end

@@ -1339,7 +1339,7 @@ function UIManager:handleInputEvent(input_event)
     if handler then
         handler(input_event)
     else
-        self.event_handlers["__default__"](input_event)
+        self.event_handlers.__default__(input_event)
     end
 end
 

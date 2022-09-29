@@ -369,29 +369,29 @@ function Kindle:readyToSuspend()
 end
 
 function Kindle:setEventHandlers(UIManager)
-    UIManager.event_handlers["Suspend"] = function()
+    UIManager.event_handlers.Suspend = function()
         self.powerd:toggleSuspend()
     end
-    UIManager.event_handlers["IntoSS"] = function()
+    UIManager.event_handlers.IntoSS = function()
         self:_beforeSuspend()
         self:intoScreenSaver()
     end
-    UIManager.event_handlers["OutOfSS"] = function()
+    UIManager.event_handlers.OutOfSS = function()
         self:outofScreenSaver()
         self:_afterResume()
     end
-    UIManager.event_handlers["Charging"] = function()
+    UIManager.event_handlers.Charging = function()
         self:_beforeCharging()
         self:usbPlugIn()
     end
-    UIManager.event_handlers["NotCharging"] = function()
+    UIManager.event_handlers.NotCharging = function()
         self:usbPlugOut()
         self:_afterNotCharging()
     end
-    UIManager.event_handlers["WakeupFromSuspend"] = function()
+    UIManager.event_handlers.WakeupFromSuspend = function()
         self:wakeupFromSuspend()
     end
-    UIManager.event_handlers["ReadyToSuspend"] = function()
+    UIManager.event_handlers.ReadyToSuspend = function()
         self:readyToSuspend()
     end
 end

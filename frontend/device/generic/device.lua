@@ -576,7 +576,7 @@ end
 -- Set device event handlers common to all devices
 function Device:_setEventHandlers(UIManager)
     if self:canReboot() then
-        UIManager.event_handlers["Reboot"] = function()
+        UIManager.event_handlers.Reboot = function()
             local ConfirmBox = require("ui/widget/confirmbox")
             UIManager:show(ConfirmBox:new{
                 text = _("Are you sure you want to reboot the device?"),
@@ -589,11 +589,11 @@ function Device:_setEventHandlers(UIManager)
             })
         end
     else
-        UIManager.event_handlers["Reboot"] = function() end
+        UIManager.event_handlers.Reboot = function() end
     end
 
     if self:canPowerOff() then
-        UIManager.event_handlers["PowerOff"] = function()
+        UIManager.event_handlers.PowerOff = function()
             local ConfirmBox = require("ui/widget/confirmbox")
             UIManager:show(ConfirmBox:new{
                 text = _("Are you sure you want to power off the device?"),
@@ -606,7 +606,7 @@ function Device:_setEventHandlers(UIManager)
             })
         end
     else
-        UIManager.event_handlers["PowerOff"] = function() end
+        UIManager.event_handlers.PowerOff = function() end
     end
 
     self:setEventHandlers(UIManager)
@@ -615,10 +615,10 @@ end
 -- Devices can add additional event handlers by overwriting this method.
 function Device:setEventHandlers(UIManager)
     -- These will be most probably overwritten in the device specific `setEventHandlers`
-    UIManager.event_handlers["Suspend"] = function()
+    UIManager.event_handlers.Suspend = function()
         self:_beforeSuspend(false)
     end
-    UIManager.event_handlers["Resume"] = function()
+    UIManager.event_handlers.Resume = function()
         self:_afterResume(false)
     end
 end

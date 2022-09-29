@@ -1262,11 +1262,11 @@ function Kobo:setEventHandlers(UIManager)
     -- We do not want auto suspend procedure to waste battery during
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.
-    UIManager.event_handlers["Suspend"] = function()
+    UIManager.event_handlers.Suspend = function()
         self:_beforeSuspend()
         self:onPowerEvent("Suspend")
     end
-    UIManager.event_handlers["Resume"] = function()
+    UIManager.event_handlers.Resume = function()
         -- MONOTONIC doesn't tick during suspend,
         -- invalidate the last battery capacity pull time so that we get up to date data immediately.
         self:getPowerDevice():invalidateCapacityCache()
@@ -1274,59 +1274,59 @@ function Kobo:setEventHandlers(UIManager)
         self:onPowerEvent("Resume")
         self:_afterResume()
     end
-    UIManager.event_handlers["PowerPress"] = function()
+    UIManager.event_handlers.PowerPress = function()
         -- Always schedule power off.
         -- Press the power button for 2+ seconds to shutdown directly from suspend.
         UIManager:scheduleIn(2, UIManager.poweroff_action)
     end
-    UIManager.event_handlers["PowerRelease"] = function()
+    UIManager.event_handlers.PowerRelease = function()
         if not self._entered_poweroff_stage then
             UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
-                UIManager.event_handlers["Resume"]()
+                UIManager.event_handlers.Resume()
             else
-                UIManager.event_handlers["Suspend"]()
+                UIManager.event_handlers.Suspend()
             end
         end
     end
-    UIManager.event_handlers["Light"] = function()
+    UIManager.event_handlers.Light = function()
         self:getPowerDevice():toggleFrontlight()
     end
     -- USB plug events with a power-only charger
-    UIManager.event_handlers["Charging"] = function()
+    UIManager.event_handlers.Charging = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
         if self.screen_saver_mode then
-           UIManager.event_handlers["Suspend"]()
+           UIManager.event_handlers.Suspend()
         end
     end
-    UIManager.event_handlers["NotCharging"] = function()
+    UIManager.event_handlers.NotCharging = function()
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
         if self.screen_saver_mode then
-           UIManager.event_handlers["Suspend"]()
+           UIManager.event_handlers.Suspend()
         end
     end
     -- USB plug events with a data-aware host
-    UIManager.event_handlers["UsbPlugIn"] = function()
+    UIManager.event_handlers.UsbPlugIn = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
         if self.screen_saver_mode then
-            UIManager.event_handlers["Suspend"]()
+            UIManager.event_handlers.Suspend()
         else
             -- Potentially start an USBMS session
             local MassStorage = require("ui/elements/mass_storage")
             MassStorage:start()
         end
     end
-    UIManager.event_handlers["UsbPlugOut"] = function()
+    UIManager.event_handlers.UsbPlugOut = function()
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
         if self.screen_saver_mode then
-            UIManager.event_handlers["Suspend"]()
+            UIManager.event_handlers.Suspend()
         else
             -- Potentially dismiss the USBMS ConfirmBox
             local MassStorage = require("ui/elements/mass_storage")
@@ -1337,25 +1337,25 @@ function Kobo:setEventHandlers(UIManager)
     if G_reader_settings:isTrue("ignore_power_sleepcover") then
         -- NOTE: The hardware event itself will wake the kernel up if it's in suspend (:/).
         --       Let the unexpected wakeup guard handle that.
-        UIManager.event_handlers["SleepCoverClosed"] = nil
-        UIManager.event_handlers["SleepCoverOpened"] = nil
+        UIManager.event_handlers.SleepCoverClosed = nil
+        UIManager.event_handlers.SleepCoverOpened = nil
     elseif G_reader_settings:isTrue("ignore_open_sleepcover") then
         -- Just ignore wakeup events, and do NOT set is_cover_closed,
         -- so device/generic/device will let us use the power button to wake ;).
-        UIManager.event_handlers["SleepCoverClosed"] = function()
-            UIManager.event_handlers["Suspend"]()
+        UIManager.event_handlers.SleepCoverClosed = function()
+            UIManager.event_handlers.Suspend()
         end
-        UIManager.event_handlers["SleepCoverOpened"] = function()
+        UIManager.event_handlers.SleepCoverOpened = function()
             self.is_cover_closed = false
         end
     else
-        UIManager.event_handlers["SleepCoverClosed"] = function()
+        UIManager.event_handlers.SleepCoverClosed = function()
             self.is_cover_closed = true
-            UIManager.event_handlers["Suspend"]()
+            UIManager.event_handlers.Suspend()
         end
-        UIManager.event_handlers["SleepCoverOpened"] = function()
+        UIManager.event_handlers.SleepCoverOpened = function()
             self.is_cover_closed = false
-            UIManager.event_handlers["Resume"]()
+            UIManager.event_handlers.Resume()
         end
     end
 end
