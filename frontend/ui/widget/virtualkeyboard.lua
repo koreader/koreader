@@ -64,6 +64,7 @@ function VirtualKey:init()
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
         self.key_chars = self:genKeyboardLayoutKeyChars()
         self.callback = function ()
+            self.keyboard:utf8modeChar()
             local current = G_reader_settings:readSetting("keyboard_layout")
             local default = G_reader_settings:readSetting("keyboard_layout_default")
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
@@ -86,6 +87,7 @@ function VirtualKey:init()
             self.keyboard:setKeyboardLayout(next_layout)
         end
         self.hold_callback = function()
+            self.keyboard:utf8modeChar()
             if util.tableSize(self.key_chars) > 5 then -- 2 or more layouts enabled
                 self.popup = VirtualKeyPopup:new{
                     parent_key = self,
@@ -100,6 +102,7 @@ function VirtualKey:init()
         end
         self.hold_cb_is_popup = true
         self.swipe_callback = function(ges)
+            self.keyboard:utf8modeChar()
             local key_function = self.key_chars[ges.direction.."_func"]
             if key_function then
                 key_function()
@@ -760,10 +763,12 @@ local VirtualKeyboard = FocusManager:new{
         ko_KR = "ko_KR_keyboard",
         ru = "ru_keyboard",
         tr = "tr_keyboard",
+        zh = "zh_keyboard",
     },
 
     lang_has_submenu = {
         ja = true,
+        zh = true,
     },
 }
 
@@ -1033,6 +1038,10 @@ end
 
 function VirtualKeyboard:goToStartOfLine()
     self.inputbox:goToStartOfLine()
+end
+
+function VirtualKeyboard:utf8modeChar()
+    if self.inputbox.utf8modeChar then self.inputbox:utf8modeChar() end
 end
 
 function VirtualKeyboard:goToEndOfLine()
