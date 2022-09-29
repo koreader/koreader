@@ -21,17 +21,17 @@ local DEFAULT_DUMP_LVL = 10
 -- @field warn warning
 -- @field err error
 local LOG_LVL = {
-    dbg = 1,
+    dbg  = 1,
     info = 2,
     warn = 3,
-    err = 4,
+    err  = 4,
 }
 
 local LOG_PREFIX = {
-    dbg = 'DEBUG',
-    info = 'INFO ',
-    warn = 'WARN ',
-    err = 'ERROR',
+    dbg  = "DEBUG",
+    info = "INFO ",
+    warn = "WARN ",
+    err  = "ERROR",
 }
 
 local noop = function() end
@@ -41,35 +41,35 @@ local Logger = {
 }
 
 local function log(log_lvl, dump_lvl, ...)
-    local line = ""
-    for i,v in ipairs({...}) do
+    local line = {}
+    for _, v in ipairs({...}) do
         if type(v) == "table" then
-            line = line .. " " .. dump(v, dump_lvl)
+            table.insert(line, dump(v, dump_lvl))
         else
-            line = line .. " " .. tostring(v)
+            table.insert(line, tostring(v))
         end
     end
     if isAndroid then
         if log_lvl == "dbg" then
-            android.LOGV(line)
+            android.LOGV(table.concat(line, " "))
         elseif log_lvl == "info" then
-            android.LOGI(line)
+            android.LOGI(table.concat(line, " "))
         elseif log_lvl == "warn" then
-            android.LOGW(line)
+            android.LOGW(table.concat(line, " "))
         elseif log_lvl == "err" then
-            android.LOGE(line)
+            android.LOGE(table.concat(line, " "))
         end
     else
-        io.stdout:write(os.date("%x-%X"), " ", LOG_PREFIX[log_lvl], line, "\n")
+        io.stdout:write(os.date("%x-%X "), LOG_PREFIX[log_lvl], table.concat(line, " "), "\n")
         io.stdout:flush()
     end
 end
 
 local LVL_FUNCTIONS = {
-    dbg = function(...) log('dbg', DEFAULT_DUMP_LVL, ...) end,
-    info = function(...) log('info', DEFAULT_DUMP_LVL, ...) end,
-    warn = function(...) log('warn', DEFAULT_DUMP_LVL, ...) end,
-    err = function(...) log('err', DEFAULT_DUMP_LVL, ...) end,
+    dbg  = function(...) log("dbg", DEFAULT_DUMP_LVL, ...) end,
+    info = function(...) log("info", DEFAULT_DUMP_LVL, ...) end,
+    warn = function(...) log("warn", DEFAULT_DUMP_LVL, ...) end,
+    err  = function(...) log("err", DEFAULT_DUMP_LVL, ...) end,
 }
 
 
