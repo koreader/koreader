@@ -31,18 +31,18 @@ local Dbg = {
 local Dbg_mt = {}
 
 local function LvDEBUG(lv, ...)
-    local line = ""
+    local line = {}
     for _, v in ipairs({...}) do
         if type(v) == "table" then
-            line = line .. " " .. dump(v, lv)
+            table.insert(line, dump(v, lv))
         else
-            line = line .. " " .. tostring(v)
+            table.insert(line, tostring(v))
         end
     end
     if isAndroid then
-        android.LOGV(line)
+        android.LOGV(table.concat(line, " "))
     else
-        io.stdout:write(string.format("# %s %s\n", os.date("%x-%X"), line))
+        io.stdout:write(os.date("%x-%X DEBUG"), table.concat(line, " "), "\n")
         io.stdout:flush()
     end
 end
@@ -54,7 +54,7 @@ function Dbg:turnOn()
     self.is_on = true
     logger:setLevel(logger.levels.dbg)
 
-    Dbg_mt.__call = function(dbg, ...) LvDEBUG(math.huge, ...) end
+    Dbg_mt.__call = function(_, ...) LvDEBUG(math.huge, ...) end
     --- Pass a guard function to detect bad input values.
     Dbg.guard = function(_, mod, method, pre_guard, post_guard)
         local old_method = mod[method]
@@ -62,11 +62,12 @@ function Dbg:turnOn()
             if pre_guard then
                 pre_guard(...)
             end
+            local n = select('#', ...)
             local values = {old_method(...)}
             if post_guard then
                 post_guard(...)
             end
-            return unpack(values)
+            return unpack(values, 1, n)
         end
     end
     --- Use this instead of a regular Lua @{assert}().
@@ -82,8 +83,8 @@ function Dbg:turnOff()
     if self.is_on == false then return end
     self.is_on = false
     logger:setLevel(logger.levels.info)
-    function Dbg_mt.__call() end
-    function Dbg.guard() end
+    Dbg_mt.__call = function() end
+    Dbg.guard = function() end
     Dbg.dassert = function(check)
         return check
     end
