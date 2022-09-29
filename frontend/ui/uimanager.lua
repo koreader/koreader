@@ -602,7 +602,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
     end
 end
 --[[
--- NOTE: While nice in theory,this is *extremely* verbose in practice,
+-- NOTE: While nice in theory, this is *extremely* verbose in practice,
 --       because most widgets will call setDirty at least once during their initialization,
 --       and that happens before they make it to the window stack...
 --       Plus, setDirty(nil, ...) is a completely valid use-case with documented semantics...
