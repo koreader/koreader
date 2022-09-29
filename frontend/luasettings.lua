@@ -9,7 +9,7 @@ local logger = require("logger")
 
 local LuaSettings = {}
 
-function LuaSettings:new(o)
+function LuaSettings:extend(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self

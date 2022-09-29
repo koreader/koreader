@@ -9,7 +9,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 
-local LuaData = LuaSettings:new{
+local LuaData = LuaSettings:extend{
     name = "",
     max_backups = 9,
 }
