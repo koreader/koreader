@@ -11,7 +11,7 @@ local isAndroid, android = pcall(require, "android")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
-local LuaDefaults = LuaSettings:new{
+local LuaDefaults = LuaSettings:extend{
     ro = nil, -- will contain the defaults.lua k/v pairs (const)
     rw = nil, -- will only contain non-defaults user-modified k/v pairs
 }
