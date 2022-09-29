@@ -28,10 +28,10 @@ local LOG_LVL = {
 }
 
 local LOG_PREFIX = {
-    dbg  = "DEBUG ",
-    info = "INFO  ",
-    warn = "WARN  ",
-    err  = "ERROR ",
+    dbg  = "DEBUG",
+    info = "INFO ",
+    warn = "WARN ",
+    err  = "ERROR",
 }
 
 local noop = function() end
@@ -41,7 +41,15 @@ local Logger = {
 }
 
 local function log(log_lvl, dump_lvl, ...)
-    local line = {}
+    local line
+    if isAndroid then
+        line = {}
+    else
+        line = {
+            os.date("%x-%X"),
+            LOG_PREFIX[log_lvl]
+        }
+    end
     for _, v in ipairs({...}) do
         if type(v) == "table" then
             table.insert(line, dump(v, dump_lvl))
@@ -60,7 +68,10 @@ local function log(log_lvl, dump_lvl, ...)
             return android.LOGE(table.concat(line, " "))
         end
     else
-        return io.write(os.date("%x-%X "), LOG_PREFIX[log_lvl], table.concat(line, " "), "\n")
+        -- NOTE: Either we add the LF to the table and we get an extra space before it because of table.concat,
+        --       or we pass it to write after a comma, and it generates an extra write syscall...
+        table.insert(line, "\n")
+        return io.write(table.concat(line, " "))
     end
 end
 

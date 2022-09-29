@@ -31,7 +31,14 @@ local Dbg = {
 local Dbg_mt = {}
 
 local function LvDEBUG(lv, ...)
-    local line = {}
+    local line
+    if isAndroid then
+        line = {}
+    else
+        line = {
+            os.date("%x-%X DEBUG"),
+        }
+    end
     for _, v in ipairs({...}) do
         if type(v) == "table" then
             table.insert(line, dump(v, lv))
@@ -42,7 +49,8 @@ local function LvDEBUG(lv, ...)
     if isAndroid then
         return android.LOGV(table.concat(line, " "))
     else
-        return io.write(os.date("%x-%X DEBUG "), table.concat(line, " "), "\n")
+        table.insert(line, "\n")
+        return io.write(table.concat(line, " "))
     end
 end
 
