@@ -127,6 +127,7 @@ Some of the previously generated long-lived tokens are still valid.]])
             {
                 {
                     text = _("Cancel"),
+                    id = "close",
                     callback = function()
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
