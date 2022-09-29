@@ -601,6 +601,11 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
         end
     end
 end
+--[[
+-- NOTE: While nice in theory,this is *extremely* verbose in practice,
+--       because most widgets will call setDirty at least once during their initialization,
+--       and that happens before they make it to the window stack...
+--       Plus, setDirty(nil, ...) is a completely valid use-case with documented semantics...
 dbg:guard(UIManager, 'setDirty',
     nil,
     function(self, widget, refreshtype, refreshregion, refreshdither)
@@ -618,6 +623,7 @@ dbg:guard(UIManager, 'setDirty',
             dbg:v("INFO: invalid widget for setDirty()", debug.traceback())
         end
     end)
+--]]
 
 --[[--
 Clear the full repaint & refresh queues.
