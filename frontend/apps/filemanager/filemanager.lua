@@ -181,7 +181,15 @@ function FileManager:setupLayout()
     local renameFile = function(file) self:renameFile(file) end
     local setHome = function(path) self:setHome(path) end
 
-    function file_chooser:onFileHold(file)  -- luacheck: ignore
+    function file_chooser:onFileHold(file)
+        if file_manager.select_mode then
+            file_manager:tapPlus()
+        else
+            self:_onFileHold(file)
+        end
+    end
+
+    function file_chooser:_onFileHold(file)  -- luacheck: ignore
         local is_file = lfs.attributes(file, "mode") == "file"
         local is_folder = lfs.attributes(file, "mode") == "directory"
         local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
@@ -361,6 +369,15 @@ function FileManager:setupLayout()
                 }
             })
             table.insert(buttons, {
+                {
+                    text = _("Select"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        file_manager:onToggleSelectMode()
+                        file_manager.selected_files[file] = true
+                        self:refreshPath()
+                    end,
+                },
                 {
                     text_func = function()
                         if ReadCollection:checkItemExist(file) then
