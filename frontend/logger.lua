@@ -28,10 +28,10 @@ local LOG_LVL = {
 }
 
 local LOG_PREFIX = {
-    dbg  = "DEBUG",
-    info = "INFO ",
-    warn = "WARN ",
-    err  = "ERROR",
+    dbg  = "DEBUG ",
+    info = "INFO  ",
+    warn = "WARN  ",
+    err  = "ERROR ",
 }
 
 local noop = function() end
