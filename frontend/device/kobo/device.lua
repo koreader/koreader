@@ -131,7 +131,7 @@ local function getRTCName()
     end
 end
 
-local Kobo = Generic:new{
+local Kobo = Generic:extend{
     model = "Kobo",
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
@@ -192,21 +192,21 @@ local Kobo = Generic:new{
 }
 
 -- Kobo Touch A/B:
-local KoboTrilogyAB = Kobo:new{
+local KoboTrilogyAB = Kobo:extend{
     model = "Kobo_trilogy_AB",
     touch_kobo_mk3_protocol = true,
     hasKeys = yes,
     hasMultitouch = no,
 }
 -- Kobo Touch C:
-local KoboTrilogyC = Kobo:new{
+local KoboTrilogyC = Kobo:extend{
     model = "Kobo_trilogy_C",
     hasKeys = yes,
     hasMultitouch = no,
 }
 
 -- Kobo Mini:
-local KoboPixie = Kobo:new{
+local KoboPixie = Kobo:extend{
     model = "Kobo_pixie",
     display_dpi = 200,
     hasMultitouch = no,
@@ -215,7 +215,7 @@ local KoboPixie = Kobo:new{
 }
 
 -- Kobo Aura One:
-local KoboDaylight = Kobo:new{
+local KoboDaylight = Kobo:extend{
     model = "Kobo_daylight",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
@@ -229,7 +229,7 @@ local KoboDaylight = Kobo:new{
 }
 
 -- Kobo Aura H2O:
-local KoboDahlia = Kobo:new{
+local KoboDahlia = Kobo:extend{
     model = "Kobo_dahlia",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
@@ -243,7 +243,7 @@ local KoboDahlia = Kobo:new{
 }
 
 -- Kobo Aura HD:
-local KoboDragon = Kobo:new{
+local KoboDragon = Kobo:extend{
     model = "Kobo_dragon",
     hasFrontlight = yes,
     hasMultitouch = no,
@@ -251,7 +251,7 @@ local KoboDragon = Kobo:new{
 }
 
 -- Kobo Glo:
-local KoboKraken = Kobo:new{
+local KoboKraken = Kobo:extend{
     model = "Kobo_kraken",
     hasFrontlight = yes,
     hasMultitouch = no,
@@ -259,7 +259,7 @@ local KoboKraken = Kobo:new{
 }
 
 -- Kobo Aura:
-local KoboPhoenix = Kobo:new{
+local KoboPhoenix = Kobo:extend{
     model = "Kobo_phoenix",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
@@ -273,7 +273,7 @@ local KoboPhoenix = Kobo:new{
 }
 
 -- Kobo Aura H2O2:
-local KoboSnow = Kobo:new{
+local KoboSnow = Kobo:extend{
     model = "Kobo_snow",
     hasFrontlight = yes,
     touch_snow_protocol = true,
@@ -289,7 +289,7 @@ local KoboSnow = Kobo:new{
 
 -- Kobo Aura H2O2, Rev2:
 --- @fixme Check if the Clara fix actually helps here... (#4015)
-local KoboSnowRev2 = Kobo:new{
+local KoboSnowRev2 = Kobo:extend{
     model = "Kobo_snow_r2",
     isMk7 = yes,
     hasFrontlight = yes,
@@ -303,7 +303,7 @@ local KoboSnowRev2 = Kobo:new{
 }
 
 -- Kobo Aura second edition:
-local KoboStar = Kobo:new{
+local KoboStar = Kobo:extend{
     model = "Kobo_star",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
@@ -311,7 +311,7 @@ local KoboStar = Kobo:new{
 }
 
 -- Kobo Aura second edition, Rev 2:
-local KoboStarRev2 = Kobo:new{
+local KoboStarRev2 = Kobo:extend{
     model = "Kobo_star_r2",
     isMk7 = yes,
     hasFrontlight = yes,
@@ -320,7 +320,7 @@ local KoboStarRev2 = Kobo:new{
 }
 
 -- Kobo Glo HD:
-local KoboAlyssum = Kobo:new{
+local KoboAlyssum = Kobo:extend{
     model = "Kobo_alyssum",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
@@ -329,14 +329,14 @@ local KoboAlyssum = Kobo:new{
 }
 
 -- Kobo Touch 2.0:
-local KoboPika = Kobo:new{
+local KoboPika = Kobo:extend{
     model = "Kobo_pika",
     touch_phoenix_protocol = true,
     main_finger_slot = 1,
 }
 
 -- Kobo Clara HD:
-local KoboNova = Kobo:new{
+local KoboNova = Kobo:extend{
     model = "Kobo_nova",
     isMk7 = yes,
     canToggleChargingLED = yes,
@@ -362,7 +362,7 @@ local KoboNova = Kobo:new{
 --       i.e., this will affect KSM users.
 --       c.f., https://github.com/koreader/koreader/pull/4414#issuecomment-449652335
 --       There's also a CM_ROTARY_ENABLE command, but which seems to do as much nothing as the STATUS one...
-local KoboFrost = Kobo:new{
+local KoboFrost = Kobo:extend{
     model = "Kobo_frost",
     isMk7 = yes,
     canToggleChargingLED = yes,
@@ -387,7 +387,7 @@ local KoboFrost = Kobo:new{
 
 -- Kobo Libra:
 -- NOTE: Assume the same quirks as the Forma apply.
-local KoboStorm = Kobo:new{
+local KoboStorm = Kobo:extend{
     model = "Kobo_storm",
     isMk7 = yes,
     canToggleChargingLED = yes,
@@ -418,7 +418,7 @@ local KoboStorm = Kobo:new{
 
 -- Kobo Nia:
 --- @fixme: Mostly untested, assume it's Clara-ish for now.
-local KoboLuna = Kobo:new{
+local KoboLuna = Kobo:extend{
     model = "Kobo_luna",
     isMk7 = yes,
     canToggleChargingLED = yes,
@@ -428,7 +428,7 @@ local KoboLuna = Kobo:new{
 }
 
 -- Kobo Elipsa
-local KoboEuropa = Kobo:new{
+local KoboEuropa = Kobo:extend{
     model = "Kobo_europa",
     isSunxi = yes,
     hasEclipseWfm = yes,
@@ -448,7 +448,7 @@ local KoboEuropa = Kobo:new{
 }
 
 -- Kobo Sage
-local KoboCadmus = Kobo:new{
+local KoboCadmus = Kobo:extend{
     model = "Kobo_cadmus",
     isSunxi = yes,
     hasEclipseWfm = yes,
@@ -481,7 +481,7 @@ local KoboCadmus = Kobo:new{
 }
 
 -- Kobo Libra 2:
-local KoboIo = Kobo:new{
+local KoboIo = Kobo:extend{
     model = "Kobo_io",
     isMk7 = yes,
     hasEclipseWfm = yes,
@@ -513,7 +513,7 @@ local KoboIo = Kobo:new{
 }
 
 -- Kobo Clara 2E:
-local KoboGoldfinch = Kobo:new{
+local KoboGoldfinch = Kobo:extend{
     model = "Kobo_goldfinch",
     isMk7 = yes,
     hasEclipseWfm = yes,
@@ -742,6 +742,7 @@ function Kobo:init()
         dodgy_rtc = dodgy_rtc,
     }
 
+    -- Let generic properly setup the standard stuff
     Generic.init(self)
 
     -- Various HW Buttons, Switches & Synthetic NTX events

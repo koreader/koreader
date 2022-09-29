@@ -8,7 +8,7 @@ local bit = require("bit")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local DeviceListener = InputContainer:new{}
+local DeviceListener = InputContainer:extend{}
 
 local function _setSetting(name)
     G_reader_settings:makeTrue(name)
