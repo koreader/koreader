@@ -4,7 +4,7 @@
 local logger = require("logger")
 local util = require("util")
 
-local function binarysearch( tbl,value,fcompval,reversed )
+local function binarysearch( tbl, value, fcompval, reversed )
     if not fcompval then return end
     local iStart,iEnd = 1,#tbl
     local iMid
@@ -78,7 +78,7 @@ function IME:init()
     if not self.key_map and self.keys_string then
         self.key_map = {}
         for i=0, #self.keys_string do
-            self.key_map[self.keys_string:sub(i,i)] = self.keys_string:sub(i, i)
+            self.key_map[self.keys_string:sub(i, i)] = self.keys_string:sub(i, i)
         end
     end
 

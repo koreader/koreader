@@ -140,11 +140,11 @@ local wrapInputBox = function(inputbox)
         table.insert(wrappers, util.wrapMethod(inputbox, "unfocus",         nil, wrappedSeparate))
         table.insert(wrappers, util.wrapMethod(inputbox, "onCloseKeyboard", nil, wrappedSeparate))
         -- -- Gestures to move cursor.
-        table.insert(wrappers, util.wrapMethod(inputbox, "onTapTextBox",   nil, wrappedSeparate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "onHoldTextBox",  nil, wrappedSeparate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "onSwipeTextBox", nil, wrappedSeparate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onTapTextBox",    nil, wrappedSeparate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onHoldTextBox",   nil, wrappedSeparate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onSwipeTextBox",  nil, wrappedSeparate))
         -- -- Others
-        table.insert(wrappers, util.wrapMethod(inputbox, "utf8modeChar",   nil, wrappedSeparate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "emitUtf8ModeKey", nil, wrappedSeparate))
 
         -- addChars is the only method we need a more complicated wrapper for.
         table.insert(wrappers, util.wrapMethod(inputbox, "addChars", wrappedAddChars, nil))
