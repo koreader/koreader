@@ -710,6 +710,7 @@ function CloudStorage:configCloud(type)
             table.insert(cs_servers,{
                 name = fields[1],
                 password = fields[2],
+                address = fields[3],
                 type = "dropbox",
                 url = "/"
             })
