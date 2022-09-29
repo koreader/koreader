@@ -238,15 +238,10 @@ function CoverMenu:updateItems(select_number)
                 -- And clear the rendering stack to avoid inheriting its dirty/refresh queue
                 UIManager:clearRenderStack()
 
-                -- Replace Book information callback to use directly our bookinfo
-                orig_buttons[4][2].callback = function()
-                    FileManagerBookInfo:show(file, bookinfo)
-                    UIManager:close(self.file_dialog)
-                end
-
-                -- Fudge the "Reset settings" button ([1][3]) callback to also trash the cover_info_cache
-                local orig_purge_callback = orig_buttons[1][3].callback
-                orig_buttons[1][3].callback = function()
+                -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
+                local button = self.file_dialog.button_table:getButtonById("reset_settings")
+                local orig_purge_callback = button.callback
+                button.callback = function()
                     -- Wipe the cache
                     if self.cover_info_cache and self.cover_info_cache[file] then
                         self.cover_info_cache[file] = nil
@@ -255,63 +250,14 @@ function CoverMenu:updateItems(select_number)
                     orig_purge_callback()
                 end
 
+                -- Replace the "Book information" button callback to use directly our bookinfo
+                button = self.file_dialog.button_table:getButtonById("book_information")
+                button.callback = function()
+                    FileManagerBookInfo:show(file, bookinfo)
+                    UIManager:close(self.file_dialog)
+                end
+
                 -- Add some new buttons to original buttons set
-                table.insert(orig_buttons[5], 1,
-                    { -- Mark the book as read/unread
-                        text_func = function()
-                            -- If the book has a cache entry, it means it has a sidecar file, and it *may* have the info we need.
-                            local status
-                            if self.cover_info_cache and self.cover_info_cache[file] then
-                                local _, _, c_status = unpack(self.cover_info_cache[file])
-                                status = c_status
-                            end
-                            -- NOTE: status may still be nil if the BookStatus widget was never opened in this book.
-                            --       For our purposes, we assume this means reading or on hold, which is just fine.
-                            -- NOTE: This also means we assume "on hold" means reading, meaning it'll be flipped to "finished",
-                            --       which I'm personally okay with, too.
-                            --       c.f., BookStatusWidget:generateSwitchGroup for the three possible constant values.
-                            return status == "complete" and _("Mark as reading") or _("Mark as read")
-                        end,
-                        enabled = true,
-                        callback = function()
-                            local status
-                            if self.cover_info_cache and self.cover_info_cache[file] then
-                                local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
-                                status = c_status == "complete" and "reading" or "complete"
-                                -- Update the cache, even if it had a nil status before
-                                self.cover_info_cache[file] = {c_pages, c_percent_finished, status}
-                            else
-                                -- We assumed earlier an empty status meant "reading", so, flip that to "complete"
-                                status = "complete"
-                            end
-
-                            -- In case the book doesn't have a sidecar file, this'll create it
-                            local docinfo = DocSettings:open(file)
-                            if docinfo.data.summary and docinfo.data.summary.status then
-                                -- Book already had the full BookStatus table in its sidecar, easy peasy!
-                                docinfo.data.summary.status = status
-                            else
-                                -- No BookStatus table, create a minimal one...
-                                if docinfo.data.summary then
-                                    -- Err, a summary table with no status entry? Should never happen...
-                                    local summary = { status = status }
-                                    -- Append the status entry to the existing summary...
-                                    util.tableMerge(docinfo.data.summary, summary)
-                                else
-                                    -- No summary table at all, create a minimal one
-                                    local summary = { status = status }
-                                    docinfo:saveSetting("summary", summary)
-                                end
-                            end
-                            docinfo:flush()
-
-                            UIManager:close(self.file_dialog)
-                            self:updateItems()
-                        end,
-                    }
-                )
-
-                -- Keep on adding new buttons
                 table.insert(orig_buttons, {
                     { -- Allow user to view real size cover in ImageViewer
                         text = _("View full size cover"),
@@ -379,8 +325,60 @@ function CoverMenu:updateItems(select_number)
                     },
                 })
                 table.insert(orig_buttons, {
+                    { -- Mark the book as read/unread
+                        text_func = function()
+                            -- If the book has a cache entry, it means it has a sidecar file, and it *may* have the info we need.
+                            local status
+                            if self.cover_info_cache and self.cover_info_cache[file] then
+                                local _, _, c_status = unpack(self.cover_info_cache[file])
+                                status = c_status
+                            end
+                            -- NOTE: status may still be nil if the BookStatus widget was never opened in this book.
+                            --       For our purposes, we assume this means reading or on hold, which is just fine.
+                            -- NOTE: This also means we assume "on hold" means reading, meaning it'll be flipped to "finished",
+                            --       which I'm personally okay with, too.
+                            --       c.f., BookStatusWidget:generateSwitchGroup for the three possible constant values.
+                            return status == "complete" and _("Mark as reading") or _("Mark as read")
+                        end,
+                        enabled = true,
+                        callback = function()
+                            local status
+                            if self.cover_info_cache and self.cover_info_cache[file] then
+                                local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
+                                status = c_status == "complete" and "reading" or "complete"
+                                -- Update the cache, even if it had a nil status before
+                                self.cover_info_cache[file] = {c_pages, c_percent_finished, status}
+                            else
+                                -- We assumed earlier an empty status meant "reading", so, flip that to "complete"
+                                status = "complete"
+                            end
+
+                            -- In case the book doesn't have a sidecar file, this'll create it
+                            local docinfo = DocSettings:open(file)
+                            if docinfo.data.summary and docinfo.data.summary.status then
+                                -- Book already had the full BookStatus table in its sidecar, easy peasy!
+                                docinfo.data.summary.status = status
+                            else
+                                -- No BookStatus table, create a minimal one...
+                                if docinfo.data.summary then
+                                    -- Err, a summary table with no status entry? Should never happen...
+                                    local summary = { status = status }
+                                    -- Append the status entry to the existing summary...
+                                    util.tableMerge(docinfo.data.summary, summary)
+                                else
+                                    -- No summary table at all, create a minimal one
+                                    local summary = { status = status }
+                                    docinfo:saveSetting("summary", summary)
+                                end
+                            end
+                            docinfo:flush()
+
+                            UIManager:close(self.file_dialog)
+                            self:updateItems()
+                        end,
+                    },
                     { -- Allow a new extraction (multiple interruptions, book replaced)...
-                        text = _("Refresh cached book information"),
+                        text = _("Refresh book info"),
                         enabled = bookinfo and true or false,
                         callback = function()
                             -- Wipe the cache
