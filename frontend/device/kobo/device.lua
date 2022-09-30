@@ -631,6 +631,13 @@ function Kobo:init()
         end
     end
 
+    -- NOTE: i.MX5 devices have a wonky RTC that doesn't like alarms set further away that UINT16_MAX seconds from now...
+    --       (c.f., WakeupMgr for more details).
+    local dodgy_rtc = false
+    if self:getRTCName() == "pmic_rtc" then
+        dodgy_rtc = true
+    end
+
     -- Detect the various CPU governor sysfs knobs...
     if util.pathExists("/sys/devices/system/cpu/cpufreq/policy0") then
         self.cpu_governor_knob = "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
@@ -687,7 +694,9 @@ function Kobo:init()
         main_finger_slot = self.main_finger_slot or 0,
         pressure_event = self.pressure_event,
     }
-    self.wakeup_mgr = WakeupMgr:new()
+    self.wakeup_mgr = WakeupMgr:new{
+        dodgy_rtc = dodgy_rtc,
+    }
 
     Generic.init(self)
 
@@ -1306,6 +1315,17 @@ function Kobo:defaultCPUGovernor()
         return
     end
     writeToSys(self.default_cpu_governor, self.cpu_governor_knob)
+end
+
+function Kobo:getRTCName()
+    local fd = io.open("/sys/class/rtc/rtc0/name", "re")
+    if fd then
+        local str = fd:read("*line")
+        fd:close()
+        return str
+    else
+        return nil
+    end
 end
 
 function Kobo:isStartupScriptUpToDate()

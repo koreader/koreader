@@ -23,6 +23,7 @@ local WakeupMgr = {
     dev_rtc = "/dev/rtc0", -- RTC device
     _task_queue = {},      -- Table with epoch at which to schedule the task and the function to be scheduled.
     rtc = RTC, -- The RTC implementation to use, defaults to the RTC module.
+    dodgy_rtc = false, -- If the RTC has trouble with timers further away than UINT16_MAX (e.g., on i.MX5).
 }
 
 --[[--
@@ -64,11 +65,10 @@ function WakeupMgr:addTask(seconds_from_now, callback)
 
     local old_upcoming_task = (self._task_queue[1] or {}).epoch
 
-    -- NOTE: Apparently, some RTCs have trouble with timers further away than UINT8_MAX, so,
+    -- NOTE: Apparently, some RTCs have trouble with timers further away than UINT16_MAX, so,
     --       if necessary, setup an alarm chain to work it around...
     --       c.f., https://github.com/koreader/koreader/issues/8039#issuecomment-1263547625
-    -- FIXME: Limit to i.MX 5 devices.
-    if seconds_from_now > 0xFFFF then
+    if self.dodgy_rtc and seconds_from_now > 0xFFFF then
         logger.info("WakeupMgr: scheduling a chain of alarms for a wakeup in", seconds_from_now)
 
         local seconds_left = seconds_from_now
