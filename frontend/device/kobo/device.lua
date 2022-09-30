@@ -631,6 +631,17 @@ function Kobo:init()
         end
     end
 
+    -- Detect the various CPU governor sysfs knobs...
+    if util.pathExists("/sys/devices/system/cpu/cpufreq/policy0") then
+        self.cpu_governor_knob = "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
+    else
+        self.cpu_governor_knob = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    end
+    self.default_cpu_governor = self:getCPUGovernor()
+
+
+    -- FIXME: Check the initial SMP state here, too.
+
     -- Automagically set this so we never have to remember to do it manually ;p
     if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
         self.hasNaturalLightMixer = yes
@@ -913,6 +924,9 @@ end
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
+    -- Experiment time! Switch to the performance CPU governor, to see if we can eek out a bit of latency out of resume...
+    self:performanceCPUGovernor()
+
     --[[
     -- On most devices, attempting to PM with a Wi-Fi module loaded will horribly crash the kernel, so, don't?
     if koboIsWifiOn() then
@@ -960,6 +974,10 @@ function Kobo:standby(max_duration)
         --]]
         self.wakeup_mgr:removeTasks(nil, standby_alarm)
     end
+
+    -- And restore the standard CPU scheduler once we're done dealing with the wakeup event
+    local UIManager = require("ui/uimanager")
+    UIManager:tickAfterNext(self.defaultCPUGovernor, self)
 end
 
 function Kobo:suspend()
@@ -1258,6 +1276,31 @@ function Kobo:enableCPUCores(amount)
             f:close()
         end
     end
+end
+
+function Kobo:getCPUGovernor()
+    local fd = io.open(self.cpu_governor_knob, "re")
+    if fd then
+        local str = fd:read("*line")
+        fd:close()
+        return str
+    else
+        return nil
+    end
+end
+
+function Kobo:performanceCPUGovernor()
+    if not self.default_cpu_governor then
+        return
+    end
+    writeToSys("performance", self.cpu_governor_knob)
+end
+
+function Kobo:defaultCPUGovernor()
+    if not self.default_cpu_governor then
+        return
+    end
+    writeToSys(self.default_cpu_governor, self.cpu_governor_knob)
 end
 
 function Kobo:isStartupScriptUpToDate()
