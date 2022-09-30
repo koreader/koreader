@@ -52,10 +52,6 @@ local period_popup = {  "。",
     ":",
 }
 
-local switch_char = "换字"
-local separator = "分隔"
-local local_del = ""
-
 local H = "H" -- stroke_h 横
 local I = "I" -- stroke_s 竖
 local J = "J" -- stroke_p 撇
@@ -144,7 +140,7 @@ local wrapInputBox = function(inputbox)
         table.insert(wrappers, util.wrapMethod(inputbox, "onHoldTextBox",   nil, wrappedSeparate))
         table.insert(wrappers, util.wrapMethod(inputbox, "onSwipeTextBox",  nil, wrappedSeparate))
         -- -- Others
-        table.insert(wrappers, util.wrapMethod(inputbox, "emitUtf8ModeKey", nil, wrappedSeparate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onSwitchingKeyboardLayout", nil, wrappedSeparate))
 
         -- addChars is the only method we need a more complicated wrapper for.
         table.insert(wrappers, util.wrapMethod(inputbox, "addChars", wrappedAddChars, nil))
@@ -181,13 +177,13 @@ return {
             { label = "←" },
             { JA.s_4, { label = "丶", "㇏" } },
             { JA.s_5, { label = "𠃋", "㇜" } },
-            { JA.s_6, { switch_char, north=local_del, alt_label=local_del } },
+            { JA.s_6, { ime.separator, north=ime.local_del, alt_label=ime.local_del } },
             { label = "→" },
         },
         -- third row
         {
             { label = "↑" },
-            { JA.s_7, { label = "＊", W } },
+            { JA.s_7, ime.switch_char },
             { s_8,    comma_popup },
             { JA.s_9, period_popup },
             { label = "↓" },
@@ -196,7 +192,7 @@ return {
         {
             { label = "🌐" },
             { label = "空格",  " ", " ", width = 2.0 },
-            { JA.s_0, separator },
+            { JA.s_0, { label = "＊", W } },
             { label = "⮠", "\n", "\n", bold = true }, -- return
         },
     },

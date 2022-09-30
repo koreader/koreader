@@ -64,7 +64,7 @@ function VirtualKey:init()
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
         self.key_chars = self:genKeyboardLayoutKeyChars()
         self.callback = function ()
-            self.keyboard:emitUtf8ModeKey()
+            self.keyboard:onSwitchingKeyboardLayout()
             local current = G_reader_settings:readSetting("keyboard_layout")
             local default = G_reader_settings:readSetting("keyboard_layout_default")
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
@@ -87,7 +87,7 @@ function VirtualKey:init()
             self.keyboard:setKeyboardLayout(next_layout)
         end
         self.hold_callback = function()
-            self.keyboard:emitUtf8ModeKey()
+            self.keyboard:onSwitchingKeyboardLayout()
             if util.tableSize(self.key_chars) > 5 then -- 2 or more layouts enabled
                 self.popup = VirtualKeyPopup:new{
                     parent_key = self,
@@ -102,7 +102,7 @@ function VirtualKey:init()
         end
         self.hold_cb_is_popup = true
         self.swipe_callback = function(ges)
-            self.keyboard:emitUtf8ModeKey()
+            self.keyboard:onSwitchingKeyboardLayout()
             local key_function = self.key_chars[ges.direction.."_func"]
             if key_function then
                 key_function()
@@ -1040,8 +1040,9 @@ function VirtualKeyboard:goToStartOfLine()
     self.inputbox:goToStartOfLine()
 end
 
-function VirtualKeyboard:emitUtf8ModeKey()
-    if self.inputbox.emitUtf8ModeKey then self.inputbox:emitUtf8ModeKey() end
+-- Some keyboard with intermediate state (ie. zh) may need to be notified
+function VirtualKeyboard:onSwitchingKeyboardLayout()
+    if self.inputbox.onSwitchingKeyboardLayout then self.inputbox:onSwitchingKeyboardLayout() end
 end
 
 function VirtualKeyboard:goToEndOfLine()
