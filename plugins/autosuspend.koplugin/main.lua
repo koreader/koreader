@@ -227,7 +227,9 @@ function AutoSuspend:_schedule_standby()
         --logger.dbg("AutoSuspend: WiFi is on, delaying standby")
         standby_delay_seconds = self.auto_standby_timeout_seconds
     elseif Device.powerd:isCharging() and not Device:canPowerSaveWhileCharging() then
-        -- Don't enter standby when charging on devices where charging prevents entering low power states.
+        -- Don't enter standby when charging on devices where charging *may* prevent entering low power states.
+        -- (*May*, because depending on the USB controller, it might depend on what it's plugged to, and how it's setup:
+        -- i.e., genreally, on those devices, USBNet being enabled is guaranteed to prevent PM).
         -- NOTE: Minor simplification here, we currently don't do the hasAuxBattery dance like in _schedule,
         --       because all the hasAuxBattery devices can currently enter PM states while charging ;).
         --logger.dbg("AutoSuspend: charging, delaying standby")
