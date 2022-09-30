@@ -933,7 +933,8 @@ end
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
-    -- Experiment time! Switch to the performance CPU governor, to see if we can eek out a bit of latency out of resume...
+    -- NOTE: Switch to the performance CPU governor, in order to speed up the resume process so as to lower its latency cost...
+    --       (It won't have any impact on power efficiency *during* suspend, so there's not really any drawback).
     self:performanceCPUGovernor()
 
     --[[
@@ -984,7 +985,7 @@ function Kobo:standby(max_duration)
         self.wakeup_mgr:removeTasks(nil, standby_alarm)
     end
 
-    -- And restore the standard CPU scheduler once we're done dealing with the wakeup event
+    -- And restore the standard CPU scheduler once we're done dealing with the wakeup event.
     local UIManager = require("ui/uimanager")
     UIManager:tickAfterNext(self.defaultCPUGovernor, self)
 end
