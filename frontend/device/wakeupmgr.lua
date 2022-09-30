@@ -74,7 +74,7 @@ function WakeupMgr:addTask(seconds_from_now, callback)
         local seconds_left = seconds_from_now
         while seconds_left > 0 do
             local epoch = RTC:secondsFromNowToEpoch(seconds_left)
-            logger.info("WakeupMgr: scheduling wakeup in", seconds_left, "@", epoch)
+            logger.info("WakeupMgr: scheduling wakeup in", seconds_left, "->", epoch)
 
             -- We only need a callback for the final wakeup, we take care of not breaking the chain when an action is pop'ed.
             table.insert(self._task_queue, {
@@ -86,7 +86,7 @@ function WakeupMgr:addTask(seconds_from_now, callback)
         end
     else
         local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
-        logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now, "@", epoch)
+        logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now, "->", epoch)
 
         table.insert(self._task_queue, {
             epoch = epoch,
