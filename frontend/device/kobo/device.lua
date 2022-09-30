@@ -1250,7 +1250,7 @@ function Kobo:getCPUCount()
         fd:close()
 
         -- Format is n-N, where n is the first core, and N the last (e.g., 0-3)
-        return tonumber(str:match("%d+$")) or 0
+        return tonumber(str:match("%d+$")) or 1
     else
         return 1
     end
