@@ -121,11 +121,15 @@ function WakeupMgr:removeTasks(epoch, callback)
 
     local removed = false
     local reschedule = false
+    local match_epoch = epoch
     for k = #self._task_queue, 1, -1 do
         local v = self._task_queue[k]
-        -- NOTE: This will remove *all* the DummyTaskCallback,
-        --       not necessarily only those linked to the requested epoch/callback...
-        if epoch == v.epoch or callback == v.callback or self.DummyTaskCallback == v.callback then
+        -- NOTE: For the DummyTaskCallback shenanigans, we at least try to only remove those that come earlier than our match...
+        if (epoch == v.epoch or callback == v.callback) or
+           (match_epoch and self.DummyTaskCallback == v.callback and v.epoch < match_epoch) then
+            if not match_epoch then
+                match_epoch = v.epoch
+            end
             table.remove(self._task_queue, k)
             removed = true
             -- If we've successfuly pop'ed the upcoming task, we need to schedule the next one (if any) on exit.
@@ -200,7 +204,7 @@ Set wakeup alarm.
 Simple wrapper for @{ffi.rtc.setWakeupAlarm}.
 --]]
 function WakeupMgr:setWakeupAlarm(epoch, enabled)
-    logger.dbg("WakeupMgr:setWakeupAlarm", epoch, enabled)
+    logger.dbg("WakeupMgr:setWakeupAlarm for", epoch, os.date("(%F %T %z)", epoch))
     return self.rtc:setWakeupAlarm(epoch, enabled)
 end
 
