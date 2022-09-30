@@ -30,25 +30,31 @@ local Dbg = {
 
 local Dbg_mt = {}
 
-local function LvDEBUG(lv, ...)
-    local line
-    if isAndroid then
-        line = {}
-    else
-        line = {
+local LvDEBUG
+if isAndroid then
+    LvDEBUG = function(lv, ...)
+        local line = {}
+        for _, v in ipairs({...}) do
+            if type(v) == "table" then
+                table.insert(line, dump(v, lv))
+            else
+                table.insert(line, tostring(v))
+            end
+        end
+        return android.LOGV(table.concat(line, " "))
+    end
+else
+    LvDEBUG = function(lv, ...)
+        local line = {
             os.date("%x-%X DEBUG"),
         }
-    end
-    for _, v in ipairs({...}) do
-        if type(v) == "table" then
-            table.insert(line, dump(v, lv))
-        else
-            table.insert(line, tostring(v))
+        for _, v in ipairs({...}) do
+            if type(v) == "table" then
+                table.insert(line, dump(v, lv))
+            else
+                table.insert(line, tostring(v))
+            end
         end
-    end
-    if isAndroid then
-        return android.LOGV(table.concat(line, " "))
-    else
         table.insert(line, "\n")
         return io.write(table.concat(line, " "))
     end

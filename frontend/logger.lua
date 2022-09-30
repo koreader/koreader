@@ -40,34 +40,40 @@ local Logger = {
     levels = LOG_LVL,
 }
 
-local function log(log_lvl, dump_lvl, ...)
-    local line
-    if isAndroid then
-        line = {}
-    else
-        line = {
+local log
+if isAndroid then
+    local ANDROID_LOG_FNS = {
+        dbg  = android.LOGV,
+        info = android.LOGI,
+        warn = android.LOGW,
+        err  = android.LOGE,
+    }
+
+    log = function(log_lvl, dump_lvl, ...)
+        local line = {}
+        for _, v in ipairs({...}) do
+            if type(v) == "table" then
+                table.insert(line, dump(v, dump_lvl))
+            else
+                table.insert(line, tostring(v))
+            end
+        end
+        return ANDROID_LOG_FNS[log_lvl](table.concat(line, " "))
+    end
+else
+    log = function(log_lvl, dump_lvl, ...)
+        local line = {
             os.date("%x-%X"),
             LOG_PREFIX[log_lvl]
         }
-    end
-    for _, v in ipairs({...}) do
-        if type(v) == "table" then
-            table.insert(line, dump(v, dump_lvl))
-        else
-            table.insert(line, tostring(v))
+        for _, v in ipairs({...}) do
+            if type(v) == "table" then
+                table.insert(line, dump(v, dump_lvl))
+            else
+                table.insert(line, tostring(v))
+            end
         end
-    end
-    if isAndroid then
-        if log_lvl == "dbg" then
-            return android.LOGV(table.concat(line, " "))
-        elseif log_lvl == "info" then
-            return android.LOGI(table.concat(line, " "))
-        elseif log_lvl == "warn" then
-            return android.LOGW(table.concat(line, " "))
-        elseif log_lvl == "err" then
-            return android.LOGE(table.concat(line, " "))
-        end
-    else
+
         -- NOTE: Either we add the LF to the table and we get an extra space before it because of table.concat,
         --       or we pass it to write after a comma, and it generates an extra write syscall...
         table.insert(line, "\n")
@@ -81,7 +87,6 @@ local LVL_FUNCTIONS = {
     warn = function(...) return log("warn", DEFAULT_DUMP_LVL, ...) end,
     err  = function(...) return log("err", DEFAULT_DUMP_LVL, ...) end,
 }
-
 
 --[[--
 Set logging level. By default, level is set to info.
