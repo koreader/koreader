@@ -54,6 +54,11 @@ local function LvDEBUG(lv, ...)
     end
 end
 
+--- Helper function to help dealing with nils in Dbg:guard...
+local function pack_values(...)
+    return select('#', ...), {...}
+end
+
 --- Turn on debug mode.
 -- This should only be used in tests and at the user's request.
 function Dbg:turnOn()
@@ -62,19 +67,18 @@ function Dbg:turnOn()
     logger:setLevel(logger.levels.dbg)
 
     Dbg_mt.__call = function(_, ...) return LvDEBUG(math.huge, ...) end
-    --- Pass a guard function to detect bad input values. Unsafe if method can return nil.
+    --- Pass a guard function to detect bad input values.
     Dbg.guard = function(_, mod, method, pre_guard, post_guard)
         local old_method = mod[method]
         mod[method] = function(...)
             if pre_guard then
                 pre_guard(...)
             end
-            -- NOTE: This will break on the first nil being returned...
-            local values = {old_method(...)}
+            local n, values = pack_values(old_method(...))
             if post_guard then
                 post_guard(...)
             end
-            return unpack(values)
+            return unpack(values, 1, n)
         end
     end
     --- Use this instead of a regular Lua @{assert}().
