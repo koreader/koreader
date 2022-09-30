@@ -124,7 +124,7 @@ function WakeupMgr:removeTasks(epoch, callback)
         local v = self._task_queue[k]
         -- NOTE: For the DummyTaskCallback shenanigans, we at least try to only remove those that come earlier than our match...
         if (epoch == v.epoch or callback == v.callback) or
-           (match_epoch and self.DummyTaskCallback == v.callback and v.epoch < match_epoch) then
+           (self.dodgy_rtc and match_epoch and self.DummyTaskCallback == v.callback and v.epoch < match_epoch) then
             if not match_epoch then
                 match_epoch = v.epoch
             end
