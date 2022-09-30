@@ -64,7 +64,7 @@ else
     log = function(log_lvl, ...)
         local line = {
             os.date("%x-%X"),
-            LOG_PREFIX[log_lvl]
+            LOG_PREFIX[log_lvl],
         }
         for _, v in ipairs({...}) do
             if type(v) == "table" then
