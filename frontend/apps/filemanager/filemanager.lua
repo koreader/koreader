@@ -215,9 +215,11 @@ function FileManager:setupLayout()
                     text = _("Select"),
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        file_manager:onToggleSelectMode()
-                        file_manager.selected_files[file] = true
-                        self:refreshPath()
+                        file_manager:onToggleSelectMode(true) -- no full screen refresh
+                        if is_file then
+                            file_manager.selected_files[file] = true
+                            self:refreshPath()
+                        end
                     end,
                 },
             },
@@ -575,12 +577,14 @@ function FileManager:onShowPlusMenu()
     return true
 end
 
-function FileManager:onToggleSelectMode()
+function FileManager:onToggleSelectMode(no_refresh)
     logger.dbg("toggle select mode")
     self.select_mode = not self.select_mode
     self.selected_files = self.select_mode and {} or nil
     self.title_bar:setRightIcon(self.select_mode and "check" or "plus")
-    self:onRefresh()
+    if not no_refresh then
+        self:onRefresh()
+    end
 end
 
 function FileManager:tapPlus()
@@ -703,7 +707,7 @@ function FileManager:tapPlus()
                 {
                     text = _("Select files"),
                     callback = function()
-                        self:onToggleSelectMode()
+                        self:onToggleSelectMode(true) -- no full screen refresh
                         UIManager:close(self.file_dialog)
                     end,
                 },
