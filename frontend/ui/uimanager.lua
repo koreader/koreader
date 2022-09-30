@@ -74,13 +74,11 @@ function UIManager:init()
         if Device:needsScreenRefreshAfterResume() then
             Screen:refreshFull()
         end
-        UIManager:nextTick(function()
+        self:nextTick(function()
             Device:saveSettings()
-            if Device:isKobo() then
-                self._exit_code = 88
-            end
             self:broadcastEvent(Event:new("Close"))
             Device:powerOff()
+            self:quit(Device:isKobo() and 88)
         end)
     end
     self.reboot_action = function()
@@ -99,13 +97,11 @@ function UIManager:init()
         if Device:needsScreenRefreshAfterResume() then
             Screen:refreshFull()
         end
-        UIManager:nextTick(function()
+        self:nextTick(function()
             Device:saveSettings()
-            if Device:isKobo() then
-                self._exit_code = 88
-            end
             self:broadcastEvent(Event:new("Close"))
             Device:reboot()
+            self:quit(Device:isKobo() and 88)
         end)
     end
 

@@ -383,9 +383,11 @@ function Device:suspend() end
 -- Hardware specific method to resume the device
 function Device:resume() end
 
+-- NOTE: These two should ideally run in the background, and only trip the action after a small delay,
+--       to give us time to quit first.
+--       e.g., os.execute("sleep 1 && shutdown -r now &")
 -- Hardware specific method to power off the device
 function Device:powerOff() end
-
 -- Hardware specific method to reboot the device
 function Device:reboot() end
 

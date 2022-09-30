@@ -119,11 +119,11 @@ function SonyPRSTUX:resume()
 end
 
 function SonyPRSTUX:powerOff()
-    os.execute("poweroff")
+    os.execute("sleep 1 && poweroff &")
 end
 
 function SonyPRSTUX:reboot()
-    os.execute("reboot")
+    os.execute("sleep 1 && reboot &")
 end
 
 function SonyPRSTUX:usbPlugIn()

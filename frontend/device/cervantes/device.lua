@@ -230,10 +230,10 @@ function Cervantes:resume()
     os.execute("./resume.sh")
 end
 function Cervantes:reboot()
-    os.execute("reboot")
+    os.execute("sleep 1 && reboot &")
 end
 function Cervantes:powerOff()
-    os.execute("halt")
+    os.execute("sleep 1 && halt &")
 end
 
 -- This method is the same as the one in kobo/device.lua except the sleep cover part.

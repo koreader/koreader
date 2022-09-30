@@ -1161,11 +1161,11 @@ function Kobo:powerOff()
     self.wakeup_mgr:unsetWakeupAlarm()
 
     -- Then shut down without init's help
-    os.execute("poweroff -f")
+    os.execute("sleep 1 && poweroff -f &")
 end
 
 function Kobo:reboot()
-    os.execute("reboot")
+    os.execute("sleep 1 && reboot &")
 end
 
 function Kobo:toggleGSensor(toggle)
