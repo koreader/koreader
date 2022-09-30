@@ -5,6 +5,7 @@ It vanishes on key press or after a given timeout.
 
 Example:
     local UIManager = require("ui/uimanager")
+    local InfoMessage = require("ui/widget/infomessage")
     local _ = require("gettext")
     local Screen = require("device").screen
     local sample
@@ -18,8 +19,7 @@ Example:
         show_icon = false,
         timeout = 5,  -- This widget will vanish in 5 seconds.
     }
-    UIManager:show(sample_input)
-    sample_input:onShowKeyboard()
+    UIManager:show(sample)
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
