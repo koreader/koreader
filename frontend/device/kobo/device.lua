@@ -646,8 +646,8 @@ function Kobo:init()
     end
     self.default_cpu_governor = self:getCPUGovernor()
 
-
-    -- FIXME: Check the initial SMP state here, too.
+    -- And while we're on CPU-related endavors...
+    self.cpu_count = self:isSMP() and self:getCPUCount() or 1
 
     -- Automagically set this so we never have to remember to do it manually ;p
     if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
@@ -1243,7 +1243,7 @@ function Kobo:toggleChargingLED(toggle)
 end
 
 -- Return the highest core number
-local function getCPUCount()
+function Kobo:getCPUCount()
     local fd = io.open("/sys/devices/system/cpu/possible", "re")
     if fd then
         local str = fd:read("*line")
@@ -1252,21 +1252,12 @@ local function getCPUCount()
         -- Format is n-N, where n is the first core, and N the last (e.g., 0-3)
         return tonumber(str:match("%d+$")) or 0
     else
-        return 0
+        return 1
     end
 end
 
 function Kobo:enableCPUCores(amount)
-    if not self:isSMP() then
-        return
-    end
-
-    if not self.cpu_count then
-        self.cpu_count = getCPUCount()
-    end
-
-    -- Not actually SMP or getCPUCount failed...
-    if self.cpu_count == 0 then
+    if self.cpu_count == 1 then
         return
     end
 
