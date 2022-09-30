@@ -337,16 +337,12 @@ necessary if the caller wants to unschedule action *before* it actually gets ins
 @see nextTick
 ]]
 function UIManager:tickAfterNext(action, ...)
-    -- Storing varargs is a bit iffy as we don't build LuaJIT w/ 5.2 compat, so we don't have access to table.pack...
-    -- c.f., http://lua-users.org/wiki/VarargTheSecondClassCitizen
-    local n = select("#", ...)
-    local va = {...}
     -- We need to keep a reference to this anonymous function, as it is *NOT* quite `action` yet,
     -- and the caller might want to unschedule it early...
-    local action_wrapper = function()
-        self:nextTick(action, unpack(va, 1, n))
+    local action_wrapper = function(...)
+        self:nextTick(action, ...)
     end
-    self:nextTick(action_wrapper)
+    self:nextTick(action_wrapper, ...)
 
     return action_wrapper
 end
