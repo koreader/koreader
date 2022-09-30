@@ -201,6 +201,10 @@ function NetworkListener:onNetworkConnected()
         return
     end
 
+    -- This is for the sake of events that don't emanate from NetworkMgr itself...
+    NetworkMgr:setWifiState(true)
+    NetworkMgr:setConnectionState(true)
+
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return
     end
@@ -215,6 +219,9 @@ function NetworkListener:onNetworkDisconnected()
     if not (Device:hasWifiManager() and not Device:isEmulator()) then
         return
     end
+
+    NetworkMgr:setWifiState(false)
+    NetworkMgr:setConnectionState(false)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return

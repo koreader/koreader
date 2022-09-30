@@ -12,7 +12,10 @@ local logger = require("logger")
 local _ = require("gettext")
 local T = ffiutil.template
 
-local NetworkMgr = {}
+local NetworkMgr = {
+    is_wifi_on = false,
+    is_connected = false,
+}
 
 function NetworkMgr:readNWSettings()
     self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
@@ -40,7 +43,8 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         return
     end
 
-    if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
+    self:queryNetworkState()
+    if self.is_wifi_on and self.is_connected then
         self.wifi_was_on = true
         G_reader_settings:makeTrue("wifi_was_on")
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
@@ -79,16 +83,17 @@ function NetworkMgr:init()
         self:turnOffWifi()
     end
 
+    self:queryNetworkState()
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
     if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
         -- Don't bother if WiFi is already up...
-        if not (self:isWifiOn() and self:isConnected()) then
+        if not self.is_connected then
             self:restoreWifiAsync()
         end
         self:scheduleConnectivityCheck()
     else
         -- Trigger an initial NetworkConnected event if WiFi was already up when we were launched
-        if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
+        if self.is_connected then
             -- NOTE: This needs to be delayed because NetworkListener is initialized slightly later by the FM/Reader app...
             UIManager:scheduleIn(2, function() UIManager:broadcastEvent(Event:new("NetworkConnected")) end)
         end
@@ -108,7 +113,7 @@ function NetworkMgr:authenticateNetwork() end
 function NetworkMgr:disconnectNetwork() end
 function NetworkMgr:obtainIP() end
 function NetworkMgr:releaseIP() end
--- This function should unblockly call both turnOnWifi() and obtainIP().
+-- This function should call both turnOnWifi() and obtainIP() in a non-blocking manner.
 function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
 
@@ -274,6 +279,27 @@ function NetworkMgr:isOnline()
     return socket.dns.toip("dns.msftncsi.com") ~= nil
 end
 
+-- Update our cached network status
+function NetworkMgr:queryNetworkState()
+    self.is_wifi_on = self:isWifiOn()
+    self.is_connected = self.is_wifi_on and self:isConnected()
+end
+
+-- These do not call the actual Device methods, but what we, NetworkMgr, thing the state is based on our own behavior.
+function NetworkMgr:getWifiState()
+    return self.is_wifi_on
+end
+function NetworkMgr:setWifiState(bool)
+    self.is_wifi_on = bool
+end
+function NetworkMgr:getConnectionState()
+    return self.is_connected
+end
+function NetworkMgr:setConnectionState(bool)
+    self.is_connected = bool
+end
+
+
 function NetworkMgr:isNetworkInfoAvailable()
     if Device:isAndroid() then
         -- always available
@@ -371,9 +397,8 @@ end
 
 function NetworkMgr:getWifiToggleMenuTable()
     local toggleCallback = function(touchmenu_instance, long_press)
-        local is_wifi_on = NetworkMgr:isWifiOn()
-        local is_connected = NetworkMgr:isConnected()
-        local fully_connected = is_wifi_on and is_connected
+        self:queryNetworkState()
+        local fully_connected = self.is_wifi_on and self.is_connected
         local complete_callback = function()
             -- Notify TouchMenu to update item check state
             touchmenu_instance:updateItems()
@@ -409,7 +434,7 @@ function NetworkMgr:getWifiToggleMenuTable()
         end
         if fully_connected then
             NetworkMgr:toggleWifiOff(complete_callback)
-        elseif is_wifi_on and not is_connected then
+        elseif self.is_wifi_on and not self.is_connected then
             -- ask whether user wants to connect or turn off wifi
             NetworkMgr:promptWifi(complete_callback, long_press)
         else
