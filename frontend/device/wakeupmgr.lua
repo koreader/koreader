@@ -69,9 +69,10 @@ function WakeupMgr:addTask(seconds_from_now, callback)
         local seconds_left = seconds_from_now
         while seconds_left > 0 do
             local epoch = RTC:secondsFromNowToEpoch(seconds_left)
-            logger.info("WakeupMgr: scheduling wakeup in", seconds_left)
+            logger.info("WakeupMgr: scheduling wakeup in", seconds_left, "@", epoch)
 
             -- We only need a callback for the final wakeup, wakeupAction takes care of not breaking the chain.
+            -- FIXME: Changing the callback breaks removeTasks matching on it, though.
             table.insert(self._task_queue, {
                 epoch = epoch,
                 callback = seconds_left == seconds_from_now and callback or function() end,
@@ -81,7 +82,7 @@ function WakeupMgr:addTask(seconds_from_now, callback)
         end
     else
         local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
-        logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now)
+        logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now, "@", epoch)
 
         table.insert(self._task_queue, {
             epoch = epoch,
@@ -193,6 +194,7 @@ Set wakeup alarm.
 Simple wrapper for @{ffi.rtc.setWakeupAlarm}.
 --]]
 function WakeupMgr:setWakeupAlarm(epoch, enabled)
+    logger.dbg("WakeupMgr:setWakeupAlarm", epoch, enabled)
     return self.rtc:setWakeupAlarm(epoch, enabled)
 end
 
