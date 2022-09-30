@@ -633,6 +633,7 @@ function Kobo:init()
 
     -- NOTE: i.MX5 devices have a wonky RTC that doesn't like alarms set further away that UINT16_MAX seconds from now...
     --       (c.f., WakeupMgr for more details).
+    -- NOTE: getRTCName is currently hardcoded to rtc0 (which is also WakeupMgr's default).
     local dodgy_rtc = false
     if self:getRTCName() == "pmic_rtc" then
         dodgy_rtc = true
