@@ -282,7 +282,7 @@ function UIManager:schedule(sched_time, action, ...)
     table.insert(self._task_queue, p, {
         time = sched_time,
         action = action,
-        argc = select('#', ...),
+        argc = select("#", ...),
         args = {...},
     })
     self._task_queue_dirty = true
@@ -339,7 +339,7 @@ necessary if the caller wants to unschedule action *before* it actually gets ins
 function UIManager:tickAfterNext(action, ...)
     -- Storing varargs is a bit iffy as we don't build LuaJIT w/ 5.2 compat, so we don't have access to table.pack...
     -- c.f., http://lua-users.org/wiki/VarargTheSecondClassCitizen
-    local n = select('#', ...)
+    local n = select("#", ...)
     local va = {...}
     -- We need to keep a reference to this anonymous function, as it is *NOT* quite `action` yet,
     -- and the caller might want to unschedule it early...

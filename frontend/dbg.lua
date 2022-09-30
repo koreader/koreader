@@ -62,7 +62,7 @@ end
 
 --- Helper function to help dealing with nils in Dbg:guard...
 local function pack_values(...)
-    return select('#', ...), {...}
+    return select("#", ...), {...}
 end
 
 --- Turn on debug mode.
