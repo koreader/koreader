@@ -44,6 +44,11 @@ function WakeupMgr:new(o)
     return o
 end
 
+-- This is a dummy task we use when working around i.MX5 RTC issues.
+-- We need to be able to recognize it so that we can deal with it in removeTasks...
+function WakeupMgr.DummyTaskCallback()
+end
+
 --[[--
 Add a task to the queue.
 
@@ -72,10 +77,9 @@ function WakeupMgr:addTask(seconds_from_now, callback)
             logger.info("WakeupMgr: scheduling wakeup in", seconds_left, "@", epoch)
 
             -- We only need a callback for the final wakeup, wakeupAction takes care of not breaking the chain.
-            -- FIXME: Changing the callback breaks removeTasks matching on it, though.
             table.insert(self._task_queue, {
                 epoch = epoch,
-                callback = seconds_left == seconds_from_now and callback or function() end,
+                callback = seconds_left == seconds_from_now and callback or self.DummyTaskCallback,
             })
 
             seconds_left = seconds_left - 0xFFFF
@@ -119,7 +123,9 @@ function WakeupMgr:removeTasks(epoch, callback)
     local reschedule = false
     for k = #self._task_queue, 1, -1 do
         local v = self._task_queue[k]
-        if epoch == v.epoch or callback == v.callback then
+        -- NOTE: This will remove *all* the DummyTaskCallback,
+        --       not necessarily only those linked to the requested epoch/callback...
+        if epoch == v.epoch or callback == v.callback or self.DummyTaskCallback == v.callback then
             table.remove(self._task_queue, k)
             removed = true
             -- If we've successfuly pop'ed the upcoming task, we need to schedule the next one (if any) on exit.
