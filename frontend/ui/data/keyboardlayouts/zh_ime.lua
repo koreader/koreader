@@ -12,6 +12,9 @@ local function binarysearch( tbl, value, fcompval, reversed )
         iMid = math.floor( (iStart+iEnd)/2 )
         local value2 = fcompval( tbl[iMid] )
         if value == value2 then
+            if iMid == 0 or fcompval( tbl[iMid-1] ) ~= value then
+                return iMid
+            end
             iEnd = iMid - 1
             while iStart <= iEnd do
                 iMid = math.floor( (iStart+iEnd)/2 )
