@@ -62,19 +62,19 @@ function Dbg:turnOn()
     logger:setLevel(logger.levels.dbg)
 
     Dbg_mt.__call = function(_, ...) return LvDEBUG(math.huge, ...) end
-    --- Pass a guard function to detect bad input values.
+    --- Pass a guard function to detect bad input values. Unsafe if method can return nil.
     Dbg.guard = function(_, mod, method, pre_guard, post_guard)
         local old_method = mod[method]
         mod[method] = function(...)
             if pre_guard then
                 pre_guard(...)
             end
-            local n = select('#', ...)
+            -- NOTE: This will break on the first nil being returned...
             local values = {old_method(...)}
             if post_guard then
                 post_guard(...)
             end
-            return unpack(values, 1, n)
+            return unpack(values)
         end
     end
     --- Use this instead of a regular Lua @{assert}().
