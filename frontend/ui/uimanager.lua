@@ -260,7 +260,7 @@ function UIManager:schedule(sched_time, action, ...)
                 if s == e then
                     p = e + 1
                     break
-                elseif s - e == 1 then
+                elseif s - e == -1 then
                     s = e
                 else
                     s = p
