@@ -32,11 +32,11 @@ local Dbg_mt = {}
 
 local LvDEBUG
 if isAndroid then
-    LvDEBUG = function(lv, ...)
+    LvDEBUG = function(...)
         local line = {}
         for _, v in ipairs({...}) do
             if type(v) == "table" then
-                table.insert(line, dump(v, lv))
+                table.insert(line, dump(v, math.huge))
             else
                 table.insert(line, tostring(v))
             end
@@ -44,13 +44,13 @@ if isAndroid then
         return android.LOGV(table.concat(line, " "))
     end
 else
-    LvDEBUG = function(lv, ...)
+    LvDEBUG = function(...)
         local line = {
             os.date("%x-%X DEBUG"),
         }
         for _, v in ipairs({...}) do
             if type(v) == "table" then
-                table.insert(line, dump(v, lv))
+                table.insert(line, dump(v, math.huge))
             else
                 table.insert(line, tostring(v))
             end
@@ -72,7 +72,7 @@ function Dbg:turnOn()
     self.is_on = true
     logger:setLevel(logger.levels.dbg)
 
-    Dbg_mt.__call = function(_, ...) return LvDEBUG(math.huge, ...) end
+    Dbg_mt.__call = function(_, ...) return LvDEBUG(...) end
     --- Pass a guard function to detect bad input values.
     Dbg.guard = function(_, mod, method, pre_guard, post_guard)
         local old_method = mod[method]
@@ -101,6 +101,7 @@ function Dbg:turnOff()
     self.is_on = false
     logger:setLevel(logger.levels.info)
     Dbg_mt.__call = function() end
+    -- NOTE: This doesn't actually disengage previously wrapped methods!
     Dbg.guard = function() end
     Dbg.dassert = function(check)
         return check
@@ -116,13 +117,13 @@ end
 --- Simple table dump.
 function Dbg:v(...)
     if self.is_verbose then
-        return LvDEBUG(math.huge, ...)
+        return LvDEBUG(...)
     end
 end
 
 --- Simple traceback.
 function Dbg:traceback()
-    return LvDEBUG(math.huge, debug.traceback())
+    return LvDEBUG(debug.traceback())
 end
 
 setmetatable(Dbg, Dbg_mt)

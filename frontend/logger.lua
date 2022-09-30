@@ -49,11 +49,11 @@ if isAndroid then
         err  = android.LOGE,
     }
 
-    log = function(log_lvl, dump_lvl, ...)
+    log = function(log_lvl, ...)
         local line = {}
         for _, v in ipairs({...}) do
             if type(v) == "table" then
-                table.insert(line, dump(v, dump_lvl))
+                table.insert(line, dump(v, DEFAULT_DUMP_LVL))
             else
                 table.insert(line, tostring(v))
             end
@@ -61,14 +61,14 @@ if isAndroid then
         return ANDROID_LOG_FNS[log_lvl](table.concat(line, " "))
     end
 else
-    log = function(log_lvl, dump_lvl, ...)
+    log = function(log_lvl, ...)
         local line = {
             os.date("%x-%X"),
             LOG_PREFIX[log_lvl]
         }
         for _, v in ipairs({...}) do
             if type(v) == "table" then
-                table.insert(line, dump(v, dump_lvl))
+                table.insert(line, dump(v, DEFAULT_DUMP_LVL))
             else
                 table.insert(line, tostring(v))
             end
@@ -82,10 +82,10 @@ else
 end
 
 local LVL_FUNCTIONS = {
-    dbg  = function(...) return log("dbg", DEFAULT_DUMP_LVL, ...) end,
-    info = function(...) return log("info", DEFAULT_DUMP_LVL, ...) end,
-    warn = function(...) return log("warn", DEFAULT_DUMP_LVL, ...) end,
-    err  = function(...) return log("err", DEFAULT_DUMP_LVL, ...) end,
+    dbg  = function(...) return log("dbg", ...) end,
+    info = function(...) return log("info", ...) end,
+    warn = function(...) return log("warn", ...) end,
+    err  = function(...) return log("err", ...) end,
 }
 
 --[[--
