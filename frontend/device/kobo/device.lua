@@ -1283,6 +1283,11 @@ function Kobo:getCPUGovernor()
     if fd then
         local str = fd:read("*line")
         fd:close()
+        -- If we're currently using the userspace governor, switch to conservative, as we won't ever standby with Wi-Fi on.
+        -- (userspace if only used on i.MX5 for DVFS shenanigans when Wi-Fi is enabled)
+        if str == "userspace" then
+            str = "conservative"
+        end
         return str
     else
         return nil
