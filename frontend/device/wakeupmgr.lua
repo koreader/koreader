@@ -94,8 +94,6 @@ function WakeupMgr:addTask(seconds_from_now, callback)
         })
     end
 
-    --- @todo Binary insert? This table should be so small that performance doesn't matter.
-    -- It might be useful to have that available as a utility function regardless.
     table.sort(self._task_queue, function(a, b) return a.epoch < b.epoch end)
 
     local new_upcoming_task = self._task_queue[1].epoch
