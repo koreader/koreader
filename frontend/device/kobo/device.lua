@@ -27,6 +27,31 @@ local function koboEnableWifi(toggle)
     end
 end
 
+-- NOTE: Cheap-ass way of checking if Wi-Fi seems to be enabled...
+--       Since the crux of the issues lies in race-y module unloading, this is perfectly fine for our usage.
+local function koboIsWifiOn()
+    local needle = os.getenv("WIFI_MODULE") or "sdio_wifi_pwr"
+    local nlen = #needle
+    -- /proc/modules is usually empty, unless Wi-Fi or USB is enabled
+    -- We could alternatively check if lfs.attributes("/proc/sys/net/ipv4/conf/" .. os.getenv("INTERFACE"), "mode") == "directory"
+    -- c.f., also what Cervantes does via /sys/class/net/eth0/carrier to check if the interface is up.
+    -- That said, since we only care about whether *modules* are loaded, this does the job nicely.
+    local f = io.open("/proc/modules", "re")
+    if not f then
+        return false
+    end
+
+    local found = false
+    for haystack in f:lines() do
+        if haystack:sub(1, nlen) == needle then
+            found = true
+            break
+        end
+    end
+    f:close()
+    return found
+end
+
 -- checks if standby is available on the device
 local function checkStandby()
     logger.dbg("Kobo: checking if standby is possible ...")
@@ -754,30 +779,7 @@ function Kobo:initNetworkManager(NetworkMgr)
         os.execute("./restore-wifi-async.sh")
     end
 
-    -- NOTE: Cheap-ass way of checking if Wi-Fi seems to be enabled...
-    --       Since the crux of the issues lies in race-y module unloading, this is perfectly fine for our usage.
-    function NetworkMgr:isWifiOn()
-        local needle = os.getenv("WIFI_MODULE") or "sdio_wifi_pwr"
-        local nlen = #needle
-        -- /proc/modules is usually empty, unless Wi-Fi or USB is enabled
-        -- We could alternatively check if lfs.attributes("/proc/sys/net/ipv4/conf/" .. os.getenv("INTERFACE"), "mode") == "directory"
-        -- c.f., also what Cervantes does via /sys/class/net/eth0/carrier to check if the interface is up.
-        -- That said, since we only care about whether *modules* are loaded, this does the job nicely.
-        local f = io.open("/proc/modules", "re")
-        if not f then
-            return false
-        end
-
-        local found = false
-        for haystack in f:lines() do
-            if haystack:sub(1, nlen) == needle then
-                found = true
-                break
-            end
-        end
-        f:close()
-        return found
-    end
+    NetworkMgr.isWifiOn = koboIsWifiOn
 end
 
 function Kobo:supportsScreensaver() return true end
@@ -911,6 +913,13 @@ end
 --- The function to put the device into standby, with enabled touchscreen.
 -- max_duration ... maximum time for the next standby, can wake earlier (e.g. Tap, Button ...)
 function Kobo:standby(max_duration)
+    -- On most devices, attempting to PM with a Wi-Fi module loaded will horribly crash the kernel, so, don't?
+    if koboIsWifiOn() then
+        -- AutoSuspend relies on NetworkMgr:getWifiState to prevent this, so, if we ever trip this, it's a bug ;).
+        logger.err("Kobo standby: cannot standby with Wi-Fi modules loaded! (NetworkMgr is confused: this is a bug)")
+        return
+    end
+
     -- We don't really have anything to schedule, we just need an alarm out of WakeupMgr ;).
     local function standby_alarm()
     end
