@@ -350,8 +350,7 @@ function Device:install()
         ok_callback = function()
             local save_quit = function()
                 self:saveSettings()
-                UIManager:quit()
-                UIManager._exit_code = 85
+                UIManager:quit(85)
             end
             UIManager:broadcastEvent(Event:new("Exit", save_quit))
         end,

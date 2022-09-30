@@ -775,9 +775,10 @@ function UIManager:getPreviousRefreshRegion()
 end
 
 --- Signals to quit.
-function UIManager:quit()
+function UIManager:quit(exit_code)
     if not self._running then return end
-    logger.info("quitting uimanager")
+    logger.info("quitting uimanager with exitcode:", exit_code or 0)
+    self._exit_code = exit_code
     self._task_queue_dirty = false
     self._running = false
     self._run_forever = nil
@@ -1582,15 +1583,13 @@ end
 
 --- Sanely restart KOReader (on supported platforms).
 function UIManager:restartKOReader()
-    self:quit()
     -- This is just a magic number to indicate the restart request for shell scripts.
-    self._exit_code = 85
+    self:quit(85)
 end
 
 --- Sanely abort KOReader (e.g., exit sanely, but with a non-zero return code).
 function UIManager:abort()
-    self:quit()
-    self._exit_code = 1
+    self:quit(1)
 end
 
 UIManager:init()
