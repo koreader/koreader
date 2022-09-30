@@ -344,6 +344,13 @@ function Device:toggleFullscreen()
 end
 
 function Device:setEventHandlers(UIManager)
+    if not self:canSuspend() then
+        -- If we can't suspend, we have no business even trying to, as we may not have overloaded `Device:simulateResume`,
+        -- and since the empty Generic protoype doesn't flip `Device.screen_saver_mode`, we'd be stuck if we tried...
+        -- Instead, rely on the Generic Suspend/Resume handlers, which are sane ;).
+        return
+    end
+
     UIManager.event_handlers.Suspend = function()
         self:_beforeSuspend()
         self:simulateSuspend()
