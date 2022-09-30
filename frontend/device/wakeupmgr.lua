@@ -57,15 +57,38 @@ function WakeupMgr:addTask(seconds_from_now, callback)
     assert(type(seconds_from_now) == "number", "delay is not a number")
     assert(type(callback) == "function", "callback is not a function")
 
-    local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
-    logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now)
-
     local old_upcoming_task = (self._task_queue[1] or {}).epoch
 
-    table.insert(self._task_queue, {
-        epoch = epoch,
-        callback = callback,
-    })
+    -- NOTE: Apparently, some RTCs have trouble with timers further away than UINT8_MAX, so,
+    --       if necessary, setup an alarm chain to work it around...
+    --       c.f., https://github.com/koreader/koreader/issues/8039#issuecomment-1263547625
+    -- FIXME: Limit to i.MX 5 devices.
+    if seconds_from_now > 0xFFFF then
+        logger.info("WakeupMgr: scheduling a chain of alarms for a wakeup in", seconds_from_now)
+
+        local seconds_left = seconds_from_now
+        while seconds_left > 0 do
+            local epoch = RTC:secondsFromNowToEpoch(seconds_left)
+            logger.info("WakeupMgr: scheduling wakeup in", seconds_left)
+
+            -- We only need a callback for the final wakeup, wakeupAction takes care of not breaking the chain.
+            table.insert(self._task_queue, {
+                epoch = epoch,
+                callback = seconds_left == seconds_from_now and callback or function() end,
+            })
+
+            seconds_left = seconds_left - 0xFFFF
+        end
+    else
+        local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
+        logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now)
+
+        table.insert(self._task_queue, {
+            epoch = epoch,
+            callback = callback,
+        })
+    end
+
     --- @todo Binary insert? This table should be so small that performance doesn't matter.
     -- It might be useful to have that available as a utility function regardless.
     table.sort(self._task_queue, function(a, b) return a.epoch < b.epoch end)
