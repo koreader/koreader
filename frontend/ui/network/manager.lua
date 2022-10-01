@@ -33,7 +33,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         if Device:hasWifiManager() and not Device:isEmulator() then
             os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         end
-        NetworkMgr:turnOffWifi()
+        self:turnOffWifi()
 
         -- Handle the UI warning if it's from a beforeWifiAction...
         if widget then
@@ -67,12 +67,12 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
             end
         end
     else
-        UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(iter + 1, callback, widget) end)
+        UIManager:scheduleIn(2, self.connectivityCheck, self, iter + 1, callback, widget)
     end
 end
 
 function NetworkMgr:scheduleConnectivityCheck(callback, widget)
-    UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(1, callback, widget) end)
+    UIManager:scheduleIn(2, self.connectivityCheck, self, 1, callback, widget)
 end
 
 function NetworkMgr:init()
@@ -95,7 +95,7 @@ function NetworkMgr:init()
         -- Trigger an initial NetworkConnected event if WiFi was already up when we were launched
         if self.is_connected then
             -- NOTE: This needs to be delayed because NetworkListener is initialized slightly later by the FM/Reader app...
-            UIManager:scheduleIn(2, function() UIManager:broadcastEvent(Event:new("NetworkConnected")) end)
+            UIManager:scheduleIn(2, UIManager.broadcastEvent, UIManager, Event:new("NetworkConnected"))
         end
     end
 end
@@ -217,9 +217,9 @@ function NetworkMgr:beforeWifiAction(callback)
 
     local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
     if wifi_enable_action == "turn_on" then
-        NetworkMgr:turnOnWifiAndWaitForConnection(callback)
+        self:turnOnWifiAndWaitForConnection(callback)
     else
-        NetworkMgr:promptWifiOn(callback)
+        self:promptWifiOn(callback)
     end
 end
 
@@ -239,9 +239,9 @@ function NetworkMgr:afterWifiAction(callback)
            callback()
         end
     elseif wifi_disable_action == "turn_off" then
-        NetworkMgr:turnOffWifi(callback)
+        self:turnOffWifi(callback)
     else
-        NetworkMgr:promptWifiOff(callback)
+        self:promptWifiOff(callback)
     end
 end
 
@@ -388,7 +388,7 @@ function NetworkMgr:getWifiMenuTable()
         return {
             text = _("Wi-Fi settings"),
             enabled_func = function() return true end,
-            callback = function() NetworkMgr:openSettings() end,
+            callback = function() self:openSettings() end,
         }
     else
         return self:getWifiToggleMenuTable()
@@ -400,6 +400,8 @@ function NetworkMgr:getWifiToggleMenuTable()
         self:queryNetworkState()
         local fully_connected = self.is_wifi_on and self.is_connected
         local complete_callback = function()
+            -- Check the connection status again
+            self:queryNetworkState()
             -- Notify TouchMenu to update item check state
             touchmenu_instance:updateItems()
             -- If Wi-Fi was on when the menu was shown, this means the tap meant to turn the Wi-Fi *off*,
@@ -410,9 +412,9 @@ function NetworkMgr:getWifiToggleMenuTable()
                 -- On hasWifiManager devices that play with kernel modules directly,
                 -- double-check that the connection attempt was actually successful...
                 if Device:isKobo() or Device:isCervantes() then
-                    if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
+                    if self.is_wifi_on and self.is_connected then
                         UIManager:broadcastEvent(Event:new("NetworkConnected"))
-                    elseif NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
+                    elseif self.is_wifi_on and not self.is_connected then
                         -- If we can't ping the gateway, despite a successful authentication w/ the AP, display a warning,
                         -- because this means that Wi-Fi is technically still enabled (e.g., modules are loaded).
                         -- We can't really enforce a turnOffWifi right now, because the user might want to try another AP or something.
@@ -433,19 +435,19 @@ function NetworkMgr:getWifiToggleMenuTable()
             end
         end
         if fully_connected then
-            NetworkMgr:toggleWifiOff(complete_callback)
+            self:toggleWifiOff(complete_callback)
         elseif self.is_wifi_on and not self.is_connected then
             -- ask whether user wants to connect or turn off wifi
-            NetworkMgr:promptWifi(complete_callback, long_press)
+            self:promptWifi(complete_callback, long_press)
         else
-            NetworkMgr:toggleWifiOn(complete_callback, long_press)
+            self:toggleWifiOn(complete_callback, long_press)
         end
     end
 
     return {
         text = _("Wi-Fi connection"),
         enabled_func = function() return Device:hasWifiToggle() end,
-        checked_func = function() return NetworkMgr:isWifiOn() end,
+        checked_func = function() return self:isWifiOn() end,
         callback = toggleCallback,
         hold_callback = function(touchmenu_instance)
             toggleCallback(touchmenu_instance, true)
@@ -467,9 +469,9 @@ function NetworkMgr:getProxyMenuTable()
         checked_func = function() return proxy_enabled() end,
         callback = function()
             if not proxy_enabled() and proxy() then
-                NetworkMgr:setHTTPProxy(proxy())
+                self:setHTTPProxy(proxy())
             elseif proxy_enabled() then
-                NetworkMgr:setHTTPProxy(nil)
+                self:setHTTPProxy(nil)
             end
             if not proxy() then
                 UIManager:show(InfoMessage:new{
@@ -483,7 +485,7 @@ function NetworkMgr:getProxyMenuTable()
             hint = proxy() or "",
             callback = function(input)
                 if input ~= "" then
-                    NetworkMgr:setHTTPProxy(input)
+                    self:setHTTPProxy(input)
                 end
             end,
         }
@@ -669,7 +671,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
                     if network.password then
                         -- If we hit a preferred network and we're not already connected,
                         -- attempt to connect to said preferred network....
-                        success, err_msg = NetworkMgr:authenticateNetwork(network)
+                        success, err_msg = self:authenticateNetwork(network)
                         if success then
                             ssid = network.ssid
                             break
@@ -679,7 +681,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
             end
 
             if success then
-                NetworkMgr:obtainIP()
+                self:obtainIP()
                 if complete_callback then
                     complete_callback()
                 end
