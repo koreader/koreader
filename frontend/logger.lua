@@ -76,6 +76,7 @@ else
 
         -- NOTE: Either we add the LF to the table and we get an extra space before it because of table.concat,
         --       or we pass it to write after a comma, and it generates an extra write syscall...
+        --       That, or just rewrite every logger call to handle spacing themselves ;).
         table.insert(line, "\n")
         return io.write(table.concat(line, " "))
     end
