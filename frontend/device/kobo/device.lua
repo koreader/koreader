@@ -88,6 +88,47 @@ local function writeToSys(val, file)
     return nw == bytes
 end
 
+-- Return the highest core number
+local function getCPUCount()
+    local fd = io.open("/sys/devices/system/cpu/possible", "re")
+    if fd then
+        local str = fd:read("*line")
+        fd:close()
+
+        -- Format is n-N, where n is the first core, and N the last (e.g., 0-3)
+        return tonumber(str:match("%d+$")) or 1
+    else
+        return 1
+    end
+end
+
+local function getCPUGovernor(knob)
+    local fd = io.open(knob, "re")
+    if fd then
+        local str = fd:read("*line")
+        fd:close()
+        -- If we're currently using the userspace governor, fudge that to conservative, as we won't ever standby with Wi-Fi on.
+        -- (userspace is only used on i.MX5 for DVFS shenanigans when Wi-Fi is enabled)
+        if str == "userspace" then
+            str = "conservative"
+        end
+        return str
+    else
+        return nil
+    end
+end
+
+local function getRTCName()
+    local fd = io.open("/sys/class/rtc/rtc0/name", "re")
+    if fd then
+        local str = fd:read("*line")
+        fd:close()
+        return str
+    else
+        return nil
+    end
+end
+
 local Kobo = Generic:new{
     model = "Kobo",
     isKobo = yes,
@@ -625,7 +666,7 @@ function Kobo:init()
     --       (c.f., WakeupMgr for more details).
     -- NOTE: getRTCName is currently hardcoded to rtc0 (which is also WakeupMgr's default).
     local dodgy_rtc = false
-    if self:getRTCName() == "pmic_rtc" then
+    if getRTCName() == "pmic_rtc" then
         -- This *should* match the 'RTC' (46) NTX HWConfig field being set to 'MSP430' (0).
         dodgy_rtc = true
     end
@@ -636,7 +677,7 @@ function Kobo:init()
     else
         self.cpu_governor_knob = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
     end
-    self.default_cpu_governor = self:getCPUGovernor()
+    self.default_cpu_governor = getCPUGovernor(self.cpu_governor_knob)
     -- NOP unsupported methods
     if not self.default_cpu_governor then
         self.performanceCPUGovernor = function() end
@@ -644,7 +685,7 @@ function Kobo:init()
     end
 
     -- And while we're on CPU-related endeavors...
-    self.cpu_count = self:isSMP() and self:getCPUCount() or 1
+    self.cpu_count = self:isSMP() and getCPUCount() or 1
     -- NOP unsupported methods
     if self.cpu_count == 1 then
         self.enableCPUCores = function() end
@@ -657,12 +698,6 @@ function Kobo:init()
     -- Ditto
     if self:isMk7() then
         self.canHWDither = yes
-    end
-
-    -- NOP unsupported methods
-    if not self:canToggleChargingLED() then
-        self.toggleChargingLED = function() end
-        self.setupChargingLED = function() end
     end
 
     self.powerd = require("device/kobo/powerd"):new{
@@ -733,6 +768,12 @@ function Kobo:init()
         -- NOP unsupported methods
         self.disableKeyRepeat = function() end
         self.restoreKeyRepeat = function() end
+    end
+
+    -- NOP unsupported methods
+    if not self:canToggleChargingLED() then
+        self.toggleChargingLED = function() end
+        self.setupChargingLED = function() end
     end
 
     -- We have no way of querying the current state of the charging LED, so, start from scratch.
@@ -1281,39 +1322,12 @@ function Kobo:enableCPUCores(amount)
     end
 end
 
-function Kobo:getCPUGovernor()
-    local fd = io.open(self.cpu_governor_knob, "re")
-    if fd then
-        local str = fd:read("*line")
-        fd:close()
-        -- If we're currently using the userspace governor, fudge that to conservative, as we won't ever standby with Wi-Fi on.
-        -- (userspace is only used on i.MX5 for DVFS shenanigans when Wi-Fi is enabled)
-        if str == "userspace" then
-            str = "conservative"
-        end
-        return str
-    else
-        return nil
-    end
-end
-
 function Kobo:performanceCPUGovernor()
     writeToSys("performance", self.cpu_governor_knob)
 end
 
 function Kobo:defaultCPUGovernor()
     writeToSys(self.default_cpu_governor, self.cpu_governor_knob)
-end
-
-function Kobo:getRTCName()
-    local fd = io.open("/sys/class/rtc/rtc0/name", "re")
-    if fd then
-        local str = fd:read("*line")
-        fd:close()
-        return str
-    else
-        return nil
-    end
 end
 
 function Kobo:isStartupScriptUpToDate()
