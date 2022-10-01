@@ -636,6 +636,7 @@ function Kobo:init()
     -- NOTE: getRTCName is currently hardcoded to rtc0 (which is also WakeupMgr's default).
     local dodgy_rtc = false
     if self:getRTCName() == "pmic_rtc" then
+        -- This *should* match the 'RTC' (46) NTX HWConfig field being set to 'MSP430' (0).
         dodgy_rtc = true
     end
 
