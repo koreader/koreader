@@ -1150,15 +1150,19 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
             if more_options_param.left_min then -- DoubleSpinWidget
                 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                 -- (No support for value_table - add it if needed)
-                local curr_values, default_values
+                local curr_values, left_default, right_default
                 if more_options_param.names then -- allows managing 2 different settings
                     curr_values = { self.configurable[more_options_param.names[1]],
                                     self.configurable[more_options_param.names[2]] }
-                    default_values = { G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[1]),
-                                       G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[2]) }
+                    left_default = G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[1])
+                    right_default = G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[2])
                 else
                     curr_values = self.configurable[name]
-                    default_values = G_reader_settings:readSetting(self.config_options.prefix.."_"..name)
+                    local default_values = G_reader_settings:readSetting(self.config_options.prefix.."_"..name)
+                    if default_values then
+                        left_default = default_values[1]
+                        right_default = default_values[2]
+                    end
                 end
                 widget = DoubleSpinWidget:new{
                     width_factor = more_options_param.widget_width_factor,
@@ -1176,9 +1180,8 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     right_max = more_options_param.right_max,
                     right_step = more_options_param.right_step,
                     right_hold_step = more_options_param.right_hold_step,
-                    default_values = true,
-                    left_default = default_values[1],
-                    right_default = default_values[2],
+                    left_default = left_default,
+                    right_default = right_default,
                     keep_shown_on_apply = true,
                     unit = more_options_param.unit,
                     precision = more_options_param.precision,
