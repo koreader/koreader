@@ -757,15 +757,6 @@ function UIManager:isWidgetShown(widget)
     return false
 end
 
---[[--
-Returns the region of the previous refresh.
-
-@return a rectangle @{ui.geometry.Geom|Geom} object
-]]
-function UIManager:getPreviousRefreshRegion()
-   return self._last_refresh_region
-end
-
 --- Signals to quit.
 function UIManager:quit(exit_code)
     if not self._running then return end
@@ -1207,8 +1198,11 @@ function UIManager:_repaint()
             refresh.dither = nil
         end
         dbg:v("triggering refresh", refresh)
+
+        --[[
         -- Remember the refresh region
-        self._last_refresh_region = refresh.region
+        self._last_refresh_region = refresh.region:copy()
+        --]]
         refresh_methods[refresh.mode](Screen,
             refresh.region.x, refresh.region.y,
             refresh.region.w, refresh.region.h,
