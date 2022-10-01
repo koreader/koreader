@@ -285,7 +285,7 @@ function NetworkMgr:queryNetworkState()
     self.is_connected = self.is_wifi_on and self:isConnected()
 end
 
--- These do not call the actual Device methods, but what we, NetworkMgr, thing the state is based on our own behavior.
+-- These do not call the actual Device methods, but what we, NetworkMgr, think the state is based on our own behavior.
 function NetworkMgr:getWifiState()
     return self.is_wifi_on
 end
