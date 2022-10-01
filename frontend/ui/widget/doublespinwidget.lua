@@ -31,14 +31,12 @@ local DoubleSpinWidget = FocusManager:new{
     left_min = 1,
     left_max = 20,
     left_value = 1,
-    left_default = nil,
     left_precision = nil, -- default "%02d" in NumberPickerWidget
     left_wrap = false,
     right_text = _("Right"),
     right_min = 1,
     right_max = 20,
     right_value = 1,
-    right_default = nil,
     right_precision = nil,
     right_wrap = false,
     cancel_text = _("Close"),
@@ -48,8 +46,9 @@ local DoubleSpinWidget = FocusManager:new{
     callback = nil,
     close_callback = nil,
     keep_shown_on_apply = false,
-    -- Set this to add upper default button that applies default values with callback(left_default, right_default)
-    default_values = false,
+    -- Set both left and right defaults to add upper button that sets spin values to default values
+    left_default = nil,
+    right_default = nil,
     default_text = nil,
     -- Optional extra button above ok/cancel buttons row
     extra_text = nil,
@@ -197,7 +196,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     }
 
     local buttons = {}
-    if self.default_values then
+    if self.left_default and self.right_default then
         local separator = self.is_range and "–" or "/"
         local unit = ""
         if self.unit then
