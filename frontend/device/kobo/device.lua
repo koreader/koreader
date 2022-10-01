@@ -648,7 +648,7 @@ function Kobo:init()
     end
     self.default_cpu_governor = self:getCPUGovernor()
 
-    -- And while we're on CPU-related endavors...
+    -- And while we're on CPU-related endeavors...
     self.cpu_count = self:isSMP() and self:getCPUCount() or 1
 
     -- Automagically set this so we never have to remember to do it manually ;p
