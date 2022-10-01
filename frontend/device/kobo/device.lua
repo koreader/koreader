@@ -502,7 +502,6 @@ end
 function Kobo:getKeyRepeat()
     -- Sanity check (mostly for the testsuite's benefit...)
     if not self.ntx_fd then
-        self.hasKeyRepeat = false
         return false
     end
 
@@ -510,20 +509,14 @@ function Kobo:getKeyRepeat()
     if C.ioctl(self.ntx_fd, C.EVIOCGREP, self.key_repeat) < 0 then
         local err = ffi.errno()
         logger.warn("Device:getKeyRepeat: EVIOCGREP ioctl failed:", ffi.string(C.strerror(err)))
-        self.hasKeyRepeat = false
+        return false
     else
-        self.hasKeyRepeat = true
         logger.dbg("Key repeat is set up to repeat every", self.key_repeat[C.REP_PERIOD], "ms after a delay of", self.key_repeat[C.REP_DELAY], "ms")
+        return true
     end
-
-    return self.hasKeyRepeat
 end
 
 function Kobo:disableKeyRepeat()
-    if not self.hasKeyRepeat then
-        return
-    end
-
     -- NOTE: LuaJIT zero inits, and PERIOD == 0 with DELAY == 0 disables repeats ;).
     local key_repeat = ffi.new("unsigned int[?]", C.REP_CNT)
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, key_repeat) < 0 then
@@ -533,10 +526,6 @@ function Kobo:disableKeyRepeat()
 end
 
 function Kobo:restoreKeyRepeat()
-    if not self.hasKeyRepeat then
-        return
-    end
-
     if C.ioctl(self.ntx_fd, C.EVIOCSREP, self.key_repeat) < 0 then
         local err = ffi.errno()
         logger.warn("Device:restoreKeyRepeat: EVIOCSREP ioctl failed:", ffi.string(C.strerror(err)))
@@ -647,9 +636,18 @@ function Kobo:init()
         self.cpu_governor_knob = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
     end
     self.default_cpu_governor = self:getCPUGovernor()
+    -- NOP unsupported methods
+    if not self.default_cpu_governor then
+        self.performanceCPUGovernor = function() end
+        self.defaultCPUGovernor = function() end
+    end
 
     -- And while we're on CPU-related endeavors...
     self.cpu_count = self:isSMP() and self:getCPUCount() or 1
+    -- NOP unsupported methods
+    if self.cpu_count == 1 then
+        self.enableCPUCores = function() end
+    end
 
     -- Automagically set this so we never have to remember to do it manually ;p
     if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
@@ -658,6 +656,11 @@ function Kobo:init()
     -- Ditto
     if self:isMk7() then
         self.canHWDither = yes
+    end
+
+    -- NOP unsupported methods
+    if not self:canToggleChargingLED() then
+        self.toggleChargingLED = function() end
     end
 
     self.powerd = require("device/kobo/powerd"):new{
@@ -724,7 +727,11 @@ function Kobo:init()
     self:initEventAdjustHooks()
 
     -- See if the device supports key repeat
-    self:getKeyRepeat()
+    if not self:getKeyRepeat() then
+        -- NOP unsupported methods
+        self.disableKeyRepeat = function() end
+        self.restoreKeyRepeat = function() end
+    end
 
     -- We have no way of querying the current state of the charging LED, so, start from scratch.
     -- Much like Nickel, start by turning it off.
@@ -938,6 +945,7 @@ function Kobo:standby(max_duration)
     -- NOTE: Switch to the performance CPU governor, in order to speed up the resume process so as to lower its latency cost...
     --       (It won't have any impact on power efficiency *during* suspend, so there's not really any drawback).
     self:performanceCPUGovernor()
+    local UIManager = require("ui/uimanager")
 
     --[[
     -- On most devices, attempting to PM with a Wi-Fi module loaded will horribly crash the kernel, so, don't?
@@ -989,7 +997,6 @@ function Kobo:standby(max_duration)
     end
 
     -- And restore the standard CPU scheduler once we're done dealing with the wakeup event.
-    local UIManager = require("ui/uimanager")
     UIManager:tickAfterNext(self.defaultCPUGovernor, self)
 end
 
@@ -1180,10 +1187,6 @@ function Kobo:toggleGSensor(toggle)
 end
 
 function Kobo:toggleChargingLED(toggle)
-    if not self:canToggleChargingLED() then
-        return
-    end
-
     -- We have no way of querying the current state from the HW!
     if toggle == nil then
         return
@@ -1260,10 +1263,6 @@ function Kobo:getCPUCount()
 end
 
 function Kobo:enableCPUCores(amount)
-    if self.cpu_count == 1 then
-        return
-    end
-
     -- CPU0 is *always* online ;).
     for n=1, self.cpu_count do
         local path = "/sys/devices/system/cpu/cpu" .. n .. "/online"
@@ -1299,16 +1298,10 @@ function Kobo:getCPUGovernor()
 end
 
 function Kobo:performanceCPUGovernor()
-    if not self.default_cpu_governor then
-        return
-    end
     writeToSys("performance", self.cpu_governor_knob)
 end
 
 function Kobo:defaultCPUGovernor()
-    if not self.default_cpu_governor then
-        return
-    end
     writeToSys(self.default_cpu_governor, self.cpu_governor_knob)
 end
 
