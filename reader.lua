@@ -1,6 +1,6 @@
 #!./luajit
 
--- Enforce line-buffering for stdout
+-- Enforce line-buffering for stdout (this is the default if it points to a tty, but we redirect to a file on most platforms).
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
