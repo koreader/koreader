@@ -1,6 +1,8 @@
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
+local UIManager -- Updated on UIManager init
 local WakeupMgr = require("device/wakeupmgr")
+local time = require("ui/time")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -944,14 +946,12 @@ end
 
 -- NOTE: We overload this to make sure checkUnexpectedWakeup doesn't trip *before* the newly scheduled suspend
 function Kobo:rescheduleSuspend()
-    local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
     UIManager:unschedule(self.checkUnexpectedWakeup)
     UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
 end
 
 function Kobo:checkUnexpectedWakeup()
-    local UIManager = require("ui/uimanager")
     -- Just in case another event like SleepCoverClosed also scheduled a suspend
     UIManager:unschedule(self.suspend)
 
@@ -986,7 +986,6 @@ function Kobo:standby(max_duration)
     -- NOTE: Switch to the performance CPU governor, in order to speed up the resume process so as to lower its latency cost...
     --       (It won't have any impact on power efficiency *during* suspend, so there's not really any drawback).
     self:performanceCPUGovernor()
-    local UIManager = require("ui/uimanager")
 
     --[[
     -- On most devices, attempting to PM with a Wi-Fi module loaded will horribly crash the kernel, so, don't?
@@ -1006,7 +1005,6 @@ function Kobo:standby(max_duration)
         self.wakeup_mgr:addTask(max_duration, standby_alarm)
     end
 
-    local time = require("ui/time")
     logger.info("Kobo standby: asking to enter standby . . .")
     local standby_time = time.boottime_or_realtime_coarse()
 
@@ -1043,7 +1041,6 @@ end
 
 function Kobo:suspend()
     logger.info("Kobo suspend: going to sleep . . .")
-    local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.checkUnexpectedWakeup)
     -- NOTE: Sleep as little as possible here, sleeping has a tendency to make
     -- everything mysteriously hang...
@@ -1110,7 +1107,6 @@ function Kobo:suspend()
     end
     --]]
 
-    local time = require("ui/time")
     logger.info("Kobo suspend: asking for a suspend to RAM . . .")
     local suspend_time = time.boottime_or_realtime_coarse()
 
@@ -1162,7 +1158,6 @@ function Kobo:resume()
     -- Reset unexpected_wakeup_count ASAP
     self.unexpected_wakeup_count = 0
     -- Unschedule the checkUnexpectedWakeup shenanigans.
-    local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.checkUnexpectedWakeup)
     UIManager:unschedule(self.suspend)
 
@@ -1339,7 +1334,10 @@ function Kobo:isStartupScriptUpToDate()
     return md5.sumFile(current_script) == md5.sumFile(new_script)
 end
 
-function Kobo:setEventHandlers(UIManager)
+function Kobo:setEventHandlers(uimgr)
+    -- Update our module-local
+    UIManager = uimgr
+
     -- We do not want auto suspend procedure to waste battery during
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.
