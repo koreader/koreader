@@ -197,6 +197,7 @@ function NetworkListener:_scheduleActivityCheck()
 end
 
 function NetworkListener:onNetworkConnected()
+    logger.dbg("NetworkListener: onNetworkConnected")
     if not (Device:hasWifiManager() and not Device:isEmulator()) then
         return
     end
@@ -216,6 +217,7 @@ function NetworkListener:onNetworkConnected()
 end
 
 function NetworkListener:onNetworkDisconnected()
+    logger.dbg("NetworkListener: onNetworkDisconnected")
     if not (Device:hasWifiManager() and not Device:isEmulator()) then
         return
     end
