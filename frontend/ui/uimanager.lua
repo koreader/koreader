@@ -760,7 +760,7 @@ end
 --- Signals to quit.
 function UIManager:quit(exit_code)
     if not self._running then return end
-    logger.info("quitting uimanager with exitcode:", exit_code or 0)
+    logger.info("quitting uimanager with exit code:", exit_code or 0)
     self._exit_code = exit_code
     self._task_queue_dirty = false
     self._running = false
