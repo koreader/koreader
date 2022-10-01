@@ -259,7 +259,7 @@ function Cervantes:setEventHandlers(UIManager)
         UIManager:scheduleIn(2, UIManager.poweroff_action)
     end
     UIManager.event_handlers.PowerRelease = function()
-        if not self._entered_poweroff_stage then
+        if not UIManager._entered_poweroff_stage then
             UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
