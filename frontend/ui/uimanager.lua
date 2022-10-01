@@ -799,7 +799,7 @@ function UIManager:sendEvent(event)
     local top_widget = self._window_stack[#self._window_stack].widget
 
     -- A toast widget gets closed by any event, and lets the event be handled by a lower widget.
-    -- (Notification is our only widget flagged as a toast).
+    -- (Notification is our only widget flagged as such).
     while top_widget.toast do -- close them all
         self:close(top_widget)
         if not self._window_stack[1] then
