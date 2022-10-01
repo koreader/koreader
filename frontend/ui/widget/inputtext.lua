@@ -139,7 +139,9 @@ if Device:isTouchDevice() or Device:hasDPad() then
                     self.is_keyboard_hidden = false
                 end
             end
-            if #self.charlist > 0 then -- Avoid cursor moving within a hint.
+            -- zh keyboard with candidates shown here has _frame_textwidget.dimen = nil.
+            -- Check to avoid crash.
+            if #self.charlist > 0 and self._frame_textwidget.dimen then -- Avoid cursor moving within a hint.
                 local textwidget_offset = self.margin + self.bordersize + self.padding
                 local x = ges.pos.x - self._frame_textwidget.dimen.x - textwidget_offset
                 local y = ges.pos.y - self._frame_textwidget.dimen.y - textwidget_offset
