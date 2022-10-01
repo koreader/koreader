@@ -99,6 +99,7 @@ local Kobo = Generic:new{
     canReboot = yes,
     canPowerOff = yes,
     canSuspend = yes,
+    supportsScreensaver = yes,
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
     -- most Kobos have also mirrored X coordinates
@@ -661,6 +662,7 @@ function Kobo:init()
     -- NOP unsupported methods
     if not self:canToggleChargingLED() then
         self.toggleChargingLED = function() end
+        self.setupChargingLED = function() end
     end
 
     self.powerd = require("device/kobo/powerd"):new{
@@ -810,8 +812,6 @@ function Kobo:initNetworkManager(NetworkMgr)
 
     NetworkMgr.isWifiOn = koboIsWifiOn
 end
-
-function Kobo:supportsScreensaver() return true end
 
 function Kobo:setTouchEventHandler()
     if self.touch_snow_protocol then
