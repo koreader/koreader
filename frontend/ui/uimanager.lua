@@ -60,6 +60,7 @@ function UIManager:init()
     }
     self.poweroff_action = function()
         self._entered_poweroff_stage = true
+        self:broadcastEvent(Event:new("Close"))
         Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         local Screensaver = require("ui/screensaver")
@@ -76,13 +77,13 @@ function UIManager:init()
         end
         self:nextTick(function()
             Device:saveSettings()
-            self:broadcastEvent(Event:new("Close"))
             Device:powerOff()
             self:quit(Device:isKobo() and 88)
         end)
     end
     self.reboot_action = function()
         self._entered_poweroff_stage = true
+        self:broadcastEvent(Event:new("Close"))
         Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         local Screensaver = require("ui/screensaver")
@@ -99,7 +100,6 @@ function UIManager:init()
         end
         self:nextTick(function()
             Device:saveSettings()
-            self:broadcastEvent(Event:new("Close"))
             Device:reboot()
             self:quit(Device:isKobo() and 88)
         end)
