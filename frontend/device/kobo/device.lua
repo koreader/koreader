@@ -941,6 +941,7 @@ function Kobo:standby(max_duration)
 
     --[[
     -- On most devices, attempting to PM with a Wi-Fi module loaded will horribly crash the kernel, so, don't?
+    -- NOTE: Much like suspend, our caller should ensure this never happens, hence this being commented out ;).
     if koboIsWifiOn() then
         -- AutoSuspend relies on NetworkMgr:getWifiState to prevent this, so, if we ever trip this, it's a bug ;).
         logger.err("Kobo standby: cannot standby with Wi-Fi modules loaded! (NetworkMgr is confused: this is a bug)")
