@@ -60,21 +60,12 @@ function UIManager:init()
     }
     self.poweroff_action = function()
         self._entered_poweroff_stage = true
-        self:broadcastEvent(Event:new("Close"))
         Device.orig_rotation_mode = Device.screen:getRotationMode()
+        self:broadcastEvent(Event:new("Close"))
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("poweroff", _("Powered off"))
-        if Device:hasEinkScreen() and Screensaver:modeIsImage() then
-            if Screensaver:withBackground() then
-                Screen:clear()
-            end
-            Screen:refreshFull()
-        end
         Screensaver:show()
-        if Device:needsScreenRefreshAfterResume() then
-            Screen:refreshFull()
-        end
         self:nextTick(function()
             Device:saveSettings()
             Device:powerOff()
@@ -83,21 +74,12 @@ function UIManager:init()
     end
     self.reboot_action = function()
         self._entered_poweroff_stage = true
-        self:broadcastEvent(Event:new("Close"))
         Device.orig_rotation_mode = Device.screen:getRotationMode()
+        self:broadcastEvent(Event:new("Close"))
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("reboot", _("Rebooting…"))
-        if Device:hasEinkScreen() and Screensaver:modeIsImage() then
-            if Screensaver:withBackground() then
-                Screen:clear()
-            end
-            Screen:refreshFull()
-        end
         Screensaver:show()
-        if Device:needsScreenRefreshAfterResume() then
-            Screen:refreshFull()
-        end
         self:nextTick(function()
             Device:saveSettings()
             Device:reboot()
