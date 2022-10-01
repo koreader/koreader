@@ -691,7 +691,7 @@ end
 
 --- Get top widget (name if possible, ref otherwise).
 function UIManager:getTopWidget()
-    if self._window_stack[1] == nil then
+    if not self._window_stack[1] then
         -- No widgets in the stack, bye!
         return nil
     end
@@ -799,7 +799,7 @@ which itself will take care of propagating an event to its members.
 @param event an @{ui.event.Event|Event} object
 ]]
 function UIManager:sendEvent(event)
-    if self._window_stack[1] == nil then
+    if not self._window_stack[1] then
         -- No widgets in the stack!
         return
     end
@@ -807,12 +807,11 @@ function UIManager:sendEvent(event)
     -- The top widget gets to be the first to get the event
     local top_widget = self._window_stack[#self._window_stack].widget
 
-    -- A toast widget gets closed by any event, and
-    -- lets the event be handled by a lower widget
-    -- (Notification is our single widget with toast=true)
+    -- A toast widget gets closed by any event, and lets the event be handled by a lower widget.
+    -- (Notification is our only widget flagged as a toast).
     while top_widget.toast do -- close them all
         self:close(top_widget)
-        if self._window_stack[1] == nil then
+        if not self._window_stack[1] then
             return
         end
         top_widget = self._window_stack[#self._window_stack].widget
@@ -838,19 +837,23 @@ function UIManager:sendEvent(event)
     local i = #self._window_stack
     while i > 0 do
         local widget = self._window_stack[i].widget
-        if checked_widgets[widget] == nil then
+        if not checked_widgets[widget] then
             checked_widgets[widget] = true
             -- Widget's active widgets have precedence to handle this event
-            -- NOTE: While FileManager only has a single (screenshotter), ReaderUI has a few active_widgets.
+            -- NOTE: ReaderUI & FileManager have their registered modules referenced as such.
             if widget.active_widgets then
                 for _, active_widget in ipairs(widget.active_widgets) do
-                    if active_widget:handleEvent(event) then return end
+                    if active_widget:handleEvent(event) then
+                        return
+                    end
                 end
             end
             if widget.is_always_active then
                 -- Widget itself is flagged always active, let it handle the event
-                -- NOTE: is_always_active widgets currently are widgets that want to show a VirtualKeyboard or listen to Dispatcher events
-                if widget:handleEvent(event) then return end
+                -- NOTE: is_always_active widgets are currently widgets that want to show a VirtualKeyboard or listen to Dispatcher events
+                if widget:handleEvent(event) then
+                    return
+                end
             end
             i = #self._window_stack
         else
@@ -871,7 +874,7 @@ function UIManager:broadcastEvent(event)
     local i = #self._window_stack
     while i > 0 do
         local widget = self._window_stack[i].widget
-        if checked_widgets[widget] == nil then
+        if not checked_widgets[widget] then
             checked_widgets[widget] = true
             widget:handleEvent(event)
             i = #self._window_stack
@@ -1190,7 +1193,7 @@ function UIManager:_repaint()
 
     -- we should have at least one refresh if we did repaint.  If we don't, we
     -- add one now and log a warning if we are debugging
-    if dirty and self._refresh_stack[1] == nil then
+    if dirty and not self._refresh_stack[1] then
         logger.dbg("no refresh got enqueued. Will do a partial full screen refresh, which might be inefficient")
         self:_refresh("partial")
     end
@@ -1364,7 +1367,7 @@ function UIManager:handleInput()
         --dbg("---------------------------------------------------")
 
         -- stop when we have no window to show
-        if self._window_stack[1] == nil and not self._run_forever then
+        if not self._window_stack[1] and not self._run_forever then
             logger.info("no dialog left to show")
             self:quit()
             return nil
