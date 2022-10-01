@@ -167,7 +167,7 @@ return {
         -- first row
         {
             { label = "123" },
-            { JA.s_1, { label = "一", "㇐"} },
+            { JA.s_1, { label = "一", "㇐", north="——"} },
             { JA.s_2, { label = "丨", "㇑"} },
             { s_3,    { label = "丿", "㇒"} },
             { label = "", bold = false } -- backspace
@@ -175,7 +175,7 @@ return {
         -- second row
         {
             { label = "←" },
-            { JA.s_4, { label = "丶", "㇏" } },
+            { JA.s_4, { label = "丶", "㇏", north="、" } },
             { JA.s_5, { label = "𠃋", "㇜" } },
             { JA.s_6, { ime.separator, north=ime.local_del, alt_label=ime.local_del } },
             { label = "→" },
