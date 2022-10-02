@@ -28,7 +28,7 @@ Please try to include the relevant sections in your issue description.
 You can upload the whole `crash.log` file on GitHub by dragging and dropping it onto this textbox.
 
 If your issue doesn't directly concern a Lua crash, we'll quite likely need you to enable *verbose* debug logs before providing them to us.
-To do so, go to [Tools] → More tools → Developer options, and tick both `Enable debug logging` and `Enable verbose debug logging`.
+To do so, from the FileManager, go to [Tools] → More tools → Developer options, and tick both `Enable debug logging` and `Enable verbose debug logging`.
 
 If you instead opt to inline it, please do so behind a spoiler tag:
 <details>
