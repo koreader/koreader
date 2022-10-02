@@ -5,13 +5,14 @@ in the so-called sidecar directory
 ]]
 
 local DataStorage = require("datastorage")
+local LuaSettings = require("luasettings")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 
-local DocSettings = {}
+local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 
@@ -102,10 +103,12 @@ end
 -- @treturn DocSettings object
 function DocSettings:open(docfile)
     --- @todo (zijiehe): Remove history_path, use only sidecar.
-    local new = {}
-    new.history_file = self:getHistoryPath(docfile)
 
-    local sidecar = self:getSidecarDir(docfile)
+    -- NOTE: Beware, our new instance is new, but self is still LuaData!
+    local new = DocSettings:extend{}
+    new.history_file = new:getHistoryPath(docfile)
+
+    local sidecar = new:getSidecarDir(docfile)
     new.sidecar = sidecar
     DocSettings:ensureSidecar(sidecar)
     -- If there is a file which has a same name as the sidecar directory, or
@@ -113,7 +116,7 @@ function DocSettings:open(docfile)
     if lfs.attributes(sidecar, "mode") == "directory" then
         -- New sidecar file name is metadata.{file last suffix}.lua. So we
         -- can handle two files with only different suffixes.
-        new.sidecar_file = self:getSidecarFile(docfile)
+        new.sidecar_file = new:getSidecarFile(docfile)
         new.legacy_sidecar_file = sidecar.."/"..
                                   ffiutil.basename(docfile)..".lua"
     end
@@ -163,139 +166,7 @@ function DocSettings:open(docfile)
         new.data = {}
     end
 
-    return setmetatable(new, {__index = DocSettings})
-end
-
---[[-- Reads a setting, optionally initializing it to a default.
-
-If default is provided, and the key doesn't exist yet, it is initialized to default first.
-This ensures both that the defaults are actually set if necessary,
-and that the returned reference actually belongs to the DocSettings object straight away,
-without requiring further interaction (e.g., saveSetting) from the caller.
-
-This is mainly useful if the data type you want to retrieve/store is assigned/returned/passed by reference (e.g., a table),
-and you never actually break that reference by assigning another one to the same variable, (by e.g., assigning it a new object).
-c.f., https://www.lua.org/manual/5.1/manual.html#2.2
-
-@param key The setting's key
-@param default Initialization data (Optional)
-]]
-function DocSettings:readSetting(key, default)
-    -- No initialization data: legacy behavior
-    if not default then
-        return self.data[key]
-    end
-
-    if not self:has(key) then
-        self.data[key] = default
-    end
-    return self.data[key]
-end
-
---- Saves a setting.
-function DocSettings:saveSetting(key, value)
-    self.data[key] = value
-    return self
-end
-
---- Deletes a setting.
-function DocSettings:delSetting(key)
-    self.data[key] = nil
-    return self
-end
-
---- Checks if setting exists.
-function DocSettings:has(key)
-    return self.data[key] ~= nil
-end
-
---- Checks if setting does not exist.
-function DocSettings:hasNot(key)
-    return self.data[key] == nil
-end
-
---- Checks if setting is `true` (boolean).
-function DocSettings:isTrue(key)
-    return self.data[key] == true
-end
-
---- Checks if setting is `false` (boolean).
-function DocSettings:isFalse(key)
-    return self.data[key] == false
-end
-
---- Checks if setting is `nil` or `true`.
-function DocSettings:nilOrTrue(key)
-    return self:hasNot(key) or self:isTrue(key)
-end
-
---- Checks if setting is `nil` or `false`.
-function DocSettings:nilOrFalse(key)
-    return self:hasNot(key) or self:isFalse(key)
-end
-
---- Flips `nil` or `true` to `false`, and `false` to `nil`.
---- e.g., a setting that defaults to true.
-function DocSettings:flipNilOrTrue(key)
-    if self:nilOrTrue(key) then
-        self:saveSetting(key, false)
-    else
-        self:delSetting(key)
-    end
-    return self
-end
-
---- Flips `nil` or `false` to `true`, and `true` to `nil`.
---- e.g., a setting that defaults to false.
-function DocSettings:flipNilOrFalse(key)
-    if self:nilOrFalse(key) then
-        self:saveSetting(key, true)
-    else
-        self:delSetting(key)
-    end
-    return self
-end
-
---- Flips a setting between `true` and `nil`.
-function DocSettings:flipTrue(key)
-    if self:isTrue(key) then
-        self:delSetting(key)
-    else
-        self:saveSetting(key, true)
-    end
-    return self
-end
-
---- Flips a setting between `false` and `nil`.
-function DocSettings:flipFalse(key)
-    if self:isFalse(key) then
-        self:delSetting(key)
-    else
-        self:saveSetting(key, false)
-    end
-    return self
-end
-
--- Unconditionally makes a boolean setting `true`.
-function DocSettings:makeTrue(key)
-    self:saveSetting(key, true)
-    return self
-end
-
--- Unconditionally makes a boolean setting `false`.
-function DocSettings:makeFalse(key)
-    self:saveSetting(key, false)
-    return self
-end
-
---- Toggles a boolean setting
-function DocSettings:toggle(key)
-    if self:nilOrFalse(key) then
-        self:saveSetting(key, true)
-    else
-        self:saveSetting(key, false)
-    end
-    return self
+    return new
 end
 
 --- Serializes settings and writes them to `metadata.lua`.
@@ -362,10 +233,6 @@ function DocSettings:flush()
             break
         end
     end
-end
-
-function DocSettings:close()
-    self:flush()
 end
 
 function DocSettings:getFilePath()
