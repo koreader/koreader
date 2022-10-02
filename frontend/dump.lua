@@ -1,5 +1,7 @@
 --[[--
 A simple serialization function which won't do uservalues, functions, or loops.
+
+If we ever need a more full-featured variant, the consensus seems to be https://github.com/pkulchenko/serpent ;).
 ]]
 
 local isUbuntuTouch = os.getenv("UBUNTU_APPLICATION_ISOLATION") ~= nil
@@ -15,7 +17,8 @@ local function _serialize(what, outt, indent, max_lv, history, pairs_func)
         return
     end
 
-    if type(what) == "table" then
+    local datatype = type(what)
+    if datatype == "table" then
         history = history or {}
         for up, item in ipairs(history) do
             if item == what then
@@ -43,9 +46,9 @@ local function _serialize(what, outt, indent, max_lv, history, pairs_func)
             insert(outt, string.rep(indent_prefix, indent))
         end
         insert(outt, "}")
-    elseif type(what) == "string" then
+    elseif datatype == "string" then
         insert(outt, string.format("%q", what))
-    elseif type(what) == "number" then
+    elseif datatype == "number" then
         if isUbuntuTouch then
             --- @fixme The `SDL_CreateRenderer` function in Ubuntu touch somehow
             -- use a strange locale that formats number like this: 1.10000000000000g+02
@@ -55,11 +58,11 @@ local function _serialize(what, outt, indent, max_lv, history, pairs_func)
         else
             insert(outt, tostring(what))
         end
-    elseif type(what) == "boolean" then
+    elseif datatype == "boolean" then
         insert(outt, tostring(what))
-    elseif type(what) == "function" then
+    elseif datatype == "function" then
         insert(outt, tostring(what))
-    elseif type(what) == "nil" then
+    elseif datatype == "nil" then
         insert(outt, "nil")
     end
 end
