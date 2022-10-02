@@ -5,7 +5,7 @@ local LuaData = require("luadata")
 
 local db_location = DataStorage:getSettingsDir() .. "/vocabulary_builder.sqlite3"
 
-local DB_SCHEMA_VERSION = 20220730
+local DB_SCHEMA_VERSION = 20221002
 local VOCABULARY_DB_SCHEMA = [[
     -- To store looked up words
     CREATE TABLE IF NOT EXISTS "vocabulary" (
@@ -17,6 +17,7 @@ local VOCABULARY_DB_SCHEMA = [[
         "review_count"  INTEGER NOT NULL DEFAULT 0,
         "prev_context"  TEXT,
         "next_context"  TEXT,
+        "streak_count"  INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY("word")
     );
     CREATE TABLE IF NOT EXISTS "title" (
@@ -78,7 +79,13 @@ function VocabularyBuilder:createDB()
                             ALTER TABLE vocabulary DROP book_title;]])
         end
         if db_version < 20220730 then
-            db_conn:exec("ALTER TABLE title ADD filter INTEGER NOT NULL DEFAULT 1;")
+            if tonumber(db_conn:rowexec("SELECT COUNT(*) FROM pragma_table_info('title') WHERE name='filter'")) == 0 then
+                db_conn:exec("ALTER TABLE title ADD filter INTEGER NOT NULL DEFAULT 1;")
+            end
+        end
+        if db_version < 20221002 then
+            db_conn:exec([[ ALTER TABLE vocabulary ADD streak_count INTEGER NULL DEFAULT 0;
+                            UPDATE vocabulary SET streak_count = review_count; ]])
         end
 
         db_conn:exec("CREATE INDEX IF NOT EXISTS title_id_index ON vocabulary(title_id);")
@@ -140,6 +147,7 @@ function VocabularyBuilder:_select_items(items, start_idx)
         if item and not item.word then
             item.word = results.word[i]
             item.review_count = math.max(0, tonumber(results.review_count[i]))
+            item.streak_count = math.max(0, tonumber(results.streak_count[i]))
             item.book_title = results.name[i] or ""
             item.create_time = tonumber( results.create_time[i])
             item.review_time = nil --use this field to flag change
@@ -184,8 +192,9 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     local current_time = os.time()
 
     local due_time
-    local target_count = math.max(item.review_count + (isGot and 1 or -1), 0)
-    if not isGot or target_count == 0 then
+    local target_review_count = math.max(item.review_count + (isGot and 1 or -1), 0)
+    local target_count = isGot and item.streak_count + 1 or 0
+    if target_count == 0 then
         due_time = current_time + 5 * 60
     elseif target_count == 1 then
         due_time = current_time + 30 * 60
@@ -205,11 +214,13 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
         due_time = current_time + 24 * 30 * 3600
     end
 
+    item.last_streak_count = item.streak_count
     item.last_review_count = item.review_count
     item.last_review_time = item.review_time
     item.last_due_time = item.due_time
 
-    item.review_count = target_count
+    item.streak_count = target_count
+    item.review_count = target_review_count
     item.review_time = current_time
     item.due_time = due_time
 end
@@ -217,6 +228,7 @@ end
 function VocabularyBuilder:batchUpdateItems(items)
     local sql = [[UPDATE vocabulary
                 SET review_count = ?,
+                    streak_count = ?,
                     review_time = ?,
                         due_time = ?
                     WHERE word = ?;]]
@@ -226,7 +238,7 @@ function VocabularyBuilder:batchUpdateItems(items)
 
     for _, item in ipairs(items) do
         if item.review_time then
-            stmt:bind(item.review_count, item.review_time, item.due_time, item.word)
+            stmt:bind(item.review_count, item.streak_count, item.review_time, item.due_time, item.word)
             stmt:step()
             stmt:clearbind():reset()
         end
@@ -248,6 +260,7 @@ function VocabularyBuilder:insertOrUpdate(entry)
                         ON CONFLICT(word) DO UPDATE SET title_id = excluded.title_id,
                         create_time = excluded.create_time,
                         review_count = MAX(review_count-1, 0),
+                        streak_count = 0,
                         due_time = ?,
                         prev_context = ifnull(excluded.prev_context, prev_context),
                         next_context = ifnull(excluded.next_context, next_context);]]);
@@ -308,7 +321,7 @@ end
 function VocabularyBuilder:resetProgress()
     local conn = SQ3.open(db_location)
     local due_time = os.time()
-    conn:exec(string.format("UPDATE vocabulary SET review_count = 0, due_time = %d;", due_time))
+    conn:exec(string.format("UPDATE vocabulary SET review_count = 0, streak_count = 0, due_time = %d;", due_time))
     conn:close()
 end
 

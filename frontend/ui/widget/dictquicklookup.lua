@@ -506,7 +506,7 @@ function DictQuickLookup:init()
         end
     end
     if self.tweak_buttons_func then
-        self.tweak_buttons_func(buttons)
+        self:tweak_buttons_func(buttons)
     end
     -- Bottom buttons get a bit less padding so their line separators
     -- reach out from the content to the borders a bit more
