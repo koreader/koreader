@@ -19,7 +19,9 @@ local LuaDefaults = LuaSettings:extend{
 --- Opens a settings file.
 function LuaDefaults:open(path)
     local file_path = path or DataStorage:getDataDir() .. "/defaults.custom.lua"
-    local new = {file = file_path}
+    local new = LuaDefaults:extend{
+        file = file_path,
+    }
     local ok, stored
 
     -- File being absent and returning an empty table is a use case,
@@ -57,7 +59,7 @@ function LuaDefaults:open(path)
         error("Failed reading " .. defaults_path)
     end
 
-    return setmetatable(new, {__index = LuaDefaults})
+    return new
 end
 
 --- Reads a setting, optionally initializing it to a default.

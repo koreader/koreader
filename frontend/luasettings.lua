@@ -18,7 +18,9 @@ end
 
 --- Opens a settings file.
 function LuaSettings:open(file_path)
-    local new = {file=file_path}
+    local new = LuaSettings:extend{
+        file = file_path,
+    }
     local ok, stored
 
     -- File being absent and returning an empty table is a use case,
@@ -41,13 +43,14 @@ function LuaSettings:open(file_path)
         end
     end
 
-    return setmetatable(new, {__index = LuaSettings})
+    return new
 end
 
 --- @todo DocSettings can return a LuaSettings to use following awesome features.
 function LuaSettings:wrap(data)
-    local new = {data = type(data) == "table" and data or {}}
-    return setmetatable(new, {__index = LuaSettings})
+    return LuaSettings:extend{
+        data = type(data) == "table" and data or {},
+    }
 end
 
 --[[--Reads child settings.

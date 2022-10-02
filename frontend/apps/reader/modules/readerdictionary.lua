@@ -156,7 +156,7 @@ function ReaderDictionary:init()
     self:updateSdcvDictNamesOptions()
 
     if not lookup_history then
-        lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
+        lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", "LookupHistory")
     end
 end
 

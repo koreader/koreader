@@ -31,7 +31,7 @@ function ReaderWikipedia:init()
     self.wiki_languages = {}
     self.ui.menu:registerToMainMenu(self)
     if not wikipedia_history then
-        wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", { name = "WikipediaHistory" })
+        wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", "WikipediaHistory")
     end
 end
 
