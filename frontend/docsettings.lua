@@ -104,18 +104,18 @@ end
 function DocSettings:open(docfile)
     --- @todo (zijiehe): Remove history_path, use only sidecar.
 
-    -- NOTE: Beware, our new instance is new, but self is still LuaData!
+    -- NOTE: Beware, our new instance is new, but self is still DocSettings!
     local new = DocSettings:extend{}
     new.history_file = new:getHistoryPath(docfile)
 
     local sidecar = new:getSidecarDir(docfile)
     new.sidecar = sidecar
     DocSettings:ensureSidecar(sidecar)
-    -- If there is a file which has a same name as the sidecar directory, or
-    -- the file system is read-only, we should not waste time to read it.
+    -- If there is a file which has a same name as the sidecar directory,
+    -- or the file system is read-only, we should not waste time to read it.
     if lfs.attributes(sidecar, "mode") == "directory" then
-        -- New sidecar file name is metadata.{file last suffix}.lua. So we
-        -- can handle two files with only different suffixes.
+        -- New sidecar file name is metadata.{file last suffix}.lua.
+        -- So we can handle two files with only different suffixes.
         new.sidecar_file = new:getSidecarFile(docfile)
         new.legacy_sidecar_file = sidecar.."/"..
                                   ffiutil.basename(docfile)..".lua"
@@ -178,8 +178,7 @@ function DocSettings:flush()
         return
     end
 
-    -- If we can write to sidecar_file, we do not need to write to history_file
-    -- anymore.
+    -- If we can write to sidecar_file, we do not need to write to history_file anymore.
     local serials = {}
     if self.sidecar_file then
         table.insert(serials, self.sidecar_file)
@@ -193,11 +192,10 @@ function DocSettings:flush()
     for _, f in ipairs(serials) do
         local directory_updated = false
         if lfs.attributes(f, "mode") == "file" then
-            -- As an additional safety measure (to the ffiutil.fsync* calls
-            -- used below), we only backup the file to .old when it has
-            -- not been modified in the last 60 seconds. This should ensure
-            -- in the case the fsync calls are not supported that the OS
-            -- may have itself sync'ed that file content in the meantime.
+            -- As an additional safety measure (to the ffiutil.fsync* calls used below),
+            -- we only backup the file to .old when it has not been modified in the last 60 seconds.
+            -- This should ensure in the case the fsync calls are not supported
+            -- that the OS may have itself sync'ed that file content in the meantime.
             local mtime = lfs.attributes(f, "modification")
             if mtime < os.time() - 60 then
                 logger.dbg("Rename ", f, " to ", f .. ".old")
@@ -241,8 +239,7 @@ end
 
 --- Purges (removes) sidecar directory.
 function DocSettings:purge(full)
-    -- Remove any of the old ones we may consider as candidates
-    -- in DocSettings:open()
+    -- Remove any of the old ones we may consider as candidates in DocSettings:open()
     if self.history_file then
         os.remove(self.history_file)
         os.remove(self.history_file .. ".old")
@@ -252,12 +249,10 @@ function DocSettings:purge(full)
     end
     if lfs.attributes(self.sidecar, "mode") == "directory" then
         if full then
-            -- Asked to remove all the content of this .sdr directory,
-            -- whether it's ours or not
+            -- Asked to remove all the content of this .sdr directory, whether it's ours or not
             ffiutil.purgeDir(self.sidecar)
         else
-            -- Only remove the files we know we may have created
-            -- with our usual names.
+            -- Only remove the files we know we may have created with our usual names.
             for f in lfs.dir(self.sidecar) do
                 local fullpath = self.sidecar.."/"..f
                 local to_remove = false
@@ -265,8 +260,8 @@ function DocSettings:purge(full)
                     -- Currently, we only create a single file in there,
                     -- named metadata.suffix.lua (ie. metadata.epub.lua),
                     -- with possibly backups named metadata.epub.lua.old and
-                    -- metadata.epub.lua.old_dom20180528, so all sharing the
-                    -- same base: self.sidecar_file
+                    -- metadata.epub.lua.old_dom20180528,
+                    -- so all sharing the same base: self.sidecar_file
                     if util.stringStartsWith(fullpath, self.sidecar_file) then
                         to_remove = true
                     end
@@ -281,8 +276,8 @@ function DocSettings:purge(full)
             os.remove(self.sidecar)
         end
     end
-    -- We should have meet the candidate we used and remove it above. But in
-    -- case we didn't, remove it
+    -- We should have meet the candidate we used and remove it above.
+    -- But in case we didn't, remove it.
     if self.filepath and lfs.attributes(self.filepath, "mode") == "file" then
         os.remove(self.filepath)
     end
