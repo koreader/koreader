@@ -43,6 +43,43 @@ local function getActivatedKeyboards(compact)
     return table.concat(activated_keyboards, ", "), #activated_keyboards
 end
 
+local function isKeyboardLayoutActive(lang)
+    if VirtualKeyboard:getKeyboardLayout() == lang then
+        return true
+    end
+
+    local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
+    return util.arrayContains(keyboard_layouts, lang)
+end
+
+-- Generate the language specific settings menu on demand, and only for active layouts,
+-- to avoid loading potentially complex/large data when the layout isn't enabled.
+local function genLayoutSpecificSubmenu()
+    local item_table = {}
+
+    for lang, keyboard_layout in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
+        if isKeyboardLayoutActive(lang) and VirtualKeyboard.lang_has_submenu[lang] then
+            local kb_pkg = "ui/data/keyboardlayouts/" .. keyboard_layout
+            local keyboard = require(kb_pkg)
+            if dbg.dassert(keyboard.genMenuItems ~= nil) then
+                table.insert(item_table, {
+                    text = Language:getLanguageName(lang),
+                    sub_item_table = keyboard:genMenuItems(),
+                })
+            end
+        end
+    end
+
+    -- Be a little more user-friendly than an empty menu ;).
+    if #item_table == 0 then
+        table.insert(item_table, {
+            text = _("Not available for any of your active layouts"),
+        })
+    end
+
+    return item_table
+end
+
 local sub_item_table = {
     {
         text_func = function()
@@ -140,7 +177,8 @@ local sub_item_table = {
     },
     {
         text = _("Layout-specific keyboard settings"),
-        sub_item_table = {},
+        -- Lazy-loaded to avoid pinning potentially unnecessary data
+        sub_item_table_func = genLayoutSpecificSubmenu,
     }
 }
 
@@ -180,15 +218,6 @@ for lang, keyboard_layout in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboa
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
-    if VirtualKeyboard.lang_has_submenu[lang] then
-        local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
-        if dbg.dassert(keyboard.genMenuItems ~= nil) then
-            table.insert(sub_item_table[4].sub_item_table, {
-                text = Language:getLanguageName(lang),
-                sub_item_table = keyboard:genMenuItems(),
-            })
-        end
-    end
 end
 
 return sub_item_table
