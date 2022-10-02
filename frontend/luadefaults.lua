@@ -163,11 +163,10 @@ function LuaDefaults:flush()
     if not self.file then return end
     local directory_updated = false
     if lfs.attributes(self.file, "mode") == "file" then
-        -- As an additional safety measure (to the ffiutil.fsync* calls
-        -- used below), we only backup the file to .old when it has
-        -- not been modified in the last 60 seconds. This should ensure
-        -- in the case the fsync calls are not supported that the OS
-        -- may have itself sync'ed that file content in the meantime.
+        -- As an additional safety measure (to the ffiutil.fsync* calls used below),
+        -- we only backup the file to .old when it has not been modified in the last 60 seconds.
+        -- This should ensure in the case the fsync calls are not supported
+        -- that the OS may have itself sync'ed that file content in the meantime.
         local mtime = lfs.attributes(self.file, "modification")
         if mtime < os.time() - 60 then
             os.rename(self.file, self.file .. ".old")
