@@ -47,7 +47,7 @@ function LuaSettings:open(file_path)
 end
 
 function LuaSettings:wrap(data)
-    return LuaSettings:extend{
+    return self:extend{
         data = type(data) == "table" and data or {},
     }
 end
@@ -68,7 +68,7 @@ end
     -- result "b"
 ]]
 function LuaSettings:child(key)
-    return LuaSettings:wrap(self:readSetting(key))
+    return self:wrap(self:readSetting(key))
 end
 
 --[[-- Reads a setting, optionally initializing it to a default.
