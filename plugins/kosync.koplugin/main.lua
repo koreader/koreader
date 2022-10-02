@@ -21,7 +21,6 @@ if G_reader_settings:hasNot("device_id") then
 end
 
 local KOSync = WidgetContainer:extend{
-    vertical_align = "top",
     name = "kosync",
     is_doc_only = true,
     title = _("Register/login to KOReader server"),

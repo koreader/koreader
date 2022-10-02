@@ -156,7 +156,6 @@ local function getBookInfo(book)
 end
 
 local CalibreSearch = WidgetContainer:extend{
-    vertical_align = "top",
     books = {},
     libraries = {},
     last_scan = {},

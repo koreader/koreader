@@ -94,7 +94,6 @@ local function updateMyClippings(clippings, new_clippings)
 end
 
 local Exporter = WidgetContainer:extend{
-    vertical_align = "top",
     name = "exporter",
     clipping_dir = DataStorage:getDataDir() .. "/clipboard",
     targets = {
