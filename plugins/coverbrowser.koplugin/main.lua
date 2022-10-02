@@ -46,7 +46,6 @@ local collection_display_mode = false -- not initialized yet
 local series_mode = nil -- defaults to not display series
 
 local CoverBrowser = WidgetContainer:extend{
-    vertical_align = "top",
     name = "coverbrowser",
 }
 

@@ -28,7 +28,6 @@ if not Device:isTouchDevice() then
 end
 
 local Gestures = WidgetContainer:extend{
-    vertical_align = "top",
     name = "gestures",
     settings_data = nil,
     gestures = nil,

@@ -11,7 +11,6 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local OPDSCatalog = WidgetContainer:extend{
-    vertical_align = "top",
     title = _("OPDS Catalog"),
 }
 
