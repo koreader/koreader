@@ -20,6 +20,7 @@ function LuaData:open(file_path, name)
         name = name.name
     end
 
+    -- NOTE: Beware, our new instance is new, but self is still LuaData!
     local new = LuaData:extend{
         name = name,
         file = file_path,
@@ -37,7 +38,7 @@ function LuaData:open(file_path, name)
     local data_env = {}
     data_env.__index = data_env
     setmetatable(data_env, data_env)
-    data_env[self.name.."Entry"] = function(table)
+    data_env[new.name.."Entry"] = function(table)
         if table.index then
             -- We've got a deleted setting, overwrite with nil and be done with it.
             if not table.data then
@@ -78,7 +79,7 @@ function LuaData:open(file_path, name)
         end
     end
     if not ok then
-        for i=1, self.max_backups, 1 do
+        for i=1, new.max_backups, 1 do
             local backup_file = new.file..".old."..i
             if lfs.attributes(backup_file, "mode") == "file" then
                 ok, err = loadfile(backup_file, "t", data_env)
