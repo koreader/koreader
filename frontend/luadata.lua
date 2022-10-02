@@ -3,7 +3,6 @@ Handles append-mostly data such as KOReader's bookmarks and dictionary search hi
 ]]
 
 local LuaSettings = require("luasettings")
-local dbg = require("dbg")
 local dump = require("dump")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -15,19 +14,17 @@ local LuaData = LuaSettings:extend{
 }
 
 --- Creates a new LuaData instance.
-function LuaData:open(file_path, o) -- luacheck: ignore 312
-    if o and type(o) ~= "table" then
-        if dbg.is_on then
-            error("LuaData: got "..type(o)..", table expected")
-        else
-            o = {}
-        end
+function LuaData:open(file_path, name)
+    -- Backwards compat, just in case...
+    if type(name) == "table" then
+        name = name.name
     end
-    -- always initiate a new instance
-    -- careful, `o` is already a table so we use parentheses
-    self = LuaData:new(o)
 
-    local new = {file=file_path, data={}}
+    local new = LuaData:extend{
+        name = name,
+        file = file_path,
+        data = {},
+    }
 
     -- Some magic to allow for self-describing function names:
     -- We'll use data_env both as the environment when loading the data, *and* its metatable,
@@ -97,7 +94,7 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
         end
     end
 
-    return setmetatable(new, {__index = self})
+    return new
 end
 
 --- Saves a setting.
