@@ -10,7 +10,6 @@ local UIManager = require("ui/uimanager")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local Screen = Device.screen
 local T = require("ffi/util").template
-local dbg = require("dbg")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -65,7 +64,7 @@ local function genLayoutSpecificSubmenu()
                 text = Language:getLanguageName(lang),
                 sub_item_table_func = function()
                     local keyboard = require(kb_pkg)
-                    if dbg.dassert(keyboard.genMenuItems ~= nil) then
+                    if keyboard.genMenuItems ~= nil then
                         return keyboard:genMenuItems()
                     else
                         return {
