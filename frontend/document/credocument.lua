@@ -1019,6 +1019,28 @@ function CreDocument:setupFallbackFontFaces()
     self._document:setStringProperty("crengine.font.fallback.faces", s_fallbacks)
 end
 
+function CreDocument:setFontFamilyFontFaces(font_family_fonts, ignore_font_names)
+    if not font_family_fonts then
+        font_family_fonts = {}
+    end
+    -- crengine expects font names concatenated in the order they appear in the
+    -- enum css_font_family_t (include/cssdef.h) (with css_ff_inherit ignored,
+    -- the first slot carries ignore_font_names if not empty
+    local fonts = {}
+    table.insert(fonts, ignore_font_names and "not-empty" or "")
+    table.insert(fonts, font_family_fonts["serif"] or "")
+    table.insert(fonts, font_family_fonts["sans-serif"] or "")
+    table.insert(fonts, font_family_fonts["cursive"] or "")
+    table.insert(fonts, font_family_fonts["fantasy"] or "")
+    table.insert(fonts, font_family_fonts["monospace"] or "")
+    table.insert(fonts, font_family_fonts["math"] or "")
+    table.insert(fonts, font_family_fonts["emoji"] or "")
+    table.insert(fonts, font_family_fonts["fangsong"] or "")
+    local s_font_family_faces = table.concat(fonts, "|")
+    logger.dbg("CreDocument: set font-family font faces:", s_font_family_faces)
+    self._document:setStringProperty("crengine.font.family.faces", s_font_family_faces)
+end
+
 -- To use the new crengine language typography facilities (hyphenation, line breaking,
 -- OpenType fonts locl letter forms...)
 function CreDocument:setTextMainLang(lang)
