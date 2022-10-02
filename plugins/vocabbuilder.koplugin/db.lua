@@ -205,6 +205,10 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
         due_time = current_time + 24 * 30 * 3600
     end
 
+    item.last_review_count = item.review_count
+    item.last_review_time = item.review_time
+    item.last_due_time = item.due_time
+
     item.review_count = target_count
     item.review_time = current_time
     item.due_time = due_time
