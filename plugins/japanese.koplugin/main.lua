@@ -29,12 +29,12 @@ local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
 
-local SingleInstanceDeinflector = Deinflector:new()
+local SingleInstanceDeinflector = Deinflector:new{}
 
-local Japanese = WidgetContainer:new({
+local Japanese = WidgetContainer:extend{
     name = "japanese",
     pretty_name = "Japanese",
-})
+}
 
 -- Yomichan uses 10 characters as the default look-ahead, but crengine's
 -- getNextVisibleChar counts furigana if any are present, so use a higher

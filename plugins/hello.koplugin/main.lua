@@ -15,7 +15,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
-local Hello = WidgetContainer:new{
+local Hello = WidgetContainer:extend{
     name = "hello",
     is_doc_only = false,
 }

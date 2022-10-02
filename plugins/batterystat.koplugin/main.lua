@@ -263,7 +263,7 @@ end
 
 BatteryStat:init()
 
-local BatteryStatWidget = WidgetContainer:new{
+local BatteryStatWidget = WidgetContainer:extend{
     name = "batterystat",
 }
 

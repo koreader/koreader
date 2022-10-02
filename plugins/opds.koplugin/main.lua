@@ -3,7 +3,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
-local OPDS = WidgetContainer:new{
+local OPDS = WidgetContainer:extend{
     name = "opds",
     is_doc_only = false,
 }

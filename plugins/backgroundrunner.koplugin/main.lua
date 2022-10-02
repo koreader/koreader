@@ -254,7 +254,7 @@ end
 
 BackgroundRunner:_schedule()
 
-local BackgroundRunnerWidget = WidgetContainer:new{
+local BackgroundRunnerWidget = WidgetContainer:extend{
     name = "backgroundrunner",
     runner = BackgroundRunner,
 }

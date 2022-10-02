@@ -59,7 +59,7 @@ menuItem.callback = function()
     showConfirmBox()
 end
 
-local KeepAlive = WidgetContainer:new{
+local KeepAlive = WidgetContainer:extend{
     name = "keepalive",
 }
 

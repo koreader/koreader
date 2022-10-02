@@ -26,7 +26,7 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = ffiutil.template
 
-local TextEditor = WidgetContainer:new{
+local TextEditor = WidgetContainer:extend{
     name = "texteditor",
     settings_file = DataStorage:getSettingsDir() .. "/text_editor.lua",
     settings = nil, -- loaded only when needed

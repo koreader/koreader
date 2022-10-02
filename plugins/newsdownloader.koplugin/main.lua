@@ -22,7 +22,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
-local NewsDownloader = WidgetContainer:new{
+local NewsDownloader = WidgetContainer:extend{
     name = "news_downloader",
     initialized = false,
     feed_config_file = "feed_config.lua",

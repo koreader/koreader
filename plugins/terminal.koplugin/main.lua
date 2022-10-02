@@ -82,7 +82,7 @@ local T = require("ffi/util").template
 
 local CHUNK_SIZE = 80 * 40 -- max. nb of read bytes (reduce this, if taps are not detected)
 
-local Terminal = WidgetContainer:new{
+local Terminal = WidgetContainer:extend{
     name = "terminal",
     history = "",
     is_shell_open = false,

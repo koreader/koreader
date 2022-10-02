@@ -20,7 +20,7 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 
-local Calibre = WidgetContainer:new{
+local Calibre = WidgetContainer:extend{
     name = "calibre",
     is_doc_only = false,
 }

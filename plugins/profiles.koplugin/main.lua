@@ -13,7 +13,7 @@ local util = require("util")
 
 local autostart_done = false
 
-local Profiles = WidgetContainer:new{
+local Profiles = WidgetContainer:extend{
     name = "profiles",
     profiles_file = DataStorage:getSettingsDir() .. "/profiles.lua",
     profiles = nil,

@@ -10,7 +10,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
-local QRClipboard = WidgetContainer:new{
+local QRClipboard = WidgetContainer:extend{
     name = "qrclipboard",
     is_doc_only = false,
 }

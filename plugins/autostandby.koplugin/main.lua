@@ -13,7 +13,7 @@ local SpinWidget = require("ui/widget/spinwidget")
 local logger = require("logger")
 local _ = require("gettext")
 
-local AutoStandby = WidgetContainer:new{
+local AutoStandby = WidgetContainer:extend{
     is_doc_only = false,
     name = "autostandby",
 

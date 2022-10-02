@@ -43,7 +43,7 @@ local function frac(x)
     return x - math.floor(x)
 end
 
-local AutoWarmth = WidgetContainer:new{
+local AutoWarmth = WidgetContainer:extend{
     name = "autowarmth",
     sched_times_s = {},
     sched_warmths = {},

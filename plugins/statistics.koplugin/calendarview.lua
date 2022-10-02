@@ -28,7 +28,7 @@ local Input = Device.input
 local Screen = Device.screen
 local _ = require("gettext")
 
-local HistogramWidget = Widget:new{
+local HistogramWidget = Widget:extend{
     width = nil,
     height = nil,
     color = Blitbuffer.COLOR_BLACK,
@@ -76,7 +76,7 @@ function HistogramWidget:paintTo(bb, x, y)
 end
 
 
-local CalendarDay = InputContainer:new{
+local CalendarDay = InputContainer:extend{
     daynum = nil,
     ratio_per_hour = nil,
     filler = false,
@@ -170,7 +170,7 @@ function CalendarDay:onHold()
 end
 
 
-local CalendarWeek = InputContainer:new{
+local CalendarWeek = InputContainer:extend{
     width = nil,
     height = nil,
     day_width = 0,
@@ -367,7 +367,7 @@ end
 -- Fetched from db, cached as local as it might be expensive
 local MIN_MONTH = nil
 
-local CalendarView = FocusManager:new{
+local CalendarView = FocusManager:extend{
     reader_statistics = nil,
     monthTranslation = nil,
     shortDayOfWeekTranslation = nil,

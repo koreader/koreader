@@ -13,7 +13,7 @@ local util = require("frontend/util")
 local BaseUtil = require("ffi/util")
 local _ = require("gettext")
 
-local MoveToArchive = WidgetContainer:new{
+local MoveToArchive = WidgetContainer:extend{
     name = "movetoarchive",
 }
 

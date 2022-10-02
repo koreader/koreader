@@ -21,7 +21,7 @@ local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
 local default_auto_standby_timeout_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage
 
-local AutoSuspend = WidgetContainer:new{
+local AutoSuspend = WidgetContainer:extend{
     name = "autosuspend",
     is_doc_only = false,
     autoshutdown_timeout_seconds = default_autoshutdown_timeout_seconds,

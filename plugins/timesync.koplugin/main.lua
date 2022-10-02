@@ -17,7 +17,7 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local NetworkMgr = require("ui/network/manager")
 
-local TimeSync = WidgetContainer:new{
+local TimeSync = WidgetContainer:extend{
     name = "timesync",
 }
 
