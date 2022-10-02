@@ -4,8 +4,8 @@ Widget that displays an informational message.
 It vanishes on key press or after a given timeout.
 
 Example:
-    local UIManager = require("ui/uimanager")
     local InfoMessage = require("ui/widget/infomessage")
+    local UIManager = require("ui/uimanager")
     local _ = require("gettext")
     local Screen = require("device").screen
     local sample
