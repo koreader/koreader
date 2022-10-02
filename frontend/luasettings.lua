@@ -46,7 +46,6 @@ function LuaSettings:open(file_path)
     return new
 end
 
---- @todo DocSettings can return a LuaSettings to use following awesome features.
 function LuaSettings:wrap(data)
     return LuaSettings:extend{
         data = type(data) == "table" and data or {},
