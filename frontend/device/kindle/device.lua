@@ -599,7 +599,7 @@ local KindlePaperWhite5 = Kindle:extend{
     canDoSwipeAnimation = yes,
 }
 
-local KindleScribe = Kindle:new{
+local KindleScribe = Kindle:extend{
     model = "KindleScribe",
     isMTK = yes,
     isTouchDevice = yes,
