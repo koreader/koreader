@@ -23,7 +23,7 @@ local input_dialog, check_button_bold, check_button_border, check_button_compact
 local function getActivatedKeyboards(compact)
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
     local activated_keyboards = {}
-    for lang, dummy in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
+    for lang, __ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
         if util.arrayContains(keyboard_layouts, lang) then
             if compact then
                 table.insert(activated_keyboards, lang)
@@ -57,16 +57,23 @@ end
 local function genLayoutSpecificSubmenu()
     local item_table = {}
 
-    for lang, keyboard_layout in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
-        if isKeyboardLayoutActive(lang) and VirtualKeyboard.lang_has_submenu[lang] then
+    for lang, __ in FFIUtil.orderedPairs(VirtualKeyboard.lang_has_submenu) do
+        if isKeyboardLayoutActive(lang) then
+            local keyboard_layout = VirtualKeyboard.lang_to_keyboard_layout[lang]
             local kb_pkg = "ui/data/keyboardlayouts/" .. keyboard_layout
-            local keyboard = require(kb_pkg)
-            if dbg.dassert(keyboard.genMenuItems ~= nil) then
-                table.insert(item_table, {
-                    text = Language:getLanguageName(lang),
-                    sub_item_table = keyboard:genMenuItems(),
-                })
-            end
+            table.insert(item_table, {
+                text = Language:getLanguageName(lang),
+                sub_item_table_func = function()
+                    local keyboard = require(kb_pkg)
+                    if dbg.dassert(keyboard.genMenuItems ~= nil) then
+                        return keyboard:genMenuItems()
+                    else
+                        return {
+                            text = _("Not implemented"),
+                        }
+                    end
+                end,
+            })
         end
     end
 
