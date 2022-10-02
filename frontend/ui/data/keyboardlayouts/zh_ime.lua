@@ -12,7 +12,7 @@ local function binarysearch( tbl, value, fcompval, reversed )
         iMid = math.floor( (iStart+iEnd)/2 )
         local value2 = fcompval( tbl[iMid] )
         if value == value2 then
-            if iMid == 0 or fcompval( tbl[iMid-1] ) ~= value then
+            if iMid == 1 or fcompval( tbl[iMid-1] ) ~= value then
                 return iMid
             end
             iEnd = iMid - 1
@@ -313,6 +313,11 @@ function IME:wrappedAddChars(inputbox, char)
         if #imex.code > 0 then
             imex.candi = {}
             imex.char = ""
+            local previous_imex = _stack[#_stack-1]
+            if previous_imex then
+                previous_imex.candi = {}
+                previous_imex.char = ""
+            end
             self:refreshHintChars(inputbox)
             self:clear_stack()
         else
