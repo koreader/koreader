@@ -207,17 +207,17 @@ function CoverMenu:updateItems(select_number)
     -- (FileManager may replace file_chooser.onFileHold after we've been called once, so we need
     -- to replace it again if it is not ours)
     if not self.onFileHold_ours -- never replaced
-            or self._onFileHold ~= self.onFileHold_ours then -- it is no more ours
+            or self.showFileDialog ~= self.onFileHold_ours then -- it is no more ours
         -- We need to do it at nextTick, once FileManager has instantiated
         -- its FileChooser completely
         UIManager:nextTick(function()
             -- Store original function, so we can call it
-            self.onFileHold_orig = self._onFileHold
+            self.onFileHold_orig = self.showFileDialog
 
             -- Replace it with ours
             -- This causes luacheck warning: "shadowing upvalue argument 'self' on line 34".
             -- Ignoring it (as done in filemanager.lua for the same onFileHold)
-            self._onFileHold = function(self, file) -- luacheck: ignore
+            self.showFileDialog = function(self, file) -- luacheck: ignore
                 -- Call original function: it will create a ButtonDialogTitle
                 -- and store it as self.file_dialog, and UIManager:show() it.
                 self.onFileHold_orig(self, file)
@@ -404,7 +404,7 @@ function CoverMenu:updateItems(select_number)
             end
 
             -- Remember our function
-            self.onFileHold_ours = self._onFileHold
+            self.onFileHold_ours = self.showFileDialog
         end)
     end
     Menu.mergeTitleBarIntoLayout(self)
