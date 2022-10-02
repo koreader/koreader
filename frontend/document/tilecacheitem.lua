@@ -3,7 +3,7 @@ local CacheItem = require("cacheitem")
 local Persist = require("persist")
 local logger = require("logger")
 
-local TileCacheItem = CacheItem:new{}
+local TileCacheItem = CacheItem:extend{}
 
 function TileCacheItem:onFree()
     logger.dbg("TileCacheItem: free blitbuffer", self.bb)
