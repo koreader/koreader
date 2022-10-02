@@ -70,7 +70,6 @@ local function timeFirstOrdering(l, r)
 end
 
 function ReadHistory:_indexing(start)
-    assert(self ~= nil)
     --- @todo (Hzj_jie): Use binary search to find an item when deleting it.
     for i = start, #self.hist, 1 do
         self.hist[i].index = i
@@ -78,7 +77,6 @@ function ReadHistory:_indexing(start)
 end
 
 function ReadHistory:_sort()
-    assert(self ~= nil)
     local autoremove_deleted_items_from_history =
         not G_reader_settings:nilOrFalse("autoremove_deleted_items_from_history")
     if autoremove_deleted_items_from_history then
@@ -98,7 +96,6 @@ end
 -- Reduces total count in hist list to a reasonable number by removing last
 -- several items.
 function ReadHistory:_reduce()
-    assert(self ~= nil)
     while #self.hist > 500 do
         table.remove(self.hist, #self.hist)
     end
@@ -106,7 +103,6 @@ end
 
 -- Flushes current history table into file.
 function ReadHistory:_flush()
-    assert(self ~= nil)
     local content = {}
     for _, v in ipairs(self.hist) do
         table.insert(content, {
@@ -115,15 +111,16 @@ function ReadHistory:_flush()
         })
     end
     local f = io.open(history_file, "w")
-    f:write("return " .. dump(content) .. "\n")
-    ffiutil.fsyncOpenedFile(f) -- force flush to the storage device
-    f:close()
+    if f then
+        f:write("return " .. dump(content) .. "\n")
+        ffiutil.fsyncOpenedFile(f) -- force flush to the storage device
+        f:close()
+    end
 end
 
 --- Reads history table from file.
 -- @treturn boolean true if the history_file has been updated and reloaded.
 function ReadHistory:_read(force_read)
-    assert(self ~= nil)
     local history_file_modification_time = lfs.attributes(history_file, "modification")
     if history_file_modification_time == nil
             or (not force_read and (history_file_modification_time <= self.last_read_time)) then
@@ -142,7 +139,6 @@ end
 
 -- Reads history from legacy history folder
 function ReadHistory:_readLegacyHistory()
-    assert(self ~= nil)
     local history_dir = DataStorage:getHistoryDir()
     for f in lfs.dir(history_dir) do
         local path = joinPath(history_dir, f)
@@ -162,7 +158,6 @@ function ReadHistory:_readLegacyHistory()
 end
 
 function ReadHistory:_init()
-    assert(self ~= nil)
     self:reload()
 end
 
@@ -199,7 +194,6 @@ function ReadHistory:getPreviousFile(current_file)
 end
 
 function ReadHistory:getFileByDirectory(directory, recursive)
-    assert(self ~= nil)
     local real_path = realpath(directory)
     for i=1, #self.hist do
         local ipath = realpath(ffiutil.dirname(self.hist[i].file))
@@ -232,7 +226,6 @@ function ReadHistory:fileSettingsPurged(path)
 end
 
 function ReadHistory:clearMissing()
-    assert(self ~= nil)
     for i = #self.hist, 1, -1 do
         if self.hist[i].file == nil or lfs.attributes(self.hist[i].file, "mode") ~= "file" then
             self:removeItem(self.hist[i], i)
@@ -242,7 +235,6 @@ function ReadHistory:clearMissing()
 end
 
 function ReadHistory:removeItemByPath(path)
-    assert(self ~= nil)
     for i = #self.hist, 1, -1 do
         if self.hist[i].file == path then
             self:removeItem(self.hist[i])
@@ -253,7 +245,6 @@ function ReadHistory:removeItemByPath(path)
 end
 
 function ReadHistory:updateItemByPath(old_path, new_path)
-    assert(self ~= nil)
     for i = #self.hist, 1, -1 do
         if self.hist[i].file == old_path then
             self.hist[i].file = new_path
@@ -273,7 +264,6 @@ function ReadHistory:updateItemByPath(old_path, new_path)
 end
 
 function ReadHistory:removeItem(item, idx)
-    assert(self ~= nil)
     table.remove(self.hist, item.index or idx)
     os.remove(DocSettings:getHistoryPath(item.file))
     self:_indexing(item.index or idx)
@@ -282,7 +272,6 @@ function ReadHistory:removeItem(item, idx)
 end
 
 function ReadHistory:addItem(file, ts)
-    assert(self ~= nil)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
         local now = ts or os.time()
         table.insert(self.hist, 1, buildEntry(now, file))
@@ -303,7 +292,6 @@ end
 --- Reloads history from history_file.
 -- @treturn boolean true if history_file has been updated and reload happened.
 function ReadHistory:reload(force_read)
-    assert(self ~= nil)
     if self:_read(force_read) then
         self:_readLegacyHistory()
         self:_sort()
