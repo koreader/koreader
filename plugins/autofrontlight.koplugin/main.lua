@@ -92,7 +92,7 @@ end
 
 AutoFrontlight:init()
 
-local AutoFrontlightWidget = WidgetContainer:new{
+local AutoFrontlightWidget = WidgetContainer:extend{
     name = "autofrontlight",
 }
 

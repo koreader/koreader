@@ -17,7 +17,7 @@ local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 
-local DocSettingTweak = WidgetContainer:new{
+local DocSettingTweak = WidgetContainer:extend{
     name = "docsettingtweak",
 }
 

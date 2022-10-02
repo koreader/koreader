@@ -12,7 +12,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
-local BookShortcuts = WidgetContainer:new{
+local BookShortcuts = WidgetContainer:extend{
     name = "bookshortcuts",
     shortcuts = LuaSettings:open(DataStorage:getSettingsDir() .. "/bookshortcuts.lua"),
     updated = false,

@@ -21,7 +21,7 @@ if not util.pathExists("dropbear") then
     return { disabled = true, }
 end
 
-local SSH = WidgetContainer:new{
+local SSH = WidgetContainer:extend{
     name = "SSH",
     is_doc_only = false,
 }

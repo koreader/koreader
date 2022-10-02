@@ -9,7 +9,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local AutoTurn = WidgetContainer:new{
+local AutoTurn = WidgetContainer:extend{
     name = "autoturn",
     is_doc_only = true,
     autoturn_sec = 0,
