@@ -469,7 +469,7 @@ function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
         if cleanup then -- clean instance properties we may have set
             if fc.onFileHold_orig then
                 -- remove our onFileHold that extended file_dialog with new buttons
-                fc.onFileHold = fc.onFileHold_orig
+                fc.showFileDialog = fc.onFileHold_orig
                 fc.onFileHold_orig = nil
                 fc.onFileHold_ours = nil
             end
