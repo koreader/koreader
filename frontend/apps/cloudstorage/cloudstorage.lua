@@ -823,6 +823,7 @@ function CloudStorage:infoServer(item)
         self.address = item.address
         if self:generateDropBoxAccessToken() then
             DropBox:info(self.password)
+            self.username = nil
         end
     elseif item.type == "ftp" then
         Ftp:info(item)
