@@ -18,8 +18,7 @@ if Device:isCervantes() then
         common_settings.start_bq = {
             text = T(_("Start %1 reader app"), "BQ"),
             callback = function()
-                UIManager:quit()
-                UIManager._exit_code = 87
+                UIManager:quit(87)
             end,
         }
     end

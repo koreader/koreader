@@ -26,26 +26,43 @@ local Dbg = {
     -- set to nil so first debug:turnOff call won't be skipped
     is_on = nil,
     is_verbose = nil,
-    ev_log = nil,
 }
 
 local Dbg_mt = {}
 
-local function LvDEBUG(lv, ...)
-    local line = ""
-    for i,v in ipairs({...}) do
-        if type(v) == "table" then
-            line = line .. " " .. dump(v, lv)
-        else
-            line = line .. " " .. tostring(v)
+local LvDEBUG
+if isAndroid then
+    LvDEBUG = function(...)
+        local line = {}
+        for _, v in ipairs({...}) do
+            if type(v) == "table" then
+                table.insert(line, dump(v, math.huge))
+            else
+                table.insert(line, tostring(v))
+            end
         end
+        return android.LOGV(table.concat(line, " "))
     end
-    if isAndroid then
-        android.LOGV(line)
-    else
-        io.stdout:write(string.format("# %s %s\n", os.date("%x-%X"), line))
-        io.stdout:flush()
+else
+    LvDEBUG = function(...)
+        local line = {
+            os.date("%x-%X DEBUG"),
+        }
+        for _, v in ipairs({...}) do
+            if type(v) == "table" then
+                table.insert(line, dump(v, math.huge))
+            else
+                table.insert(line, tostring(v))
+            end
+        end
+        table.insert(line, "\n")
+        return io.write(table.concat(line, " "))
     end
+end
+
+--- Helper function to help dealing with nils in Dbg:guard...
+local function pack_values(...)
+    return select("#", ...), {...}
 end
 
 --- Turn on debug mode.
@@ -55,7 +72,7 @@ function Dbg:turnOn()
     self.is_on = true
     logger:setLevel(logger.levels.dbg)
 
-    Dbg_mt.__call = function(dbg, ...) LvDEBUG(math.huge, ...) end
+    Dbg_mt.__call = function(_, ...) return LvDEBUG(...) end
     --- Pass a guard function to detect bad input values.
     Dbg.guard = function(_, mod, method, pre_guard, post_guard)
         local old_method = mod[method]
@@ -63,11 +80,11 @@ function Dbg:turnOn()
             if pre_guard then
                 pre_guard(...)
             end
-            local values = {old_method(...)}
+            local n, values = pack_values(old_method(...))
             if post_guard then
                 post_guard(...)
             end
-            return unpack(values)
+            return unpack(values, 1, n)
         end
     end
     --- Use this instead of a regular Lua @{assert}().
@@ -75,19 +92,6 @@ function Dbg:turnOn()
         assert(check, msg)
         return check
     end
-
-    -- create or clear ev log file
-    --- @note: On Linux, use CLOEXEC to avoid polluting the fd table of our child processes.
-    ---        Otherwise, it can be problematic w/ wpa_supplicant & USBMS...
-    ---        Note that this is entirely undocumented, but at least LuaJIT passes the mode as-is to fopen, so, we're good.
-    local open_flags = "w"
-    if jit.os == "Linux" then
-        -- Oldest Kindle devices are too old to support O_CLOEXEC...
-        if os.getenv("KINDLE_LEGACY") ~= "yes" then
-            open_flags = "we"
-        end
-    end
-    self.ev_log = io.open("ev.log", open_flags)
 end
 
 --- Turn off debug mode.
@@ -96,14 +100,11 @@ function Dbg:turnOff()
     if self.is_on == false then return end
     self.is_on = false
     logger:setLevel(logger.levels.info)
-    function Dbg_mt.__call() end
-    function Dbg.guard() end
+    Dbg_mt.__call = function() end
+    -- NOTE: This doesn't actually disengage previously wrapped methods!
+    Dbg.guard = function() end
     Dbg.dassert = function(check)
         return check
-    end
-    if self.ev_log then
-        self.ev_log:close()
-        self.ev_log = nil
     end
 end
 
@@ -116,24 +117,13 @@ end
 --- Simple table dump.
 function Dbg:v(...)
     if self.is_verbose then
-        LvDEBUG(math.huge, ...)
-    end
-end
-
---- Log @{ui.event|Event} to dedicated log file.
-function Dbg:logEv(ev)
-    local ev_value = tostring(ev.value)
-    local log = ev.type.."|"..ev.code.."|"
-                ..ev_value.."|"..ev.time.sec.."|"..ev.time.usec.."\n"
-    if self.ev_log then
-        self.ev_log:write(log)
-        self.ev_log:flush()
+        return LvDEBUG(...)
     end
 end
 
 --- Simple traceback.
 function Dbg:traceback()
-    LvDEBUG(math.huge, debug.traceback())
+    return LvDEBUG(debug.traceback())
 end
 
 setmetatable(Dbg, Dbg_mt)

@@ -21,17 +21,17 @@ local DEFAULT_DUMP_LVL = 10
 -- @field warn warning
 -- @field err error
 local LOG_LVL = {
-    dbg = 1,
+    dbg  = 1,
     info = 2,
     warn = 3,
-    err = 4,
+    err  = 4,
 }
 
 local LOG_PREFIX = {
-    dbg = 'DEBUG',
-    info = 'INFO ',
-    warn = 'WARN ',
-    err = 'ERROR',
+    dbg  = "DEBUG",
+    info = "INFO ",
+    warn = "WARN ",
+    err  = "ERROR",
 }
 
 local noop = function() end
@@ -40,38 +40,54 @@ local Logger = {
     levels = LOG_LVL,
 }
 
-local function log(log_lvl, dump_lvl, ...)
-    local line = ""
-    for i,v in ipairs({...}) do
-        if type(v) == "table" then
-            line = line .. " " .. dump(v, dump_lvl)
-        else
-            line = line .. " " .. tostring(v)
+local log
+if isAndroid then
+    local ANDROID_LOG_FNS = {
+        dbg  = android.LOGV,
+        info = android.LOGI,
+        warn = android.LOGW,
+        err  = android.LOGE,
+    }
+
+    log = function(log_lvl, ...)
+        local line = {}
+        for _, v in ipairs({...}) do
+            if type(v) == "table" then
+                table.insert(line, dump(v, DEFAULT_DUMP_LVL))
+            else
+                table.insert(line, tostring(v))
+            end
         end
+        return ANDROID_LOG_FNS[log_lvl](table.concat(line, " "))
     end
-    if isAndroid then
-        if log_lvl == "dbg" then
-            android.LOGV(line)
-        elseif log_lvl == "info" then
-            android.LOGI(line)
-        elseif log_lvl == "warn" then
-            android.LOGW(line)
-        elseif log_lvl == "err" then
-            android.LOGE(line)
+else
+    log = function(log_lvl, ...)
+        local line = {
+            os.date("%x-%X"),
+            LOG_PREFIX[log_lvl],
+        }
+        for _, v in ipairs({...}) do
+            if type(v) == "table" then
+                table.insert(line, dump(v, DEFAULT_DUMP_LVL))
+            else
+                table.insert(line, tostring(v))
+            end
         end
-    else
-        io.stdout:write(os.date("%x-%X"), " ", LOG_PREFIX[log_lvl], line, "\n")
-        io.stdout:flush()
+
+        -- NOTE: Either we add the LF to the table and we get an extra space before it because of table.concat,
+        --       or we pass it to write after a comma, and it generates an extra write syscall...
+        --       That, or just rewrite every logger call to handle spacing themselves ;).
+        table.insert(line, "\n")
+        return io.write(table.concat(line, " "))
     end
 end
 
 local LVL_FUNCTIONS = {
-    dbg = function(...) log('dbg', DEFAULT_DUMP_LVL, ...) end,
-    info = function(...) log('info', DEFAULT_DUMP_LVL, ...) end,
-    warn = function(...) log('warn', DEFAULT_DUMP_LVL, ...) end,
-    err = function(...) log('err', DEFAULT_DUMP_LVL, ...) end,
+    dbg  = function(...) return log("dbg", ...) end,
+    info = function(...) return log("info", ...) end,
+    warn = function(...) return log("warn", ...) end,
+    err  = function(...) return log("err", ...) end,
 }
-
 
 --[[--
 Set logging level. By default, level is set to info.

@@ -197,9 +197,14 @@ function NetworkListener:_scheduleActivityCheck()
 end
 
 function NetworkListener:onNetworkConnected()
+    logger.dbg("NetworkListener: onNetworkConnected")
     if not (Device:hasWifiManager() and not Device:isEmulator()) then
         return
     end
+
+    -- This is for the sake of events that don't emanate from NetworkMgr itself...
+    NetworkMgr:setWifiState(true)
+    NetworkMgr:setConnectionState(true)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return
@@ -212,9 +217,13 @@ function NetworkListener:onNetworkConnected()
 end
 
 function NetworkListener:onNetworkDisconnected()
+    logger.dbg("NetworkListener: onNetworkDisconnected")
     if not (Device:hasWifiManager() and not Device:isEmulator()) then
         return
     end
+
+    NetworkMgr:setWifiState(false)
+    NetworkMgr:setConnectionState(false)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return

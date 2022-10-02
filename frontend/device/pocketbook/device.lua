@@ -390,10 +390,10 @@ end
 
 function PocketBook:setEventHandlers(UIManager)
     -- Only fg/bg state plugin notifiers, not real power event.
-    UIManager.event_handlers["Suspend"] = function()
+    UIManager.event_handlers.Suspend = function()
         self:_beforeSuspend()
     end
-    UIManager.event_handlers["Resume"] = function()
+    UIManager.event_handlers.Resume = function()
         self:_afterResume()
     end
 end

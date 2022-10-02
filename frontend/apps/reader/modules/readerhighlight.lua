@@ -941,7 +941,9 @@ function ReaderHighlight:onShowHighlightMenu(page, index)
         buttons = highlight_buttons,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
     }
-    UIManager:show(self.highlight_dialog)
+    -- NOTE: Disable merging for this update,
+    --       or the buggy Sage kernel may alpha-blend it into the page (with a bogus alpha value, to boot)...
+    UIManager:show(self.highlight_dialog, "[ui]")
 end
 dbg:guard(ReaderHighlight, "onShowHighlightMenu",
     function(self)

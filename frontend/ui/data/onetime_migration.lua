@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20220922
+local CURRENT_MIGRATION_DATE = 20220930
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -446,9 +446,9 @@ if last_migration_date < 20220914 then
     end
 end
 
--- The great defaults.persistent.lua migration to LuaDefaults
-if last_migration_date < 20220922 then
-    logger.info("Performing one-time migration for 20220922")
+-- The great defaults.persistent.lua migration to LuaDefaults (#9546)
+if last_migration_date < 20220930 then
+    logger.info("Performing one-time migration for 20220930")
 
     local defaults_path = DataStorage:getDataDir() .. "/defaults.persistent.lua"
     local defaults = {}
@@ -465,6 +465,10 @@ if last_migration_date < 20220922 then
             G_defaults:saveSetting(k, v)
         end
     end
+    -- Handle NETWORK_PROXY & STARDICT_DATA_DIR, which default to nil (and as such don't actually exist in G_defaults).
+    G_defaults:saveSetting("NETWORK_PROXY", defaults.NETWORK_PROXY)
+    G_defaults:saveSetting("STARDICT_DATA_DIR", defaults.STARDICT_DATA_DIR)
+
     G_defaults:flush()
 
     local archived_path = DataStorage:getDataDir() .. "/defaults.legacy.lua"

@@ -155,7 +155,7 @@ function BasePowerD:unchecked_read_int_file(file)
         fd:close()
         return int
     else
-        return
+        return nil
     end
 end
 

@@ -61,9 +61,8 @@ function MassStorage:start(never_ask)
             ok_callback = function()
                 -- save settings before activating USBMS:
                 UIManager:flushSettings()
-                UIManager._exit_code = 86
                 UIManager:broadcastEvent(Event:new("Close"))
-                UIManager:quit()
+                UIManager:quit(86)
             end,
             cancel_callback = function()
                 self:dismiss()
@@ -74,9 +73,8 @@ function MassStorage:start(never_ask)
     else
         -- save settings before activating USBMS:
         UIManager:flushSettings()
-        UIManager._exit_code = 86
         UIManager:broadcastEvent(Event:new("Close"))
-        UIManager:quit()
+        UIManager:quit(86)
     end
 end
 
