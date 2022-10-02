@@ -158,7 +158,6 @@ function Device:invertButtons()
 end
 
 function Device:init()
-    assert(self ~= nil)
     if not self.screen then
         error("screen/framebuffer must be implemented")
     end

@@ -33,7 +33,6 @@ function CommandRunner:createEnvironment()
 end
 
 function CommandRunner:start(job)
-    assert(self ~= nil)
     assert(self.pio == nil)
     assert(self.job == nil)
     self.job = job
@@ -51,7 +50,6 @@ end
 -- @return a table contains the result from luawrapper.sh. Returns nil if the
 --         command has not been finished.
 function CommandRunner:poll()
-    assert(self ~= nil)
     assert(self.pio ~= nil)
     assert(self.job ~= nil)
     local line = self.pio:read()
@@ -87,7 +85,6 @@ end
 --- Whether this is a running job.
 -- @treturn boolean
 function CommandRunner:pending()
-    assert(self ~= nil)
     return self.pio ~= nil
 end
 

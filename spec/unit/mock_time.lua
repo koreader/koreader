@@ -29,7 +29,6 @@ local MockTime = {
 }
 
 function MockTime:install()
-    assert(self ~= nil)
     if self.original_util_time == nil then
         self.original_util_time = util.gettime
         assert(self.original_util_time ~= nil)
@@ -173,7 +172,6 @@ function MockTime:install()
  end
 
 function MockTime:uninstall()
-    assert(self ~= nil)
     os.time = self.original_os_time --luacheck: ignore
     if self.original_util_time ~= nil then
         util.gettime = self.original_util_time
@@ -202,7 +200,6 @@ function MockTime:uninstall()
 end
 
 function MockTime:set_realtime(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end
@@ -212,7 +209,6 @@ function MockTime:set_realtime(value)
 end
 
 function MockTime:increase_realtime(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end
@@ -222,7 +218,6 @@ function MockTime:increase_realtime(value)
 end
 
 function MockTime:set_monotonic(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end
@@ -232,7 +227,6 @@ function MockTime:set_monotonic(value)
 end
 
 function MockTime:increase_monotonic(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end
@@ -242,7 +236,6 @@ function MockTime:increase_monotonic(value)
 end
 
 function MockTime:set_boottime(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end
@@ -252,7 +245,6 @@ function MockTime:set_boottime(value)
 end
 
 function MockTime:increase_boottime(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end
@@ -262,7 +254,6 @@ function MockTime:increase_boottime(value)
 end
 
 function MockTime:set_boottime_or_realtime_coarse(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end
@@ -272,7 +263,6 @@ function MockTime:set_boottime_or_realtime_coarse(value)
 end
 
 function MockTime:increase_boottime_or_realtime_coarse(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end
@@ -282,7 +272,6 @@ function MockTime:increase_boottime_or_realtime_coarse(value)
 end
 
 function MockTime:set(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end
@@ -298,7 +287,6 @@ function MockTime:set(value)
 end
 
 function MockTime:increase(value)
-    assert(self ~= nil)
     if type(value) ~= "number" then
         return false
     end

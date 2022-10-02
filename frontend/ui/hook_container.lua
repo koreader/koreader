@@ -15,18 +15,15 @@ function HookContainer:new(o)
 end
 
 function HookContainer:_assertIsValidName(name)
-    assert(self ~= nil)
     assert(type(name) == "string")
     assert(string.len(name) > 0)
 end
 
 function HookContainer:_assertIsValidFunction(func)
-    assert(self ~= nil)
     assert(type(func) == "function" or type(func) == "table")
 end
 
 function HookContainer:_assertIsValidFunctionOrNil(func)
-    assert(self ~= nil)
     if func == nil then return end
     self:_assertIsValidFunction(func)
 end
