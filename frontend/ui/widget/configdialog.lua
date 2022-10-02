@@ -577,15 +577,15 @@ function ConfigOption:init()
                                 self.options[c].more_options_param.show_true_value_func = self.options[c].show_true_value_func
                             end
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
-                            local default_value
+                            local default_value_local
                             if self.options[c].more_options_param.names then
                                 local option1 = self.config:findOptionByName(self.options[c].more_options_param.names[1])
                                 local option2 = self.config:findOptionByName(self.options[c].more_options_param.names[2])
-                                default_value = { option1.default_value, option2.default_value }
+                                default_value_local = { option1.default_value, option2.default_value }
                             else
-                                default_value = self.options[c].default_value
+                                default_value_local = self.options[c].default_value
                             end
-                            self.config:onConfigMoreChoose(self.options[c].values, default_value, self.options[c].name,
+                            self.config:onConfigMoreChoose(self.options[c].values, default_value_local, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                             UIManager:tickAfterNext(function()
                                 Notification:resetNotifySource()
@@ -623,15 +623,15 @@ function ConfigOption:init()
                                 self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
-                            local default_value
+                            local default_value_local
                             if self.options[c].more_options_param.names then
                                 local option1 = self.config:findOptionByName(self.options[c].more_options_param.names[1])
                                 local option2 = self.config:findOptionByName(self.options[c].more_options_param.names[2])
-                                default_value = { option1.default_value, option2.default_value }
+                                default_value_local = { option1.default_value, option2.default_value }
                             else
-                                default_value = self.options[c].default_value
+                                default_value_local = self.options[c].default_value
                             end
-                            self.config:onConfigMoreChoose(self.options[c].values, default_value, self.options[c].name,
+                            self.config:onConfigMoreChoose(self.options[c].values, default_value_local, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                         else
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
@@ -1362,15 +1362,15 @@ function ConfigDialog:onConfigMoreChoose(values, default_value_orig, name, event
                         when_applied_callback = nil -- prevent bottom menu from being shown (before being hidden again)
                         widget:onClose()
                         local option = self:findOptionByName(more_options_param.other_button.other_option)
-                        local default_value
+                        local default_value_local
                         if option.more_options_param.names then
                             local option1 = self:findOptionByName(option.more_options_param.names[1])
                             local option2 = self:findOptionByName(option.more_options_param.names[2])
-                            default_value = { option1.default_value, option2.default_value }
+                            default_value_local = { option1.default_value, option2.default_value }
                         else
-                            default_value = option.default_value
+                            default_value_local = option.default_value
                         end
-                        self:onConfigMoreChoose(option.values, default_value, option.name,
+                        self:onConfigMoreChoose(option.values, default_value_local, option.name,
                             option.event, nil, option.name_text, option.more_options_param)
                     end,
                 }
