@@ -185,11 +185,11 @@ function FileManager:setupLayout()
         if file_manager.select_mode then
             file_manager:tapPlus()
         else
-            self:_onFileHold(file)
+            self:showFileDialog(file)
         end
     end
 
-    function file_chooser:_onFileHold(file)  -- luacheck: ignore
+    function file_chooser:showFileDialog(file)  -- luacheck: ignore
         local is_file = lfs.attributes(file, "mode") == "file"
         local is_folder = lfs.attributes(file, "mode") == "directory"
         local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
