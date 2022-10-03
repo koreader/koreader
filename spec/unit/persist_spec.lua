@@ -101,8 +101,18 @@ describe("Persist module", function()
         end
     end)
 
-    it ("should fail to serialize functions", function()
-        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit", "zstd"}) do
+    it("should fail to serialize functions", function()
+        for _, codec in ipairs({"dump", "bitser", "luajit", "zstd"}) do
+            assert.is_true(Persist.getCodec(codec).id == codec)
+            ser = Persist.getCodec(codec).serialize
+            deser = Persist.getCodec(codec).deserialize
+            str = ser(fail)
+            assert.are_not.same(deser(str), fail)
+        end
+    end)
+
+    it("should successfully serialize functions", function()
+        for _, codec in ipairs({"serpent"}) do
             assert.is_true(Persist.getCodec(codec).id == codec)
             ser = Persist.getCodec(codec).serialize
             deser = Persist.getCodec(codec).deserialize

@@ -166,7 +166,7 @@ local codecs = {
             return t()
         end,
     },
-    -- serpent: human readable (-ish), more thorough than dump
+    -- serpent: human readable (-ish), more thorough than dump (in particular, supports serializing functions)
     -- NOTE: if you want pretty printing, pass { sortkeys = true, compact = false, indent = "  " } to serpent's second arg.
     serpent = {
         id = "serpent",
