@@ -23,8 +23,8 @@ It only setups the metatable (or prototype chain) and will not initiate a real i
 @tparam table subclass
 @treturn Widget
 ]]
-function Widget:extend(subclass)
-    local o = subclass or {}
+function Widget:extend(subclass_prototype)
+    local o = subclass_prototype or {}
     setmetatable(o, self)
     self.__index = self
     return o
