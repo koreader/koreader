@@ -195,32 +195,32 @@ function CoverMenu:updateItems(select_number)
         UIManager:scheduleIn(1, self.items_update_action)
     end
 
-    -- (We may not need to do the following if we extend onFileHold
+    -- (We may not need to do the following if we extend showFileDialog
     -- code in filemanager.lua to check for existence and call a
     -- method: self:getAdditionalButtons() to add our buttons
     -- to its own set.)
 
-    -- We want to add some buttons to the onFileHold popup. This function
+    -- We want to add some buttons to the showFileDialog popup. This function
     -- is dynamically created by FileManager:init(), and we don't want
-    -- to override this... So, here, when we see the onFileHold function,
+    -- to override this... So, here, when we see the showFileDialog function,
     -- we replace it by ours.
-    -- (FileManager may replace file_chooser.onFileHold after we've been called once, so we need
+    -- (FileManager may replace file_chooser.showFileDialog after we've been called once, so we need
     -- to replace it again if it is not ours)
-    if not self.onFileHold_ours -- never replaced
-            or self.showFileDialog ~= self.onFileHold_ours then -- it is no more ours
+    if not self.showFileDialog_ours -- never replaced
+            or self.showFileDialog ~= self.showFileDialog_ours then -- it is no more ours
         -- We need to do it at nextTick, once FileManager has instantiated
         -- its FileChooser completely
         UIManager:nextTick(function()
             -- Store original function, so we can call it
-            self.onFileHold_orig = self.showFileDialog
+            self.showFileDialog_orig = self.showFileDialog
 
             -- Replace it with ours
             -- This causes luacheck warning: "shadowing upvalue argument 'self' on line 34".
-            -- Ignoring it (as done in filemanager.lua for the same onFileHold)
+            -- Ignoring it (as done in filemanager.lua for the same showFileDialog)
             self.showFileDialog = function(self, file) -- luacheck: ignore
                 -- Call original function: it will create a ButtonDialogTitle
                 -- and store it as self.file_dialog, and UIManager:show() it.
-                self.onFileHold_orig(self, file)
+                self.showFileDialog_orig(self, file)
 
                 local bookinfo = BookInfoManager:getBookInfo(file)
                 if not bookinfo or bookinfo._is_directory then
@@ -340,7 +340,6 @@ function CoverMenu:updateItems(select_number)
                             --       c.f., BookStatusWidget:generateSwitchGroup for the three possible constant values.
                             return status == "complete" and _("Mark as reading") or _("Mark as read")
                         end,
-                        enabled = true,
                         callback = function()
                             local status
                             if self.cover_info_cache and self.cover_info_cache[file] then
@@ -404,13 +403,13 @@ function CoverMenu:updateItems(select_number)
             end
 
             -- Remember our function
-            self.onFileHold_ours = self.showFileDialog
+            self.showFileDialog_ours = self.showFileDialog
         end)
     end
     Menu.mergeTitleBarIntoLayout(self)
 end
 
--- Similar to onFileHold setup just above, but for History,
+-- Similar to showFileDialog setup just above, but for History,
 -- which is plugged in main.lua _FileManagerHistory_updateItemTable()
 function CoverMenu:onHistoryMenuHold(item)
     -- Call original function: it will create a ButtonDialog
@@ -529,7 +528,7 @@ function CoverMenu:onHistoryMenuHold(item)
     return true
 end
 
--- Similar to onFileHold setup just above, but for Collections,
+-- Similar to showFileDialog setup just above, but for Collections,
 -- which is plugged in main.lua _FileManagerCollections_updateItemTable()
 function CoverMenu:onCollectionsMenuHold(item)
     -- Call original function: it will create a ButtonDialog
