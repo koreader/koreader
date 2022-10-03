@@ -1434,7 +1434,7 @@ function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, dir
 ]]),
         current_value[1], current_value[2])
     elseif type(current_value) == "table" then
-        display_value = serpent.block(display_value, { maxlevel = 6, indent = "  " })
+        display_value = serpent.block(current_value, { maxlevel = 6, indent = "  " })
     else
         display_value = current_value
     end
