@@ -769,6 +769,7 @@ local VirtualKeyboard = FocusManager:extend{
         ru = "ru_keyboard",
         th = "th_keyboard",
         tr = "tr_keyboard",
+        vi = "vi_keyboard",
         zh = "zh_keyboard",
     },
 
