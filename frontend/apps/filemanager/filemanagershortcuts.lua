@@ -1,17 +1,17 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local util = require("ffi/util")
 local _ = require("gettext")
 local T = util.template
 
-local FileManagerShortcuts = InputContainer:extend{
+local FileManagerShortcuts = WidgetContainer:extend{
     folder_shortcuts = G_reader_settings:readSetting("folder_shortcuts", {}),
 }
 
