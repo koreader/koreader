@@ -1472,6 +1472,8 @@ local WrappedFunction_mt = {
 function util.pack_values(...)
     return select("#", ...), {...}
 end
+--- Ditto, but with the length bundled in the table.
+--- Unpack w/ unpack(t, 1, t.n)
 function util.table_pack(...)
     return { n = select("#", ...), ... }
 end
