@@ -19,12 +19,6 @@ These functions don't do anything when debugging is turned off.
 --]]--
 
 local logger = require("logger")
-local serpent = require("ffi/serpent")
-local isAndroid, android = pcall(require, "android")
-
-local serpent_opts = {
-    indent = "  ",
-}
 
 local Dbg = {
     -- set to nil so first debug:turnOff call won't be skipped
@@ -34,35 +28,7 @@ local Dbg = {
 
 local Dbg_mt = {}
 
-local LvDEBUG
-if isAndroid then
-    LvDEBUG = function(...)
-        local line = {}
-        for _, v in ipairs({...}) do
-            if type(v) == "table" then
-                table.insert(line, serpent.block(v, serpent_opts))
-            else
-                table.insert(line, tostring(v))
-            end
-        end
-        return android.LOGV(table.concat(line, " "))
-    end
-else
-    LvDEBUG = function(...)
-        local line = {
-            os.date("%x-%X DEBUG"),
-        }
-        for _, v in ipairs({...}) do
-            if type(v) == "table" then
-                table.insert(line, serpent.block(v, serpent_opts))
-            else
-                table.insert(line, tostring(v))
-            end
-        end
-        table.insert(line, "\n")
-        return io.write(table.concat(line, " "))
-    end
-end
+local LvDEBUG = logger.LvDEBUG
 
 --- Helper function to help dealing with nils in Dbg:guard...
 local function pack_values(...)
