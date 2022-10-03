@@ -1,7 +1,7 @@
 describe("Persist module", function()
     local Persist
     local sample
-    local bitserInstance, luajitInstance, dumpInstance
+    local bitserInstance, luajitInstance, dumpInstance, serpentInstance
     local ser, deser, str, tab
     local fail = { a = function() end, }
 
@@ -31,6 +31,7 @@ describe("Persist module", function()
         bitserInstance = Persist:new{ path = "test.dat", codec = "bitser" }
         luajitInstance = Persist:new{ path = "testj.dat", codec = "luajit" }
         dumpInstance = Persist:new { path = "test.txt", codec = "dump" }
+        serpentInstance = Persist:new { path = "tests.txt", codec = "serpent" }
         sample = arrayOf(1000)
     end)
 
@@ -38,6 +39,7 @@ describe("Persist module", function()
         assert.is_true(bitserInstance:save(sample))
         assert.is_true(luajitInstance:save(sample))
         assert.is_true(dumpInstance:save(sample))
+        assert.is_true(serpentInstance:save(sample))
     end)
 
     it("should generate a valid file", function()
@@ -54,20 +56,23 @@ describe("Persist module", function()
         assert.are.same(sample, bitserInstance:load())
         assert.are.same(sample, luajitInstance:load())
         assert.are.same(sample, dumpInstance:load())
+        assert.are.same(sample, serpentInstance:load())
     end)
 
     it("should delete the file", function()
         bitserInstance:delete()
         luajitInstance:delete()
         dumpInstance:delete()
+        serpentInstance:delete()
         assert.is_nil(bitserInstance:exists())
         assert.is_nil(luajitInstance:exists())
         assert.is_nil(dumpInstance:exists())
+        assert.is_nil(serpentInstance:exists())
     end)
 
     it("should return standalone serializers/deserializers", function()
         tab = sample
-        for _, codec in ipairs({"dump", "bitser", "luajit"}) do
+        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit"}) do
             assert.is_true(Persist.getCodec(codec).id == codec)
             ser = Persist.getCodec(codec).serialize
             deser = Persist.getCodec(codec).deserialize
@@ -88,7 +93,7 @@ describe("Persist module", function()
     end)
 
     it ("should fail to serialize functions", function()
-        for _, codec in ipairs({"dump", "bitser", "luajit"}) do
+        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit"}) do
             assert.is_true(Persist.getCodec(codec).id == codec)
             ser = Persist.getCodec(codec).serialize
             deser = Persist.getCodec(codec).deserialize
