@@ -15,7 +15,7 @@ rf. https://en.wikipedia.org/wiki/Stroke_count_method
 
 --]]
 
-local IME = require("frontend/ui/data/keyboardlayouts/zh_ime")
+local IME = require("frontend/ui/data/keyboardlayouts/generic_ime")
 local util = require("util")
 local JA = require("ui/data/keyboardlayouts/ja_keyboard_keys")
 local _ = require("gettext")
@@ -95,6 +95,8 @@ local ime = IME:new{
     show_candi_callback = function()
         return  G_reader_settings:nilOrTrue(SHOW_CANDI_KEY)
     end,
+    separator = "分隔",
+    switch_char = "下一字",
     W = W -- has wildcard function
 }
 
@@ -102,8 +104,8 @@ local wrappedAddChars = function(inputbox, char)
     ime:wrappedAddChars(inputbox, char)
 end
 
-local function wrappedSeparate(inputbox)
-    ime:wrappedSeparate(inputbox)
+local function seperate(inputbox)
+    ime:separate(inputbox)
 end
 
 local function wrappedDelChar(inputbox)
@@ -128,19 +130,19 @@ local wrapInputBox = function(inputbox)
         table.insert(wrappers, util.wrapMethod(inputbox, "delToStartOfLine", nil, clear_stack))
         table.insert(wrappers, util.wrapMethod(inputbox, "clear",            nil, clear_stack))
         -- -- Navigation.
-        table.insert(wrappers, util.wrapMethod(inputbox, "leftChar",  nil, wrappedSeparate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "rightChar", nil, wrappedSeparate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "upLine",    nil, wrappedSeparate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "downLine",  nil, wrappedSeparate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "leftChar",  nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "rightChar", nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "upLine",    nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "downLine",  nil, seperate))
         -- -- Move to other input box.
-        table.insert(wrappers, util.wrapMethod(inputbox, "unfocus",         nil, wrappedSeparate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "onCloseKeyboard", nil, wrappedSeparate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "unfocus",         nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onCloseKeyboard", nil, seperate))
         -- -- Gestures to move cursor.
-        table.insert(wrappers, util.wrapMethod(inputbox, "onTapTextBox",    nil, wrappedSeparate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "onHoldTextBox",   nil, wrappedSeparate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "onSwipeTextBox",  nil, wrappedSeparate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onTapTextBox",    nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onHoldTextBox",   nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onSwipeTextBox",  nil, seperate))
         -- -- Others
-        table.insert(wrappers, util.wrapMethod(inputbox, "onSwitchingKeyboardLayout", nil, wrappedSeparate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onSwitchingKeyboardLayout", nil, seperate))
 
         -- addChars is the only method we need a more complicated wrapper for.
         table.insert(wrappers, util.wrapMethod(inputbox, "addChars", wrappedAddChars, nil))

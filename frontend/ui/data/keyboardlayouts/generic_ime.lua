@@ -1,6 +1,6 @@
------------------------------------------
--- General Chinese input method engine --
------------------------------------------
+---------------------------------
+-- Generic input method engine --
+---------------------------------
 local logger = require("logger")
 local util = require("util")
 
@@ -54,9 +54,10 @@ local IME = {
     iter_map = nil, -- next code when using wildcard
     iter_map_last_key = nil,
     show_candi_callback = function() end,
-    switch_char = "下一字", -- default
-    separator = "分隔",  -- default
-    use_space_as_separator = true,
+    switch_char = "SWITCH",
+    separator = "SEPARATOR",
+    partial_separators = { " " }, -- when in state act as separator, otherwise input itself
+    auto_separate_callback = function() return false end,
     local_del = "",  -- default
     W = nil -- default no wildcard
 }
@@ -102,11 +103,37 @@ function IME:clear_stack()
     self.last_key = ""
     self.last_index = 0
     self.hint_char_count = 0
+    self.on_stage_char_count = 0
 end
 
 function IME:reset_status()
     self.last_key = ""
     self.last_index = 0
+end
+
+function IME:uniqueMap(code)
+    -- Here we find out if given code has only one candidate and no other code
+    -- starts with the given one, so that auto separation can take place.
+    if not code then return true end
+    if self.W and code:find(self.W) then
+        return false -- with wildcard, we just return false even if its unique
+    else
+        if type(self.code_map[code]) == "table" then
+            return false
+        end
+        local idx = binarysearch(self.sorted_codes, code, function(v) return v end)
+        if idx == #self.sorted_codes then
+            return true
+        elseif not idx then
+            idx = binarysearch(self.sorted_codes, code, function(v) return string.sub(v or "", 1, #code) end )
+            if not idx or idx == #self.sorted_codes then
+                return true
+            end
+        end
+        local next_code = self.sorted_codes[idx+1]
+        local unique = next_code:sub(1, #code) ~= code
+        return unique
+    end
 end
 
 function IME:searchStartWith(code)
@@ -197,13 +224,21 @@ function IME:delHintChars(inputbox)
     end
 end
 
+function IME:delOnStageAndHintChars(inputbox)
+    self:delHintChars(inputbox)
+    for i=1, self.on_stage_char_count do
+        inputbox.delChar:raw_method_call()
+    end
+end
+
 function IME:getHintChars()
     self.hint_char_count = 0
+    self.on_stage_char_count = 0
     local hint_chars = ""
     for i=1, #_stack do
         hint_chars = hint_chars .. _stack[i].char
         if _stack[i].char ~= "" then
-            self.hint_char_count = self.hint_char_count + #util.splitToChars(_stack[i].char)
+            self.on_stage_char_count = self.on_stage_char_count + #util.splitToChars(_stack[i].char)
         end
     end
     local imex = _stack[#_stack]
@@ -244,20 +279,16 @@ function IME:getHintChars()
 end
 
 function IME:refreshHintChars(inpuxbox)
-    self:delHintChars(inpuxbox)
+    self:delOnStageAndHintChars(inpuxbox)
     inpuxbox.addChars:raw_method_call(self:getHintChars())
 end
 
-function IME:wrappedSeparate(inputbox)
-    local imex = _stack[#_stack]
-    if self:show_candi_callback() and ( #imex.candi > 1 or self.W and imex.code:find(self.W) ) then
-        imex.candi = {}
-        self:refreshHintChars(inputbox)
+function IME:separate(inputbox)
+    if self.hint_char_count then
+        self:delHintChars(inputbox)
     end
     self:clear_stack()
 end
-
-
 
 function IME:wrappedDelChar(inputbox)
     local imex = _stack[#_stack]
@@ -275,7 +306,7 @@ function IME:wrappedDelChar(inputbox)
         self:refreshHintChars(inputbox)
     elseif #imex.code == 1 then
         -- one char with one stroke
-        self:delHintChars(inputbox)
+        self:delOnStageAndHintChars(inputbox)
         self:clear_stack()
     else
         inputbox.delChar:raw_method_call()
@@ -304,11 +335,9 @@ function IME:wrappedAddChars(inputbox, char)
         end
         self:refreshHintChars(inputbox)
     elseif char == self.separator or
-        self.use_space_as_separator and char == " " and _stack[1].code ~= "" then
-        imex.candi = {}
-        self:refreshHintChars(inputbox)
-        self:clear_stack()
-        return
+        _stack[1].code ~= "" and self.partial_separators and util.arrayContains(self.partial_separators, char) then
+            self:separate(inputbox)
+            return
     elseif char == self.local_del then
         if #imex.code > 0 then
             imex.candi = {}
@@ -335,17 +364,23 @@ function IME:wrappedAddChars(inputbox, char)
                 imex.char = new_candi[1]
                 imex.candi = new_candi
                 self:refreshHintChars(inputbox)
+                if self.auto_separate_callback() and self:uniqueMap(imex.code) then
+                    self:separate(inputbox)
+                end
             else
+                if self.auto_separate_callback() then -- flush current stack
+                    self:separate(inputbox)
+                end
                 new_candi,imex.last_candi = self:getCandidates(key) or {},nil -- single stroke
-                table.insert(_stack, {code=key, index=1, char=new_candi[1], candi=new_candi})
+                if self.auto_separate_callback() then
+                    _stack[1] = { code=key, index=1, char=new_candi[1] or "", candi=new_candi }
+                else
+                    table.insert(_stack, {code=key, index=1, char=new_candi[1] or "", candi=new_candi} )
+                end
                 self:refreshHintChars(inputbox)
             end
         else
-            if #imex.candi > 1 then
-                imex.candi = {}
-                self:refreshHintChars(inputbox)
-            end
-            self:clear_stack()
+            self:separate(inputbox)
             inputbox.addChars:raw_method_call(char)
         end
     end
