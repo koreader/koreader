@@ -188,7 +188,6 @@ function DocSettings:flush()
     end
     self:ensureSidecar(self.sidecar)
     local s_out = dump(self.data)
-    os.setlocale('C', 'numeric')
     for _, f in ipairs(serials) do
         local directory_updated = false
         if lfs.attributes(f, "mode") == "file" then
