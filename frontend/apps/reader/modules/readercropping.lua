@@ -5,15 +5,15 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local Event = require("ui/event")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local Device = require("device")
 local Screen = Device.screen
 local _ = require("gettext")
 
-local ReaderCropping = InputContainer:extend{}
+local ReaderCropping = WidgetContainer:extend{}
 
 function ReaderCropping:onPageCrop(mode)
     self.ui:handleEvent(Event:new("CloseConfigMenu"))

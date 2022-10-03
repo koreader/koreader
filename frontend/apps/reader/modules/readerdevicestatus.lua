@@ -2,15 +2,15 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local powerd = Device:getPowerDevice()
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 
-local ReaderDeviceStatus = InputContainer:extend{
+local ReaderDeviceStatus = WidgetContainer:extend{
     battery_confirm_box = nil,
     memory_confirm_box = nil,
 }

@@ -6,7 +6,6 @@ local DictQuickLookup = require("ui/widget/dictquicklookup")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -16,6 +15,7 @@ local NetworkMgr = require("ui/network/manager")
 local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffi = require("ffi")
 local C = ffi.C
 local ffiUtil  = require("ffi/util")
@@ -60,7 +60,7 @@ local function getIfosInDir(path)
     return ifos
 end
 
-local ReaderDictionary = InputContainer:extend{
+local ReaderDictionary = WidgetContainer:extend{
     data_dir = nil,
     dict_window_list = {},
     lookup_msg = _("Searching dictionary for:\n%1"),
