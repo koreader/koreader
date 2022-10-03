@@ -219,15 +219,14 @@ function FontList:getFontList()
 end
 
 function FontList:dumpFontList()
-    local dump = require("dump")
+    local serpent = require("ffi/serpent")
 
     -- FontInfo
     local path = self.cachedir .. "/fontinfo_dump.lua"
     local f = io.open(path, "w")
     if f ~= nil then
         os.setlocale('C', 'numeric')
-        f:write("return ")
-        f:write(dump(self.fontinfo, nil, true))
+        f:write(serpent.block(self.fontinfo, { indent = "  " }))
         f:close()
     else
         return
@@ -238,8 +237,7 @@ function FontList:dumpFontList()
     f = io.open(path, "w")
     if f ~= nil then
         os.setlocale('C', 'numeric')
-        f:write("return ")
-        f:write(dump(self.fontlist, nil, true))
+        f:write(serpent.block(self.fontlist, { indent = "  " }))
         f:close()
     else
         return
