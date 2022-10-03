@@ -46,11 +46,11 @@ function Dbg:turnOn()
             if pre_guard then
                 pre_guard(...)
             end
-            local n, values = util.pack_values(old_method(...))
+            local values = util.table_pack(old_method(...))
             if post_guard then
                 post_guard(...)
             end
-            return unpack(values, 1, n)
+            return unpack(values, 1, values.n)
         end
     end
     --- Use this instead of a regular Lua @{assert}().
