@@ -541,7 +541,7 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
     local check_num = 0
 
     local completed = false
-    local ret_values, ret_n
+    local ret_values
 
     local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
         local output_str = ""
@@ -633,7 +633,6 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
                         local ok, t = pcall(buffer.decode, ret_str)
                         if ok and t then
                             ret_values = t
-                            ret_n = t.n
                         else
                             logger.warn("malformed serialized data:", t)
                         end
@@ -673,10 +672,10 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
     end
     -- return what we got or not to our caller
     if ret_values then
-        if ret_n then
-            return completed, unpack(ret_values, 1, ret_n)
-        else
+        if task_returns_simple_string then
             return completed, ret_values
+        else
+            return completed, unpack(ret_values, 1, ret_values.n)
         end
     end
     return completed
