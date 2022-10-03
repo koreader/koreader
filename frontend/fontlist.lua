@@ -225,7 +225,7 @@ function FontList:dumpFontList()
     local path = self.cachedir .. "/fontinfo_dump.lua"
     local f = io.open(path, "w")
     if f ~= nil then
-        f:write(serpent.block(self.fontinfo, { indent = "  " }))
+        f:write(serpent.block(self.fontinfo, { indent = "  ", comment = false }))
         f:close()
     else
         return
@@ -235,7 +235,7 @@ function FontList:dumpFontList()
     path = self.cachedir .. "/fontlist_dump.lua"
     f = io.open(path, "w")
     if f ~= nil then
-        f:write(serpent.block(self.fontlist, { indent = "  " }))
+        f:write(serpent.block(self.fontlist, { indent = "  ", comment = false }))
         f:close()
     else
         return
