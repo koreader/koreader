@@ -1,7 +1,7 @@
 describe("Persist module", function()
     local Persist
     local sample
-    local bitserInstance, luajitInstance, dumpInstance, serpentInstance
+    local bitserInstance, luajitInstance, zstdInstance, dumpInstance, serpentInstance
     local ser, deser, str, tab
     local fail = { a = function() end, }
 
@@ -30,14 +30,16 @@ describe("Persist module", function()
         Persist = require("persist")
         bitserInstance = Persist:new{ path = "test.dat", codec = "bitser" }
         luajitInstance = Persist:new{ path = "testj.dat", codec = "luajit" }
-        dumpInstance = Persist:new { path = "test.txt", codec = "dump" }
-        serpentInstance = Persist:new { path = "tests.txt", codec = "serpent" }
+        zstdInstance = Persist:new{ path = "test.zst", codec = "zstd" }
+        dumpInstance = Persist:new { path = "test.lua", codec = "dump" }
+        serpentInstance = Persist:new { path = "tests.lua", codec = "serpent" }
         sample = arrayOf(1000)
     end)
 
     it("should save a table to file", function()
         assert.is_true(bitserInstance:save(sample))
         assert.is_true(luajitInstance:save(sample))
+        assert.is_true(zstdInstance:save(sample))
         assert.is_true(dumpInstance:save(sample))
         assert.is_true(serpentInstance:save(sample))
     end)
@@ -50,11 +52,16 @@ describe("Persist module", function()
         assert.is_true(luajitInstance:exists())
         assert.is_true(luajitInstance:size() > 0)
         assert.is_true(type(luajitInstance:timestamp()) == "number")
+
+        assert.is_true(zstdInstance:exists())
+        assert.is_true(zstdInstance:size() > 0)
+        assert.is_true(type(zstdInstance:timestamp()) == "number")
     end)
 
     it("should load a table from file", function()
         assert.are.same(sample, bitserInstance:load())
         assert.are.same(sample, luajitInstance:load())
+        assert.are.same(sample, zstdInstance:load())
         assert.are.same(sample, dumpInstance:load())
         assert.are.same(sample, serpentInstance:load())
     end)
@@ -62,17 +69,19 @@ describe("Persist module", function()
     it("should delete the file", function()
         bitserInstance:delete()
         luajitInstance:delete()
+        zstdInstance:delete()
         dumpInstance:delete()
         serpentInstance:delete()
         assert.is_nil(bitserInstance:exists())
         assert.is_nil(luajitInstance:exists())
+        assert.is_nil(zstdInstance:exists())
         assert.is_nil(dumpInstance:exists())
         assert.is_nil(serpentInstance:exists())
     end)
 
     it("should return standalone serializers/deserializers", function()
         tab = sample
-        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit"}) do
+        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit", "zstd"}) do
             assert.is_true(Persist.getCodec(codec).id == codec)
             ser = Persist.getCodec(codec).serialize
             deser = Persist.getCodec(codec).deserialize
@@ -83,7 +92,7 @@ describe("Persist module", function()
     end)
 
     it("should work with huge tables", function()
-        for _, codec in ipairs({"bitser", "luajit"}) do
+        for _, codec in ipairs({"bitser", "luajit", "zstd"}) do
             tab = arrayOf(100000)
             ser = Persist.getCodec(codec).serialize
             deser = Persist.getCodec(codec).deserialize
@@ -93,7 +102,7 @@ describe("Persist module", function()
     end)
 
     it ("should fail to serialize functions", function()
-        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit"}) do
+        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit", "zstd"}) do
             assert.is_true(Persist.getCodec(codec).id == codec)
             ser = Persist.getCodec(codec).serialize
             deser = Persist.getCodec(codec).deserialize
