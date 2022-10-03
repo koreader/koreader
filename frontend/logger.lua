@@ -9,7 +9,7 @@ Example:
     logger.err("House is on fire!")
 ]]
 
-local dump = require("dump")
+local serpent = require("ffi/serpent")
 local isAndroid, android = pcall(require, "android")
 
 local DEFAULT_DUMP_LVL = 10
@@ -36,6 +36,11 @@ local LOG_PREFIX = {
 
 local noop = function() end
 
+local serpent_opts = {
+    maxlevel = DEFAULT_DUMP_LVL,
+    indent = "  ",
+}
+
 local Logger = {
     levels = LOG_LVL,
 }
@@ -53,7 +58,7 @@ if isAndroid then
         local line = {}
         for _, v in ipairs({...}) do
             if type(v) == "table" then
-                table.insert(line, dump(v, DEFAULT_DUMP_LVL))
+                table.insert(line, serpent.block(v, serpent_opts))
             else
                 table.insert(line, tostring(v))
             end
@@ -68,7 +73,7 @@ else
         }
         for _, v in ipairs({...}) do
             if type(v) == "table" then
-                table.insert(line, dump(v, DEFAULT_DUMP_LVL))
+                table.insert(line, serpent.block(v, serpent_opts))
             else
                 table.insert(line, tostring(v))
             end

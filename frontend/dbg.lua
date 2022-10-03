@@ -19,8 +19,12 @@ These functions don't do anything when debugging is turned off.
 --]]--
 
 local logger = require("logger")
-local dump = require("dump")
+local serpent = require("ffi/serpent")
 local isAndroid, android = pcall(require, "android")
+
+local serpent_opts = {
+    indent = "  ",
+}
 
 local Dbg = {
     -- set to nil so first debug:turnOff call won't be skipped
@@ -36,7 +40,7 @@ if isAndroid then
         local line = {}
         for _, v in ipairs({...}) do
             if type(v) == "table" then
-                table.insert(line, dump(v, math.huge))
+                table.insert(line, serpent.block(v, serpent_opts))
             else
                 table.insert(line, tostring(v))
             end
@@ -50,7 +54,7 @@ else
         }
         for _, v in ipairs({...}) do
             if type(v) == "table" then
-                table.insert(line, dump(v, math.huge))
+                table.insert(line, serpent.block(v, serpent_opts))
             else
                 table.insert(line, tostring(v))
             end
