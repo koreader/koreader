@@ -27,8 +27,8 @@ local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local dump = require("dump")
 local logger = require("logger")
+local serpent = require("ffi/serpent")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -1398,7 +1398,7 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
     end
     -- generic fallback to support table values
     if type(display_value) == "table" then
-        display_value = dump(display_value)
+        display_value = serpent.block(display_value, { maxlevel = 6, indent = "  " })
     end
 
     UIManager:show(ConfirmBox:new{
@@ -1434,7 +1434,7 @@ function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, dir
 ]]),
         current_value[1], current_value[2])
     elseif type(current_value) == "table" then
-        display_value = dump(current_value)
+        display_value = serpent.block(display_value, { maxlevel = 6, indent = "  " })
     else
         display_value = current_value
     end
