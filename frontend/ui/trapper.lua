@@ -16,6 +16,7 @@ local UIManager = require("ui/uimanager")
 local buffer = require("string.buffer")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 
 local Trapper = {}
@@ -540,13 +541,13 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
     local check_num = 0
 
     local completed = false
-    local ret_values = nil
+    local ret_values, ret_n
 
     local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
         local output_str = ""
         if task_returns_simple_string then
             -- task is assumed to return only a string or nil,
-            -- avoid possibly expensive ser/deser
+            -- so avoid a possibly expensive ser/deser roundtrip.
             local result = task()
             if type(result) == "string" then
                 output_str = result
@@ -557,10 +558,7 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
             -- task may return complex data structures, that we serialize.
             -- Note: LuaJIT's serializer currently doesn't support functions,
             --       coroutines, non-numerical FFI cdata, full userdata.
-            -- task may also return multiple return values,
-            -- so we wrap them in a table
-            -- (beware: the { } construct may stop at the first nil met)
-            local results = { task() }
+            local results = util.table_pack(task())
             local ok, str = pcall(buffer.encode, results)
             if not ok then
                 logger.warn("cannot serialize", tostring(results), "->", str)
@@ -622,7 +620,7 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
             -- it may still be alive blocking on write() (if data exceeds
             -- the kernel pipe buffer)
             local subprocess_done = ffiutil.isSubProcessDone(pid)
-            local stuff_to_read = parent_read_fd and ffiutil.getNonBlockingReadSize(parent_read_fd) ~=0
+            local stuff_to_read = parent_read_fd and ffiutil.getNonBlockingReadSize(parent_read_fd) ~= 0
             logger.dbg("subprocess_done:", subprocess_done, " stuff_to_read:", stuff_to_read)
             if subprocess_done or stuff_to_read then
                 -- Subprocess is gone or nearly gone
@@ -630,11 +628,12 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
                 if stuff_to_read then
                     local ret_str = ffiutil.readAllFromFD(parent_read_fd)
                     if task_returns_simple_string then
-                        ret_values = { ret_str }
+                        ret_values = ret_str
                     else
                         local ok, t = pcall(buffer.decode, ret_str)
                         if ok and t then
                             ret_values = t
+                            ret_n = t.n
                         else
                             logger.warn("malformed serialized data:", t)
                         end
@@ -674,7 +673,11 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
     end
     -- return what we got or not to our caller
     if ret_values then
-        return completed, unpack(ret_values)
+        if ret_n then
+            return completed, unpack(ret_values, 1, ret_n)
+        else
+            return completed, ret_values
+        end
     end
     return completed
 end
