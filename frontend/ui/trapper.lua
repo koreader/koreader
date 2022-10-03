@@ -13,7 +13,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local InfoMessage = require("ui/widget/infomessage")
 local TrapWidget = require("ui/widget/trapwidget")
 local UIManager = require("ui/uimanager")
-local dump = require("dump")
+local buffer = require("string.buffer")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
 local _ = require("gettext")
@@ -545,8 +545,8 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
     local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
         local output_str = ""
         if task_returns_simple_string then
-            -- task is assumed to return only a string or nil, avoid
-            -- possibly expensive dump()/dofile()
+            -- task is assumed to return only a string or nil,
+            -- avoid possibly expensive ser/deser
             local result = task()
             if type(result) == "string" then
                 output_str = result
@@ -554,15 +554,19 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
                 logger.warn("returned value from task is not a string:", result)
             end
         else
-            -- task may return complex data structures, that we dump()
-            -- Note: be sure these data structures contain only classic types,
-            -- and no function (dofile() with fail if it meets
-            -- "function: 0x55949671c670"...)
-            -- task may also return multiple return values, so we
-            -- wrap them in a table (beware the { } construct may stop
-            -- at the first nil met)
+            -- task may return complex data structures, that we serialize.
+            -- Note: LuaJIT's serializer currently doesn't support functions,
+            --       coroutines, non-numerical FFI cdata, full userdata.
+            -- task may also return multiple return values,
+            -- so we wrap them in a table
+            -- (beware: the { } construct may stop at the first nil met)
             local results = { task() }
-            output_str = "return "..dump(results).."\n"
+            local ok, str = pcall(buffer.encode, results)
+            if not ok then
+                logger.warn("cannot serialize", tostring(results), "->", str)
+            else
+                output_str = str
+            end
         end
         ffiutil.writeToFD(child_write_fd, output_str, true)
     end, true) -- with_pipe = true
@@ -628,11 +632,11 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
                     if task_returns_simple_string then
                         ret_values = { ret_str }
                     else
-                        local ok, results = pcall(load(ret_str))
-                        if ok and results then
-                            ret_values = results
+                        local ok, t = pcall(buffer.decode, ret_str)
+                        if ok and t then
+                            ret_values = t
                         else
-                            logger.warn("load() failed:", results)
+                            logger.warn("malformed serialized data:", t)
                         end
                     end
                     if not subprocess_done then
