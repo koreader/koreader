@@ -25,7 +25,7 @@ assignees: ''
 Android logs are kept in memory. Please go to [Menu] → Help → Bug Report to save these logs to a file.
 
 Please try to include the relevant sections in your issue description.
-You can upload the whole `crash.log` file on GitHub (zipped if necessary) by dragging and dropping it onto this textbox.
+You can upload the whole `crash.log` file (zipped if necessary) on GitHub by dragging and dropping it onto this textbox.
 
 If your issue doesn't directly concern a Lua crash, we'll quite likely need you to reproduce the issue with *verbose* debug logging enabled before providing the logs to us.
 To do so, from the file manager, go to [Tools] → More tools → Developer options, and tick both `Enable debug logging` and `Enable verbose debug logging`.
