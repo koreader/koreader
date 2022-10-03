@@ -266,13 +266,12 @@ function Persist:delete()
 end
 
 function Persist.getCodec(name)
-    local fallback = codecs["serpent"]
     for key, codec in pairs(codecs) do
-        if type(key) == "string" and key == name then
+        if key == name then
             return codec
         end
     end
-    return fallback
+    return codecs["serpent"]
 end
 
 return Persist
