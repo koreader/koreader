@@ -112,6 +112,11 @@ function Logger:setLevel(new_lvl)
     end
 end
 
+-- For dbg's sake
+function Logger.LvDEBUG(...)
+    return log("dbg", ...)
+end
+
 Logger:setLevel(LOG_LVL.info)
 
 return Logger
