@@ -2,7 +2,6 @@
 A simple serialization function which won't do uservalues, functions, or loops.
 ]]
 
-local isUbuntuTouch = os.getenv("UBUNTU_APPLICATION_ISOLATION") ~= nil
 local insert = table.insert
 local indent_prefix = "    "
 
@@ -46,15 +45,7 @@ local function _serialize(what, outt, indent, max_lv, history, pairs_func)
     elseif type(what) == "string" then
         insert(outt, string.format("%q", what))
     elseif type(what) == "number" then
-        if isUbuntuTouch then
-            --- @fixme The `SDL_CreateRenderer` function in Ubuntu touch somehow
-            -- use a strange locale that formats number like this: 1.10000000000000g+02
-            -- which cannot be recognized by loadfile after the number is dumped.
-            -- Here the workaround is to preserve enough precision in "%.13e" format.
-            insert(outt, string.format("%.13e", what))
-        else
-            insert(outt, tostring(what))
-        end
+        insert(outt, tostring(what))
     elseif type(what) == "boolean" then
         insert(outt, tostring(what))
     elseif type(what) == "function" then
