@@ -31,8 +31,8 @@ describe("Persist module", function()
         bitserInstance = Persist:new{ path = "test.dat", codec = "bitser" }
         luajitInstance = Persist:new{ path = "testj.dat", codec = "luajit" }
         zstdInstance = Persist:new{ path = "test.zst", codec = "zstd" }
-        dumpInstance = Persist:new { path = "test.lua", codec = "dump" }
-        serpentInstance = Persist:new { path = "tests.lua", codec = "serpent" }
+        dumpInstance = Persist:new{ path = "test.lua", codec = "dump" }
+        serpentInstance = Persist:new{ path = "tests.lua", codec = "serpent" }
         sample = arrayOf(1000)
     end)
 
