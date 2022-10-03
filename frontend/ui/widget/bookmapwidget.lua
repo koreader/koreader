@@ -23,6 +23,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Widget = require("ui/widget/widget")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Input = Device.input
 local Screen = Device.screen
 local logger = require("logger")
@@ -30,7 +31,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- BookMapRow (reused by PageBrowserWidget)
-local BookMapRow = InputContainer:extend{
+local BookMapRow = WidgetContainer:extend{
     width = nil,
     height = nil,
     pages_frame_border = Size.border.default,
