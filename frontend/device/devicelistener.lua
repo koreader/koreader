@@ -1,6 +1,6 @@
 local Device = require("device")
 local Event = require("ui/event")
-local EventListener = require("ui/widget/container/eventlistener")
+local EventListener = require("ui/widget/eventlistener")
 local Notification = require("ui/widget/notification")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
