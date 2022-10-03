@@ -9,6 +9,9 @@ void setlinebuf(struct _IO_FILE *);
 ]]
 C.setlinebuf(C.stdout)
 
+-- Enforce a reliable locale for numerical representations
+os.setlocale("C", "numeric")
+
 io.write([[
 ---------------------------------------------
                 launching...
