@@ -3,6 +3,7 @@
 ---------------------------------
 local logger = require("logger")
 local util = require("util")
+local Utf8Proc = require("ffi/utf8proc")
 
 local function binarysearch( tbl, value, fcompval, reversed )
     if not fcompval then return end
@@ -59,6 +60,8 @@ local IME = {
     partial_separators = { " " }, -- when in state act as separator, otherwise input itself
     auto_separate_callback = function() return false end,
     local_del = "",  -- default
+    has_case = false,
+    exact_match = false,
     W = nil -- default no wildcard
 }
 
@@ -137,6 +140,7 @@ function IME:uniqueMap(code)
 end
 
 function IME:searchStartWith(code)
+    if self.exact_match then return end
     local result = binarysearch(self.sorted_codes, code, function(v) return string.sub(v or "", 1, #code) end)
     if result then
         local candi = self.code_map[self.sorted_codes[result]]
@@ -290,6 +294,30 @@ function IME:separate(inputbox)
     self:clear_stack()
 end
 
+function IME:tweak_case(new_candi, old_imex, new_stroke_upper)
+    if self.has_case then
+        local old_chars = util.splitToChars(old_imex.char)
+        logger.dbg("zh_ime: tweak_case old chars", old_chars, "new_candi", new_candi)
+        for i=1, #new_candi do
+            local new_chars = util.splitToChars(new_candi[i])
+            for j=1, math.max(#new_chars, #old_chars) do
+                local old_char = old_chars[j]
+                local new_char = new_chars[j]
+                if new_char ~= old_char then
+                    if not old_char and new_stroke_upper then
+                        -- tweak new_char
+                        new_chars[j] = Utf8Proc.uppercase_dumb(new_char)
+                    elseif old_char and new_char and old_char == Utf8Proc.uppercase_dumb(old_char) then
+                        -- tweak new_char when corresponding old char is uppercase
+                        new_chars[j] = Utf8Proc.uppercase_dumb(new_char)
+                    end
+                end
+            end
+            new_candi[i] = table.concat(new_chars)
+        end
+    end
+end
+
 function IME:wrappedDelChar(inputbox)
     local imex = _stack[#_stack]
     -- stepped deletion
@@ -297,7 +325,9 @@ function IME:wrappedDelChar(inputbox)
         -- last char has over one input strokes
         imex.code = string.sub(imex.code, 1, -2)
         imex.index = 1
-        imex.candi, imex.last_candi = self:getCandidates(imex.code)
+        local new_candi, last_candi = self:getCandidates(imex.code)
+        self:tweak_case(new_candi, imex)
+        imex.candi, imex.last_candi = new_candi, last_candi
         imex.char = imex.candi[1]
         self:refreshHintChars(inputbox)
     elseif #_stack > 1 then
@@ -313,7 +343,7 @@ function IME:wrappedDelChar(inputbox)
     end
 end
 
-function IME:wrappedAddChars(inputbox, char)
+function IME:wrappedAddChars(inputbox, char, orig_char)
     local imex = _stack[#_stack]
     if char == self.switch_char then
         imex.index = imex.index + 1
@@ -361,6 +391,9 @@ function IME:wrappedAddChars(inputbox, char)
             new_candi,imex.last_candi = self:getCandidates(imex.code..key)
             if new_candi and #new_candi > 0 then
                 imex.code = imex.code .. key
+
+                self:tweak_case(new_candi, imex, orig_char and orig_char ~= char)
+
                 imex.char = new_candi[1]
                 imex.candi = new_candi
                 self:refreshHintChars(inputbox)
@@ -371,7 +404,10 @@ function IME:wrappedAddChars(inputbox, char)
                 if self.auto_separate_callback() then -- flush current stack
                     self:separate(inputbox)
                 end
-                new_candi,imex.last_candi = self:getCandidates(key) or {},nil -- single stroke
+                new_candi,imex.last_candi = self:getCandidates(key) or {orig_char or char},nil -- single stroke
+
+                self:tweak_case(new_candi, {}, orig_char and orig_char ~= char)
+
                 if self.auto_separate_callback() then
                     _stack[1] = { code=key, index=1, char=new_candi[1] or "", candi=new_candi }
                 else
@@ -381,7 +417,7 @@ function IME:wrappedAddChars(inputbox, char)
             end
         else
             self:separate(inputbox)
-            inputbox.addChars:raw_method_call(char)
+            inputbox.addChars:raw_method_call(orig_char or char)
         end
     end
 end
