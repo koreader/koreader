@@ -1280,16 +1280,16 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     local is_footnote, reason, extStopReason, extStartXP, extEndXP =
             self.ui.document:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
     if not is_footnote then
-        logger.info("not a footnote:", reason)
+        logger.dbg("not a footnote:", reason)
         return false
     end
-    logger.info("is a footnote:", reason)
+    logger.dbg("is a footnote:", reason)
     if extStartXP then
-        logger.info("  extended until:", extStopReason)
-        logger.info(extStartXP)
-        logger.info(extEndXP)
+        logger.dbg("  extended until:", extStopReason)
+        logger.dbg(extStartXP)
+        logger.dbg(extEndXP)
     else
-        logger.info("  not extended because:", extStopReason)
+        logger.dbg("  not extended because:", extStopReason)
     end
     -- OK, done with the dirty footnote detection work, we can now
     -- get back to the fancy UI stuff
