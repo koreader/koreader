@@ -1468,11 +1468,7 @@ local WrappedFunction_mt = {
     end,
 }
 
---- Helper function to help dealing with nils in varargs, since we don't have table.pack...
-function util.pack_values(...)
-    return select("#", ...), {...}
-end
---- Ditto, but with the length bundled in the table.
+--- Helper function to help dealing with nils in varargs, since we don't have table.pack w/o Lua 5.2 compat...
 --- Unpack w/ unpack(t, 1, t.n)
 function util.table_pack(...)
     return { n = select("#", ...), ... }
