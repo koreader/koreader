@@ -1468,6 +1468,14 @@ local WrappedFunction_mt = {
     end,
 }
 
+--- Helper function to help dealing with nils in varargs, since we don't have table.pack...
+function util.pack_values(...)
+    return select("#", ...), {...}
+end
+function util.table_pack(...)
+    return { n = select("#", ...), ... }
+end
+
 --- Wrap (or replace) a table method with a custom method, in a revertable way.
 -- This allows you extend the features of an existing module by modifying its
 -- internal methods, and then revert them back to normal later if necessary.

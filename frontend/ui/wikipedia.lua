@@ -223,7 +223,7 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
         error(content)
     end
 
-    if content ~= "" and string.sub(content, 1,1) == "{" then
+    if content ~= "" and string.sub(content, 1, 1) == "{" then
         local ok, result = pcall(JSON.decode, content)
         if ok and result then
             logger.dbg("wiki result json:", result)
