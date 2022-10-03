@@ -556,8 +556,8 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
             end
         else
             -- task may return complex data structures, that we serialize.
-            -- Note: LuaJIT's serializer currently doesn't support functions,
-            --       coroutines, non-numerical FFI cdata & full userdata.
+            -- NOTE: LuaJIT's serializer currently doesn't support:
+            --       functions, coroutines, non-numerical FFI cdata & full userdata.
             local results = util.table_pack(task())
             local ok, str = pcall(buffer.encode, results)
             if not ok then
