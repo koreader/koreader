@@ -16,6 +16,8 @@ This is an abstract interface to a document
 local Document = {
     -- file name
     file = nil,
+    -- engine instance
+    _document = nil,
 
     links = {},
 
@@ -40,8 +42,8 @@ local Document = {
 
 }
 
-function Document:extend(subclass)
-    local o = subclass or {}
+function Document:extend(subclass_prototype)
+    local o = subclass_prototype or {}
     setmetatable(o, self)
     self.__index = self
     return o
