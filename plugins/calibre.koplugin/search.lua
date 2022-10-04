@@ -155,6 +155,7 @@ local function getBookInfo(book)
         size)
 end
 
+-- This is a singleton
 local CalibreSearch = WidgetContainer:extend{
     books = {},
     libraries = {},
