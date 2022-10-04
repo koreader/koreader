@@ -54,13 +54,13 @@ end
 
 local Screensaver = {
     screensaver_provider = {
+        gif  = true,
         jpg  = true,
         jpeg = true,
         png  = true,
-        gif  = true,
+        svg  = true,
         tif  = true,
         tiff = true,
-        svg  = true,
         webp = true,
     },
     default_screensaver_message = _("Sleeping"),
