@@ -34,15 +34,7 @@ local ReaderView = OverlapGroup:extend{
     state = nil, -- table
     outer_page_color = Blitbuffer.gray(G_defaults:readSetting("DOUTER_PAGE_COLOR") / 15),
     -- highlight with "lighten" or "underscore" or "strikeout" or "invert"
-    highlight = {
-        lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
-        note_mark = G_reader_settings:readSetting("highlight_note_marker"),
-        temp_drawer = "invert",
-        temp = nil, -- table
-        saved_drawer = "lighten",
-        saved = nil, -- table
-        indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
-    },
+    highlight = nil, -- table
     highlight_visible = true,
     note_mark_line_w = 3, -- side line thickness
     note_mark_sign = nil,
@@ -53,10 +45,7 @@ local ReaderView = OverlapGroup:extend{
     page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") / 15),
     page_states = nil, -- table
     -- properties of the gap drawn between each page in scroll mode:
-    page_gap = {
-        -- color (0 = white, 8 = gray, 15 = black)
-        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) / 15),
-    },
+    page_gap = nil, -- table
     -- DjVu page rendering mode (used in djvu.c:drawPage())
     render_mode = G_defaults:readSetting("DRENDER_MODE"), -- default to COLOR
     -- Crengine view mode
@@ -94,9 +83,20 @@ function ReaderView:init()
         offset = nil,
         bbox = nil,
     }
-    self.highlight.temp = {}
-    self.highlight.saved = {}
+    self.highlight = {
+        lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
+        note_mark = G_reader_settings:readSetting("highlight_note_marker"),
+        temp_drawer = "invert",
+        temp = {},
+        saved_drawer = "lighten",
+        saved = {},
+        indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
+    }
     self.page_states = {}
+    self.page_gap = {
+        -- color (0 = white, 8 = gray, 15 = black)
+        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) / 15),
+    }
 
     self:addWidgets()
     self.emitHintPageEvent = function()
