@@ -25,7 +25,7 @@ local FileChooser = Menu:extend{
     file_filter = nil, -- function defined in the caller, returns true for files to be shown
     show_unsupported = false, -- set to true to ignore file_filter
     -- NOTE: Input is *always* a relative entry name
-    exclude_dirs = {
+    exclude_dirs = { -- const
         -- KOReader / Kindle
         "%.sdr$",
         -- Kobo
@@ -54,7 +54,7 @@ local FileChooser = Menu:extend{
         "^%.thumbnail%-previews$",
         "^%.reading%-states$",
     },
-    exclude_files = {
+    exclude_files = { -- const
         -- Kobo
         "^BookReader%.sqlite",
         "^KoboReader%.sqlite",

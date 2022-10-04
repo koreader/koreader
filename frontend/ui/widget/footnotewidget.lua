@@ -121,7 +121,7 @@ local FootnoteWidget = InputContainer:extend{
     -- (already scaled) sizes in screen pixels
     doc_font_size = Screen:scaleBySize(18),
     doc_font_name = nil,
-    doc_margins = {
+    doc_margins = { -- const
         left = Screen:scaleBySize(20),
         right = Screen:scaleBySize(20),
         top = Screen:scaleBySize(10),

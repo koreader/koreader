@@ -49,7 +49,7 @@ local CreDocument = Document:extend{
     --   require one to set FreeSans as fallback to get its nicer glyphes, which
     --   would override Noto Sans CJK good symbol glyphs with smaller ones
     --   (Noto Sans & Serif do not have these symbol glyphs).
-    fallback_fonts = {
+    fallback_fonts = { -- const
         "Noto Sans CJK SC",
         "Noto Naskh Arabic",
         "Noto Sans Devanagari UI",

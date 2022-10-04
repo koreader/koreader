@@ -74,7 +74,7 @@ local GestureDetector = {
     HOLD_INTERVAL_MS = HOLD_INTERVAL_MS,
     SWIPE_INTERVAL_MS = SWIPE_INTERVAL_MS,
     -- pinch/spread direction table
-    DIRECTION_TABLE = {
+    DIRECTION_TABLE = { -- const
         east = "horizontal",
         west = "horizontal",
         north = "vertical",
