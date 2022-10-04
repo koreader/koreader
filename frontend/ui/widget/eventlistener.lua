@@ -9,8 +9,8 @@ will call a method "onEventName" for an event with name
 
 local EventListener = {}
 
-function EventListener:extend(subclass)
-    local o = subclass or {}
+function EventListener:extend(subclass_prototype)
+    local o = subclass_prototype or {}
     setmetatable(o, self)
     self.__index = self
     return o
