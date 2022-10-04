@@ -9,6 +9,7 @@ local realpath = ffiutil.realpath
 
 local history_file = joinPath(DataStorage:getDataDir(), "history.lua")
 
+-- This is a singleton
 local ReadHistory = {
     hist = {},
     last_read_time = 0,
