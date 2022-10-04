@@ -785,11 +785,11 @@ function VirtualKeyboard:init()
     local lang = self:getKeyboardLayout()
     local keyboard_layout = self.lang_to_keyboard_layout[lang] or self.lang_to_keyboard_layout["en"]
     local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
-    self.KEYS = keyboard.keys
-    self.shiftmode_keys = keyboard.shiftmode_keys
-    self.symbolmode_keys = keyboard.symbolmode_keys
-    self.utf8mode_keys = keyboard.utf8mode_keys
-    self.umlautmode_keys = keyboard.umlautmode_keys
+    self.KEYS = keyboard.keys or {}
+    self.shiftmode_keys = keyboard.shiftmode_keys or {}
+    self.symbolmode_keys = keyboard.symbolmode_keys or {}
+    self.utf8mode_keys = keyboard.utf8mode_keys or {}
+    self.umlautmode_keys = keyboard.umlautmode_keys or {}
     self.width = Screen:getWidth()
     local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
     self.height = Screen:scaleBySize(keys_height * #self.KEYS)
