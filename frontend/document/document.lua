@@ -19,12 +19,12 @@ local Document = {
     -- engine instance
     _document = nil,
 
-    links = {},
+    links = nil, -- table
 
     GAMMA_NO_GAMMA = 1.0,
 
     -- override bbox from orignal page's getUsedBBox
-    bbox = {},
+    bbox = nil, -- table
 
     -- flag to show whether the document was opened successfully
     is_open = false,
@@ -58,6 +58,8 @@ end
 
 -- base document initialization should be called on each document init
 function Document:_init()
+    self.links = {}
+    self.bbox = {}
     self.configurable = Configurable:new{}
     self.info = {
         -- whether the document is pageable

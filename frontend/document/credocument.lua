@@ -65,8 +65,8 @@ local CreDocument = Document:extend{
     provider_name = "Cool Reader Engine",
 
     hide_nonlinear_flows = false,
-    flows = {},
-    page_in_flow = {},
+    flows = nil, -- table
+    page_in_flow = nil, -- table
     last_linear_page = nil,
 }
 
@@ -146,6 +146,9 @@ end
 function CreDocument:init()
     self:updateColorRendering()
     self:engineInit()
+
+    self.flows = {}
+    self.page_in_flow = {}
 
     local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
     if file_type == "zip" then
