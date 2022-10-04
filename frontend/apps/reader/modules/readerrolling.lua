@@ -44,7 +44,7 @@ local ReaderRolling = InputContainer:extend{
     rendering_hash = 0,
     current_pos = 0,
     -- only used for page view mode
-    current_page= nil,
+    current_page = nil,
     xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
     cre_top_bar_enabled = false,

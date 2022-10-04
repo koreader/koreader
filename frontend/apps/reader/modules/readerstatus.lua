@@ -12,12 +12,6 @@ local T = require("ffi/util").template
 
 local ReaderStatus = WidgetContainer:extend{
     document = nil,
-    summary = {
-        rating = 0,
-        note = nil,
-        status = "",
-        modified = "",
-    },
     enabled = true,
     total_pages = 0,
 }
