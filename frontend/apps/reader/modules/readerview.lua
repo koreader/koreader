@@ -28,6 +28,7 @@ local T = require("ffi/util").template
 
 local ReaderView = OverlapGroup:extend{
     document = nil,
+    view_modules = nil, -- array
 
     -- single page state
     state = {
@@ -45,9 +46,9 @@ local ReaderView = OverlapGroup:extend{
         lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
         note_mark = G_reader_settings:readSetting("highlight_note_marker"),
         temp_drawer = "invert",
-        temp = {},
+        temp = nil, -- table
         saved_drawer = "lighten",
-        saved = {},
+        saved = nil, -- table
         indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
     },
     highlight_visible = true,
@@ -58,7 +59,7 @@ local ReaderView = OverlapGroup:extend{
     -- PDF/DjVu continuous paging
     page_scroll = nil,
     page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") / 15),
-    page_states = {},
+    page_states = nil, -- table
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = {
         -- color (0 = white, 8 = gray, 15 = black)
@@ -91,13 +92,10 @@ local ReaderView = OverlapGroup:extend{
 
 function ReaderView:init()
     self.view_modules = {}
-    -- fix recalculate from close document pageno
-    self.state.page = nil
 
-    -- Reset the various areas across documents
-    self.visible_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
-    self.page_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
-    self.dim_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
+    self.highlight.temp = {}
+    self.highlight.saved = {}
+    self.page_states = {}
 
     self:addWidgets()
     self.emitHintPageEvent = function()
@@ -1074,6 +1072,17 @@ function ReaderView:onCloseDocument()
     self.hinting = false
     -- stop any in fly HintPage event
     UIManager:unschedule(self.emitHintPageEvent)
+
+    -- Clear document-specific state
+    self.state.page = nil
+    self.state.offset = nil
+    self.state.bbox = nil
+    self.highlight.temp = nil
+    self.highlight.saved = nil
+    self.page_states = nil
+    self.visible_area = nil
+    self.page_area = nil
+    self.dim_area = nil
 end
 
 function ReaderView:onReaderReady()
