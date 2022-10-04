@@ -41,7 +41,7 @@ local NewsDownloader = WidgetContainer:extend{
         enable_filter = false,
         filter_element = ""
     },
-    kv = {}
+    kv = nil, -- KeyValuePage
 }
 
 local FEED_TYPE_RSS = "rss"

@@ -52,9 +52,15 @@ local TermInputText = InputText:extend{
 
     wrap = true,
 
-    alternate_buffer = {},
-    save_buffer = {},
+    alternate_buffer = nil, -- table
+    save_buffer = nil, -- table
 }
+
+function TermInputText:init()
+    self.alternate_buffer = {}
+    self.save_buffer = {}
+    InputText.init(self)
+end
 
 -- disable positioning cursor by tap in emulator mode
 function TermInputText:onTapTextBox(arg, ges)

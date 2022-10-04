@@ -85,10 +85,11 @@ local CalibreWireless = WidgetContainer:extend{
         SET_CALIBRE_DEVICE_NAME   = 2,
         TOTAL_SPACE               = 4,
     },
-    calibre = {},
+    calibre = nil, -- hash
 }
 
 function CalibreWireless:init()
+    self.calibre = {}
     -- reversed operator codes and names dictionary
     self.opnames = {}
     for name, code in pairs(self.opcodes) do

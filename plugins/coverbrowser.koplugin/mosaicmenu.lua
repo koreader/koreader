@@ -344,7 +344,7 @@ end
 
 -- Based on menu.lua's MenuItem
 local MosaicMenuItem = InputContainer:extend{
-    entry = {},
+    entry = nil, -- table, mandatory
     text = nil,
     show_parent = nil,
     detail = nil,
