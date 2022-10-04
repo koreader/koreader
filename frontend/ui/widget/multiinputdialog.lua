@@ -204,7 +204,7 @@ end
 
 function MultiInputDialog:getFields()
     local fields = {}
-    for k, field in ipairs(self.input_field) do
+    for i, field in ipairs(self.input_field) do
         table.insert(fields, field.text)
     end
     return fields
