@@ -18,7 +18,7 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local Keyboard
+local Keyboard -- Conditional instantiation
 local FocusManagerInstance -- Delayed instantiation
 
 local InputText = InputContainer:extend{
