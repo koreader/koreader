@@ -44,6 +44,7 @@ local T = BaseUtil.template
 
 local FileManager = InputContainer:extend{
     title = _("KOReader"),
+    active_widgets = nil, -- array
     root_path = lfs.currentdir(),
 
     clipboard = nil, -- for single file operations
