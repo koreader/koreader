@@ -425,6 +425,7 @@ local KoboLuna = Kobo:new{
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
     display_dpi = 212,
+    power_dev = "/dev/input/event2",
 }
 
 -- Kobo Elipsa
