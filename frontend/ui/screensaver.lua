@@ -60,6 +60,8 @@ local Screensaver = {
         gif  = true,
         tif  = true,
         tiff = true,
+        svg  = true,
+        webp = true,
     },
     default_screensaver_message = _("Sleeping"),
 }
