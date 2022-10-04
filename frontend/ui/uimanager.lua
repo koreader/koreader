@@ -60,6 +60,7 @@ function UIManager:init()
     }
     self.poweroff_action = function()
         self._entered_poweroff_stage = true
+        logger.info("Powering off the device...")
         Device.orig_rotation_mode = Device.screen:getRotationMode()
         self:broadcastEvent(Event:new("Close"))
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
@@ -74,6 +75,7 @@ function UIManager:init()
     end
     self.reboot_action = function()
         self._entered_poweroff_stage = true
+        logger.info("Rebooting the device...")
         Device.orig_rotation_mode = Device.screen:getRotationMode()
         self:broadcastEvent(Event:new("Close"))
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
