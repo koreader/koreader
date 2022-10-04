@@ -45,7 +45,7 @@ function WakeupMgr:new(o)
     return o
 end
 
-function WakeupMgr:init(o)
+function WakeupMgr:init()
     self._task_queue = {}
 end
 

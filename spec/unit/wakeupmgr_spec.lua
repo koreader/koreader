@@ -7,7 +7,7 @@ describe("WakeupMgr", function()
         require("commonrequire")
         package.unloadAll()
         RTC = require("ffi/rtc")
-        WakeupMgr = require("device/wakeupmgr")
+        WakeupMgr = require("device/wakeupmgr"):new{}
         -- We could theoretically test this by running the tests as root locally.
         stub(WakeupMgr, "setWakeupAlarm")
         WakeupMgr.validateWakeupAlarmByProximity = spy.new(function() return true end)
