@@ -14,7 +14,7 @@ local _ = require("gettext")
 -- page view change (when scrolling in a same page)
 
 local ReaderBack = EventListener:extend{
-    location_stack = {},
+    location_stack = nil, -- array
     -- a limit not intended to be a practical limit but just a failsafe
     max_stack = 5000,
 }

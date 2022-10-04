@@ -444,7 +444,7 @@ local ReaderFooter = WidgetContainer:extend{
     height = Screen:scaleBySize(G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT")),
     horizontal_margin = Size.span.horizontal_default,
     bottom_padding = Size.padding.tiny,
-    settings = {},
+    settings = nil, -- table
     -- added to expose them to unit tests
     textGeneratorMap = footerTextGeneratorMap,
 }

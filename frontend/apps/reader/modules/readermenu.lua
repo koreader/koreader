@@ -15,8 +15,8 @@ local T = require("ffi/util").template
 
 local ReaderMenu = InputContainer:extend{
     tab_item_table = nil,
-    menu_items = {},
-    registered_widgets = {},
+    menu_items = nil, -- table, mandatory
+    registered_widgets = nil, -- array
 }
 
 function ReaderMenu:init()
