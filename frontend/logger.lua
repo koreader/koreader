@@ -39,6 +39,7 @@ local noop = function() end
 local serpent_opts = {
     maxlevel = DEFAULT_DUMP_LVL,
     indent = "  ",
+    nocode = true,
 }
 
 local Logger = {
