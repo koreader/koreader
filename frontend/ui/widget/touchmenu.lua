@@ -269,7 +269,7 @@ TouchMenuBar widget
 --]]
 local TouchMenuBar = InputContainer:extend{
     width = Screen:getWidth(),
-    icons = {},
+    icons = nil, -- array, mandatory
     -- touch menu that holds the bar, used for trigger repaint on icons
     show_parent = nil,
     menu = nil,

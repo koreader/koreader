@@ -16,7 +16,7 @@ local Screen = Device.screen
 
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
--- there is only one instance of this
+-- This is a singleton
 local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
     FULL_REFRESH_COUNT =
