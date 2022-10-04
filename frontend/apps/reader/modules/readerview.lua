@@ -61,7 +61,7 @@ local ReaderView = OverlapGroup:extend{
     render_mode = G_defaults:readSetting("DRENDER_MODE"), -- default to COLOR
     -- Crengine view mode
     view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE"), -- default to page mode
-    hinting = nil,
+    hinting = true,
 
     -- visible area within current viewing page
     visible_area = nil,
@@ -72,14 +72,14 @@ local ReaderView = OverlapGroup:extend{
     -- has footer
     footer_visible = nil,
     -- has dogear
-    dogear_visible = nil,
+    dogear_visible = false,
     -- in flipping state
-    flipping_visible = nil,
+    flipping_visible = false,
     -- to ensure periodic flush of settings
     settings_last_save_time = nil,
     -- might be directly updated by readerpaging/readerrolling when
     -- they handle some panning/scrolling, to request "fast" refreshes
-    currently_scrolling = nil,
+    currently_scrolling = false,
 }
 
 function ReaderView:init()
@@ -94,13 +94,9 @@ function ReaderView:init()
         offset = nil,
         bbox = nil,
     }
-    self.hinting = true
     self.highlight.temp = {}
     self.highlight.saved = {}
     self.page_states = {}
-    self.dogear_visible = false
-    self.flipping_visible = false
-    self.currently_scrolling = false
 
     self:addWidgets()
     self.emitHintPageEvent = function()
