@@ -63,6 +63,12 @@ function ButtonDialogTitle:init()
             }
         end
     end
+    self.button_table = ButtonTable:new{
+        width = self.width,
+        buttons = self.buttons,
+        zero_sep = true,
+        show_parent = self,
+    }
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
         MovableContainer:new{
@@ -81,12 +87,7 @@ function ButtonDialogTitle:init()
                         },
                     },
                     VerticalSpan:new{ width = Size.span.vertical_default },
-                    ButtonTable:new{
-                        width = self.width,
-                        buttons = self.buttons,
-                        zero_sep = true,
-                        show_parent = self,
-                    },
+                    self.button_table,
                 },
                 background = Blitbuffer.COLOR_WHITE,
                 bordersize = Size.border.window,
