@@ -1075,10 +1075,6 @@ end
 function ReaderView:onCloseDocument()
     -- stop any pending HintPage event
     UIManager:unschedule(self.emitHintPageEvent)
-
-    -- Clear document-specific state
-    self.highlight.temp = nil
-    self.highlight.saved = nil
 end
 
 function ReaderView:onReaderReady()
