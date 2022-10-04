@@ -24,6 +24,8 @@ function ReaderDogear:init()
     self.top_pad = nil
     self:setupDogear()
     self:resetLayout()
+
+    self.dimen = self:getSize()
 end
 
 function ReaderDogear:setupDogear(new_dogear_size)
