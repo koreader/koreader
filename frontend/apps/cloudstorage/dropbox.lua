@@ -12,8 +12,8 @@ local _ = require("gettext")
 
 local DropBox = {}
 
-function DropBox:getAccessToken(refresh_token, app_key_secret_b64)
-    return DropBoxApi:getAccessToken(refresh_token, app_key_secret_b64)
+function DropBox:getAccessToken(refresh_token, app_key_colon_secret)
+    return DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
 end
 
 function DropBox:run(url, password, choose_folder_mode)
@@ -120,7 +120,7 @@ Some of the previously generated long-lived tokens are still valid.]])
             },
             {
                 text = text_appkey,
-                hint = _("Dropbox <APP_KEY>:<APP_SECRET>\nBase64 encoded\n(leave blank for long-lived token)"),
+                hint = _("Dropbox <APP_KEY>:<APP_SECRET>\n(leave blank for long-lived token)"),
             },
         },
         buttons = {
