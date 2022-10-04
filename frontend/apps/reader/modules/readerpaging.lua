@@ -37,7 +37,7 @@ local ReaderPaging = InputContainer:extend{
 
     page_flipping_mode = false,
     bookmark_flipping_mode = false,
-    flip_steps = {0,1,2,5,10,20,50,100},
+    flip_steps = {0, 1, 2, 5, 10, 20, 50, 100},
 }
 
 function ReaderPaging:init()
