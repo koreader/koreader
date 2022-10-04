@@ -95,7 +95,7 @@ end
 
 -- Based on menu.lua's MenuItem
 local ListMenuItem = InputContainer:extend{
-    entry = {},
+    entry = nil, -- hash, mandatory
     text = nil,
     show_parent = nil,
     detail = nil,
