@@ -456,11 +456,11 @@ function VirtualKey:invert(invert, hold)
     self:update_keyboard(hold, true)
 end
 
-VirtualKeyPopup = FocusManager:new{
+VirtualKeyPopup = FocusManager:extend{
     modal = true,
     disable_double_tap = true,
     inputbox = nil,
-    layout = {},
+    layout = nil, -- array
 }
 
 function VirtualKeyPopup:onTapClose(arg, ges)
@@ -489,6 +489,7 @@ function VirtualKeyPopup:init()
     local key_char_orig = key_chars[1]
     local key_char_orig_func = parent_key.callback
 
+    self.layout = {}
     local rows = {
         extra_key_chars = {
             key_chars[2],
@@ -731,16 +732,16 @@ local VirtualKeyboard = FocusManager:extend{
     modal = true,
     disable_double_tap = true,
     inputbox = nil,
-    KEYS = {}, -- table to store layouts
-    shiftmode_keys = {},
-    symbolmode_keys = {},
-    utf8mode_keys = {},
-    umlautmode_keys = {},
+    KEYS = nil, -- table to store layouts
+    shiftmode_keys = nil, -- table
+    symbolmode_keys = nil, -- table
+    utf8mode_keys = nil, -- table
+    umlautmode_keys = nil, -- table
     keyboard_layer = 2,
     shiftmode = false,
     symbolmode = false,
     umlautmode = false,
-    layout = {},
+    layout = nil, -- array
 
     height = nil,
     default_label_size = DEFAULT_LABEL_SIZE,
