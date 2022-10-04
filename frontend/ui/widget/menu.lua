@@ -425,7 +425,6 @@ function MenuItem:init()
 end
 
 local _dots_cached_info
-
 function MenuItem:getDotsText(face)
     local screen_w = Screen:getWidth()
     if not _dots_cached_info or _dots_cached_info.screen_width ~= screen_w
