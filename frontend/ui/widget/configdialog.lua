@@ -1398,7 +1398,7 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
     end
     -- generic fallback to support table values
     if type(display_value) == "table" then
-        display_value = serpent.block(display_value, { maxlevel = 6, indent = "  ", comment = false })
+        display_value = serpent.block(display_value, { maxlevel = 6, indent = "  ", comment = false, nocode = true })
     end
 
     UIManager:show(ConfirmBox:new{
@@ -1434,7 +1434,7 @@ function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, dir
 ]]),
         current_value[1], current_value[2])
     elseif type(current_value) == "table" then
-        display_value = serpent.block(current_value, { maxlevel = 6, indent = "  ", comment = false })
+        display_value = serpent.block(current_value, { maxlevel = 6, indent = "  ", comment = false, nocode = true })
     else
         display_value = current_value
     end
