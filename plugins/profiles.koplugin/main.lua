@@ -112,7 +112,7 @@ function Profiles:getSubMenuItems()
                 separator = true,
             },
             {
-                text = T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(v)),
+                text_func = function() return T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(v)) end,
                 sub_item_table = edit_actions_sub_items,
             },
             {
