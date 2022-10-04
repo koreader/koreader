@@ -1521,14 +1521,14 @@ function CreDocument:setupCallCache()
     ---        c.f., https://github.com/koreader/koreader/pull/7634#discussion_r627820424
     ---        Keep in mind that a *lot* of ReaderUI modules keep a ref to document, so it may be fairly remote!
     ---        A good contender for issues like these would be references being stored in the class object instead
-    ---        of an instance because of inheritance rules. c.f., https://github.com/koreader/koreader/pull/9586,
-    ---        which got rid of a giant leak of every ReaderUI modules via the active_wigets array...
+    ---        of in instance objects because of inheritance rules. c.f., https://github.com/koreader/koreader/pull/9586,
+    ---        which got rid of a giant leak of every ReaderUI module via the active_widgets array...
     ---        A simple testing methodology is to create a dummy buffer alongside self.buffer in drawCurrentView,
     ---        push it to the global cache via _callCacheSet, and trace the BlitBuffer gc method in ffi/blitbuffer.lua.
     ---        You'll probably want to stick a pair of collectgarbage() calls somewhere in the UI loop
     ---        (e.g., at the coda of UIManager:close) to trip a GC pass earlier than the one in DocumentRegistry:openDocument.
     ---        (Keep in mind that, in UIManager:close, widget is still in scope inside the function,
-    ---        so you'll have to close another widget to truly collect ReaderUI).
+    ---        so you'll have to close another widget to truly collect it (here, ReaderUI)).
     self._callCacheDestroy = function()
         self._global_call_cache = nil
         self._tag_list_call_cache = nil
