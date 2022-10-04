@@ -201,6 +201,7 @@ function MultiInputDialog:init()
 
 end
 
+--- Returns an array of our input field's *text* field.
 function MultiInputDialog:getFields()
     local fields = {}
     for i, field in ipairs(self.input_field) do
