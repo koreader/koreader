@@ -22,14 +22,14 @@ local API_UPLOAD_FILE = "https://content.dropboxapi.com/2/files/upload"
 local API_CREATE_FOLDER = "https://api.dropboxapi.com/2/files/create_folder_v2"
 local API_LIST_ADD_FOLDER = "https://api.dropboxapi.com/2/files/list_folder/continue"
 
-function DropBoxApi:getAccessToken(refresh_token, app_key_secret_b64)
+function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
     local sink = {}
     local data = "grant_type=refresh_token&refresh_token=" .. refresh_token
     local request = {
         url     = API_TOKEN,
         method  = "POST",
         headers = {
-            ["Authorization"] = "Basic " .. app_key_secret_b64,
+            ["Authorization"] = "Basic " .. require("ffi/sha2").bin_to_base64(app_key_colon_secret),
             ["Content-Type"] = "application/x-www-form-urlencoded",
             ["Content-Length"] = string.len(data),
         },
