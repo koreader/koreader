@@ -15,6 +15,7 @@ function LuaSettings:extend(o)
     self.__index = self
     return o
 end
+-- NOTE: Instances are created via open, so we do *NOT* implement a new method, to avoid confusion.
 
 --- Opens a settings file.
 function LuaSettings:open(file_path)
