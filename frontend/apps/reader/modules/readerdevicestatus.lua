@@ -200,7 +200,6 @@ High level threshold is checked when the device is charging.]]),
                         right_max = 100,
                         right_default = 100,
                         right_hold_step = 5,
-                        default_values = true,
                         unit = "%",
                         callback = function(left_value, right_value)
                             self.battery_threshold = left_value

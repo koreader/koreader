@@ -957,7 +957,6 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 right_max = 7200,
                                 right_step = 10,
                                 right_hold_step = 60,
-                                default_values = true,
                                 is_range = true,
                                 -- @translators This is the time unit for seconds.
                                 unit = C_("Time", "s"),

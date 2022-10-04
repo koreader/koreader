@@ -380,7 +380,6 @@ When the book's language tag is not among our presets, no specific features will
                 -- let room on the widget sides so we can see
                 -- the hyphenation changes happening
                 width_factor = 0.6,
-                default_values = true,
                 default_text = T(_("Language defaults: %1 / %2"), alg_left_hyphen_min, alg_right_hyphen_min),
                 title_text = _("Hyphenation limits"),
                 info_text = _([[

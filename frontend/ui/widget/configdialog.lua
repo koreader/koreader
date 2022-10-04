@@ -577,7 +577,15 @@ function ConfigOption:init()
                                 self.options[c].more_options_param.show_true_value_func = self.options[c].show_true_value_func
                             end
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
-                            self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
+                            local default_value_original
+                            if self.options[c].more_options_param.names then
+                                local option1 = self.config:findOptionByName(self.options[c].more_options_param.names[1])
+                                local option2 = self.config:findOptionByName(self.options[c].more_options_param.names[2])
+                                default_value_original = { option1.default_value, option2.default_value }
+                            else
+                                default_value_original = self.options[c].default_value
+                            end
+                            self.config:onConfigMoreChoose(self.options[c].values, default_value_original, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                             UIManager:tickAfterNext(function()
                                 Notification:resetNotifySource()
@@ -615,10 +623,18 @@ function ConfigOption:init()
                                 self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
-                            self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
+                            local default_value_original
+                            if self.options[c].more_options_param.names then
+                                local option1 = self.config:findOptionByName(self.options[c].more_options_param.names[1])
+                                local option2 = self.config:findOptionByName(self.options[c].more_options_param.names[2])
+                                default_value_original = { option1.default_value, option2.default_value }
+                            else
+                                default_value_original = self.options[c].default_value
+                            end
+                            self.config:onConfigMoreChoose(self.options[c].values, default_value_original, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                         else
-                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, arg, self.options[c].hide_on_apply)
                         end
@@ -1100,7 +1116,7 @@ end
 
 -- Tweaked variant used with the more options variant of buttonprogress and fine tune with numpicker
 -- events are not supported
-function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, more_options_param)
+function ConfigDialog:onConfigMoreChoose(values, default_value_orig, name, event, args, name_text, more_options_param)
     if not more_options_param then
         more_options_param = {}
     end
@@ -1150,15 +1166,20 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
             if more_options_param.left_min then -- DoubleSpinWidget
                 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                 -- (No support for value_table - add it if needed)
-                local curr_values, default_values
+                local curr_values, left_default, right_default
                 if more_options_param.names then -- allows managing 2 different settings
                     curr_values = { self.configurable[more_options_param.names[1]],
                                     self.configurable[more_options_param.names[2]] }
-                    default_values = { G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[1]),
-                                       G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[2]) }
+                    left_default = G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[1])
+                        or default_value_orig[1]
+                    right_default = G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[2])
+                        or default_value_orig[2]
                 else
                     curr_values = self.configurable[name]
-                    default_values = G_reader_settings:readSetting(self.config_options.prefix.."_"..name)
+                    local default_values = G_reader_settings:readSetting(self.config_options.prefix.."_"..name)
+                        or default_value_orig
+                    left_default = default_values[1]
+                    right_default = default_values[2]
                 end
                 widget = DoubleSpinWidget:new{
                     width_factor = more_options_param.widget_width_factor,
@@ -1176,9 +1197,8 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     right_max = more_options_param.right_max,
                     right_step = more_options_param.right_step,
                     right_hold_step = more_options_param.right_hold_step,
-                    default_values = true,
-                    left_default = default_values[1],
-                    right_default = default_values[2],
+                    left_default = left_default,
+                    right_default = right_default,
                     keep_shown_on_apply = true,
                     unit = more_options_param.unit,
                     precision = more_options_param.precision,
@@ -1256,6 +1276,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                 local curr_items = self.configurable[name]
                 local value_index
                 local default_value = G_reader_settings:readSetting(self.config_options.prefix.."_"..name)
+                    or default_value_orig
                 if more_options_param.value_table then
                     local table_shift = more_options_param.value_table_shift or 0
                     value_index = curr_items + table_shift
@@ -1341,7 +1362,16 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                         when_applied_callback = nil -- prevent bottom menu from being shown (before being hidden again)
                         widget:onClose()
                         local option = self:findOptionByName(more_options_param.other_button.other_option)
-                        self:onConfigMoreChoose(option.values, option.name, option.event, nil, option.name_text, option.more_options_param)
+                        local default_value_original
+                        if option.more_options_param.names then
+                            local option1 = self:findOptionByName(option.more_options_param.names[1])
+                            local option2 = self:findOptionByName(option.more_options_param.names[2])
+                            default_value_original = { option1.default_value, option2.default_value }
+                        else
+                            default_value_original = option.default_value
+                        end
+                        self:onConfigMoreChoose(option.values, default_value_original, option.name,
+                            option.event, nil, option.name_text, option.more_options_param)
                     end,
                 }
             end
