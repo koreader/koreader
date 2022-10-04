@@ -429,6 +429,11 @@ function Terminal:onClose()
     self:killShell()
 end
 
+-- Kill the shell on plugin teardown
+function Terminal:onCloseWidget()
+    self:killShell()
+end
+
 function Terminal:onTerminalStart(touchmenu_instance)
     self.touchmenu_instance = touchmenu_instance
 
