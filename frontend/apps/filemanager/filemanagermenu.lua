@@ -19,7 +19,7 @@ local T = FFIUtil.template
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
-    menu_items = {},
+    menu_items = nil, -- table, mandatory
     registered_widgets = nil,
 }
 

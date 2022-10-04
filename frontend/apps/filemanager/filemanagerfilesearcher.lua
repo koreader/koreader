@@ -18,9 +18,9 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local FileSearcher = WidgetContainer:extend{
-    dirs = {},
-    files = {},
-    results = {},
+    dirs = nil, -- table
+    files = nil, -- table
+    results = nil, -- table
 
     case_sensitive = false,
     include_subfolders = true,
@@ -31,6 +31,12 @@ local sys_folders = { -- do not search in sys_folders
     ["/proc"] = true,
     ["/sys"] = true,
 }
+
+function FileSearcher:init()
+    self.dirs = {}
+    self.files = {}
+    self.results = {}
+end
 
 function FileSearcher:readDir()
     local ReaderUI = require("apps/reader/readerui")
