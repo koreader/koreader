@@ -31,15 +31,7 @@ local ReaderView = OverlapGroup:extend{
     view_modules = nil, -- array
 
     -- single page state
-    state = {
-        page = nil,
-        pos = 0,
-        zoom = 1.0,
-        rotation = 0,
-        gamma = 1.0,
-        offset = nil,
-        bbox = nil,
-    },
+    state = nil, -- table
     outer_page_color = Blitbuffer.gray(G_defaults:readSetting("DOUTER_PAGE_COLOR") / 15),
     -- highlight with "lighten" or "underscore" or "strikeout" or "invert"
     highlight = {
@@ -69,7 +61,7 @@ local ReaderView = OverlapGroup:extend{
     render_mode = G_defaults:readSetting("DRENDER_MODE"), -- default to COLOR
     -- Crengine view mode
     view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE"), -- default to page mode
-    hinting = true,
+    hinting = nil,
 
     -- visible area within current viewing page
     visible_area = nil,
@@ -80,22 +72,35 @@ local ReaderView = OverlapGroup:extend{
     -- has footer
     footer_visible = nil,
     -- has dogear
-    dogear_visible = false,
+    dogear_visible = nil,
     -- in flipping state
-    flipping_visible = false,
+    flipping_visible = nil,
     -- to ensure periodic flush of settings
     settings_last_save_time = nil,
     -- might be directly updated by readerpaging/readerrolling when
     -- they handle some panning/scrolling, to request "fast" refreshes
-    currently_scrolling = false,
+    currently_scrolling = nil,
 }
 
 function ReaderView:init()
     self.view_modules = {}
 
+    self.state = {
+        page = nil,
+        pos = 0,
+        zoom = 1.0,
+        rotation = 0,
+        gamma = 1.0,
+        offset = nil,
+        bbox = nil,
+    }
+    self.hinting = true
     self.highlight.temp = {}
     self.highlight.saved = {}
     self.page_states = {}
+    self.dogear_visible = false
+    self.flipping_visible = false
+    self.currently_scrolling = false
 
     self:addWidgets()
     self.emitHintPageEvent = function()
@@ -1069,20 +1074,12 @@ function ReaderView:getRenderModeMenuTable()
 end
 
 function ReaderView:onCloseDocument()
-    self.hinting = false
-    -- stop any in fly HintPage event
+    -- stop any pending HintPage event
     UIManager:unschedule(self.emitHintPageEvent)
 
     -- Clear document-specific state
-    self.state.page = nil
-    self.state.offset = nil
-    self.state.bbox = nil
     self.highlight.temp = nil
     self.highlight.saved = nil
-    self.page_states = nil
-    self.visible_area = nil
-    self.page_area = nil
-    self.dim_area = nil
 end
 
 function ReaderView:onReaderReady()
