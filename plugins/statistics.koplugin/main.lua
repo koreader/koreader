@@ -71,7 +71,7 @@ local ReaderStatistics = Widget:extend{
     book_read_time = 0,
     avg_time = nil,
     page_stat = nil, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
-    date = nil, -- table
+    data = nil, -- table
 }
 
 local weekDays = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" } -- in Lua wday order
