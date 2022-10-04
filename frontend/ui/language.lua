@@ -31,6 +31,7 @@ local Language = {
         ro_MD = "Română (Moldova)",
         sk = "Slovenčina",
         sv = "Svenska",
+        th = "ภาษาไทย",
         vi = "Tiếng Việt",
         tr = "Türkçe",
         vi_VN = "Viet Nam",
