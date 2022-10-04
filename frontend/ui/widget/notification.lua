@@ -47,7 +47,7 @@ local Notification = InputContainer:extend{
     timeout = 2, -- default to 2 seconds
     toast = true, -- closed on any event, and let the event propagate to next top widget
 
-    _nums_shown = {}, -- array of stacked notifications
+    _nums_shown = {}, -- actual static class member, array of stacked notifications
 
     SOURCE_BOTTOM_MENU_ICON = SOURCE_BOTTOM_MENU_ICON,
     SOURCE_BOTTOM_MENU_TOGGLE = SOURCE_BOTTOM_MENU_TOGGLE,
