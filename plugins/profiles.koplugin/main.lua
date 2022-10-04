@@ -45,7 +45,7 @@ end
 
 local function dispatcherRegisterProfile(name)
     Dispatcher:registerAction("profile_exec_"..name,
-        {category="none", event="ProfileExecute", arg=name, title=T(_("Profile \u{F144} %1"), name), general=true})
+        {category="none", event="ProfileExecute", arg=name, title=T(_("Profile %1"), name), general=true})
 end
 
 local function dispatcherRemoveProfile(name)
