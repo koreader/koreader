@@ -18,6 +18,7 @@ require("ffi/posix_h")
 
 local function yes() return true end
 local function no() return false end
+local function NOP() return end
 
 local function koboEnableWifi(toggle)
     if toggle == true then
@@ -682,15 +683,15 @@ function Kobo:init()
     self.default_cpu_governor = getCPUGovernor(self.cpu_governor_knob)
     -- NOP unsupported methods
     if not self.default_cpu_governor then
-        self.performanceCPUGovernor = function() end
-        self.defaultCPUGovernor = function() end
+        self.performanceCPUGovernor = NOP
+        self.defaultCPUGovernor = NOP
     end
 
     -- And while we're on CPU-related endeavors...
     self.cpu_count = self:isSMP() and getCPUCount() or 1
     -- NOP unsupported methods
     if self.cpu_count == 1 then
-        self.enableCPUCores = function() end
+        self.enableCPUCores = NOP
     end
 
     -- Automagically set this so we never have to remember to do it manually ;p
@@ -769,14 +770,14 @@ function Kobo:init()
     -- See if the device supports key repeat
     if not self:getKeyRepeat() then
         -- NOP unsupported methods
-        self.disableKeyRepeat = function() end
-        self.restoreKeyRepeat = function() end
+        self.disableKeyRepeat = NOP
+        self.restoreKeyRepeat = NOP
     end
 
     -- NOP unsupported methods
     if not self:canToggleChargingLED() then
-        self.toggleChargingLED = function() end
-        self.setupChargingLED = function() end
+        self.toggleChargingLED = NOP
+        self.setupChargingLED = NOP
     end
 
     -- We have no way of querying the current state of the charging LED, so, start from scratch.
