@@ -642,7 +642,7 @@ function Menu:init()
     self.show_parent = self.show_parent or self
     self.item_table = self.item_table or {}
     self.item_table_stack = {}
-    self.dimen = Geom:new{ w = self.width, h = self.height or Screen:getHeight() }
+    self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height or Screen:getHeight() }
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end

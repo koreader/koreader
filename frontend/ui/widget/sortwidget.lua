@@ -34,7 +34,7 @@ local SortItemWidget = InputContainer:extend{
 }
 
 function SortItemWidget:init()
-    self.dimen = Geom:new{w = self.width, h = self.height}
+    self.dimen = Geom:new{x = 0, y = 0, w = self.width, h = self.height}
     self.ges_events.Tap = {
         GestureRange:new{
             ges = "tap",
@@ -135,6 +135,8 @@ function SortWidget:init()
     self.orig_item_table = nil
 
     self.dimen = Geom:new{
+        x = 0,
+        y = 0,
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }

@@ -103,7 +103,7 @@ end
 
 function BookMapRow:init()
     local _mirroredUI = BD.mirroredUILayout()
-    self.dimen = Geom:new{ w = self.width, h = self.height }
+    self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
 
     -- Keep one span_height under baseline (frame bottom border) for indicators (current page, bookmarks)
     self.pages_frame_height = self.height - self.span_height
@@ -539,6 +539,8 @@ function BookMapWidget:init()
 
     -- Compute non-settings-dependant sizes and options
     self.dimen = Geom:new{
+        x = 0,
+        y = 0,
         w = Screen:getWidth(),
         h = Screen:getHeight(),
     }

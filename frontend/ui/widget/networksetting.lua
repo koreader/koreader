@@ -110,7 +110,7 @@ local NetworkItem = InputContainer:extend{
 }
 
 function NetworkItem:init()
-    self.dimen = Geom:new{w = self.width, h = self.height}
+    self.dimen = Geom:new{x = 0, y = 0, w = self.width, h = self.height}
     if not self.info.ssid then
         self.info.ssid = "[hidden]"
     end

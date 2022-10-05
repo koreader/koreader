@@ -60,6 +60,8 @@ function PhysicalNumericKey:init()
         },
     }
     self.dimen = Geom:new{
+        x = 0,
+        y = 0,
         w = self.width,
         h = self.height,
     }
@@ -85,7 +87,7 @@ function PhysicalKeyboard:init()
         KeyPress = { { all_keys }, }
     }
 
-    self.dimen = Geom:new{ w = 0, h = 0 }
+    self.dimen = Geom:new{ x = 0, y = 0, w = 0, h = 0 }
 
     self:setType(self.inputbox.input_type)
 end
