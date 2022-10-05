@@ -232,6 +232,8 @@ local KoboDaylight = Kobo:extend{
 -- Kobo Aura H2O:
 local KoboDahlia = Kobo:extend{
     model = "Kobo_dahlia",
+    canToggleChargingLED = no,  -- Possibly weird interactions with Nickel
+    led_uses_channel_3 = true,
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
     -- There's no slot 0, the first finger gets assigned slot 1, and the second slot 2.
@@ -1242,6 +1244,7 @@ function Kobo:toggleChargingLED(toggle)
         logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
         return false
     end
+    -- Relying on LFs is mildly more elegant than spamming f:flush() calls ;).
     C.setlinebuf(f)
 
     -- c.f., strace -fittTvyy -e trace=ioctl,file,signal,ipc,desc -s 256 -o /tmp/nickel.log -p $(pidof -s nickel) &
