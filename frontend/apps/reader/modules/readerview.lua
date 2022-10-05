@@ -105,6 +105,9 @@ function ReaderView:init()
     self.emitHintPageEvent = function()
         self.ui:handleEvent(Event:new("HintPage", self.hinting))
     end
+
+    -- We've subclassed OverlapGroup, go through its init, because it does some funky stuff with self.dimen...
+    OverlapGroup.init(self)
 end
 
 function ReaderView:addWidgets()

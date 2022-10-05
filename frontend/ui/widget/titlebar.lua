@@ -379,8 +379,7 @@ function TitleBar:init()
         table.insert(self, self.right_button)
     end
 
-    -- We :extend() OverlapGroup and did not :new() it, so we can
-    -- :init() it now, after we have added all the subelements.
+    -- Call our parent's init (especially since OverlapGroup has very peculiar self.dimen semantics...)
     OverlapGroup.init(self)
 end
 

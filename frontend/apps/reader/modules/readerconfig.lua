@@ -20,7 +20,6 @@ function ReaderConfig:init()
     end
     self.configurable:loadDefaults(self.options)
 
-    if not self.dimen then self.dimen = Geom:new{} end
     if Device:hasKeys() then
         self.key_events = {
             ShowConfigMenu = { {{"Press","AA"}}, doc = "show config dialog" },
@@ -120,7 +119,6 @@ end
 
 function ReaderConfig:onShowConfigMenu()
     self.config_dialog = ConfigDialog:new{
-        dimen = self.dimen:copy(),
         document = self.document,
         ui = self.ui,
         configurable = self.configurable,
