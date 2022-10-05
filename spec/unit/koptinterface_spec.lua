@@ -127,7 +127,7 @@ describe("Koptinterface module", function()
         local word_boxes = Koptinterface:getWordFromPosition(complex_doc, {
             page = 19, x = 320, y = 730,
         })
-        assert.is.same("examples", word_boxes.word)
+        assert.is.same("of", word_boxes.word)
     end)
 
     it("should get link from native position", function()
@@ -142,7 +142,7 @@ describe("Koptinterface module", function()
     it("should get link from reflow position", function()
         paper_doc.configurable.text_wrap = 1
         local link = Koptinterface:getLinkFromPosition(paper_doc, 1, {
-            x = 500, y = 480,
+            x = 455, y = 1105,
         })
         assert.truthy(link)
         assert.is.same(20, link.page)
