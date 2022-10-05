@@ -1,7 +1,6 @@
 local ConfigDialog = require("ui/widget/configdialog")
 local Device = require("device")
 local Event = require("ui/event")
-local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local CreOptions = require("ui/data/creoptions")

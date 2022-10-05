@@ -50,9 +50,9 @@ function OverlapGroup:init()
         if self.dimen.h then
             self._size.h = self.dimen.h
         end
-    else
-        self.dimen = Geom:new{x = 0, y = 0, w = self._size.w, h = self._size.h}
     end
+    -- Regardless of what was passed to the constructor, make sure dimen is actually a Geom
+    self.dimen = Geom:new{x = 0, y = 0, w = self._size.w, h = self._size.h}
 end
 
 function OverlapGroup:paintTo(bb, x, y)

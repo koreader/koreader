@@ -379,7 +379,7 @@ function TitleBar:init()
         table.insert(self, self.right_button)
     end
 
-    -- Call our parent's init (especially since OverlapGroup has very peculiar self.dimen semantics...)
+    -- Call our base class's init (especially since OverlapGroup has very peculiar self.dimen semantics...)
     OverlapGroup.init(self)
 end
 
