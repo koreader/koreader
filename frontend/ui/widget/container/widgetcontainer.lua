@@ -18,21 +18,6 @@ local Widget = require("ui/widget/widget")
 
 local WidgetContainer = Widget:extend{}
 
-function WidgetContainer:init()
-    if self.dimen then
-        if self.initDimen then
-            self:initDimen()
-        else
-            if not self.dimen.w then
-                self.dimen.w = self[1]:getSize().w
-            end
-            if not self.dimen.h then
-                self.dimen.h = self[1]:getSize().h
-            end
-        end
-    end
-end
-
 function WidgetContainer:getSize()
     if self.dimen then
         -- fixed size
@@ -61,26 +46,33 @@ end
 
 function WidgetContainer:paintTo(bb, x, y)
     -- default to pass request to first child widget
-    if self[1] then
-        x = x + (self.dimen.x or 0)
-        y = y + (self.dimen.y or 0)
-        if self.align == "top" then
-            local contentSize = self[1]:getSize()
-            self[1]:paintTo(bb,
-                x + math.floor((self.dimen.w - contentSize.w)/2), y)
-        elseif self.align == "bottom" then
-            local contentSize = self[1]:getSize()
-            self[1]:paintTo(bb,
-                x + math.floor((self.dimen.w - contentSize.w)/2),
-                y + (self.dimen.h - contentSize.h))
-        elseif self.align == "center" then
-            local contentSize = self[1]:getSize()
-            self[1]:paintTo(bb,
-                x + math.floor((self.dimen.w - contentSize.w)/2),
-                y + math.floor((self.dimen.h - contentSize.h)/2))
-        else
-            return self[1]:paintTo(bb, x, y)
-        end
+    if self[1] == nil then
+        return
+    end
+
+    if not self.dimen then
+        local content_size = self[1]:getSize()
+        self.dimen = Geom:new{x = 0, y = 0, w = content_size.w, h = content_size.h}
+    end
+
+    x = x + (self.dimen.x or 0)
+    y = y + (self.dimen.y or 0)
+    if self.align == "top" then
+        local contentSize = self[1]:getSize()
+        self[1]:paintTo(bb,
+            x + math.floor((self.dimen.w - contentSize.w)/2), y)
+    elseif self.align == "bottom" then
+        local contentSize = self[1]:getSize()
+        self[1]:paintTo(bb,
+            x + math.floor((self.dimen.w - contentSize.w)/2),
+            y + (self.dimen.h - contentSize.h))
+    elseif self.align == "center" then
+        local contentSize = self[1]:getSize()
+        self[1]:paintTo(bb,
+            x + math.floor((self.dimen.w - contentSize.w)/2),
+            y + math.floor((self.dimen.h - contentSize.h)/2))
+    else
+        return self[1]:paintTo(bb, x, y)
     end
 end
 

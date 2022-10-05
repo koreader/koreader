@@ -3,6 +3,7 @@ A layout widget that puts objects above each other.
 --]]
 
 local BD = require("ui/bidi")
+local Geom = require("ui/geometry")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local OverlapGroup = WidgetContainer:extend{
@@ -36,18 +37,21 @@ function OverlapGroup:getSize()
     return self._size
 end
 
-function OverlapGroup:initDimen()
+-- NOTE: OverlapGroup is one of those special snowflakes that will compute self.dimen at init,
+--       instead of at paintTo...
+function OverlapGroup:init()
     self:getSize()  -- populate self._size
     -- sync self._size with self.dimen, self.dimen has higher priority
-    if self.dimen.w then
-        self._size.w = self.dimen.w
+    if self.dimen then
+        -- Jump through some extra hoops because this may not be a Geom...
+        if self.dimen.w then
+            self._size.w = self.dimen.w
+        end
+        if self.dimen.h then
+            self._size.h = self.dimen.h
+        end
     else
-        self.dimen.w = self._size.w
-    end
-    if self.dimen.h then
-        self._size.h = self.dimen.h
-    else
-        self.dimen.h = self._size.h
+        self.dimen = Geom:new{x = 0, y = 0, w = self._size.w, h = self._size.h}
     end
 end
 
