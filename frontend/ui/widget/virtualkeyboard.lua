@@ -804,7 +804,6 @@ function VirtualKeyboard:init()
         self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func
     end
     if Device:hasDPad() then
-        FocusManager.init(self)
         -- hadDPad() would have FocusManager handle arrow keys strokes to navigate
         -- and activate this VirtualKeyboard's touch keys (needed on non-touch Kindle).
         -- If we have a keyboard, we'd prefer arrow keys (and Enter, and Del) to be
