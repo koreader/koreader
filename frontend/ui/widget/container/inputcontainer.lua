@@ -39,6 +39,7 @@ local InputContainer = WidgetContainer:extend{
 }
 
 function InputContainer:_init()
+    -- These should be instance-specific
     if not self.key_events then
         self.key_events = {}
     end
