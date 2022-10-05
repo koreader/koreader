@@ -866,10 +866,12 @@ end
 
 function InputText:goToHome()
     self.text_widget:moveCursorToCharPos(1)
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:goToEnd()
     self.text_widget:moveCursorToCharPos(0)
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:moveCursorToCharPos(char_pos)
