@@ -20,6 +20,7 @@ function ReaderFlipping:init()
         widget,
     }
     self:resetLayout()
+    self.dimen = self:getSize()
 end
 
 function ReaderFlipping:resetLayout()
