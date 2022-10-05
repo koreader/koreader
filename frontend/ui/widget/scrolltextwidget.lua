@@ -233,6 +233,16 @@ function ScrollTextWidget:moveCursorDown()
     self:updateScrollBar()
 end
 
+function ScrollTextWidget:moveCursorHome()
+    self.text_widget:moveCursorHome()
+    self:updateScrollBar()
+end
+
+function ScrollTextWidget:moveCursorEnd()
+    self.text_widget:moveCursorEnd()
+    self:updateScrollBar()
+end
+
 function ScrollTextWidget:scrollDown()
     self.text_widget:scrollDown()
     self:updateScrollBar(true)

@@ -576,8 +576,7 @@ function InputText:onKeyPress(key)
         if key["Backspace"] then
             self:delChar()
         elseif key["Del"] then
-            self:rightChar()
-            self:delChar()
+            self:delNextChar()
         elseif key["Left"] then
             self:leftChar()
         elseif key["Right"] then
@@ -817,6 +816,16 @@ function InputText:delChar()
     self:initTextBox(table.concat(self.charlist))
 end
 
+function InputText:delNextChar()
+    if self.readonly or not self:isTextEditable(true) then
+        return
+    end
+    if self.charpos > #self.charlist then return end
+    self.is_text_edited = true
+    table.remove(self.charlist, self.charpos)
+    self:initTextBox(table.concat(self.charlist))
+end
+
 function InputText:delToStartOfLine()
     if self.readonly or not self:isTextEditable(true) then
         return
@@ -865,12 +874,12 @@ function InputText:goToEndOfLine()
 end
 
 function InputText:goToHome()
-    self.text_widget:moveCursorToCharPos(1)
+    self.text_widget:moveCursorHome()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:goToEnd()
-    self.text_widget:moveCursorToCharPos(0)
+    self.text_widget:moveCursorEnd()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
