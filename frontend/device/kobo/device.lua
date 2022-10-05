@@ -1235,12 +1235,14 @@ function Kobo:toggleChargingLED(toggle)
     --       In fact, Nickel itself doesn't provide this feature on said older devices
     --       (when it does, it's an option in the Energy saving settings),
     --       which is why we also limit ourselves to "true" on devices where this was tested.
+    --       FWIW, on older devices, the knob is at "/sys/devices/platform/pmic_light.1/lit".
     -- c.f., drivers/misc/ntx_misc_light.c
     local f = io.open("/sys/devices/platform/ntx_led/lit", "we")
     if not f then
         logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
         return false
     end
+    C.setlinebuf(f)
 
     -- c.f., strace -fittTvyy -e trace=ioctl,file,signal,ipc,desc -s 256 -o /tmp/nickel.log -p $(pidof -s nickel) &
     -- This was observed on a Forma, so I'm mildly hopeful that it's safe on other Mk. 7 devices ;).
@@ -1249,38 +1251,13 @@ function Kobo:toggleChargingLED(toggle)
         -- NOTE: Technically, Nickel forces a toggle off before that, too.
         --       But since we do that on startup, it shouldn't be necessary here...
         if self.led_uses_channel_3 then
-            f:write("ch 3")
-            f:flush()
-            f:write("cur 1")
-            f:flush()
-            f:write("dc 63")
-            f:flush()
+            f:write("ch 3\n", "cur 1\n", "dc 63\n")
         end
-        f:write("ch 4")
-        f:flush()
-        f:write("cur 1")
-        f:flush()
-        f:write("dc 63")
-        f:flush()
+        f:write("ch 4\n", "cur 1\n", "dc 63\n")
     else
-        f:write("ch 3")
-        f:flush()
-        f:write("cur 1")
-        f:flush()
-        f:write("dc 0")
-        f:flush()
-        f:write("ch 4")
-        f:flush()
-        f:write("cur 1")
-        f:flush()
-        f:write("dc 0")
-        f:flush()
-        f:write("ch 5")
-        f:flush()
-        f:write("cur 1")
-        f:flush()
-        f:write("dc 0")
-        f:flush()
+        for ch = 3, 5 do
+            f:write("ch " .. tostring(ch) .. "\n", "cur 1\n", "dc 0\n")
+        end
     end
 
     f:close()
