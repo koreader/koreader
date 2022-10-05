@@ -25,12 +25,12 @@ and to store that table as a configuration setting.
 ]]
 
 local DepGraph = require("depgraph")
+local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Device = require("device")
 local Screen = Device.screen
 local _ = require("gettext")
 
@@ -39,22 +39,12 @@ local InputContainer = WidgetContainer:extend{
 }
 
 function InputContainer:_init()
-    -- we need to do deep copy here
-    local new_key_events = {}
-    if self.key_events then
-        for k,v in pairs(self.key_events) do
-            new_key_events[k] = v
-        end
+    if not self.key_events then
+        self.key_events = {}
     end
-    self.key_events = new_key_events
-
-    local new_ges_events = {}
-    if self.ges_events then
-        for k,v in pairs(self.ges_events) do
-            new_ges_events[k] = v
-        end
+    if not self.ges_events then
+        self.ges_events = {}
     end
-    self.ges_events = new_ges_events
     self.touch_zone_dg = nil
     self._zones = {}
     self._ordered_touch_zones = {}
