@@ -174,7 +174,7 @@ local codecs = {
         writes_to_file = false,
 
         serialize = function(t)
-            local ok, str = serpent.dump(t)
+            local ok, str = pcall(serpent.dump, t)
             if not ok then
                 return nil, "cannot serialize " .. tostring(t) .. " (" .. str .. ")"
             end
