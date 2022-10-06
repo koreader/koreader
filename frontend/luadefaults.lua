@@ -46,11 +46,14 @@ function LuaDefaults:open(path)
 
     -- The actual defaults file, on the other hand, is set in stone.
     -- We just have to deal with some platform shenanigans...
-    local defaults_path = DataStorage:getDataDir() .. "/defaults.lua"
+    -- NOTE: On most platforms, $PWD should be our "install" folder, so look there first,
+    --       as DataDir may point elsewhere, and that elsewhere may not exist yet ;).
+    local defaults_path = "defaults.lua"
     if isAndroid then
         defaults_path = android.dir .. "/defaults.lua"
-    elseif os.getenv("APPIMAGE") then
-        defaults_path = "defaults.lua"
+    elseif not util.fileExists(defaults_path) then
+        -- You probably have bigger problems than this if we didn't find it in the install folder, but, oh, well ;).
+        defaults_path = DataStorage:getDataDir() .. "/defaults.lua"
     end
     ok, stored = pcall(dofile, defaults_path)
     if ok and stored then
