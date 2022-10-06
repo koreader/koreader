@@ -45,7 +45,7 @@ function WidgetContainer:clear(skip_free)
 end
 
 function WidgetContainer:paintTo(bb, x, y)
-    -- default to pass request to first child widget
+    -- Forward painting duties to our first child widget
     if self[1] == nil then
         return
     end
@@ -77,10 +77,10 @@ function WidgetContainer:paintTo(bb, x, y)
 end
 
 function WidgetContainer:propagateEvent(event)
-    -- propagate to children
+    -- Propagate to children
     for _, widget in ipairs(self) do
         if widget:handleEvent(event) then
-            -- stop propagating when an event handler returns true
+            -- Stop propagating when an event handler returns true
             return true
         end
     end
