@@ -2,7 +2,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
 
-local DjvuDocument = Document:new{
+local DjvuDocument = Document:extend{
     _document = false,
     -- libdjvulibre manages its own additional cache, default value is hard written in c module.
     is_djvu = true,

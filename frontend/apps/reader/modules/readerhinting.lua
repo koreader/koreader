@@ -2,9 +2,13 @@ local EventListener = require("ui/widget/eventlistener")
 
 local DHINTCOUNT = G_defaults:readSetting("DHINTCOUNT")
 
-local ReaderHinting = EventListener:new{
-    hinting_states = {}
+local ReaderHinting = EventListener:extend{
+    hinting_states = nil, -- array
 }
+
+function ReaderHinting:init()
+    self.hinting_states = {}
+end
 
 function ReaderHinting:onHintPage()
     if not self.view.hinting then return true end

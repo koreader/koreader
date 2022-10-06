@@ -23,6 +23,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Widget = require("ui/widget/widget")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Input = Device.input
 local Screen = Device.screen
 local logger = require("logger")
@@ -30,7 +31,7 @@ local util = require("util")
 local _ = require("gettext")
 
 -- BookMapRow (reused by PageBrowserWidget)
-local BookMapRow = InputContainer:new{
+local BookMapRow = WidgetContainer:extend{
     width = nil,
     height = nil,
     pages_frame_border = Size.border.default,
@@ -102,7 +103,7 @@ end
 
 function BookMapRow:init()
     local _mirroredUI = BD.mirroredUILayout()
-    self.dimen = Geom:new{ w = self.width, h = self.height }
+    self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
 
     -- Keep one span_height under baseline (frame bottom border) for indicators (current page, bookmarks)
     self.pages_frame_height = self.height - self.span_height
@@ -517,7 +518,7 @@ function BookMapRow:paintTo(bb, x, y)
 end
 
 -- BookMapWidget: shows a map of content, including TOC, boomarks, read pages, non-linear flows...
-local BookMapWidget = InputContainer:new{
+local BookMapWidget = InputContainer:extend{
     title = _("Book map"),
     -- Focus page: show the BookMapRow containing this page
     -- in the middle of screen
@@ -538,6 +539,8 @@ function BookMapWidget:init()
 
     -- Compute non-settings-dependant sizes and options
     self.dimen = Geom:new{
+        x = 0,
+        y = 0,
         w = Screen:getWidth(),
         h = Screen:getHeight(),
     }

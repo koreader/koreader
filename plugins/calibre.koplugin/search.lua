@@ -9,11 +9,11 @@ local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local Persist = require("persist")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
@@ -155,7 +155,8 @@ local function getBookInfo(book)
         size)
 end
 
-local CalibreSearch = InputContainer:new{
+-- This is a singleton
+local CalibreSearch = WidgetContainer:extend{
     books = {},
     libraries = {},
     last_scan = {},

@@ -120,7 +120,7 @@ local T = require("ffi/util").template
 local util = require("util")
 local _ = require("gettext")
 
-local InputDialog = FocusManager:new{
+local InputDialog = FocusManager:extend{
     is_always_active = true,
     title = "",
     input = "",

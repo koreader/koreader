@@ -26,7 +26,7 @@ local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local SortItemWidget = InputContainer:new{
+local SortItemWidget = InputContainer:extend{
     item = nil,
     face = Font:getFace("smallinfofont"),
     width = nil,
@@ -34,7 +34,7 @@ local SortItemWidget = InputContainer:new{
 }
 
 function SortItemWidget:init()
-    self.dimen = Geom:new{w = self.width, h = self.height}
+    self.dimen = Geom:new{x = 0, y = 0, w = self.width, h = self.height}
     self.ges_events.Tap = {
         GestureRange:new{
             ges = "tap",
@@ -116,7 +116,7 @@ function SortItemWidget:onHold()
     return true
 end
 
-local SortWidget = FocusManager:new{
+local SortWidget = FocusManager:extend{
     title = "",
     width = nil,
     height = nil,
@@ -135,6 +135,8 @@ function SortWidget:init()
     self.orig_item_table = nil
 
     self.dimen = Geom:new{
+        x = 0,
+        y = 0,
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }

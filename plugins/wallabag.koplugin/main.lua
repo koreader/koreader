@@ -37,7 +37,7 @@ local article_id_prefix = "[w-id_"
 local article_id_postfix = "] "
 local failed, skipped, downloaded = 1, 2, 3
 
-local Wallabag = WidgetContainer:new{
+local Wallabag = WidgetContainer:extend{
     name = "wallabag",
 }
 

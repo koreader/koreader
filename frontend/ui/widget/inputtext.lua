@@ -18,10 +18,10 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local Keyboard
-local FocusManagerInstance = FocusManager:new{}
+local Keyboard -- Conditional instantiation
+local FocusManagerInstance -- Delayed instantiation
 
-local InputText = InputContainer:new{
+local InputText = InputContainer:extend{
     text = "",
     hint = "demo hint",
     input_type = nil, -- "number" or anything else
@@ -576,8 +576,7 @@ function InputText:onKeyPress(key)
         if key["Backspace"] then
             self:delChar()
         elseif key["Del"] then
-            self:rightChar()
-            self:delChar()
+            self:delNextChar()
         elseif key["Left"] then
             self:leftChar()
         elseif key["Right"] then
@@ -616,6 +615,9 @@ function InputText:onKeyPress(key)
         -- FocusManager may turn on alternative key maps.
         -- These key map maybe single text keys.
         -- It will cause unexpected focus move instead of enter text to InputText
+        if not FocusManagerInstance then
+            FocusManagerInstance = FocusManager:new{}
+        end
         local is_alternative_key = FocusManagerInstance:isAlternativeKey(key)
         if not is_alternative_key and Device:isSDL() then
             -- SDL already insert char via TextInput event
@@ -814,6 +816,16 @@ function InputText:delChar()
     self:initTextBox(table.concat(self.charlist))
 end
 
+function InputText:delNextChar()
+    if self.readonly or not self:isTextEditable(true) then
+        return
+    end
+    if self.charpos > #self.charlist then return end
+    self.is_text_edited = true
+    table.remove(self.charlist, self.charpos)
+    self:initTextBox(table.concat(self.charlist))
+end
+
 function InputText:delToStartOfLine()
     if self.readonly or not self:isTextEditable(true) then
         return
@@ -862,11 +874,13 @@ function InputText:goToEndOfLine()
 end
 
 function InputText:goToHome()
-    self.text_widget:moveCursorToCharPos(1)
+    self.text_widget:moveCursorHome()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:goToEnd()
-    self.text_widget:moveCursorToCharPos(0)
+    self.text_widget:moveCursorEnd()
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:moveCursorToCharPos(char_pos)

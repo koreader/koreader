@@ -40,7 +40,6 @@ describe("Readerview module", function()
 
         readerui:onClose()
 
-        assert.is.falsy(readerui.view.hinting)
         for i = #UIManager._task_queue, 1, -1 do
             local task = UIManager._task_queue[i]
             if task.action == readerui.view.emitHintPageEvent then

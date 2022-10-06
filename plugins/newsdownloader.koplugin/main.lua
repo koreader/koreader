@@ -22,7 +22,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
-local NewsDownloader = WidgetContainer:new{
+local NewsDownloader = WidgetContainer:extend{
     name = "news_downloader",
     initialized = false,
     feed_config_file = "feed_config.lua",
@@ -41,7 +41,7 @@ local NewsDownloader = WidgetContainer:new{
         enable_filter = false,
         filter_element = ""
     },
-    kv = {}
+    kv = nil, -- KeyValuePage
 }
 
 local FEED_TYPE_RSS = "rss"

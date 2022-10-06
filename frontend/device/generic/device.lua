@@ -20,7 +20,6 @@ local Device = {
     charging_mode = false,
     survive_screen_saver = false,
     is_cover_closed = false,
-    should_restrict_JIT = false,
     model = nil,
     powerd = nil,
     screen = nil,
@@ -130,7 +129,7 @@ local Device = {
     canExternalDictLookup = no,
 }
 
-function Device:new(o)
+function Device:extend(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
@@ -159,7 +158,6 @@ function Device:invertButtons()
 end
 
 function Device:init()
-    assert(self ~= nil)
     if not self.screen then
         error("screen/framebuffer must be implemented")
     end

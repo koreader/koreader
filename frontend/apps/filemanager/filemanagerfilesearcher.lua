@@ -4,23 +4,23 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local BaseUtil = require("ffi/util")
 local Utf8Proc = require("ffi/utf8proc")
 local lfs = require("libs/libkoreader-lfs")
-local BaseUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
-local FileSearcher = InputContainer:new{
-    dirs = {},
-    files = {},
-    results = {},
+local FileSearcher = WidgetContainer:extend{
+    dirs = nil, -- table
+    files = nil, -- table
+    results = nil, -- table
 
     case_sensitive = false,
     include_subfolders = true,
@@ -31,6 +31,12 @@ local sys_folders = { -- do not search in sys_folders
     ["/proc"] = true,
     ["/sys"] = true,
 }
+
+function FileSearcher:init()
+    self.dirs = {}
+    self.files = {}
+    self.results = {}
+end
 
 function FileSearcher:readDir()
     local ReaderUI = require("apps/reader/readerui")

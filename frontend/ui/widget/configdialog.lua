@@ -35,7 +35,7 @@ local T = require("ffi/util").template
 
 local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 
-local OptionTextItem = InputContainer:new{}
+local OptionTextItem = InputContainer:extend{}
 
 function OptionTextItem:init()
     local text_widget = self[1]
@@ -110,7 +110,7 @@ function OptionTextItem:onHoldSelect()
     return true
 end
 
-local OptionIconItem = InputContainer:new{}
+local OptionIconItem = InputContainer:extend{}
 
 function OptionIconItem:init()
     self.underline_container = UnderlineContainer:new{
@@ -185,7 +185,7 @@ function OptionIconItem:onHoldSelect()
     return true
 end
 
-local ConfigOption = CenterContainer:new{}
+local ConfigOption = CenterContainer:extend{}
 
 function ConfigOption:init()
     -- make default styles
@@ -706,7 +706,7 @@ function ConfigOption:_itemGroupToLayoutLine(option_items_group)
     return layout_line
 end
 
-local ConfigPanel = FrameContainer:new{
+local ConfigPanel = FrameContainer:extend{
     background = Blitbuffer.COLOR_WHITE,
     bordersize = 0,
 }
@@ -724,7 +724,7 @@ function ConfigPanel:init()
     table.insert(self, panel)
 end
 
-local MenuBar = FrameContainer:new{
+local MenuBar = FrameContainer:extend{
     bordersize = 0,
     padding = 0,
     background = Blitbuffer.COLOR_WHITE,
@@ -860,7 +860,7 @@ Widget that displays config menubar and config panel
 
 --]]
 
-local ConfigDialog = FocusManager:new{
+local ConfigDialog = FocusManager:extend{
     --is_borderless = false,
     name = "ConfigDialog",
     panel_index = 1,

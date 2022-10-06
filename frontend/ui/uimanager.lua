@@ -16,7 +16,7 @@ local Screen = Device.screen
 
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
--- there is only one instance of this
+-- This is a singleton
 local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
     FULL_REFRESH_COUNT =
@@ -60,6 +60,7 @@ function UIManager:init()
     }
     self.poweroff_action = function()
         self._entered_poweroff_stage = true
+        logger.info("Powering off the device...")
         Device.orig_rotation_mode = Device.screen:getRotationMode()
         self:broadcastEvent(Event:new("Close"))
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
@@ -74,6 +75,7 @@ function UIManager:init()
     end
     self.reboot_action = function()
         self._entered_poweroff_stage = true
+        logger.info("Rebooting the device...")
         Device.orig_rotation_mode = Device.screen:getRotationMode()
         self:broadcastEvent(Event:new("Close"))
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)

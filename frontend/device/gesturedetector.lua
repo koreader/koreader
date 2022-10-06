@@ -63,6 +63,7 @@ local TWO_FINGER_TAP_DURATION_MS = 300
 local HOLD_INTERVAL_MS = 500
 local SWIPE_INTERVAL_MS = 900
 
+-- This is used as a singleton by Input (itself used as a singleton).
 local GestureDetector = {
     -- must be initialized with the Input singleton class
     input = nil,
@@ -73,7 +74,7 @@ local GestureDetector = {
     HOLD_INTERVAL_MS = HOLD_INTERVAL_MS,
     SWIPE_INTERVAL_MS = SWIPE_INTERVAL_MS,
     -- pinch/spread direction table
-    DIRECTION_TABLE = {
+    DIRECTION_TABLE = { -- const
         east = "horizontal",
         west = "horizontal",
         north = "vertical",

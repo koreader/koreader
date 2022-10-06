@@ -39,7 +39,7 @@ local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
 --[[
 TouchMenuItem widget
 --]]
-local TouchMenuItem = InputContainer:new{
+local TouchMenuItem = InputContainer:extend{
     menu = nil,
     vertical_align = "center",
     item = nil,
@@ -267,9 +267,9 @@ end
 --[[
 TouchMenuBar widget
 --]]
-local TouchMenuBar = InputContainer:new{
+local TouchMenuBar = InputContainer:extend{
     width = Screen:getWidth(),
-    icons = {},
+    icons = nil, -- array, mandatory
     -- touch menu that holds the bar, used for trigger repaint on icons
     show_parent = nil,
     menu = nil,
@@ -423,7 +423,7 @@ function TouchMenuBar:init()
             self.bar_sep
         },
     }
-    self.dimen = Geom:new{ w = self.width, h = self.height }
+    self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
 end
 
 function TouchMenuBar:switchToTab(index)
@@ -443,7 +443,7 @@ end
 --[[
 TouchMenu widget for hierarchical menus
 --]]
-local TouchMenu = FocusManager:new{
+local TouchMenu = FocusManager:extend{
     tab_item_table = nil, -- mandatory
     -- for returning in multi-level menus
     item_table_stack = nil,

@@ -112,7 +112,7 @@ body > section > title {
 -- body { background-color: #eeeeee; }
 
 -- Widget to display footnote HTML content
-local FootnoteWidget = InputContainer:new{
+local FootnoteWidget = InputContainer:extend{
     html = nil,
     css = nil,
     -- font_face can't really be overriden, it needs to be known by MuPDF
@@ -121,7 +121,7 @@ local FootnoteWidget = InputContainer:new{
     -- (already scaled) sizes in screen pixels
     doc_font_size = Screen:scaleBySize(18),
     doc_font_name = nil,
-    doc_margins = {
+    doc_margins = { -- const
         left = Screen:scaleBySize(20),
         right = Screen:scaleBySize(20),
         top = Screen:scaleBySize(10),

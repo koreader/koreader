@@ -20,8 +20,7 @@ local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
-local ReaderHighlight = InputContainer:new{
-}
+local ReaderHighlight = InputContainer:extend{}
 
 local function inside_box(pos, box)
     if pos then

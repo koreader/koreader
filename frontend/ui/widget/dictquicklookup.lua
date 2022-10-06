@@ -36,7 +36,7 @@ local time = require("ui/time")
 --[[
 Display quick lookup word definition
 ]]
-local DictQuickLookup = InputContainer:new{
+local DictQuickLookup = InputContainer:extend{
     results = nil,
     lookupword = nil,
     dictionary = nil,

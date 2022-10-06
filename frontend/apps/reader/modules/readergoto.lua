@@ -1,13 +1,12 @@
 local Event = require("ui/event")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local SkimToWidget = require("ui/widget/skimtowidget")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local ReaderGoto = InputContainer:new{
-}
+local ReaderGoto = WidgetContainer:extend{}
 
 function ReaderGoto:init()
     self.ui.menu:registerToMainMenu(self)

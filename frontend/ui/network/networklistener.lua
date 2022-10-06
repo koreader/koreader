@@ -1,15 +1,15 @@
 local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
+local EventListener = require("ui/widget/eventlistener")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local NetworkListener = InputContainer:new{}
+local NetworkListener = EventListener:extend{}
 
 function NetworkListener:onToggleWifi()
     if not NetworkMgr:isWifiOn() then

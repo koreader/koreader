@@ -9,7 +9,7 @@ require("ffi/linux_input_h")
 local function yes() return true end
 local function no() return false end
 
-local SonyPRSTUX = Generic:new{
+local SonyPRSTUX = Generic:extend{
     model = "Sony PRSTUX",
     isSonyPRSTUX = yes,
     hasKeys = yes,
@@ -239,7 +239,7 @@ function SonyPRSTUX:setEventHandlers(UIManager)
 end
 
 -- For Sony PRS-T2
-local SonyPRSTUX_T2 = SonyPRSTUX:new{
+local SonyPRSTUX_T2 = SonyPRSTUX:extend{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = no,

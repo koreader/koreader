@@ -1,10 +1,10 @@
 local Geom = require("ui/geometry")
 local IconWidget = require("ui/widget/iconwidget")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = require("device").screen
 
-local ReaderFlipping = InputContainer:new{
+local ReaderFlipping = WidgetContainer:extend{
     orig_reflow_mode = 0,
 }
 

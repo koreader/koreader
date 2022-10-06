@@ -21,11 +21,10 @@ local SetDefaultsWidget = CenterContainer:extend{
 }
 
 function SetDefaultsWidget:init()
-    -- We're a CenterContainer, so handle our own stuff first
+    -- This would usually be passed to the constructor, as CenterContainer's paintTo does *NOT* set/update self.dimen...
     self.dimen = Screen:getSize()
     -- Don't refresh the FM behind us. May leave stray bits of overflowed InputDialog behind in the popout border space.
     self.covers_fullscreen = true
-    CenterContainer.init(self)
 
     -- Then deal with our child widgets and our internal variables
     self.screen_width = Screen:getWidth()

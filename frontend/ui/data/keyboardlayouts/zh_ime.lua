@@ -48,7 +48,7 @@ end
 
 local _stack
 local IME = {
-    code_map = {},
+    code_map = nil, -- hash, mandatory
     key_map = nil, -- input key to code map
     keys_string = "abcdefghijklmnopqrstuvwxyz",
     iter_map = nil, -- next code when using wildcard

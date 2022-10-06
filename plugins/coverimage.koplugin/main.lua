@@ -62,7 +62,7 @@ local function getExtension(filename)
     return util.getFileNameSuffix(name):lower()
 end
 
-local CoverImage = WidgetContainer:new{
+local CoverImage = WidgetContainer:extend{
     name = "coverimage",
     is_doc_only = true,
 }

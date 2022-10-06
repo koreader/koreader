@@ -11,7 +11,7 @@ local isAndroid, android = pcall(require, "android")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
-local LuaDefaults = LuaSettings:new{
+local LuaDefaults = LuaSettings:extend{
     ro = nil, -- will contain the defaults.lua k/v pairs (const)
     rw = nil, -- will only contain non-defaults user-modified k/v pairs
 }
@@ -19,7 +19,9 @@ local LuaDefaults = LuaSettings:new{
 --- Opens a settings file.
 function LuaDefaults:open(path)
     local file_path = path or DataStorage:getDataDir() .. "/defaults.custom.lua"
-    local new = {file = file_path}
+    local new = LuaDefaults:extend{
+        file = file_path,
+    }
     local ok, stored
 
     -- File being absent and returning an empty table is a use case,
@@ -57,7 +59,7 @@ function LuaDefaults:open(path)
         error("Failed reading " .. defaults_path)
     end
 
-    return setmetatable(new, {__index = LuaDefaults})
+    return new
 end
 
 --- Reads a setting, optionally initializing it to a default.
@@ -161,11 +163,10 @@ function LuaDefaults:flush()
     if not self.file then return end
     local directory_updated = false
     if lfs.attributes(self.file, "mode") == "file" then
-        -- As an additional safety measure (to the ffiutil.fsync* calls
-        -- used below), we only backup the file to .old when it has
-        -- not been modified in the last 60 seconds. This should ensure
-        -- in the case the fsync calls are not supported that the OS
-        -- may have itself sync'ed that file content in the meantime.
+        -- As an additional safety measure (to the ffiutil.fsync* calls used below),
+        -- we only backup the file to .old when it has not been modified in the last 60 seconds.
+        -- This should ensure in the case the fsync calls are not supported
+        -- that the OS may have itself sync'ed that file content in the meantime.
         local mtime = lfs.attributes(self.file, "modification")
         if mtime < os.time() - 60 then
             os.rename(self.file, self.file .. ".old")

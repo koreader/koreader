@@ -28,28 +28,13 @@ local T = require("ffi/util").template
 
 local ReaderView = OverlapGroup:extend{
     document = nil,
+    view_modules = nil, -- array
 
     -- single page state
-    state = {
-        page = nil,
-        pos = 0,
-        zoom = 1.0,
-        rotation = 0,
-        gamma = 1.0,
-        offset = nil,
-        bbox = nil,
-    },
+    state = nil, -- table
     outer_page_color = Blitbuffer.gray(G_defaults:readSetting("DOUTER_PAGE_COLOR") / 15),
     -- highlight with "lighten" or "underscore" or "strikeout" or "invert"
-    highlight = {
-        lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
-        note_mark = G_reader_settings:readSetting("highlight_note_marker"),
-        temp_drawer = "invert",
-        temp = {},
-        saved_drawer = "lighten",
-        saved = {},
-        indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
-    },
+    highlight = nil, -- table
     highlight_visible = true,
     note_mark_line_w = 3, -- side line thickness
     note_mark_sign = nil,
@@ -58,12 +43,9 @@ local ReaderView = OverlapGroup:extend{
     -- PDF/DjVu continuous paging
     page_scroll = nil,
     page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") / 15),
-    page_states = {},
+    page_states = nil, -- table
     -- properties of the gap drawn between each page in scroll mode:
-    page_gap = {
-        -- color (0 = white, 8 = gray, 15 = black)
-        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) / 15),
-    },
+    page_gap = nil, -- table
     -- DjVu page rendering mode (used in djvu.c:drawPage())
     render_mode = G_defaults:readSetting("DRENDER_MODE"), -- default to COLOR
     -- Crengine view mode
@@ -91,10 +73,30 @@ local ReaderView = OverlapGroup:extend{
 
 function ReaderView:init()
     self.view_modules = {}
-    -- fix recalculate from close document pageno
-    self.state.page = nil
 
-    -- Reset the various areas across documents
+    self.state = {
+        page = nil,
+        pos = 0,
+        zoom = 1.0,
+        rotation = 0,
+        gamma = 1.0,
+        offset = nil,
+        bbox = nil,
+    }
+    self.highlight = {
+        lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
+        note_mark = G_reader_settings:readSetting("highlight_note_marker"),
+        temp_drawer = "invert",
+        temp = {},
+        saved_drawer = "lighten",
+        saved = {},
+        indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
+    }
+    self.page_states = {}
+    self.page_gap = {
+        -- color (0 = white, 8 = gray, 15 = black)
+        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) / 15),
+    }
     self.visible_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
     self.page_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
     self.dim_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
@@ -103,6 +105,9 @@ function ReaderView:init()
     self.emitHintPageEvent = function()
         self.ui:handleEvent(Event:new("HintPage", self.hinting))
     end
+
+    -- We've subclassed OverlapGroup, go through its init, because it does some funky stuff with self.dimen...
+    OverlapGroup.init(self)
 end
 
 function ReaderView:addWidgets()
@@ -1071,8 +1076,7 @@ function ReaderView:getRenderModeMenuTable()
 end
 
 function ReaderView:onCloseDocument()
-    self.hinting = false
-    -- stop any in fly HintPage event
+    -- stop any pending HintPage event
     UIManager:unschedule(self.emitHintPageEvent)
 end
 

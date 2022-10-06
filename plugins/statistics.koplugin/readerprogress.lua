@@ -25,7 +25,8 @@ local Screen = Device.screen
 local LINE_COLOR = Blitbuffer.COLOR_WEB_GRAY
 local BG_COLOR = Blitbuffer.COLOR_LIGHT_GRAY
 
-local ReaderProgress = InputContainer:new{
+-- Oh, hey, this one actually *is* an InputContainer!
+local ReaderProgress = InputContainer:extend{
     padding = Size.padding.fullscreen,
 }
 

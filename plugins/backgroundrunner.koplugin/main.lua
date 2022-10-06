@@ -115,7 +115,6 @@ function BackgroundRunner:_shouldRepeat(job)
 end
 
 function BackgroundRunner:_finishJob(job)
-    assert(self ~= nil)
     if type(job.executable) == "function" then
         local time_diff = job.end_time - job.start_time
         local threshold = time.s(1)
@@ -159,7 +158,6 @@ end
 
 --- Polls the status of the pending CommandRunner.
 function BackgroundRunner:_poll()
-    assert(self ~= nil)
     assert(CommandRunner:pending())
     local result = CommandRunner:poll()
     if result == nil then return end
@@ -169,7 +167,6 @@ end
 
 function BackgroundRunner:_execute()
     logger.dbg("BackgroundRunner: _execute() @ ", os.time())
-    assert(self ~= nil)
     if CommandRunner:pending() then
         self:_poll()
     else
@@ -236,7 +233,6 @@ function BackgroundRunner:_execute()
 end
 
 function BackgroundRunner:_schedule()
-    assert(self ~= nil)
     if self.running == false then
         if #self.jobs == 0 and not CommandRunner:pending() then
             logger.dbg("BackgroundRunnerWidget: no job, not running @ ", os.time())
@@ -252,14 +248,13 @@ function BackgroundRunner:_schedule()
 end
 
 function BackgroundRunner:_insert(job)
-    assert(self ~= nil)
     job.insert_time = UIManager:getTime()
     table.insert(self.jobs, job)
 end
 
 BackgroundRunner:_schedule()
 
-local BackgroundRunnerWidget = WidgetContainer:new{
+local BackgroundRunnerWidget = WidgetContainer:extend{
     name = "backgroundrunner",
     runner = BackgroundRunner,
 }

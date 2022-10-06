@@ -10,11 +10,11 @@ local CalibreSearch = require("search")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local FFIUtil = require("ffi/util")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
@@ -55,7 +55,7 @@ local function updateDir(dir)
     end
 end
 
-local CalibreWireless = InputContainer:new{
+local CalibreWireless = WidgetContainer:extend{
     id = "KOReader",
     model = require("device").model,
     version = require("version"):getCurrentRevision(),
@@ -85,10 +85,11 @@ local CalibreWireless = InputContainer:new{
         SET_CALIBRE_DEVICE_NAME   = 2,
         TOTAL_SPACE               = 4,
     },
-    calibre = {},
+    calibre = nil, -- hash
 }
 
 function CalibreWireless:init()
+    self.calibre = {}
     -- reversed operator codes and names dictionary
     self.opnames = {}
     for name, code in pairs(self.opcodes) do

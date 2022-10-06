@@ -18,7 +18,7 @@ local time = require("ui/time")
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
 
-local CreDocument = Document:new{
+local CreDocument = Document:extend{
     -- this is defined in kpvcrlib/crengine/crengine/include/lvdocview.h
     SCROLL_VIEW_MODE = 0,
     PAGE_VIEW_MODE = 1,
@@ -49,7 +49,7 @@ local CreDocument = Document:new{
     --   require one to set FreeSans as fallback to get its nicer glyphes, which
     --   would override Noto Sans CJK good symbol glyphs with smaller ones
     --   (Noto Sans & Serif do not have these symbol glyphs).
-    fallback_fonts = {
+    fallback_fonts = { -- const
         "Noto Sans CJK SC",
         "Noto Naskh Arabic",
         "Noto Sans Devanagari UI",
@@ -65,8 +65,8 @@ local CreDocument = Document:new{
     provider_name = "Cool Reader Engine",
 
     hide_nonlinear_flows = false,
-    flows = {},
-    page_in_flow = {},
+    flows = nil, -- table
+    page_in_flow = nil, -- table
     last_linear_page = nil,
 }
 
@@ -146,6 +146,9 @@ end
 function CreDocument:init()
     self:updateColorRendering()
     self:engineInit()
+
+    self.flows = {}
+    self.page_in_flow = {}
 
     local file_type = string.lower(string.match(self.file, ".+%.([^.]+)"))
     if file_type == "zip" then
@@ -331,9 +334,11 @@ function CreDocument:close()
         end
 
         -- Only exists if the call cache is enabled
+        --[[
         if self._callCacheDestroy then
             self._callCacheDestroy()
         end
+        --]]
     end
 end
 
@@ -1510,14 +1515,27 @@ function CreDocument:setupCallCache()
         -- Stores the key for said current tag
         self._current_call_cache_tag = nil
     end
+    --[[
+    --- @note: If explicitly destroying the references to the caches is necessary to get their content collected by the GC,
+    ---        then you have a ref leak to this Document instance somewhere,
+    ---        c.f., https://github.com/koreader/koreader/pull/7634#discussion_r627820424
+    ---        Keep in mind that a *lot* of ReaderUI modules keep a ref to document, so it may be fairly remote!
+    ---        A good contender for issues like these would be references being stored in the class object instead
+    ---        of in instance objects because of inheritance rules. c.f., https://github.com/koreader/koreader/pull/9586,
+    ---        which got rid of a giant leak of every ReaderUI module via the active_widgets array...
+    ---        A simple testing methodology is to create a dummy buffer alongside self.buffer in drawCurrentView,
+    ---        push it to the global cache via _callCacheSet, and trace the BlitBuffer gc method in ffi/blitbuffer.lua.
+    ---        You'll probably want to stick a pair of collectgarbage() calls somewhere in the UI loop
+    ---        (e.g., at the coda of UIManager:close) to trip a GC pass earlier than the one in DocumentRegistry:openDocument.
+    ---        (Keep in mind that, in UIManager:close, widget is still in scope inside the function,
+    ---        so you'll have to close another widget to truly collect it (here, ReaderUI)).
     self._callCacheDestroy = function()
-        --- @note: Explicitly destroying the references to the caches is apparently necessary to get their content collected by the GC...
-        ---        c.f., https://github.com/koreader/koreader/pull/7634#discussion_r627820424
         self._global_call_cache = nil
         self._tag_list_call_cache = nil
         self._tag_call_cache = nil
         self._current_call_cache_tag = nil
     end
+    --]]
     -- global cache
     self._callCacheGet = function(key)
         return self._global_call_cache[key]

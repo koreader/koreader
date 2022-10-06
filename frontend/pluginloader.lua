@@ -89,7 +89,7 @@ function PluginLoader:loadPlugins()
     if type(plugins_disabled) ~= "table" then
         plugins_disabled = {}
     end
-    --disable obsolete plugins
+    -- disable obsolete plugins
     for element in pairs(OBSOLETE_PLUGINS) do
         plugins_disabled[element] = true
     end

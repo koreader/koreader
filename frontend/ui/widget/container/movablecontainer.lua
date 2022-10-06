@@ -23,7 +23,7 @@ local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local logger = require("logger")
 
-local MovableContainer = InputContainer:new{
+local MovableContainer = InputContainer:extend{
     -- Alpha value for subwidget transparency
     -- 0 = fully invisible, 1 = fully opaque (0.6 / 0.7 / 0.8 are some interesting values)
     alpha = nil,
@@ -106,7 +106,7 @@ function MovableContainer:paintTo(bb, x, y)
 
     local content_size = self[1]:getSize()
     if not self.dimen then
-        self.dimen = Geom:new{w = content_size.w, h = content_size.h}
+        self.dimen = Geom:new{x = 0, y = 0, w = content_size.w, h = content_size.h}
     end
 
     self._orig_x = x

@@ -12,7 +12,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local dbg = require("dbg")
 local Screen = Device.screen
 
-local RadioButtonTable = FocusManager:new{
+local RadioButtonTable = FocusManager:extend{
     width = Screen:getWidth(),
     radio_buttons = {
         {

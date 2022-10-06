@@ -1,5 +1,5 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local BookInfoManager = require("bookinfomanager")
@@ -45,7 +45,7 @@ local history_display_mode = false -- not initialized yet
 local collection_display_mode = false -- not initialized yet
 local series_mode = nil -- defaults to not display series
 
-local CoverBrowser = InputContainer:new{
+local CoverBrowser = WidgetContainer:extend{
     name = "coverbrowser",
 }
 

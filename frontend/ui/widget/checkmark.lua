@@ -17,11 +17,11 @@ Example:
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Font = require("ui/font")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local TextWidget = require("ui/widget/textwidget")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local CheckMark = InputContainer:new{
+local CheckMark = WidgetContainer:extend{
     checkable = true,
     checked = false,
     enabled = true,

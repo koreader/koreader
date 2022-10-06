@@ -21,7 +21,7 @@ WakeupMgr base class.
 --]]
 local WakeupMgr = {
     dev_rtc = "/dev/rtc0", -- RTC device
-    _task_queue = {},      -- Table with epoch at which to schedule the task and the function to be scheduled.
+    _task_queue = nil,      -- Table with epoch at which to schedule the task and the function to be scheduled.
     rtc = RTC, -- The RTC implementation to use, defaults to the RTC module.
     dodgy_rtc = false, -- If the RTC has trouble with timers further away than UINT16_MAX (e.g., on i.MX5).
 }
@@ -43,6 +43,10 @@ function WakeupMgr:new(o)
     self.__index = self
     if o.init then o:init() end
     return o
+end
+
+function WakeupMgr:init()
+    self._task_queue = {}
 end
 
 -- This is a dummy task we use when working around i.MX5 RTC issues.

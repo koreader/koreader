@@ -340,6 +340,8 @@ function TitleBar:init()
     end
 
     self.dimen = Geom:new{
+        x = 0,
+        y = 0,
         w = self.width,
         h = self.titlebar_height, -- buttons can overflow this
     }
@@ -379,8 +381,7 @@ function TitleBar:init()
         table.insert(self, self.right_button)
     end
 
-    -- We :extend() OverlapGroup and did not :new() it, so we can
-    -- :init() it now, after we have added all the subelements.
+    -- Call our base class's init (especially since OverlapGroup has very peculiar self.dimen semantics...)
     OverlapGroup.init(self)
 end
 

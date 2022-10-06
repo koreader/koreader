@@ -27,7 +27,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 
-local CheckButton = InputContainer:new{
+local CheckButton = InputContainer:extend{
     callback = nil,
     hold_callback = nil,
     checkable = true, -- empty space when false

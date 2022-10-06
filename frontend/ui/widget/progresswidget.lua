@@ -34,7 +34,7 @@ local Geom = require("ui/geometry")
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
 
-local ProgressWidget = Widget:new{
+local ProgressWidget = Widget:extend{
     width = nil,
     height = nil,
     margin_h = Screen:scaleBySize(3),

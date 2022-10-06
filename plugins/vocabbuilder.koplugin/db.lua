@@ -99,7 +99,7 @@ end
 function VocabularyBuilder:insertLookupData(db_conn)
     local file_path = DataStorage:getSettingsDir() .. "/lookup_history.lua"
 
-    local lookup_history = LuaData:open(file_path, { name = "LookupHistory" })
+    local lookup_history = LuaData:open(file_path, "LookupHistory")
     if lookup_history:has("lookup_history") then
         local lookup_history_table = lookup_history:readSetting("lookup_history")
         local book_titles = {}

@@ -2,13 +2,13 @@ local BD = require("ui/bidi")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local IconWidget = require("ui/widget/iconwidget")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = Device.screen
 
-local ReaderDogear = InputContainer:new{}
+local ReaderDogear = WidgetContainer:extend{}
 
 function ReaderDogear:init()
     -- This image could be scaled for DPI (with scale_for_dpi=true, scale_factor=0.7),

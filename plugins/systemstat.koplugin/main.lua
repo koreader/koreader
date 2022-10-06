@@ -291,7 +291,7 @@ end
 
 SystemStat:init()
 
-local SystemStatWidget = WidgetContainer:new{
+local SystemStatWidget = WidgetContainer:extend{
     name = "systemstat",
 }
 

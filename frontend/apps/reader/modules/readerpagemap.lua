@@ -6,18 +6,18 @@ local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local ReaderPageMap = InputContainer:new{
+local ReaderPageMap = WidgetContainer:extend{
     label_font_face = "ffont",
     label_default_font_size = 14,
     -- Black so it's readable (and non-gray-flashing on GloHD)

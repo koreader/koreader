@@ -21,8 +21,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = ffiutil.template
 
-local ReaderLink = InputContainer:new{
-    location_stack = {}
+local ReaderLink = InputContainer:extend{
+    location_stack = nil, -- table, per-instance
 }
 
 function ReaderLink:init()
@@ -154,7 +154,7 @@ function ReaderLink:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.go_to_previous_location = {
         text = _("Go back to previous location"),
-        enabled_func = function() return #self.location_stack > 0 end,
+        enabled_func = function() return self.location_stack and #self.location_stack > 0 end,
         callback = function() self:onGoBackLink() end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{

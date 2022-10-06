@@ -48,7 +48,7 @@ local ImageCache = Cache:new{
     enable_eviction_cb = false,
 }
 
-local ImageWidget = Widget:new{
+local ImageWidget = Widget:extend{
     -- Can be provided with a path to a file
     file = nil,
     -- or an already made BlitBuffer (ie: made by RenderImage)

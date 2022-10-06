@@ -70,19 +70,8 @@ local ReaderStatistics = Widget:extend{
     book_read_pages = 0,
     book_read_time = 0,
     avg_time = nil,
-    page_stat = {}, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
-    data = {
-        title = "",
-        authors = "N/A",
-        language = "N/A",
-        series = "N/A",
-        performance_in_pages = {},
-        total_time_in_sec = 0,
-        highlights = 0,
-        notes = 0,
-        pages = 0,
-        md5 = nil,
-    },
+    page_stat = nil, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
+    data = nil, -- table
 }
 
 local weekDays = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" } -- in Lua wday order
@@ -149,6 +138,20 @@ function ReaderStatistics:init()
     if self.ui and self.ui.document and self.ui.document.is_pic then
         return
     end
+
+    -- Placeholder until onReaderReady
+    self.data = {
+        title = "",
+        authors = "N/A",
+        language = "N/A",
+        series = "N/A",
+        performance_in_pages = {},
+        total_time_in_sec = 0,
+        highlights = 0,
+        notes = 0,
+        pages = 0,
+        md5 = nil,
+    }
 
     self.start_current_period = os.time()
     self:resetVolatileStats()

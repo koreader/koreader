@@ -16,7 +16,7 @@ local T = require("ffi/util").template
 -- and some `if NORM then` branches can be simplified.
 local NORM = false
 
-local ReaderUserHyph = WidgetContainer:new{
+local ReaderUserHyph = WidgetContainer:extend{
     -- return values from setUserHyphenationDict (crengine's UserHyphDict::init())
     USER_DICT_RELOAD = 0,
     USER_DICT_NOCHANGE = 1,

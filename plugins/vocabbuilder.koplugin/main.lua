@@ -137,7 +137,7 @@ end
 --[[--
 Menu dialogue widget
 --]]--
-local MenuDialog = FocusManager:new{
+local MenuDialog = FocusManager:extend{
     padding = Size.padding.large,
     is_edit_mode = false,
     edit_callback = nil,
@@ -381,7 +381,7 @@ end
 --[[--
 Individual word info dialogue widget
 --]]--
-local WordInfoDialog = InputContainer:new{
+local WordInfoDialog = InputContainer:extend{
     title = nil,
     book_title = nil,
     dates = nil,
@@ -594,7 +594,7 @@ local point_widget = TextWidget:new{
 --[[--
 Individual word item widget
 --]]--
-local VocabItemWidget = InputContainer:new{
+local VocabItemWidget = InputContainer:extend{
     face = Font:getFace("smallinfofont"),
     width = nil,
     height = nil,
@@ -985,7 +985,7 @@ end
 --[[--
 Container widget. Same as sortwidget
 --]]--
-local VocabularyBuilderWidget = FocusManager:new{
+local VocabularyBuilderWidget = FocusManager:extend{
     title = "",
     width = nil,
     height = nil,
@@ -1414,7 +1414,7 @@ end
 --[[--
 Item shown in main menu
 --]]--
-local VocabBuilder = WidgetContainer:new{
+local VocabBuilder = WidgetContainer:extend{
     name = "vocabulary_builder",
     is_doc_only = false
 }

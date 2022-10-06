@@ -3,31 +3,29 @@ Handles append-mostly data such as KOReader's bookmarks and dictionary search hi
 ]]
 
 local LuaSettings = require("luasettings")
-local dbg = require("dbg")
 local dump = require("dump")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 
-local LuaData = LuaSettings:new{
+local LuaData = LuaSettings:extend{
     name = "",
     max_backups = 9,
 }
 
 --- Creates a new LuaData instance.
-function LuaData:open(file_path, o) -- luacheck: ignore 312
-    if o and type(o) ~= "table" then
-        if dbg.is_on then
-            error("LuaData: got "..type(o)..", table expected")
-        else
-            o = {}
-        end
+function LuaData:open(file_path, name)
+    -- Backwards compat, just in case...
+    if type(name) == "table" then
+        name = name.name
     end
-    -- always initiate a new instance
-    -- careful, `o` is already a table so we use parentheses
-    self = LuaData:new(o)
 
-    local new = {file=file_path, data={}}
+    -- NOTE: Beware, our new instance is new, but self is still LuaData!
+    local new = LuaData:extend{
+        name = name,
+        file = file_path,
+        data = {},
+    }
 
     -- Some magic to allow for self-describing function names:
     -- We'll use data_env both as the environment when loading the data, *and* its metatable,
@@ -40,7 +38,7 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
     local data_env = {}
     data_env.__index = data_env
     setmetatable(data_env, data_env)
-    data_env[self.name.."Entry"] = function(table)
+    data_env[new.name.."Entry"] = function(table)
         if table.index then
             -- We've got a deleted setting, overwrite with nil and be done with it.
             if not table.data then
@@ -81,7 +79,7 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
         end
     end
     if not ok then
-        for i=1, self.max_backups, 1 do
+        for i=1, new.max_backups, 1 do
             local backup_file = new.file..".old."..i
             if lfs.attributes(backup_file, "mode") == "file" then
                 ok, err = loadfile(backup_file, "t", data_env)
@@ -97,7 +95,7 @@ function LuaData:open(file_path, o) -- luacheck: ignore 312
         end
     end
 
-    return setmetatable(new, {__index = self})
+    return new
 end
 
 --- Saves a setting.

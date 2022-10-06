@@ -29,7 +29,7 @@ local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
 local isRm2, rm_model = getModel()
 
-local Remarkable = Generic:new{
+local Remarkable = Generic:extend{
     isRemarkable = yes,
     model = rm_model,
     hasKeys = yes,
@@ -47,7 +47,7 @@ local Remarkable = Generic:new{
     home_dir = "/home/root",
 }
 
-local Remarkable1 = Remarkable:new{
+local Remarkable1 = Remarkable:extend{
     mt_width = 767, -- unscaled_size_check: ignore
     mt_height = 1023, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event0",
@@ -70,7 +70,7 @@ function Remarkable1:adjustTouchEvent(ev, by)
     end
 end
 
-local Remarkable2 = Remarkable:new{
+local Remarkable2 = Remarkable:extend{
     mt_width = 1403, -- unscaled_size_check: ignore
     mt_height = 1871, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event1",

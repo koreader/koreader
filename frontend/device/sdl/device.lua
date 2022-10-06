@@ -60,7 +60,7 @@ local external = require("device/thirdparty"):new{
     end,
 }
 
-local Device = Generic:new{
+local Device = Generic:extend{
     model = "SDL",
     isSDL = yes,
     home_dir = os.getenv("XDG_DOCUMENTS_DIR") or os.getenv("HOME"),
@@ -105,21 +105,21 @@ local Device = Generic:new{
     window = G_reader_settings:readSetting("sdl_window", {}),
 }
 
-local AppImage = Device:new{
+local AppImage = Device:extend{
     model = "AppImage",
     hasMultitouch = no,
     hasOTAUpdates = yes,
     isDesktop = yes,
 }
 
-local Desktop = Device:new{
+local Desktop = Device:extend{
     model = SDL.getPlatform(),
     isDesktop = yes,
     canRestart = notOSX,
     hasExitOptions = notOSX,
 }
 
-local Emulator = Device:new{
+local Emulator = Device:extend{
     model = "Emulator",
     isEmulator = yes,
     hasBattery = yes,
@@ -137,7 +137,7 @@ local Emulator = Device:new{
     canStandby = no,
 }
 
-local UbuntuTouch = Device:new{
+local UbuntuTouch = Device:extend{
     model = "UbuntuTouch",
     hasFrontlight = yes,
     isDefaultFullscreen = yes,

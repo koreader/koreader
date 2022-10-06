@@ -14,7 +14,7 @@ local logger = require("logger")
 local time = require("ui/time")
 local util  = require("util")
 
-local HtmlBoxWidget = InputContainer:new{
+local HtmlBoxWidget = InputContainer:extend{
     bb = nil,
     dimen = nil,
     document = nil,

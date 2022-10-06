@@ -45,6 +45,7 @@ local function computeCacheSlots()
     end
 end
 
+-- NOTE: This is a singleton!
 local DocCache = Cache:new{
     slots = computeCacheSlots(),
     size = computeCacheSize(),

@@ -26,13 +26,17 @@ to not get stuck in an invalid position.
 but notice that this does _not_ do the layout for you,
 it rather defines an abstract layout.
 ]]
-local FocusManager = InputContainer:new{
+local FocusManager = InputContainer:extend{
     selected = nil, -- defaults to x=1, y=1
     layout = nil, -- mandatory
     movement_allowed = { x = true, y = true },
 }
 
-function FocusManager:init()
+-- Only build the default mappings once, we'll make copies during instantiation.
+local KEY_EVENTS = {}
+local BUILTIN_KEY_EVENTS = {}
+local EXTRA_KEY_EVENTS = {}
+do
     if Device:hasDPad() then
         local event_keys = {}
         -- these will all generate the same event, just with different arguments
@@ -57,19 +61,16 @@ function FocusManager:init()
         table.insert(event_keys, {"FocusNext",      { {"Tab"},            doc = "move focus to next widget",     event="FocusNext"} })
         table.insert(event_keys, {"FocusPrevious",  { {"Shift", "Tab"},   doc = "move focus to previous widget", event="FocusPrevious"} })
 
-        self.key_events = {}
-        self.builtin_key_events = {}
-        self.extra_key_events = {}
         for i = 1, FEW_KEYS_END_INDEX do
             local key_name = event_keys[i][1]
-            self.key_events[key_name] = event_keys[i][2]
-            self.builtin_key_events[key_name] = event_keys[i][2]
+            KEY_EVENTS[key_name] = event_keys[i][2]
+            BUILTIN_KEY_EVENTS[key_name] = event_keys[i][2]
         end
         if not Device:hasFewKeys() then
             for i = FEW_KEYS_END_INDEX+1, NORMAL_KEYS_END_INDEX do
                 local key_name = event_keys[i][1]
-                self.key_events[key_name] = event_keys[i][2]
-                self.builtin_key_events[key_name] = event_keys[i][2]
+                KEY_EVENTS[key_name] = event_keys[i][2]
+                BUILTIN_KEY_EVENTS[key_name] = event_keys[i][2]
             end
             local focus_manager_setting = G_reader_settings:child("focus_manager")
             -- Enable advanced feature, like Hold, FocusNext, FocusPrevious
@@ -83,8 +84,8 @@ function FocusManager:init()
                         local handler_defition = util.tableDeepCopy(event_keys[i][2])
                         handler_defition[1] = alternative_keymap -- replace sample key combinations
                         local new_event_key = "Alternative" .. key_name
-                        self.key_events[new_event_key] = handler_defition
-                        self.extra_key_events[new_event_key] = handler_defition
+                        KEY_EVENTS[new_event_key] = handler_defition
+                        EXTRA_KEY_EVENTS[new_event_key] = handler_defition
                     end
                 end
             end
@@ -92,21 +93,21 @@ function FocusManager:init()
     end
 end
 
-
 function FocusManager:_init()
     InputContainer._init(self)
-    -- Make sure each FocusManager instance has its own selection field.
-    -- Take ButtonTable = FocusManager:new{} for example.
-    -- FocusManager:init method called once and all ButtonTable instances share same selected field.
-    -- It has problem when
-    -- 1. ButtonTable A (layout 1 row, 4 columns) shown, and move focus, make selected to (4, 1)
-    -- 2. ButtonTable A closed and ButtonTable B (layout 2 rows, 2 columns) shown
-    -- 3. selected (4, 1) is invalid(overflow) for ButtonTable B, and FocusManager ignore all focus move events.
+
+    -- These *need* to be instance-specific, hence the copy
     if not self.selected then
         self.selected = { x = 1, y = 1 }
     else
         self.selected = {x = self.selected.x, y = self.selected.y }
     end
+
+    -- Ditto, as each widget may choose their own custom key bindings
+    self.key_events = util.tableDeepCopy(KEY_EVENTS)
+    -- We should be fine with a simple ref for those, though
+    self.builtin_key_events = BUILTIN_KEY_EVENTS
+    self.extra_key_events = EXTRA_KEY_EVENTS
 end
 
 function FocusManager:isAlternativeKey(key)

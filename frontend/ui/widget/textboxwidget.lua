@@ -33,7 +33,7 @@ local util = require("util")
 local xtext -- Delayed (and optional) loading
 local Screen = require("device").screen
 
-local TextBoxWidget = InputContainer:new{
+local TextBoxWidget = InputContainer:extend{
     text = nil,
     editable = false, -- Editable flag for whether drawing the cursor or not.
     justified = false, -- Should text be justified (spaces widened to fill width)
@@ -59,6 +59,7 @@ local TextBoxWidget = InputContainer:new{
     idx_pad = nil,     -- idx => pad for char at idx, if non zero
     vertical_string_list = nil,
     virtual_line_num = 1, -- index of the top displayed line
+    current_line_num = 1, -- index of the currently edited line (i.e., where our cursor is)
     line_height_px = nil, -- height of a line in px
     lines_per_page = nil, -- number of visible lines
     text_height = nil,    -- adjusted height to visible text (lines_per_page*line_height_px)
@@ -1107,8 +1108,8 @@ function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_e
 end
 
 function TextBoxWidget:getCharPos()
-    -- returns virtual_line_num too
-    return self.charpos, self.virtual_line_num
+    -- returns virtual_line_num & current_line_num too
+    return self.charpos, self.virtual_line_num, self.current_line_num
 end
 
 function TextBoxWidget:getSize()
@@ -1570,7 +1571,8 @@ local CURSOR_USE_REFRESH_FUNCS = G_reader_settings:nilOrTrue("ui_cursor_use_refr
 function TextBoxWidget:moveCursorToCharPos(charpos)
     self.charpos = charpos
     self.prev_virtual_line_num = self.virtual_line_num
-    local x, y = self:_getXYForCharPos() -- we can get y outside current view
+    local x, y, screen_line_num = self:_getXYForCharPos() -- we can get y outside current view
+    self.current_line_num = screen_line_num
     -- adjust self.virtual_line_num for overflowed y to have y in current view
     if y < 0 then
         local scroll_lines = math.ceil( -y / self.line_height_px )
@@ -1809,6 +1811,14 @@ end
 function TextBoxWidget:moveCursorDown()
     local x, y = self:_getXYForCharPos()
     self:moveCursorToXY(x, y + self.line_height_px)
+end
+
+function TextBoxWidget:moveCursorHome()
+    self:moveCursorToCharPos(self.vertical_string_list[self.current_line_num].offset)
+end
+
+function TextBoxWidget:moveCursorEnd()
+    self:moveCursorToCharPos(self.vertical_string_list[self.current_line_num+1] and self.vertical_string_list[self.current_line_num+1].offset - 1 or #self.charlist + 1)
 end
 
 

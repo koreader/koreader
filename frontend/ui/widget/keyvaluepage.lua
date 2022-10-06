@@ -47,7 +47,7 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local KeyValueItem = InputContainer:new{
+local KeyValueItem = InputContainer:extend{
     key = nil,
     value = nil,
     value_lang = nil,
@@ -66,7 +66,7 @@ local KeyValueItem = InputContainer:new{
 }
 
 function KeyValueItem:init()
-    self.dimen = Geom:new{ w = self.width, h = self.height }
+    self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
 
     -- self.value may contain some control characters (\n \t...) that would
     -- be rendered as a square. Replace them with a shorter and nicer '|'.
@@ -273,7 +273,7 @@ function KeyValueItem:onShowKeyValue()
 end
 
 
-local KeyValuePage = FocusManager:new{
+local KeyValuePage = FocusManager:extend{
     title = "",
     width = nil,
     height = nil,
@@ -288,6 +288,8 @@ local KeyValuePage = FocusManager:new{
 
 function KeyValuePage:init()
     self.dimen = Geom:new{
+        x = 0,
+        y = 0,
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }

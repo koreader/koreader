@@ -51,7 +51,7 @@ local scale_by_size = Screen:scaleBySize(1000000) / 1000000
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
-local ItemShortCutIcon = WidgetContainer:new{
+local ItemShortCutIcon = WidgetContainer:extend{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
     bordersize = Size.border.default,
@@ -94,8 +94,8 @@ end
 
 
 -- Based on menu.lua's MenuItem
-local ListMenuItem = InputContainer:new{
-    entry = {},
+local ListMenuItem = InputContainer:extend{
+    entry = nil, -- hash, mandatory
     text = nil,
     show_parent = nil,
     detail = nil,

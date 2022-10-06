@@ -4,22 +4,16 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local ReaderStatus = InputContainer:new {
+local ReaderStatus = WidgetContainer:extend{
     document = nil,
-    summary = {
-        rating = 0,
-        note = nil,
-        status = "",
-        modified = "",
-    },
     enabled = true,
-    total_pages = 0
+    total_pages = 0,
 }
 
 function ReaderStatus:init()

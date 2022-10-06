@@ -4,7 +4,7 @@ local ReaderZooming = require("apps/reader/modules/readerzooming")
 local UIManager = require("ui/uimanager")
 local util = require("util")
 
-local ReaderKoptListener = EventListener:new{}
+local ReaderKoptListener = EventListener:extend{}
 
 function ReaderKoptListener:setZoomMode(zoom_mode)
     if self.document.configurable.text_wrap == 1 then

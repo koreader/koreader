@@ -34,7 +34,7 @@ local function isMassStorageSupported()
     return true
 end
 
-local Cervantes = Generic:new{
+local Cervantes = Generic:extend{
     model = "Cervantes",
     isCervantes = yes,
     isAlwaysPortrait = yes,
@@ -65,33 +65,33 @@ local Cervantes = Generic:new{
     canHWInvert = yes,
 }
 -- Cervantes Touch
-local CervantesTouch = Cervantes:new{
+local CervantesTouch = Cervantes:extend{
     model = "CervantesTouch",
     display_dpi = 167,
     hasFrontlight = no,
     hasMultitouch = no,
 }
 -- Cervantes TouchLight / Fnac Touch Plus
-local CervantesTouchLight = Cervantes:new{
+local CervantesTouchLight = Cervantes:extend{
     model = "CervantesTouchLight",
     display_dpi = 167,
     hasMultitouch = no,
 }
 -- Cervantes 2013 / Fnac Touch Light
-local Cervantes2013 = Cervantes:new{
+local Cervantes2013 = Cervantes:extend{
     model = "Cervantes2013",
     display_dpi = 212,
     hasMultitouch = no,
     --- @fixme: Possibly requires canHWInvert = no, as it seems to be based on a similar board as the Kobo Aura...
 }
 -- Cervantes 3 / Fnac Touch Light 2
-local Cervantes3 = Cervantes:new{
+local Cervantes3 = Cervantes:extend{
     model = "Cervantes3",
     display_dpi = 300,
     hasMultitouch = no,
 }
 -- Cervantes 4
-local Cervantes4 = Cervantes:new{
+local Cervantes4 = Cervantes:extend{
     model = "Cervantes4",
     display_dpi = 300,
     hasNaturalLight = yes,

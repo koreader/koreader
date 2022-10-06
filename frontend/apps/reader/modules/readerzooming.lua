@@ -14,9 +14,9 @@ local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local ReaderZooming = InputContainer:new{
+local ReaderZooming = InputContainer:extend{
     zoom = 1.0,
-    available_zoom_modes = {
+    available_zoom_modes = { -- const
         "page",
         "pagewidth",
         "pageheight",
@@ -27,26 +27,26 @@ local ReaderZooming = InputContainer:new{
         "rows",
         "manual",
     },
-    zoom_genus_to_mode = {
+    zoom_genus_to_mode = { -- const
         [4] = "page",
         [3] = "content",
         [2] = "columns",
         [1] = "rows",
         [0] = "manual",
     },
-    zoom_mode_to_genus = {
+    zoom_mode_to_genus = { -- const
         page    = 4,
         content = 3,
         columns = 2,
         rows    = 1,
         manual  = 0,
     },
-    zoom_type_to_mode = {
+    zoom_type_to_mode = { -- const
         [2] = "",
         [1] = "width",
         [0] = "height",
     },
-    zoom_mode_to_type = {
+    zoom_mode_to_type = { -- const
         [""]   = 2,
         width  = 1,
         height = 0,
@@ -58,7 +58,7 @@ local ReaderZooming = InputContainer:new{
     -- with overlap of zoom_overlap_h % (horizontally)
     -- and zoom_overlap_v % (vertically).
     kopt_zoom_factor = 1.5,
-    zoom_pan_settings = {
+    zoom_pan_settings = { -- const
         "kopt_zoom_factor",
         "zoom_overlap_h",
         "zoom_overlap_v",
@@ -71,7 +71,7 @@ local ReaderZooming = InputContainer:new{
     zoom_direction_vertical = nil, -- true for column mode
     current_page = 1,
     rotation = 0,
-    paged_modes = {
+    paged_modes = { -- const
         page = _("Zoom to fit page works best with page view."),
         pageheight = _("Zoom to fit page height works best with page view."),
         contentheight = _("Zoom to fit content height works best with page view."),

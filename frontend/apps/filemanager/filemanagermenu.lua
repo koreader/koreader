@@ -19,7 +19,7 @@ local T = FFIUtil.template
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
-    menu_items = {},
+    menu_items = nil, -- table, mandatory
     registered_widgets = nil,
 }
 
@@ -522,22 +522,20 @@ To:
             end,
         })
     end
-    if not Device.should_restrict_JIT then
-        local Blitbuffer = require("ffi/blitbuffer")
-        table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Disable C blitter"),
-            enabled_func = function()
-                return Blitbuffer.has_cblitbuffer
-            end,
-            checked_func = function()
-                return G_reader_settings:isTrue("dev_no_c_blitter")
-            end,
-            callback = function()
-                G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
-                Blitbuffer:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
-            end,
-        })
-    end
+    local Blitbuffer = require("ffi/blitbuffer")
+    table.insert(self.menu_items.developer_options.sub_item_table, {
+        text = _("Disable C blitter"),
+        enabled_func = function()
+            return Blitbuffer.has_cblitbuffer
+        end,
+        checked_func = function()
+            return G_reader_settings:isTrue("dev_no_c_blitter")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
+            Blitbuffer:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
+        end,
+    })
     if Device:hasEinkScreen() and Device:canHWDither() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable HW dithering"),

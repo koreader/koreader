@@ -9,12 +9,12 @@ local Geom = require("ui/geometry")
 local GestureDetector = require("device/gesturedetector")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Screen = require("device").screen
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -27,7 +27,7 @@ if not Device:isTouchDevice() then
     return { disabled = true, }
 end
 
-local Gestures = InputContainer:new{
+local Gestures = WidgetContainer:extend{
     name = "gestures",
     settings_data = nil,
     gestures = nil,

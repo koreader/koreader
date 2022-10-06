@@ -25,40 +25,27 @@ and to store that table as a configuration setting.
 ]]
 
 local DepGraph = require("depgraph")
+local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local Device = require("device")
 local Screen = Device.screen
 local _ = require("gettext")
 
-if Device.should_restrict_JIT then
-    jit.off(true, true)
-end
-
-local InputContainer = WidgetContainer:new{
+local InputContainer = WidgetContainer:extend{
     vertical_align = "top",
 }
 
 function InputContainer:_init()
-    -- we need to do deep copy here
-    local new_key_events = {}
-    if self.key_events then
-        for k,v in pairs(self.key_events) do
-            new_key_events[k] = v
-        end
+    -- These should be instance-specific
+    if not self.key_events then
+        self.key_events = {}
     end
-    self.key_events = new_key_events
-
-    local new_ges_events = {}
-    if self.ges_events then
-        for k,v in pairs(self.ges_events) do
-            new_ges_events[k] = v
-        end
+    if not self.ges_events then
+        self.ges_events = {}
     end
-    self.ges_events = new_ges_events
     self.touch_zone_dg = nil
     self._zones = {}
     self._ordered_touch_zones = {}
@@ -74,7 +61,7 @@ function InputContainer:paintTo(bb, x, y)
 
     if not self.dimen then
         local content_size = self[1]:getSize()
-        self.dimen = Geom:new{w = content_size.w, h = content_size.h}
+        self.dimen = Geom:new{x = 0, y = 0, w = content_size.w, h = content_size.h}
     end
     self.dimen.x = x
     self.dimen.y = y

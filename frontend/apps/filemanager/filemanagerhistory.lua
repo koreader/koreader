@@ -4,9 +4,9 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
 local FFIUtil = require("ffi/util")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local lfs = require("libs/libkoreader-lfs")
@@ -14,7 +14,7 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local T = FFIUtil.template
 
-local FileManagerHistory = InputContainer:extend{
+local FileManagerHistory = WidgetContainer:extend{
     hist_menu_title = _("History"),
 }
 
