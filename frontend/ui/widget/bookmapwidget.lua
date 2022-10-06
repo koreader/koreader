@@ -398,7 +398,7 @@ function BookMapRow:init()
             local y = self.pages_frame_height + 1
             if self.bookmarked_pages[page] then
                 -- Shift it a bit down to keep bookmark glyph(s) readable
-                y = y + math.floor(self.span_height / 3)
+                y = y + math.floor(self.span_height * (1/3))
             end
             local num = self.previous_locations[page]
             table.insert(self.indicators, {
@@ -415,7 +415,7 @@ function BookMapRow:init()
             local y = self.pages_frame_height + 1
             if self.bookmarked_pages[page] then
                 -- Shift it a bit down to keep bookmark glyph(s) readable
-                y = y + math.floor(self.span_height / 3)
+                y = y + math.floor(self.span_height * (1/3))
             end
             table.insert(self.indicators, {
                 c = self.extra_symbols_pages[page],
@@ -430,7 +430,7 @@ function BookMapRow:init()
             local y = self.pages_frame_height + 1
             if self.bookmarked_pages[page] then
                 -- Shift it a bit down to keep bookmark glyph(s) readable
-                y = y + math.floor(self.span_height / 3)
+                y = y + math.floor(self.span_height * (1/3))
             end
             table.insert(self.indicators, {
                 c = 0x25B2, -- black up-pointing triangle
@@ -1323,7 +1323,7 @@ end
 function BookMapWidget:onSpread(arg, ges)
     local updated = false
     if ges.direction == "horizontal" or ges.direction == "diagonal" then
-        local new_pages_per_row = math.floor(self.pages_per_row / 1.5)
+        local new_pages_per_row = math.floor(self.pages_per_row * (2/3))
         if (self.pages_per_row < self.fit_pages_per_row and new_pages_per_row > self.fit_pages_per_row)
                 or (self.pages_per_row > self.fit_pages_per_row and new_pages_per_row < self.fit_pages_per_row) then
             new_pages_per_row = self.fit_pages_per_row

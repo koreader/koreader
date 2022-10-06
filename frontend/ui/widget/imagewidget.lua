@@ -31,7 +31,7 @@ local logger = require("logger")
 
 -- DPI_SCALE can't change without a restart, so let's compute it now
 local function get_dpi_scale()
-    local size_scale = math.min(Screen:getWidth(), Screen:getHeight()) / 600
+    local size_scale = math.min(Screen:getWidth(), Screen:getHeight()) * (1/600)
     local dpi_scale = Screen:scaleByDPI(1)
     return math.max(0, (math.log((size_scale+dpi_scale)/2)/0.69)^2)
 end
@@ -403,7 +403,7 @@ function ImageWidget:getScaleFactorExtrema()
     local memfree, _ = util.calcFreeMem()
 
     local screen_area = Screen:getWidth() * Screen:getHeight()
-    local min_area = math.ceil(screen_area / 10000)
+    local min_area = math.ceil(screen_area * (1/10000))
     local max_area
     if memfree then
         -- If we have access to memory statistics, limit the requested bb size to 25% of the available RAM.

@@ -696,7 +696,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
         -- where xpointer target is (and remove if after 1s)
         local screen_y, screen_x = self.ui.document:getScreenPositionFromXPointer(marker_xp)
         local doc_margins = self.ui.document:getPageMargins()
-        local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
+        local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent * 0.01)
         -- Make it 4/5 of left margin wide (and bigger when huge margin)
         local marker_w = math.floor(math.max(doc_margins["left"] - Screen:scaleBySize(5), doc_margins["left"] * 4/5))
 
@@ -794,7 +794,7 @@ function ReaderRolling:onGotoViewRel(diff)
         local pan_diff = diff * page_visible_height
         if self.view.page_overlap_enable then
             local overlap_lines = G_reader_settings:readSetting("copt_overlap_lines") or 1
-            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * overlap_lines
+            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent * 0.01) * overlap_lines
             if pan_diff > overlap_h then
                 pan_diff = pan_diff - overlap_h
             elseif pan_diff < -overlap_h then
@@ -1023,9 +1023,9 @@ end
 
 function ReaderRolling:_gotoPercent(new_percent)
     if self.view.view_mode == "page" then
-        self:_gotoPage(new_percent * self.ui.document:getPageCount() / 100)
+        self:_gotoPage(new_percent * self.ui.document:getPageCount() * 0.01)
     else
-        self:_gotoPos(new_percent * self.ui.document.info.doc_height / 100)
+        self:_gotoPos(new_percent * self.ui.document.info.doc_height * 0.01)
     end
 end
 
@@ -1151,24 +1151,24 @@ function ReaderRolling:handleEngineCallback(ev, ...)
         self:showEngineProgress(0) -- Start initial delay countdown
     elseif ev == "OnLoadFileProgress" then
         -- Initial load from file (step 1/2) or from cache (step 1/1)
-        self:showEngineProgress(args[1]/100/2)
+        self:showEngineProgress(args[1]*0.01/2)
     elseif ev == "OnNodeStylesUpdateStart" then -- Start of re-rendering
         self:showEngineProgress(0) -- Start initial delay countdown
     elseif ev == "OnNodeStylesUpdateProgress" then
         -- Update node styles (step 1/2 on re-rendering)
-        self:showEngineProgress(args[1]/100/2)
+        self:showEngineProgress(args[1]*0.01/2)
     elseif ev == "OnFormatStart" then -- Start of step 2/2
         self:showEngineProgress(1/2) -- 50%, in case of no OnFormatProgress
     elseif ev == "OnFormatProgress" then
         -- Paragraph formatting and page splitting (step 2/2 after load
         -- from file, step 2/2 on re-rendering)
-        self:showEngineProgress(1/2 + args[1]/100/2)
+        self:showEngineProgress(1/2 + args[1]*0.01/2)
     elseif ev == "OnSaveCacheFileStart" then -- Start of cache file save
         self:showEngineProgress(1) -- Start initial delay countdown, fully filled
     elseif ev == "OnSaveCacheFileProgress" then
         -- Cache file save (when closing book after initial load from
         -- file or re-rendering)
-        self:showEngineProgress(1 - args[1]/100) -- unfill progress
+        self:showEngineProgress(1 - args[1]*0.01) -- unfill progress
     elseif ev == "OnDocumentReady" or ev == "OnSaveCacheFileEnd" then
         self:showEngineProgress() -- cleanup
     elseif ev == "OnLoadFileError" then
@@ -1214,7 +1214,7 @@ function ReaderRolling:showEngineProgress(percent)
             y = y + self.current_header_height
         end
 
-        local w = math.floor(Screen:getWidth() / 3)
+        local w = math.floor(Screen:getWidth() * (1/3))
         local h = Size.line.progress
         if self.engine_progress_widget then
             self.engine_progress_widget:setPercentage(percent)

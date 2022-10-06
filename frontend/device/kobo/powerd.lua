@@ -42,7 +42,7 @@ function KoboPowerD:_syncKoboLightOnStart()
                     -- ColorSetting is stored as a color temperature scale in Kelvin,
                     -- from 1500 to 6400
                     -- so normalize this to [0, 100] on our end.
-                    new_warmth = (100 - Math.round((new_color - 1500) / 49))
+                    new_warmth = (100 - Math.round((new_color - 1500) * (1/49)))
                 end
             end
             if is_frontlight_on == nil then
@@ -303,7 +303,7 @@ function KoboPowerD:turnOffFrontlightHW()
     end
     ffiUtil.runInSubProcess(function()
         for i = 1,5 do
-            self:setIntensityHW(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
+            self:setIntensityHW(math.floor(self.fl_intensity - ((self.fl_intensity * (1/5)) * i)))
             --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
             ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
@@ -336,7 +336,7 @@ function KoboPowerD:turnOnFrontlightHW()
     end
     ffiUtil.runInSubProcess(function()
         for i = 1,5 do
-            self:setIntensityHW(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
+            self:setIntensityHW(math.ceil(self.fl_min + ((self.fl_intensity * (1/5)) * i)))
             --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
             ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then

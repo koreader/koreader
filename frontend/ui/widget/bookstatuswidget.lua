@@ -406,8 +406,8 @@ function BookStatusWidget:genStatisticsGroup(width)
 
     local statistics_group = VerticalGroup:new{ align = "left" }
 
-    local tile_width = width / 3
-    local tile_height = height / 2
+    local tile_width = width * (1/3)
+    local tile_height = height * (1/2)
 
     local titles_group = HorizontalGroup:new{
         align = "center",

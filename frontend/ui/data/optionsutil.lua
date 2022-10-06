@@ -25,7 +25,7 @@ local function convertSizeTo(px, format)
     local format_factor = 1 -- we are defaulting on mm
 
     if format == "pt" then
-        format_factor =  format_factor * 2660 / 1000 -- see https://www.wikiwand.com/en/Metric_typographic_units
+        format_factor =  format_factor * (2660 / 1000) -- see https://www.wikiwand.com/en/Metric_typographic_units
     elseif format == "in" then
         format_factor = 1 / 25.4
     end

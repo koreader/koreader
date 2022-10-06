@@ -879,7 +879,7 @@ function Menu:init()
         bordersize = self.border_size,
         padding = 0,
         margin = 0,
-        radius = self.is_popout and math.floor(self.dimen.w / 20) or 0,
+        radius = self.is_popout and math.floor(self.dimen.w * (1/20)) or 0,
         content
     }
 
@@ -1414,13 +1414,13 @@ end
 function Menu.getItemFontSize(perpage)
     -- Get adjusted font size for the given nb of items per page:
     -- item font size between 14 and 24 for better matching
-    return math.floor(24 - ((perpage - 6) / 18) * 10)
+    return math.floor(24 - ((perpage - 6) * (1/18)) * 10)
 end
 
 function Menu.getItemMandatoryFontSize(perpage)
     -- Get adjusted font size for the given nb of items per page:
     -- "mandatory" font size between 12 and 18 for better matching
-    return math.floor(18 - (perpage - 6) / 3)
+    return math.floor(18 - (perpage - 6) * (1/3))
 end
 
 function Menu.getMenuText(item)

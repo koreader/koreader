@@ -123,7 +123,7 @@ function ReaderThumbnail:setupCache()
         local max_bytes = math.ceil(N * Screen:getWidth() * Screen:getHeight() * Blitbuffer.TYPE_TO_BPP[self.bb_type] / 8)
         -- We don't really care about limiting any number of slots, so allow
         -- for at least 5 pages of 10x10 tiles
-        local avg_itemsize = math.ceil(max_bytes / 500)
+        local avg_itemsize = math.ceil(max_bytes * (1/500))
         self.tile_cache = Cache:new{
             size = max_bytes,
             avg_itemsize = avg_itemsize, -- will make slots=500

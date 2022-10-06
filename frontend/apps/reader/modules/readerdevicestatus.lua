@@ -64,7 +64,7 @@ function ReaderDeviceStatus:init()
             if statm then
                 local dummy, rss = statm:read("*number", "*number")
                 statm:close()
-                rss = math.floor(rss * 4096 / 1024 / 1024)
+                rss = math.floor(rss * (4096 / 1024 / 1024))
                 if rss >= self.memory_threshold then
                     if self.memory_confirm_box then
                         UIManager:close(self.memory_confirm_box)
