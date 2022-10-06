@@ -1030,6 +1030,7 @@ function Kobo:standby(max_duration)
         logger.info("Kobo standby: zZz zZz zZz zZz... And woke up!")
         if G_reader_settings:isTrue("pm_debug_entry_failure") then
             -- NOTE: This is a debug option where we coopt the charging LED, hence us not using setupChargingLED here.
+            --       (It's called on resume anyway).
             self:toggleChargingLED(false)
         end
     else
