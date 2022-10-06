@@ -705,6 +705,17 @@ To:
             FontList:dumpFontList()
         end,
     })
+    if Device:isKobo() and Device:canToggleChargingLED() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Turn on the LED on PM entry failure"),
+            checked_func = function()
+                return G_reader_settings:isTrue("pm_debug_entry_failure")
+            end,
+            callback = function()
+                G_reader_settings:toggle("pm_debug_entry_failure")
+            end,
+        })
+    end
 
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),

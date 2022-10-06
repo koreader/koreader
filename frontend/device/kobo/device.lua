@@ -1019,8 +1019,15 @@ function Kobo:standby(max_duration)
 
     if ret then
         logger.info("Kobo standby: zZz zZz zZz zZz... And woke up!")
+        if G_reader_settings:isTrue("pm_debug_entry_failure") then
+            -- NOTE: This is a debug option where we coopt the charging LED, hence us not using setupChargingLED here.
+            self:toggleChargingLED(false)
+        end
     else
         logger.warn("Kobo standby: the kernel refused to enter standby!")
+        if G_reader_settings:isTrue("pm_debug_entry_failure") then
+            self:toggleChargingLED(true)
+        end
     end
 
     if max_duration then
@@ -1123,10 +1130,17 @@ function Kobo:suspend()
 
     if ret then
         logger.info("Kobo suspend: ZzZ ZzZ ZzZ... And woke up!")
+        if G_reader_settings:isTrue("pm_debug_entry_failure") then
+            -- NOTE: This is a debug option where we coopt the charging LED, hence us not using setupChargingLED here.
+            self:toggleChargingLED(false)
+        end
     else
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
         -- Reset state-extended back to 0 since we are giving up.
         writeToSys("0", "/sys/power/state-extended")
+        if G_reader_settings:isTrue("pm_debug_entry_failure") then
+            self:toggleChargingLED(true)
+        end
     end
 
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
