@@ -229,33 +229,19 @@ end
 function UIManager:schedule(sched_time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
-        -- Do a binary insert.
+        -- Do a binary insert if table contains at least one entry
         repeat
             p = bit.rshift(e + s, 1) -- Not necessary to use (s + (e -s) / 2) here!
             local p_time = self._task_queue[p].time
-            if sched_time > p_time then
-                if s == e then
-                    p = e + 1
-                    break
-                elseif s + 1 == e then
-                    s = e
-                else
-                    s = p
-                end
-            elseif sched_time < p_time then
-                if s == p then
-                    break
-                end
-                e = p
-            else
-                -- For fairness, it's better to make sure p+1 is strictly less than p.
-                -- Might want to revisit that in the future.
-                break
+            if sched_time >= p_time then
+                s = p + 1
+            else -- if sched_time < p_time then
+                e = p - 1
             end
         until e < s
     end
 
-    table.insert(self._task_queue, p, {
+    table.insert(self._task_queue, s, {
         time = sched_time,
         action = action,
         argc = select("#", ...),
