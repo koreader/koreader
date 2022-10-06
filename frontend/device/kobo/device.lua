@@ -232,7 +232,7 @@ local KoboDaylight = Kobo:extend{
 -- Kobo Aura H2O:
 local KoboDahlia = Kobo:extend{
     model = "Kobo_dahlia",
-    canToggleChargingLED = no,  -- Possibly weird interactions with Nickel
+    canToggleChargingLED = yes,
     led_uses_channel_3 = true,
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
@@ -776,6 +776,15 @@ function Kobo:init()
         self.restoreKeyRepeat = NOP
     end
 
+    -- Detect the NTX charging LED sysfs knob
+    if util.pathExists("/sys/devices/platform/ntx_led/lit") then
+        self.ntx_lit_sysfs_knob = "/sys/devices/platform/ntx_led/lit"
+    elseif util.pathExists("/sys/devices/platform/pmic_light.1/lit") then
+        self.ntx_lit_sysfs_knob = "/sys/devices/platform/pmic_light.1/lit"
+    else
+        self.canToggleChargingLED = no
+    end
+
     -- NOP unsupported methods
     if not self:canToggleChargingLED() then
         self.toggleChargingLED = NOP
@@ -1251,11 +1260,10 @@ function Kobo:toggleChargingLED(toggle)
     --       In fact, Nickel itself doesn't provide this feature on said older devices
     --       (when it does, it's an option in the Energy saving settings),
     --       which is why we also limit ourselves to "true" on devices where this was tested.
-    --       FWIW, on older devices, the knob is at "/sys/devices/platform/pmic_light.1/lit".
     -- c.f., drivers/misc/ntx_misc_light.c
-    local f = io.open("/sys/devices/platform/ntx_led/lit", "we")
+    local f = io.open(self.ntx_lit_sysfs_knob, "we")
     if not f then
-        logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
+        logger.err("cannot open", self.ntx_lit_sysfs_knob, "for writing!")
         return false
     end
     -- Relying on LFs is mildly more elegant than spamming f:flush() calls ;).
