@@ -61,17 +61,17 @@ function ReadHistory:getIndexByFile(item_file)
 end
 
 function ReadHistory:getIndexByTime(item_time)
-    local hist_num = #self.hist
-    if hist_num == 0 then
+    local hist_nb = #self.hist
+    if hist_nb == 0 then
         return 1
     end
     if item_time >= self.hist[1].time then
         return 1
-    elseif item_time < self.hist[hist_num].time then
-        return hist_num + 1
+    elseif item_time < self.hist[hist_nb].time then
+        return hist_nb + 1
     end
     -- binary search
-    local s, e, m, d = 1, hist_num
+    local s, e, m, d = 1, hist_nb
     while s <= e do
         m = math.floor((s + e) / 2)
         if item_time < self.hist[m].time then
@@ -83,6 +83,7 @@ function ReadHistory:getIndexByTime(item_time)
     return m + d
 end
 
+--- Reduces number of history items to the required limit by removing old items.
 function ReadHistory:_reduce()
     local history_size = G_reader_settings:readSetting("history_size") or 500
     while #self.hist > history_size do
@@ -90,6 +91,7 @@ function ReadHistory:_reduce()
     end
 end
 
+--- Saves history table to a file.
 function ReadHistory:_flush()
     local content = {}
     for _, v in ipairs(self.hist) do
@@ -125,7 +127,7 @@ function ReadHistory:_read(force_read)
     return true
 end
 
--- Reads history from legacy history folder
+--- Reads history from legacy history folder.
 function ReadHistory:_readLegacyHistory()
     local history_dir = DataStorage:getHistoryDir()
     for f in lfs.dir(history_dir) do
@@ -182,7 +184,8 @@ function ReadHistory:getPreviousFile(current_file)
     end
 end
 
-function ReadHistory:getFileByDirectory(directory, recursive) -- for BookShortcuts plugin
+--- Used in the BookShortcuts plugin.
+function ReadHistory:getFileByDirectory(directory, recursive)
     local real_path = realpath(directory)
     for _, v in ipairs(self.hist) do
         local ipath = realpath(ffiutil.dirname(v.file))
@@ -192,6 +195,7 @@ function ReadHistory:getFileByDirectory(directory, recursive) -- for BookShortcu
     end
 end
 
+--- Updates the history list after deleting a file.
 function ReadHistory:fileDeleted(path)
     local index = self:getIndexByFile(path)
     if index then
@@ -199,11 +203,12 @@ function ReadHistory:fileDeleted(path)
             self:removeItem(self.hist[index], index)
         else
             self.hist[index].dim = true
+            self:ensureLastFile()
         end
-        self:ensureLastFile()
     end
 end
 
+--- Removes the history item if the document settings has been reset.
 function ReadHistory:fileSettingsPurged(path)
     if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
         -- Also remove it from history on purge when that setting is enabled
@@ -211,6 +216,7 @@ function ReadHistory:fileSettingsPurged(path)
     end
 end
 
+--- Checks the history list for deleted files and removes history items respectively.
 function ReadHistory:clearMissing()
     local history_updated
     for i, v in ipairs(self.hist) do
@@ -257,6 +263,7 @@ function ReadHistory:removeItem(item, idx, no_flush)
     end
 end
 
+--- Adds new item (last opened document) to the top of the history list.
 function ReadHistory:addItem(file, ts)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
         local index = self:getIndexByFile(realpath(file))
