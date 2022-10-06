@@ -175,7 +175,6 @@ function LuaDefaults:flush()
     end
     local f_out = io.open(self.file, "w")
     if f_out ~= nil then
-        os.setlocale('C', 'numeric')
         f_out:write("-- we can read Lua syntax here!\nreturn ")
         f_out:write(dump(self.rw, nil, true))
         f_out:write("\n")

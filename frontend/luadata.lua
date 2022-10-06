@@ -140,7 +140,6 @@ function LuaData:append(data)
     if not self.file then return end
     local f_out = io.open(self.file, "a")
     if f_out ~= nil then
-        os.setlocale('C', 'numeric')
         -- NOTE: This is a function call, with a table as its single argument. Parentheses are elided.
         f_out:write(self.name.."Entry")
         f_out:write(dump(data))
@@ -177,7 +176,6 @@ function LuaData:flush()
     logger.dbg("LuaData: Write to", self.file)
     local f_out = io.open(self.file, "w")
     if f_out ~= nil then
-        os.setlocale('C', 'numeric')
         f_out:write("-- we can read Lua syntax here!\n")
         f_out:write(self.name.."Entry")
         f_out:write(dump(self.data))

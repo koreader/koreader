@@ -19,8 +19,7 @@ These functions don't do anything when debugging is turned off.
 --]]--
 
 local logger = require("logger")
-local dump = require("dump")
-local isAndroid, android = pcall(require, "android")
+local util = require("util")
 
 local Dbg = {
     -- set to nil so first debug:turnOff call won't be skipped
@@ -30,40 +29,7 @@ local Dbg = {
 
 local Dbg_mt = {}
 
-local LvDEBUG
-if isAndroid then
-    LvDEBUG = function(...)
-        local line = {}
-        for _, v in ipairs({...}) do
-            if type(v) == "table" then
-                table.insert(line, dump(v, math.huge))
-            else
-                table.insert(line, tostring(v))
-            end
-        end
-        return android.LOGV(table.concat(line, " "))
-    end
-else
-    LvDEBUG = function(...)
-        local line = {
-            os.date("%x-%X DEBUG"),
-        }
-        for _, v in ipairs({...}) do
-            if type(v) == "table" then
-                table.insert(line, dump(v, math.huge))
-            else
-                table.insert(line, tostring(v))
-            end
-        end
-        table.insert(line, "\n")
-        return io.write(table.concat(line, " "))
-    end
-end
-
---- Helper function to help dealing with nils in Dbg:guard...
-local function pack_values(...)
-    return select("#", ...), {...}
-end
+local LvDEBUG = logger.LvDEBUG
 
 --- Turn on debug mode.
 -- This should only be used in tests and at the user's request.
@@ -80,11 +46,11 @@ function Dbg:turnOn()
             if pre_guard then
                 pre_guard(...)
             end
-            local n, values = pack_values(old_method(...))
+            local values = util.table_pack(old_method(...))
             if post_guard then
                 post_guard(...)
             end
-            return unpack(values, 1, n)
+            return unpack(values, 1, values.n)
         end
     end
     --- Use this instead of a regular Lua @{assert}().
