@@ -146,7 +146,7 @@ function SetDefaultsWidget:init()
                                 callback = function()
                                     UIManager:close(set_dialog)
                                     local new_table = {}
-                                    for _, field in ipairs(MultiInputDialog:getFields()) do
+                                    for _, field in ipairs(set_dialog:getFields()) do
                                         local key, value = field:match("^[^= ]+"), field:match("[^= ]+$")
                                         new_table[tonumber(key) or key] = tonumber(value) or value
                                     end

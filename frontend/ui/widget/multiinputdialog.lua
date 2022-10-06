@@ -46,7 +46,7 @@ Example for input of two strings and a number:
                 {
                     text = _("Use settings"),
                     callback = function(touchmenu_instance)
-                        local fields = MultiInputDialog:getFields()
+                        local fields = sample_input:getFields()
                         -- check for user input
                         if fields[1] ~= "" and fields[2] ~= ""
                             and fields[3] ~= 0 then
@@ -205,7 +205,7 @@ end
 function MultiInputDialog:getFields()
     local fields = {}
     for i, field in ipairs(self.input_field) do
-        table.insert(fields, field.text)
+        table.insert(fields, field:getText())
     end
     return fields
 end

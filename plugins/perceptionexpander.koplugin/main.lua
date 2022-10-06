@@ -145,7 +145,7 @@ function PerceptionExpander:showSettingsDialog()
                 {
                     text = _("Apply"),
                     callback = function()
-                        self:saveSettings(MultiInputDialog:getFields())
+                        self:saveSettings(self.settings_dialog:getFields())
                         self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
                         self:createUI()

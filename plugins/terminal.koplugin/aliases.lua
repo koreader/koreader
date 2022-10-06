@@ -119,7 +119,7 @@ function Aliases:editAlias(alias_name, alias_command)
                 {
                     text = _("Save"),
                     callback = function()
-                        local fields = MultiInputDialog:getFields()
+                        local fields = alias_input:getFields()
                         local name = fields[1] and util.trim(fields[1])
                         local value = fields[2] and util.trim(fields[2])
                         if name ~= "" and value ~= "" then
@@ -150,7 +150,7 @@ function Aliases:editAlias(alias_name, alias_command)
                 {
                     text = _("Execute"),
                     callback = function()
-                        local fields = MultiInputDialog:getFields()
+                        local fields = alias_input:getFields()
                         local value = fields[2] and util.trim(fields[2])
                         if value ~= "" then
                             UIManager:close(alias_input)

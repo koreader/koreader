@@ -142,7 +142,7 @@ Some of the previously generated long-lived tokens are still valid.]])
                 {
                     text = _("Save"),
                     callback = function()
-                        local fields = MultiInputDialog:getFields()
+                        local fields = self.settings_dialog:getFields()
                         if item then
                             callback(item, fields)
                         else

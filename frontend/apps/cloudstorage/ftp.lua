@@ -140,7 +140,7 @@ Username and password are optional.]])
                 {
                     text = text_button_right,
                     callback = function()
-                        local fields = MultiInputDialog:getFields()
+                        local fields = self.settings_dialog:getFields()
                         if fields[1] ~= "" and fields[2] ~= "" then
                             if item then
                                 -- edit
