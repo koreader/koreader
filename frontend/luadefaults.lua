@@ -7,7 +7,6 @@ local LuaSettings = require("luasettings")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
 local util = require("util")
-local isAndroid, android = pcall(require, "android")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
@@ -45,21 +44,11 @@ function LuaDefaults:open(path)
     end
 
     -- The actual defaults file, on the other hand, is set in stone.
-    -- We just have to deal with some platform shenanigans...
-    -- NOTE: On most platforms, $PWD should be our "install" folder, so look there first,
-    --       as DataDir may point elsewhere, and that elsewhere may not exist yet ;).
-    local defaults_path = "defaults.lua"
-    if isAndroid then
-        defaults_path = android.dir .. "/defaults.lua"
-    elseif not util.fileExists(defaults_path) then
-        -- You probably have bigger problems than this if we didn't find it in the install folder, but, oh, well ;).
-        defaults_path = DataStorage:getDataDir() .. "/defaults.lua"
-    end
-    ok, stored = pcall(dofile, defaults_path)
+    ok, stored = pcall(dofile, "defaults.lua")
     if ok and stored then
         new.ro = stored
     else
-        error("Failed reading " .. defaults_path)
+        error("Failed reading defaults.lua")
     end
 
     return new
