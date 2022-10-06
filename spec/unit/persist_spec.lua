@@ -2,7 +2,6 @@ describe("Persist module", function()
     local Persist
     local sample
     local bitserInstance, luajitInstance, zstdInstance, dumpInstance, serpentInstance
-    local ser, deser, str, tab
     local fail = { a = function() end, }
 
     local function arrayOf(n)
@@ -80,23 +79,27 @@ describe("Persist module", function()
     end)
 
     it("should return standalone serializers/deserializers", function()
-        tab = sample
-        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit", "zstd"}) do
+        local tab = sample
+        -- NOTE: zstd only deser from a *file*, not a string.
+        for _, codec in ipairs({"dump", "serpent", "bitser", "luajit"}) do
             assert.is_true(Persist.getCodec(codec).id == codec)
-            ser = Persist.getCodec(codec).serialize
-            deser = Persist.getCodec(codec).deserialize
-            str = ser(tab)
-            assert.are.same(deser(str), tab)
-            str, ser, deser = nil, nil, nil
+            local ser = Persist.getCodec(codec).serialize
+            local deser = Persist.getCodec(codec).deserialize
+            local str = ser(tab)
+            local t, err = deser(str)
+            if not t then
+                print(codec, "deser failed:", err)
+            end
+            assert.are.same(t, tab)
         end
     end)
 
     it("should work with huge tables", function()
-        for _, codec in ipairs({"bitser", "luajit", "zstd"}) do
-            tab = arrayOf(100000)
-            ser = Persist.getCodec(codec).serialize
-            deser = Persist.getCodec(codec).deserialize
-            str = ser(tab)
+        local tab = arrayOf(100000)
+        for _, codec in ipairs({"bitser", "luajit"}) do
+            local ser = Persist.getCodec(codec).serialize
+            local deser = Persist.getCodec(codec).deserialize
+            local str = ser(tab)
             assert.are.same(deser(str), tab)
         end
     end)
@@ -104,9 +107,9 @@ describe("Persist module", function()
     it("should fail to serialize functions", function()
         for _, codec in ipairs({"dump", "bitser", "luajit", "zstd"}) do
             assert.is_true(Persist.getCodec(codec).id == codec)
-            ser = Persist.getCodec(codec).serialize
-            deser = Persist.getCodec(codec).deserialize
-            str = ser(fail)
+            local ser = Persist.getCodec(codec).serialize
+            local deser = Persist.getCodec(codec).deserialize
+            local str = ser(fail)
             assert.are_not.same(deser(str), fail)
         end
     end)
@@ -114,9 +117,9 @@ describe("Persist module", function()
     it("should successfully serialize functions", function()
         for _, codec in ipairs({"serpent"}) do
             assert.is_true(Persist.getCodec(codec).id == codec)
-            ser = Persist.getCodec(codec).serialize
-            deser = Persist.getCodec(codec).deserialize
-            str = ser(fail)
+            local ser = Persist.getCodec(codec).serialize
+            local deser = Persist.getCodec(codec).deserialize
+            local str = ser(fail)
             assert.are_not.same(deser(str), fail)
         end
     end)
