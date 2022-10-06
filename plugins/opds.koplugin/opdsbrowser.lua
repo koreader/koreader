@@ -168,7 +168,7 @@ function OPDSBrowser:addNewCatalog()
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
-                        self:addServerFromInput(MultiInputDialog:getFields())
+                        self:addServerFromInput(self.add_server_dialog:getFields())
                     end
                 },
             },
@@ -219,7 +219,7 @@ function OPDSBrowser:editCalibreServer()
                     callback = function()
                         self.add_server_dialog:onClose()
                         UIManager:close(self.add_server_dialog)
-                        self:editCalibreFromInput(MultiInputDialog:getFields())
+                        self:editCalibreFromInput(self.add_server_dialog:getFields())
                     end
                 },
             },
@@ -1012,7 +1012,7 @@ function OPDSBrowser:editOPDSServer(item)
                     callback = function()
                         self.edit_server_dialog:onClose()
                         UIManager:close(self.edit_server_dialog)
-                        self:editServerFromInput(item, MultiInputDialog:getFields())
+                        self:editServerFromInput(item, self.edit_server_dialog:getFields())
                     end
                 },
             },

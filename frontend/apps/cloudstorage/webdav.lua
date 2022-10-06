@@ -125,7 +125,7 @@ The start folder is appended to the server path.]])
                 {
                     text = text_button_ok,
                     callback = function()
-                        local fields = MultiInputDialog:getFields()
+                        local fields = self.settings_dialog:getFields()
 
                         -- make sure the URL is a valid path
                         if fields[5] ~= "" then

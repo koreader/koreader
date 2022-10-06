@@ -652,7 +652,7 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
                 {
                     text = _("Set"),
                     callback = function()
-                        local inputs = MultiInputDialog:getFields()
+                        local inputs = text_dialog:getFields()
                         local new_text, new_repetitions = inputs[1], inputs[2]
                         if new_text == "" then
                             new_text = " "
