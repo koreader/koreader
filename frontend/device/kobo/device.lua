@@ -1141,7 +1141,6 @@ function Kobo:suspend()
     if ret then
         logger.info("Kobo suspend: ZzZ ZzZ ZzZ... And woke up!")
         if G_reader_settings:isTrue("pm_debug_entry_failure") then
-            -- NOTE: This is a debug option where we coopt the charging LED, hence us not using setupChargingLED here.
             self:toggleChargingLED(false)
         end
     else
