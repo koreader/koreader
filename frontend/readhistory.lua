@@ -70,7 +70,7 @@ function ReadHistory:getIndexByTime(item_time)
     elseif item_time < self.hist[hist_nb].time then
         return hist_nb + 1
     end
-    -- binary search
+    -- binary search (returns min index when several elements equal item_time)
     local s, e, m, d = 1, hist_nb
     while s <= e do
         m = math.floor((s + e) / 2)
@@ -138,9 +138,15 @@ function ReadHistory:_readLegacyHistory()
                 local file = DocSettings:getNameFromHistory(f)
                 if file ~= nil and file ~= "" then
                     local item_path = joinPath(path, file)
+                    local real_path = realpath(item_path)
                     local item_time = lfs.attributes(joinPath(history_dir, f), "modification")
                     local index = self:getIndexByTime(item_time)
-                    if self.hist[index].file ~= realpath(item_path) then
+                    if self.hist[index].file ~= real_path then
+                        while index <= #self.hist -- sort alhabetically
+                                and self.hist[index].time == item_time
+                                and self.hist[index].file < real_path do
+                            index = index + 1
+                        end
                         table.insert(self.hist, index, buildEntry(item_time, item_path))
                     end
                 end
@@ -268,9 +274,6 @@ end
 --- Adds new item (last opened document) to the top of the history list.
 function ReadHistory:addItem(file, ts)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
-        -- util.execute("/bin/touch", "-a", file)
-        -- This emulates `touch -a` in LuaFileSystem's API, since it may be absent (Android)
-        -- or provided by busybox, which doesn't support the `-a` flag.
         local now = ts or os.time()
         local mtime = lfs.attributes(file, "modification")
         lfs.touch(file, now, mtime)
