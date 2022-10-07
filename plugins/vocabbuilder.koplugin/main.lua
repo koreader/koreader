@@ -229,7 +229,7 @@ function MenuDialog:init()
     }
 
     local reverse_button = {
-        text = settings.reverse and _("Reverse order") or _("Reverse order (show only reviewable)"),
+        text = settings.reverse and _("Reverse order") or _("Reverse order and show only reviewable"),
         callback = function()
             self:onClose()
             settings.reverse = not settings.reverse
