@@ -229,7 +229,7 @@ end
 function UIManager:schedule(sched_time, action, ...)
     local s, e = 1, #self._task_queue
     if e ~= 0 then
-        -- Do a binary insert if the table contains at least one entry
+        -- Do a binary insert if the table contains at least one entry.
         repeat
             local p = bit.rshift(e + s, 1) -- Not necessary to use (s + (e -s) / 2) here!
             local p_time = self._task_queue[p].time
