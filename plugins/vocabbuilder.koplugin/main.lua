@@ -134,6 +134,10 @@ local function onShowFilter(widget)
     UIManager:show(sort_widget)
 end
 
+local function saveSettings()
+    G_reader_settings:saveSetting("vocabulary_builder", settings)
+end
+
 --[[--
 Menu dialogue widget
 --]]--
@@ -224,6 +228,16 @@ function MenuDialog:init()
         end
     }
 
+    local reverse_button = {
+        text = settings.reverse and _("Reverse order") or _("Reverse order (show only reviewable)"),
+        callback = function()
+            self:onClose()
+            settings.reverse = not settings.reverse
+            saveSettings()
+            self.show_parent:reloadItems()
+        end
+    }
+
     local edit_button = {
         text = self.is_edit_mode and _("Resume") or _("Quick deletion"),
         callback = function()
@@ -266,6 +280,7 @@ function MenuDialog:init()
         width = width,
         buttons = {
             {filter_button},
+            {reverse_button},
             {edit_button},
             {reset_button},
             {clean_button}
@@ -356,12 +371,12 @@ end
 
 function MenuDialog:onChangeContextStatus(args, position)
     settings.with_context = position == 2
-    G_reader_settings:saveSetting("vocabulary_builder", settings)
+    saveSettings()
 end
 
 function MenuDialog:onChangeEnableStatus(args, position)
     settings.enabled = position == 2
-    G_reader_settings:saveSetting("vocabulary_builder", settings)
+    saveSettings()
     resetButtonOnLookupWindow()
 end
 
@@ -998,6 +1013,7 @@ local VocabularyBuilderWidget = FocusManager:extend{
 }
 
 function VocabularyBuilderWidget:init()
+    self.item_table = self:reload_items_callback()
     self.layout = {}
 
     self.dimen = Geom:new{
@@ -1233,7 +1249,7 @@ function VocabularyBuilderWidget:_populateItems()
     end
 
     if self.select_items_callback then
-        self.select_items_callback(self.item_table ,idx_offset, page_last)
+        self:select_items_callback(idx_offset, page_last)
     end
 
     for idx = idx_offset + 1, page_last do
@@ -1264,7 +1280,9 @@ function VocabularyBuilderWidget:_populateItems()
     end
     if self.pages == 0 then
         local has_filtered_book = DB:hasFilteredBook()
-        self.footer_page:setText(has_filtered_book and _("Filter in effect") or _("No items"), self.footer_center_width)
+        local text = has_filtered_book and _("Filter in effect") or
+            self:check_reverse() and _("No reviewable items") or _("No items")
+        self.footer_page:setText(text, self.footer_center_width)
         self.footer_first_up:hide()
         self.footer_last_down:hide()
         self.footer_left:hide()
@@ -1344,9 +1362,13 @@ function VocabularyBuilderWidget:showMenu()
     })
 end
 
+function VocabularyBuilderWidget:check_reverse()
+    return settings.reverse
+end
+
 function VocabularyBuilderWidget:reloadItems()
     DB:batchUpdateItems(self.item_table)
-    self.item_table = self.reload_items_callback()
+    self.item_table = self:reload_items_callback()
     self.pages = math.ceil(#self.item_table / self.items_per_page)
     self:goToPage(1)
 end
@@ -1427,9 +1449,10 @@ function VocabBuilder:addToMainMenu(menu_items)
     menu_items.vocabbuilder = {
         text = _("Vocabulary builder"),
         callback = function()
-            local reload_items = function()
+            local reload_items = function(builder_widget)
+                builder_widget.reload_time = os.time()
                 local vocab_items = {}
-                for i = 1, DB:selectCount() do
+                for i = 1, DB:selectCount(builder_widget) do
                     table.insert(vocab_items, {
                         callback = function(item)
                             -- custom button table
@@ -1475,7 +1498,7 @@ function VocabBuilder:addToMainMenu(menu_items)
                                 end
                             end
 
-                            self.builder_widget.current_lookup_word = item.word
+                            builder_widget.current_lookup_word = item.word
                             self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, tweak_buttons_func))
                         end
                     })
@@ -1485,9 +1508,8 @@ function VocabBuilder:addToMainMenu(menu_items)
 
             self.builder_widget = VocabularyBuilderWidget:new{
                 title = _("Vocabulary builder"),
-                item_table = reload_items(),
-                select_items_callback = function(items, start_idx, end_idx)
-                    DB:select_items(items, start_idx, end_idx)
+                select_items_callback = function(obj, start_idx, end_idx)
+                    DB:select_items(obj, start_idx, end_idx)
                 end,
                 reload_items_callback = reload_items
             }
