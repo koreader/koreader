@@ -299,7 +299,7 @@ function ReadHistory:reload(force_read)
         self:_readLegacyHistory()
         if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
             self:clearMissing()
-        else
+        end
         self:_reduce()
         return true
     end
