@@ -136,7 +136,7 @@ function VocabularyBuilder:_select_items(items, start_idx, reload_time)
     if not reload_time then
         sql = string.format("SELECT * FROM vocabulary INNER JOIN title ON title_id = title.id AND filter = true ORDER BY due_time limit %d OFFSET %d;", 32, start_idx-1)
     else
-        sql = string.format([[SELECT * FROM vocabulary INNER JOIN title 
+        sql = string.format([[SELECT * FROM vocabulary INNER JOIN title
                               ON title_id = title.id AND filter = true
                               WHERE due_time < ]] .. reload_time ..
                             " ORDER BY due_time desc limit %d OFFSET %d;", 32, start_idx-1)
