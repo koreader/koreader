@@ -241,8 +241,6 @@ describe("ReadHistory module", function()
 
         h:reload()
         assert.is.same(2, #h.hist)
-        assert_item_is(h, 1, "b", true)
-        assert_item_is(h, 2, "a")
 
         rm(test_file("b"))
     end
