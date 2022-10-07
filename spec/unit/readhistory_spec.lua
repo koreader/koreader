@@ -43,7 +43,6 @@ describe("ReadHistory module", function()
 
     local function assert_item_is(h, i, name, fileRemoved)
         assert.is.same(name, h.hist[i].text)
-        assert.is.same(i, h.hist[i].index)
         assert.is.same(joinPath(realpath(test_data_dir()), name), h.hist[i].file)
         if fileRemoved then
             assert.is_nil(realpath(test_file(name)))
