@@ -1254,6 +1254,17 @@ function Kobo:toggleChargingLED(toggle)
     if toggle == nil then
         return
     end
+    -- Don't do anything if the state is already correct
+    -- NOTE: What happens to the LED when attempting/successfully entering PM is... kind of a mess.
+    --       On a H2O, even *attempting* to enter PM will kill the light (and it'll stay off).
+    --       On a Forma, a failed attempt will *not* affect the light, but a successful one *will* kill it,
+    --       be that standby or suspend, but it'll be restored on wakeup...
+    --       On sunxi, PM appears to have zero effect on the LED.
+    if self.charging_led_state == toggle then
+        return
+    end
+    self.charging_led_state = toggle
+    logger.dbg("Kobo: Turning the charging LED", toggle and "on" or "off")
 
     -- NOTE: While most/all Kobos actually have a charging LED, and it can usually be fiddled with in a similar fashion,
     --       we've seen *extremely* weird behavior in the past when playing with it on older devices (c.f., #5479).
