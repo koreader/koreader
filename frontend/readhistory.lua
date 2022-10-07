@@ -240,13 +240,15 @@ end
 
 function ReadHistory:updateItemByPath(old_path, new_path)
     local index = self:getIndexByFile(old_path)
-    self.hist[index].file = new_path
-    self.hist[index].text = new_path:gsub(".*/", "")
-    self.hist[index].callback = function()
-        selectCallback(new_path)
+    if index then
+        self.hist[index].file = new_path
+        self.hist[index].text = new_path:gsub(".*/", "")
+        self.hist[index].callback = function()
+            selectCallback(new_path)
+        end
+        self:_flush()
+        self:reload(true)
     end
-    self:_flush()
-    self:reload(true)
     if G_reader_settings:readSetting("lastfile") == old_path then
         G_reader_settings:saveSetting("lastfile", new_path)
     end
