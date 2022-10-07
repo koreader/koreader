@@ -73,10 +73,10 @@ function ReadHistory:getIndexByTime(item_time)
     -- binary search (returns min index when several elements equal item_time)
     local s, e, m, d = 1, hist_nb
     while s <= e do
-        m = math.floor((s + e) / 2)
+        m = bit.rshift(s + e, 1)
         if item_time < self.hist[m].time then
             s, d = m + 1, 1
-        elseif item_time >= self.hist[m].time then
+        else
             e, d = m - 1, 0
         end
     end
@@ -142,7 +142,7 @@ function ReadHistory:_readLegacyHistory()
                     local item_time = lfs.attributes(joinPath(history_dir, f), "modification")
                     local index = self:getIndexByTime(item_time)
                     if self.hist[index].file ~= real_path then
-                        while index <= #self.hist -- sort alhabetically
+                        while index <= #self.hist -- sort alphabetically
                                 and self.hist[index].time == item_time
                                 and self.hist[index].file < real_path do
                             index = index + 1
