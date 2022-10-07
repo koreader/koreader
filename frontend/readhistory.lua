@@ -268,20 +268,24 @@ end
 --- Adds new item (last opened document) to the top of the history list.
 function ReadHistory:addItem(file, ts)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
-        local index = self:getIndexByFile(realpath(file))
-        if index then
-            table.remove(self.hist, index)
-        end
-        local now = ts or os.time()
-        table.insert(self.hist, 1, buildEntry(now, file))
         -- util.execute("/bin/touch", "-a", file)
         -- This emulates `touch -a` in LuaFileSystem's API, since it may be absent (Android)
         -- or provided by busybox, which doesn't support the `-a` flag.
+        local now = ts or os.time()
         local mtime = lfs.attributes(file, "modification")
         lfs.touch(file, now, mtime)
-        self:_reduce()
+        local index = self:getIndexByFile(realpath(file))
+        if index == 1 then -- last book
+            self.hist[1].time = now
+        else -- old or new book
+            if index then -- old book
+                table.remove(self.hist, index)
+            end
+            table.insert(self.hist, 1, buildEntry(now, file))
+            self:_reduce()
+            G_reader_settings:saveSetting("lastfile", file)
+        end
         self:_flush()
-        G_reader_settings:saveSetting("lastfile", file)
     end
 end
 
