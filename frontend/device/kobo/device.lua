@@ -232,7 +232,7 @@ local KoboDaylight = Kobo:extend{
 -- Kobo Aura H2O:
 local KoboDahlia = Kobo:extend{
     model = "Kobo_dahlia",
-    canToggleChargingLED = no,  -- Possibly weird interactions with Nickel
+    canToggleChargingLED = yes,
     led_uses_channel_3 = true,
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
@@ -776,6 +776,15 @@ function Kobo:init()
         self.restoreKeyRepeat = NOP
     end
 
+    -- Detect the NTX charging LED sysfs knob
+    if util.pathExists("/sys/devices/platform/ntx_led/lit") then
+        self.ntx_lit_sysfs_knob = "/sys/devices/platform/ntx_led/lit"
+    elseif util.pathExists("/sys/devices/platform/pmic_light.1/lit") then
+        self.ntx_lit_sysfs_knob = "/sys/devices/platform/pmic_light.1/lit"
+    else
+        self.canToggleChargingLED = no
+    end
+
     -- NOP unsupported methods
     if not self:canToggleChargingLED() then
         self.toggleChargingLED = NOP
@@ -1019,8 +1028,16 @@ function Kobo:standby(max_duration)
 
     if ret then
         logger.info("Kobo standby: zZz zZz zZz zZz... And woke up!")
+        if G_reader_settings:isTrue("pm_debug_entry_failure") then
+            -- NOTE: This is a debug option where we coopt the charging LED, hence us not using setupChargingLED here.
+            --       (It's called on resume anyway).
+            self:toggleChargingLED(false)
+        end
     else
         logger.warn("Kobo standby: the kernel refused to enter standby!")
+        if G_reader_settings:isTrue("pm_debug_entry_failure") then
+            self:toggleChargingLED(true)
+        end
     end
 
     if max_duration then
@@ -1123,10 +1140,16 @@ function Kobo:suspend()
 
     if ret then
         logger.info("Kobo suspend: ZzZ ZzZ ZzZ... And woke up!")
+        if G_reader_settings:isTrue("pm_debug_entry_failure") then
+            self:toggleChargingLED(false)
+        end
     else
         logger.warn("Kobo suspend: the kernel refused to enter suspend!")
         -- Reset state-extended back to 0 since we are giving up.
         writeToSys("0", "/sys/power/state-extended")
+        if G_reader_settings:isTrue("pm_debug_entry_failure") then
+            self:toggleChargingLED(true)
+        end
     end
 
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
@@ -1231,17 +1254,27 @@ function Kobo:toggleChargingLED(toggle)
     if toggle == nil then
         return
     end
+    -- Don't do anything if the state is already correct
+    -- NOTE: What happens to the LED when attempting/successfully entering PM is... kind of a mess.
+    --       On a H2O, even *attempting* to enter PM will kill the light (and it'll stay off).
+    --       On a Forma, a failed attempt will *not* affect the light, but a successful one *will* kill it,
+    --       be that standby or suspend, but it'll be restored on wakeup...
+    --       On sunxi, PM appears to have zero effect on the LED.
+    if self.charging_led_state == toggle then
+        return
+    end
+    self.charging_led_state = toggle
+    logger.dbg("Kobo: Turning the charging LED", toggle and "on" or "off")
 
     -- NOTE: While most/all Kobos actually have a charging LED, and it can usually be fiddled with in a similar fashion,
     --       we've seen *extremely* weird behavior in the past when playing with it on older devices (c.f., #5479).
     --       In fact, Nickel itself doesn't provide this feature on said older devices
     --       (when it does, it's an option in the Energy saving settings),
     --       which is why we also limit ourselves to "true" on devices where this was tested.
-    --       FWIW, on older devices, the knob is at "/sys/devices/platform/pmic_light.1/lit".
     -- c.f., drivers/misc/ntx_misc_light.c
-    local f = io.open("/sys/devices/platform/ntx_led/lit", "we")
+    local f = io.open(self.ntx_lit_sysfs_knob, "we")
     if not f then
-        logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
+        logger.err("cannot open", self.ntx_lit_sysfs_knob, "for writing!")
         return false
     end
     -- Relying on LFs is mildly more elegant than spamming f:flush() calls ;).
