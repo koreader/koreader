@@ -272,9 +272,9 @@ function ReadHistory:removeItem(item, idx, no_flush)
 end
 
 --- Adds new item (last opened document) to the top of the history list.
-function ReadHistory:addItem(file, ts)
+function ReadHistory:addItem(file)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
-        local now = ts or os.time()
+        local now = os.time()
         local mtime = lfs.attributes(file, "modification")
         lfs.touch(file, now, mtime)
         local index = self:getIndexByFile(realpath(file))
@@ -300,8 +300,6 @@ function ReadHistory:reload(force_read)
         self:_reduce()
         return true
     end
-
-    return false
 end
 
 ReadHistory:_init()
