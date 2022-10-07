@@ -135,6 +135,16 @@ if G_reader_settings and G_reader_settings:has("font_ui_fallbacks") then
     logger.dbg("updated Font.fallbacks:", Font.fallbacks)
 end
 
+-- Match bold font to fallback by name. We do not use FontInfo name match
+-- to allow users more flexibility
+for _, fallback_font_path in ipairs(Font.fallbacks) do
+    if not _bold_font_variant[fallback_font_path] and fallback_font_path:find("-Regular") then -- has no bold and is regular by name
+        local bold_path = fallback_font_path:gsub("-Regular", "-Bold", 1, true)
+        Font.bold_font_variant[fallback_font_path] = bold_path
+        Font.regular_font_variant[bold_path] = fallback_font_path
+    end
+end
+
 -- Helper functions with explicite names around
 -- bold/regular_font_variant tables
 function Font:hasBoldVariant(name)
