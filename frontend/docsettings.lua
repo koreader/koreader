@@ -16,16 +16,31 @@ local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 
-local function buildCandidate(file_path, priority, t)
-    -- Ignore empty files.
-    if file_path and lfs.attributes(file_path, "mode") == "file" then
-        return table.insert(t, {
-            path = file_path,
-            mtime = lfs.attributes(file_path, "modification"),
-            prio = priority,
-            }
-        )
+local function buildCandidates(list)
+    local candidates = {}
+
+    for i, file_path in ipairs(list) do
+        -- Ignore empty files.
+        if file_path and lfs.attributes(file_path, "mode") == "file" then
+            table.insert(candidates, {
+                path = file_path,
+                mtime = lfs.attributes(file_path, "modification"),
+                prio = i,
+                }
+            )
+        end
     end
+
+    -- MRU sort, tie breaker is insertion order (higher priority locations were inserted first).
+    table.sort(candidates, function(l, r)
+                               if l.mtime == r.mtime then
+                                   return l.prio < r.prio
+                               else
+                                   return l.mtime > r.mtime
+                               end
+                           end)
+
+    return candidates
 end
 
 --- Returns path to sidecar directory (`filename.sdr`).
@@ -124,27 +139,24 @@ function DocSettings:open(docfile)
                                   ffiutil.basename(docfile)..".lua"
     end
 
-    local candidates = {}
-    -- New sidecar file
-    buildCandidate(new.sidecar_file, 1,  candidates)
-    -- Backup file of new sidecar file
-    buildCandidate(new.sidecar_file and (new.sidecar_file .. ".old"), 2, candidates)
-    -- Legacy sidecar file
-    buildCandidate(new.legacy_sidecar_file, 3, candidates)
-    -- Legacy history folder
-    buildCandidate(new.history_file, 4, candidates)
-    -- Backup file in legacy history folder
-    buildCandidate(new.history_file .. ".old", 5, candidates)
-    -- Legacy kpdfview setting
-    buildCandidate(docfile..".kpdfview.lua", 6, candidates)
-    -- MRU sort, insertion order if mtime matches
-    table.sort(candidates, function(l, r)
-                               if l.mtime == r.mtime then
-                                   return l.prio < r.prio
-                               else
-                                   return l.mtime > r.mtime
-                               end
-                           end)
+    -- Candidates list, in order of priority:
+    local candidates_list = {
+        -- New sidecar file
+        new.sidecar_file,
+        -- Backup file of new sidecar file
+        new.sidecar_file and (new.sidecar_file .. ".old"),
+        -- Legacy sidecar file
+        new.legacy_sidecar_file,
+        -- Legacy history folder
+        new.history_file,
+        -- Backup file in legacy history folder
+        new.history_file .. ".old",
+        -- Legacy kpdfview setting
+        docfile..".kpdfview.lua",
+    }
+    -- We get back an array of tables for *existing* candidates, sorted MRU first (insertion order breaks ties).
+    local candidates = buildCandidates(candidates_list)
+
     local ok, stored, filepath
     for _, t in ipairs(candidates) do
         local candidate_path = t.path
