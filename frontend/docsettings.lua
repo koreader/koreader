@@ -79,7 +79,7 @@ function DocSettings:hasSidecarFile(doc_path)
 end
 
 function DocSettings:getHistoryPath(fullpath)
-    return HISTORY_DIR .. "/[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
+    return HISTORY_DIR .. "/[" .. fullpath:gsub("(.*/)([^/]+)", "%1] %2"):gsub("/", "#") .. ".lua"
 end
 
 function DocSettings:getPathFromHistory(hist_name)
@@ -90,7 +90,7 @@ function DocSettings:getPathFromHistory(hist_name)
     if s == nil or s == '' then return '' end
     -- 2. crop the bracket-sign from both sides
     -- 3. and finally replace decorative signs '#' to dir-char '/'
-    return string.gsub(string.sub(s,2,-3),"#","/")
+    return string.gsub(string.sub(s, 2, -3), "#", "/")
 end
 
 function DocSettings:getNameFromHistory(hist_name)
