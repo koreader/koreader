@@ -144,7 +144,7 @@ function ReadHistory:_readLegacyHistory()
                     local item_text = file:gsub(".*/", "")
                     local item_time = lfs.attributes(joinPath(history_dir, f), "modification")
                     local index = self:getIndexByTime(item_time)
-                    if #self.hist == 0 or self.hist[index].file ~= realpath(item_path) then
+                    if index > #self.hist or self.hist[index].file ~= realpath(item_path) then
                         -- items with equal time are sorted alphabetically by filename
                         while index <= #self.hist
                                 and self.hist[index].time == item_time
@@ -281,11 +281,12 @@ function ReadHistory:addItem(file)
         local now = os.time()
         local mtime = lfs.attributes(file, "modification")
         lfs.touch(file, now, mtime)
+        local history_not_empty = #self.hist > 0
         local index = self:getIndexByFile(realpath(file))
-        if index == 1 then -- last book
+        if history_not_empty and index == 1 then -- last book
             self.hist[1].time = now
         else -- old or new book
-            if index then -- old book
+            if history_not_empty and index then -- old book
                 table.remove(self.hist, index)
             end
             table.insert(self.hist, 1, buildEntry(now, file))
@@ -304,7 +305,6 @@ function ReadHistory:reload(force_read)
         self:clearMissing()
     end
     self:_reduce()
-    return true
 end
 
 ReadHistory:_init()
