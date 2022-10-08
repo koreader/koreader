@@ -304,6 +304,7 @@ function ReadHistory:reload(force_read)
         self:clearMissing()
     end
     self:_reduce()
+    return true
 end
 
 ReadHistory:_init()
