@@ -62,7 +62,6 @@ end
 
 local ReaderDictionary = WidgetContainer:extend{
     data_dir = nil,
-    dict_window_list = nil, -- array
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
@@ -100,7 +99,6 @@ local function getDictionaryFixHtmlFunc(path)
 end
 
 function ReaderDictionary:init()
-    self.dict_window_list = {}
     self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
@@ -967,9 +965,8 @@ end
 
 function ReaderDictionary:showDict(word, results, boxes, link, tweak_buttons_func)
     if results and results[1] then
-        logger.dbg("showing quick lookup window", #self.dict_window_list+1, ":", word, results)
+        logger.dbg("showing quick lookup window", #DictQuickLookup.window_list+1, ":", word, results)
         self.dict_window = DictQuickLookup:new{
-            window_list = self.dict_window_list,
             ui = self.ui,
             highlight = self.highlight,
             tweak_buttons_func = tweak_buttons_func,
@@ -993,7 +990,6 @@ function ReaderDictionary:showDict(word, results, boxes, link, tweak_buttons_fun
                 self:onHtmlDictionaryLinkTapped(dictionary, html_link)
             end,
         }
-        table.insert(self.dict_window_list, self.dict_window)
         if self.lookup_progress_msg then
             -- If we have a lookup InfoMessage that ended up being displayed, make
             -- it *not* refresh on close if it is hidden by our DictQuickLookup
