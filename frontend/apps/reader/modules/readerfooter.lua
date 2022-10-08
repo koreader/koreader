@@ -390,7 +390,7 @@ local footerTextGeneratorMap = {
             local title = doc_info.title:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
             local title_widget = TextWidget:new{
                 text = title,
-                max_width = footer._saved_screen_width * footer.settings.book_title_max_width_pct * 0.01,
+                max_width = footer._saved_screen_width * footer.settings.book_title_max_width_pct * (1/100),
                 face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
                 bold = footer.settings.text_font_bold,
             }
@@ -410,7 +410,7 @@ local footerTextGeneratorMap = {
             chapter_title = chapter_title:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
             local chapter_widget = TextWidget:new{
                 text = chapter_title,
-                max_width = footer._saved_screen_width * footer.settings.book_chapter_max_width_pct * 0.01,
+                max_width = footer._saved_screen_width * footer.settings.book_chapter_max_width_pct * (1/100),
                 face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
                 bold = footer.settings.text_font_bold,
             }
@@ -2168,7 +2168,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.footer_text.height = 0
         else
             -- Alongside a progress bar, it's the bar's width plus whatever's left.
-            local text_max_available_ratio = (100 - self.settings.progress_bar_min_width_pct) * 0.01
+            local text_max_available_ratio = (100 - self.settings.progress_bar_min_width_pct) * (1/100)
             self.footer_text:setMaxWidth(math.floor(text_max_available_ratio * self._saved_screen_width - 2 * self.settings.progress_margin_width - self.horizontal_margin))
             -- Add some spacing between the text and the bar
             self.text_width = self.footer_text:getSize().w + self.horizontal_margin
