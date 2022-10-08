@@ -220,7 +220,7 @@ function PerceptionExpander:saveSettings(fields)
 
         local line_intensity = fields[3] ~= "" and tonumber(fields[3]) or self.line_color_intensity * 10
         if line_intensity then
-            self.line_color_intensity = line_intensity / 10
+            self.line_color_intensity = line_intensity * (1/10)
         end
         self.shift_each_pages = fields[4] ~= "" and tonumber(fields[4]) or self.shift_each_pages
     end

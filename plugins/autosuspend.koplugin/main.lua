@@ -378,19 +378,19 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
     local day, hour, minute, second
     local day_max, hour_max, min_max, sec_max
     if time_scale == 2 then
-        day = math.floor(setting_val / (24*3600))
-        hour = math.floor(setting_val / 3600) % 24
-        day_max = math.floor(range[2] / (24*3600)) - 1
+        day = math.floor(setting_val * (1/(24*3600)))
+        hour = math.floor(setting_val * (1/3600)) % 24
+        day_max = math.floor(range[2] * (1/(24*3600))) - 1
         hour_max = 23
     elseif time_scale == 1 then
-        hour = math.floor(setting_val / 3600)
-        minute = math.floor(setting_val / 60) % 60
-        hour_max = math.floor(range[2] / 3600) - 1
+        hour = math.floor(setting_val * (1/3600))
+        minute = math.floor(setting_val * (1/60)) % 60
+        hour_max = math.floor(range[2] * (1/3600)) - 1
         min_max = 59
     else
-        minute = math.floor(setting_val / 60)
+        minute = math.floor(setting_val * (1/60))
         second = math.floor(setting_val) % 60
-        min_max =  math.floor(range[2] / 60) - 1
+        min_max =  math.floor(range[2] * (1/60)) - 1
         sec_max = 59
     end
 
@@ -439,13 +439,13 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
         default_callback = function()
             local day, hour, min, sec -- luacheck: ignore 431
             if time_scale == 2 then
-                day = math.floor(default_value / (24*3600))
-                hour = math.floor(default_value / 3600) % 24
+                day = math.floor(default_value * (1/(24*3600)))
+                hour = math.floor(default_value * (1/3600)) % 24
             elseif time_scale == 1 then
-                hour = math.floor(default_value / 3600)
-                min = math.floor(default_value / 60) % 60
+                hour = math.floor(default_value * (1/3600))
+                min = math.floor(default_value * (1/60)) % 60
             else
-                min = math.floor(default_value / 60)
+                min = math.floor(default_value * (1/60))
                 sec = math.floor(default_value % 60)
             end
             time_spinner:update(nil, nil, day, hour, min, sec) -- It is ok to pass nils here.

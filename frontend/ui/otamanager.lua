@@ -372,7 +372,7 @@ function OTAManager:_buildLocalPackage()
         -- Defaults to a sane-ish value as-of now, in case shit happens...
         local blocks = 6405
         if tarball_size then
-            blocks = tarball_size / (512 * 20)
+            blocks = tarball_size * (1/(512 * 20))
         end
         -- And since we want a percentage, devise the exact value we need for tar to spit out exactly 100 checkpoints ;).
         local cpoints = blocks * (1/100)
