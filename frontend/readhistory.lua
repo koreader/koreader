@@ -115,19 +115,20 @@ end
 -- @treturn boolean true if the history_file has been updated and reloaded.
 function ReadHistory:_read(force_read)
     local history_file_modification_time = lfs.attributes(history_file, "modification")
-    if history_file_modification_time == nil
-            or (not force_read and (history_file_modification_time <= self.last_read_time)) then
-        return false
+    if history_file_modification_time == nil then -- no history_file, proceed legacy only
+        return true
     end
-    self.last_read_time = history_file_modification_time
-    local ok, data = pcall(dofile, history_file)
-    if ok and data then
-        self.hist = {}
-        for _, v in ipairs(data) do
-            table.insert(self.hist, buildEntry(v.time, v.file))
+    if force_read or (history_file_modification_time > self.last_read_time) then
+        self.last_read_time = history_file_modification_time
+        local ok, data = pcall(dofile, history_file)
+        if ok and data then
+            self.hist = {}
+            for _, v in ipairs(data) do
+                table.insert(self.hist, buildEntry(v.time, v.file))
+            end
         end
+        return true
     end
-    return true
 end
 
 --- Reads history from legacy history folder.
@@ -298,12 +299,13 @@ end
 
 --- Reloads history from history_file and legacy history folder.
 function ReadHistory:reload(force_read)
-    self:_read(force_read)
-    self:_readLegacyHistory()
-    if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
-        self:clearMissing()
+    if self:_read(force_read) then
+        self:_readLegacyHistory()
+        if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
+            self:clearMissing()
+        end
+        self:_reduce()
     end
-    self:_reduce()
 end
 
 ReadHistory:_init()
