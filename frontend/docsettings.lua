@@ -21,7 +21,7 @@ local function buildCandidates(list)
 
     for i, file_path in ipairs(list) do
         -- Ignore empty files.
-        if file_path and lfs.attributes(file_path, "mode") == "file" then
+        if file_path ~= "" and lfs.attributes(file_path, "mode") == "file" then
             table.insert(candidates, {
                 path = file_path,
                 mtime = lfs.attributes(file_path, "modification"),
@@ -144,7 +144,7 @@ function DocSettings:open(docfile)
         -- New sidecar file
         new.sidecar_file,
         -- Backup file of new sidecar file
-        new.sidecar_file and (new.sidecar_file .. ".old"),
+        new.sidecar_file and (new.sidecar_file .. ".old") or "",
         -- Legacy sidecar file
         new.legacy_sidecar_file,
         -- Legacy history folder
