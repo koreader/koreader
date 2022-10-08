@@ -38,7 +38,7 @@ local function buildEntry(input_time, input_file)
             else
                 -- For past documents, the last save time of the settings is better
                 -- as last read time than input_time (its last opening time, that
-                -- we fallback to it no sidecar file)
+                -- we fallback to if no sidecar file)
                 last_read_ts = DocSettings:getLastSaveTime(file_path) or input_time
             end
             return util.secondsToDate(last_read_ts, G_reader_settings:isTrue("twelve_hour_clock"))
@@ -142,14 +142,13 @@ function ReadHistory:_readLegacyHistory()
                 local file = DocSettings:getNameFromHistory(f)
                 if file ~= nil and file ~= "" then
                     local item_path = joinPath(path, file)
-                    local item_text = file:gsub(".*/", "")
                     local item_time = lfs.attributes(joinPath(history_dir, f), "modification")
                     local index = self:getIndexByTime(item_time)
                     if index > #self.hist or self.hist[index].file ~= realpath(item_path) then
                         -- items with equal time are sorted alphabetically by filename
                         while index <= #self.hist
                                 and self.hist[index].time == item_time
-                                and self.hist[index].file:gsub(".*/", "") < item_text do
+                                and self.hist[index].file:gsub(".*/", "") < file do
                             index = index + 1
                         end
                         table.insert(self.hist, index, buildEntry(item_time, item_path))
