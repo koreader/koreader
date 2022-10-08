@@ -16,12 +16,15 @@ local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 
-local function buildCandidate(file_path, t)
+local function buildCandidate(file_path, priority, t)
     -- Ignore empty files.
     if file_path and lfs.attributes(file_path, "mode") == "file" then
-        return table.insert(t, { file_path, lfs.attributes(file_path, "modification") })
-    else
-        return nil
+        return table.insert(t, {
+            path = file_path,
+            mtime = lfs.attributes(file_path, "modification"),
+            prio = priority,
+            }
+        )
     end
 end
 
@@ -123,24 +126,28 @@ function DocSettings:open(docfile)
 
     local candidates = {}
     -- New sidecar file
-    buildCandidate(new.sidecar_file, candidates)
+    buildCandidate(new.sidecar_file, 1,  candidates)
     -- Backup file of new sidecar file
-    buildCandidate(new.sidecar_file and (new.sidecar_file .. ".old"), candidates)
+    buildCandidate(new.sidecar_file and (new.sidecar_file .. ".old"), 2, candidates)
     -- Legacy sidecar file
-    buildCandidate(new.legacy_sidecar_file, candidates)
+    buildCandidate(new.legacy_sidecar_file, 3, candidates)
     -- Legacy history folder
-    buildCandidate(new.history_file, candidates)
+    buildCandidate(new.history_file, 4, candidates)
     -- Backup file in legacy history folder
-    buildCandidate(new.history_file .. ".old", candidates)
+    buildCandidate(new.history_file .. ".old", 5, candidates)
     -- Legacy kpdfview setting
-    buildCandidate(docfile..".kpdfview.lua", candidates)
-    -- MRU sort
+    buildCandidate(docfile..".kpdfview.lua", 6, candidates)
+    -- MRU sort, insertion order if mtime matches
     table.sort(candidates, function(l, r)
-                               return l[2] > r[2]
+                               if l.mtime == r.mtime then
+                                   return l.prio < r.prio
+                               else
+                                   return l.mtime > r.mtime
+                               end
                            end)
     local ok, stored, filepath
     for _, t in ipairs(candidates) do
-        local candidate_path = t[1]
+        local candidate_path = t.path
         -- Ignore empty files
         if lfs.attributes(candidate_path, "size") > 0 then
             ok, stored = pcall(dofile, candidate_path)
@@ -210,7 +217,7 @@ function DocSettings:flush()
             if self.candidates ~= nil
             and G_reader_settings:nilOrFalse("preserve_legacy_docsetting") then
                 for _, t in ipairs(self.candidates) do
-                    local candidate_path = t[1]
+                    local candidate_path = t.path
                     if candidate_path ~= f and candidate_path ~= f .. ".old" then
                         logger.dbg("DocSettings: Removed legacy file", candidate_path)
                         os.remove(candidate_path)
