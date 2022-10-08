@@ -297,16 +297,13 @@ function ReadHistory:addItem(file)
 end
 
 --- Reloads history from history_file and legacy history folder.
--- @treturn boolean true if history_file has been updated and reload happened.
 function ReadHistory:reload(force_read)
-    if self:_read(force_read) then
-        self:_readLegacyHistory()
-        if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
-            self:clearMissing()
-        end
-        self:_reduce()
-        return true
+    self:_read(force_read)
+    self:_readLegacyHistory()
+    if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
+        self:clearMissing()
     end
+    self:_reduce()
 end
 
 ReadHistory:_init()
