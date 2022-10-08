@@ -71,10 +71,10 @@ function LuaData:open(file_path, name)
     if lfs.attributes(new.file, "mode") == "file" then
         ok, err = loadfile(new.file, "t", data_env)
         if ok then
-            logger.dbg("data is read from", new.file)
+            logger.dbg("LuaData: data is read from", new.file)
             ok()
         else
-            logger.dbg(new.file, "is invalid, removed.", err)
+            logger.dbg("LuaData:", new.file, "is invalid, removed.", err)
             os.remove(new.file)
         end
     end
@@ -84,11 +84,11 @@ function LuaData:open(file_path, name)
             if lfs.attributes(backup_file, "mode") == "file" then
                 ok, err = loadfile(backup_file, "t", data_env)
                 if ok then
-                    logger.dbg("data is read from", backup_file)
+                    logger.dbg("LuaData: data is read from", backup_file)
                     ok()
                     break
                 else
-                    logger.dbg(backup_file, "is invalid, removed.", err)
+                    logger.dbg("LuaData:", backup_file, "is invalid, removed.", err)
                     os.remove(backup_file)
                 end
             end
