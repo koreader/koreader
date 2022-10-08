@@ -281,12 +281,11 @@ function ReadHistory:addItem(file)
         local now = os.time()
         local mtime = lfs.attributes(file, "modification")
         lfs.touch(file, now, mtime)
-        local history_not_empty = #self.hist > 0
         local index = self:getIndexByFile(realpath(file))
-        if history_not_empty and index == 1 then -- last book
+        if index == 1 then -- last book
             self.hist[1].time = now
         else -- old or new book
-            if history_not_empty and index then -- old book
+            if index then -- old book
                 table.remove(self.hist, index)
             end
             table.insert(self.hist, 1, buildEntry(now, file))
