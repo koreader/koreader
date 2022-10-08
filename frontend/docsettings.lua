@@ -144,7 +144,7 @@ function DocSettings:open(docfile)
         -- New sidecar file
         new.sidecar_file,
         -- Backup file of new sidecar file
-        new.sidecar_file and (new.sidecar_file .. ".old") or "",
+        new.sidecar_file .. ".old",
         -- Legacy sidecar file
         new.legacy_sidecar_file,
         -- Legacy history folder
