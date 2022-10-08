@@ -20,7 +20,7 @@ local function buildCandidates(list)
     local candidates = {}
 
     for i, file_path in ipairs(list) do
-        -- Ignore empty files.
+        -- Ignore missing files.
         if file_path ~= "" and lfs.attributes(file_path, "mode") == "file" then
             table.insert(candidates, {
                 path = file_path,
