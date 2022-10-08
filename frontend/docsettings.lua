@@ -142,11 +142,11 @@ function DocSettings:open(docfile)
     -- Candidates list, in order of priority:
     local candidates_list = {
         -- New sidecar file
-        new.sidecar_file,
+        new.sidecar_file or "",
         -- Backup file of new sidecar file
-        new.sidecar_file .. ".old",
+        new.sidecar_file and (new.sidecar_file .. ".old") or "",
         -- Legacy sidecar file
-        new.legacy_sidecar_file,
+        new.legacy_sidecar_file or "",
         -- Legacy history folder
         new.history_file,
         -- Backup file in legacy history folder
