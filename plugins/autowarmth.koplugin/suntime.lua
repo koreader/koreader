@@ -593,7 +593,7 @@ function SunTime:getTimeInSec(val)
     else
         val = val*3600
     end
-    return math.floor(val * 1e4 ) * 1e-4
+    return math.floor(val * 1000) * (1/1000)
 end
 
 return SunTime

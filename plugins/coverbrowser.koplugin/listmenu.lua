@@ -47,7 +47,7 @@ local BookInfoManager = require("bookinfomanager")
 local corner_mark_size = -1
 local corner_mark
 
-local scale_by_size = Screen:scaleBySize(1e6) * 1e-6
+local scale_by_size = Screen:scaleBySize(1000000) * (1/1000000)
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
