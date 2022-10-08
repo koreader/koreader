@@ -64,6 +64,18 @@ local Screensaver = {
         webp = true,
     },
     default_screensaver_message = _("Sleeping"),
+
+    -- State values
+    show_message = nil,
+    screensaver_type = nil,
+    prefix = nil,
+    event_message = nil,
+    overlay_message = nil,
+    screensaver_background = nil,
+    image = nil,
+    image_file = nil,
+    delayed_close = nil,
+    screensaver_widget = nil,
 }
 
 -- Remind emulator users that Power is bound to F2
@@ -446,7 +458,7 @@ function Screensaver:withBackground()
     return self.screensaver_background ~= "none"
 end
 
-function Screensaver:setup(event, fallback_message)
+function Screensaver:setup(event, event_message)
     self.show_message = G_reader_settings:isTrue("screensaver_show_message")
     self.screensaver_type = G_reader_settings:readSetting("screensaver_type")
     local screensaver_img_background = G_reader_settings:readSetting("screensaver_img_background")
@@ -454,16 +466,15 @@ function Screensaver:setup(event, fallback_message)
 
     -- These 2 (optional) parameters are to support poweroff and reboot actions on Kobo (c.f., UIManager)
     self.prefix = event and event .. "_" or "" -- "", "poweroff_" or "reboot_"
-    self.fallback_message = fallback_message
-    self.overlay_message = nil
+    self.event_message = event_message
     if G_reader_settings:has(self.prefix .. "screensaver_type") then
         self.screensaver_type = G_reader_settings:readSetting(self.prefix .. "screensaver_type")
     else
         if event and G_reader_settings:isFalse("screensaver_hide_fallback_msg") then
-            -- Display the provided fallback_message over the screensaver,
+            -- Display the provided event_message over the screensaver,
             -- so the user can distinguish between suspend (no overlay),
             -- and reboot/poweroff (overlaid message).
-            self.overlay_message = self.fallback_message
+            self.overlay_message = self.event_message
         end
     end
 
@@ -660,15 +671,21 @@ function Screensaver:show()
             screensaver_message = G_reader_settings:readSetting(self.prefix .. "screensaver_message")
         else
             if G_reader_settings:has("screensaver_message") then
-                -- We prefer the global user setting to the event's fallback message.
                 screensaver_message = G_reader_settings:readSetting("screensaver_message")
             else
-                screensaver_message = self.fallback_message or self.default_screensaver_message
+                -- In the absence of a custom message, use the event message if any, barring that, use the default message.
+                if self.event_message then
+                    screensaver_message = self.event_message
+                    -- The overlay is only ever populated with the event message, and we only want to show it once ;).
+                    self.overlay_message = nil
+                else
+                    screensaver_message = self.default_screensaver_message
+                end
             end
         end
         -- NOTE: Only attempt to expand if there are special characters in the message.
         if screensaver_message:find("%%") then
-            screensaver_message = self:expandSpecial(screensaver_message, self.fallback_message or self.default_screensaver_message)
+            screensaver_message = self:expandSpecial(screensaver_message, self.event_message or self.default_screensaver_message)
         end
 
         local message_pos
@@ -713,9 +730,6 @@ function Screensaver:show()
                 }
             }
         end
-
-        -- No overlay needed as we just displayed *a* message (not necessarily the event's, though).
-        self.overlay_message = nil
 
         -- Check if message_widget should be overlaid on another widget
         if message_widget then
@@ -799,7 +813,7 @@ function Screensaver:cleanup()
     self.show_message = nil
     self.screensaver_type = nil
     self.prefix = nil
-    self.fallback_message = nil
+    self.event_message = nil
     self.overlay_message = nil
     self.screensaver_background = nil
 
