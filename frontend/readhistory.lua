@@ -60,6 +60,10 @@ function ReadHistory:getIndexByFile(item_file)
     end
 end
 
+--- Returns index of the entry with item_time using binary search
+-- (items in history are sorted by time in reverse order).
+-- If several entries have equal time, returns min (leftmost) index.
+-- If there are no entries with item_time, returns insertion index.
 function ReadHistory:getIndexByTime(item_time)
     local hist_nb = #self.hist
     if hist_nb == 0 then
@@ -70,7 +74,6 @@ function ReadHistory:getIndexByTime(item_time)
     elseif item_time < self.hist[hist_nb].time then
         return hist_nb + 1
     end
-    -- binary search (returns min index when several elements equal item_time)
     local s, e, m, d = 1, hist_nb
     while s <= e do
         m = bit.rshift(s + e, 1)
@@ -138,13 +141,14 @@ function ReadHistory:_readLegacyHistory()
                 local file = DocSettings:getNameFromHistory(f)
                 if file ~= nil and file ~= "" then
                     local item_path = joinPath(path, file)
-                    local real_path = realpath(item_path)
+                    local item_text = file:gsub(".*/", "")
                     local item_time = lfs.attributes(joinPath(history_dir, f), "modification")
                     local index = self:getIndexByTime(item_time)
-                    if self.hist[index].file ~= real_path then
-                        while index <= #self.hist -- sort alphabetically
+                    if #self.hist == 0 or self.hist[index].file ~= realpath(item_path) then
+                        -- items with equal time are sorted alphabetically by filename
+                        while index <= #self.hist
                                 and self.hist[index].time == item_time
-                                and self.hist[index].file < real_path do
+                                and self.hist[index].file:gsub(".*/", "") < item_text do
                             index = index + 1
                         end
                         table.insert(self.hist, index, buildEntry(item_time, item_path))
@@ -175,10 +179,10 @@ function ReadHistory:getLastFile()
     return G_reader_settings:readSetting("lastfile")
 end
 
+--- Get last or previous file in history that is not current_file
+-- (self.ui.document.file, provided as current_file, might have
+-- been removed from history).
 function ReadHistory:getPreviousFile(current_file)
-    -- Get last or previous file in history that is not current_file
-    -- (self.ui.document.file, probided as current_file, might have
-    -- been removed from history)
     if not current_file then
         current_file = G_reader_settings:readSetting("lastfile")
     end
@@ -199,6 +203,23 @@ function ReadHistory:getFileByDirectory(directory, recursive)
              return v.file
         end
     end
+end
+
+function ReadHistory:updateItemByPath(old_path, new_path)
+    local index = self:getIndexByFile(old_path)
+    if index then
+        self.hist[index].file = new_path
+        self.hist[index].text = new_path:gsub(".*/", "")
+        self.hist[index].callback = function()
+            selectCallback(new_path)
+        end
+        self:_flush()
+        self:reload(true)
+    end
+    if G_reader_settings:readSetting("lastfile") == old_path then
+        G_reader_settings:saveSetting("lastfile", new_path)
+    end
+    self:ensureLastFile()
 end
 
 --- Updates the history list after deleting a file.
@@ -244,23 +265,6 @@ function ReadHistory:removeItemByPath(path)
     end
 end
 
-function ReadHistory:updateItemByPath(old_path, new_path)
-    local index = self:getIndexByFile(old_path)
-    if index then
-        self.hist[index].file = new_path
-        self.hist[index].text = new_path:gsub(".*/", "")
-        self.hist[index].callback = function()
-            selectCallback(new_path)
-        end
-        self:_flush()
-        self:reload(true)
-    end
-    if G_reader_settings:readSetting("lastfile") == old_path then
-        G_reader_settings:saveSetting("lastfile", new_path)
-    end
-    self:ensureLastFile()
-end
-
 function ReadHistory:removeItem(item, idx, no_flush)
     local index = idx or self:getIndexByTime(item.time)
     table.remove(self.hist, index)
@@ -292,7 +296,7 @@ function ReadHistory:addItem(file)
     end
 end
 
---- Reloads history from history_file.
+--- Reloads history from history_file and legacy history folder.
 -- @treturn boolean true if history_file has been updated and reload happened.
 function ReadHistory:reload(force_read)
     if self:_read(force_read) then
