@@ -17,6 +17,8 @@ local SpinWidget = require("ui/widget/spinwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -206,7 +208,7 @@ function Screensaver:expandSpecial(message, fallback)
     return ret
 end
 
-local function addOverlayMessage(widget, text)
+local function addOverlayMessage(widget, widget_height, text)
     local FrameContainer = require("ui/widget/container/framecontainer")
     local RightContainer = require("ui/widget/container/rightcontainer")
     local Size = require("ui/size")
@@ -234,6 +236,15 @@ local function addOverlayMessage(widget, text)
         margin = 0,
         textw,
     }
+    -- If our host widget is already at the top, we'll position ourselves below it.
+    if widget_height then
+        textw = VerticalGroup:new{
+            VerticalSpan:new{
+                width = widget_height,
+            },
+            textw,
+        }
+    end
     textw = RightContainer:new{
         dimen = {
             w = screen_w,
@@ -664,6 +675,7 @@ function Screensaver:show()
         background = nil
     end
 
+    local message_height
     if self.show_message then
         -- Handle user settings & fallbacks, with that prefix mess on top...
         local screensaver_message
@@ -729,6 +741,11 @@ function Screensaver:show()
                     alignment = "center",
                 }
             }
+
+            -- Forward the height of the top message to the overlay widget
+            if message_pos == "top" then
+                message_height = message_widget[1]:getSize().h
+            end
         end
 
         -- Check if message_widget should be overlaid on another widget
@@ -751,7 +768,7 @@ function Screensaver:show()
     end
 
     if self.overlay_message then
-        widget = addOverlayMessage(widget, self.overlay_message)
+        widget = addOverlayMessage(widget, message_height, self.overlay_message)
     end
 
     if widget then
