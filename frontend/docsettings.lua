@@ -23,9 +23,9 @@ local function buildCandidates(list)
         -- Ignore missing files.
         if file_path ~= "" and lfs.attributes(file_path, "mode") == "file" then
             table.insert(candidates, {
-                path = file_path,
-                mtime = lfs.attributes(file_path, "modification"),
-                prio = i,
+                    path = file_path,
+                    mtime = lfs.attributes(file_path, "modification"),
+                    prio = i,
                 }
             )
         end
