@@ -14,6 +14,7 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerCollection = require("apps/filemanager/filemanagercollection")
+local FileManagerDocument = require("document/filemanagerdocument")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
@@ -507,7 +508,7 @@ function ReaderUI:getLastDirFile(to_file_browser)
     return last_dir, last_file
 end
 
-function ReaderUI:showFileManager(file)
+function ReaderUI:showFileManager(file, callback)
     local FileManager = require("apps/filemanager/filemanager")
 
     local last_dir, last_file
@@ -519,9 +520,9 @@ function ReaderUI:showFileManager(file)
         last_dir, last_file = self:getLastDirFile(true)
     end
     if FileManager.instance then
-        FileManager.instance:reinit(last_dir, last_file)
+        FileManager.instance:reinit(last_dir, last_file, callback)
     else
-        FileManager:showFiles(last_dir, last_file)
+        FileManager:showFiles(last_dir, last_file, callback)
     end
 end
 
@@ -561,9 +562,15 @@ function ReaderUI:showReader(file, provider)
         return
     end
 
+    -- `readerui:doShowReader` sent us here but there're some files better handled on the FM
+    provider = provider or DocumentRegistry:getProvider(file)
+    if provider.provider == "filemanagerdocument" then
+        self:showFileManager(file, FileManagerDocument.open)
+        return
+    end
+
     -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
     UIManager:broadcastEvent(Event:new("ShowingReader"))
-    provider = provider or DocumentRegistry:getProvider(file)
     if provider.provider then
         self:showReaderCoroutine(file, provider)
     end
