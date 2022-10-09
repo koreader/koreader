@@ -12,6 +12,7 @@ local FileChooser = require("ui/widget/filechooser")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerCollection = require("apps/filemanager/filemanagercollection")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
+local FileManagerDocument = require("document/filemanagerdocument")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
@@ -53,6 +54,11 @@ local FileManager = InputContainer:extend{
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
     mkdir_bin =  Device:isAndroid() and "/system/bin/mkdir" or "/bin/mkdir",
 }
+
+function FileManager:handleFile(file, callback)
+    if type(callback) ~= "function" then return end
+    callback(FileManagerDocument, file)
+end
 
 function FileManager:onSetRotationMode(rotation)
     if rotation ~= nil and rotation ~= Screen:getRotationMode() then
@@ -797,7 +803,7 @@ function FileManager:tapPlus()
     UIManager:show(self.file_dialog)
 end
 
-function FileManager:reinit(path, focused_file)
+function FileManager:reinit(path, focused_file, callback)
     UIManager:flushSettings()
     self.dimen = Screen:getSize()
     -- backup the root path and path items
@@ -819,6 +825,7 @@ function FileManager:reinit(path, focused_file)
     if self.select_mode then
         self.title_bar:setRightIcon("check")
     end
+    self:handleFile(focused_file, callback)
 end
 
 function FileManager:getCurrentDir()
@@ -1269,7 +1276,7 @@ function FileManager:getStartWithMenuTable()
 end
 
 --- @note: This is the *only* safe way to instantiate a new FileManager instance!
-function FileManager:showFiles(path, focused_file)
+function FileManager:showFiles(path, focused_file, callback)
     -- Warn about and close any pre-existing FM instances first...
     if FileManager.instance then
         logger.warn("FileManager instance mismatch! Tried to spin up a new instance, while we still have an existing one:", tostring(FileManager.instance))
@@ -1287,6 +1294,7 @@ function FileManager:showFiles(path, focused_file)
         focused_file = focused_file,
     }
     UIManager:show(file_manager)
+    self:handleFile(focused_file, callback)
 end
 
 function FileManager:openTextViewer(file_path)
