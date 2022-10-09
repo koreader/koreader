@@ -519,7 +519,7 @@ function util.bsearch(array, value)
 end
 
 --- Perform a leftmost insertion binary search for `value` in a *sorted* (ascending) `array`.
----- @param array Lua table (array only, sorted, ascending, every value must match the type of `value`)
+---- @param array Lua table (array only, sorted, ascending, every value must match the type of `value` and support comparison operators)
 ---- @param value
 ---- @return int leftmost insertion index of value in array.
 function util.bsearch_left(array, value)
@@ -539,7 +539,7 @@ function util.bsearch_left(array, value)
 end
 
 --- Perform a rightmost insertion binary search for `value` in a *sorted* (ascending) `array`.
----- @param array Lua table (array only, sorted, ascending, every value must match the type of `value`)
+---- @param array Lua table (array only, sorted, ascending, every value must match the type of `value` and support comparison operators)
 ---- @param value
 ---- @return int rightmost insertion index of value in array.
 function util.bsearch_right(array, value)
