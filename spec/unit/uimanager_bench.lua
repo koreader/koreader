@@ -7,6 +7,19 @@ local time = require("ui/time")
 local NB_TESTS = 40000
 local noop = function() end
 
+local function check()
+    for i = 1, #UIManager._task_queue-1 do
+        -- test for wrongly inserted time
+        assert.is_true(UIManager._task_queue[i].time <= UIManager._task_queue[i+1].time,
+            "time wrongly sorted")
+        if UIManager._task_queue[i].time == UIManager._task_queue[i+1].time then
+            -- for same time, test if later inserted action is after a former action
+            assert.is_true(UIManager._task_queue[i].action <= UIManager._task_queue[i+1].action,
+                "ragnarock")
+        end
+    end
+end
+
 describe("UIManager checkTasks benchmark", function()
     local now = time.now()
     local wait_until -- luacheck: no unused
@@ -71,6 +84,64 @@ describe("UIManager schedule more sophiticated benchmark", function()
             UIManager:unschedule(autowarmth_dummy) -- remove autowarmth
         end
     end
+end)
+
+describe("UIManager schedule massive collision tests", function()
+    print("Doing massive collision tests ......... this takes a lot of time")
+    UIManager:quit()
+
+    for i = 1, 6 do
+        -- simple test (1000/10 collisions)
+        UIManager._task_queue = {}
+        for j = 1, 10 do
+            UIManager:schedule(math.random(10), j)
+            -- check() -- enabling this takes really long O(n^2)
+        end
+        check()
+
+        -- armageddon test (10000 collisions)
+        UIManager._task_queue = {}
+        for j = 1, 1e5 do
+            UIManager:schedule(math.random(100), j)
+            -- check() -- enabling this takes really long O(n^2)
+        end
+        check()
+    end
+end)
+
+
+describe("UIManager schedule massive rediculous tests", function()
+    print("Doing massive rediculous collision tests ......... this takes really a lot time")
+    UIManager:quit()
+
+    for i = 1, 6 do
+        -- simple test (1000 collisions)
+        UIManager._task_queue = {}
+        local offs = 0
+        for j = 1, 1e3 do
+            UIManager:schedule(math.random(10), j + offs)
+            offs = offs + 1
+            -- check() -- enabling this takes really long O(n^2)
+        end
+        check()
+
+        -- simple (unknown number of collisions and times)
+        for j = 1, 1e4 do
+            UIManager:schedule(math.random(), j + offs)
+            offs = offs + 1
+            -- check() -- enabling this takes really long O(n^2)
+        end
+        check()
+
+        -- armageddon test (100 collisions)
+        for j = 1, 1e5 do
+            UIManager:schedule(math.random(math.random(100)), j + offs)
+            offs = offs + 1
+            -- check() -- enabling this takes really long O(n^2)
+        end
+        check()
+    end
+
 end)
 
 describe("UIManager unschedule benchmark", function()
