@@ -16,13 +16,31 @@ local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 
-local function buildCandidate(file_path)
-    -- Ignore empty files.
-    if file_path and lfs.attributes(file_path, "mode") == "file" then
-        return { file_path, lfs.attributes(file_path, "modification") }
-    else
-        return nil
+local function buildCandidates(list)
+    local candidates = {}
+
+    for i, file_path in ipairs(list) do
+        -- Ignore missing files.
+        if file_path ~= "" and lfs.attributes(file_path, "mode") == "file" then
+            table.insert(candidates, {
+                    path = file_path,
+                    mtime = lfs.attributes(file_path, "modification"),
+                    prio = i,
+                }
+            )
+        end
     end
+
+    -- MRU sort, tie breaker is insertion order (higher priority locations were inserted first).
+    table.sort(candidates, function(l, r)
+                               if l.mtime == r.mtime then
+                                   return l.prio < r.prio
+                               else
+                                   return l.mtime > r.mtime
+                               end
+                           end)
+
+    return candidates
 end
 
 --- Returns path to sidecar directory (`filename.sdr`).
@@ -61,7 +79,7 @@ function DocSettings:hasSidecarFile(doc_path)
 end
 
 function DocSettings:getHistoryPath(fullpath)
-    return HISTORY_DIR .. "/[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
+    return HISTORY_DIR .. "/[" .. fullpath:gsub("(.*/)([^/]+)", "%1] %2"):gsub("/", "#") .. ".lua"
 end
 
 function DocSettings:getPathFromHistory(hist_name)
@@ -72,7 +90,7 @@ function DocSettings:getPathFromHistory(hist_name)
     if s == nil or s == '' then return '' end
     -- 2. crop the bracket-sign from both sides
     -- 3. and finally replace decorative signs '#' to dir-char '/'
-    return string.gsub(string.sub(s,2,-3),"#","/")
+    return string.gsub(string.sub(s, 2, -3), "#", "/")
 end
 
 function DocSettings:getNameFromHistory(hist_name)
@@ -121,42 +139,39 @@ function DocSettings:open(docfile)
                                   ffiutil.basename(docfile)..".lua"
     end
 
-    local candidates = {}
-    -- New sidecar file
-    table.insert(candidates, buildCandidate(new.sidecar_file))
-    -- Backup file of new sidecar file
-    table.insert(candidates, buildCandidate(new.sidecar_file and (new.sidecar_file .. ".old")))
-    -- Legacy sidecar file
-    table.insert(candidates, buildCandidate(new.legacy_sidecar_file))
-    -- Legacy history folder
-    table.insert(candidates, buildCandidate(new.history_file))
-    -- Backup file in legacy history folder
-    table.insert(candidates, buildCandidate(new.history_file .. ".old"))
-    -- Legacy kpdfview setting
-    table.insert(candidates, buildCandidate(docfile..".kpdfview.lua"))
-    table.sort(candidates, function(l, r)
-                               if l == nil then
-                                   return false
-                               elseif r == nil then
-                                   return true
-                               else
-                                   return l[2] > r[2]
-                               end
-                           end)
+    -- Candidates list, in order of priority:
+    local candidates_list = {
+        -- New sidecar file
+        new.sidecar_file or "",
+        -- Backup file of new sidecar file
+        new.sidecar_file and (new.sidecar_file .. ".old") or "",
+        -- Legacy sidecar file
+        new.legacy_sidecar_file or "",
+        -- Legacy history folder
+        new.history_file,
+        -- Backup file in legacy history folder
+        new.history_file .. ".old",
+        -- Legacy kpdfview setting
+        docfile..".kpdfview.lua",
+    }
+    -- We get back an array of tables for *existing* candidates, sorted MRU first (insertion order breaks ties).
+    local candidates = buildCandidates(candidates_list)
+
     local ok, stored, filepath
-    for _, k in ipairs(candidates) do
+    for _, t in ipairs(candidates) do
+        local candidate_path = t.path
         -- Ignore empty files
-        if lfs.attributes(k[1], "size") > 0 then
-            ok, stored = pcall(dofile, k[1])
-            -- Ignore the empty table.
+        if lfs.attributes(candidate_path, "size") > 0 then
+            ok, stored = pcall(dofile, candidate_path)
+            -- Ignore empty tables
             if ok and next(stored) ~= nil then
-                logger.dbg("data is read from ", k[1])
-                filepath = k[1]
+                logger.dbg("DocSettings: data is read from", candidate_path)
+                filepath = candidate_path
                 break
             end
         end
-        logger.dbg(k[1], " is invalid, remove.")
-        os.remove(k[1])
+        logger.dbg("DocSettings:", candidate_path, "is invalid, removed.")
+        os.remove(candidate_path)
     end
     if ok and stored then
         new.data = stored
@@ -197,12 +212,12 @@ function DocSettings:flush()
             -- that the OS may have itself sync'ed that file content in the meantime.
             local mtime = lfs.attributes(f, "modification")
             if mtime < os.time() - 60 then
-                logger.dbg("Rename ", f, " to ", f .. ".old")
+                logger.dbg("DocSettings: Renamed", f, "to", f .. ".old")
                 os.rename(f, f .. ".old")
                 directory_updated = true -- fsync directory content too below
             end
         end
-        logger.dbg("Write to ", f)
+        logger.dbg("DocSettings: Writing to", f)
         local f_out = io.open(f, "w")
         if f_out ~= nil then
             f_out:write("-- we can read Lua syntax here!\nreturn ")
@@ -213,10 +228,11 @@ function DocSettings:flush()
 
             if self.candidates ~= nil
             and G_reader_settings:nilOrFalse("preserve_legacy_docsetting") then
-                for _, k in ipairs(self.candidates) do
-                    if k[1] ~= f and k[1] ~= f .. ".old" then
-                        logger.dbg("Remove legacy file ", k[1])
-                        os.remove(k[1])
+                for _, t in ipairs(self.candidates) do
+                    local candidate_path = t.path
+                    if candidate_path ~= f and candidate_path ~= f .. ".old" then
+                        logger.dbg("DocSettings: Removed legacy file", candidate_path)
+                        os.remove(candidate_path)
                         -- We should not remove sidecar folder, as it may
                         -- contain Kindle history files.
                     end
@@ -267,7 +283,7 @@ function DocSettings:purge(full)
                 end
                 if to_remove then
                     os.remove(fullpath)
-                    logger.dbg("purge: removed ", fullpath)
+                    logger.dbg("DocSettings: purged:", fullpath)
                 end
             end
             -- If the sidecar folder ends up empty, os.remove() can delete it.

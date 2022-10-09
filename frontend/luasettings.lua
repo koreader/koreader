@@ -32,14 +32,14 @@ function LuaSettings:open(file_path)
     if ok and stored then
         new.data = stored
     else
-        if existing then logger.warn("Failed reading", new.file, "(probably corrupted).") end
+        if existing then logger.warn("LuaSettings: Failed reading", new.file, "(probably corrupted).") end
         -- Fallback to .old if it exists
         ok, stored = pcall(dofile, new.file..".old")
         if ok and stored then
-            if existing then logger.warn("read from backup file", new.file..".old") end
+            if existing then logger.warn("LuaSettings: read from backup file", new.file..".old") end
             new.data = stored
         else
-            if existing then logger.warn("no usable backup file for", new.file, "to read from") end
+            if existing then logger.warn("LuaSettings: no usable backup file for", new.file, "to read from") end
             new.data = {}
         end
     end
