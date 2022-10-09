@@ -227,21 +227,24 @@ end
 
 -- Schedule an execution task; task queue is in ascending order
 function UIManager:schedule(sched_time, action, ...)
-    local s, e = 1, #self._task_queue
-    if e ~= 0 then
-        -- Do a binary insert if the table contains at least one entry.
-        repeat
-            local p = bit.rshift(e + s, 1) -- Not necessary to use (s + (e -s) / 2) here!
-            local p_time = self._task_queue[p].time
-            if sched_time >= p_time then
-                s = p + 1
-            else -- if sched_time < p_time then
-                e = p - 1
-            end
-        until e < s
+    local lo, hi = 1, #self._task_queue
+    -- Rightmost binary insertion
+    while lo <= hi do
+        -- NOTE: We should be (mostly) free from overflow here, thanks to LuaJIT's BitOp semantics.
+        --       For more fun details about this particular overflow,
+        --       c.f., https://ai.googleblog.com/2006/06/extra-extra-read-all-about-it-nearly.html
+        -- NOTE: For more fun reading about the binary search algo in general,
+        --       c.f., https://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/
+        local mid = bit.rshift(lo + hi, 1)
+        local mid_time = self._task_queue[mid].time
+        if sched_time >= mid_time then
+            lo = mid + 1
+        else
+            hi = mid - 1
+        end
     end
 
-    table.insert(self._task_queue, s, {
+    table.insert(self._task_queue, lo, {
         time = sched_time,
         action = action,
         argc = select("#", ...),
