@@ -157,11 +157,12 @@ function Notification:notify(arg, refresh_after)
     return false
 end
 
-function Notification:_cleanShownStack(idx)
+function Notification:_cleanShownStack()
     -- Clean stack of shown notifications
-    if idx then
+    if self._shown_idx then
+        -- If this field exists, this is the first time this instance was closed since its init.
         -- This notification is no longer displayed
-        Notification._shown_list[idx] = false
+        Notification._shown_list[self._shown_idx] = false
     end
     -- We remove from the stack's tail all slots no longer displayed.
     -- Even if slots at top are available, we'll keep adding new
@@ -179,7 +180,7 @@ function Notification:_cleanShownStack(idx)
 end
 
 function Notification:onCloseWidget()
-    self:_cleanShownStack(self._shown_idx)
+    self:_cleanShownStack()
     self._shown_idx = nil -- Don't do something stupid if this same instance gets closed multiple times
     UIManager:setDirty(nil, function()
         return "ui", self.frame.dimen
