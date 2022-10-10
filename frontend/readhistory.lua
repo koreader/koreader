@@ -69,7 +69,7 @@ function ReadHistory:getIndexByTime(item_time, item_file)
     if hist_nb == 0 then
         return 1
     end
-    if item_time >= self.hist[1].time then
+    if item_time > self.hist[1].time then
         return 1
     elseif item_time < self.hist[hist_nb].time then
         return hist_nb + 1
