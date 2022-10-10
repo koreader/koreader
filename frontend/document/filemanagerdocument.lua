@@ -22,13 +22,12 @@ function FileManagerDocument:init() end
 function FileManagerDocument:close() end
 function FileManagerDocument:register() end
 
--- opens a file with the provider with highest priority for that extension
 function FileManagerDocument:open(file)
     local extension = util.getFileNameSuffix(file)
     if not self.actions[extension] then return end
 
     if #self.actions[extension] > 1 then
-        -- more than one action paired to this extension. Show a menu to let the user choose between them.
+        -- more than one action registered. Show a menu to let the user choose
         local buttons = {}
         for index, action in ipairs(self.actions[extension]) do
             table.insert(buttons, {
