@@ -824,7 +824,8 @@ function UIManager:sendEvent(event)
         if not checked_widgets[widget] then
             checked_widgets[widget] = true
             -- Widget's active widgets have precedence to handle this event
-            -- NOTE: ReaderUI & FileManager have their registered modules referenced as such.
+            -- NOTE: ReaderUI & FileManager *may* optionally register their modules as such
+            --       (currently, they only do that for the Screenshot module).
             if widget.active_widgets then
                 for _, active_widget in ipairs(widget.active_widgets) do
                     if active_widget:handleEvent(event) then
