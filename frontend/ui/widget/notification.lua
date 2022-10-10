@@ -47,8 +47,8 @@ local Notification = InputContainer:extend{
     timeout = 2, -- default to 2 seconds
     toast = true, -- closed on any event, and let the event propagate to next top widget
 
-    _shown_list = {}, -- actual static class member, array of stacked notifications (value is show time or false).
-    _shown_idx = nil, -- index of this instance in the class's _shown_list array (assumes each Notification object is only shown once).
+    _shown_list = {}, -- actual static class member, array of stacked notifications (value is show (well, init) time or false).
+    _shown_idx = nil, -- index of this instance in the class's _shown_list array (assumes each Notification object is only shown (well, init) once).
 
     SOURCE_BOTTOM_MENU_ICON = SOURCE_BOTTOM_MENU_ICON,
     SOURCE_BOTTOM_MENU_TOGGLE = SOURCE_BOTTOM_MENU_TOGGLE,
