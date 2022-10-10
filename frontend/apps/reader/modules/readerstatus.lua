@@ -19,7 +19,6 @@ local ReaderStatus = WidgetContainer:extend{
 function ReaderStatus:init()
     if self.ui.document.is_pic then
         self.enabled = false
-        return
     else
         self.total_pages = self.document:getPageCount()
         self.ui.menu:registerToMainMenu(self)
