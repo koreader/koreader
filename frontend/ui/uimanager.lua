@@ -775,17 +775,29 @@ function UIManager:sendEvent(event)
         return
     end
 
-    -- The top widget gets to be the first to get the event
-    local top_widget = self._window_stack[#self._window_stack].widget
-
-    -- A toast widget gets closed by any event, and lets the event be handled by a lower widget.
-    -- (Notification is our only widget flagged as such).
-    while top_widget.toast do -- close them all
-        self:close(top_widget)
-        if not self._window_stack[1] then
-            return
+    local top_widget
+    local checked_widgets = {}
+    -- Toast widgets, which, by contract, must be at the top of the window stack, never stop event propagation.
+    for i = #self._window_stack, 1, -1 do
+        local widget = self._window_stack[i].widget
+        -- Whether it's a toast or not, we'll call handleEvent now,
+        -- so we'll want to skip it during the table walk later.
+        checked_widgets[widget] = true
+        if widget.toast then
+            -- We never stop event propagation on toasts, but we still want to send the event to them.
+            -- (In particular, because we want them to close on user input).
+            widget:handleEvent(event)
+        else
+            -- The first widget to consume events as designed is the topmost non-toast one
+            top_widget = widget
+            break
         end
-        top_widget = self._window_stack[#self._window_stack].widget
+    end
+
+    -- Extremely unlikely, but we can't exclude the possibility of *everything* being a toast ;).
+    -- In which case, the event has nowhere else to go, so, we're done.
+    if not top_widget then
+        return
     end
 
     if top_widget:handleEvent(event) then
@@ -793,7 +805,9 @@ function UIManager:sendEvent(event)
     end
     if top_widget.active_widgets then
         for _, active_widget in ipairs(top_widget.active_widgets) do
-            if active_widget:handleEvent(event) then return end
+            if active_widget:handleEvent(event) then
+                return
+            end
         end
     end
 
@@ -804,7 +818,6 @@ function UIManager:sendEvent(event)
     --       which relies on a hash check of already processed widgets (LuaJIT actually hashes the table's GC reference),
     --       rather than a simple loop counter, and will in fact iterate *at least* #items ^ 2 times.
     --       Thankfully, that list should be very small, so the overhead should be minimal.
-    local checked_widgets = {top_widget}
     local i = #self._window_stack
     while i > 0 do
         local widget = self._window_stack[i].widget
@@ -826,6 +839,8 @@ function UIManager:sendEvent(event)
                     return
                 end
             end
+            -- As mentioned above, event handlers might have shown/closed widgets,
+            -- so all bets are off on our old window tally being accurate, so let's take it from the top again ;).
             i = #self._window_stack
         else
             i = i - 1
