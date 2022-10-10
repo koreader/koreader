@@ -121,8 +121,8 @@ function Notification:init()
         RectSpan:new{
             -- have this VerticalGroup full width, to ensure centering
             width = Screen:getWidth(),
-            -- push this frame at its y=self.num position
-            height = notif_height * (self.num - 1) + self.margin,
+            -- push this frame at its y=self._shown_idx position
+            height = notif_height * (self._shown_idx - 1) + self.margin,
                 -- (let's add a leading self.margin to get the same distance
                 -- from top of screen to first notification top border as
                 -- between borders of next notifications)
