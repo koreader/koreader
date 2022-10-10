@@ -60,11 +60,11 @@ function ReadHistory:getIndexByFile(item_file)
     end
 end
 
---- Returns index of the entry with item_time using binary search
+--- Returns leftmost index of the entry with item_time using binary search
 -- (items in history are sorted by time in reverse order).
--- If several entries have equal time, returns min (leftmost) index.
+-- If several entries have equal time, search within them by item_file in alphabetical order.
 -- If there are no entries with item_time, returns insertion index.
-function ReadHistory:getIndexByTime(item_time)
+function ReadHistory:getIndexByTime(item_time, item_file)
     local hist_nb = #self.hist
     if hist_nb == 0 then
         return 1
@@ -83,7 +83,15 @@ function ReadHistory:getIndexByTime(item_time)
             e, d = m - 1, 0
         end
     end
-    return m + d
+    local index = m + d
+    if item_file then
+        while index <= #self.hist
+                and self.hist[index].time == item_time
+                and self.hist[index].file:gsub(".*/", "") < item_file do
+            index = index + 1
+        end
+    end
+    return index
 end
 
 --- Reduces number of history items to the required limit by removing old items.
@@ -133,6 +141,7 @@ end
 
 --- Reads history from legacy history folder.
 function ReadHistory:_readLegacyHistory()
+    local history_updated
     local history_dir = DataStorage:getHistoryDir()
     for f in lfs.dir(history_dir) do
         local path = joinPath(history_dir, f)
@@ -143,19 +152,17 @@ function ReadHistory:_readLegacyHistory()
                 if file ~= nil and file ~= "" then
                     local item_path = joinPath(path, file)
                     local item_time = lfs.attributes(joinPath(history_dir, f), "modification")
-                    local index = self:getIndexByTime(item_time)
-                    if index > #self.hist or self.hist[index].file ~= realpath(item_path) then
-                        -- items with equal time are sorted alphabetically by filename
-                        while index <= #self.hist
-                                and self.hist[index].time == item_time
-                                and self.hist[index].file:gsub(".*/", "") < file do
-                            index = index + 1
-                        end
-                        table.insert(self.hist, index, buildEntry(item_time, item_path))
+                    if self:addItem(item_path, item_time, true) then
+                        history_updated = true
                     end
                 end
             end
         end
+    end
+    if history_updated then
+        self:_reduce()
+        self:_flush()
+        self:ensureLastFile()
     end
 end
 
@@ -276,23 +283,31 @@ function ReadHistory:removeItem(item, idx, no_flush)
 end
 
 --- Adds new item (last opened document) to the top of the history list.
-function ReadHistory:addItem(file)
+-- If item time (ts) is passed, add item to the history list at this time position.
+function ReadHistory:addItem(file, ts, no_flash)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
-        local now = os.time()
+        local index = self:getIndexByFile(realpath(file))
+        if ts and index and self.hist[index].time == ts then
+            return -- this legacy item is in the history already
+        end
+        local now = ts or os.time()
         local mtime = lfs.attributes(file, "modification")
         lfs.touch(file, now, mtime)
-        local index = self:getIndexByFile(realpath(file))
-        if index == 1 then -- last book
+        if index == 1 and not ts then -- last book
             self.hist[1].time = now
         else -- old or new book
             if index then -- old book
                 table.remove(self.hist, index)
             end
-            table.insert(self.hist, 1, buildEntry(now, file))
-            self:_reduce()
-            G_reader_settings:saveSetting("lastfile", file)
+            index = ts and self:getIndexByTime(ts, file:gsub(".*/", "")) or 1
+            table.insert(self.hist, index, buildEntry(now, file))
         end
-        self:_flush()
+        if not no_flash then
+            self:_reduce()
+            self:_flush()
+            self:ensureLastFile()
+        end
+        return true -- used while adding legacy items
     end
 end
 
