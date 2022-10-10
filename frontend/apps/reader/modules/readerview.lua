@@ -32,7 +32,7 @@ local ReaderView = OverlapGroup:extend{
 
     -- single page state
     state = nil, -- table
-    outer_page_color = Blitbuffer.gray(G_defaults:readSetting("DOUTER_PAGE_COLOR") / 15),
+    outer_page_color = Blitbuffer.gray(G_defaults:readSetting("DOUTER_PAGE_COLOR") * (1/15)),
     -- highlight with "lighten" or "underscore" or "strikeout" or "invert"
     highlight = nil, -- table
     highlight_visible = true,
@@ -42,7 +42,7 @@ local ReaderView = OverlapGroup:extend{
     note_mark_pos_x2 = nil, -- page 2 in two-page mode
     -- PDF/DjVu continuous paging
     page_scroll = nil,
-    page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") / 15),
+    page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") * (1/15)),
     page_states = nil, -- table
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = nil, -- table
@@ -95,7 +95,7 @@ function ReaderView:init()
     self.page_states = {}
     self.page_gap = {
         -- color (0 = white, 8 = gray, 15 = black)
-        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) / 15),
+        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) * (1/15)),
     }
     self.visible_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
     self.page_area = Geom:new{x = 0, y = 0, w = 0, h = 0}

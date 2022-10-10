@@ -71,12 +71,12 @@ describe("Time module", function()
         assert.is.same(time.s(-6) + time.us(999000), time.s(-5.001))
 
         local tv = time.s(-6) + time.us(1000)
-        assert.is.same(-5.999, time.to_number(tv))
+        assert.is.is_true(math.abs(-5.999 - time.to_number(tv)) < 1e-9) -- we only have nano second precision
         assert.is.same(time.s(-6) + time.us(1000), time.s(-5.999))
 
         -- We lose precision because of rounding if we go higher resolution than a ms...
         tv = time.s(-6) + time.us(101)
-        assert.is.same(-5.9999, time.to_number(tv))
+        assert.is.is_true(math.abs(-5.9999 - time.to_number(tv)) < 1e-9) -- ns precision
         assert.is.same(time.s(-6) + time.us(100), time.s(-5.9999))
         --                                 ^ precision loss
 

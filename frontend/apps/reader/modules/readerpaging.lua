@@ -542,7 +542,7 @@ end
 
 function ReaderPaging:onGotoPercent(percent)
     logger.dbg("goto document offset in percent:", percent)
-    local dest = math.floor(self.number_of_pages * percent / 100)
+    local dest = math.floor(self.number_of_pages * percent * (1/100))
     if dest < 1 then dest = 1 end
     if dest > self.number_of_pages then
         dest = self.number_of_pages
@@ -908,8 +908,8 @@ function ReaderPaging:onGotoPageRel(diff)
     local x_pan_off, y_pan_off = 0, 0
     local right_to_left = self.ui.document.configurable.writing_direction and self.ui.document.configurable.writing_direction > 0
     local bottom_to_top = self.ui.zooming.zoom_bottom_to_top
-    local h_progress = 1 - self.ui.zooming.zoom_overlap_h / 100
-    local v_progress = 1 - self.ui.zooming.zoom_overlap_v / 100
+    local h_progress = 1 - self.ui.zooming.zoom_overlap_h * (1/100)
+    local v_progress = 1 - self.ui.zooming.zoom_overlap_v * (1/100)
     local old_va = self.visible_area
     local old_page = self.current_page
     local x, y, w, h = "x", "y", "w", "h"

@@ -322,7 +322,7 @@ function Kindle:outofScreenSaver()
                         -- The banner on a 1236x1648 PW5 is 1235x125; we refresh the bottom 10% of the screen to be safe.
                         local Geom = require("ui/geometry")
                         local screen_height = self.screen:getHeight()
-                        local refresh_height = math.ceil(screen_height / 10)
+                        local refresh_height = math.ceil(screen_height * (1/10))
                         local refresh_region = Geom:new{
                             x = 0,
                             y = screen_height - 1 - refresh_height,

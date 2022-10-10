@@ -133,12 +133,12 @@ function util.secondsToClock(seconds, withoutSeconds, withDays)
         local days = "0"
         local hours
         if withDays then
-            days = string.format("%d", seconds / (24*3600)) -- implicit math.floor for string.format
-            hours = string.format("%02d", (seconds / 3600) % 24)
+            days = string.format("%d", seconds * (1/(24*3600))) -- implicit math.floor for string.format
+            hours = string.format("%02d", (seconds * (1/3600)) % 24)
         else
-            hours = string.format("%02d", seconds / 3600)
+            hours = string.format("%02d", seconds * (1/3600))
         end
-        local mins = string.format("%02d", round(seconds % 3600 / 60))
+        local mins = string.format("%02d", round(seconds % 3600 * (1/60)))
         if withoutSeconds then
             if mins == "60" then
                 -- Can only happen because of rounding, which only happens if withoutSeconds...

@@ -295,7 +295,7 @@ function AutoDim:autodim_task()
     local check_delay = time.s(self.autodim_starttime_m * 60) - idle_duration
     if check_delay <= 0 then
         self.autodim_save_fl = self.autodim_save_fl or Powerd:frontlightIntensity()
-        self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_fraction / 100 + 0.5)
+        self.autodim_end_fl = math.floor(self.autodim_save_fl * self.autodim_fraction * (1/100) + 0.5)
         -- Clamp `self.autodim_end_fl` to 1 if `self.autodim_fraction` ~= 0
         if self.autodim_fraction ~= 0 and self.autodim_end_fl == 0 then
             self.autodim_end_fl = 1

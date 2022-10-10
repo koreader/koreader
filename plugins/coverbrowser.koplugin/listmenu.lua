@@ -47,7 +47,7 @@ local BookInfoManager = require("bookinfomanager")
 local corner_mark_size = -1
 local corner_mark
 
-local scale_by_size = Screen:scaleBySize(1000000) / 1000000
+local scale_by_size = Screen:scaleBySize(1000000) * (1/1000000)
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
@@ -191,7 +191,7 @@ function ListMenuItem:update()
     local function _fontSize(nominal, max)
         -- The nominal font size is based on 64px ListMenuItem height.
         -- Keep ratio of font size to item height
-        local font_size = math.floor(nominal * dimen.h / 64 / scale_by_size)
+        local font_size = math.floor(nominal * dimen.h * (1/64) / scale_by_size)
         -- But limit it to the provided max, to avoid huge font size when
         -- only 4-6 items per page
         if max and font_size >= max then
@@ -201,7 +201,7 @@ function ListMenuItem:update()
     end
     -- Will speed up a bit if we don't do all font sizes when
     -- looking for one that make text fit
-    local fontsize_dec_step = math.ceil(_fontSize(100) / 100)
+    local fontsize_dec_step = math.ceil(_fontSize(100) * (1/100))
 
     -- We'll draw a border around cover images, it may not be
     -- needed with some covers, but it's nicer when cover is
@@ -476,7 +476,7 @@ function ListMenuItem:update()
             }
 
             -- Create or replace corner_mark if needed
-            local mark_size = math.floor(dimen.h / 6)
+            local mark_size = math.floor(dimen.h * (1/6))
             -- Just fits under the page info text, which in turn adapts to the ListMenuItem height.
             if mark_size ~= corner_mark_size then
                 corner_mark_size = mark_size

@@ -46,7 +46,7 @@ table.insert(page_turns_tap_zones_sub_items, {
             value_max = 100,
             default_value = math.floor(G_defaults:readSetting("DTAP_ZONE_FORWARD").w * 100),
             callback = function(spin)
-                G_reader_settings:saveSetting("page_turns_tap_zone_forward_size_ratio", spin.value / 100)
+                G_reader_settings:saveSetting("page_turns_tap_zone_forward_size_ratio", spin.value * (1/100))
                 ReaderUI.instance.view:setupTouchZones()
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
