@@ -1,10 +1,20 @@
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local InfoMessage = require("ui/widget/infomessage")
+local UIManager = require("ui/uimanager")
 local Document = require("document/document")
+local logger = require("logger")
 local util = require("util")
+local _ = require("gettext")
 
 local FileManagerDocument = Document:extend{
     _document = false,
     provider = "filemanagerdocument",
     provider_name = "File Manager",
+
+    -- a dictionary of actions per extension
+    actions = {},
+
+    -- an array of provider names
     providers = {},
 }
 
@@ -15,22 +25,45 @@ function FileManagerDocument:register() end
 -- opens a file with the provider with highest priority for that extension
 function FileManagerDocument:open(file)
     local extension = util.getFileNameSuffix(file)
-    if not self.providers[extension] then return end
-    local max_priority = 0
-    local max_priority_index = 1
-    for i, v in ipairs(self.providers[extension]) do
-        if v.priority > max_priority then
-            max_priority = v.priority
-            max_priority_index = i
+    if not self.actions[extension] then return end
+
+    if #self.actions[extension] > 1 then
+        -- more than one action paired to this extension. Show a menu to let the user choose between them.
+        local buttons = {}
+        for index, action in ipairs(self.actions[extension]) do
+            table.insert(buttons, {
+                {
+                    text = action.desc,
+                    callback = function()
+                        UIManager:close(self.choose_dialog)
+                        self.actions[extension][index].open_func(file)
+                    end,
+                },
+            })
         end
+        self.choose_dialog = ButtonDialogTitle:new{
+            title = _("Choose action"),
+            title_align = "center",
+            buttons = buttons,
+        }
+        UIManager:show(self.choose_dialog)
+    else
+        self.actions[extension][1].open_func(file)
     end
-    self.providers[extension][max_priority_index].open_func(file)
 end
 
 function FileManagerDocument:addHandler(name, t)
     assert(type(name) == "string", "string expected")
     assert(type(t) == "table", "table expected")
-    local extension, mimetype, priority, open_func
+
+    -- don't add duplicates
+    for __, v in ipairs(self.providers) do
+        if name == v then
+            return
+        end
+    end
+
+    local extension, mimetype, open_func
     for k, v in pairs(t) do
         if type(v) == "table" then
             if type(k) == "string" then
@@ -42,28 +75,18 @@ function FileManagerDocument:addHandler(name, t)
             if type(v.open_func) == "function" then
                 open_func = v.open_func
             end
-            priority = v.priority or 20
         end
 
         if extension and mimetype and open_func then
-            if not self.providers[extension] then
-                self.providers[extension] = {}
+            v.provider = name
+            if not self.actions[extension] then
+                self.actions[extension] = {}
+                require("document/documentregistry"):addProvider(extension, mimetype, self, 20)
             end
-            table.insert(self.providers[extension], v)
-            require("document/documentregistry"):addProvider(extension, mimetype, self, priority)
+            table.insert(self.actions[extension], v)
         end
     end
 end
-
-function FileManagerDocument:changeHandler(extension, t)
-    self:deleteHandler(extension)
-    self:addHandler(extension, t)
-end
-
--- todo: remove from self.providers and documentregistry
-function FileManagerDocument:deleteHandler(extension)
-end
-
 
 function FileManagerDocument:getProps()
     local _, _, docname = self.file:find(".*/(.*)")
