@@ -46,7 +46,6 @@ for __, v in ipairs({"sh", "zsh", "bash"}) do
         mimetype = "text/x-shellscript",
         open_func = runScript,
         desc = _("Run script"),
-        priority = 80,
         svg = "icon.svg",
     }
 end
@@ -66,7 +65,6 @@ function ShellRunner:init()
             mimetype = "text/x-shellscript",
             open_func = function(file) logger.info(file) end,
             desc = _("Log file name"),
-            priority = 100,
         }
     })
 end
