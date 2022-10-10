@@ -1,7 +1,7 @@
 local Document = require("document/document")
 local util = require("util")
 
-local FileManagerDocument = Document:new{
+local FileManagerDocument = Document:extend{
     _document = false,
     provider = "filemanagerdocument",
     provider_name = "File Manager",

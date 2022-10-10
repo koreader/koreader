@@ -48,7 +48,7 @@ for _, v in ipairs({"sh", "zsh", "bash"}) do
     }
 end
 
-local ShellRunner = WidgetContainer:new{
+local ShellRunner = WidgetContainer:extend{
     name = "ShellRunner",
     is_doc_only = false,
 }
