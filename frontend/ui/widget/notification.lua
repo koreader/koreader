@@ -208,4 +208,27 @@ function Notification:onTapClose()
     return true
 end
 
+-- Toasts should go bye-bye on user input, without stopping the event's propagation.
+function Notification:onKeyPress(key)
+    if self.toast then
+        UIManager:close(self)
+        return false
+    end
+    return InputContainer.onKeyPress(self, key)
+end
+function Notification:onKeyRepeat(key)
+    if self.toast then
+        UIManager:close(self)
+        return false
+    end
+    return InputContainer.onKeyRepeat(self, key)
+end
+function Notification:onGesture(ev)
+    if self.toast then
+        UIManager:close(self)
+        return false
+    end
+    return InputContainer.onGesture(self, ev)
+end
+
 return Notification
