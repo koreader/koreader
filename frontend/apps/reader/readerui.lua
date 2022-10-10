@@ -14,7 +14,6 @@ local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerCollection = require("apps/filemanager/filemanagercollection")
-local FileManagerDocument = require("document/filemanagerdocument")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
@@ -565,7 +564,8 @@ function ReaderUI:showReader(file, provider)
     -- `readerui:doShowReader` sent us here but there're some files better handled on the FM
     provider = provider or DocumentRegistry:getProvider(file)
     if provider.provider == "filemanagerdocument" then
-        self:showFileManager(file, FileManagerDocument.open)
+        require("document/filemanagerdocument"):open(file)
+        self:showFileManager(file)
         return
     end
 
