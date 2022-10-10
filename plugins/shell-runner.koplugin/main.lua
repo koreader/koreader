@@ -6,7 +6,6 @@ local UIManager =  require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local BaseUtil = require("ffi/util")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 local T = BaseUtil.template
 

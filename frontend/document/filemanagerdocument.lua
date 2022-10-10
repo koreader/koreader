@@ -1,8 +1,6 @@
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
-local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Document = require("document/document")
-local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
