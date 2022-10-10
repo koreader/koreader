@@ -19,7 +19,6 @@ local ReaderStatus = WidgetContainer:extend{
 function ReaderStatus:init()
     if self.ui.document.is_pic then
         self.enabled = false
-        return
     else
         self.total_pages = self.document:getPageCount()
         self.ui.menu:registerToMainMenu(self)
@@ -258,6 +257,8 @@ function ReaderStatus:onMarkBook(mark_read)
     else
         self.settings.data.summary = {status = "complete"}
     end
+    self.settings:saveSetting("summary", self.settings.data.summary)
+    self.settings:flush()
 end
 
 function ReaderStatus:onReadSettings(config)
