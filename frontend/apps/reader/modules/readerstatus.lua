@@ -257,6 +257,7 @@ function ReaderStatus:onMarkBook(mark_read)
     else
         self.settings.data.summary = {status = "complete"}
     end
+    -- If History is called over Reader, it will read the file to get the book status, so save and flush
     self.settings:saveSetting("summary", self.settings.data.summary)
     self.settings:flush()
 end
