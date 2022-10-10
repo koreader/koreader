@@ -5,6 +5,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager =  require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local BaseUtil = require("ffi/util")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = BaseUtil.template
@@ -14,7 +15,7 @@ local T = BaseUtil.template
 -- This is the single function used by all extensions
 local function runScript(file)
      local script_is_running_msg = InfoMessage:new{
-         text = T(_("Running %1 script %2…"), util.getScriptType(file), BD.filename(BaseUtil.basename(file))),
+         text = T(_("Running shell script %1…"), BD.filename(BaseUtil.basename(file))),
      }
      UIManager:show(script_is_running_msg)
      UIManager:scheduleIn(0.5, function()
@@ -40,11 +41,13 @@ end
 
 -- this is the table of extensions this plugin knows how to handle
 local t = {}
-for _, v in ipairs({"sh", "zsh", "bash"}) do
+for __, v in ipairs({"sh", "zsh", "bash"}) do
     t[v] = {
         mimetype = "text/x-shellscript",
         open_func = runScript,
+        desc = _("Run script"),
         priority = 80,
+        svg = "icon.svg",
     }
 end
 
@@ -56,6 +59,16 @@ local ShellRunner = WidgetContainer:extend{
 -- on init we register the extensions as FM documents
 function ShellRunner:init()
     FileManagerDocument:addHandler("ShellRunner", t)
+
+    -- add another handler for "sh" files, just to showcase a nice menu to choose action :)
+    FileManagerDocument:addHandler("ShellDummy", {
+        sh = {
+            mimetype = "text/x-shellscript",
+            open_func = function(file) logger.info(file) end,
+            desc = _("Log file name"),
+            priority = 100,
+        }
+    })
 end
 
 return ShellRunner
