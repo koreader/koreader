@@ -491,6 +491,73 @@ function util.arrayReferences(t, n, m, l)
     return false
 end
 
+-- A set of binary search implementations for plain arrays.
+-- Should be easy to tweak for arrays of hashes (c.f., UIManager:schedule),
+-- or arrays sorted in descending order (c.f., ReadHistory).
+-- refs: https://en.wikipedia.org/wiki/Binary_search_algorithm
+--       https://rosettacode.org/wiki/Binary_search
+--- Perform a binary search for `value` in a *sorted* (ascending) `array`.
+---- @param array Lua table (array only, sorted, ascending, every value must match the type of `value` and support comparison operators)
+---- @param value
+---- @return int index of value in array, or a (nil, insertion index) tuple if value was not found.
+function util.bsearch(array, value)
+    local lo = 1
+    local hi = #array
+    while lo <= hi do
+        -- invariants: value > array[i] for all i < lo
+        --             value < array[i] for all i > hi
+        local mid = bit.rshift(lo + hi, 1)
+        if array[mid] > value then
+            hi = mid - 1
+        elseif array[mid] < value then
+            lo = mid + 1
+        else
+            return mid
+        end
+    end
+    return nil, lo
+end
+
+--- Perform a leftmost insertion binary search for `value` in a *sorted* (ascending) `array`.
+---- @param array Lua table (array only, sorted, ascending, every value must match the type of `value` and support comparison operators)
+---- @param value
+---- @return int leftmost insertion index of value in array.
+function util.bsearch_left(array, value)
+    local lo = 1
+    local hi = #array
+    while lo <= hi do
+        -- invariants: value > array[i] for all i < lo
+        --             value <= array[i] for all i > hi
+        local mid = bit.rshift(lo + hi, 1)
+        if array[mid] >= value then
+            hi = mid - 1
+        else
+            lo = mid + 1
+        end
+    end
+    return lo
+end
+
+--- Perform a rightmost insertion binary search for `value` in a *sorted* (ascending) `array`.
+---- @param array Lua table (array only, sorted, ascending, every value must match the type of `value` and support comparison operators)
+---- @param value
+---- @return int rightmost insertion index of value in array.
+function util.bsearch_right(array, value)
+    local lo = 1
+    local hi = #array
+    while lo <= hi do
+        -- invariants: value >= array[i] for all i < low
+        --             value < array[i] for all i > high
+        local mid = bit.rshift(lo + hi, 1)
+        if array[mid] > value then
+            hi = mid - 1
+        else
+            lo = mid + 1
+        end
+    end
+    return lo
+end
+
 -- Merge t2 into t1, overwriting existing elements if they already exist
 -- Probably not safe with nested tables (c.f., https://stackoverflow.com/q/1283388)
 ---- @param t1 Lua table
