@@ -72,7 +72,7 @@ local function wrappedAddChars(inputbox, char)
     end
 
     -- Replace character if there was a valid replacement.
-    logger.dbg("ja_kbd: applying", char, "key to", current_char, "yielded", new_char or "<nil>")
+    logger.dbg("ja_kbd: applying", char, "key to", current_char, "yielded", new_char)
     if not current_char then return end -- no character to modify
     if new_char then
         -- Use the raw methods to avoid calling the callbacks.

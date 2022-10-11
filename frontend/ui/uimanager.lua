@@ -547,16 +547,16 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             -- NOTE: It's too early to tell what the function will return (especially the region), because the widget hasn't been painted yet.
             --       Consuming the lambda now also appears have nasty side-effects that render it useless later, subtly breaking a whole lot of things...
             --       Thankfully, we can track them in _refresh()'s logging very soon after that...
-            logger.dbg("setDirty via a func from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil")
+            logger.dbg("setDirty via a func from widget", widget and (widget.name or widget.id or tostring(widget)))
         end
     else
         -- otherwise, enqueue refresh
         self:_refresh(refreshtype, refreshregion, refreshdither)
         if dbg.is_on then
             if refreshregion then
-                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h, refreshdither and "AND w/ HW dithering" or "")
+                logger.dbg("setDirty", refreshtype, "from widget", widget and (widget.name or widget.id or tostring(widget)), "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h, refreshdither and "AND w/ HW dithering" or "")
             else
-                logger.dbg("setDirty", refreshtype and refreshtype or "nil", "from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil", "w/ NO region", refreshdither and "AND w/ HW dithering" or "")
+                logger.dbg("setDirty", refreshtype, "from widget", widget and (widget.name or widget.id or tostring(widget)), "w/ NO region", refreshdither and "AND w/ HW dithering" or "")
             end
         end
     end

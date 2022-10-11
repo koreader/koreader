@@ -261,13 +261,15 @@ function PocketBook:init()
 end
 
 function PocketBook:notifyBookState(title, document)
-    local fn = document and document.file or nil
-    logger.dbg("Notify book state", title or "[nil]", fn or "[nil]")
+    local fn = document and document.file
+    logger.dbg("Notify book state", title, fn)
     os.remove("/tmp/.current")
     if fn then
         local fo = io.open("/tmp/.current", "w+")
-        fo:write(fn)
-        fo:close()
+        if fo then
+            fo:write(fn)
+            fo:close()
+        end
     end
     inkview.SetSubtaskInfo(inkview.GetCurrentTask(), 0, title and (title .. " - koreader") or "koreader", fn or _("N/A"))
 end
