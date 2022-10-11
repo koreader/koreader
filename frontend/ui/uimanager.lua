@@ -247,8 +247,7 @@ function UIManager:schedule(sched_time, action, ...)
     table.insert(self._task_queue, lo, {
         time = sched_time,
         action = action,
-        argc = select("#", ...),
-        args = {...},
+        args = table.pack(...),
     })
     self._task_queue_dirty = true
 end
@@ -895,7 +894,7 @@ function UIManager:_checkTasks()
             -- NOTE: Said task's action might modify _task_queue.
             --       To avoid race conditions and catch new upcoming tasks during this call,
             --       we repeatedly check the head of the queue (c.f., #1758).
-            task.action(unpack(task.args, 1, task.argc))
+            task.action(unpack(task.args))
         else
             -- As the queue is sorted in ascending order, it's safe to assume all items are currently future tasks.
             wait_until = task_time
