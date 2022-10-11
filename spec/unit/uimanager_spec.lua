@@ -15,16 +15,17 @@ describe("UIManager spec", function()
         local future2 = future + time.s(5)
         UIManager:quit()
         UIManager._task_queue = {
-            { time = now - time.s(10), action = noop, args = {} },
-            { time = now - time.us(5), action = noop, args = {} },
-            { time = now, action = noop, args = {} },
-            { time = future, action = noop, args = {} },
             { time = future2, action = noop, args = {} },
+            { time = future, action = noop, args = {} },
+            { time = now, action = noop, args = {} },
+            { time = now - time.us(5), action = noop, args = {} },
+            { time = now - time.s(10), action = noop, args = {} },
         }
+        UIManager._task_queue.len = #UIManager._task_queue
         UIManager:_checkTasks()
-        assert.are.same(2, #UIManager._task_queue, 2)
-        assert.are.same(future, UIManager._task_queue[1].time)
-        assert.are.same(future2, UIManager._task_queue[2].time)
+        assert.are.same(2, #UIManager._task_queue)
+        assert.are.same(future, UIManager._task_queue[2].time)
+        assert.are.same(future2, UIManager._task_queue[1].time)
     end)
 
     it("should calcualte wait_until properly in checkTasks routine", function()
@@ -32,11 +33,13 @@ describe("UIManager spec", function()
         local future_time = now + time.s(60000)
         UIManager:quit()
         UIManager._task_queue = {
-            { time = now - time.s(10), action = noop, args = {} },
-            { time = now - time.us(5), action = noop, args = {} },
-            { time = now, action = noop, args = {} },
             { time = future_time, action = noop, args = {} },
+            { time = now, action = noop, args = {} },
+            { time = now - time.us(5), action = noop, args = {} },
+            { time = now - time.s(10), action = noop, args = {} },
         }
+        UIManager._task_queue.len = #UIManager._task_queue
+
         wait_until, now = UIManager:_checkTasks()
         assert.are.same(future_time, wait_until)
     end)
@@ -45,10 +48,12 @@ describe("UIManager spec", function()
         now = time.now()
         UIManager:quit()
         UIManager._task_queue = {
-            { time = now - time.s(10), action = noop, args = {} },
-            { time = now - time.us(5), action = noop, args = {} },
             { time = now, action = noop, args = {} },
+            { time = now - time.us(5), action = noop, args = {} },
+            { time = now - time.s(10), action = noop, args = {} },
         }
+        UIManager._task_queue.len = #UIManager._task_queue
+
         wait_until, now = UIManager:_checkTasks()
         assert.are.same(nil, wait_until)
     end)
@@ -73,7 +78,7 @@ describe("UIManager spec", function()
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'quz')
         assert.are.same(2, #UIManager._task_queue)
-        assert.are.same('quz', UIManager._task_queue[1].action)
+        assert.are.same('quz', UIManager._task_queue[2].action)
 
         UIManager:quit()
         UIManager._task_queue = {
@@ -82,35 +87,35 @@ describe("UIManager spec", function()
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'foo')
         assert.are.same(2, #UIManager._task_queue)
-        assert.are.same('foo', UIManager._task_queue[2].action)
+        assert.are.same('foo', UIManager._task_queue[1].action)
         UIManager:scheduleIn(155, 'bar')
         assert.are.same(3, #UIManager._task_queue)
-        assert.are.same('bar', UIManager._task_queue[3].action)
+        assert.are.same('bar', UIManager._task_queue[1].action)
     end)
 
     it("should insert new task in ascendant order", function()
         now = time.now()
         UIManager:quit()
         UIManager._task_queue = {
-            { time = now - time.s(10), action = '1', args = {} },
-            { time = now - time.us(5), action = '2', args = {} },
             { time = now, action = '3', args = {} },
+            { time = now - time.us(5), action = '2', args = {} },
+            { time = now - time.s(10), action = '1', args = {} },
         }
         -- insert into the tail slot
         UIManager:scheduleIn(10, 'foo')
-        assert.are.same('foo', UIManager._task_queue[4].action)
+        assert.are.same('foo', UIManager._task_queue[1].action)
         -- insert into the second slot
         UIManager:schedule(now - time.s(5), 'bar')
-        assert.are.same('bar', UIManager._task_queue[2].action)
+        assert.are.same('bar', UIManager._task_queue[4].action)
         -- insert into the head slot
         UIManager:schedule(now - time.s(15), 'baz')
-        assert.are.same('baz', UIManager._task_queue[1].action)
+        assert.are.same('baz', UIManager._task_queue[6].action)
         -- insert into the last second slot
         UIManager:scheduleIn(5, 'qux')
-        assert.are.same('qux', UIManager._task_queue[6].action)
+        assert.are.same('qux', UIManager._task_queue[2].action)
         -- insert into the middle slot
         UIManager:schedule(now - time.us(1), 'quux')
-        assert.are.same('quux', UIManager._task_queue[5].action)
+        assert.are.same('quux', UIManager._task_queue[4].action)
     end)
 
     it("should insert new tasks with same times after existing tasks", function()
@@ -122,43 +127,47 @@ describe("UIManager spec", function()
         UIManager:schedule(now, "now");
         assert.are.same("now", UIManager._task_queue[1].action)
         UIManager:schedule(now + time.s(10), "10s");
-        assert.are.same("10s", UIManager._task_queue[2].action)
+        assert.are.same("10s", UIManager._task_queue[1].action)
         UIManager:schedule(now + time.s(5), "5s");
         assert.are.same("5s", UIManager._task_queue[2].action)
 
         -- insert task at the end after "10s"
         -- NOTE: Can't use 10, as time.now, which is used internally, may or may not have moved,
         --       depending on host's performance and clock granularity (especially if host is fast and/or COARSE is available).
-        UIManager:scheduleIn(11, 'foo')
-        assert.are.same('foo', UIManager._task_queue[4].action)
+        UIManager:scheduleIn(10, 'foo') -- is a bit later than "10s", as time.now() is used internally
+        assert.are.same('foo', UIManager._task_queue[1].action)
 
         -- insert task at the second last position after "10s"
         UIManager:schedule(now + time.s(10), 'bar')
-        assert.are.same('bar', UIManager._task_queue[4].action)
+        assert.are.same('bar', UIManager._task_queue[2].action)
 
         -- insert task at the second last position after "bar"
         UIManager:schedule(now + time.s(10), 'baz')
-        assert.are.same('baz', UIManager._task_queue[5].action)
+        assert.are.same('baz', UIManager._task_queue[2].action)
 
         -- insert task after "5s"
         UIManager:schedule(now + time.s(5), 'nix')
-        assert.are.same('nix', UIManager._task_queue[3].action)
+        assert.are.same('nix', UIManager._task_queue[5].action)
         -- "barba" is later than "nix" anyway
         UIManager:scheduleIn(5, 'barba') -- is a bit later than "5s", as time.now() is used internally
-        assert.are.same('barba', UIManager._task_queue[4].action)
+        assert.are.same('barba', UIManager._task_queue[5].action)
 
-        -- "mama" is sheduled now and inserted after "now"
+        -- "papa" is shortly after "now"
+        UIManager:nextTick('papa') -- is a bit later than "now"
+        assert.are.same('papa', UIManager._task_queue[8].action)
+
+        -- "mama is shedule now and inserted after "now"
         UIManager:schedule(now, 'mama')
-        assert.are.same('mama', UIManager._task_queue[2].action)
+        assert.are.same('mama', UIManager._task_queue[9].action)
 
         -- "papa" is shortly after "now"
         -- NOTE: For the same reason as above, test this last, as time.now may not have moved...
-        UIManager:nextTick('papa') -- is a bit later than "now"
-        assert.are.same('papa', UIManager._task_queue[3].action)
+        UIManager:nextTick('papa1') -- is a bit later than "now"
+        assert.are.same('papa1', UIManager._task_queue[8].action)
 
         -- "letta" is shortly after "papa"
         UIManager:tickAfterNext('letta')
-        assert.are.same("function", type(UIManager._task_queue[4].action))
+        assert.are.same("function", type(UIManager._task_queue[8].action))
 
     end)
 
@@ -166,17 +175,19 @@ describe("UIManager spec", function()
         now = time.now()
         UIManager:quit()
         UIManager._task_queue = {
-            { time = now - time.s(15), action = '3', args = {} },
-            { time = now - time.s(10), action = '1', args = {} },
-            { time = now - time.us(6), action = '3', args = {} },
-            { time = now - time.us(5), action = '2', args = {} },
             { time = now, action = '3', args = {} },
+            { time = now - time.us(5), action = '2', args = {} },
+            { time = now - time.us(6), action = '3', args = {} },
+            { time = now - time.s(10), action = '1', args = {} },
+            { time = now - time.s(15), action = '3', args = {} },
         }
+        UIManager._task_queue.len = #UIManager._task_queue
         -- insert into the tail slot
         UIManager:unschedule('3')
         assert.are.same({
-            { time = now - time.s(10), action = '1', args = {} },
             { time = now - time.us(5), action = '2', args = {} },
+            { time = now - time.s(10), action = '1', args = {} },
+            len = 2,
         }, UIManager._task_queue)
     end)
 
@@ -188,7 +199,8 @@ describe("UIManager spec", function()
         end
         UIManager:quit()
         UIManager._task_queue = {
-            { time = now - time.s(15), action = task_to_remove, args = {} }, -- this will be called
+            { time = now, action = task_to_remove, args = {} }, -- this will be removed
+            { time = now - time.us(5), action = task_to_remove, args = {} }, -- this will be removed
             {
                 time = now - time.s(10),
                 action = function() -- this will be called, too
@@ -197,9 +209,10 @@ describe("UIManager spec", function()
                 end,
                 args = {},
             },
-            { time = now - time.us(5), action = task_to_remove, args = {} }, -- this will be removed
-            { time = now, action = task_to_remove, args = {} }, -- this will be removed
+            { time = now - time.s(15), action = task_to_remove, args = {} }, -- this will be called
         }
+        UIManager._task_queue.len = #UIManager._task_queue
+
         UIManager:_checkTasks()
         assert.are.same(2, run_count)
     end)

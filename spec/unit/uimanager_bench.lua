@@ -10,11 +10,11 @@ local noop = function() end
 local function check()
     for i = 1, #UIManager._task_queue-1 do
         -- test for wrongly inserted time
-        assert.is_true(UIManager._task_queue[i].time <= UIManager._task_queue[i+1].time,
+        assert.is_true(UIManager._task_queue[i].time >= UIManager._task_queue[i+1].time,
             "time wrongly sorted")
         if UIManager._task_queue[i].time == UIManager._task_queue[i+1].time then
             -- for same time, test if later inserted action is after a former action
-            assert.is_true(UIManager._task_queue[i].action <= UIManager._task_queue[i+1].action,
+            assert.is_true(UIManager._task_queue[i].action >= UIManager._task_queue[i+1].action,
                 "ragnarock")
         end
     end
@@ -26,7 +26,7 @@ describe("UIManager checkTasks benchmark", function()
     UIManager:quit()
     UIManager._task_queue = {}
 
-    for i=1, NB_TESTS do
+    for i= NB_TESTS, 1, -1 do
         table.insert(
             UIManager._task_queue,
             { time = now + i, action = noop, args = {} }
@@ -43,7 +43,6 @@ describe("UIManager schedule simple benchmark", function()
     UIManager:quit()
     UIManager._task_queue = {}
 
-    -- Insert tasks at the beginning and at the end of the _task_queue
     for i=1, NB_TESTS/2 do
         UIManager:schedule(now + i, noop)
         UIManager:schedule(now + NB_TESTS - i, noop)
@@ -149,15 +148,17 @@ describe("UIManager unschedule benchmark", function()
     UIManager:quit()
     UIManager._task_queue = {}
 
-    for i=1, NB_TESTS do
+    for i=NB_TESTS, 1, -1 do
         table.insert(
             UIManager._task_queue,
             { time = now + i, action = 'a', args={} }
         )
     end
 
-    for i=1, NB_TESTS do
+    for i=1, NB_TESTS/2 do
         UIManager:schedule(now + i, noop)
+        UIManager:unschedule(noop)
+        UIManager:schedule(now + NB_TESTS - i, noop)
         UIManager:unschedule(noop)
     end
 end)
