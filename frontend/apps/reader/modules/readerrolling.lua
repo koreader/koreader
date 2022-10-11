@@ -1145,34 +1145,35 @@ function ReaderRolling:updateBatteryState()
 end
 
 function ReaderRolling:handleEngineCallback(ev, ...)
-    local args = {...}
-    -- logger.info("handleCallback: got", ev, args and #args > 0 and args[1] or nil)
+    local argc = select("#", ...)
+    local arg = argc > 0 and select(1, ...)
+    -- logger.info("handleCallback: got", ev, ...)
     if ev == "OnLoadFileStart" then -- Start of book loading
         self:showEngineProgress(0) -- Start initial delay countdown
     elseif ev == "OnLoadFileProgress" then
         -- Initial load from file (step 1/2) or from cache (step 1/1)
-        self:showEngineProgress(args[1]*(1/100/2))
+        self:showEngineProgress(arg*(1/100/2))
     elseif ev == "OnNodeStylesUpdateStart" then -- Start of re-rendering
         self:showEngineProgress(0) -- Start initial delay countdown
     elseif ev == "OnNodeStylesUpdateProgress" then
         -- Update node styles (step 1/2 on re-rendering)
-        self:showEngineProgress(args[1]*(1/100/2))
+        self:showEngineProgress(arg*(1/100/2))
     elseif ev == "OnFormatStart" then -- Start of step 2/2
         self:showEngineProgress(1/2) -- 50%, in case of no OnFormatProgress
     elseif ev == "OnFormatProgress" then
         -- Paragraph formatting and page splitting (step 2/2 after load
         -- from file, step 2/2 on re-rendering)
-        self:showEngineProgress(1/2 + args[1]*(1/100/2))
+        self:showEngineProgress(1/2 + arg*(1/100/2))
     elseif ev == "OnSaveCacheFileStart" then -- Start of cache file save
         self:showEngineProgress(1) -- Start initial delay countdown, fully filled
     elseif ev == "OnSaveCacheFileProgress" then
         -- Cache file save (when closing book after initial load from
         -- file or re-rendering)
-        self:showEngineProgress(1 - args[1]*(1/100)) -- unfill progress
+        self:showEngineProgress(1 - arg*(1/100)) -- unfill progress
     elseif ev == "OnDocumentReady" or ev == "OnSaveCacheFileEnd" then
         self:showEngineProgress() -- cleanup
     elseif ev == "OnLoadFileError" then
-        logger.warn("Cre error loading file:", args[1])
+        logger.warn("Cre error loading file:", arg)
     end
     -- ignore other events
 end

@@ -57,7 +57,8 @@ if isAndroid then
 
     log = function(log_lvl, ...)
         local line = {}
-        for _, v in ipairs({...}) do
+        for i = 1, select("#", ...) do
+            local v = select(i, ...)
             if type(v) == "table" then
                 table.insert(line, serpent.block(v, serpent_opts))
             else
@@ -72,7 +73,8 @@ else
             os.date("%x-%X"),
             LOG_PREFIX[log_lvl],
         }
-        for _, v in ipairs({...}) do
+        for i = 1, select("#", ...) do
+            local v = select(i, ...)
             if type(v) == "table" then
                 table.insert(line, serpent.block(v, serpent_opts))
             else
