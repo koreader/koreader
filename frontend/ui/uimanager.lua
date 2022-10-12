@@ -473,7 +473,9 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
+    local widget_name
     if widget then
+        widget_name = widget.name or widget.id or tostring(widget)
         if widget == "all" then
             -- special case: set all top-level widgets as being "dirty".
             for _, window in ipairs(self._window_stack) do
@@ -499,7 +501,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                 local w = self._window_stack[i].widget
                 if handle_alpha then
                     self._dirty[w] = true
-                    logger.dbg("setDirty: Marking as dirty widget:", w.name or w.id or tostring(w), "because it's below translucent widget:", widget.name or widget.id or tostring(widget))
+                    logger.dbg("setDirty: Marking as dirty widget:", w.name or w.id or tostring(w), "because it's below translucent widget:", widget_name)
                     -- Stop flagging widgets at the uppermost one that covers the full screen
                     if w.covers_fullscreen then
                         break
@@ -547,16 +549,16 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             -- NOTE: It's too early to tell what the function will return (especially the region), because the widget hasn't been painted yet.
             --       Consuming the lambda now also appears have nasty side-effects that render it useless later, subtly breaking a whole lot of things...
             --       Thankfully, we can track them in _refresh()'s logging very soon after that...
-            logger.dbg("setDirty via a func from widget", widget and (widget.name or widget.id or tostring(widget)))
+            logger.dbg("setDirty via a func from widget", widget_name)
         end
     else
         -- otherwise, enqueue refresh
         self:_refresh(refreshtype, refreshregion, refreshdither)
         if dbg.is_on then
             if refreshregion then
-                logger.dbg("setDirty", refreshtype, "from widget", widget and (widget.name or widget.id or tostring(widget)), "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h, refreshdither and "AND w/ HW dithering" or "")
+                logger.dbg("setDirty", refreshtype, "from widget", widget_name, "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h, refreshdither and "AND w/ HW dithering" or "")
             else
-                logger.dbg("setDirty", refreshtype, "from widget", widget and (widget.name or widget.id or tostring(widget)), "w/ NO region", refreshdither and "AND w/ HW dithering" or "")
+                logger.dbg("setDirty", refreshtype, "from widget", widget_name, "w/ NO region", refreshdither and "AND w/ HW dithering" or "")
             end
         end
     end
