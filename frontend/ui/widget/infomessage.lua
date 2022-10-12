@@ -64,6 +64,7 @@ local InfoMessage = InputContainer:extend{
     dismiss_callback = nil,
     -- Passed to TextBoxWidget
     alignment = "left",
+    honor_soft_hyphen = true,
     -- In case we'd like to use it to display some text we know a few more things about:
     lang = nil,
     para_direction_rtl = nil,
@@ -149,6 +150,7 @@ function InfoMessage:init()
             face = self.face,
             width = text_width,
             alignment = self.alignment,
+            honor_soft_hyphen = self.honor_soft_hyphen,
             lang = self.lang,
             para_direction_rtl = self.para_direction_rtl,
             auto_para_direction = self.auto_para_direction,

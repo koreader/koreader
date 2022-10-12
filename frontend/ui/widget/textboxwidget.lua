@@ -38,6 +38,7 @@ local TextBoxWidget = InputContainer:extend{
     editable = false, -- Editable flag for whether drawing the cursor or not.
     justified = false, -- Should text be justified (spaces widened to fill width)
     alignment = "left", -- or "center", "right"
+    honor_soft_hyphen = false,
     dialog = nil, -- parent dialog that will be set dirty
     face = nil,
     bold = nil,   -- use bold=true to use a real bold font (or synthetized if not available),
@@ -498,6 +499,25 @@ function TextBoxWidget:_splitToLines()
         -- Make sure `idx` point to the next char to be processed in the next loop.
 
         ::idx_continue:: -- (Label for goto when use_xtext=true)
+    end
+
+    if self.honor_soft_hyphen then
+        -- Check if there is a soft hyphen at the end of a line, replace it with a visible hyphen.
+        -- Begin from the end.
+        local soft_hyphens_at_eol = false
+        for i = #self.vertical_string_list, 1, -1 do
+            local pos = self.vertical_string_list[i].end_offset
+            if self.text:sub(pos, pos + 1) == "\xC2\xAD" then
+                self.text = self.text:sub(1, pos - 1) .. "-" .. self.text:sub(pos + 2)
+                soft_hyphens_at_eol = true
+            end
+        end
+
+        if soft_hyphens_at_eol then
+            self.text:gsub("\xC2\xAD","") -- remove all other soft hyphens
+            self:setText(self.text)
+            self:_computeTextDimensions()
+        end
     end
 end
 
