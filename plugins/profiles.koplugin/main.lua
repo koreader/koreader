@@ -34,6 +34,17 @@ function Profiles:loadProfiles()
     end
     self.profiles = LuaSettings:open(self.profiles_file)
     self.data = self.profiles.data
+    -- ensure profile name
+    for k, v in pairs(self.data) do
+        if not v.settings then
+            self.data[k].settings = {}
+        end
+        if not self.data[k].settings.name then
+            self.data[k].settings.name = k
+            self.updated = true
+        end
+    end
+    self:onFlushSettings()
 end
 
 function Profiles:onFlushSettings()
@@ -94,7 +105,9 @@ function Profiles:getSubMenuItems()
         Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k)
         local sub_items = {
             {
-                text = _("Execute"),
+                text_func = function()
+                    return (v.settings.show_as_quickmenu and "\u{F0CA} " or "\u{F144} ") .. _("Execute")
+                end,
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
                     self:onProfileExecute(k)
@@ -194,7 +207,9 @@ function Profiles:getSubMenuItems()
             },
         }
         table.insert(sub_item_table, {
-            text = k,
+            text_func = function()
+                return (v.settings.show_as_quickmenu and "\u{F0CA} " or "\u{F144} ") .. k
+            end,
             hold_keep_menu_open = false,
             sub_item_table = sub_items,
             hold_callback = function()
