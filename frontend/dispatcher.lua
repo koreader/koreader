@@ -518,7 +518,9 @@ function Dispatcher:_addToOrder(location, settings, item)
                 end
             end
         else
-            table.insert(location[settings].settings.order, item)
+            if not util.arrayContains(location[settings].settings.order, item) then
+                table.insert(location[settings].settings.order, item)
+            end
         end
     end
 end
