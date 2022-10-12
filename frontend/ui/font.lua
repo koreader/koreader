@@ -6,6 +6,7 @@ local FontList = require("fontlist")
 local Freetype = require("ffi/freetype")
 local Screen = require("device").screen
 local logger = require("logger")
+local util = require("util")
 
 -- Known regular (and italic) fonts with an available bold font file
 local _bold_font_variant = {}
@@ -136,12 +137,30 @@ if G_reader_settings and G_reader_settings:has("font_ui_fallbacks") then
 end
 
 -- Match bold font to fallback by name. We do not use FontInfo name match
--- to allow users more flexibility
+-- to allow users more flexibility.
+-- Because the hardcoded fallback fonts' paths are their filenames not actual paths,
+-- we need to match with filenames rather than paths
+local _fallback_fonts_without_bold = {}
 for _, fallback_font_path in ipairs(Font.fallbacks) do
-    if not _bold_font_variant[fallback_font_path] and fallback_font_path:find("-Regular") then -- has no bold and is regular by name
-        local bold_path = fallback_font_path:gsub("-Regular", "-Bold", 1, true)
-        Font.bold_font_variant[fallback_font_path] = bold_path
-        Font.regular_font_variant[bold_path] = fallback_font_path
+    local _, font_name = util.splitFilePathName(fallback_font_path)
+    if font_name and 
+       not _bold_font_variant[fallback_font_path] and not _bold_font_variant[font_name] and 
+       font_name:find("-Regular") then
+        local bold_font_name = font_name:gsub("-Regular", "-Bold", 1, true)
+        _fallback_fonts_without_bold[bold_font_name] = fallback_font_path
+    end
+end
+
+for _, font_path in ipairs(FontList:getFontList()) do
+    local _, bold_font_name = util.splitFilePathName(font_path)
+    local fallback_font_path = _fallback_fonts_without_bold[bold_font_name]
+    if bold_font_name and fallback_font_path then
+        Font.bold_font_variant[fallback_font_path] = font_path
+        Font.regular_font_variant[font_path] = fallback_font_path
+        _fallback_fonts_without_bold[bold_font_name] = nil
+    end
+    if #_fallback_fonts_without_bold == 0 then
+        break
     end
 end
 
