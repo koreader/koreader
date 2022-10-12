@@ -105,12 +105,23 @@ function Profiles:getSubMenuItems()
         Dispatcher:addSubMenu(self, edit_actions_sub_items, self.data, k)
         local sub_items = {
             {
-                text_func = function()
-                    return (v.settings.show_as_quickmenu and "\u{F0CA} " or "\u{F144} ") .. _("Execute")
-                end,
+                text = _("Execute"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
+                    local show_as_quickmenu = v.settings.show_as_quickmenu
+                    self.data[k].settings.show_as_quickmenu = nil
                     self:onProfileExecute(k)
+                    self.data[k].settings.show_as_quickmenu = show_as_quickmenu
+                end,
+            },
+            {
+                text = _("Show as QuickMenu"),
+                callback = function(touchmenu_instance)
+                    touchmenu_instance:onClose()
+                    local show_as_quickmenu = v.settings.show_as_quickmenu
+                    self.data[k].settings.show_as_quickmenu = true
+                    self:onProfileExecute(k)
+                    self.data[k].settings.show_as_quickmenu = show_as_quickmenu
                 end,
             },
             {
