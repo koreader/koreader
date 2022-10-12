@@ -1,0 +1,14 @@
+* portable: s'executa en dispositius integrats (Cervantes, Kindle, Kobo, PocketBook), Android i ordenadors Linux. Els desenvolupadors poden executar un emulador de KOReader en Linux i MacOS.
+
+* documents multiformat: admet formats de pàgina de maquetació fixa (PDF, DjVu, CBT, CBZ) i de maquetació fluida (EPUB, FB2, Mobi, DOC, CHM, TXT). També es pot modificar la maquetació dels documents PDF/DjVu escanejats, i redistribuir el seu contingut, gràcies a la biblioteca K2pdfopt incorporada.
+
+* lectura amb totes les funcions: interfície d'usuari multilingüe amb una vista de lectura altament personalitzable i moltes opcions de composició tipogràfica. És possible establir marges de pàgina arbitraris, anul·lar l'interlineat i triar fonts i estils externs. L'aplicació també disposa de diccionaris de separació de síl·labes multilingües integrats.
+
+* integració amb calibre (cerca de metadades, recepció sense fil de llibres electrònics, exploració de la biblioteca a través de OPDS), i amb Wallabag, Wikipedia, Google Translate i altres proveïdors de contingut.
+
+* optimitzat per a dispositius de tinta electrònica: interfície d'usuari personalitzada sense animacions, amb menús paginats, contrast de text ajustable i zoom que permet ajustar fàcilment la pàgina o el contingut dels mitjans paginats.
+
+* extensible mitjançant complements
+
+* i molt més: cerca de paraules en diccionaris StarDict / Wikipedia, afegir catàlegs OPDS i canals RSS propis en línia, actualitzacions de programari en línia, client FTP, servidor SSH, ...
+

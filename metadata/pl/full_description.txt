@@ -1,0 +1,14 @@
+* przenośny: działa na urządzeniach wbudowanych (Cervantes, Kindle, Kobo, PocketBook), komputerach z systemem Android i Linux. Programiści mogą uruchomić emulator KOReadera w systemach Linux i MacOS.
+
+* dokumenty wieloformatowe: obsługuje stałe formaty stron (PDF, DjVu, CBT, CBZ) i formaty e-booków z funkcją reflow (EPUB, FB2, Mobi, DOC, CHM, TXT). Zeskanowane dokumenty PDF/DjVu można również uzupełniać za pomocą wbudowanej biblioteki K2pdfopt.
+
+* w pełni funkcjonalne czytanie: wielojęzyczny interfejs użytkownika z wysoce konfigurowalnym widokiem czytnika i wieloma opcjami składu. Możesz ustawić dowolne marginesy strony, zastąpić odstępy między wierszami oraz wybrać zewnętrzne czcionki i style. Do aplikacji dołączone są wielojęzyczne słowniki dzielenia wyrazów.
+
+* zintegrowany z calibre (wyszukuj metadane, odbieraj e-booki bezprzewodowo, przeglądaj bibliotekę przez OPDS), Wallabag, Wikipedią, Google Translate i innymi dostawcami treści.
+
+* zoptymalizowany pod kątem urządzeń e-ink: niestandardowy interfejs użytkownika bez animacji, z paginowanymi menu, regulowanym kontrastem tekstu i łatwym powiększaniem w celu dopasowania treści lub strony w mediach stronicowanych.
+
+* rozszerzalny za pomocą wtyczek
+
+* oraz wiele więcej: szukaj słów w słownikach StarDict / Wikipedii, dodawaj własne internetowe katalogi OPDS i kanały RSS, bezprzewodowe aktualizacje oprogramowania online, klient FTP, serwer SSH…
+

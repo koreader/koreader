@@ -1,0 +1,1 @@
+电子书阅读器支持多种格式，如PDF，DjVu，EPUB，FB2，CBZ。
