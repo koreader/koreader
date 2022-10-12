@@ -163,7 +163,7 @@ for _, font_path in ipairs(FontList:getFontList()) do
         break
     end
 end
-bold_candidates = nil
+bold_candidates = nil -- luacheck: ignore
 
 -- Helper functions with explicite names around
 -- bold/regular_font_variant tables
