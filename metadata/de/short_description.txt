@@ -1,0 +1,1 @@
+Ebook-Reader mit Unterstützung für viele Formate wie PDF, DjVu, EPUB, FB2, CBZ.

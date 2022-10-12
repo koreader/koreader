@@ -1,0 +1,1 @@
+Lector de libros electrónicos con soporte para diversos formatos como PDF, DjVu, EPUB, FB2, CBZ.
