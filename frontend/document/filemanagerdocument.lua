@@ -1,6 +1,8 @@
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local RenderImage = require("ui/renderimage")
 local UIManager = require("ui/uimanager")
 local Document = require("document/document")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
@@ -19,6 +21,41 @@ local FileManagerDocument = Document:extend{
 function FileManagerDocument:init() end
 function FileManagerDocument:close() end
 function FileManagerDocument:register() end
+
+
+function FileManagerDocument:getPageCount()
+    logger.info("getPageCount")
+end
+
+function FileManagerDocument:getCoverPageImage(file) 
+    logger.info("getCoverPageImage", file)
+
+    local extension = util.getFileNameSuffix(file)
+    if not extension then return end
+    for __, v in ipairs(self.actions[extension]) do
+        if v.svg then
+            logger.info("got image", v.svg)
+            local full_path = "/home/pazos/koreader/plugins/shell-runner.koplugin/generic.svg"
+            local cover_bb = RenderImage:renderSVGImageFileWithMupdf(full_path, 100, 100, 1)
+            --cover_bb:setAllocated(1)
+            return cover_bb
+        end
+    end
+
+end
+
+function FileManagerDocument:getProps()
+    logger.info("getProps")
+    local _, _, docname = self.file:find(".*/(.*)")
+    docname = docname or self.file
+    return {
+        title = docname:match("(.*)%."),
+    }
+end
+
+
+
+function FileManagerDocument:_readMetadata() return true end
 
 function FileManagerDocument:open(file)
     local extension = util.getFileNameSuffix(file)
@@ -47,6 +84,9 @@ function FileManagerDocument:open(file)
     else
         self.actions[extension][1].open_func(file)
     end
+end
+
+function FileManagerDocument:getIcon(file)
 end
 
 function FileManagerDocument:addHandler(name, t)
@@ -85,21 +125,6 @@ function FileManagerDocument:addHandler(name, t)
     end
 end
 
-function FileManagerDocument:getProps()
-    local _, _, docname = self.file:find(".*/(.*)")
-    docname = docname or self.file
-    return {
-        title = docname:match("(.*)%."),
-    }
-end
 
-function FileManagerDocument:_readMetadata()
-    Document._readMetadata(self)
-    return true
-end
-
-function FileManagerDocument:getCoverPageImage()
-    return nil
-end
 
 return FileManagerDocument

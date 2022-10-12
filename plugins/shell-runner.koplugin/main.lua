@@ -9,9 +9,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local T = BaseUtil.template
 
--- example plugin which registers a few extensions as FM documents.
-
--- This is the single function used by all extensions
 local function runScript(file)
      local script_is_running_msg = InfoMessage:new{
          text = T(_("Running shell script %1…"), BD.filename(BaseUtil.basename(file))),
@@ -38,34 +35,35 @@ local function runScript(file)
      end)
 end
 
--- this is the table of extensions this plugin knows how to handle
-local t = {}
-for __, v in ipairs({"sh", "zsh", "bash"}) do
-    t[v] = {
-        mimetype = "text/x-shellscript",
-        open_func = runScript,
-        desc = _("Run script"),
-        svg = "icon.svg",
-    }
-end
-
 local ShellRunner = WidgetContainer:extend{
     name = "ShellRunner",
-    is_doc_only = false,
+    is_doc_only = false
 }
 
--- on init we register the extensions as FM documents
 function ShellRunner:init()
-    FileManagerDocument:addHandler("ShellRunner", t)
+    local tRun, tLog = {}, {}
 
-    -- add another handler for "sh" files, just to showcase a nice menu to choose action :)
-    FileManagerDocument:addHandler("ShellDummy", {
-        sh = {
+    -- in this example we asign the same function and the same icon to all
+    -- extensions for the same handler, but both can be different for each extension.
+    for __, v in ipairs({"sh", "zsh", "bash"}) do
+
+        tRun[v] = {
+            mimetype = "text/x-shellscript",
+            open_func = runScript,
+            desc = _("Run script"),
+            svg = self.path .. "/generic.svg",
+        }
+
+        tLog[v] = {
             mimetype = "text/x-shellscript",
             open_func = function(file) logger.info(file) end,
             desc = _("Log file name"),
         }
-    })
+    end
+
+    -- register FM handlers
+    FileManagerDocument:addHandler("ShellRun", tRun)
+    FileManagerDocument:addHandler("ShellLog", tLog)
 end
 
 return ShellRunner
