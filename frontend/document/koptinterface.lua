@@ -1136,7 +1136,7 @@ function KoptInterface:getSelectedWordContext(word, pos, nb_words)
             next_count = next_count + 1
         end
     end
-
+    if #prev_text == 0 and #next_text == 0 then return end
     return table.concat(prev_text, " "), table.concat(next_text, " ")
 end
 
