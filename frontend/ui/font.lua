@@ -136,8 +136,8 @@ if G_reader_settings and G_reader_settings:has("font_ui_fallbacks") then
     logger.dbg("updated Font.fallbacks:", Font.fallbacks)
 end
 
--- We don't ship a bold variant for some ofg our fallback fonts. 
--- Allow users themselves to drop a Noto Sans Bold variant of their most used fallbacks, 
+-- We don't ship a bold variant for some of our fallback fonts.
+-- Allow users themselves to drop a Noto Sans Bold variant of their most used fallbacks,
 -- and we will use them if present.
 -- Match bold font to fallback by name. We do not use FontInfo name match
 -- to allow users more flexibility.
