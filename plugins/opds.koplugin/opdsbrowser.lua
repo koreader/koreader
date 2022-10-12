@@ -393,7 +393,7 @@ end
 function OPDSBrowser:getCatalog(item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
     if not ok and catalog then
-        logger.info("Cannot get catalog info from", item_url or "nil", catalog)
+        logger.info("Cannot get catalog info from", item_url, catalog)
         UIManager:show(InfoMessage:new{
             text = T(_("Cannot get catalog info from %1"), (item_url and BD.url(item_url) or "nil")),
         })
@@ -882,7 +882,7 @@ function OPDSBrowser:showDownloads(item)
 end
 
 function OPDSBrowser:browse(browse_url, username, password)
-    logger.dbg("Browse OPDS url", browse_url or "nil")
+    logger.dbg("Browse OPDS url", browse_url)
     table.insert(self.paths, {
         url = browse_url,
         username = username,

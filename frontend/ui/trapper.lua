@@ -16,7 +16,6 @@ local UIManager = require("ui/uimanager")
 local buffer = require("string.buffer")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 
 local Trapper = {}
@@ -558,7 +557,7 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
             -- task may return complex data structures, that we serialize.
             -- NOTE: LuaJIT's serializer currently doesn't support:
             --       functions, coroutines, non-numerical FFI cdata & full userdata.
-            local results = util.table_pack(task())
+            local results = table.pack(task())
             local ok, str = pcall(buffer.encode, results)
             if not ok then
                 logger.warn("cannot serialize", tostring(results), "->", str)
@@ -675,7 +674,7 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
         if task_returns_simple_string then
             return completed, ret_values
         else
-            return completed, unpack(ret_values, 1, ret_values.n)
+            return completed, unpack(ret_values)
         end
     end
     return completed

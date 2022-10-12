@@ -38,7 +38,8 @@ local RULE_TYPES = {
 
 local function toRuleTypes(...)
     local final = 0
-    for _, ruleType in ipairs({...}) do
+    for i = 1, select("#", ...) do
+        local ruleType = select(i, ...)
         if RULE_TYPES[ruleType] then
             final = bit.bor(final, RULE_TYPES[ruleType])
         end

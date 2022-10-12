@@ -182,7 +182,8 @@ end
 function ReaderThumbnail:resetCachedPagesForBookmarks(...)
     -- Multiple bookmarks may be provided
     local start_page, end_page
-    for _, bm in ipairs({...}) do
+    for i = 1, select("#", ...) do
+        local bm = select(i, ...)
         if self.ui.rolling then
             -- Look at all properties that may be xpointers
             for _, k in ipairs({"page", "pos0", "pos1"}) do

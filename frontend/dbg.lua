@@ -19,7 +19,6 @@ These functions don't do anything when debugging is turned off.
 --]]--
 
 local logger = require("logger")
-local util = require("util")
 
 local Dbg = {
     -- set to nil so first debug:turnOff call won't be skipped
@@ -46,11 +45,11 @@ function Dbg:turnOn()
             if pre_guard then
                 pre_guard(...)
             end
-            local values = util.table_pack(old_method(...))
+            local values = table.pack(old_method(...))
             if post_guard then
                 post_guard(...)
             end
-            return unpack(values, 1, values.n)
+            return unpack(values)
         end
     end
     --- Use this instead of a regular Lua @{assert}().
