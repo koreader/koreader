@@ -140,29 +140,30 @@ end
 -- to allow users more flexibility.
 -- Because the hardcoded fallback fonts' paths are their filenames not actual paths,
 -- we need to match with filenames rather than paths
-local _fallback_fonts_without_bold = {}
+local bold_candidates = {} -- key: bold font's name, value: corresponding regular font's path
 for _, fallback_font_path in ipairs(Font.fallbacks) do
     local _, font_name = util.splitFilePathName(fallback_font_path)
-    if font_name and
-       not _bold_font_variant[fallback_font_path] and not _bold_font_variant[font_name] and
-       font_name:find("-Regular") then
+    if font_name and not _bold_font_variant[fallback_font_path]
+                 and not _bold_font_variant[font_name]
+                 and font_name:find("-Regular") then
         local bold_font_name = font_name:gsub("-Regular", "-Bold", 1, true)
-        _fallback_fonts_without_bold[bold_font_name] = fallback_font_path
+        bold_candidates[bold_font_name] = fallback_font_path
     end
 end
 
 for _, font_path in ipairs(FontList:getFontList()) do
     local _, bold_font_name = util.splitFilePathName(font_path)
-    local fallback_font_path = _fallback_fonts_without_bold[bold_font_name]
+    local fallback_font_path = bold_candidates[bold_font_name]
     if bold_font_name and fallback_font_path then
         Font.bold_font_variant[fallback_font_path] = font_path
         Font.regular_font_variant[font_path] = fallback_font_path
-        _fallback_fonts_without_bold[bold_font_name] = nil
+        bold_candidates[bold_font_name] = nil
     end
-    if #_fallback_fonts_without_bold == 0 then
+    if #bold_candidates == 0 then
         break
     end
 end
+bold_candidates = nil
 
 -- Helper functions with explicite names around
 -- bold/regular_font_variant tables
