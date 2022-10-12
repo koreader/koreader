@@ -14,6 +14,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DictQuickLookUp = require("ui/widget/dictquicklookup")
+local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FocusManager = require("ui/widget/focusmanager")
@@ -1442,81 +1443,91 @@ local VocabBuilder = WidgetContainer:extend{
 }
 
 function VocabBuilder:init()
+    local reload_items = function()
+        local vocab_items = {}
+        for i = 1, DB:selectCount() do
+            table.insert(vocab_items, {
+                callback = function(item)
+                    -- custom button table
+                    local tweak_buttons_func = function() end
+                    if item.due_time <= os.time() then
+                        tweak_buttons_func = function(obj, buttons)
+                            local tweaked_button_count = 0
+                            local early_break
+                            for j = 1, #buttons do
+                                for k = 1, #buttons[j] do
+                                    if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
+                                        buttons[j][k] = {
+                                            id = "got_it",
+                                            text = _("Got it"),
+                                            callback = function()
+                                                self.builder_widget:gotItFromDict(item.word)
+                                                UIManager:sendEvent(Event:new("Close"))
+                                            end
+                                        }
+                                        if tweaked_button_count == 1 then
+                                            early_break = true
+                                            break
+                                        end
+                                        tweaked_button_count = tweaked_button_count + 1
+                                    elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
+                                        buttons[j][k] = {
+                                            id = "forgot",
+                                            text = _("Forgot"),
+                                            callback = function()
+                                                self.builder_widget:forgotFromDict(item.word)
+                                                UIManager:sendEvent(Event:new("Close"))
+                                            end
+                                        }
+                                        if tweaked_button_count == 1 then
+                                            early_break = true
+                                            break
+                                        end
+                                        tweaked_button_count = tweaked_button_count + 1
+                                    end
+                                end
+                                if early_break then break end
+                            end
+                        end
+                    end
+
+                    self.builder_widget.current_lookup_word = item.word
+                    self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, tweak_buttons_func))
+                end
+            })
+        end
+        return vocab_items
+    end
+
+    self.builder_widget = VocabularyBuilderWidget:new{
+        title = _("Vocabulary builder"),
+        item_table = reload_items(),
+        select_items_callback = function(items, start_idx, end_idx)
+            DB:select_items(items, start_idx, end_idx)
+        end,
+        reload_items_callback = reload_items
+    }
+
     self.ui.menu:registerToMainMenu(self)
+    self:onDispatcherRegisterActions()
 end
 
 function VocabBuilder:addToMainMenu(menu_items)
     menu_items.vocabbuilder = {
         text = _("Vocabulary builder"),
         callback = function()
-            local reload_items = function(builder_widget)
-                builder_widget.reload_time = os.time()
-                local vocab_items = {}
-                for i = 1, DB:selectCount(builder_widget) do
-                    table.insert(vocab_items, {
-                        callback = function(item)
-                            -- custom button table
-                            local tweak_buttons_func = function() end
-                            if item.due_time <= os.time() then
-                                tweak_buttons_func = function(obj, buttons)
-                                    local tweaked_button_count = 0
-                                    local early_break
-                                    for j = 1, #buttons do
-                                        for k = 1, #buttons[j] do
-                                            if buttons[j][k].id == "highlight" and not buttons[j][k].enabled then
-                                                buttons[j][k] = {
-                                                    id = "got_it",
-                                                    text = _("Got it"),
-                                                    callback = function()
-                                                        self.builder_widget:gotItFromDict(item.word)
-                                                        UIManager:sendEvent(Event:new("Close"))
-                                                    end
-                                                }
-                                                if tweaked_button_count == 1 then
-                                                    early_break = true
-                                                    break
-                                                end
-                                                tweaked_button_count = tweaked_button_count + 1
-                                            elseif buttons[j][k].id == "search" and not buttons[j][k].enabled then
-                                                buttons[j][k] = {
-                                                    id = "forgot",
-                                                    text = _("Forgot"),
-                                                    callback = function()
-                                                        self.builder_widget:forgotFromDict(item.word)
-                                                        UIManager:sendEvent(Event:new("Close"))
-                                                    end
-                                                }
-                                                if tweaked_button_count == 1 then
-                                                    early_break = true
-                                                    break
-                                                end
-                                                tweaked_button_count = tweaked_button_count + 1
-                                            end
-                                        end
-                                        if early_break then break end
-                                    end
-                                end
-                            end
-
-                            builder_widget.current_lookup_word = item.word
-                            self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, tweak_buttons_func))
-                        end
-                    })
-                end
-                return vocab_items
-            end
-
-            self.builder_widget = VocabularyBuilderWidget:new{
-                title = _("Vocabulary builder"),
-                select_items_callback = function(obj, start_idx, end_idx)
-                    DB:select_items(obj, start_idx, end_idx)
-                end,
-                reload_items_callback = reload_items
-            }
-
-            UIManager:show(self.builder_widget)
+            self:onShowVocabBuilder()
         end
     }
+end
+
+function VocabBuilder:onDispatcherRegisterActions()
+    Dispatcher:registerAction("show_vocab_builder",
+        {category="none", event="ShowVocabBuilder", title=_("Show vocabulary builder"), general=true, separator=true})
+end
+
+function VocabBuilder:onShowVocabBuilder()
+    UIManager:show(self.builder_widget)
 end
 
 -- Event sent by readerdictionary "WordLookedUp"
