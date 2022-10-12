@@ -71,6 +71,7 @@ function ButtonDialogTitle:init()
     }
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
+        ignore_if_over = "height",
         MovableContainer:new{
             FrameContainer:new{
                 VerticalGroup:new{
