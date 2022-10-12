@@ -143,8 +143,8 @@ end
 local _fallback_fonts_without_bold = {}
 for _, fallback_font_path in ipairs(Font.fallbacks) do
     local _, font_name = util.splitFilePathName(fallback_font_path)
-    if font_name and 
-       not _bold_font_variant[fallback_font_path] and not _bold_font_variant[font_name] and 
+    if font_name and
+       not _bold_font_variant[fallback_font_path] and not _bold_font_variant[font_name] and
        font_name:find("-Regular") then
         local bold_font_name = font_name:gsub("-Regular", "-Bold", 1, true)
         _fallback_fonts_without_bold[bold_font_name] = fallback_font_path
