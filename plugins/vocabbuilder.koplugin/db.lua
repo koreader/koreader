@@ -36,15 +36,13 @@ function VocabularyBuilder:init()
     VocabularyBuilder:createDB()
 end
 
-function VocabularyBuilder:selectCount(conn)
-    if conn then
-        return tonumber(conn:rowexec("SELECT count(0) FROM vocabulary INNER JOIN title ON filter=true AND title_id=id;"))
-    else
-        local db_conn = SQ3.open(db_location)
-        local count = tonumber(db_conn:rowexec("SELECT count(0) FROM vocabulary INNER JOIN title ON filter=true AND title_id=id;"))
-        db_conn:close()
-        return count
-    end
+function VocabularyBuilder:selectCount(vocab_widget)
+    local db_conn = SQ3.open(db_location)
+    local where_clause = vocab_widget:check_reverse() and " WHERE due_time < " .. vocab_widget.reload_time or ""
+    local sql = "SELECT count(0) FROM vocabulary INNER JOIN title ON filter=true AND title_id=id" .. where_clause .. ";"
+    local count = tonumber(db_conn:rowexec(sql))
+    db_conn:close()
+    return count
 end
 
 function VocabularyBuilder:createDB()
@@ -132,9 +130,17 @@ function VocabularyBuilder:insertLookupData(db_conn)
     end
 end
 
-function VocabularyBuilder:_select_items(items, start_idx)
+function VocabularyBuilder:_select_items(items, start_idx, reload_time)
     local conn = SQ3.open(db_location)
-    local sql = string.format("SELECT * FROM vocabulary INNER JOIN title ON title_id = title.id AND filter = true ORDER BY due_time limit %d OFFSET %d;", 32, start_idx-1)
+    local sql
+    if not reload_time then
+        sql = string.format("SELECT * FROM vocabulary INNER JOIN title ON title_id = title.id AND filter = true ORDER BY due_time limit %d OFFSET %d;", 32, start_idx-1)
+    else
+        sql = string.format([[SELECT * FROM vocabulary INNER JOIN title
+                              ON title_id = title.id AND filter = true
+                              WHERE due_time < ]] .. reload_time ..
+                            " ORDER BY due_time desc limit %d OFFSET %d;", 32, start_idx-1)
+    end
 
     local results = conn:exec(sql)
     conn:close()
@@ -170,7 +176,8 @@ function VocabularyBuilder:_select_items(items, start_idx)
 
 end
 
-function VocabularyBuilder:select_items(items, start_idx, end_idx)
+function VocabularyBuilder:select_items(vocab_widget, start_idx, end_idx)
+    local items = vocab_widget.item_table
     local start_cursor
     if #items == 0 then
         start_cursor = 0
@@ -184,7 +191,7 @@ function VocabularyBuilder:select_items(items, start_idx, end_idx)
     end
 
     if not start_cursor then return end
-    self:_select_items(items, start_cursor)
+    self:_select_items(items, start_cursor, vocab_widget:check_reverse() and vocab_widget.reload_time)
 end
 
 
