@@ -1316,7 +1316,7 @@ end
 
 function Kobo:enableCPUCores(amount)
     -- CPU0 is *always* online ;).
-    for n=1, self.cpu_count do
+    for n = 1, self.cpu_count do
         local path = "/sys/devices/system/cpu/cpu" .. n .. "/online"
         local up
         if n >= amount then
@@ -1325,11 +1325,7 @@ function Kobo:enableCPUCores(amount)
             up = "1"
         end
 
-        local f = io.open(path, "we")
-        if f then
-            f:write(up)
-            f:close()
-        end
+        writeToSys(up, path)
     end
 end
 
