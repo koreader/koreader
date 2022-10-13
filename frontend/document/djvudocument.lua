@@ -96,8 +96,8 @@ function DjvuDocument:nativeToPageRectTransform(pageno, rect)
     return self.koptinterface:nativeToPageRectTransform(self, pageno, rect)
 end
 
-function DjvuDocument:getSelectedWordContext(selected_text, nb_words)
-    return self.koptinterface:getSelectedWordContext(selected_text.text, selected_text.pos0, nb_words)
+function DjvuDocument:getSelectedWordContext(word, nb_words, pos)
+    return self.koptinterface:getSelectedWordContext(word, nb_words, pos)
 end
 
 function DjvuDocument:getOCRWord(pageno, wbox)

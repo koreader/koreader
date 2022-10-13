@@ -716,9 +716,9 @@ function CreDocument:getNextVisibleChar(xp)
     return self._document:getNextVisibleChar(xp)
 end
 
-function CreDocument:getSelectedWordContext(selected_text, nb_words)
-    local pos_start = selected_text.pos0
-    local pos_end = selected_text.pos1
+function CreDocument:getSelectedWordContext(word, nb_words, pos0, pos1)
+    local pos_start = pos0
+    local pos_end = pos1
 
     for i=0, nb_words do
         local start = self:getPrevVisibleWordStart(pos_start)
@@ -732,8 +732,8 @@ function CreDocument:getSelectedWordContext(selected_text, nb_words)
         else break end
     end
 
-    local prev = self:getTextFromXPointers(pos_start, selected_text.pos0)
-    local next = self:getTextFromXPointers(selected_text.pos1, pos_end)
+    local prev = self:getTextFromXPointers(pos_start, pos0)
+    local next = self:getTextFromXPointers(pos1, pos_end)
 
     return prev, next
 end

@@ -1095,7 +1095,7 @@ function KoptInterface:getWordFromNativePosition(doc, boxes, pos)
     return word_box
 end
 
-function KoptInterface:getSelectedWordContext(word, pos, nb_words)
+function KoptInterface:getSelectedWordContext(word, nb_words, pos)
     local boxes = self.last_text_boxes
     if not pos or not boxes or #boxes == 0 then return end
     local i, j = getWordBoxIndices(boxes, pos)
