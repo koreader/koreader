@@ -141,6 +141,7 @@ function SysfsLight:_write_value(file, val)
         logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
         return false
     end
+    val = tostring(val)
     local bytes = #val
     local nw = C.write(fd, val, bytes)
     C.close(fd)
