@@ -81,8 +81,8 @@ local function writeToSys(val, file)
         logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
         return
     end
-    local bytes = #val + 1 -- + LF
-    local nw = C.write(fd, val .. "\n", bytes)
+    local bytes = #val
+    local nw = C.write(fd, val, bytes)
     if nw == -1 then
         logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
     end
@@ -930,12 +930,13 @@ function Kobo:getFirmwareVersion()
     local version_str = version_file:read("*line")
     version_file:close()
 
-    local i = 0
-    for field in ffiUtil.gsplit(version_str, ",", false, false) do
-        i = i + 1
-        if (i == 3) then
-             self.firmware_rev = field
+    local i = 1
+    for field in version_str:gmatch("([^,]+)") do
+        if i == 3 then
+            self.firmware_rev = field
+            break
         end
+        i = i + 1
     end
 end
 
@@ -1272,13 +1273,11 @@ function Kobo:toggleChargingLED(toggle)
     --       (when it does, it's an option in the Energy saving settings),
     --       which is why we also limit ourselves to "true" on devices where this was tested.
     -- c.f., drivers/misc/ntx_misc_light.c
-    local f = io.open(self.ntx_lit_sysfs_knob, "we")
-    if not f then
-        logger.err("cannot open", self.ntx_lit_sysfs_knob, "for writing!")
+    local fd = C.open(self.ntx_lit_sysfs_knob, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
+    if fd == -1 then
+        logger.err("Cannot open file `" .. self.ntx_lit_sysfs_knob .. "`:", ffi.string(C.strerror(ffi.errno())))
         return false
     end
-    -- Relying on LFs is mildly more elegant than spamming f:flush() calls ;).
-    C.setlinebuf(f)
 
     -- c.f., strace -fittTvyy -e trace=ioctl,file,signal,ipc,desc -s 256 -o /tmp/nickel.log -p $(pidof -s nickel) &
     -- This was observed on a Forma, so I'm mildly hopeful that it's safe on other Mk. 7 devices ;).
@@ -1286,17 +1285,20 @@ function Kobo:toggleChargingLED(toggle)
     if toggle == true then
         -- NOTE: Technically, Nickel forces a toggle off before that, too.
         --       But since we do that on startup, it shouldn't be necessary here...
-        if self.led_uses_channel_3 then
-            f:write("ch 3\n", "cur 1\n", "dc 63\n")
+        for ch = self.led_uses_channel_3 and 3 or 4, 4 do
+            C.write(fd, "ch " .. tostring(ch), 4)
+            C.write(fd, "cur 1", 5)
+            C.write(fd, "dc 63", 5)
         end
-        f:write("ch 4\n", "cur 1\n", "dc 63\n")
     else
         for ch = 3, 5 do
-            f:write("ch " .. tostring(ch) .. "\n", "cur 1\n", "dc 0\n")
+            C.write(fd, "ch " .. tostring(ch), 4)
+            C.write(fd, "cur 1", 5)
+            C.write(fd, "dc 0", 4)
         end
     end
 
-    f:close()
+    C.close(fd)
 end
 
 -- Return the highest core number
@@ -1315,7 +1317,7 @@ end
 
 function Kobo:enableCPUCores(amount)
     -- CPU0 is *always* online ;).
-    for n=1, self.cpu_count do
+    for n = 1, self.cpu_count do
         local path = "/sys/devices/system/cpu/cpu" .. n .. "/online"
         local up
         if n >= amount then
@@ -1324,11 +1326,7 @@ function Kobo:enableCPUCores(amount)
             up = "1"
         end
 
-        local f = io.open(path, "we")
-        if f then
-            f:write(up)
-            f:close()
-        end
+        writeToSys(up, path)
     end
 end
 

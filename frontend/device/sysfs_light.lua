@@ -5,6 +5,10 @@
 local logger = require("logger")
 local dbg = require("dbg")
 
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/posix_h")
+
 local SysfsLight = {
     frontlight_white = nil,
     frontlight_red = nil,
@@ -131,19 +135,23 @@ function SysfsLight:_set_light_value(sysfs_directory, value)
     self:_write_value(sysfs_directory .. "/brightness", value)
 end
 
-function SysfsLight:_write_value(file, value)
-    local f = io.open(file, "w")
-    if not f then
-        logger.err("Could not open file: ", file)
+function SysfsLight:_write_value(file, val)
+    local fd = C.open(file, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
+    if fd == -1 then
+        logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
         return false
     end
-    local ret, err_msg, err_code = f:write(value)
-    f:close()
-    if not ret then
-        logger.err("Write error: ", err_msg, err_code)
+    val = tostring(val)
+    local bytes = #val
+    local nw = C.write(fd, val, bytes)
+    if nw == -1 then
+        logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
+        C.close(fd)
         return false
     end
-    return true
+    C.close(fd)
+    -- NOTE: Allows the caller to possibly handle short writes (not that these should ever happen here).
+    return nw == bytes
 end
 
 return SysfsLight

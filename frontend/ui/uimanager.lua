@@ -556,9 +556,9 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
         self:_refresh(refreshtype, refreshregion, refreshdither)
         if dbg.is_on then
             if refreshregion then
-                logger.dbg("setDirty", refreshtype, "from widget", widget_name, "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h, refreshdither and "AND w/ HW dithering" or "")
+                logger.dbg("setDirty", refreshtype, "from widget", widget_name, "w/ region", refreshregion.x, refreshregion.y, refreshregion.w, refreshregion.h, "dithering:", refreshdither)
             else
-                logger.dbg("setDirty", refreshtype, "from widget", widget_name, "w/ NO region", refreshdither and "AND w/ HW dithering" or "")
+                logger.dbg("setDirty", refreshtype, "from widget", widget_name, "w/ NO region; dithering:", refreshdither)
             end
         end
     end
@@ -1085,7 +1085,7 @@ function UIManager:_refresh(mode, region, dither)
     end
 
     -- if we've stopped hitting collisions, enqueue the refresh
-    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, dither and "w/ HW dithering" or "")
+    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, "dithering:", dither)
     table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
 end
 
