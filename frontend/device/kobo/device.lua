@@ -1275,7 +1275,7 @@ function Kobo:toggleChargingLED(toggle)
     -- c.f., drivers/misc/ntx_misc_light.c
     local fd = C.open(self.ntx_lit_sysfs_knob, bit.bor(C.O_WRONLY, C.O_CLOEXEC)) -- procfs/sysfs, we shouldn't need O_TRUNC
     if fd == -1 then
-        logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
+        logger.err("Cannot open file `" .. self.ntx_lit_sysfs_knob .. "`:", ffi.string(C.strerror(ffi.errno())))
         return false
     end
 
@@ -1285,14 +1285,11 @@ function Kobo:toggleChargingLED(toggle)
     if toggle == true then
         -- NOTE: Technically, Nickel forces a toggle off before that, too.
         --       But since we do that on startup, it shouldn't be necessary here...
-        if self.led_uses_channel_3 then
-            C.write(fd, "ch 3", 4)
+        for ch = self.led_uses_channel_3 and 3 or 4, 4 do
+            C.write(fd, "ch " .. tostring(ch), 4)
             C.write(fd, "cur 1", 5)
             C.write(fd, "dc 63", 5)
         end
-        C.write(fd, "ch 4", 4)
-        C.write(fd, "cur 1", 5)
-        C.write(fd, "dc 63", 5)
     else
         for ch = 3, 5 do
             C.write(fd, "ch " .. tostring(ch), 4)
