@@ -1283,33 +1283,10 @@ dbg:guard(ReaderHighlight, "lookup",
 
 function ReaderHighlight:getSelectedWordContext(nb_words)
     if not self.selected_text then return end
-    if not self.ui.rolling then
-        local ok, prev_context, next_context = pcall(self.ui.document.getSelectedWordContext, self.ui.document, self.selected_text.text, self.selected_text.pos0, nb_words)
-        if ok then
-            return prev_context, next_context
-        else
-            return nil
-        end
+    local ok, prev_context, next_context = pcall(self.ui.document.getSelectedWordContext, self.ui.document, self.selected_text, nb_words)
+    if ok then
+        return prev_context, next_context
     end
-    local pos_start = self.selected_text.pos0
-    local pos_end = self.selected_text.pos1
-
-    for i=0, nb_words do
-        local ok, start = pcall(self.ui.document.getPrevVisibleWordStart, self.ui.document, pos_start)
-        if ok then pos_start = start
-        else break end
-    end
-
-    for i=0, nb_words do
-        local ok, ending = pcall(self.ui.document.getNextVisibleWordEnd, self.ui.document, pos_end)
-        if ok then pos_end = ending
-        else break end
-    end
-
-    local ok_prev, prev = pcall(self.ui.document.getTextFromXPointers, self.ui.document, pos_start, self.selected_text.pos0)
-    local ok_next, next = pcall(self.ui.document.getTextFromXPointers, self.ui.document, self.selected_text.pos1, pos_end)
-
-    return ok_prev and prev, ok_next and next
 end
 
 function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
