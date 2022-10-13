@@ -931,7 +931,7 @@ function Kobo:getFirmwareVersion()
     version_file:close()
 
     local i = 0
-    for field in ffiUtil.gsplit(version_str, ",", false, false) do
+    for field in util.gsplit(version_str, ",", false, false) do
         i = i + 1
         if (i == 3) then
              self.firmware_rev = field
