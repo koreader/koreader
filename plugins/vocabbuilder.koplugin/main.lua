@@ -1340,6 +1340,7 @@ function VocabularyBuilderWidget:resetItems()
             }
         end
     end
+    self.reload_time = os.time()
     self:_populateItems()
 end
 
@@ -1531,7 +1532,7 @@ end
 
 function VocabBuilder:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_vocab_builder",
-        {category="none", event="ShowVocabBuilder", title=_("Show vocabulary builder"), general=true, separator=true})
+        {category="none", event="ShowVocabBuilder", title=_("Open vocabulary builder"), general=true, separator=true})
 end
 
 function VocabBuilder:onShowVocabBuilder()
