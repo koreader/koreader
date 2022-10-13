@@ -131,6 +131,10 @@ function InfoMessage:init()
         end
     end
 
+    -- todo: use a setting to enable this method
+    -- todo: only do it, if the document language == uilanguage
+    self:hyphenate()
+
     local text_widget
     if self.height then
         text_widget = ScrollTextWidget:new{
@@ -293,6 +297,21 @@ function InfoMessage:onTapClose()
     self:dismiss()
     if self.readonly ~= true then
         return true
+    end
+end
+
+function InfoMessage:hyphenate()
+    local words = {}
+    for word in self.text:gmatch("[%S]+") do
+        table.insert(words, word)
+    end
+    local cre = require("document/credocument"):engineInit()
+    for i = 1, #words do
+        local word = words[i] -- may end with punctuation marks, no problem.
+        local suggested_hyphenation = cre.getHyphenationForWord(word) -- contains hyphens
+        local cleaned_word = suggested_hyphenation:gsub("-","") -- clear hyphens
+        suggested_hyphenation = suggested_hyphenation:gsub("-", "\xC2\xAD") -- change hyphens to soft hyphens
+        self.text = self.text:gsub(cleaned_word, suggested_hyphenation)
     end
 end
 
