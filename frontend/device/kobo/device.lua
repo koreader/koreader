@@ -930,12 +930,13 @@ function Kobo:getFirmwareVersion()
     local version_str = version_file:read("*line")
     version_file:close()
 
-    local i = 0
-    for field in util.gsplit(version_str, ",", false, false) do
-        i = i + 1
-        if (i == 3) then
-             self.firmware_rev = field
+    local i = 1
+    for field in version_str:gmatch("([^,]+)") do
+        if i == 3 then
+            self.firmware_rev = field
+            break
         end
+        i = i + 1
     end
 end
 
