@@ -81,8 +81,8 @@ local function writeToSys(val, file)
         logger.err("Cannot open file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
         return
     end
-    local bytes = #val + 1 -- + LF
-    local nw = C.write(fd, val .. "\n", bytes)
+    local bytes = #val
+    local nw = C.write(fd, val, bytes)
     if nw == -1 then
         logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
     end
