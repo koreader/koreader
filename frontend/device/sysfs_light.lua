@@ -144,11 +144,12 @@ function SysfsLight:_write_value(file, val)
     val = tostring(val)
     local bytes = #val
     local nw = C.write(fd, val, bytes)
-    C.close(fd)
     if nw == -1 then
         logger.err("Cannot write `" .. val .. "` to file `" .. file .. "`:", ffi.string(C.strerror(ffi.errno())))
+        C.close(fd)
         return false
     end
+    C.close(fd)
     -- NOTE: Allows the caller to possibly handle short writes (not that these should ever happen here).
     return nw == bytes
 end
