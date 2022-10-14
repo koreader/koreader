@@ -1,5 +1,5 @@
 -- NonDocument type for files that are not intended to be viewed
-local Blitbuffer = require("ffi/blitbuffer")
+
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local DocumentRegistry = require("document/documentregistry")
 local RenderImage = require("ui/renderimage")
@@ -30,7 +30,6 @@ function NonDocument:register() end
 function NonDocument:getPageCount() end
 
 function NonDocument:getProps()
-    logger.info("getProps")
     local _, _, docname = self.file:find(".*/(.*)")
     docname = docname or self.file
     return {
