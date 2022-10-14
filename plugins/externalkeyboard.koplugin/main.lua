@@ -119,7 +119,7 @@ end
 
 function ExternalKeyboard:getOTGRole()
     local role = USB_ROLE_DEVICE
-    local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "r")
+    local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "re")
 
     -- Do not throw exception if the file for role does not exist.
     -- If it does not exist, the USB must be in the default device mode.
@@ -135,7 +135,7 @@ function ExternalKeyboard:setOTGRole(role)
     -- Writing role to file will fail if the role is the same as the current role.
     -- Check current role before calling.
     logger.dbg("ExternalKeyboard:setOTGRole setting to", role)
-    local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "w")
+    local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "we")
     if file then
         file:write(self:USBRoleToChipideaRole(role))
         file:close()

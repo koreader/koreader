@@ -2,6 +2,7 @@ local bit = require("bit")
 local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
 
+-- Constants from the linux kernel input-event-codes.h
 local KEY_UP = 103
 local BTN_DPAD_UP = 0x220
 
