@@ -1,5 +1,5 @@
 -- NonDocument type for files that are not intended to be viewed
-
+local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local DocumentRegistry = require("document/documentregistry")
 local RenderImage = require("ui/renderimage")
@@ -22,34 +22,12 @@ local NonDocument = Document:extend{
 
 }
 
-function NonDocument:init()
-    logger.info("nondocument init", self.file)
-end
-function NonDocument:close()
-    logger.info("nondocument close", self.file)
-end
-function NonDocument:register()
-    logger.info("nondocument register", self.file)
-end
+function NonDocument:_readMetadata() return true end
 
-function NonDocument:getCoverPageImage()
-    logger.info("getCoverPageImage", self.file)
-    local extension = util.getFileNameSuffix(self.file)
-    if not extension then return end
-    for __, v in ipairs(self.actions[extension]) do
-        if v.icon_path then
-            logger.info("got image", v.icon_path)
-            local cover_bb = RenderImage:renderSVGImageFile(v.icon_path, 100, 100, 1)
-            cover_bb:setAllocated(1)
-            logger.info(cover_bb)
-            return cover_bb
-        end
-    end
-end
-
-function NonDocument:getPageCount()
-    logger.info("getPageCount")
-end
+function NonDocument:init() end
+function NonDocument:close() end
+function NonDocument:register() end
+function NonDocument:getPageCount() end
 
 function NonDocument:getProps()
     logger.info("getProps")
@@ -60,12 +38,20 @@ function NonDocument:getProps()
     }
 end
 
-function NonDocument:_readMetadata() return true end
+function NonDocument:getCoverPageImage()
+    local extension = util.getFileNameSuffix(self.file)
+    if not extension then return end
+    for __, v in ipairs(self.actions[extension]) do
+        if v.icon_path then
+            return RenderImage:renderSVGImageFile(v.icon_path, 100, 100, 4)
+        end
+    end
+end
 
+-- open a given file with available actions for the extension
 function NonDocument:open(file)
     local extension = util.getFileNameSuffix(file)
     if not self.actions[extension] then return end
-
     if #self.actions[extension] > 1 then
         -- more than one action registered. Show a menu to let the user choose
         local buttons = {}
@@ -87,9 +73,19 @@ function NonDocument:open(file)
         }
         UIManager:show(self.choose_dialog)
     else
+        -- a single action
         self.actions[extension][1].open_func(file)
     end
 end
+
+-- plugins need to call this method to register themselves as handlers for specific file
+-- extensions.
+--
+--TODO: document me better
+--
+-- name is the unique identifier for the handler.
+-- t is a dictionary of extensions/actions.
+-- actions is an array of standalone things to do with a file of a given extension
 
 function NonDocument:addHandler(name, t)
     assert(type(name) == "string", "string expected")
