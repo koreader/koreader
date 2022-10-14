@@ -21,6 +21,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LanguageSupport = require("languagesupport")
+local NonDocument = require("document/nondocument")
 local PluginLoader = require("pluginloader")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderBack = require("apps/reader/modules/readerback")
@@ -561,11 +562,11 @@ function ReaderUI:showReader(file, provider)
         return
     end
 
-    -- `readerui:doShowReader` sent us here but there're some files better handled on the FM
+    -- maybe it is not a document
     provider = provider or DocumentRegistry:getProvider(file)
-    if provider.provider == "filemanagerdocument" then
-        require("document/filemanagerdocument"):open(file)
+    if provider.provider == "nondocument" then
         self:showFileManager(file)
+        NonDocument:open(file)
         return
     end
 

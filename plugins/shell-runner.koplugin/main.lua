@@ -1,6 +1,6 @@
 local BD = require("ui/bidi")
 local Device = require ("device")
-local FileManagerDocument = require("document/filemanagerdocument")
+local NonDocument = require("document/nondocument")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager =  require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -51,7 +51,7 @@ function ShellRunner:init()
             mimetype = "text/x-shellscript",
             open_func = runScript,
             desc = _("Run script"),
-            svg = self.path .. "/generic.svg",
+            icon_path = self.path .. "/generic.svg",
         }
 
         tLog[v] = {
@@ -62,8 +62,8 @@ function ShellRunner:init()
     end
 
     -- register FM handlers
-    FileManagerDocument:addHandler("ShellRun", tRun)
-    FileManagerDocument:addHandler("ShellLog", tLog)
+    NonDocument:addHandler("ShellRun", tRun)
+    NonDocument:addHandler("ShellLog", tLog)
 end
 
 return ShellRunner

@@ -1,4 +1,7 @@
+-- NonDocument type for files that are not intended to be viewed
+
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local DocumentRegistry = require("document/documentregistry")
 local RenderImage = require("ui/renderimage")
 local UIManager = require("ui/uimanager")
 local Document = require("document/document")
@@ -6,45 +9,49 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
-local FileManagerDocument = Document:extend{
+local NonDocument = Document:extend{
     _document = false,
-    provider = "filemanagerdocument",
-    provider_name = "File Manager",
+    provider = "nondocument",
+    provider_name = _("File Manager"),
 
     -- a dictionary of actions per extension
     actions = {},
 
     -- an array of provider names
     providers = {},
+
 }
 
-function FileManagerDocument:init() end
-function FileManagerDocument:close() end
-function FileManagerDocument:register() end
-
-
-function FileManagerDocument:getPageCount()
-    logger.info("getPageCount")
+function NonDocument:init()
+    logger.info("nondocument init", self.file)
+end
+function NonDocument:close()
+    logger.info("nondocument close", self.file)
+end
+function NonDocument:register()
+    logger.info("nondocument register", self.file)
 end
 
-function FileManagerDocument:getCoverPageImage(file) 
-    logger.info("getCoverPageImage", file)
-
-    local extension = util.getFileNameSuffix(file)
+function NonDocument:getCoverPageImage()
+    logger.info("getCoverPageImage", self.file)
+    local extension = util.getFileNameSuffix(self.file)
     if not extension then return end
     for __, v in ipairs(self.actions[extension]) do
-        if v.svg then
-            logger.info("got image", v.svg)
-            local full_path = "/home/pazos/koreader/plugins/shell-runner.koplugin/generic.svg"
-            local cover_bb = RenderImage:renderSVGImageFileWithMupdf(full_path, 100, 100, 1)
-            --cover_bb:setAllocated(1)
+        if v.icon_path then
+            logger.info("got image", v.icon_path)
+            local cover_bb = RenderImage:renderSVGImageFile(v.icon_path, 100, 100, 1)
+            cover_bb:setAllocated(1)
+            logger.info(cover_bb)
             return cover_bb
         end
     end
-
 end
 
-function FileManagerDocument:getProps()
+function NonDocument:getPageCount()
+    logger.info("getPageCount")
+end
+
+function NonDocument:getProps()
     logger.info("getProps")
     local _, _, docname = self.file:find(".*/(.*)")
     docname = docname or self.file
@@ -53,11 +60,9 @@ function FileManagerDocument:getProps()
     }
 end
 
+function NonDocument:_readMetadata() return true end
 
-
-function FileManagerDocument:_readMetadata() return true end
-
-function FileManagerDocument:open(file)
+function NonDocument:open(file)
     local extension = util.getFileNameSuffix(file)
     if not self.actions[extension] then return end
 
@@ -86,45 +91,39 @@ function FileManagerDocument:open(file)
     end
 end
 
-function FileManagerDocument:getIcon(file)
-end
-
-function FileManagerDocument:addHandler(name, t)
+function NonDocument:addHandler(name, t)
     assert(type(name) == "string", "string expected")
-    assert(type(t) == "table", "table expected")
-
-    -- don't add duplicates
     for __, v in ipairs(self.providers) do
         if name == v then
             return
         end
     end
 
-    local extension, mimetype, open_func
+    assert(type(t) == "table", "table expected")
+    local handlers = {}
     for k, v in pairs(t) do
+        local handler = {}
         if type(v) == "table" then
-            if type(k) == "string" then
-                extension = k
-            end
-            if type(v.mimetype) == "string" then
-                mimetype = v.mimetype
-            end
-            if type(v.open_func) == "function" then
-                open_func = v.open_func
-            end
+            handler.extension = k
+            handler.desc = v.desc
+            handler.mimetype = v.mimetype
+            handler.open_func = v.open_func
+            handler.icon_path = v.icon_path -- optional
         end
+        if handler.extension and handler.desc and handler.mimetype and handler.open_func then
+            table.insert(handlers, handler)
+        end
+    end
 
-        if extension and mimetype and open_func then
-            v.provider = name
-            if not self.actions[extension] then
-                self.actions[extension] = {}
-                require("document/documentregistry"):addProvider(extension, mimetype, self, 20)
-            end
-            table.insert(self.actions[extension], v)
+    table.insert(self.providers, name)
+    for __, v in ipairs(handlers) do
+        if not self.actions[v.extension] then
+            self.actions[v.extension] = {}
+            DocumentRegistry:addProvider(v.extension, v.mimetype, self, 20)
         end
+        table.insert(self.actions[v.extension], v)
     end
 end
 
 
-
-return FileManagerDocument
+return NonDocument
