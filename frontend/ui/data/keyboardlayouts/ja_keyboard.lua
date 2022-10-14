@@ -208,6 +208,7 @@ return {
     shiftmode_keys = {["ABC\0"] = true, ["記号\0"] = true, ["カタカナ\0"] = true, ["ひらがな\0"] = true},
     symbolmode_keys = {["ABC"] = true, ["記号"] = true, ["ひらがな"] = true,  ["カタカナ"] = true},
     utf8mode_keys = {["🌐"] = true},
+    always_lock_shift = true,
     keys = {
         -- first row [🌐, あ, か, さ, <bksp>]
         {  -- R         r         S         s

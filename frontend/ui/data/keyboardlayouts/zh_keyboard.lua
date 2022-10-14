@@ -165,6 +165,7 @@ return {
     symbolmode_keys = {["Sym"] = false},
     utf8mode_keys = {["🌐"] = true},
     umlautmode_keys = {["Äéß"] = false},  -- Disabled 'umlaut' keys
+    always_lock_shift = true,
     keys = {
         -- first row
         {

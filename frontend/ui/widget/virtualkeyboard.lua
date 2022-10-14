@@ -50,7 +50,7 @@ local VirtualKey = InputContainer:extend{
     radius = 0,
     face = Font:getFace("infont"),
 }
-
+local ignore_key_release -- for caps lock, after setLayout, not the same virtual key anymore
 function VirtualKey:init()
     local label_font_size = G_reader_settings:readSetting("keyboard_key_font_size", DEFAULT_LABEL_SIZE)
     self.face = Font:getFace("infont", label_font_size)
@@ -59,7 +59,15 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:setLayer("Sym") end
         self.skiptap = true
     elseif self.keyboard.shiftmode_keys[self.label] ~= nil then
-        self.callback = function () self.keyboard:setLayer("Shift") end
+        self.callback = function ()
+            self.keyboard.shiftlock = false
+            self.keyboard:setLayer("Shift")
+        end
+        self.hold_callback = function ()
+            ignore_key_release = true
+            self.keyboard.shiftlock = true
+            self.keyboard:setLayer("Shift")
+        end
         self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
         self.key_chars = self:genKeyboardLayoutKeyChars()
@@ -144,7 +152,13 @@ function VirtualKey:init()
             self.keyboard:scrollDown()
         end
     else
-        self.callback = function () self.keyboard:addChar(self.key) end
+        self.callback = function ()
+            self.keyboard:addChar(self.key)
+            if not self.keyboard.always_lock_shift and self.keyboard.shiftmode
+               and not self.keyboard.symbolmode and not self.keyboard.shiftlock then
+                    self.keyboard:setLayer("Shift")
+            end
+        end
         self.hold_callback = function()
             if not self.key_chars then return end
 
@@ -419,6 +433,10 @@ function VirtualKey:onSwipeKey(arg, ges)
 end
 
 function VirtualKey:onHoldReleaseKey()
+    if ignore_key_release then
+        ignore_key_release = nil
+        return true
+    end
     if self.ignore_key_release then
         self.ignore_key_release = nil
         return true
@@ -792,6 +810,7 @@ function VirtualKeyboard:init()
     self.symbolmode_keys = keyboard.symbolmode_keys or {}
     self.utf8mode_keys = keyboard.utf8mode_keys or {}
     self.umlautmode_keys = keyboard.umlautmode_keys or {}
+    self.always_lock_shift = keyboard.always_lock_shift
     self.width = Screen:getWidth()
     local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
     self.height = Screen:scaleBySize(keys_height * #self.KEYS)
