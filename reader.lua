@@ -1,24 +1,7 @@
 #!./luajit
 
 -- Enforce line-buffering for stdout (this is the default if it points to a tty, but we redirect to a file on most platforms).
-local ffi = require("ffi")
-local C = ffi.C
-
--- macOS is a special snowflake
-if ffi.os == "OSX" then
-    ffi.cdef[[
-extern struct _IO_FILE *__stdoutp;
-void setlinebuf(struct _IO_FILE *);
-]]
-    C.setlinebuf(C.__stdoutp)
-else
-    ffi.cdef[[
-extern struct _IO_FILE *stdout;
-void setlinebuf(struct _IO_FILE *);
-]]
-    C.setlinebuf(C.stdout)
-end
-
+io.stdout:setvbuf("line")
 -- Enforce a reliable locale for numerical representations
 os.setlocale("C", "numeric")
 
