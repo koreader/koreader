@@ -6,7 +6,6 @@ All the render* functions should return a BlitBuffer object on success, nil othe
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Math = require("optmath")
-local Screen = require("device").screen
 local ffi = require("ffi")
 local logger = require("logger")
 
@@ -370,18 +369,9 @@ function RenderImage:renderSVGImageFileWithNanoSVG(filename, width, height, zoom
         offset_y = Math.round((height - inner_h) / 2)
     end
     logger.dbg("renderSVG", filename, zoom, native_w, native_h, ">", width, height, offset_x, offset_y)
-    local file_bb = Blitbuffer.new(width, height, Blitbuffer.TYPE_BBRGB32)
-    svg_image:drawTo(file_bb, zoom, offset_x, offset_y)
-    svg_image:free()
-
-    -- handle alpha
     local bb = Blitbuffer.new(width, height, Blitbuffer.TYPE_BBRGB32)
-    bb:fill(Blitbuffer.COLOR_WHITE)
-    if Screen.sw_dithering then
-        bb:ditheralphablitFrom(file_bb, 0, 0, 0, 0, bb.w, bb.h)
-    else
-        bb:alphablitFrom(file_bb, 0, 0, 0, 0, bb.w, bb.h)
-    end
+    svg_image:drawTo(bb, zoom, offset_x, offset_y)
+    svg_image:free()
     return bb, true -- is_straight_alpha=true
 end
 

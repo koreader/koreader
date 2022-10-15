@@ -1,25 +1,50 @@
--- NonDocument type for files that are not intended to be viewed
+--[[--
+NonDocument
 
+any file *with extension* can become a nondocument
+if there's one or more providers that know how to open it.
+
+@module nondocument
+]]
+
+local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local Document = require("document/document")
 local DocumentRegistry = require("document/documentregistry")
 local RenderImage = require("ui/renderimage")
+local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
-local Document = require("document/document")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+
+local function getIcon(path, width, height, zoom)
+    local bb, is_straight_alpha = RenderImage:renderSVGImageFile(path, width, height, zoom)
+    local icon = Blitbuffer.new(width, height, Blitbuffer.TYPE_BBRGB32)
+    icon:fill(Blitbuffer.COLOR_WHITE)
+    if is_straight_alpha then
+        if Screen.sw_dithering then
+            icon:ditheralphablitFrom(bb, 0, 0, 0, 0, icon.w, icon.h)
+        else
+            icon:alphablitFrom(bb, 0, 0, 0, 0, icon.w, icon.h)
+        end
+    else
+        if Screen.sw_dithering then
+            icon:ditherpmulalphablitFrom(bb, 0, 0, 0, 0, icon.w, icon.h)
+        else
+            icon:pmulalphablitFrom(bb, 0, 0, 0, 0, icon.w, icon.h)
+        end
+    end
+    return icon
+end
 
 local NonDocument = Document:extend{
     _document = false,
     provider = "nondocument",
     provider_name = _("File Manager"),
 
-    -- a dictionary of actions per extension
-    actions = {},
-
-    -- an array of provider names
+    extensions = {},
     providers = {},
-
 }
 
 function NonDocument:_readMetadata() return true end
@@ -39,28 +64,26 @@ end
 
 function NonDocument:getCoverPageImage()
     local extension = util.getFileNameSuffix(self.file)
-    if not extension then return end
-    for __, v in ipairs(self.actions[extension]) do
+    for __, v in ipairs(self.extensions[extension]) do
         if v.icon_path then
-            return RenderImage:renderSVGImageFile(v.icon_path, 100, 100, 4)
+            return getIcon(v.icon_path, 100, 100, 4)
         end
     end
 end
 
--- open a given file with available actions for the extension
 function NonDocument:open(file)
     local extension = util.getFileNameSuffix(file)
-    if not self.actions[extension] then return end
-    if #self.actions[extension] > 1 then
+    if not self.extensions[extension] then return end
+    if #self.extensions[extension] > 1 then
         -- more than one action registered. Show a menu to let the user choose
         local buttons = {}
-        for index, action in ipairs(self.actions[extension]) do
+        for index, action in ipairs(self.extensions[extension]) do
             table.insert(buttons, {
                 {
                     text = action.desc,
                     callback = function()
                         UIManager:close(self.choose_dialog)
-                        self.actions[extension][index].open_func(file)
+                        self.extensions[extension][index].open_func(file)
                     end,
                 },
             })
@@ -72,53 +95,71 @@ function NonDocument:open(file)
         }
         UIManager:show(self.choose_dialog)
     else
-        -- a single action
-        self.actions[extension][1].open_func(file)
+        self.extensions[extension][1].open_func(file)
     end
 end
 
--- plugins need to call this method to register themselves as handlers for specific file
--- extensions.
---
---TODO: document me better
---
--- name is the unique identifier for the handler.
--- t is a dictionary of extensions/actions.
--- actions is an array of standalone things to do with a file of a given extension
+--[[--
+Register actions for specific extensions.
 
-function NonDocument:addHandler(name, t)
-    assert(type(name) == "string", "string expected")
+An action is an operation done on a given extension.
+It is represented as a table with some fields:
+
+    desc        description of what the action does
+    open_func   a function that performs the operation on a specific file
+    mimetype    the mimetype for the extension
+    icon_path   (optional) icon for the extension
+
+Actions can be shared between different extensions but you cannot register different
+actions for a single extension with the same id.
+
+If you want to register multiple actions for each extension then call this method as many
+times as you need, using different identifiers for each action.
+
+@param id string unique identifier
+@param t table of extensions/actions
+@treturn true on success
+]]
+
+function NonDocument:addProvider(id, t)
+    assert(type(id) == "string", "string expected")
+    -- prevent duplicates
     for __, v in ipairs(self.providers) do
-        if name == v then
+        if id == v then
             return
         end
     end
 
     assert(type(t) == "table", "table expected")
-    local handlers = {}
+    local actions = {}
     for k, v in pairs(t) do
-        local handler = {}
+        local action = {}
         if type(v) == "table" then
-            handler.extension = k
-            handler.desc = v.desc
-            handler.mimetype = v.mimetype
-            handler.open_func = v.open_func
-            handler.icon_path = v.icon_path -- optional
+            action.extension = k
+            action.desc = v.desc
+            action.mimetype = v.mimetype
+            action.open_func = v.open_func
+            action.icon_path = v.icon_path -- optional
         end
-        if handler.extension and handler.desc and handler.mimetype and handler.open_func then
-            table.insert(handlers, handler)
+        if action.extension and action.desc and action.mimetype and action.open_func then
+            table.insert(actions, action)
         end
     end
 
-    table.insert(self.providers, name)
-    for __, v in ipairs(handlers) do
-        if not self.actions[v.extension] then
-            self.actions[v.extension] = {}
+    if #actions < 1 then
+        logger.warn(id, "no valid actions")
+        return
+    end
+
+    table.insert(self.providers, id)
+    for __, v in ipairs(actions) do
+        if not self.extensions[v.extension] then
+            self.extensions[v.extension] = {}
             DocumentRegistry:addProvider(v.extension, v.mimetype, self, 20)
         end
-        table.insert(self.actions[v.extension], v)
+        table.insert(self.extensions[v.extension], v)
     end
+    return true
 end
-
 
 return NonDocument

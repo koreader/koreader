@@ -42,11 +42,7 @@ local ShellRunner = WidgetContainer:extend{
 
 function ShellRunner:init()
     local tRun, tLog = {}, {}
-
-    -- in this example we asign the same function and the same icon to all
-    -- extensions for the same handler, but both can be different for each extension.
     for __, v in ipairs({"sh", "zsh", "bash"}) do
-
         tRun[v] = {
             mimetype = "text/x-shellscript",
             open_func = runScript,
@@ -62,8 +58,8 @@ function ShellRunner:init()
     end
 
     -- register FM handlers
-    NonDocument:addHandler("ShellRun", tRun)
-    NonDocument:addHandler("ShellLog", tLog)
+    NonDocument:addProvider("ShellRun", tRun)
+    NonDocument:addProvider("ShellLog", tLog)
 end
 
 return ShellRunner
