@@ -760,11 +760,6 @@ which itself will take care of propagating an event to its members.
 @param event an @{ui.event.Event|Event} object
 ]]
 function UIManager:sendEvent(event)
-    if not self._window_stack[1] then
-        -- No widgets in the stack!
-        return
-    end
-
     local top_widget
     local checked_widgets = {}
     -- Toast widgets, which, by contract, must be at the top of the window stack, never stop event propagation.
