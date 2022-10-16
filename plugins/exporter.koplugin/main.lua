@@ -27,10 +27,10 @@
 local DataStorage = require("datastorage")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local MyClipping = require("clip")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -93,7 +93,7 @@ local function updateMyClippings(clippings, new_clippings)
     return clippings
 end
 
-local Exporter = InputContainer:new {
+local Exporter = WidgetContainer:extend{
     name = "exporter",
     clipping_dir = DataStorage:getDataDir() .. "/clipboard",
     targets = {

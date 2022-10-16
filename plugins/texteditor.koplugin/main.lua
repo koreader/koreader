@@ -19,13 +19,14 @@ local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = ffiutil.template
 
-local TextEditor = WidgetContainer:new{
+local TextEditor = WidgetContainer:extend{
     name = "texteditor",
     settings_file = DataStorage:getSettingsDir() .. "/text_editor.lua",
     settings = nil, -- loaded only when needed

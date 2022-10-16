@@ -29,7 +29,7 @@ local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
 local isRm2, rm_model = getModel()
 
-local Remarkable = Generic:new{
+local Remarkable = Generic:extend{
     isRemarkable = yes,
     model = rm_model,
     hasKeys = yes,
@@ -47,7 +47,7 @@ local Remarkable = Generic:new{
     home_dir = "/home/root",
 }
 
-local Remarkable1 = Remarkable:new{
+local Remarkable1 = Remarkable:extend{
     mt_width = 767, -- unscaled_size_check: ignore
     mt_height = 1023, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event0",
@@ -70,7 +70,7 @@ function Remarkable1:adjustTouchEvent(ev, by)
     end
 end
 
-local Remarkable2 = Remarkable:new{
+local Remarkable2 = Remarkable:extend{
     mt_width = 1403, -- unscaled_size_check: ignore
     mt_height = 1871, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event1",
@@ -233,25 +233,25 @@ function Remarkable:getDefaultCoverPath()
 end
 
 function Remarkable:setEventHandlers(UIManager)
-    UIManager.event_handlers["Suspend"] = function()
+    UIManager.event_handlers.Suspend = function()
         self:_beforeSuspend()
         self:onPowerEvent("Suspend")
     end
-    UIManager.event_handlers["Resume"] = function()
+    UIManager.event_handlers.Resume = function()
         self:onPowerEvent("Resume")
         self:_afterResume()
     end
-    UIManager.event_handlers["PowerPress"] = function()
+    UIManager.event_handlers.PowerPress = function()
         UIManager:scheduleIn(2, UIManager.poweroff_action)
     end
-    UIManager.event_handlers["PowerRelease"] = function()
+    UIManager.event_handlers.PowerRelease = function()
         if not UIManager._entered_poweroff_stage then
             UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
-                UIManager.event_handlers["Resume"]()
+                UIManager.event_handlers.Resume()
             else
-                UIManager.event_handlers["Suspend"]()
+                UIManager.event_handlers.Suspend()
             end
         end
     end

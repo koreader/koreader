@@ -213,7 +213,7 @@ local HgFSM = {
     final = nil,
 
     fsm_state = nil,
-    fsm_prev_states = {},
+    fsm_prev_states = nil, -- array
 
     do_not_del_in_medial = false,
 

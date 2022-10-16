@@ -82,21 +82,21 @@ function OCREngine:onFree()
 end
 
 function KoptInterface:setDefaultConfigurable(configurable)
-    configurable.doc_language = DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE
-    configurable.trim_page = DKOPTREADER_CONFIG_TRIM_PAGE
-    configurable.text_wrap = DKOPTREADER_CONFIG_TEXT_WRAP
-    configurable.detect_indent = DKOPTREADER_CONFIG_DETECT_INDENT
-    configurable.max_columns = DKOPTREADER_CONFIG_MAX_COLUMNS
-    configurable.auto_straighten = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN
-    configurable.justification = DKOPTREADER_CONFIG_JUSTIFICATION
+    configurable.doc_language = G_defaults:readSetting("DKOPTREADER_CONFIG_DOC_DEFAULT_LANG_CODE")
+    configurable.trim_page = G_defaults:readSetting("DKOPTREADER_CONFIG_TRIM_PAGE")
+    configurable.text_wrap = G_defaults:readSetting("DKOPTREADER_CONFIG_TEXT_WRAP")
+    configurable.detect_indent = G_defaults:readSetting("DKOPTREADER_CONFIG_DETECT_INDENT")
+    configurable.max_columns = G_defaults:readSetting("DKOPTREADER_CONFIG_MAX_COLUMNS")
+    configurable.auto_straighten = G_defaults:readSetting("DKOPTREADER_CONFIG_AUTO_STRAIGHTEN")
+    configurable.justification = G_defaults:readSetting("DKOPTREADER_CONFIG_JUSTIFICATION")
     configurable.writing_direction = 0
-    configurable.font_size = DKOPTREADER_CONFIG_FONT_SIZE
-    configurable.page_margin = DKOPTREADER_CONFIG_PAGE_MARGIN
-    configurable.quality = DKOPTREADER_CONFIG_RENDER_QUALITY
-    configurable.contrast = DKOPTREADER_CONFIG_CONTRAST
-    configurable.defect_size = DKOPTREADER_CONFIG_DEFECT_SIZE
-    configurable.line_spacing = DKOPTREADER_CONFIG_LINE_SPACING
-    configurable.word_spacing = DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING
+    configurable.font_size = G_defaults:readSetting("DKOPTREADER_CONFIG_FONT_SIZE")
+    configurable.page_margin = G_defaults:readSetting("DKOPTREADER_CONFIG_PAGE_MARGIN")
+    configurable.quality = G_defaults:readSetting("DKOPTREADER_CONFIG_RENDER_QUALITY")
+    configurable.contrast = G_defaults:readSetting("DKOPTREADER_CONFIG_CONTRAST")
+    configurable.defect_size = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFECT_SIZE")
+    configurable.line_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_LINE_SPACING")
+    configurable.word_spacing = G_defaults:readSetting("DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING")
 end
 
 function KoptInterface:waitForContext(kc)
@@ -275,7 +275,7 @@ function KoptInterface:getCachedContext(doc, pageno)
         logger.dbg("reflowing page", pageno, "in foreground")
         -- reflow page
         --local secs, usecs = FFIUtil.gettime()
-        page:reflow(kc, doc.render_mode or DRENDER_MODE) -- Fall backs to a default set to DDJVU_RENDER_COLOR
+        page:reflow(kc, doc.render_mode or G_defaults:readSetting("DRENDER_MODE")) -- Fall backs to a default set to DDJVU_RENDER_COLOR
         page:close()
         --local nsecs, nusecs = FFIUtil.gettime()
         --local dur = nsecs - secs + (nusecs - usecs) / 1000000

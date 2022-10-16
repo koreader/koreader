@@ -3,8 +3,8 @@ local Device = require("device")
 local Event = require("ui/event")
 local _ = require("gettext")
 
-local ReaderRotation = InputContainer:new{
-    current_rotation = 0
+local ReaderRotation = InputContainer:extend{
+    current_rotation = 0,
 }
 
 function ReaderRotation:init()

@@ -9,6 +9,7 @@ local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local time = require("ui/time")
 local _ = require("gettext")
@@ -38,12 +39,12 @@ local band = bit.band
     it in explicit page turning. And use that xpointer for non-page-turning
     rendering.
 --]]
-local ReaderRolling = InputContainer:new{
+local ReaderRolling = InputContainer:extend{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     rendering_hash = 0,
     current_pos = 0,
     -- only used for page view mode
-    current_page= nil,
+    current_page = nil,
     xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
     cre_top_bar_enabled = false,
@@ -152,6 +153,7 @@ function ReaderRolling:onReadSettings(config)
     self.ui.document:requestDomVersion(config:readSetting("cre_dom_version"))
     -- If we're using a DOM version without normalized XPointers, some stuff
     -- may need tweaking:
+    local cre = require("document/credocument"):engineInit()
     if config:readSetting("cre_dom_version") < cre.getDomVersionWithNormalizedXPointers() then
         -- Show some warning when styles "display:" have changed that
         -- bookmarks may break
@@ -694,7 +696,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
         -- where xpointer target is (and remove if after 1s)
         local screen_y, screen_x = self.ui.document:getScreenPositionFromXPointer(marker_xp)
         local doc_margins = self.ui.document:getPageMargins()
-        local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0)
+        local marker_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent * (1/100))
         -- Make it 4/5 of left margin wide (and bigger when huge margin)
         local marker_w = math.floor(math.max(doc_margins["left"] - Screen:scaleBySize(5), doc_margins["left"] * 4/5))
 
@@ -785,14 +787,14 @@ function ReaderRolling:onRestoreBookLocation(saved_location)
 end
 
 function ReaderRolling:onGotoViewRel(diff)
-    logger.dbg("goto relative screen:", diff, ", in mode: ", self.view.view_mode)
+    logger.dbg("goto relative screen:", diff, ", in mode:", self.view.view_mode)
     if self.view.view_mode == "scroll" then
         local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height
         local pan_diff = diff * page_visible_height
         if self.view.page_overlap_enable then
             local overlap_lines = G_reader_settings:readSetting("copt_overlap_lines") or 1
-            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * overlap_lines
+            local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent * (1/100)) * overlap_lines
             if pan_diff > overlap_h then
                 pan_diff = pan_diff - overlap_h
             elseif pan_diff < -overlap_h then
@@ -1021,9 +1023,9 @@ end
 
 function ReaderRolling:_gotoPercent(new_percent)
     if self.view.view_mode == "page" then
-        self:_gotoPage(new_percent * self.ui.document:getPageCount() / 100)
+        self:_gotoPage(new_percent * self.ui.document:getPageCount() * (1/100))
     else
-        self:_gotoPos(new_percent * self.ui.document.info.doc_height / 100)
+        self:_gotoPos(new_percent * self.ui.document.info.doc_height * (1/100))
     end
 end
 
@@ -1143,34 +1145,35 @@ function ReaderRolling:updateBatteryState()
 end
 
 function ReaderRolling:handleEngineCallback(ev, ...)
-    local args = {...}
-    -- logger.info("handleCallback: got", ev, args and #args > 0 and args[1] or nil)
+    local argc = select("#", ...)
+    local arg = argc > 0 and select(1, ...)
+    -- logger.info("handleCallback: got", ev, ...)
     if ev == "OnLoadFileStart" then -- Start of book loading
         self:showEngineProgress(0) -- Start initial delay countdown
     elseif ev == "OnLoadFileProgress" then
         -- Initial load from file (step 1/2) or from cache (step 1/1)
-        self:showEngineProgress(args[1]/100/2)
+        self:showEngineProgress(arg*(1/100/2))
     elseif ev == "OnNodeStylesUpdateStart" then -- Start of re-rendering
         self:showEngineProgress(0) -- Start initial delay countdown
     elseif ev == "OnNodeStylesUpdateProgress" then
         -- Update node styles (step 1/2 on re-rendering)
-        self:showEngineProgress(args[1]/100/2)
+        self:showEngineProgress(arg*(1/100/2))
     elseif ev == "OnFormatStart" then -- Start of step 2/2
         self:showEngineProgress(1/2) -- 50%, in case of no OnFormatProgress
     elseif ev == "OnFormatProgress" then
         -- Paragraph formatting and page splitting (step 2/2 after load
         -- from file, step 2/2 on re-rendering)
-        self:showEngineProgress(1/2 + args[1]/100/2)
+        self:showEngineProgress(1/2 + arg*(1/100/2))
     elseif ev == "OnSaveCacheFileStart" then -- Start of cache file save
         self:showEngineProgress(1) -- Start initial delay countdown, fully filled
     elseif ev == "OnSaveCacheFileProgress" then
         -- Cache file save (when closing book after initial load from
         -- file or re-rendering)
-        self:showEngineProgress(1 - args[1]/100) -- unfill progress
+        self:showEngineProgress(1 - arg*(1/100)) -- unfill progress
     elseif ev == "OnDocumentReady" or ev == "OnSaveCacheFileEnd" then
         self:showEngineProgress() -- cleanup
     elseif ev == "OnLoadFileError" then
-        logger.warn("Cre error loading file:", args[1])
+        logger.warn("Cre error loading file:", arg)
     end
     -- ignore other events
 end
@@ -1212,7 +1215,7 @@ function ReaderRolling:showEngineProgress(percent)
             y = y + self.current_header_height
         end
 
-        local w = math.floor(Screen:getWidth() / 3)
+        local w = math.floor(Screen:getWidth() * (1/3))
         local h = Size.line.progress
         if self.engine_progress_widget then
             self.engine_progress_widget:setPercentage(percent)

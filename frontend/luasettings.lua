@@ -9,16 +9,19 @@ local logger = require("logger")
 
 local LuaSettings = {}
 
-function LuaSettings:new(o)
+function LuaSettings:extend(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
     return o
 end
+-- NOTE: Instances are created via open, so we do *NOT* implement a new method, to avoid confusion.
 
 --- Opens a settings file.
 function LuaSettings:open(file_path)
-    local new = {file=file_path}
+    local new = LuaSettings:extend{
+        file = file_path,
+    }
     local ok, stored
 
     -- File being absent and returning an empty table is a use case,
@@ -29,25 +32,25 @@ function LuaSettings:open(file_path)
     if ok and stored then
         new.data = stored
     else
-        if existing then logger.warn("Failed reading", new.file, "(probably corrupted).") end
+        if existing then logger.warn("LuaSettings: Failed reading", new.file, "(probably corrupted).") end
         -- Fallback to .old if it exists
         ok, stored = pcall(dofile, new.file..".old")
         if ok and stored then
-            if existing then logger.warn("read from backup file", new.file..".old") end
+            if existing then logger.warn("LuaSettings: read from backup file", new.file..".old") end
             new.data = stored
         else
-            if existing then logger.warn("no usable backup file for", new.file, "to read from") end
+            if existing then logger.warn("LuaSettings: no usable backup file for", new.file, "to read from") end
             new.data = {}
         end
     end
 
-    return setmetatable(new, {__index = LuaSettings})
+    return new
 end
 
---- @todo DocSettings can return a LuaSettings to use following awesome features.
 function LuaSettings:wrap(data)
-    local new = {data = type(data) == "table" and data or {}}
-    return setmetatable(new, {__index = LuaSettings})
+    return self:extend{
+        data = type(data) == "table" and data or {},
+    }
 end
 
 --[[--Reads child settings.
@@ -66,7 +69,7 @@ end
     -- result "b"
 ]]
 function LuaSettings:child(key)
-    return LuaSettings:wrap(self:readSetting(key))
+    return self:wrap(self:readSetting(key))
 end
 
 --[[-- Reads a setting, optionally initializing it to a default.
@@ -251,11 +254,10 @@ function LuaSettings:flush()
     if not self.file then return end
     local directory_updated = false
     if lfs.attributes(self.file, "mode") == "file" then
-        -- As an additional safety measure (to the ffiutil.fsync* calls
-        -- used below), we only backup the file to .old when it has
-        -- not been modified in the last 60 seconds. This should ensure
-        -- in the case the fsync calls are not supported that the OS
-        -- may have itself sync'ed that file content in the meantime.
+        -- As an additional safety measure (to the ffiutil.fsync* calls used below),
+        -- we only backup the file to .old when it has not been modified in the last 60 seconds.
+        -- This should ensure in the case the fsync calls are not supported
+        -- that the OS may have itself sync'ed that file content in the meantime.
         local mtime = lfs.attributes(self.file, "modification")
         if mtime < os.time() - 60 then
             os.rename(self.file, self.file .. ".old")
@@ -264,7 +266,6 @@ function LuaSettings:flush()
     end
     local f_out = io.open(self.file, "w")
     if f_out ~= nil then
-        os.setlocale('C', 'numeric')
         f_out:write("-- we can read Lua syntax here!\nreturn ")
         f_out:write(dump(self.data, nil, true))
         f_out:write("\n")

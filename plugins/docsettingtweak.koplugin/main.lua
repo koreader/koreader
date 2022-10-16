@@ -14,9 +14,10 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 
-local DocSettingTweak = WidgetContainer:new{
+local DocSettingTweak = WidgetContainer:extend{
     name = "docsettingtweak",
 }
 
@@ -51,6 +52,9 @@ end
 
 function DocSettingTweak:editDirectoryDefaults()
     local directory_defaults_file = io.open(directory_defaults_path, "rb")
+    if not directory_defaults_file then
+        return
+    end
     local defaults = directory_defaults_file:read("*all")
     directory_defaults_file:close()
     local config_editor
@@ -74,6 +78,9 @@ function DocSettingTweak:editDirectoryDefaults()
                     local syntax_okay, syntax_error = pcall(loadstring(content))
                     if syntax_okay then
                         directory_defaults_file = io.open(directory_defaults_path, "w")
+                        if not directory_defaults_file then
+                            return false, _("Missing defaults file")
+                        end
                         directory_defaults_file:write(content)
                         directory_defaults_file:close()
                         DocSettingTweak:loadDefaults()

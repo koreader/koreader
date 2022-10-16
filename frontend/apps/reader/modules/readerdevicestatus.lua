@@ -2,15 +2,15 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local powerd = Device:getPowerDevice()
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 
-local ReaderDeviceStatus = InputContainer:new{
+local ReaderDeviceStatus = WidgetContainer:extend{
     battery_confirm_box = nil,
     memory_confirm_box = nil,
 }
@@ -64,7 +64,7 @@ function ReaderDeviceStatus:init()
             if statm then
                 local dummy, rss = statm:read("*number", "*number")
                 statm:close()
-                rss = math.floor(rss * 4096 / 1024 / 1024)
+                rss = math.floor(rss * (4096 / 1024 / 1024))
                 if rss >= self.memory_threshold then
                     if self.memory_confirm_box then
                         UIManager:close(self.memory_confirm_box)
@@ -200,7 +200,6 @@ High level threshold is checked when the device is charging.]]),
                         right_max = 100,
                         right_default = 100,
                         right_hold_step = 5,
-                        default_values = true,
                         unit = "%",
                         callback = function(left_value, right_value)
                             self.battery_threshold = left_value

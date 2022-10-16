@@ -31,9 +31,9 @@ local logger = require("logger")
 
 -- DPI_SCALE can't change without a restart, so let's compute it now
 local function get_dpi_scale()
-    local size_scale = math.min(Screen:getWidth(), Screen:getHeight()) / 600
+    local size_scale = math.min(Screen:getWidth(), Screen:getHeight()) * (1/600)
     local dpi_scale = Screen:scaleByDPI(1)
-    return math.pow(2, math.max(0, math.log((size_scale+dpi_scale)/2)/0.69))
+    return math.max(0, (math.log((size_scale+dpi_scale)/2)/0.69)^2)
 end
 local DPI_SCALE = get_dpi_scale()
 
@@ -48,7 +48,7 @@ local ImageCache = Cache:new{
     enable_eviction_cb = false,
 }
 
-local ImageWidget = Widget:new{
+local ImageWidget = Widget:extend{
     -- Can be provided with a path to a file
     file = nil,
     -- or an already made BlitBuffer (ie: made by RenderImage)
@@ -403,7 +403,7 @@ function ImageWidget:getScaleFactorExtrema()
     local memfree, _ = util.calcFreeMem()
 
     local screen_area = Screen:getWidth() * Screen:getHeight()
-    local min_area = math.ceil(screen_area / 10000)
+    local min_area = math.ceil(screen_area * (1/10000))
     local max_area
     if memfree then
         -- If we have access to memory statistics, limit the requested bb size to 25% of the available RAM.
@@ -456,9 +456,20 @@ function ImageWidget:getCurrentHeight()
 end
 
 function ImageWidget:getCurrentDiagonal()
-    local tl = Geom:new{ x = 0, y = 0 }
-    local br = Geom:new{ x = self._bb:getWidth() - 1, y = self._bb:getHeight() - 1}
-    return tl:distance(br)
+    return math.sqrt(self._bb:getWidth()^2 + self._bb:getHeight()^2)
+end
+
+-- And now, getters for the original, unscaled dimensions.
+function ImageWidget:getOriginalWidth()
+    return self._img_w
+end
+
+function ImageWidget:getOriginalHeight()
+    return self._img_h
+end
+
+function ImageWidget:getOriginalDiagonal()
+    return math.sqrt(self._img_w^2 + self._img_h^2)
 end
 
 function ImageWidget:getPanByCenterRatio(x, y)

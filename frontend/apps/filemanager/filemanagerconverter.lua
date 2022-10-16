@@ -55,6 +55,9 @@ end
 
 function FileConverter:_mdFileToHtml(file, title)
     local f = io.open(file, "rb")
+    if f == nil then
+        return
+    end
     local content = f:read("*all")
     f:close()
     local html = self:mdToHtml(content, title)
@@ -63,6 +66,9 @@ end
 
 function FileConverter:writeStringToFile(content, file)
     local f = io.open(file, "w")
+    if f == nil then
+        return
+    end
     f:write(content)
     f:close()
 end
@@ -104,7 +110,20 @@ function FileConverter:showConvertButtons(file, ui)
             },
         },
     }
+    self.convert_dialog.onCloseWidget = function(this)
+        local super = getmetatable(this)
+        if super.onCloseWidget then
+            -- Call our super's method, if any
+            super.onCloseWidget(this)
+        end
+        -- And then do our own cleanup
+        self:cleanup()
+    end
     UIManager:show(self.convert_dialog)
+end
+
+function FileConverter:cleanup()
+    self.convert_dialog = nil
 end
 
 return FileConverter

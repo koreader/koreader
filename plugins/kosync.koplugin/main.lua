@@ -1,18 +1,18 @@
-local Dispatcher = require("dispatcher")
-local InputContainer = require("ui/widget/container/inputcontainer")
-local LoginDialog = require("ui/widget/logindialog")
-local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
+local Device = require("device")
+local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
+local InfoMessage = require("ui/widget/infomessage")
+local LoginDialog = require("ui/widget/logindialog")
+local Math = require("optmath")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
-local Device = require("device")
-local Event = require("ui/event")
-local Math = require("optmath")
-local Screen = Device.screen
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local random = require("random")
 local util = require("util")
+local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -20,7 +20,7 @@ if G_reader_settings:hasNot("device_id") then
     G_reader_settings:saveSetting("device_id", random.uuid())
 end
 
-local KOSync = InputContainer:new{
+local KOSync = WidgetContainer:extend{
     name = "kosync",
     is_doc_only = true,
     title = _("Register/login to KOReader server"),

@@ -2,15 +2,15 @@ local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local OPDSBrowser = require("opdsbrowser")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
-local OPDSCatalog = InputContainer:extend{
+local OPDSCatalog = WidgetContainer:extend{
     title = _("OPDS Catalog"),
 }
 

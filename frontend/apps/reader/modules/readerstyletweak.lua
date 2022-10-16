@@ -19,6 +19,7 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -27,7 +28,7 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 
 -- Simple widget for showing tweak info
-local TweakInfoWidget = InputContainer:new{
+local TweakInfoWidget = InputContainer:extend{
     tweak = nil,
     is_global_default = nil,
     toggle_global_default_callback = function() end,
@@ -226,7 +227,7 @@ end
 
 -- Reader component for managing tweaks. The aggregated css_text
 -- is actually requested from us and applied by ReaderTypeset
-local ReaderStyleTweak = InputContainer:new{
+local ReaderStyleTweak = WidgetContainer:extend{
     tweaks_by_id = nil,
     tweaks_table = nil, -- sub-menu items
     nb_enabled_tweaks = 0, -- for use by main menu item

@@ -21,7 +21,7 @@ local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
 local default_auto_standby_timeout_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage
 
-local AutoSuspend = WidgetContainer:new{
+local AutoSuspend = WidgetContainer:extend{
     name = "autosuspend",
     is_doc_only = false,
     autoshutdown_timeout_seconds = default_autoshutdown_timeout_seconds,
@@ -220,12 +220,16 @@ function AutoSuspend:_schedule_standby()
 
     -- When we're in a state where entering suspend is undesirable, we simply postpone the check by the full delay.
     local standby_delay_seconds
-    if NetworkMgr:isWifiOn() then
+    -- NOTE: As this may fire repeatedly, we don't want to poke the actual Device implementation every few seconds,
+    --       instead, we rely on NetworkMgr's last known status. (i.e., this *should* match NetworkMgr:isWifiOn).
+    if NetworkMgr:getWifiState() then
         -- Don't enter standby if wifi is on, as this will break in fun and interesting ways (from Wi-Fi issues to kernel deadlocks).
         --logger.dbg("AutoSuspend: WiFi is on, delaying standby")
         standby_delay_seconds = self.auto_standby_timeout_seconds
     elseif Device.powerd:isCharging() and not Device:canPowerSaveWhileCharging() then
-        -- Don't enter standby when charging on devices where charging prevents entering low power states.
+        -- Don't enter standby when charging on devices where charging *may* prevent entering low power states.
+        -- (*May*, because depending on the USB controller, it might depend on what it's plugged to, and how it's setup:
+        -- e.g., generally, on those devices, USBNet being enabled is guaranteed to prevent PM).
         -- NOTE: Minor simplification here, we currently don't do the hasAuxBattery dance like in _schedule,
         --       because all the hasAuxBattery devices can currently enter PM states while charging ;).
         --logger.dbg("AutoSuspend: charging, delaying standby")
@@ -374,19 +378,19 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
     local day, hour, minute, second
     local day_max, hour_max, min_max, sec_max
     if time_scale == 2 then
-        day = math.floor(setting_val / (24*3600))
-        hour = math.floor(setting_val / 3600) % 24
-        day_max = math.floor(range[2] / (24*3600)) - 1
+        day = math.floor(setting_val * (1/(24*3600)))
+        hour = math.floor(setting_val * (1/3600)) % 24
+        day_max = math.floor(range[2] * (1/(24*3600))) - 1
         hour_max = 23
     elseif time_scale == 1 then
-        hour = math.floor(setting_val / 3600)
-        minute = math.floor(setting_val / 60) % 60
-        hour_max = math.floor(range[2] / 3600) - 1
+        hour = math.floor(setting_val * (1/3600))
+        minute = math.floor(setting_val * (1/60)) % 60
+        hour_max = math.floor(range[2] * (1/3600)) - 1
         min_max = 59
     else
-        minute = math.floor(setting_val / 60)
+        minute = math.floor(setting_val * (1/60))
         second = math.floor(setting_val) % 60
-        min_max =  math.floor(range[2] / 60) - 1
+        min_max =  math.floor(range[2] * (1/60)) - 1
         sec_max = 59
     end
 
@@ -435,13 +439,13 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
         default_callback = function()
             local day, hour, min, sec -- luacheck: ignore 431
             if time_scale == 2 then
-                day = math.floor(default_value / (24*3600))
-                hour = math.floor(default_value / 3600) % 24
+                day = math.floor(default_value * (1/(24*3600)))
+                hour = math.floor(default_value * (1/3600)) % 24
             elseif time_scale == 1 then
-                hour = math.floor(default_value / 3600)
-                min = math.floor(default_value / 60) % 60
+                hour = math.floor(default_value * (1/3600))
+                min = math.floor(default_value * (1/60)) % 60
             else
-                min = math.floor(default_value / 60)
+                min = math.floor(default_value * (1/60))
                 sec = math.floor(default_value % 60)
             end
             time_spinner:update(nil, nil, day, hour, min, sec) -- It is ok to pass nils here.

@@ -7,7 +7,7 @@ local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 
-local LinkBox = InputContainer:new{
+local LinkBox = InputContainer:extend{
     box = nil,
     color = Blitbuffer.COLOR_DARK_GRAY,
     radius = 0,

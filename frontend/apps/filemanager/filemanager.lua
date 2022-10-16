@@ -44,6 +44,7 @@ local T = BaseUtil.template
 
 local FileManager = InputContainer:extend{
     title = _("KOReader"),
+    active_widgets = nil, -- array
     root_path = lfs.currentdir(),
 
     clipboard = nil, -- for single file operations
@@ -120,7 +121,7 @@ function FileManager:setupLayout()
         right_icon_hold_callback = false, -- propagate long-press to dispatcher
     }
 
-    local show_hidden = G_reader_settings:isTrue("show_hidden") or DSHOWHIDDENFILES
+    local show_hidden = G_reader_settings:isTrue("show_hidden") or G_defaults:readSetting("DSHOWHIDDENFILES")
     local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local file_chooser = FileChooser:new{
         -- remember to adjust the height when new item is added to the group
@@ -181,7 +182,15 @@ function FileManager:setupLayout()
     local renameFile = function(file) self:renameFile(file) end
     local setHome = function(path) self:setHome(path) end
 
-    function file_chooser:onFileHold(file)  -- luacheck: ignore
+    function file_chooser:onFileHold(file)
+        if file_manager.select_mode then
+            file_manager:tapPlus()
+        else
+            self:showFileDialog(file)
+        end
+    end
+
+    function file_chooser:showFileDialog(file)  -- luacheck: ignore
         local is_file = lfs.attributes(file, "mode") == "file"
         local is_folder = lfs.attributes(file, "mode") == "directory"
         local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
@@ -204,19 +213,14 @@ function FileManager:setupLayout()
                     end,
                 },
                 {
-                    text = _("Reset settings"),
-                    enabled = is_file and DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
+                    text = _("Select"),
                     callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(file)),
-                            ok_text = _("Reset"),
-                            ok_callback = function()
-                                filemanagerutil.purgeSettings(file)
-                                require("readhistory"):fileSettingsPurged(file)
-                                self:refreshPath()
-                                UIManager:close(self.file_dialog)
-                            end,
-                        })
+                        UIManager:close(self.file_dialog)
+                        file_manager:onToggleSelectMode(true) -- no full screen refresh
+                        if is_file then
+                            file_manager.selected_files[file] = true
+                            self:refreshPath()
+                        end
                     end,
                 },
             },
@@ -329,6 +333,43 @@ function FileManager:setupLayout()
         if is_file then
             table.insert(buttons, {
                 {
+                    text = _("Reset settings"),
+                    id = "reset_settings", -- used by covermenu
+                    enabled = is_file and DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(file)),
+                            ok_text = _("Reset"),
+                            ok_callback = function()
+                                filemanagerutil.purgeSettings(file)
+                                require("readhistory"):fileSettingsPurged(file)
+                                self:refreshPath()
+                                UIManager:close(self.file_dialog)
+                            end,
+                        })
+                    end,
+                },
+                {
+                    text_func = function()
+                        if ReadCollection:checkItemExist(file) then
+                            return _("Remove from favorites")
+                        else
+                            return _("Add to favorites")
+                        end
+                    end,
+                    enabled = DocumentRegistry:getProviders(file) ~= nil,
+                    callback = function()
+                        if ReadCollection:checkItemExist(file) then
+                            ReadCollection:removeItem(file)
+                        else
+                            ReadCollection:addItem(file)
+                        end
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+            })
+            table.insert(buttons, {
+                {
                     text = _("Open with…"),
                     enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1 or file_manager.texteditor,
                     callback = function()
@@ -353,32 +394,13 @@ function FileManager:setupLayout()
                 },
                 {
                     text = _("Book information"),
+                    id = "book_information", -- used by covermenu
                     enabled = FileManagerBookInfo:isSupported(file),
                     callback = function()
                         FileManagerBookInfo:show(file)
                         UIManager:close(self.file_dialog)
                     end,
                 }
-            })
-            table.insert(buttons, {
-                {
-                    text_func = function()
-                        if ReadCollection:checkItemExist(file) then
-                            return _("Remove from favorites")
-                        else
-                            return _("Add to favorites")
-                        end
-                    end,
-                    enabled = DocumentRegistry:getProviders(file) ~= nil,
-                    callback = function()
-                        if ReadCollection:checkItemExist(file) then
-                            ReadCollection:removeItem(file)
-                        else
-                            ReadCollection:addItem(file)
-                        end
-                        UIManager:close(self.file_dialog)
-                    end,
-                },
             })
             if FileManagerConverter:isSupported(file) then
                 table.insert(buttons, {
@@ -556,12 +578,14 @@ function FileManager:onShowPlusMenu()
     return true
 end
 
-function FileManager:onToggleSelectMode()
+function FileManager:onToggleSelectMode(no_refresh)
     logger.dbg("toggle select mode")
     self.select_mode = not self.select_mode
     self.selected_files = self.select_mode and {} or nil
     self.title_bar:setRightIcon(self.select_mode and "check" or "plus")
-    self:onRefresh()
+    if not no_refresh then
+        self:onRefresh()
+    end
 end
 
 function FileManager:tapPlus()
@@ -684,7 +708,7 @@ function FileManager:tapPlus()
                 {
                     text = _("Select files"),
                     callback = function()
-                        self:onToggleSelectMode()
+                        self:onToggleSelectMode(true) -- no full screen refresh
                         UIManager:close(self.file_dialog)
                     end,
                 },

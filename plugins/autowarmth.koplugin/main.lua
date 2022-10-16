@@ -37,16 +37,16 @@ local activate_closer_midnight = 4
 local midnight_index = 11
 
 local device_max_warmth = Device:hasNaturalLight() and Powerd.fl_warmth_max or 100
-local device_warmth_fit_scale = device_max_warmth / 100
+local device_warmth_fit_scale = device_max_warmth * (1/100)
 
 local function frac(x)
     return x - math.floor(x)
 end
 
-local AutoWarmth = WidgetContainer:new{
+local AutoWarmth = WidgetContainer:extend{
     name = "autowarmth",
-    sched_times_s = {},
-    sched_warmths = {},
+    sched_times_s = nil, -- array
+    sched_warmths = nil, -- array
     fl_turned_off = nil -- true/false if autowarmth has toggled the frontlight
 }
 
@@ -54,7 +54,7 @@ local AutoWarmth = WidgetContainer:new{
 function AutoWarmth:getTimezoneOffset()
     local utcdate   = os.date("!*t")
     local localdate = os.date("*t")
-    return os.difftime(os.time(localdate), os.time(utcdate))/3600
+    return os.difftime(os.time(localdate), os.time(utcdate)) * (1/3600)
 end
 
 function AutoWarmth:init()
@@ -704,7 +704,7 @@ function AutoWarmth:getScheduleMenu()
                     min = mm,
                     ok_text = _("Set time"),
                     callback = function(time)
-                        local new_time = time.hour + time.min / 60
+                        local new_time = time.hour + time.min * (1/60)
                         local function get_valid_time(n, dir)
                             for i = n+dir, dir > 0 and midnight_index or 1, dir do
                                 if self.scheduler_times[i] then

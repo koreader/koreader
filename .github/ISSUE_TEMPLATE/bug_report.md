@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a bug report to help us improve
+about: Create a bug report to help us improve the application
 title: ''
 labels: ''
 assignees: ''
@@ -15,20 +15,20 @@ assignees: ''
 #### Steps to reproduce
 
 ##### `crash.log` (if applicable)
-`crash.log` is a file that is automatically created when KOReader crashes. It can
-normally be found in the KOReader directory:
+`crash.log` is a file that is automatically created when KOReader crashes. It can normally be found in the KOReader directory:
 
 * `/mnt/private/koreader` for Cervantes
 * `koreader/` directory for Kindle
 * `.adds/koreader/` directory for Kobo
 * `applications/koreader/` directory for Pocketbook
 
-
-Android logs are kept in memory. Please go to Help → Bug Report to save these logs to a file.
+Android logs are kept in memory. Please go to [Menu] → Help → Bug Report to save these logs to a file.
 
 Please try to include the relevant sections in your issue description.
-You can upload the whole `crash.log` file on GitHub by dragging and
-dropping it onto this textbox.
+You can upload the whole `crash.log` file (zipped if necessary) on GitHub by dragging and dropping it onto this textbox.
+
+If your issue doesn't directly concern a Lua crash, we'll quite likely need you to reproduce the issue with *verbose* debug logging enabled before providing the logs to us.
+To do so, from the file manager, go to [Tools] → More tools → Developer options, and tick both `Enable debug logging` and `Enable verbose debug logging`.
 
 If you instead opt to inline it, please do so behind a spoiler tag:
 <details>

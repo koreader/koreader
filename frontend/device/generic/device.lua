@@ -20,7 +20,6 @@ local Device = {
     charging_mode = false,
     survive_screen_saver = false,
     is_cover_closed = false,
-    should_restrict_JIT = false,
     model = nil,
     powerd = nil,
     screen = nil,
@@ -130,7 +129,7 @@ local Device = {
     canExternalDictLookup = no,
 }
 
-function Device:new(o)
+function Device:extend(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
@@ -159,7 +158,6 @@ function Device:invertButtons()
 end
 
 function Device:init()
-    assert(self ~= nil)
     if not self.screen then
         error("screen/framebuffer must be implemented")
     end
@@ -350,8 +348,7 @@ function Device:install()
         ok_callback = function()
             local save_quit = function()
                 self:saveSettings()
-                UIManager:quit()
-                UIManager._exit_code = 85
+                UIManager:quit(85)
             end
             UIManager:broadcastEvent(Event:new("Exit", save_quit))
         end,
@@ -384,9 +381,11 @@ function Device:suspend() end
 -- Hardware specific method to resume the device
 function Device:resume() end
 
+-- NOTE: These two should ideally run in the background, and only trip the action after a small delay,
+--       to give us time to quit first.
+--       e.g., os.execute("sleep 1 && shutdown -r now &")
 -- Hardware specific method to power off the device
 function Device:powerOff() end
-
 -- Hardware specific method to reboot the device
 function Device:reboot() end
 
@@ -576,7 +575,7 @@ end
 -- Set device event handlers common to all devices
 function Device:_setEventHandlers(UIManager)
     if self:canReboot() then
-        UIManager.event_handlers["Reboot"] = function()
+        UIManager.event_handlers.Reboot = function()
             local ConfirmBox = require("ui/widget/confirmbox")
             UIManager:show(ConfirmBox:new{
                 text = _("Are you sure you want to reboot the device?"),
@@ -589,11 +588,11 @@ function Device:_setEventHandlers(UIManager)
             })
         end
     else
-        UIManager.event_handlers["Reboot"] = function() end
+        UIManager.event_handlers.Reboot = function() end
     end
 
     if self:canPowerOff() then
-        UIManager.event_handlers["PowerOff"] = function()
+        UIManager.event_handlers.PowerOff = function()
             local ConfirmBox = require("ui/widget/confirmbox")
             UIManager:show(ConfirmBox:new{
                 text = _("Are you sure you want to power off the device?"),
@@ -606,7 +605,7 @@ function Device:_setEventHandlers(UIManager)
             })
         end
     else
-        UIManager.event_handlers["PowerOff"] = function() end
+        UIManager.event_handlers.PowerOff = function() end
     end
 
     self:setEventHandlers(UIManager)
@@ -615,10 +614,10 @@ end
 -- Devices can add additional event handlers by overwriting this method.
 function Device:setEventHandlers(UIManager)
     -- These will be most probably overwritten in the device specific `setEventHandlers`
-    UIManager.event_handlers["Suspend"] = function()
+    UIManager.event_handlers.Suspend = function()
         self:_beforeSuspend(false)
     end
-    UIManager.event_handlers["Resume"] = function()
+    UIManager.event_handlers.Resume = function()
         self:_afterResume(false)
     end
 end

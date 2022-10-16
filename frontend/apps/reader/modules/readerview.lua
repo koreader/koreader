@@ -28,28 +28,13 @@ local T = require("ffi/util").template
 
 local ReaderView = OverlapGroup:extend{
     document = nil,
+    view_modules = nil, -- array
 
     -- single page state
-    state = {
-        page = nil,
-        pos = 0,
-        zoom = 1.0,
-        rotation = 0,
-        gamma = 1.0,
-        offset = nil,
-        bbox = nil,
-    },
-    outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR / 15),
+    state = nil, -- table
+    outer_page_color = Blitbuffer.gray(G_defaults:readSetting("DOUTER_PAGE_COLOR") * (1/15)),
     -- highlight with "lighten" or "underscore" or "strikeout" or "invert"
-    highlight = {
-        lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
-        note_mark = G_reader_settings:readSetting("highlight_note_marker"),
-        temp_drawer = "invert",
-        temp = {},
-        saved_drawer = "lighten",
-        saved = {},
-        indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
-    },
+    highlight = nil, -- table
     highlight_visible = true,
     note_mark_line_w = 3, -- side line thickness
     note_mark_sign = nil,
@@ -57,17 +42,14 @@ local ReaderView = OverlapGroup:extend{
     note_mark_pos_x2 = nil, -- page 2 in two-page mode
     -- PDF/DjVu continuous paging
     page_scroll = nil,
-    page_bgcolor = Blitbuffer.gray(DBACKGROUND_COLOR / 15),
-    page_states = {},
+    page_bgcolor = Blitbuffer.gray(G_defaults:readSetting("DBACKGROUND_COLOR") * (1/15)),
+    page_states = nil, -- table
     -- properties of the gap drawn between each page in scroll mode:
-    page_gap = {
-        -- color (0 = white, 8 = gray, 15 = black)
-        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) / 15),
-    },
+    page_gap = nil, -- table
     -- DjVu page rendering mode (used in djvu.c:drawPage())
-    render_mode = DRENDER_MODE, -- default to COLOR
+    render_mode = G_defaults:readSetting("DRENDER_MODE"), -- default to COLOR
     -- Crengine view mode
-    view_mode = DCREREADER_VIEW_MODE, -- default to page mode
+    view_mode = G_defaults:readSetting("DCREREADER_VIEW_MODE"), -- default to page mode
     hinting = true,
 
     -- visible area within current viewing page
@@ -91,10 +73,30 @@ local ReaderView = OverlapGroup:extend{
 
 function ReaderView:init()
     self.view_modules = {}
-    -- fix recalculate from close document pageno
-    self.state.page = nil
 
-    -- Reset the various areas across documents
+    self.state = {
+        page = nil,
+        pos = 0,
+        zoom = 1.0,
+        rotation = 0,
+        gamma = 1.0,
+        offset = nil,
+        bbox = nil,
+    }
+    self.highlight = {
+        lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
+        note_mark = G_reader_settings:readSetting("highlight_note_marker"),
+        temp_drawer = "invert",
+        temp = {},
+        saved_drawer = "lighten",
+        saved = {},
+        indicator = nil, -- geom: non-touch highlight position indicator: {x = 50, y=50}
+    }
+    self.page_states = {}
+    self.page_gap = {
+        -- color (0 = white, 8 = gray, 15 = black)
+        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) * (1/15)),
+    }
     self.visible_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
     self.page_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
     self.dim_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
@@ -103,6 +105,9 @@ function ReaderView:init()
     self.emitHintPageEvent = function()
         self.ui:handleEvent(Event:new("HintPage", self.hinting))
     end
+
+    -- We've subclassed OverlapGroup, go through its init, because it does some funky stuff with self.dimen...
+    OverlapGroup.init(self)
 end
 
 function ReaderView:addWidgets()
@@ -883,7 +888,7 @@ function ReaderView:onReadSettings(config)
         end
     end
     self.inverse_reading_order = config:isTrue("inverse_reading_order") or G_reader_settings:isTrue("inverse_reading_order")
-    self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or DSHOWOVERLAP
+    self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or G_defaults:readSetting("DSHOWOVERLAP")
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
                                               or G_reader_settings:readSetting("kopt_page_gap_height")
@@ -1071,8 +1076,7 @@ function ReaderView:getRenderModeMenuTable()
 end
 
 function ReaderView:onCloseDocument()
-    self.hinting = false
-    -- stop any in fly HintPage event
+    -- stop any pending HintPage event
     UIManager:unschedule(self.emitHintPageEvent)
 end
 
@@ -1141,16 +1145,18 @@ function ReaderView:getTapZones()
     local forward_zone, backward_zone
     local tap_zones_type = G_reader_settings:readSetting("page_turns_tap_zones", "default")
     if tap_zones_type == "default" then
+        local DTAP_ZONE_FORWARD = G_defaults:readSetting("DTAP_ZONE_FORWARD")
         forward_zone = {
             ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
             ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
         }
+        local DTAP_ZONE_BACKWARD = G_defaults:readSetting("DTAP_ZONE_BACKWARD")
         backward_zone = {
             ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
             ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
         }
     else -- user defined page turns tap zones
-        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", DTAP_ZONE_FORWARD.w)
+        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", G_defaults:readSetting("DTAP_ZONE_FORWARD").w)
         local tap_zone_backward_w = 1 - tap_zone_forward_w
         if tap_zones_type == "left_right" then
             forward_zone = {

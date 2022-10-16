@@ -33,7 +33,7 @@ else
     rm -f "/tmp/resolv.ko"
 fi
 
-wpa_cli terminate
+wpa_cli -i "${INTERFACE}" terminate
 
 [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" down
 ifconfig "${INTERFACE}" down
@@ -44,23 +44,45 @@ if grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     usleep 250000
     rmmod "${WIFI_MODULE}"
 fi
-if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
-    # Handle the shitty DVFS switcheroo...
-    if [ -n "${CPUFREQ_DVFS}" ]; then
-        echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-        if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
-            echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-        else
-            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-            cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
-        fi
+
+# Handle dependencies, if any
+WIFI_DEP_MOD=""
+SKIP_SDIO_PWR_MODULE=""
+case "${WIFI_MODULE}" in
+    "moal")
+        WIFI_DEP_MOD="mlan"
+        SKIP_SDIO_PWR_MODULE="1"
+        ;;
+esac
+if [ -n "${WIFI_DEP_MOD}" ]; then
+    if grep -q "^${WIFI_DEP_MOD}" "/proc/modules"; then
+        usleep 250000
+        rmmod "${WIFI_DEP_MOD}"
     fi
-    usleep 250000
-    rmmod sdio_wifi_pwr
 fi
 
-# Poke the kernel via ioctl on platforms without the dedicated power module...
-if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+if [ -n "${SKIP_SDIO_PWR_MODULE}" ]; then
     usleep 250000
     ./luajit frontend/device/kobo/ntx_io.lua 208 0
+else
+    if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
+        # Handle the shitty DVFS switcheroo...
+        if [ -n "${CPUFREQ_DVFS}" ]; then
+            echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+            if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
+                echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+            else
+                echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+            fi
+        fi
+        usleep 250000
+        rmmod sdio_wifi_pwr
+    fi
+
+    # Poke the kernel via ioctl on platforms without the dedicated power module...
+    if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+        usleep 250000
+        ./luajit frontend/device/kobo/ntx_io.lua 208 0
+    fi
 fi

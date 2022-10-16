@@ -9,7 +9,7 @@ local Geom = require("ui/geometry")
 local Size = require("ui/size")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local UnderlineContainer = WidgetContainer:new{
+local UnderlineContainer = WidgetContainer:extend{
     linesize = Size.line.thick,
     padding = Size.padding.tiny,
     --- @todo shouldn't this default to black instead?

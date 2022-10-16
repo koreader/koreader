@@ -66,9 +66,9 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = ffiUtil.template
 
-local ReaderUI = InputContainer:new{
+local ReaderUI = InputContainer:extend{
     name = "ReaderUI",
-    active_widgets = {},
+    active_widgets = nil, -- array
 
     -- if we have a parent container, it must be referenced for now
     dialog = nil,
@@ -104,6 +104,8 @@ function ReaderUI:registerPostReadyCallback(callback)
 end
 
 function ReaderUI:init()
+    self.active_widgets = {}
+
     -- cap screen refresh on pan to 2 refreshes per second
     local pan_rate = Screen.low_pan_rate and 2.0 or 30.0
 

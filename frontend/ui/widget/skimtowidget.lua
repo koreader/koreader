@@ -20,7 +20,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local SkimToWidget = FocusManager:new{}
+local SkimToWidget = FocusManager:extend{}
 
 function SkimToWidget:init()
     local screen_width = Screen:getWidth()
@@ -56,7 +56,7 @@ function SkimToWidget:init()
     local button_span_unit_width = Size.span.horizontal_small
     local larger_span_units = 3 -- 3 x small span width
     local nb_span_units = 2 + 2*larger_span_units
-    local button_width = math.floor( (inner_width - nb_span_units * button_span_unit_width) / 5)
+    local button_width = math.floor( (inner_width - nb_span_units * button_span_unit_width) * (1/5))
     local button_inner_width = button_width - 2 * (Size.border.button + Size.padding.button)
     -- Update inner_width (possibly smaller because of math.floor())
     inner_width = button_width * 5 + nb_span_units * button_span_unit_width

@@ -34,10 +34,12 @@ local T = require("ffi/util").template
 local Input = Device.input
 local Screen = Device.screen
 
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
 --[[
 TouchMenuItem widget
 --]]
-local TouchMenuItem = InputContainer:new{
+local TouchMenuItem = InputContainer:extend{
     menu = nil,
     vertical_align = "center",
     item = nil,
@@ -92,6 +94,8 @@ function TouchMenuItem:init()
     local checked_widget = CheckMark:new{ -- for layout, to :getSize()
         checked = true,
     }
+
+    self.checkmark_tap_width = checked_widget:getSize().w + 2*Size.padding.default
 
     -- text_max_width should be the TouchMenuItem width minus the below
     -- FrameContainer default paddings minus the checked widget width
@@ -166,11 +170,20 @@ function TouchMenuItem:onTapSelect(arg, ges)
     end
     if enabled == false then return end
 
+    local tap_on_checkmark = false
+    if ges and ges.pos and ges.pos.x then
+        local tap_x = BD.mirroredUILayout() and self.dimen.w - ges.pos.x - 1
+                                             or ges.pos.x
+        if tap_x <= self.checkmark_tap_width then
+            tap_on_checkmark = true
+        end
+    end
+
     -- If the menu hasn't actually been drawn yet, don't do anything (as it's confusing, and the coordinates may be wrong).
     if not self.item_frame.dimen then return end
 
     if G_reader_settings:isFalse("flash_ui") then
-        self.menu:onMenuSelect(self.item)
+        self.menu:onMenuSelect(self.item, tap_on_checkmark)
     else
         -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
@@ -198,7 +211,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
 
         -- Callback
         --
-        self.menu:onMenuSelect(self.item)
+        self.menu:onMenuSelect(self.item, tap_on_checkmark)
 
         UIManager:forceRePaint()
     end
@@ -254,9 +267,9 @@ end
 --[[
 TouchMenuBar widget
 --]]
-local TouchMenuBar = InputContainer:new{
+local TouchMenuBar = InputContainer:extend{
     width = Screen:getWidth(),
-    icons = {},
+    icons = nil, -- array, mandatory
     -- touch menu that holds the bar, used for trigger repaint on icons
     show_parent = nil,
     menu = nil,
@@ -410,7 +423,7 @@ function TouchMenuBar:init()
             self.bar_sep
         },
     }
-    self.dimen = Geom:new{ w = self.width, h = self.height }
+    self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
 end
 
 function TouchMenuBar:switchToTab(index)
@@ -430,7 +443,7 @@ end
 --[[
 TouchMenu widget for hierarchical menus
 --]]
-local TouchMenu = FocusManager:new{
+local TouchMenu = FocusManager:extend{
     tab_item_table = nil, -- mandatory
     -- for returning in multi-level menus
     item_table_stack = nil,
@@ -828,9 +841,14 @@ function TouchMenu:onSwipe(arg, ges_ev)
     end
 end
 
-function TouchMenu:onMenuSelect(item)
+function TouchMenu:onMenuSelect(item, tap_on_checkmark)
     if self.touch_menu_callback then
         self.touch_menu_callback()
+    end
+    if tap_on_checkmark and item.checkmark_callback then
+        item.checkmark_callback()
+        self:updateItems()
+        return true
     end
     if item.tap_input or type(item.tap_input_func) == "function" then
         if not item.keep_menu_open then

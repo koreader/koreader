@@ -32,7 +32,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
 
-local NumberPickerWidget = FocusManager:new{
+local NumberPickerWidget = FocusManager:extend{
     spinner_face = Font:getFace("smalltfont"),
     precision = "%02d",
     width = nil,

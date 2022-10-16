@@ -11,7 +11,7 @@ local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local ButtonProgressWidget = FocusManager:new{
+local ButtonProgressWidget = FocusManager:extend{
     width = Screen:scaleBySize(216),
     height = Size.item.height_default,
     padding = Size.padding.small,

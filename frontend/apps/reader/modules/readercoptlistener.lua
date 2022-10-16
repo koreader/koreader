@@ -8,7 +8,7 @@ local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local ReaderCoptListener = EventListener:new{}
+local ReaderCoptListener = EventListener:extend{}
 
 local CRE_HEADER_DEFAULT_SIZE = 20
 

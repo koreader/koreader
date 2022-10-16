@@ -1,8 +1,9 @@
 --[[--
 A simple serialization function which won't do uservalues, functions, or loops.
+
+If you need a more full-featured variant, serpent is available in ffi/serpent ;).
 ]]
 
-local isUbuntuTouch = os.getenv("UBUNTU_APPLICATION_ISOLATION") ~= nil
 local insert = table.insert
 local indent_prefix = "    "
 
@@ -15,7 +16,8 @@ local function _serialize(what, outt, indent, max_lv, history, pairs_func)
         return
     end
 
-    if type(what) == "table" then
+    local datatype = type(what)
+    if datatype == "table" then
         history = history or {}
         for up, item in ipairs(history) do
             if item == what then
@@ -43,23 +45,15 @@ local function _serialize(what, outt, indent, max_lv, history, pairs_func)
             insert(outt, string.rep(indent_prefix, indent))
         end
         insert(outt, "}")
-    elseif type(what) == "string" then
+    elseif datatype == "string" then
         insert(outt, string.format("%q", what))
-    elseif type(what) == "number" then
-        if isUbuntuTouch then
-            --- @fixme The `SDL_CreateRenderer` function in Ubuntu touch somehow
-            -- use a strange locale that formats number like this: 1.10000000000000g+02
-            -- which cannot be recognized by loadfile after the number is dumped.
-            -- Here the workaround is to preserve enough precision in "%.13e" format.
-            insert(outt, string.format("%.13e", what))
-        else
-            insert(outt, tostring(what))
-        end
-    elseif type(what) == "boolean" then
+    elseif datatype == "number" then
         insert(outt, tostring(what))
-    elseif type(what) == "function" then
+    elseif datatype == "boolean" then
         insert(outt, tostring(what))
-    elseif type(what) == "nil" then
+    elseif datatype == "function" then
+        insert(outt, tostring(what))
+    elseif datatype == "nil" then
         insert(outt, "nil")
     end
 end

@@ -15,9 +15,10 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local Input = Device.input
 local time = require("ui/time")
+local _ = require("gettext")
 local Screen = Device.screen
+local Input = Device.input
 
 local band = bit.band
 
@@ -39,15 +40,16 @@ local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE + SOURCE_DISPATCHER
 local SOURCE_DEFAULT = SOURCE_SOME + SOURCE_BOTTOM_MENU_MORE + SOURCE_BOTTOM_MENU_PROGRESS
 local SOURCE_ALL = SOURCE_BOTTOM_MENU + SOURCE_DISPATCHER + SOURCE_OTHER
 
-local Notification = InputContainer:new{
+local Notification = InputContainer:extend{
     face = Font:getFace("x_smallinfofont"),
-    text = "Null Message",
+    text = _("N/A"),
     margin = Size.margin.default,
     padding = Size.padding.default,
     timeout = 2, -- default to 2 seconds
     toast = true, -- closed on any event, and let the event propagate to next top widget
 
-    _nums_shown = {}, -- array of stacked notifications
+    _shown_list = {}, -- actual static class member, array of stacked notifications (value is show (well, init) time or false).
+    _shown_idx = nil, -- index of this instance in the class's _shown_list array (assumes each Notification object is only shown (well, init) once).
 
     SOURCE_BOTTOM_MENU_ICON = SOURCE_BOTTOM_MENU_ICON,
     SOURCE_BOTTOM_MENU_TOGGLE = SOURCE_BOTTOM_MENU_TOGGLE,
@@ -110,8 +112,8 @@ function Notification:init()
     local notif_height = self.frame:getSize().h
 
     self:_cleanShownStack()
-    table.insert(Notification._nums_shown, UIManager:getTime())
-    self.num = #Notification._nums_shown
+    table.insert(Notification._shown_list, UIManager:getTime())
+    self._shown_idx = #Notification._shown_list
 
     self[1] = VerticalGroup:new{
         align = "center",
@@ -119,8 +121,8 @@ function Notification:init()
         RectSpan:new{
             -- have this VerticalGroup full width, to ensure centering
             width = Screen:getWidth(),
-            -- push this frame at its y=self.num position
-            height = notif_height * (self.num - 1) + self.margin,
+            -- push this frame at its y=self._shown_idx position
+            height = notif_height * (self._shown_idx - 1) + self.margin,
                 -- (let's add a leading self.margin to get the same distance
                 -- from top of screen to first notification top border as
                 -- between borders of next notifications)
@@ -156,30 +158,31 @@ function Notification:notify(arg, refresh_after)
     return false
 end
 
-function Notification:_cleanShownStack(num)
+function Notification:_cleanShownStack()
     -- Clean stack of shown notifications
-    if num then
+    if self._shown_idx then
+        -- If this field exists, this is the first time this instance was closed since its init.
         -- This notification is no longer displayed
-        Notification._nums_shown[num] = false
+        Notification._shown_list[self._shown_idx] = false
     end
-    -- We remove from the stack tail all slots no longer displayed.
+    -- We remove from the stack's tail all slots no longer displayed.
     -- Even if slots at top are available, we'll keep adding new
     -- notifications only at the tail/bottom (easier for the eyes
     -- to follow what is happening).
     -- As a sanity check, we also forget those shown for
     -- more than 30s in case no close event was received.
     local expire_time = UIManager:getTime() - time.s(30)
-    for i=#Notification._nums_shown, 1, -1 do
-        if Notification._nums_shown[i] and Notification._nums_shown[i] > expire_time then
+    for i = #Notification._shown_list, 1, -1 do
+        if Notification._shown_list[i] and Notification._shown_list[i] > expire_time then
             break -- still shown (or not yet expired)
         end
-        table.remove(Notification._nums_shown, i)
+        table.remove(Notification._shown_list, i)
     end
 end
 
 function Notification:onCloseWidget()
-    self:_cleanShownStack(self.num)
-    self.num = nil -- avoid mess in case onCloseWidget is called multiple times
+    self:_cleanShownStack()
+    self._shown_idx = nil -- Don't do something stupid if this same instance gets closed multiple times
     UIManager:setDirty(nil, function()
         return "ui", self.frame.dimen
     end)
@@ -206,6 +209,29 @@ function Notification:onTapClose()
     if self.toast then return end -- should not happen
     UIManager:close(self)
     return true
+end
+
+-- Toasts should go bye-bye on user input, without stopping the event's propagation.
+function Notification:onKeyPress(key)
+    if self.toast then
+        UIManager:close(self)
+        return false
+    end
+    return InputContainer.onKeyPress(self, key)
+end
+function Notification:onKeyRepeat(key)
+    if self.toast then
+        UIManager:close(self)
+        return false
+    end
+    return InputContainer.onKeyRepeat(self, key)
+end
+function Notification:onGesture(ev)
+    if self.toast then
+        UIManager:close(self)
+        return false
+    end
+    return InputContainer.onGesture(self, ev)
 end
 
 return Notification

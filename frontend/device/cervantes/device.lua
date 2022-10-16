@@ -34,7 +34,7 @@ local function isMassStorageSupported()
     return true
 end
 
-local Cervantes = Generic:new{
+local Cervantes = Generic:extend{
     model = "Cervantes",
     isCervantes = yes,
     isAlwaysPortrait = yes,
@@ -65,33 +65,33 @@ local Cervantes = Generic:new{
     canHWInvert = yes,
 }
 -- Cervantes Touch
-local CervantesTouch = Cervantes:new{
+local CervantesTouch = Cervantes:extend{
     model = "CervantesTouch",
     display_dpi = 167,
     hasFrontlight = no,
     hasMultitouch = no,
 }
 -- Cervantes TouchLight / Fnac Touch Plus
-local CervantesTouchLight = Cervantes:new{
+local CervantesTouchLight = Cervantes:extend{
     model = "CervantesTouchLight",
     display_dpi = 167,
     hasMultitouch = no,
 }
 -- Cervantes 2013 / Fnac Touch Light
-local Cervantes2013 = Cervantes:new{
+local Cervantes2013 = Cervantes:extend{
     model = "Cervantes2013",
     display_dpi = 212,
     hasMultitouch = no,
     --- @fixme: Possibly requires canHWInvert = no, as it seems to be based on a similar board as the Kobo Aura...
 }
 -- Cervantes 3 / Fnac Touch Light 2
-local Cervantes3 = Cervantes:new{
+local Cervantes3 = Cervantes:extend{
     model = "Cervantes3",
     display_dpi = 300,
     hasMultitouch = no,
 }
 -- Cervantes 4
-local Cervantes4 = Cervantes:new{
+local Cervantes4 = Cervantes:extend{
     model = "Cervantes4",
     display_dpi = 300,
     hasNaturalLight = yes,
@@ -230,10 +230,10 @@ function Cervantes:resume()
     os.execute("./resume.sh")
 end
 function Cervantes:reboot()
-    os.execute("reboot")
+    os.execute("sleep 1 && reboot &")
 end
 function Cervantes:powerOff()
-    os.execute("halt")
+    os.execute("sleep 1 && halt &")
 end
 
 -- This method is the same as the one in kobo/device.lua except the sleep cover part.
@@ -241,11 +241,11 @@ function Cervantes:setEventHandlers(UIManager)
     -- We do not want auto suspend procedure to waste battery during
     -- suspend. So let's unschedule it when suspending, and restart it after
     -- resume. Done via the plugin's onSuspend/onResume handlers.
-    UIManager.event_handlers["Suspend"] = function()
+    UIManager.event_handlers.Suspend = function()
         self:_beforeSuspend()
         self:onPowerEvent("Suspend")
     end
-    UIManager.event_handlers["Resume"] = function()
+    UIManager.event_handlers.Resume = function()
         -- MONOTONIC doesn't tick during suspend,
         -- invalidate the last battery capacity pull time so that we get up to date data immediately.
         self:getPowerDevice():invalidateCapacityCache()
@@ -253,59 +253,59 @@ function Cervantes:setEventHandlers(UIManager)
         self:onPowerEvent("Resume")
         self:_afterResume()
     end
-    UIManager.event_handlers["PowerPress"] = function()
+    UIManager.event_handlers.PowerPress = function()
         -- Always schedule power off.
         -- Press the power button for 2+ seconds to shutdown directly from suspend.
         UIManager:scheduleIn(2, UIManager.poweroff_action)
     end
-    UIManager.event_handlers["PowerRelease"] = function()
-        if not self._entered_poweroff_stage then
+    UIManager.event_handlers.PowerRelease = function()
+        if not UIManager._entered_poweroff_stage then
             UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
-                UIManager.event_handlers["Resume"]()
+                UIManager.event_handlers.Resume()
             else
-                UIManager.event_handlers["Suspend"]()
+                UIManager.event_handlers.Suspend()
             end
         end
     end
-    UIManager.event_handlers["Light"] = function()
+    UIManager.event_handlers.Light = function()
         self:getPowerDevice():toggleFrontlight()
     end
     -- USB plug events with a power-only charger
-    UIManager.event_handlers["Charging"] = function()
+    UIManager.event_handlers.Charging = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
         if self.screen_saver_mode then
-           UIManager.event_handlers["Suspend"]()
+           UIManager.event_handlers.Suspend()
         end
     end
-    UIManager.event_handlers["NotCharging"] = function()
+    UIManager.event_handlers.NotCharging = function()
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
         if self.screen_saver_mode then
-           UIManager.event_handlers["Suspend"]()
+           UIManager.event_handlers.Suspend()
         end
     end
     -- USB plug events with a data-aware host
-    UIManager.event_handlers["UsbPlugIn"] = function()
+    UIManager.event_handlers.UsbPlugIn = function()
         self:_beforeCharging()
         -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
         if self.screen_saver_mode then
-            UIManager.event_handlers["Suspend"]()
+            UIManager.event_handlers.Suspend()
         else
             -- Potentially start an USBMS session
             local MassStorage = require("ui/elements/mass_storage")
             MassStorage:start()
         end
     end
-    UIManager.event_handlers["UsbPlugOut"] = function()
+    UIManager.event_handlers.UsbPlugOut = function()
         -- We need to put the device into suspension, other things need to be done before it.
         self:usbPlugOut()
         self:_afterNotCharging()
         if self.screen_saver_mode then
-            UIManager.event_handlers["Suspend"]()
+            UIManager.event_handlers.Suspend()
         else
             -- Potentially dismiss the USBMS ConfirmBox
             local MassStorage = require("ui/elements/mass_storage")

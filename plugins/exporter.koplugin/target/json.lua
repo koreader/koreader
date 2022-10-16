@@ -1,5 +1,7 @@
 local Device = require("device")
 local rapidjson = require("rapidjson")
+local md5 = require("ffi/MD5")
+local _ = require("gettext")
 
 -- json exporter
 local JsonExporter = require("base"):new {
@@ -7,13 +9,36 @@ local JsonExporter = require("base"):new {
     shareable = Device:canShareText(),
 }
 
-local function format(booknotes)
+function JsonExporter:getMenuTable()
+    return {
+        text = _("Json"),
+        checked_func = function() return self:isEnabled() end,
+        sub_item_table = {
+            {
+                text = _("Export to Json"),
+                checked_func = function() return self:isEnabled() end,
+                callback = function() self:toggleEnabled() end,
+            },
+            {
+                text = _("Include book checksum in export"),
+                checked_func = function() return self.settings.bookChecksum end,
+                callback = function()
+                    self.settings.bookChecksum = not self.settings.bookChecksum
+                    self:saveSettings()
+                end,
+            }
+        }
+    }
+end
+
+local function format(booknotes, settings)
     local t = {
         title = booknotes.title,
         author = booknotes.author,
         entries = {},
         exported = booknotes.exported,
         file = booknotes.file,
+        md5sum = settings.bookChecksum and md5.sumFile(booknotes.file) or nil,
         number_of_pages = booknotes.number_of_pages
     }
     for _, entry in ipairs(booknotes) do
@@ -27,13 +52,13 @@ function JsonExporter:export(t)
     local timestamp = self.timestamp or os.time()
     local path = self:getFilePath(t)
     if #t == 1 then
-        exportable = format(t[1])
+        exportable = format(t[1], self.settings)
         exportable.created_on = timestamp
         exportable.version = self:getVersion()
     else
         local documents = {}
         for _, booknotes in ipairs(t) do
-            table.insert(documents, format(booknotes))
+            table.insert(documents, format(booknotes, self.settings))
         end
         exportable = {
             created_on = timestamp,

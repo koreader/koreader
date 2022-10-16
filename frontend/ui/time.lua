@@ -133,7 +133,7 @@ end
 --- Converts an fts time to a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
 function time.to_number(time_fts)
     -- Round to 4 decimal places
-    return math.floor(time.to_s(time_fts) * 10000 + 0.5) / 10000
+    return math.floor(time.to_s(time_fts) * 10000 + 0.5) * (1/10000)
 end
 
 --- Converts an fts to a Lua (int) number (resolution: 1µs)

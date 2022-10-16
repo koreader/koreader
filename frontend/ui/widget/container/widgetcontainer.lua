@@ -15,28 +15,8 @@ It handles event propagation and painting (with different alignments) for its ch
 
 local Geom = require("ui/geometry")
 local Widget = require("ui/widget/widget")
-local Device = require("device")
 
-if Device.should_restrict_JIT then
-    jit.off(true, true)
-end
-
-local WidgetContainer = Widget:new()
-
-function WidgetContainer:init()
-    if self.dimen then
-        if self.initDimen then
-            self:initDimen()
-        else
-            if not self.dimen.w then
-                self.dimen.w = self[1]:getSize().w
-            end
-            if not self.dimen.h then
-                self.dimen.h = self[1]:getSize().h
-            end
-        end
-    end
-end
+local WidgetContainer = Widget:extend{}
 
 function WidgetContainer:getSize()
     if self.dimen then
@@ -46,7 +26,7 @@ function WidgetContainer:getSize()
         -- return size of first child widget
         return self[1]:getSize()
     else
-        return Geom:new{ w = 0, h = 0 }
+        return Geom:new{ x= 0, y = 0, w = 0, h = 0 }
     end
 end
 
@@ -65,35 +45,42 @@ function WidgetContainer:clear(skip_free)
 end
 
 function WidgetContainer:paintTo(bb, x, y)
-    -- default to pass request to first child widget
-    if self[1] then
-        x = x + (self.dimen.x or 0)
-        y = y + (self.dimen.y or 0)
-        if self.align == "top" then
-            local contentSize = self[1]:getSize()
-            self[1]:paintTo(bb,
-                x + math.floor((self.dimen.w - contentSize.w)/2), y)
-        elseif self.align == "bottom" then
-            local contentSize = self[1]:getSize()
-            self[1]:paintTo(bb,
-                x + math.floor((self.dimen.w - contentSize.w)/2),
-                y + (self.dimen.h - contentSize.h))
-        elseif self.align == "center" then
-            local contentSize = self[1]:getSize()
-            self[1]:paintTo(bb,
-                x + math.floor((self.dimen.w - contentSize.w)/2),
-                y + math.floor((self.dimen.h - contentSize.h)/2))
-        else
-            return self[1]:paintTo(bb, x, y)
-        end
+    -- Forward painting duties to our first child widget
+    if self[1] == nil then
+        return
+    end
+
+    if not self.dimen then
+        local content_size = self[1]:getSize()
+        self.dimen = Geom:new{x = 0, y = 0, w = content_size.w, h = content_size.h}
+    end
+
+    x = x + (self.dimen.x or 0)
+    y = y + (self.dimen.y or 0)
+    if self.align == "top" then
+        local contentSize = self[1]:getSize()
+        self[1]:paintTo(bb,
+            x + math.floor((self.dimen.w - contentSize.w)/2), y)
+    elseif self.align == "bottom" then
+        local contentSize = self[1]:getSize()
+        self[1]:paintTo(bb,
+            x + math.floor((self.dimen.w - contentSize.w)/2),
+            y + (self.dimen.h - contentSize.h))
+    elseif self.align == "center" then
+        local contentSize = self[1]:getSize()
+        self[1]:paintTo(bb,
+            x + math.floor((self.dimen.w - contentSize.w)/2),
+            y + math.floor((self.dimen.h - contentSize.h)/2))
+    else
+        return self[1]:paintTo(bb, x, y)
     end
 end
 
 function WidgetContainer:propagateEvent(event)
-    -- propagate to children
+    -- Propagate to children
     for _, widget in ipairs(self) do
         if widget:handleEvent(event) then
-            -- stop propagating when an event handler returns true
+            -- Stop propagating when an event handler returns true
             return true
         end
     end

@@ -9,24 +9,25 @@ local Geom = require("ui/geometry")
 local GestureDetector = require("device/gesturedetector")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Screen = require("device").screen
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 local util = require("util")
 local T = FFIUtil.template
 local time = require("ui/time")
 local _ = require("gettext")
 local C_ = _.pgettext
-local logger = require("logger")
 
 if not Device:isTouchDevice() then
     return { disabled = true, }
 end
 
-local Gestures = InputContainer:new{
+local Gestures = WidgetContainer:extend{
     name = "gestures",
     settings_data = nil,
     gestures = nil,
@@ -185,30 +186,16 @@ function Gestures:init()
     self:initGesture()
 end
 
-local gestureTextFunc = function(location, ges)
-    local item = location[ges]
-    local action_name = _("Pass through")
-    if item then
-        local sub_item = next(item)
-        if sub_item == nil then return _("Nothing") end
-        action_name = Dispatcher:getNameFromItem(sub_item, location, ges)
-        if next(item, sub_item) ~= nil then
-            action_name = _("Many")
-        end
-    end
-    return action_name
-end
-
 function Gestures:gestureTitleFunc(ges)
     local title = gestures_list[ges] or self:friendlyMultiswipeName(ges)
-    return T(_("%1   (%2)"), title, gestureTextFunc(self.gestures, ges))
+    return T(_("%1   (%2)"), title, Dispatcher:menuTextFunc(self.gestures[ges]))
 end
 
 function Gestures:genMenu(ges)
     local sub_items = {}
     if gestures_list[ges] ~= nil then
         table.insert(sub_items, {
-            text = T(_("%1 (default)"), gestureTextFunc(self.defaults, ges)),
+            text = T(_("%1 (default)"), Dispatcher:menuTextFunc(self.defaults[ges])),
             keep_menu_open = true,
             separator = true,
             checked_func = function()
@@ -223,7 +210,6 @@ function Gestures:genMenu(ges)
     table.insert(sub_items, {
         text = _("Pass through"),
         keep_menu_open = true,
-        separator = true,
         checked_func = function()
             return self.gestures[ges] == nil
         end,
@@ -739,46 +725,48 @@ function Gestures:setupGesture(ges)
         ratio_w = 1, ratio_h = 1/8,
     }
 
-    -- legacy global variable DTAP_ZONE_FLIPPING may still be defined in default.persistent.lua
-    local dtap_zone_top_left = DTAP_ZONE_FLIPPING and DTAP_ZONE_FLIPPING or DTAP_ZONE_TOP_LEFT
+    local dtap_zone_top_left = G_defaults:readSetting("DTAP_ZONE_TOP_LEFT")
     local zone_top_left_corner = {
         ratio_x = dtap_zone_top_left.x,
         ratio_y = dtap_zone_top_left.y,
         ratio_w = dtap_zone_top_left.w,
         ratio_h = dtap_zone_top_left.h,
     }
-    -- legacy global variable DTAP_ZONE_BOOKMARK may still be defined in default.persistent.lua
-    local dtap_zone_top_right = DTAP_ZONE_BOOKMARK and DTAP_ZONE_BOOKMARK or DTAP_ZONE_TOP_RIGHT
+    local dtap_zone_top_right = G_defaults:readSetting("DTAP_ZONE_TOP_RIGHT")
     local zone_top_right_corner = {
         ratio_x = dtap_zone_top_right.x,
         ratio_y = dtap_zone_top_right.y,
         ratio_w = dtap_zone_top_right.w,
         ratio_h = dtap_zone_top_right.h,
     }
+    local dtap_zone_bottom_left = G_defaults:readSetting("DTAP_ZONE_BOTTOM_LEFT")
     local zone_bottom_left_corner = {
-        ratio_x = DTAP_ZONE_BOTTOM_LEFT.x,
-        ratio_y = DTAP_ZONE_BOTTOM_LEFT.y,
-        ratio_w = DTAP_ZONE_BOTTOM_LEFT.w,
-        ratio_h = DTAP_ZONE_BOTTOM_LEFT.h,
+        ratio_x = dtap_zone_bottom_left.x,
+        ratio_y = dtap_zone_bottom_left.y,
+        ratio_w = dtap_zone_bottom_left.w,
+        ratio_h = dtap_zone_bottom_left.h,
     }
+    local dtap_zone_bottom_right = G_defaults:readSetting("DTAP_ZONE_BOTTOM_RIGHT")
     local zone_bottom_right_corner = {
-        ratio_x = DTAP_ZONE_BOTTOM_RIGHT.x,
-        ratio_y = DTAP_ZONE_BOTTOM_RIGHT.y,
-        ratio_w = DTAP_ZONE_BOTTOM_RIGHT.w,
-        ratio_h = DTAP_ZONE_BOTTOM_RIGHT.h,
+        ratio_x = dtap_zone_bottom_right.x,
+        ratio_y = dtap_zone_bottom_right.y,
+        ratio_w = dtap_zone_bottom_right.w,
+        ratio_h = dtap_zone_bottom_right.h,
     }
-    -- NOTE: The defaults are effectively mapped to DTAP_ZONE_BACKWARD & DTAP_ZONE_FORWARD
+    -- NOTE: The defaults are effectively mapped to G_defaults:readSetting("DTAP_ZONE_BACKWARD") & G_defaults:readSetting("DTAP_ZONE_FORWARD")
+    local ddouble_tap_zone_prev_chapter = G_defaults:readSetting("DDOUBLE_TAP_ZONE_PREV_CHAPTER")
     local zone_left = {
-        ratio_x = DDOUBLE_TAP_ZONE_PREV_CHAPTER.x,
-        ratio_y = DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
-        ratio_w = DDOUBLE_TAP_ZONE_PREV_CHAPTER.w,
-        ratio_h = DDOUBLE_TAP_ZONE_PREV_CHAPTER.h,
+        ratio_x = ddouble_tap_zone_prev_chapter.x,
+        ratio_y = ddouble_tap_zone_prev_chapter.y,
+        ratio_w = ddouble_tap_zone_prev_chapter.w,
+        ratio_h = ddouble_tap_zone_prev_chapter.h,
     }
+    local ddouble_tap_zone_next_chapter = G_defaults:readSetting("DDOUBLE_TAP_ZONE_NEXT_CHAPTER")
     local zone_right = {
-        ratio_x = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.x,
-        ratio_y = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.y,
-        ratio_w = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.w,
-        ratio_h = DDOUBLE_TAP_ZONE_NEXT_CHAPTER.h,
+        ratio_x = ddouble_tap_zone_next_chapter.x,
+        ratio_y = ddouble_tap_zone_next_chapter.y,
+        ratio_w = ddouble_tap_zone_next_chapter.w,
+        ratio_h = ddouble_tap_zone_next_chapter.h,
     }
 
     local overrides_tap_corner

@@ -16,7 +16,7 @@ local T = require("ffi/util").template
 -- and some `if NORM then` branches can be simplified.
 local NORM = false
 
-local ReaderUserHyph = WidgetContainer:new{
+local ReaderUserHyph = WidgetContainer:extend{
     -- return values from setUserHyphenationDict (crengine's UserHyphDict::init())
     USER_DICT_RELOAD = 0,
     USER_DICT_NOCHANGE = 1,
@@ -34,6 +34,7 @@ end
 -- if reload==true, force a reload
 -- Unload is done automatically when a new dictionary is loaded.
 function ReaderUserHyph:loadDictionary(name, reload, no_scrubbing)
+    local cre = require("document/credocument"):engineInit()
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
         logger.dbg("set user hyphenation dict", name, reload, no_scrubbing)
         local ret = cre.setUserHyphenationDict(name, reload)
@@ -265,6 +266,7 @@ function ReaderUserHyph:modifyUserEntry(word)
         word = Utf8Proc.normalize_NFC(word)
     end
 
+    local cre = require("document/credocument"):engineInit()
     local suggested_hyphenation = cre.getHyphenationForWord(word)
 
     -- word may have some strange punctuation marks (as the upper dot),

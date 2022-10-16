@@ -48,10 +48,11 @@ describe("PDF document module", function()
 end)
 
 describe("EPUB document module", function()
-    local DocumentRegistry
+    local DocumentRegistry, cre
 
     setup(function()
         require("commonrequire")
+        cre = require("libs/libkoreader-cre")
         DocumentRegistry = require("document/documentregistry")
     end)
 

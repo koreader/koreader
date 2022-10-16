@@ -63,6 +63,7 @@ local TWO_FINGER_TAP_DURATION_MS = 300
 local HOLD_INTERVAL_MS = 500
 local SWIPE_INTERVAL_MS = 900
 
+-- This is used as a singleton by Input (itself used as a singleton).
 local GestureDetector = {
     -- must be initialized with the Input singleton class
     input = nil,
@@ -73,7 +74,7 @@ local GestureDetector = {
     HOLD_INTERVAL_MS = HOLD_INTERVAL_MS,
     SWIPE_INTERVAL_MS = SWIPE_INTERVAL_MS,
     -- pinch/spread direction table
-    DIRECTION_TABLE = {
+    DIRECTION_TABLE = { -- const
         east = "horizontal",
         west = "horizontal",
         north = "vertical",
@@ -1061,13 +1062,18 @@ function Contact:handleTwoFingerPan(buddy_contact)
             w = 0,
             h = 0,
         }
+        -- Use midpoint of tstart and rstart as swipe start point
+        local start_point = tstart_pos:midpoint(rstart_pos)
+        local end_point = tend_pos:midpoint(rend_pos)
+        -- Compute the distance based on the start & end midpoints
+        local avg_distance = start_point:distance(end_point)
+        -- We'll also want to remember the span between both contacts on start & end for some gestures
         local start_distance = tstart_pos:distance(rstart_pos)
         local end_distance = tend_pos:distance(rend_pos)
         local ges_ev = {
             ges = "two_finger_pan",
-            -- Use midpoint of tstart and rstart as swipe start point
-            pos = tstart_pos:midpoint(rstart_pos),
-            distance = tpan_dis + rpan_dis,
+            pos = start_point,
+            distance = avg_distance,
             direction = tpan_dir,
             time = self.current_tev.timev,
         }
@@ -1078,6 +1084,11 @@ function Contact:handleTwoFingerPan(buddy_contact)
                 ges_ev.ges = "outward_pan"
             end
             ges_ev.direction = gesture_detector.DIRECTION_TABLE[tpan_dir]
+            -- Use the the sum of both contacts' travel for the distance
+            ges_ev.distance = tpan_dis + rpan_dis
+            -- Some handlers might also want to know the distance between the two contacts on lift & down.
+            ges_ev.span = end_distance
+            ges_ev.start_span = start_distance
         elseif self.state == Contact.holdState then
             ges_ev.ges = "two_finger_hold_pan"
             -- Flag 'em for holdState to discriminate with two_finger_hold_release

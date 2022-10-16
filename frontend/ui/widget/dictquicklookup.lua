@@ -36,7 +36,7 @@ local time = require("ui/time")
 --[[
 Display quick lookup word definition
 ]]
-local DictQuickLookup = InputContainer:new{
+local DictQuickLookup = InputContainer:extend{
     results = nil,
     lookupword = nil,
     dictionary = nil,
@@ -55,6 +55,11 @@ local DictQuickLookup = InputContainer:new{
     -- refresh_callback will be called before we trigger full refresh in onSwipe
     refresh_callback = nil,
     html_dictionary_link_tapped_callback = nil,
+
+    -- Static class member, holds a ref to the currently opened widgets (in instantiation order).
+    window_list = {},
+    -- Static class member, used by ReaderWiktionary to communicate state from a closed widget to the next opened one.
+    rotated_update_wiki_languages_on_close = nil,
 }
 
 local highlight_strings = {
@@ -384,6 +389,9 @@ function DictQuickLookup:init()
                     callback = function()
                         self:onClose()
                     end,
+                    hold_callback = function()
+                        self:onHoldClose()
+                    end,
                 },
             },
         }
@@ -471,7 +479,7 @@ function DictQuickLookup:init()
                         if self.is_wiki then
                             -- We're rotating: forward this flag from the one we're closing so
                             -- that ReaderWikipedia can give it to the one we'll be showing
-                            self.window_list.rotated_update_wiki_languages_on_close = self.update_wiki_languages_on_close
+                            DictQuickLookup.rotated_update_wiki_languages_on_close = self.update_wiki_languages_on_close
                             self:lookupWikipedia(false, nil, nil, self.wiki_languages[2])
                             self:onClose(true)
                         else
@@ -485,6 +493,9 @@ function DictQuickLookup:init()
                     text = _("Close"),
                     callback = function()
                         self:onClose()
+                    end,
+                    hold_callback = function()
+                        self:onHoldClose()
                     end,
                 },
             },
@@ -506,7 +517,7 @@ function DictQuickLookup:init()
         end
     end
     if self.tweak_buttons_func then
-        self.tweak_buttons_func(buttons)
+        self:tweak_buttons_func(buttons)
     end
     -- Bottom buttons get a bit less padding so their line separators
     -- reach out from the content to the borders a bit more
@@ -698,6 +709,10 @@ function DictQuickLookup:init()
         dimen = self.region,
         self.movable,
     }
+
+    -- We're a new window
+    table.insert(DictQuickLookup.window_list, self)
+
     UIManager:setDirty(self, function()
         return "partial", self.dict_frame.dimen
     end)
@@ -900,6 +915,15 @@ function DictQuickLookup:onCloseWidget()
         end
     end
 
+    -- Drop our ref from the static class member
+    for i = #DictQuickLookup.window_list, 1, -1 do
+        local window = DictQuickLookup.window_list[i]
+        -- We should only find a single match, but, better safe than sorry...
+        if window == self then
+            table.remove(DictQuickLookup.window_list, i)
+        end
+    end
+
     -- NOTE: Drop region to make it a full-screen flash
     UIManager:setDirty(nil, function()
         return "flashui", nil
@@ -1095,12 +1119,7 @@ end
 
 function DictQuickLookup:onClose(no_clear)
     UIManager:close(self)
-    for i = #self.window_list, 1, -1 do
-        local window = self.window_list[i]
-        if window == self then
-            table.remove(self.window_list, i)
-        end
-    end
+
     if self.update_wiki_languages_on_close then
         -- except if we got no result for current language
         if not self.results.no_result then
@@ -1119,8 +1138,10 @@ function DictQuickLookup:onClose(no_clear)
 end
 
 function DictQuickLookup:onHoldClose(no_clear)
-    while #self.window_list > 0 do
-        self.window_list[#self.window_list]:onClose(no_clear)
+    -- Pop the windows FILO
+    for i = #DictQuickLookup.window_list, 1, -1 do
+        local window = DictQuickLookup.window_list[i]
+        window:onClose(no_clear)
     end
     return true
 end
@@ -1271,8 +1292,8 @@ function DictQuickLookup:lookupWikipedia(get_fullpage, word, is_sane, lang)
     if not lang then
         -- Use the lang of the current or nearest is_wiki DictQuickLookup.
         -- Otherwise, first lang in ReaderWikipedia.wiki_languages will be used.
-        for i = #self.window_list, 1, -1 do
-            local window = self.window_list[i]
+        for i = #DictQuickLookup.window_list, 1, -1 do
+            local window = DictQuickLookup.window_list[i]
             if window.is_wiki and window.lang then
                 lang = window.lang
                 break

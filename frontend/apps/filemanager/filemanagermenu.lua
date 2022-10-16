@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
@@ -20,7 +19,7 @@ local T = FFIUtil.template
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
-    menu_items = {},
+    menu_items = nil, -- table, mandatory
     registered_widgets = nil,
 }
 
@@ -63,6 +62,8 @@ end
 function FileManagerMenu:initGesListener()
     if not Device:isTouchDevice() then return end
 
+    local DTAP_ZONE_MENU = G_defaults:readSetting("DTAP_ZONE_MENU")
+    local DTAP_ZONE_MENU_EXT = G_defaults:readSetting("DTAP_ZONE_MENU_EXT")
     self:registerTouchZones({
         {
             id = "filemanager_tap",
@@ -423,9 +424,6 @@ To:
         callback = function()
             SetDefaults:ConfirmEdit()
         end,
-        hold_callback = function()
-            SetDefaults:ConfirmSave()
-        end,
     }
     self.menu_items.plugin_management = {
         text = _("Plugin management"),
@@ -524,22 +522,20 @@ To:
             end,
         })
     end
-    if not Device.should_restrict_JIT then
-        local Blitbuffer = require("ffi/blitbuffer")
-        table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Disable C blitter"),
-            enabled_func = function()
-                return Blitbuffer.has_cblitbuffer
-            end,
-            checked_func = function()
-                return G_reader_settings:isTrue("dev_no_c_blitter")
-            end,
-            callback = function()
-                G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
-                Blitbuffer:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
-            end,
-        })
-    end
+    local Blitbuffer = require("ffi/blitbuffer")
+    table.insert(self.menu_items.developer_options.sub_item_table, {
+        text = _("Disable C blitter"),
+        enabled_func = function()
+            return Blitbuffer.has_cblitbuffer
+        end,
+        checked_func = function()
+            return G_reader_settings:isTrue("dev_no_c_blitter")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
+            Blitbuffer:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
+        end,
+    })
     if Device:hasEinkScreen() and Device:canHWDither() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable HW dithering"),
@@ -709,11 +705,22 @@ To:
             FontList:dumpFontList()
         end,
     })
+    if Device:isKobo() and Device:canToggleChargingLED() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Turn on the LED on PM entry failure"),
+            checked_func = function()
+                return G_reader_settings:isTrue("pm_debug_entry_failure")
+            end,
+            callback = function()
+                G_reader_settings:toggle("pm_debug_entry_failure")
+            end,
+        })
+    end
 
     self.menu_items.cloud_storage = {
         text = _("Cloud storage"),
         callback = function()
-            local cloud_storage = CloudStorage:new{}
+            local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{}
             UIManager:show(cloud_storage)
             local filemanagerRefresh = function() self.ui:onRefresh() end
             function cloud_storage:onClose()
@@ -882,10 +889,10 @@ function FileManagerMenu:_getTabIndexFromLocation(ges)
     if not ges then
         return last_tab_index
     -- if the start position is far right
-    elseif ges.pos.x > 2 * Screen:getWidth() / 3 then
+    elseif ges.pos.x > Screen:getWidth() * (2/3) then
         return BD.mirroredUILayout() and 1 or #self.tab_item_table
     -- if the start position is far left
-    elseif ges.pos.x < Screen:getWidth() / 3 then
+    elseif ges.pos.x < Screen:getWidth() * (1/3) then
         return BD.mirroredUILayout() and #self.tab_item_table or 1
     -- if center return the last index
     else

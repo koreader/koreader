@@ -40,7 +40,7 @@ local T = FFIUtil.template
 --[[--
 Widget that displays a shortcut icon for menu item.
 --]]
-local ItemShortCutIcon = WidgetContainer:new{
+local ItemShortCutIcon = WidgetContainer:extend{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
     bordersize = Size.border.default,
@@ -88,7 +88,7 @@ end
 --[[
 Widget that displays an item for menu
 --]]
-local MenuItem = InputContainer:new{
+local MenuItem = InputContainer:extend{
     text = nil,
     bidi_wrap_func = nil,
     show_parent = nil,
@@ -425,7 +425,6 @@ function MenuItem:init()
 end
 
 local _dots_cached_info
-
 function MenuItem:getDotsText(face)
     local screen_w = Screen:getWidth()
     if not _dots_cached_info or _dots_cached_info.screen_width ~= screen_w
@@ -565,7 +564,7 @@ end
 --[[
 Widget that displays menu
 --]]
-local Menu = FocusManager:new{
+local Menu = FocusManager:extend{
     show_parent = nil,
 
     title = "No Title",
@@ -576,7 +575,7 @@ local Menu = FocusManager:new{
     header_padding = Size.padding.default,
     dimen = nil,
     item_table = nil, -- NOT mandatory (will be empty)
-    item_shortcuts = {
+    item_shortcuts = { -- const
         "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
         "A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
         "Z", "X", "C", "V", "B", "N", "M", ".", "Sym",
@@ -643,7 +642,7 @@ function Menu:init()
     self.show_parent = self.show_parent or self
     self.item_table = self.item_table or {}
     self.item_table_stack = {}
-    self.dimen = Geom:new{ w = self.width, h = self.height or Screen:getHeight() }
+    self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height or Screen:getHeight() }
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end
@@ -880,7 +879,7 @@ function Menu:init()
         bordersize = self.border_size,
         padding = 0,
         margin = 0,
-        radius = self.is_popout and math.floor(self.dimen.w / 20) or 0,
+        radius = self.is_popout and math.floor(self.dimen.w * (1/20)) or 0,
         content
     }
 
@@ -1415,13 +1414,13 @@ end
 function Menu.getItemFontSize(perpage)
     -- Get adjusted font size for the given nb of items per page:
     -- item font size between 14 and 24 for better matching
-    return math.floor(24 - ((perpage - 6) / 18) * 10)
+    return math.floor(24 - ((perpage - 6) * (1/18)) * 10)
 end
 
 function Menu.getItemMandatoryFontSize(perpage)
     -- Get adjusted font size for the given nb of items per page:
     -- "mandatory" font size between 12 and 18 for better matching
-    return math.floor(18 - (perpage - 6) / 3)
+    return math.floor(18 - (perpage - 6) * (1/3))
 end
 
 function Menu.getMenuText(item)

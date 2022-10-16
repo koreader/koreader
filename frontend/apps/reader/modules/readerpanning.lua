@@ -2,7 +2,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Device = require("device")
 local _ = require("gettext")
 
-local ReaderPanning = InputContainer:new{
+local ReaderPanning = InputContainer:extend{
     -- defaults
     panning_steps = {
         normal = 50,
@@ -40,8 +40,8 @@ function ReaderPanning:onPanning(args, _)
     local dx, dy = unpack(args)
     -- for now, bounds checking/calculation is done in the view
     self.view:PanningUpdate(
-        dx * self.panning_steps.normal * self.dimen.w / 100,
-        dy * self.panning_steps.normal * self.dimen.h / 100)
+        dx * self.panning_steps.normal * self.dimen.w * (1/100),
+        dy * self.panning_steps.normal * self.dimen.h * (1/100))
     return true
 end
 

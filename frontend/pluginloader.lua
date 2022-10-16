@@ -89,7 +89,7 @@ function PluginLoader:loadPlugins()
     if type(plugins_disabled) ~= "table" then
         plugins_disabled = {}
     end
-    --disable obsolete plugins
+    -- disable obsolete plugins
     for element in pairs(OBSOLETE_PLUGINS) do
         plugins_disabled[element] = true
     end
@@ -124,7 +124,7 @@ function PluginLoader:loadPlugins()
                         table.insert(self.enabled_plugins, plugin_module)
                     end
                 else
-                    logger.dbg("Plugin ", mainfile, " has been disabled.")
+                    logger.dbg("Plugin", mainfile, "has been disabled.")
                 end
                 package.path = package_path
                 package.cpath = package_cpath
@@ -203,7 +203,7 @@ function PluginLoader:createPluginInstance(plugin, attr)
         self.loaded_plugins[plugin.name] = re
         return ok, re
     else  -- re is the error message
-        logger.err("Failed to initialize", plugin.name, "plugin: ", re)
+        logger.err("Failed to initialize", plugin.name, "plugin:", re)
         return nil, re
     end
 end

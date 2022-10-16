@@ -21,8 +21,9 @@ WakeupMgr base class.
 --]]
 local WakeupMgr = {
     dev_rtc = "/dev/rtc0", -- RTC device
-    _task_queue = {},      -- Table with epoch at which to schedule the task and the function to be scheduled.
+    _task_queue = nil,      -- Table with epoch at which to schedule the task and the function to be scheduled.
     rtc = RTC, -- The RTC implementation to use, defaults to the RTC module.
+    dodgy_rtc = false, -- If the RTC has trouble with timers further away than UINT16_MAX (e.g., on i.MX5).
 }
 
 --[[--
@@ -44,6 +45,15 @@ function WakeupMgr:new(o)
     return o
 end
 
+function WakeupMgr:init()
+    self._task_queue = {}
+end
+
+-- This is a dummy task we use when working around i.MX5 RTC issues.
+-- We need to be able to recognize it so that we can deal with it in removeTasks...
+function WakeupMgr.DummyTaskCallback()
+end
+
 --[[--
 Add a task to the queue.
 
@@ -57,17 +67,37 @@ function WakeupMgr:addTask(seconds_from_now, callback)
     assert(type(seconds_from_now) == "number", "delay is not a number")
     assert(type(callback) == "function", "callback is not a function")
 
-    local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
-    logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now)
-
     local old_upcoming_task = (self._task_queue[1] or {}).epoch
 
-    table.insert(self._task_queue, {
-        epoch = epoch,
-        callback = callback,
-    })
-    --- @todo Binary insert? This table should be so small that performance doesn't matter.
-    -- It might be useful to have that available as a utility function regardless.
+    -- NOTE: Apparently, some RTCs have trouble with timers further away than UINT16_MAX, so,
+    --       if necessary, setup an alarm chain to work it around...
+    --       c.f., https://github.com/koreader/koreader/issues/8039#issuecomment-1263547625
+    if self.dodgy_rtc and seconds_from_now > 0xFFFF then
+        logger.info("WakeupMgr: scheduling a chain of alarms for a wakeup in", seconds_from_now)
+
+        local seconds_left = seconds_from_now
+        while seconds_left > 0 do
+            local epoch = RTC:secondsFromNowToEpoch(seconds_left)
+            logger.info("WakeupMgr: scheduling wakeup in", seconds_left, "->", epoch)
+
+            -- We only need a callback for the final wakeup, we take care of not breaking the chain when an action is pop'ed.
+            table.insert(self._task_queue, {
+                epoch = epoch,
+                callback = seconds_left == seconds_from_now and callback or self.DummyTaskCallback,
+            })
+
+            seconds_left = seconds_left - 0xFFFF
+        end
+    else
+        local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
+        logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now, "->", epoch)
+
+        table.insert(self._task_queue, {
+            epoch = epoch,
+            callback = callback,
+        })
+    end
+
     table.sort(self._task_queue, function(a, b) return a.epoch < b.epoch end)
 
     local new_upcoming_task = self._task_queue[1].epoch
@@ -93,9 +123,15 @@ function WakeupMgr:removeTasks(epoch, callback)
 
     local removed = false
     local reschedule = false
+    local match_epoch = epoch
     for k = #self._task_queue, 1, -1 do
         local v = self._task_queue[k]
-        if epoch == v.epoch or callback == v.callback then
+        -- NOTE: For the DummyTaskCallback shenanigans, we at least try to only remove those that come earlier than our match...
+        if (epoch == v.epoch or callback == v.callback) or
+           (self.dodgy_rtc and match_epoch and self.DummyTaskCallback == v.callback and v.epoch < match_epoch) then
+            if not match_epoch then
+                match_epoch = v.epoch
+            end
             table.remove(self._task_queue, k)
             removed = true
             -- If we've successfuly pop'ed the upcoming task, we need to schedule the next one (if any) on exit.
@@ -170,6 +206,7 @@ Set wakeup alarm.
 Simple wrapper for @{ffi.rtc.setWakeupAlarm}.
 --]]
 function WakeupMgr:setWakeupAlarm(epoch, enabled)
+    logger.dbg("WakeupMgr:setWakeupAlarm for", epoch, os.date("(%F %T %z)", epoch))
     return self.rtc:setWakeupAlarm(epoch, enabled)
 end
 

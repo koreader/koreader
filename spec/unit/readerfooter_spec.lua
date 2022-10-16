@@ -551,9 +551,10 @@ describe("Readerfooter module", function()
     end)
 
     it("should support toggle footer through menu if tap zone is disabled", function()
-        local saved_tap_zone_minibar = DTAP_ZONE_MINIBAR
-        DTAP_ZONE_MINIBAR.w = 0 --luacheck: ignore
-        DTAP_ZONE_MINIBAR.h = 0 --luacheck: ignore
+        local DTAP_ZONE_MINIBAR = G_defaults:readSetting("DTAP_ZONE_MINIBAR")
+        DTAP_ZONE_MINIBAR.w = 0
+        DTAP_ZONE_MINIBAR.h = 0
+        G_defaults:saveSetting("DTAP_ZONE_MINIBAR", DTAP_ZONE_MINIBAR)
 
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
@@ -590,7 +591,7 @@ describe("Readerfooter module", function()
         tapFooterMenu(fake_menu, "Toggle mode")
         assert.is.same(3, footer.mode)
 
-        DTAP_ZONE_MINIBAR = saved_tap_zone_minibar --luacheck: ignore
+        G_defaults:delSetting("DTAP_ZONE_MINIBAR")
         readerui:closeDocument()
         readerui:onClose()
     end)

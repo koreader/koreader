@@ -1,10 +1,10 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Font = require("ui/font")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local TextWidget = require("ui/widget/textwidget")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
-local RadioMark = InputContainer:new{
+local RadioMark = WidgetContainer:extend{
     checkable = true, -- empty space when false
     checked = false,
     enabled = true,

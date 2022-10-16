@@ -14,14 +14,15 @@ local Notification = require("ui/widget/notification")
 local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = ffiutil.template
 
-local ReaderLink = InputContainer:new{
-    location_stack = {}
+local ReaderLink = InputContainer:extend{
+    location_stack = nil, -- table, per-instance
 }
 
 function ReaderLink:init()
@@ -153,7 +154,7 @@ function ReaderLink:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.go_to_previous_location = {
         text = _("Go back to previous location"),
-        enabled_func = function() return #self.location_stack > 0 end,
+        enabled_func = function() return self.location_stack and #self.location_stack > 0 end,
         callback = function() self:onGoBackLink() end,
         hold_callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
@@ -465,7 +466,7 @@ function ReaderLink:showLinkBox(link, allow_footnote_popup)
         if sbox then
             UIManager:show(LinkBox:new{
                 box = sbox,
-                timeout = FOLLOW_LINK_TIMEOUT,
+                timeout = G_defaults:readSetting("FOLLOW_LINK_TIMEOUT"),
                 callback = function()
                     self:onGotoLink(link.link, false, allow_footnote_popup)
                 end
@@ -889,8 +890,8 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         local shortest_dist = nil
         for _, link in ipairs(links) do
             if not internal_links_only or link.page then
-                local start_dist = math.pow(link.x0 - pos_x, 2) + math.pow(link.y0 - pos_y, 2)
-                local end_dist = math.pow(link.x1 - pos_x, 2) + math.pow(link.y1 - pos_y, 2)
+                local start_dist = (link.x0 - pos_x)^2 + (link.y0 - pos_y)^2
+                local end_dist = (link.x1 - pos_x)^2 + (link.y1 - pos_y)^2
                 local min_dist = math.min(start_dist, end_dist)
                 if shortest_dist == nil or min_dist < shortest_dist then
                     -- onGotoLink()'s GotoPage event needs the link
@@ -979,17 +980,17 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
                         -- and we compute each part individually
                         -- First, vertical distance (squared)
                         if pos_y < segment.y0 then -- above the segment height
-                            segment_dist = math.pow(segment.y0 - pos_y, 2)
+                            segment_dist = (segment.y0 - pos_y)^2
                         elseif pos_y > segment.y1 then -- below the segment height
-                            segment_dist = math.pow(pos_y - segment.y1, 2)
+                            segment_dist = (pos_y - segment.y1)^2
                         else -- gesture pos is on the segment height, no vertical distance
                             segment_dist = 0
                         end
                         -- Next, horizontal distance (squared)
                         if pos_x < segment.x0 then -- on the left of segment: calc dist to x0
-                            segment_dist = segment_dist + math.pow(segment.x0 - pos_x, 2)
+                            segment_dist = segment_dist + (segment.x0 - pos_x)^2
                         elseif pos_x > segment.x1 then -- on the right of segment : calc dist to x1
-                            segment_dist = segment_dist + math.pow(pos_x - segment.x1, 2)
+                            segment_dist = segment_dist + (pos_x - segment.x1)^2
                         -- else -- gesture pos is in the segment width, no horizontal distance
                         end
                         if shortest_dist == nil or segment_dist < shortest_dist then
@@ -1012,8 +1013,8 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
                     -- We used to just check distance from start_x and end_x, and
                     -- we could miss a tap in the middle of a long link.
                     -- (also start_y = end_y = the top of the rect for a link on a single line)
-                    local start_dist = math.pow(link.start_x - pos_x, 2) + math.pow(link.start_y - pos_y, 2)
-                    local end_dist = math.pow(link.end_x - pos_x, 2) + math.pow(link.end_y - pos_y, 2)
+                    local start_dist = (link.start_x - pos_x)^2 + (link.start_y - pos_y)^2
+                    local end_dist = (link.end_x - pos_x)^2 + (link.end_y - pos_y)^2
                     local min_dist = math.min(start_dist, end_dist)
                     if shortest_dist == nil or min_dist < shortest_dist then
                         selected_link = link
@@ -1049,7 +1050,7 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         end
     end
     if selected_link then
-        if max_distance and selected_distance2 and selected_distance2 > math.pow(max_distance, 2) then
+        if max_distance and selected_distance2 and selected_distance2 > max_distance^2 then
             logger.dbg("nearest link is further than max distance, ignoring it")
         else
             return self:onGotoLink(selected_link, false, isFootnoteLinkInPopupEnabled())
@@ -1279,16 +1280,16 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     local is_footnote, reason, extStopReason, extStartXP, extEndXP =
             self.ui.document:isLinkToFootnote(source_xpointer, target_xpointer, flags, max_text_size)
     if not is_footnote then
-        logger.info("not a footnote:", reason)
+        logger.dbg("not a footnote:", reason)
         return false
     end
-    logger.info("is a footnote:", reason)
+    logger.dbg("is a footnote:", reason)
     if extStartXP then
-        logger.info("  extended until:", extStopReason)
-        logger.info(extStartXP)
-        logger.info(extEndXP)
+        logger.dbg("  extended until:", extStopReason)
+        logger.dbg(extStartXP)
+        logger.dbg(extEndXP)
     else
-        logger.info("  not extended because:", extStopReason)
+        logger.dbg("  not extended because:", extStopReason)
     end
     -- OK, done with the dirty footnote detection work, we can now
     -- get back to the fancy UI stuff

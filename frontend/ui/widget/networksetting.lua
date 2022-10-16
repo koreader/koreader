@@ -74,7 +74,7 @@ local function obtainIP()
 end
 
 
-local MinimalPaginator = Widget:new{
+local MinimalPaginator = Widget:extend{
     width = nil,
     height = nil,
     progress = nil,
@@ -100,7 +100,7 @@ end
 function MinimalPaginator:setProgress(progress) self.progress = progress end
 
 
-local NetworkItem = InputContainer:new{
+local NetworkItem = InputContainer:extend{
     dimen = nil,
     height = Screen:scaleBySize(44),
     icon_size = Screen:scaleBySize(32),
@@ -110,7 +110,7 @@ local NetworkItem = InputContainer:new{
 }
 
 function NetworkItem:init()
-    self.dimen = Geom:new{w = self.width, h = self.height}
+    self.dimen = Geom:new{x = 0, y = 0, w = self.width, h = self.height}
     if not self.info.ssid then
         self.info.ssid = "[hidden]"
     end
@@ -384,7 +384,7 @@ function NetworkItem:onTapSelect(arg, ges_ev)
 end
 
 
-local NetworkSetting = InputContainer:new{
+local NetworkSetting = InputContainer:extend{
     width = nil,
     height = nil,
     -- sample network_list entry: {

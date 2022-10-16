@@ -7,7 +7,6 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -19,7 +18,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local NaturalLightWidget = InputContainer:new{
+local NaturalLightWidget = WidgetContainer:extend{
     is_always_active = true,
     width = nil,
     height = nil,
@@ -176,7 +175,7 @@ function NaturalLightWidget:update()
     }
     self[1] = WidgetContainer:new{
         align = "top",
-        dimen =Geom:new{
+        dimen = Geom:new{
             x = 0, y = 0,
             w = self.screen_width,
             h = self.screen_height,

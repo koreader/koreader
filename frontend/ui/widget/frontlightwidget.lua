@@ -25,7 +25,7 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
 
-local FrontLightWidget = FocusManager:new{
+local FrontLightWidget = FocusManager:extend{
     name = "FrontLightWidget",
     width = nil,
     height = nil,
@@ -52,7 +52,7 @@ function FrontLightWidget:init()
     self.fl.max = self.powerd.fl_max
     self.fl.cur = self.powerd:frontlightIntensity()
     local fl_steps = self.fl.max - self.fl.min + 1
-    self.fl.stride = math.ceil(fl_steps / 25)
+    self.fl.stride = math.ceil(fl_steps * (1/25))
     self.fl.steps = math.ceil(fl_steps / self.fl.stride)
     if (self.fl.steps - 1) * self.fl.stride < self.fl.max - self.fl.min then
         self.fl.steps = self.fl.steps + 1
@@ -70,7 +70,7 @@ function FrontLightWidget:init()
         self.nl.cur = self.powerd:toNativeWarmth(self.powerd:frontlightWarmth())
 
         local nl_steps = self.nl.max - self.nl.min + 1
-        self.nl.stride = math.ceil(nl_steps / 25)
+        self.nl.stride = math.ceil(nl_steps * (1/25))
         self.nl.steps = math.ceil(nl_steps / self.nl.stride)
         if (self.nl.steps - 1) * self.nl.stride < self.nl.max - self.nl.min then
             self.nl.steps = self.nl.steps + 1
@@ -172,7 +172,7 @@ function FrontLightWidget:layout()
     self.fl_level = TextWidget:new{
         text = tostring(self.fl.cur),
         face = self.medium_font_face,
-        max_width = math.floor(self.screen_width * 0.95 - 1.275 * self.fl_minus.width - 1.275 * self.fl_plus.width),
+        max_width = math.floor(self.screen_width * 0.95 - 1.275 * (self.fl_minus.width + self.fl_plus.width)),
     }
     local fl_level_container = CenterContainer:new{
         dimen = Geom:new{
@@ -215,7 +215,7 @@ function FrontLightWidget:layout()
         end,
     }
     local fl_spacer = HorizontalSpan:new{
-        width = math.floor((self.screen_width * 0.95 - 1.2 * self.fl_minus.width - 1.2 * self.fl_plus.width - 1.2 * fl_toggle.width) / 2),
+        width = math.floor((self.screen_width * 0.95 - 1.2 * (self.fl_minus.width + self.fl_plus.width + fl_toggle.width)) / 2),
     }
     local fl_buttons_above = HorizontalGroup:new{
         align = "center",
@@ -301,7 +301,7 @@ function FrontLightWidget:layout()
         self.nl_level = TextWidget:new{
             text = tostring(self.nl.cur),
             face = self.medium_font_face,
-            max_width = math.floor(self.screen_width * 0.95 - 1.275 * self.nl_minus.width - 1.275 * self.nl_plus.width),
+            max_width = math.floor(self.screen_width * 0.95 - 1.275 * (self.nl_minus.width + self.nl_plus.width)),
         }
         local nl_level_container = CenterContainer:new{
             dimen = Geom:new{
@@ -333,7 +333,7 @@ function FrontLightWidget:layout()
             end,
         }
         local nl_spacer = HorizontalSpan:new{
-            width = math.floor((self.screen_width * 0.95 - 1.2 * self.nl_minus.width - 1.2 * self.nl_plus.width) / 2),
+            width = math.floor((self.screen_width * 0.95 - 1.2 * (self.nl_minus.width + self.nl_plus.width)) / 2),
         }
         local nl_buttons_above = HorizontalGroup:new{
             align = "center",
@@ -557,15 +557,14 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
     end
 
     if ges_ev.pos:intersectWith(self.fl_progress.dimen) then
-        -- Unschedule any pending updates.
-        UIManager:unschedule(self.refreshBrightnessWidgets)
-
         local perc = self.fl_progress:getPercentageFromPosition(ges_ev.pos)
         if not perc then
             return true
         end
-        local num = Math.round(perc * self.fl.max)
+        -- Unschedule any pending updates.
+        UIManager:unschedule(self.refreshBrightnessWidgets)
 
+        local num = Math.round(perc * self.fl.max)
         -- Always set the frontlight intensity.
         self:setFrontLightIntensity(num)
 

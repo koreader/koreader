@@ -1,6 +1,6 @@
 local Device = require("device")
 local Event = require("ui/event")
-local InputContainer = require("ui/widget/container/inputcontainer")
+local EventListener = require("ui/widget/eventlistener")
 local Notification = require("ui/widget/notification")
 local Screen = Device.screen
 local UIManager = require("ui/uimanager")
@@ -8,7 +8,7 @@ local bit = require("bit")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local DeviceListener = InputContainer:new{}
+local DeviceListener = EventListener:extend{}
 
 local function _setSetting(name)
     G_reader_settings:makeTrue(name)
@@ -83,10 +83,7 @@ if Device:hasFrontlight() then
             end
             local gestureScale
             local scale_multiplier
-            if ges.ges == "two_finger_swipe" then
-                -- for backward compatibility
-                scale_multiplier = FRONTLIGHT_SENSITIVITY_DECREASE * 0.8
-            elseif ges.ges == "swipe" then
+            if ges.ges == "two_finger_swipe" or ges.ges == "swipe" then
                 scale_multiplier = 0.8
             else
                 scale_multiplier = 1

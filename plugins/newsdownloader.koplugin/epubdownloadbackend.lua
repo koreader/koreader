@@ -1,6 +1,7 @@
 local Version = require("version")
 local ffiutil = require("ffi/util")
 local http = require("socket.http")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")

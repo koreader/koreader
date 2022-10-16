@@ -1,15 +1,15 @@
 local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
+local EventListener = require("ui/widget/eventlistener")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local NetworkListener = InputContainer:new{}
+local NetworkListener = EventListener:extend{}
 
 function NetworkListener:onToggleWifi()
     if not NetworkMgr:isWifiOn() then
@@ -197,9 +197,14 @@ function NetworkListener:_scheduleActivityCheck()
 end
 
 function NetworkListener:onNetworkConnected()
+    logger.dbg("NetworkListener: onNetworkConnected")
     if not (Device:hasWifiManager() and not Device:isEmulator()) then
         return
     end
+
+    -- This is for the sake of events that don't emanate from NetworkMgr itself...
+    NetworkMgr:setWifiState(true)
+    NetworkMgr:setConnectionState(true)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return
@@ -212,9 +217,13 @@ function NetworkListener:onNetworkConnected()
 end
 
 function NetworkListener:onNetworkDisconnected()
+    logger.dbg("NetworkListener: onNetworkDisconnected")
     if not (Device:hasWifiManager() and not Device:isEmulator()) then
         return
     end
+
+    NetworkMgr:setWifiState(false)
+    NetworkMgr:setConnectionState(false)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return

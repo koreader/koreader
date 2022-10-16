@@ -23,22 +23,18 @@ end
 local InputContainer = require("ui/widget/container/inputcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local RightContainer = require("ui/widget/container/rightcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ImageWidget = require("ui/widget/imagewidget")
 local TextWidget = require("ui/widget/textwidget")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local Blitbuffer = require("ffi/blitbuffer")
-local Geom = require("ui/geometry")
 local Device = require("device")
 local Screen = Device.screen
-local Input = Device.input
 local Font = require("ui/font")
-local dbg = require("dbg")
 --dbg:turnOn()
 
-local TouchProbe = InputContainer:new{
+local TouchProbe = InputContainer:extend{
     curr_probe_step = 1,
 }
 

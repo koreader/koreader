@@ -25,7 +25,7 @@ local function convertSizeTo(px, format)
     local format_factor = 1 -- we are defaulting on mm
 
     if format == "pt" then
-        format_factor =  format_factor * 2660 / 1000 -- see https://www.wikiwand.com/en/Metric_typographic_units
+        format_factor =  format_factor * (2660 / 1000) -- see https://www.wikiwand.com/en/Metric_typographic_units
     elseif format == "in" then
         format_factor = 1 / 25.4
     end
@@ -90,25 +90,10 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
         end
     elseif option.labels and option.values then
         if option.more_options_param and option.more_options_param.value_table then
-            if option.more_options_param.args_table then
-                for k,v in pairs(option.more_options_param.args_table) do
-                    if v == current then
-                        current = k
-                        break
-                    end
-                end
-            end
-            current = option.more_options_param.value_table[current]
+            local table_shift = option.more_options_param.value_table_shift or 0
+            current = option.more_options_param.value_table[current + table_shift]
             if default then
-                if option.more_options_param.args_table then
-                    for k,v in pairs(option.more_options_param.args_table) do
-                        if v == default then
-                            default = k
-                            break
-                        end
-                    end
-                end
-                default = option.more_options_param.value_table[default]
+                default = option.more_options_param.value_table[default + table_shift]
             end
         else
             if default then

@@ -4,6 +4,7 @@ local dump = require("dump")
 local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local serpent = require("ffi/serpent")
 local zstd = require("ffi/zstd")
 
 local C = ffi.C
@@ -164,6 +165,29 @@ local codecs = {
             end
             return t()
         end,
+    },
+    -- serpent: human readable (-ish), more thorough than dump (in particular, supports serializing functions)
+    -- NOTE: if you want pretty printing, pass { sortkeys = true, compact = false, indent = "  " } to serpent's second arg.
+    serpent = {
+        id = "serpent",
+        reads_from_file = false,
+        writes_to_file = false,
+
+        serialize = function(t)
+            local ok, str = pcall(serpent.dump, t)
+            if not ok then
+                return nil, "cannot serialize " .. tostring(t) .. " (" .. str .. ")"
+            end
+            return str
+        end,
+
+        deserialize = function(str)
+            local ok, t = serpent.load(str)
+            if not ok then
+                return nil, "malformed serialized data (" .. t .. ")"
+            end
+            return t
+        end,
     }
 }
 
@@ -172,7 +196,7 @@ local Persist = {}
 function Persist:new(o)
     o = o or {}
     assert(type(o.path) == "string", "path is required")
-    o.codec = o.codec or "dump"
+    o.codec = o.codec or "serpent"
     setmetatable(o, self)
     self.__index = self
     return o
@@ -242,13 +266,12 @@ function Persist:delete()
 end
 
 function Persist.getCodec(name)
-    local fallback = codecs["dump"]
     for key, codec in pairs(codecs) do
-        if type(key) == "string" and key == name then
+        if key == name then
             return codec
         end
     end
-    return fallback
+    return codecs["serpent"]
 end
 
 return Persist

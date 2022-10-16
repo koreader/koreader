@@ -2,9 +2,9 @@ local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -12,7 +12,7 @@ local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
-local ReaderTypography = InputContainer:new{}
+local ReaderTypography = WidgetContainer:extend{}
 
 -- This is used to migrate old hyph settings, and to show the currently
 -- used hyph dict language in the hyphenation menu.
@@ -151,6 +151,7 @@ When the book's language tag is not among our presets, no specific features will
             -- Show infos about TextLangMan seen lang_tags and loaded hyph dicts
             local lang_infos = {}
             local seen_hyph_dicts = {} -- to avoid outputing count and size for shared hyph dicts
+            local cre = require("document/credocument"):engineInit()
             local main_lang_tag, main_lang_active_hyph_dict, loaded_lang_infos = cre.getTextLangStatus() -- luacheck: no unused
             -- First output main lang tag
             local main_lang_info = loaded_lang_infos[main_lang_tag]
@@ -360,6 +361,7 @@ When the book's language tag is not among our presets, no specific features will
         end,
         callback = function()
             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+            local cre = require("document/credocument"):engineInit()
             local hyph_alg, alg_left_hyphen_min, alg_right_hyphen_min = cre.getSelectedHyphDict() -- luacheck: no unused
             local hyph_limits_widget = DoubleSpinWidget:new{
                 -- Min (1) and max (10) values are enforced by crengine
@@ -378,7 +380,6 @@ When the book's language tag is not among our presets, no specific features will
                 -- let room on the widget sides so we can see
                 -- the hyphenation changes happening
                 width_factor = 0.6,
-                default_values = true,
                 default_text = T(_("Language defaults: %1 / %2"), alg_left_hyphen_min, alg_right_hyphen_min),
                 title_text = _("Hyphenation limits"),
                 info_text = _([[

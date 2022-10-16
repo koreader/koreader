@@ -2,7 +2,7 @@
 Language-specific handling module.
 
 This module defines a somewhat generic system by which language-specific
-plugins can improve KoReader's support for languages that are not close enough
+plugins can improve KOReader's support for languages that are not close enough
 to European languages to "just work".
 
 This was originally designed to improve KoReader's Japanese support through the
@@ -29,10 +29,10 @@ local _ = require("gettext")
 -- plugins when reloading different viewers.
 local PluginListSingleton = {}
 
-local LanguageSupport = WidgetContainer:new({
+local LanguageSupport = WidgetContainer:extend{
     name = "language_support",
     plugins = PluginListSingleton,
-})
+}
 
 --[[--
 Registers a new language-specific plugin with given language_code.

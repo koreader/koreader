@@ -16,13 +16,15 @@ This is an abstract interface to a document
 local Document = {
     -- file name
     file = nil,
+    -- engine instance
+    _document = nil,
 
-    links = {},
+    links = nil, -- table
 
     GAMMA_NO_GAMMA = 1.0,
 
     -- override bbox from orignal page's getUsedBBox
-    bbox = {},
+    bbox = nil, -- table
 
     -- flag to show whether the document was opened successfully
     is_open = false,
@@ -40,10 +42,15 @@ local Document = {
 
 }
 
-function Document:new(from_o)
-    local o = from_o or {}
+function Document:extend(subclass_prototype)
+    local o = subclass_prototype or {}
     setmetatable(o, self)
     self.__index = self
+    return o
+end
+
+function Document:new(o)
+    o = self:extend(o)
     if o._init then o:_init() end
     if o.init then o:init() end
     return o
@@ -51,7 +58,9 @@ end
 
 -- base document initialization should be called on each document init
 function Document:_init()
-    self.configurable = Configurable:new()
+    self.links = {}
+    self.bbox = {}
+    self.configurable = Configurable:new{}
     self.info = {
         -- whether the document is pageable
         has_pages = false,

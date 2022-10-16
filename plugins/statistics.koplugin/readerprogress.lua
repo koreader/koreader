@@ -25,7 +25,8 @@ local Screen = Device.screen
 local LINE_COLOR = Blitbuffer.COLOR_WEB_GRAY
 local BG_COLOR = Blitbuffer.COLOR_LIGHT_GRAY
 
-local ReaderProgress = InputContainer:new{
+-- Oh, hey, this one actually *is* an InputContainer!
+local ReaderProgress = InputContainer:extend{
     padding = Size.padding.fullscreen,
 }
 
@@ -127,7 +128,7 @@ function ReaderProgress:genSingleHeader(title)
     local padding_span = HorizontalSpan:new{ width = self.padding }
     local line_width = (self.screen_width - header_title:getSize().w) / 2 - self.padding * 2
     local line_container = LeftContainer:new{
-        dimen = Geom:new{ w = line_width, h = self.screen_height / 25 },
+        dimen = Geom:new{ w = line_width, h = self.screen_height * (1/25) },
         LineWidget:new{
             background = BG_COLOR,
             dimen = Geom:new{
@@ -138,7 +139,7 @@ function ReaderProgress:genSingleHeader(title)
     }
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Screen:scaleBySize(self.header_span), height = self.screen_height / 25 },
+        VerticalSpan:new{ width = Screen:scaleBySize(self.header_span), height = self.screen_height * (1/25) },
         HorizontalGroup:new{
             align = "center",
             padding_span,
@@ -149,7 +150,7 @@ function ReaderProgress:genSingleHeader(title)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Size.span.vertical_large, height = self.screen_height / 25 },
+        VerticalSpan:new{ width = Size.span.vertical_large, height = self.screen_height * (1/25) },
     }
 end
 
@@ -167,7 +168,7 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
     local padding_span = HorizontalSpan:new{ width = self.padding }
     local line_width = (self.screen_width - header_title_left:getSize().w - header_title_right:getSize().w - self.padding * 7) / 4
     local line_container = LeftContainer:new{
-        dimen = Geom:new{ w = line_width, h = self.screen_height / 25 },
+        dimen = Geom:new{ w = line_width, h = self.screen_height * (1/25) },
         LineWidget:new{
             background = BG_COLOR,
             dimen = Geom:new{
@@ -178,7 +179,7 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
     }
 
     return VerticalGroup:new{
-        VerticalSpan:new{ width = Screen:scaleBySize(25), height = self.screen_height / 25 },
+        VerticalSpan:new{ width = Screen:scaleBySize(25), height = self.screen_height * (1/25) },
         HorizontalGroup:new{
             align = "center",
             padding_span,
@@ -195,7 +196,7 @@ function ReaderProgress:genDoubleHeader(title_left, title_right)
             line_container,
             padding_span,
         },
-        VerticalSpan:new{ width = Size.span.vertical_large, height = self.screen_height / 25 },
+        VerticalSpan:new{ width = Size.span.vertical_large, height = self.screen_height * (1/25) },
     }
 end
 
@@ -250,7 +251,7 @@ function ReaderProgress:genWeekStats(stats_day)
             align = "center",
             padding = Size.padding.small,
             LeftContainer:new{
-                dimen = Geom:new{ w = self.screen_width , h = height / 3 },
+                dimen = Geom:new{ w = self.screen_width , h = height * (1/3) },
                 TextWidget:new{
                     padding = Size.padding.small,
                     text = date_format_show .. " - " .. util.secondsToClockDuration(user_duration_format, select_day_time, true),
@@ -261,7 +262,7 @@ function ReaderProgress:genWeekStats(stats_day)
         local titles_group = HorizontalGroup:new{
             align = "center",
             LeftContainer:new{
-                dimen = Geom:new{ w = self.screen_width , h = height / 3 },
+                dimen = Geom:new{ w = self.screen_width , h = height * (1/3) },
                 ProgressWidget:new{
                     width = math.floor((self.screen_width * 0.005) + (self.screen_width * 0.9 * select_day_time / max_week_time)),
                     height = Screen:scaleBySize(14),
@@ -290,8 +291,8 @@ function ReaderProgress:genSummaryDay(width)
         dimen = Geom:new{ w = width, h = height },
     }
     local statistics_group = VerticalGroup:new{ align = "left" }
-    local tile_width = width / 4
-    local tile_height = height / 3
+    local tile_width = width * (1/4)
+    local tile_height = height * (1/3)
     local user_duration_format = G_reader_settings:readSetting("duration_format")
 
     local titles_group = HorizontalGroup:new{
@@ -385,8 +386,8 @@ function ReaderProgress:genSummaryWeek(width)
         dimen = Geom:new{ w = width, h = height },
     }
     local statistics_group = VerticalGroup:new{ align = "left" }
-    local tile_width = width / 4
-    local tile_height = height / 3
+    local tile_width = width * (1/4)
+    local tile_height = height * (1/3)
     local user_duration_format = G_reader_settings:readSetting("duration_format")
     local total_group = HorizontalGroup:new{
         align = "center",
@@ -456,14 +457,14 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = tostring(math.floor(total_pages / 7)),
+                text = tostring(math.floor(total_pages * (1/7))),
                 face = self.medium_font_face,
             }
         },
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClockDuration(user_duration_format, math.floor(total_time) / 7, true),
+                text = util.secondsToClockDuration(user_duration_format, math.floor(total_time) * (1/7), true),
                 face = self.medium_font_face,
             }
         }

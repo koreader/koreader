@@ -7,7 +7,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local ReadTimer = WidgetContainer:new{
+local ReadTimer = WidgetContainer:extend{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
 }
@@ -45,8 +45,8 @@ end
 function ReadTimer:remainingTime()
     if self:scheduled() then
         local remainder = self:remaining()
-        local hours = math.floor(remainder / 3600)
-        local minutes = math.floor(remainder % 3600 / 60)
+        local hours = math.floor(remainder * (1/3600))
+        local minutes = math.floor(remainder % 3600 * (1/60))
         local seconds = math.floor(remainder % 60)
         return hours, minutes, seconds
     end

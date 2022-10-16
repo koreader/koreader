@@ -67,7 +67,7 @@ local external = require("device/thirdparty"):new{
     end,
 }
 
-local Device = Generic:new{
+local Device = Generic:extend{
     isAndroid = yes,
     model = android.prop.product,
     hasKeys = yes,
@@ -111,21 +111,6 @@ local Device = Generic:new{
             android.dictLookup(text, app, action)
         end
     end,
-
-    -- Android is very finicky, and the LuaJIT allocator has a tremendously hard time getting the system
-    -- to allocate memory for it in the very specific memory range it requires to store generated code (mcode).
-    -- Failure to do so at runtime (mcode_alloc) will *tank* performance
-    -- (much worse than if the JIT were simply disabled).
-    -- The first line of defense is left to android-luajit-launcher,
-    -- which will try to grab the full mcode region in one go right at startup.
-    -- The second line of defense is *this* flag, which disables the JIT in a few code-hungry modules,
-    -- but not necessarily performance critical ones, to hopefully limit the amount of mcode memory
-    -- required for those modules where it *really* matters (e.g., ffi/blitbuffer.lua).
-    -- This is also why we try to actually avoid entering actual loops in the Lua blitter on Android,
-    -- and instead attempt to do most of everything via the C implementation.
-    -- NOTE: Since https://github.com/koreader/android-luajit-launcher/pull/283, we've patched LuaJIT
-    --       to ensure that the initial mcode alloc works, and sticks around, which is why this is no longer enabled.
-    should_restrict_JIT = false,
 }
 
 function Device:init()

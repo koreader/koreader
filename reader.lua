@@ -1,5 +1,11 @@
 #!./luajit
-io.stdout:write([[
+
+-- Enforce line-buffering for stdout (this is the default if it points to a tty, but we redirect to a file on most platforms).
+io.stdout:setvbuf("line")
+-- Enforce a reliable locale for numerical representations
+os.setlocale("C", "numeric")
+
+io.write([[
 ---------------------------------------------
                 launching...
   _  _____  ____                _
@@ -11,7 +17,6 @@ io.stdout:write([[
  It's a scroll... It's a codex... It's KOReader!
 
  [*] Current time: ]], os.date("%x-%X"), "\n")
-io.stdout:flush()
 
 -- Set up Lua and ffi search paths
 require("setupkoenv")
@@ -21,18 +26,15 @@ local userpatch = require("userpatch")
 userpatch.applyPatches(userpatch.early_once)
 userpatch.applyPatches(userpatch.early)
 
+io.write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
+
 -- Load default settings
-require("defaults")
-local DataStorage = require("datastorage")
-pcall(dofile, DataStorage:getDataDir() .. "/defaults.persistent.lua")
-
-
-io.stdout:write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
-io.stdout:flush()
+G_defaults = require("luadefaults"):open()
 
 -- Read settings and check for language override
 -- Has to be done before requiring other files because
 -- they might call gettext on load
+local DataStorage = require("datastorage")
 G_reader_settings = require("luasettings"):open(
     DataStorage:getDataDir().."/settings.reader.lua")
 

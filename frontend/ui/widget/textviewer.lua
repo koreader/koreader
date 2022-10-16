@@ -33,7 +33,7 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local TextViewer = InputContainer:new{
+local TextViewer = InputContainer:extend{
     title = nil,
     text = nil,
     width = nil,
@@ -124,15 +124,40 @@ function TextViewer:init()
         show_parent = self,
     }
 
+    -- Callback to enable/disable buttons, for at-top/at-bottom feedback
+    local prev_at_top = false -- Buttons were created enabled
+    local prev_at_bottom = false
+    local function button_update(id, enable)
+        local button = self.button_table:getButtonById(id)
+        if button then
+            if enable then
+                button:enable()
+            else
+                button:disable()
+            end
+            button:refresh()
+        end
+    end
+    self._buttons_scroll_callback = function(low, high)
+        if prev_at_top and low > 0 then
+            button_update("top", true)
+            prev_at_top = false
+        elseif not prev_at_top and low <= 0 then
+            button_update("top", false)
+            prev_at_top = true
+        end
+        if prev_at_bottom and high < 1 then
+            button_update("bottom", true)
+            prev_at_bottom = false
+        elseif not prev_at_bottom and high >= 1 then
+            button_update("bottom", false)
+            prev_at_bottom = true
+        end
+    end
+
+    -- buttons
     local default_buttons =
         {
-            {
-                text = _("Close"),
-                callback = function()
-                    self:onClose()
-                end,
-                hold_callback = self.default_hold_callback,
-            },
             {
                 text = _("Find"),
                 id = "find",
@@ -152,6 +177,31 @@ function TextViewer:init()
                         end
                     end
                 end,
+            },
+            {
+                text = "⇱",
+                id = "top",
+                callback = function()
+                    self.scroll_text_w:scrollToTop()
+                end,
+                hold_callback = self.default_hold_callback,
+                allow_hold_when_disabled = true,
+            },
+            {
+                text = "⇲",
+                id = "bottom",
+                callback = function()
+                    self.scroll_text_w:scrollToBottom()
+                end,
+                hold_callback = self.default_hold_callback,
+                allow_hold_when_disabled = true,
+            },
+            {
+                text = _("Close"),
+                callback = function()
+                    self:onClose()
+                end,
+                hold_callback = self.default_hold_callback,
             },
         }
     local buttons = self.buttons_table or {}
@@ -180,6 +230,7 @@ function TextViewer:init()
         para_direction_rtl = self.para_direction_rtl,
         auto_para_direction = self.auto_para_direction,
         alignment_strict = self.alignment_strict,
+        scroll_callback = self._buttons_scroll_callback,
     }
     self.textw = FrameContainer:new{
         padding = self.text_padding,
@@ -359,9 +410,7 @@ function TextViewer:findCallback(input_dialog)
         local button_text = self._find_next and _("Find next") or _("Find")
         local find_button = self.button_table:getButtonById("find")
         find_button:setText(button_text, find_button.width)
-        UIManager:setDirty(self, function()
-            return "ui", find_button.dimen
-        end)
+        find_button:refresh()
     end
 end
 

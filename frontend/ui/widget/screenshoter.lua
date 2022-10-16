@@ -9,15 +9,12 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local Screenshoter = InputContainer:new{
+local Screenshoter = InputContainer:extend{
     prefix = 'Screenshot',
 }
 
 function Screenshoter:init()
-    local diagonal = math.sqrt(
-        math.pow(Screen:getWidth(), 2) +
-        math.pow(Screen:getHeight(), 2)
-    )
+    local diagonal = math.sqrt(Screen:getWidth()^2 + Screen:getHeight()^2)
     self.ges_events = {
         TapDiagonal = {
             GestureRange:new{

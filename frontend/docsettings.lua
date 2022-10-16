@@ -5,23 +5,42 @@ in the so-called sidecar directory
 ]]
 
 local DataStorage = require("datastorage")
+local LuaSettings = require("luasettings")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 
-local DocSettings = {}
+local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
 
-local function buildCandidate(file_path)
-    -- Ignore empty files.
-    if file_path and lfs.attributes(file_path, "mode") == "file" then
-        return { file_path, lfs.attributes(file_path, "modification") }
-    else
-        return nil
+local function buildCandidates(list)
+    local candidates = {}
+
+    for i, file_path in ipairs(list) do
+        -- Ignore missing files.
+        if file_path ~= "" and lfs.attributes(file_path, "mode") == "file" then
+            table.insert(candidates, {
+                    path = file_path,
+                    mtime = lfs.attributes(file_path, "modification"),
+                    prio = i,
+                }
+            )
+        end
     end
+
+    -- MRU sort, tie breaker is insertion order (higher priority locations were inserted first).
+    table.sort(candidates, function(l, r)
+                               if l.mtime == r.mtime then
+                                   return l.prio < r.prio
+                               else
+                                   return l.mtime > r.mtime
+                               end
+                           end)
+
+    return candidates
 end
 
 --- Returns path to sidecar directory (`filename.sdr`).
@@ -60,7 +79,7 @@ function DocSettings:hasSidecarFile(doc_path)
 end
 
 function DocSettings:getHistoryPath(fullpath)
-    return HISTORY_DIR .. "/[" .. fullpath:gsub("(.*/)([^/]+)","%1] %2"):gsub("/","#") .. ".lua"
+    return HISTORY_DIR .. "/[" .. fullpath:gsub("(.*/)([^/]+)", "%1] %2"):gsub("/", "#") .. ".lua"
 end
 
 function DocSettings:getPathFromHistory(hist_name)
@@ -71,7 +90,7 @@ function DocSettings:getPathFromHistory(hist_name)
     if s == nil or s == '' then return '' end
     -- 2. crop the bracket-sign from both sides
     -- 3. and finally replace decorative signs '#' to dir-char '/'
-    return string.gsub(string.sub(s,2,-3),"#","/")
+    return string.gsub(string.sub(s, 2, -3), "#", "/")
 end
 
 function DocSettings:getNameFromHistory(hist_name)
@@ -102,58 +121,57 @@ end
 -- @treturn DocSettings object
 function DocSettings:open(docfile)
     --- @todo (zijiehe): Remove history_path, use only sidecar.
-    local new = {}
-    new.history_file = self:getHistoryPath(docfile)
 
-    local sidecar = self:getSidecarDir(docfile)
+    -- NOTE: Beware, our new instance is new, but self is still DocSettings!
+    local new = DocSettings:extend{}
+    new.history_file = new:getHistoryPath(docfile)
+
+    local sidecar = new:getSidecarDir(docfile)
     new.sidecar = sidecar
     DocSettings:ensureSidecar(sidecar)
-    -- If there is a file which has a same name as the sidecar directory, or
-    -- the file system is read-only, we should not waste time to read it.
+    -- If there is a file which has a same name as the sidecar directory,
+    -- or the file system is read-only, we should not waste time to read it.
     if lfs.attributes(sidecar, "mode") == "directory" then
-        -- New sidecar file name is metadata.{file last suffix}.lua. So we
-        -- can handle two files with only different suffixes.
-        new.sidecar_file = self:getSidecarFile(docfile)
+        -- New sidecar file name is metadata.{file last suffix}.lua.
+        -- So we can handle two files with only different suffixes.
+        new.sidecar_file = new:getSidecarFile(docfile)
         new.legacy_sidecar_file = sidecar.."/"..
                                   ffiutil.basename(docfile)..".lua"
     end
 
-    local candidates = {}
-    -- New sidecar file
-    table.insert(candidates, buildCandidate(new.sidecar_file))
-    -- Backup file of new sidecar file
-    table.insert(candidates, buildCandidate(new.sidecar_file and (new.sidecar_file .. ".old")))
-    -- Legacy sidecar file
-    table.insert(candidates, buildCandidate(new.legacy_sidecar_file))
-    -- Legacy history folder
-    table.insert(candidates, buildCandidate(new.history_file))
-    -- Backup file in legacy history folder
-    table.insert(candidates, buildCandidate(new.history_file .. ".old"))
-    -- Legacy kpdfview setting
-    table.insert(candidates, buildCandidate(docfile..".kpdfview.lua"))
-    table.sort(candidates, function(l, r)
-                               if l == nil then
-                                   return false
-                               elseif r == nil then
-                                   return true
-                               else
-                                   return l[2] > r[2]
-                               end
-                           end)
+    -- Candidates list, in order of priority:
+    local candidates_list = {
+        -- New sidecar file
+        new.sidecar_file or "",
+        -- Backup file of new sidecar file
+        new.sidecar_file and (new.sidecar_file .. ".old") or "",
+        -- Legacy sidecar file
+        new.legacy_sidecar_file or "",
+        -- Legacy history folder
+        new.history_file,
+        -- Backup file in legacy history folder
+        new.history_file .. ".old",
+        -- Legacy kpdfview setting
+        docfile..".kpdfview.lua",
+    }
+    -- We get back an array of tables for *existing* candidates, sorted MRU first (insertion order breaks ties).
+    local candidates = buildCandidates(candidates_list)
+
     local ok, stored, filepath
-    for _, k in ipairs(candidates) do
+    for _, t in ipairs(candidates) do
+        local candidate_path = t.path
         -- Ignore empty files
-        if lfs.attributes(k[1], "size") > 0 then
-            ok, stored = pcall(dofile, k[1])
-            -- Ignore the empty table.
+        if lfs.attributes(candidate_path, "size") > 0 then
+            ok, stored = pcall(dofile, candidate_path)
+            -- Ignore empty tables
             if ok and next(stored) ~= nil then
-                logger.dbg("data is read from ", k[1])
-                filepath = k[1]
+                logger.dbg("DocSettings: data is read from", candidate_path)
+                filepath = candidate_path
                 break
             end
         end
-        logger.dbg(k[1], " is invalid, remove.")
-        os.remove(k[1])
+        logger.dbg("DocSettings:", candidate_path, "is invalid, removed.")
+        os.remove(candidate_path)
     end
     if ok and stored then
         new.data = stored
@@ -163,139 +181,7 @@ function DocSettings:open(docfile)
         new.data = {}
     end
 
-    return setmetatable(new, {__index = DocSettings})
-end
-
---[[-- Reads a setting, optionally initializing it to a default.
-
-If default is provided, and the key doesn't exist yet, it is initialized to default first.
-This ensures both that the defaults are actually set if necessary,
-and that the returned reference actually belongs to the DocSettings object straight away,
-without requiring further interaction (e.g., saveSetting) from the caller.
-
-This is mainly useful if the data type you want to retrieve/store is assigned/returned/passed by reference (e.g., a table),
-and you never actually break that reference by assigning another one to the same variable, (by e.g., assigning it a new object).
-c.f., https://www.lua.org/manual/5.1/manual.html#2.2
-
-@param key The setting's key
-@param default Initialization data (Optional)
-]]
-function DocSettings:readSetting(key, default)
-    -- No initialization data: legacy behavior
-    if not default then
-        return self.data[key]
-    end
-
-    if not self:has(key) then
-        self.data[key] = default
-    end
-    return self.data[key]
-end
-
---- Saves a setting.
-function DocSettings:saveSetting(key, value)
-    self.data[key] = value
-    return self
-end
-
---- Deletes a setting.
-function DocSettings:delSetting(key)
-    self.data[key] = nil
-    return self
-end
-
---- Checks if setting exists.
-function DocSettings:has(key)
-    return self.data[key] ~= nil
-end
-
---- Checks if setting does not exist.
-function DocSettings:hasNot(key)
-    return self.data[key] == nil
-end
-
---- Checks if setting is `true` (boolean).
-function DocSettings:isTrue(key)
-    return self.data[key] == true
-end
-
---- Checks if setting is `false` (boolean).
-function DocSettings:isFalse(key)
-    return self.data[key] == false
-end
-
---- Checks if setting is `nil` or `true`.
-function DocSettings:nilOrTrue(key)
-    return self:hasNot(key) or self:isTrue(key)
-end
-
---- Checks if setting is `nil` or `false`.
-function DocSettings:nilOrFalse(key)
-    return self:hasNot(key) or self:isFalse(key)
-end
-
---- Flips `nil` or `true` to `false`, and `false` to `nil`.
---- e.g., a setting that defaults to true.
-function DocSettings:flipNilOrTrue(key)
-    if self:nilOrTrue(key) then
-        self:saveSetting(key, false)
-    else
-        self:delSetting(key)
-    end
-    return self
-end
-
---- Flips `nil` or `false` to `true`, and `true` to `nil`.
---- e.g., a setting that defaults to false.
-function DocSettings:flipNilOrFalse(key)
-    if self:nilOrFalse(key) then
-        self:saveSetting(key, true)
-    else
-        self:delSetting(key)
-    end
-    return self
-end
-
---- Flips a setting between `true` and `nil`.
-function DocSettings:flipTrue(key)
-    if self:isTrue(key) then
-        self:delSetting(key)
-    else
-        self:saveSetting(key, true)
-    end
-    return self
-end
-
---- Flips a setting between `false` and `nil`.
-function DocSettings:flipFalse(key)
-    if self:isFalse(key) then
-        self:delSetting(key)
-    else
-        self:saveSetting(key, false)
-    end
-    return self
-end
-
--- Unconditionally makes a boolean setting `true`.
-function DocSettings:makeTrue(key)
-    self:saveSetting(key, true)
-    return self
-end
-
--- Unconditionally makes a boolean setting `false`.
-function DocSettings:makeFalse(key)
-    self:saveSetting(key, false)
-    return self
-end
-
---- Toggles a boolean setting
-function DocSettings:toggle(key)
-    if self:nilOrFalse(key) then
-        self:saveSetting(key, true)
-    else
-        self:saveSetting(key, false)
-    end
-    return self
+    return new
 end
 
 --- Serializes settings and writes them to `metadata.lua`.
@@ -307,8 +193,7 @@ function DocSettings:flush()
         return
     end
 
-    -- If we can write to sidecar_file, we do not need to write to history_file
-    -- anymore.
+    -- If we can write to sidecar_file, we do not need to write to history_file anymore.
     local serials = {}
     if self.sidecar_file then
         table.insert(serials, self.sidecar_file)
@@ -318,23 +203,21 @@ function DocSettings:flush()
     end
     self:ensureSidecar(self.sidecar)
     local s_out = dump(self.data)
-    os.setlocale('C', 'numeric')
     for _, f in ipairs(serials) do
         local directory_updated = false
         if lfs.attributes(f, "mode") == "file" then
-            -- As an additional safety measure (to the ffiutil.fsync* calls
-            -- used below), we only backup the file to .old when it has
-            -- not been modified in the last 60 seconds. This should ensure
-            -- in the case the fsync calls are not supported that the OS
-            -- may have itself sync'ed that file content in the meantime.
+            -- As an additional safety measure (to the ffiutil.fsync* calls used below),
+            -- we only backup the file to .old when it has not been modified in the last 60 seconds.
+            -- This should ensure in the case the fsync calls are not supported
+            -- that the OS may have itself sync'ed that file content in the meantime.
             local mtime = lfs.attributes(f, "modification")
             if mtime < os.time() - 60 then
-                logger.dbg("Rename ", f, " to ", f .. ".old")
+                logger.dbg("DocSettings: Renamed", f, "to", f .. ".old")
                 os.rename(f, f .. ".old")
                 directory_updated = true -- fsync directory content too below
             end
         end
-        logger.dbg("Write to ", f)
+        logger.dbg("DocSettings: Writing to", f)
         local f_out = io.open(f, "w")
         if f_out ~= nil then
             f_out:write("-- we can read Lua syntax here!\nreturn ")
@@ -345,10 +228,11 @@ function DocSettings:flush()
 
             if self.candidates ~= nil
             and G_reader_settings:nilOrFalse("preserve_legacy_docsetting") then
-                for _, k in ipairs(self.candidates) do
-                    if k[1] ~= f and k[1] ~= f .. ".old" then
-                        logger.dbg("Remove legacy file ", k[1])
-                        os.remove(k[1])
+                for _, t in ipairs(self.candidates) do
+                    local candidate_path = t.path
+                    if candidate_path ~= f and candidate_path ~= f .. ".old" then
+                        logger.dbg("DocSettings: Removed legacy file", candidate_path)
+                        os.remove(candidate_path)
                         -- We should not remove sidecar folder, as it may
                         -- contain Kindle history files.
                     end
@@ -364,18 +248,13 @@ function DocSettings:flush()
     end
 end
 
-function DocSettings:close()
-    self:flush()
-end
-
 function DocSettings:getFilePath()
     return self.filepath
 end
 
 --- Purges (removes) sidecar directory.
 function DocSettings:purge(full)
-    -- Remove any of the old ones we may consider as candidates
-    -- in DocSettings:open()
+    -- Remove any of the old ones we may consider as candidates in DocSettings:open()
     if self.history_file then
         os.remove(self.history_file)
         os.remove(self.history_file .. ".old")
@@ -385,12 +264,10 @@ function DocSettings:purge(full)
     end
     if lfs.attributes(self.sidecar, "mode") == "directory" then
         if full then
-            -- Asked to remove all the content of this .sdr directory,
-            -- whether it's ours or not
+            -- Asked to remove all the content of this .sdr directory, whether it's ours or not
             ffiutil.purgeDir(self.sidecar)
         else
-            -- Only remove the files we know we may have created
-            -- with our usual names.
+            -- Only remove the files we know we may have created with our usual names.
             for f in lfs.dir(self.sidecar) do
                 local fullpath = self.sidecar.."/"..f
                 local to_remove = false
@@ -398,15 +275,15 @@ function DocSettings:purge(full)
                     -- Currently, we only create a single file in there,
                     -- named metadata.suffix.lua (ie. metadata.epub.lua),
                     -- with possibly backups named metadata.epub.lua.old and
-                    -- metadata.epub.lua.old_dom20180528, so all sharing the
-                    -- same base: self.sidecar_file
+                    -- metadata.epub.lua.old_dom20180528,
+                    -- so all sharing the same base: self.sidecar_file
                     if util.stringStartsWith(fullpath, self.sidecar_file) then
                         to_remove = true
                     end
                 end
                 if to_remove then
                     os.remove(fullpath)
-                    logger.dbg("purge: removed ", fullpath)
+                    logger.dbg("DocSettings: purged:", fullpath)
                 end
             end
             -- If the sidecar folder ends up empty, os.remove() can delete it.
@@ -414,8 +291,8 @@ function DocSettings:purge(full)
             os.remove(self.sidecar)
         end
     end
-    -- We should have meet the candidate we used and remove it above. But in
-    -- case we didn't, remove it
+    -- We should have meet the candidate we used and remove it above.
+    -- But in case we didn't, remove it.
     if self.filepath and lfs.attributes(self.filepath, "mode") == "file" then
         os.remove(self.filepath)
     end

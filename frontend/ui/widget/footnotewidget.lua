@@ -112,7 +112,7 @@ body > section > title {
 -- body { background-color: #eeeeee; }
 
 -- Widget to display footnote HTML content
-local FootnoteWidget = InputContainer:new{
+local FootnoteWidget = InputContainer:extend{
     html = nil,
     css = nil,
     -- font_face can't really be overriden, it needs to be known by MuPDF
@@ -121,7 +121,7 @@ local FootnoteWidget = InputContainer:new{
     -- (already scaled) sizes in screen pixels
     doc_font_size = Screen:scaleBySize(18),
     doc_font_name = nil,
-    doc_margins = {
+    doc_margins = { -- const
         left = Screen:scaleBySize(20),
         right = Screen:scaleBySize(20),
         top = Screen:scaleBySize(10),
@@ -217,6 +217,7 @@ function FootnoteWidget:init()
 
     local font_css = ""
     if G_reader_settings:isTrue("footnote_popup_use_book_font") then
+        local cre = require("document/credocument"):engineInit()
         -- Note: we can't provide any base weight (as supported by crengine), as MuPDF
         -- will use the bold font for anything with a weight > 400. We can only use the
         -- font as-is, without its natural weight tweaked.

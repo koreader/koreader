@@ -46,7 +46,7 @@ Example for input of two strings and a number:
                 {
                     text = _("Use settings"),
                     callback = function(touchmenu_instance)
-                        local fields = MultiInputDialog:getFields()
+                        local fields = sample_input:getFields()
                         -- check for user input
                         if fields[1] ~= "" and fields[2] ~= ""
                             and fields[3] ~= 0 then
@@ -91,10 +91,9 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local input_field, input_description
-
 local MultiInputDialog = InputDialog:extend{
-    fields = {},
+    fields = nil, -- array, mandatory
+    input_fields = nil, -- array
     description_padding = Size.padding.default,
     description_margin = Size.margin.small,
     bottom_v_padding = Size.padding.default,
@@ -108,19 +107,17 @@ function MultiInputDialog:init()
         self.title_bar,
     }
 
-    input_field = {}
-    input_description = {}
-    local k = 0
+    self.input_field = {}
+    local input_description = {}
     for i, field in ipairs(self.fields) do
-        k = k + 1
-        input_field[k] = InputText:new{
+        self.input_field[i] = InputText:new{
             text = field.text or "",
             hint = field.hint or "",
             input_type = field.input_type or "string",
             text_type =  field.text_type,
             face = self.input_face,
             width = math.floor(self.width * 0.9),
-            focused = k == 1 and true or false,
+            focused = i == 1 and true or false,
             scroll = false,
             parent = self,
             padding = field.padding or nil,
@@ -133,9 +130,9 @@ function MultiInputDialog:init()
             auto_para_direction = field.auto_para_direction or self.auto_para_direction,
             alignment_strict = field.alignment_strict or self.alignment_strict,
         }
-        table.insert(self.layout, #self.layout, {input_field[k]})
+        table.insert(self.layout, #self.layout, {self.input_field[i]})
         if field.description then
-            input_description[k] = FrameContainer:new{
+            input_description[i] = FrameContainer:new{
                 padding = self.description_padding,
                 margin = self.description_margin,
                 bordersize = 0,
@@ -148,17 +145,17 @@ function MultiInputDialog:init()
             table.insert(VerticalGroupData, CenterContainer:new{
                 dimen = Geom:new{
                     w = self.title_bar:getSize().w,
-                    h = input_description[k]:getSize().h ,
+                    h = input_description[i]:getSize().h ,
                 },
-                input_description[k],
+                input_description[i],
             })
         end
         table.insert(VerticalGroupData, CenterContainer:new{
             dimen = Geom:new{
                 w = self.title_bar:getSize().w,
-                h = input_field[k]:getSize().h,
+                h = self.input_field[i]:getSize().h,
             },
-            input_field[k],
+            self.input_field[i],
         })
     end
 
@@ -188,7 +185,7 @@ function MultiInputDialog:init()
         VerticalGroupData,
     }
 
-    self._input_widget = input_field[1]
+    self._input_widget = self.input_field[1]
 
     self[1] = CenterContainer:new{
         dimen = Geom:new{
@@ -204,12 +201,18 @@ function MultiInputDialog:init()
 
 end
 
+--- Returns an array of our input field's *text* field.
 function MultiInputDialog:getFields()
     local fields = {}
-    for i=1, #input_field do
-        table.insert(fields, input_field[i].text)
+    for i, field in ipairs(self.input_field) do
+        table.insert(fields, field:getText())
     end
     return fields
+end
+
+--- BEWARE: Live ref to an internal component!
+function MultiInputDialog:getRawFields()
+    return self.input_field
 end
 
 function MultiInputDialog:onSwitchFocus(inputbox)

@@ -32,37 +32,32 @@ local T = require("ffi/util").template
 local stats_book = {}
 
 --[[
---Save into sdr folder addtional section
+-- Stored in the sidecar metadata, in a dedicated table:
 ["summary"] = {
     ["rating"] = 5,
     ["note"] = "Some text",
     ["status"] = "Reading"
     ["modified"] = "24.01.2016"
 },]]
-local BookStatusWidget = FocusManager:new{
+local BookStatusWidget = FocusManager:extend{
     padding = Size.padding.fullscreen,
     settings = nil,
     thumbnail = nil,
     props = nil,
-    star = {},
-    summary = {
-        rating = nil,
-        note = nil,
-        status = "",
-        modified = "",
-    },
+    star = nil, -- Button
+    summary = nil, -- hash
 }
 
 function BookStatusWidget:init()
     self.layout = {}
+    -- What a blank, full summary table should look like
+    local new_summary = {
+        rating = nil,
+        note = nil,
+        status = "",
+        modified = "",
+    }
     if self.settings then
-        -- What a blank, full summary table should look like
-        local new_summary = {
-            rating = nil,
-            note = nil,
-            status = "",
-            modified = "",
-        }
         local summary = self.settings:readSetting("summary")
         -- Check if the summary table we get is a full one, or a minimal one from CoverMenu...
         if summary then
@@ -77,6 +72,8 @@ function BookStatusWidget:init()
         else
             self.summary = new_summary
         end
+    else
+        self.summary = new_summary
     end
     self.total_pages = self.ui.document:getPageCount()
     stats_book = self:getStats()
@@ -409,8 +406,8 @@ function BookStatusWidget:genStatisticsGroup(width)
 
     local statistics_group = VerticalGroup:new{ align = "left" }
 
-    local tile_width = width / 3
-    local tile_height = height / 2
+    local tile_width = width * (1/3)
+    local tile_height = height * (1/2)
 
     local titles_group = HorizontalGroup:new{
         align = "center",

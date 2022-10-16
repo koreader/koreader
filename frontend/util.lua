@@ -4,6 +4,7 @@ This module contains miscellaneous helper functions for the KOReader frontend.
 
 local BaseUtil = require("ffi/util")
 local Utf8Proc = require("ffi/utf8proc")
+local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = BaseUtil.template
@@ -132,12 +133,12 @@ function util.secondsToClock(seconds, withoutSeconds, withDays)
         local days = "0"
         local hours
         if withDays then
-            days = string.format("%d", seconds / (24*3600)) -- implicit math.floor for string.format
-            hours = string.format("%02d", (seconds / 3600) % 24)
+            days = string.format("%d", seconds * (1/(24*3600))) -- implicit math.floor for string.format
+            hours = string.format("%02d", (seconds * (1/3600)) % 24)
         else
-            hours = string.format("%02d", seconds / 3600)
+            hours = string.format("%02d", seconds * (1/3600))
         end
-        local mins = string.format("%02d", round(seconds % 3600 / 60))
+        local mins = string.format("%02d", round(seconds % 3600 * (1/60)))
         if withoutSeconds then
             if mins == "60" then
                 -- Can only happen because of rounding, which only happens if withoutSeconds...
@@ -332,7 +333,7 @@ function util.tableEquals(o1, o2, ignore_mt)
     if not ignore_mt then
         local mt1 = getmetatable(o1)
         if mt1 and mt1.__eq then
-            --compare using built in method
+            -- Compare using built in method
             return o1 == o2
         end
     end
@@ -488,6 +489,73 @@ function util.arrayReferences(t, n, m, l)
     end
 
     return false
+end
+
+-- A set of binary search implementations for plain arrays.
+-- Should be easy to tweak for arrays of hashes (c.f., UIManager:schedule),
+-- or arrays sorted in descending order (c.f., ReadHistory).
+-- refs: https://en.wikipedia.org/wiki/Binary_search_algorithm
+--       https://rosettacode.org/wiki/Binary_search
+--- Perform a binary search for `value` in a *sorted* (ascending) `array`.
+---- @param array Lua table (array only, sorted, ascending, every value must match the type of `value` and support comparison operators)
+---- @param value
+---- @return int index of value in array, or a (nil, insertion index) tuple if value was not found.
+function util.bsearch(array, value)
+    local lo = 1
+    local hi = #array
+    while lo <= hi do
+        -- invariants: value > array[i] for all i < lo
+        --             value < array[i] for all i > hi
+        local mid = bit.rshift(lo + hi, 1)
+        if array[mid] > value then
+            hi = mid - 1
+        elseif array[mid] < value then
+            lo = mid + 1
+        else
+            return mid
+        end
+    end
+    return nil, lo
+end
+
+--- Perform a leftmost insertion binary search for `value` in a *sorted* (ascending) `array`.
+---- @param array Lua table (array only, sorted, ascending, every value must match the type of `value` and support comparison operators)
+---- @param value
+---- @return int leftmost insertion index of value in array.
+function util.bsearch_left(array, value)
+    local lo = 1
+    local hi = #array
+    while lo <= hi do
+        -- invariants: value > array[i] for all i < lo
+        --             value <= array[i] for all i > hi
+        local mid = bit.rshift(lo + hi, 1)
+        if array[mid] >= value then
+            hi = mid - 1
+        else
+            lo = mid + 1
+        end
+    end
+    return lo
+end
+
+--- Perform a rightmost insertion binary search for `value` in a *sorted* (ascending) `array`.
+---- @param array Lua table (array only, sorted, ascending, every value must match the type of `value` and support comparison operators)
+---- @param value
+---- @return int rightmost insertion index of value in array.
+function util.bsearch_right(array, value)
+    local lo = 1
+    local hi = #array
+    while lo <= hi do
+        -- invariants: value >= array[i] for all i < low
+        --             value < array[i] for all i > high
+        local mid = bit.rshift(lo + hi, 1)
+        if array[mid] > value then
+            hi = mid - 1
+        else
+            lo = mid + 1
+        end
+    end
+    return lo
 end
 
 -- Merge t2 into t1, overwriting existing elements if they already exist
@@ -873,7 +941,6 @@ end
 ---- @string path
 ---- @treturn bool
 function util.isEmptyDir(path)
-    local lfs = require("libs/libkoreader-lfs")
     -- lfs.dir will crash rather than return nil if directory doesn't exist O_o
     local ok, iter, dir_obj = pcall(lfs.dir, path)
     if not ok then return end
@@ -900,7 +967,6 @@ end
 ---- @string path
 ---- @treturn bool
 function util.pathExists(path)
-    local lfs = require("libs/libkoreader-lfs")
     return lfs.attributes(path, "mode") ~= nil
 end
 
@@ -918,7 +984,6 @@ function util.makePath(path)
         return nil, err.." (creating "..path..")"
     end
 
-    local lfs = require("libs/libkoreader-lfs")
     return lfs.mkdir(path)
 end
 
@@ -926,7 +991,6 @@ end
 -- @string path of the file to remove
 -- @treturn bool true on success; nil, err_message on error
 function util.removeFile(file)
-    local lfs = require("libs/libkoreader-lfs")
     if file and lfs.attributes(file, "mode") == "file" then
         return os.remove(file)
     elseif file then
@@ -951,7 +1015,6 @@ function util.diskUsage(dir)
         end
     end
     local err = { total = nil, used = nil, available = nil }
-    local lfs = require("libs/libkoreader-lfs")
     if not dir or lfs.attributes(dir, "mode") ~= "directory" then return err end
     local usage = doCommand(dir)
     if not usage then return err end
@@ -1356,8 +1419,8 @@ function util.shell_escape(args)
     return table.concat(escaped_args, " ")
 end
 
---- Clear all the elements from a table without reassignment.
---- @table t the table to be cleared
+--- Clear all the elements from an array without reassignment.
+--- @table t the array to be cleared
 function util.clearTable(t)
     local c = #t
     for i = 0, c do t[i] = nil end
@@ -1404,7 +1467,7 @@ function util.checkLuaSyntax(lua_text)
     end
     -- Replace: [string "blah blah..."]:3: '=' expected near '123'
     -- with: Line 3: '=' expected near '123'
-    err = err:gsub("%[string \".-%\"]:", "Line ")
+    err = err and err:gsub("%[string \".-%\"]:", "Line ")
     return err
 end
 

@@ -7,10 +7,15 @@ local czmq = ffi.load("libs/libczmq.so.1")
 
 local MessageQueue = {}
 
-function MessageQueue:new(o)
-    o = o or {}
+function MessageQueue:extend(subclass_prototype)
+    local o = subclass_prototype or {}
     setmetatable(o, self)
     self.__index = self
+    return o
+end
+
+function MessageQueue:new(o)
+    o = self:extend(o)
     if o.init then o:init() end
     self.messages = {}
     return o

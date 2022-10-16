@@ -13,36 +13,64 @@ local _ = require("gettext")
 local DropBoxApi = {
 }
 
+local API_TOKEN = "https://api.dropbox.com/oauth2/token"
 local API_URL_INFO = "https://api.dropboxapi.com/2/users/get_current_account"
+local API_GET_SPACE_USAGE = "https://api.dropboxapi.com/2/users/get_space_usage"
 local API_LIST_FOLDER = "https://api.dropboxapi.com/2/files/list_folder"
 local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
 local API_UPLOAD_FILE = "https://content.dropboxapi.com/2/files/upload"
 local API_CREATE_FOLDER = "https://api.dropboxapi.com/2/files/create_folder_v2"
 local API_LIST_ADD_FOLDER = "https://api.dropboxapi.com/2/files/list_folder/continue"
 
-function DropBoxApi:fetchInfo(token)
+function DropBoxApi:getAccessToken(refresh_token, app_key_colon_secret)
     local sink = {}
-    socketutil:set_timeout()
+    local data = "grant_type=refresh_token&refresh_token=" .. refresh_token
     local request = {
-        url     = API_URL_INFO,
+        url     = API_TOKEN,
+        method  = "POST",
+        headers = {
+            ["Authorization"] = "Basic " .. require("ffi/sha2").bin_to_base64(app_key_colon_secret),
+            ["Content-Type"] = "application/x-www-form-urlencoded",
+            ["Content-Length"] = string.len(data),
+        },
+        source  = ltn12.source.string(data),
+        sink    = ltn12.sink.table(sink),
+    }
+    socketutil:set_timeout()
+    local code = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
+    if code == 200 then
+        local headers = table.concat(sink)
+        if headers ~= "" then
+            local _, result = pcall(JSON.decode, headers)
+            return result["access_token"]
+        end
+    end
+    logger.info("Dropbox: cannot get access token")
+end
+
+function DropBoxApi:fetchInfo(token, space_usage)
+    local url = space_usage and API_GET_SPACE_USAGE or API_URL_INFO
+    local sink = {}
+    local request = {
+        url     = url,
         method  = "POST",
         headers = {
             ["Authorization"] = "Bearer " .. token,
         },
         sink    = ltn12.sink.table(sink),
     }
-    local headers_request = socket.skip(1, http.request(request))
+    socketutil:set_timeout()
+    local code = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
-    local result_response = table.concat(sink)
-    if headers_request == nil then
-        return nil
+    if code == 200 then
+        local headers = table.concat(sink)
+        if headers ~= "" then
+            local _, result = pcall(JSON.decode, headers)
+            return result
+        end
     end
-    if result_response ~= "" then
-        local _, result = pcall(JSON.decode, result_response)
-        return result
-    else
-        return nil
-    end
+    logger.info("Dropbox: cannot get account info")
 end
 
 function DropBoxApi:fetchListFolders(path, token)

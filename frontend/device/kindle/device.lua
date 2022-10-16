@@ -141,7 +141,7 @@ local function frameworkStopped()
     end
 end
 
-local Kindle = Generic:new{
+local Kindle = Generic:extend{
     model = "Kindle",
     isKindle = yes,
     -- NOTE: We can cheat by adding a platform-specific entry here, because the only code that will check for this is here.
@@ -322,7 +322,7 @@ function Kindle:outofScreenSaver()
                         -- The banner on a 1236x1648 PW5 is 1235x125; we refresh the bottom 10% of the screen to be safe.
                         local Geom = require("ui/geometry")
                         local screen_height = self.screen:getHeight()
-                        local refresh_height = math.ceil(screen_height / 10)
+                        local refresh_height = math.ceil(screen_height * (1/10))
                         local refresh_region = Geom:new{
                             x = 0,
                             y = screen_height - 1 - refresh_height,
@@ -369,29 +369,29 @@ function Kindle:readyToSuspend()
 end
 
 function Kindle:setEventHandlers(UIManager)
-    UIManager.event_handlers["Suspend"] = function()
+    UIManager.event_handlers.Suspend = function()
         self.powerd:toggleSuspend()
     end
-    UIManager.event_handlers["IntoSS"] = function()
+    UIManager.event_handlers.IntoSS = function()
         self:_beforeSuspend()
         self:intoScreenSaver()
     end
-    UIManager.event_handlers["OutOfSS"] = function()
+    UIManager.event_handlers.OutOfSS = function()
         self:outofScreenSaver()
         self:_afterResume()
     end
-    UIManager.event_handlers["Charging"] = function()
+    UIManager.event_handlers.Charging = function()
         self:_beforeCharging()
         self:usbPlugIn()
     end
-    UIManager.event_handlers["NotCharging"] = function()
+    UIManager.event_handlers.NotCharging = function()
         self:usbPlugOut()
         self:_afterNotCharging()
     end
-    UIManager.event_handlers["WakeupFromSuspend"] = function()
+    UIManager.event_handlers.WakeupFromSuspend = function()
         self:wakeupFromSuspend()
     end
-    UIManager.event_handlers["ReadyToSuspend"] = function()
+    UIManager.event_handlers.ReadyToSuspend = function()
         self:readyToSuspend()
     end
 end
@@ -411,7 +411,7 @@ function Kindle:ambientBrightnessLevel()
     return 4
 end
 
-local Kindle2 = Kindle:new{
+local Kindle2 = Kindle:extend{
     model = "Kindle2",
     isREAGL = no,
     hasKeyboard = yes,
@@ -424,7 +424,7 @@ local Kindle2 = Kindle:new{
     supportsScreensaver = yes, -- The first ad-supported device was the K3
 }
 
-local KindleDXG = Kindle:new{
+local KindleDXG = Kindle:extend{
     model = "KindleDXG",
     isREAGL = no,
     hasKeyboard = yes,
@@ -437,7 +437,7 @@ local KindleDXG = Kindle:new{
     supportsScreensaver = yes, -- The first ad-supported device was the K3
 }
 
-local Kindle3 = Kindle:new{
+local Kindle3 = Kindle:extend{
     model = "Kindle3",
     isREAGL = no,
     hasKeyboard = yes,
@@ -449,7 +449,7 @@ local Kindle3 = Kindle:new{
     isSpecialOffers = hasSpecialOffers(),
 }
 
-local Kindle4 = Kindle:new{
+local Kindle4 = Kindle:extend{
     model = "Kindle4",
     isREAGL = no,
     hasKeys = yes,
@@ -461,7 +461,7 @@ local Kindle4 = Kindle:new{
     isSpecialOffers = hasSpecialOffers(),
 }
 
-local KindleTouch = Kindle:new{
+local KindleTouch = Kindle:extend{
     model = "KindleTouch",
     isREAGL = no,
     isTouchDevice = yes,
@@ -469,7 +469,7 @@ local KindleTouch = Kindle:new{
     touch_dev = "/dev/input/event3",
 }
 
-local KindlePaperWhite = Kindle:new{
+local KindlePaperWhite = Kindle:extend{
     model = "KindlePaperWhite",
     isREAGL = no,
     isTouchDevice = yes,
@@ -479,7 +479,7 @@ local KindlePaperWhite = Kindle:new{
     touch_dev = "/dev/input/event0",
 }
 
-local KindlePaperWhite2 = Kindle:new{
+local KindlePaperWhite2 = Kindle:extend{
     model = "KindlePaperWhite2",
     isTouchDevice = yes,
     hasFrontlight = yes,
@@ -488,13 +488,13 @@ local KindlePaperWhite2 = Kindle:new{
     touch_dev = "/dev/input/event1",
 }
 
-local KindleBasic = Kindle:new{
+local KindleBasic = Kindle:extend{
     model = "KindleBasic",
     isTouchDevice = yes,
     touch_dev = "/dev/input/event1",
 }
 
-local KindleVoyage = Kindle:new{
+local KindleVoyage = Kindle:extend{
     model = "KindleVoyage",
     isTouchDevice = yes,
     hasFrontlight = yes,
@@ -504,7 +504,7 @@ local KindleVoyage = Kindle:new{
     touch_dev = "/dev/input/event1",
 }
 
-local KindlePaperWhite3 = Kindle:new{
+local KindlePaperWhite3 = Kindle:extend{
     model = "KindlePaperWhite3",
     isTouchDevice = yes,
     hasFrontlight = yes,
@@ -513,7 +513,7 @@ local KindlePaperWhite3 = Kindle:new{
     touch_dev = "/dev/input/event1",
 }
 
-local KindleOasis = Kindle:new{
+local KindleOasis = Kindle:extend{
     model = "KindleOasis",
     isTouchDevice = yes,
     hasFrontlight = yes,
@@ -529,7 +529,7 @@ local KindleOasis = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-imx-i2c.1-event",
 }
 
-local KindleOasis2 = Kindle:new{
+local KindleOasis2 = Kindle:extend{
     model = "KindleOasis2",
     isZelda = yes,
     isTouchDevice = yes,
@@ -540,7 +540,7 @@ local KindleOasis2 = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }
 
-local KindleOasis3 = Kindle:new{
+local KindleOasis3 = Kindle:extend{
     model = "KindleOasis3",
     isZelda = yes,
     isTouchDevice = yes,
@@ -553,13 +553,13 @@ local KindleOasis3 = Kindle:new{
     touch_dev = "/dev/input/by-path/platform-30a30000.i2c-event",
 }
 
-local KindleBasic2 = Kindle:new{
+local KindleBasic2 = Kindle:extend{
     model = "KindleBasic2",
     isTouchDevice = yes,
     touch_dev = "/dev/input/event0",
 }
 
-local KindlePaperWhite4 = Kindle:new{
+local KindlePaperWhite4 = Kindle:extend{
     model = "KindlePaperWhite4",
     isRex = yes,
     isTouchDevice = yes,
@@ -571,7 +571,7 @@ local KindlePaperWhite4 = Kindle:new{
     touch_dev = "/dev/input/event2",
 }
 
-local KindleBasic3 = Kindle:new{
+local KindleBasic3 = Kindle:extend{
     model = "KindleBasic3",
     isRex = yes,
     -- NOTE: Apparently, the KT4 doesn't actually support the fancy nightmode waveforms, c.f., ko/#5076
@@ -582,7 +582,7 @@ local KindleBasic3 = Kindle:new{
     touch_dev = "/dev/input/event2",
 }
 
-local KindlePaperWhite5 = Kindle:new{
+local KindlePaperWhite5 = Kindle:extend{
     model = "KindlePaperWhite5",
     isMTK = yes,
     isTouchDevice = yes,
@@ -595,6 +595,20 @@ local KindlePaperWhite5 = Kindle:new{
     display_dpi = 300,
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     -- NOTE: While hardware dithering (via MDP) should be a thing, it doesn't appear to do anything right now :/.
+    canHWDither = no,
+    canDoSwipeAnimation = yes,
+}
+
+local KindleScribe = Kindle:extend{
+    model = "KindleScribe",
+    isMTK = yes,
+    isTouchDevice = yes,
+    hasFrontlight = yes,
+    hasNaturalLight = yes,
+    hasNaturalLightMixer = yes,
+    display_dpi = 300,
+    -- TBD
+    touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
     canHWDither = no,
     canDoSwipeAnimation = yes,
 }
@@ -1096,6 +1110,27 @@ function KindlePaperWhite5:init()
     self.input.open("fake_events")
 end
 
+function KindleScribe:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    -- TBD, assume PW5 for now
+    self.powerd = require("device/kindle/powerd"):new{
+        device = self,
+        fl_intensity_file = "/sys/class/backlight/fp9966-bl1/brightness",
+        warmth_intensity_file = "/sys/class/backlight/fp9966-bl0/brightness",
+        batt_capacity_file = "/sys/class/power_supply/bd71827_bat/capacity",
+        is_charging_file = "/sys/class/power_supply/bd71827_bat/charging",
+        batt_status_file = "/sys/class/power_supply/bd71827_bat/status",
+    }
+
+    -- Enable the so-called "fast" mode, so as to prevent the driver from silently promoting refreshes to REAGL.
+    self.screen:_MTK_ToggleFastMode(true)
+
+    Kindle.init(self)
+
+    self.input.open(self.touch_dev)
+    self.input.open("fake_events")
+end
+
 function KindleTouch:exit()
     if self:isMTK() then
         -- Disable the so-called "fast" mode
@@ -1135,6 +1170,7 @@ KindlePaperWhite4.exit = KindleTouch.exit
 KindleBasic3.exit = KindleTouch.exit
 KindleOasis3.exit = KindleTouch.exit
 KindlePaperWhite5.exit = KindleTouch.exit
+KindleScribe.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -1188,7 +1224,8 @@ local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
                   "16Q", "16R", "16S", "16T", "16U", "16V" }
 local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
 local koa3_set = Set { "11L", "0WQ", "0WP", "0WN", "0WM", "0WL" }
-local pw5_set = Set { "1LG", "1Q0", "1PX", "1VD", "219", "21A", "2BH", "2BJ" }
+local pw5_set = Set { "1LG", "1Q0", "1PX", "1VD", "219", "21A", "2BH", "2BJ", "2DK" }
+local scribe_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
 
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
     local kindle_devcode = string.sub(kindle_sn, 3, 4)
@@ -1233,6 +1270,8 @@ else
         return KindleOasis3
     elseif pw5_set[kindle_devcode_v2] then
         return KindlePaperWhite5
+    elseif scribe_set[kindle_devcode_v2] then
+        return KindleScribe
     end
 end
 

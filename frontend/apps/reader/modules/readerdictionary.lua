@@ -6,7 +6,6 @@ local DictQuickLookup = require("ui/widget/dictquicklookup")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -16,9 +15,11 @@ local NetworkMgr = require("ui/network/manager")
 local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffi = require("ffi")
 local C = ffi.C
 local ffiUtil  = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local time = require("ui/time")
 local util  = require("util")
@@ -59,9 +60,8 @@ local function getIfosInDir(path)
     return ifos
 end
 
-local ReaderDictionary = InputContainer:new{
+local ReaderDictionary = WidgetContainer:extend{
     data_dir = nil,
-    dict_window_list = {},
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
@@ -106,7 +106,7 @@ function ReaderDictionary:init()
     if self.ui then
         self.ui.menu:registerToMainMenu(self)
     end
-    self.data_dir = STARDICT_DATA_DIR or
+    self.data_dir = G_defaults:readSetting("STARDICT_DATA_DIR") or
         os.getenv("STARDICT_DATA_DIR") or
         DataStorage:getDataDir() .. "/data/dict"
 
@@ -134,7 +134,7 @@ function ReaderDictionary:init()
             if f then
                 local content = f:read("*all")
                 f:close()
-                local dictname = content:match("\nbookname=(.-)\n")
+                local dictname = content:match("\nbookname=(.-)\r?\n")
                 local is_html = content:find("sametypesequence=h", 1, true) ~= nil
                 -- sdcv won't use dict that don't have a bookname=
                 if dictname then
@@ -155,7 +155,7 @@ function ReaderDictionary:init()
     self:updateSdcvDictNamesOptions()
 
     if not lookup_history then
-        lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
+        lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", "LookupHistory")
     end
 end
 
@@ -965,9 +965,8 @@ end
 
 function ReaderDictionary:showDict(word, results, boxes, link, tweak_buttons_func)
     if results and results[1] then
-        logger.dbg("showing quick lookup window", #self.dict_window_list+1, ":", word, results)
+        logger.dbg("showing quick lookup window", #DictQuickLookup.window_list+1, ":", word, results)
         self.dict_window = DictQuickLookup:new{
-            window_list = self.dict_window_list,
             ui = self.ui,
             highlight = self.highlight,
             tweak_buttons_func = tweak_buttons_func,
@@ -991,7 +990,6 @@ function ReaderDictionary:showDict(word, results, boxes, link, tweak_buttons_fun
                 self:onHtmlDictionaryLinkTapped(dictionary, html_link)
             end,
         }
-        table.insert(self.dict_window_list, self.dict_window)
         if self.lookup_progress_msg then
             -- If we have a lookup InfoMessage that ended up being displayed, make
             -- it *not* refresh on close if it is hidden by our DictQuickLookup
@@ -1051,7 +1049,6 @@ function ReaderDictionary:downloadDictionaryPrep(dict, size)
     local dummy, filename = util.splitFilePathName(dict.url)
     local download_location = string.format("%s/%s", self.data_dir, filename)
 
-    local lfs = require("libs/libkoreader-lfs")
     if lfs.attributes(download_location) then
         UIManager:show(ConfirmBox:new{
             text =  _("File already exists. Overwrite?"),

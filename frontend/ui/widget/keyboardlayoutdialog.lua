@@ -23,7 +23,7 @@ local _ = require("gettext")
 local Device = require("device")
 local Screen = Device.screen
 
-local KeyboardLayoutDialog = FocusManager:new{
+local KeyboardLayoutDialog = FocusManager:extend{
     is_always_active = true,
     modal = true,
     stop_events_propagation = true,

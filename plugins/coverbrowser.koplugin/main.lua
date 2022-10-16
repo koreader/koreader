@@ -1,5 +1,5 @@
-local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 local BookInfoManager = require("bookinfomanager")
@@ -45,7 +45,7 @@ local history_display_mode = false -- not initialized yet
 local collection_display_mode = false -- not initialized yet
 local series_mode = nil -- defaults to not display series
 
-local CoverBrowser = InputContainer:new{
+local CoverBrowser = WidgetContainer:extend{
     name = "coverbrowser",
 }
 
@@ -467,11 +467,11 @@ function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
     if fm then
         local fc = fm.file_chooser
         if cleanup then -- clean instance properties we may have set
-            if fc.onFileHold_orig then
-                -- remove our onFileHold that extended file_dialog with new buttons
-                fc.onFileHold = fc.onFileHold_orig
-                fc.onFileHold_orig = nil
-                fc.onFileHold_ours = nil
+            if fc.showFileDialog_orig then
+                -- remove our showFileDialog that extended file_dialog with new buttons
+                fc.showFileDialog = fc.showFileDialog_orig
+                fc.showFileDialog_orig = nil
+                fc.showFileDialog_ours = nil
             end
         end
         if filemanager_display_mode then

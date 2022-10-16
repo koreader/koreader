@@ -3,17 +3,17 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = require("device").screen
 local BaseUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
 local T = BaseUtil.template
 
-local FileManagerCollection = InputContainer:extend{
+local FileManagerCollection = WidgetContainer:extend{
     coll_menu_title = _("Favorites"),
 }
 

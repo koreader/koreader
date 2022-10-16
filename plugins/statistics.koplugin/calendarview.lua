@@ -28,7 +28,7 @@ local Input = Device.input
 local Screen = Device.screen
 local _ = require("gettext")
 
-local HistogramWidget = Widget:new{
+local HistogramWidget = Widget:extend{
     width = nil,
     height = nil,
     color = Blitbuffer.COLOR_BLACK,
@@ -76,7 +76,7 @@ function HistogramWidget:paintTo(bb, x, y)
 end
 
 
-local CalendarDay = InputContainer:new{
+local CalendarDay = InputContainer:extend{
     daynum = nil,
     ratio_per_hour = nil,
     filler = false,
@@ -125,7 +125,7 @@ function CalendarDay:init()
     local inner_h = self.height - 2*self.border
     if self.show_histo then
         if not self.histo_height then
-            self.histo_height = inner_h / 3
+            self.histo_height = inner_h * (1/3)
         end
         self.histo_w = BottomContainer:new{
             dimen = Geom:new{w = inner_w, h = inner_h},
@@ -170,7 +170,7 @@ function CalendarDay:onHold()
 end
 
 
-local CalendarWeek = InputContainer:new{
+local CalendarWeek = InputContainer:extend{
     width = nil,
     height = nil,
     day_width = 0,
@@ -367,7 +367,7 @@ end
 -- Fetched from db, cached as local as it might be expensive
 local MIN_MONTH = nil
 
-local CalendarView = FocusManager:new{
+local CalendarView = FocusManager:extend{
     reader_statistics = nil,
     monthTranslation = nil,
     shortDayOfWeekTranslation = nil,
@@ -419,9 +419,9 @@ function CalendarView:init()
     self.inner_padding = Size.padding.small
 
     -- 7 days in a week
-    self.day_width = math.floor((self.dimen.w - 2*self.outer_padding - 6*self.inner_padding) / 7)
+    self.day_width = math.floor((self.dimen.w - 2*self.outer_padding - 6*self.inner_padding) * (1/7))
     -- Put back the possible 7px lost in rounding into outer_padding
-    self.outer_padding = math.floor((self.dimen.w - 7*self.day_width - 6*self.inner_padding) / 2)
+    self.outer_padding = math.floor((self.dimen.w - 7*self.day_width - 6*self.inner_padding) * (1/2))
 
     self.content_width = self.dimen.w - 2*self.outer_padding
 
@@ -557,7 +557,7 @@ function CalendarView:init()
     -- At most 6 weeks in a month
     local available_height = self.dimen.h - self.title_bar:getHeight()
                             - self.page_info:getSize().h - self.day_names:getSize().h
-    self.week_height = math.floor((available_height - 7*self.inner_padding) / 6)
+    self.week_height = math.floor((available_height - 7*self.inner_padding) * (1/6))
     self.day_border = Size.border.default
     if self.show_hourly_histogram then
         -- day num + nb_book_spans + histogram: ceil() as histogram rarely

@@ -28,7 +28,7 @@ genTapZonesMenu("left_right")
 genTapZonesMenu("top_bottom")
 table.insert(page_turns_tap_zones_sub_items, {
     text_func = function()
-        local size = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", DTAP_ZONE_FORWARD.w) * 100)
+        local size = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", G_defaults:readSetting("DTAP_ZONE_FORWARD").w) * 100)
         return T(_("Forward tap zone size: %1%"), size)
     end,
     enabled_func = function()
@@ -37,16 +37,16 @@ table.insert(page_turns_tap_zones_sub_items, {
     keep_menu_open = true,
     callback = function(touchmenu_instance)
         local is_left_right = G_reader_settings:readSetting("page_turns_tap_zones") == "left_right"
-        local size = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", DTAP_ZONE_FORWARD.w) * 100)
+        local size = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", G_defaults:readSetting("DTAP_ZONE_FORWARD").w) * 100)
         UIManager:show(require("ui/widget/spinwidget"):new{
             title_text = is_left_right and _("Forward tap zone width") or _("Forward tap zone height"),
             info_text = is_left_right and _("Percentage of screen width") or _("Percentage of screen height"),
             value = size,
             value_min = 0,
             value_max = 100,
-            default_value = math.floor(DTAP_ZONE_FORWARD.w * 100),
+            default_value = math.floor(G_defaults:readSetting("DTAP_ZONE_FORWARD").w * 100),
             callback = function(spin)
-                G_reader_settings:saveSetting("page_turns_tap_zone_forward_size_ratio", spin.value / 100)
+                G_reader_settings:saveSetting("page_turns_tap_zone_forward_size_ratio", spin.value * (1/100))
                 ReaderUI.instance.view:setupTouchZones()
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end,

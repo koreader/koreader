@@ -2,6 +2,7 @@ local JSON = require("json")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local ffiutil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -222,7 +223,7 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
         error(content)
     end
 
-    if content ~= "" and string.sub(content, 1,1) == "{" then
+    if content ~= "" and string.sub(content, 1, 1) == "{" then
         local ok, result = pcall(JSON.decode, content)
         if ok and result then
             logger.dbg("wiki result json:", result)
@@ -394,7 +395,7 @@ local function image_load_bb_func(image, highres)
     logger.dbg("fetching", source)
     local Trapper = require("ui/trapper")
     -- We use dismissableRunInSubprocess with simple string return value to
-    -- avoid dump()/load() a long string of image bytes
+    -- avoid serialization/deserialization of a long string of image bytes
     local completed, data = Trapper:dismissableRunInSubprocess(function()
         local success, data = getUrlContent(source, timeout, maxtime)
         -- With simple string value, we're not able to return the failure

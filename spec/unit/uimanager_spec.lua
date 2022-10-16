@@ -113,6 +113,52 @@ describe("UIManager spec", function()
         assert.are.same('quux', UIManager._task_queue[5].action)
     end)
 
+    it("should insert new tasks with same times after existing tasks", function()
+        now = time.now()
+        UIManager:quit()
+        UIManager._task_queue = {}
+
+        -- insert task "5s" between "now" and "10s"
+        UIManager:schedule(now, "now");
+        assert.are.same("now", UIManager._task_queue[1].action)
+        UIManager:schedule(now + time.s(10), "10s");
+        assert.are.same("10s", UIManager._task_queue[2].action)
+        UIManager:schedule(now + time.s(5), "5s");
+        assert.are.same("5s", UIManager._task_queue[2].action)
+
+        -- insert task at the end after "10s"
+        UIManager:scheduleIn(10, 'foo') -- is a bit later than "10s", as time.now() is used internally
+        assert.are.same('foo', UIManager._task_queue[4].action)
+
+        -- insert task at the second last position after "10s"
+        UIManager:schedule(now + time.s(10), 'bar')
+        assert.are.same('bar', UIManager._task_queue[4].action)
+
+        -- insert task at the second last position after "bar"
+        UIManager:schedule(now + time.s(10), 'baz')
+        assert.are.same('baz', UIManager._task_queue[5].action)
+
+        -- insert task after "5s"
+        UIManager:schedule(now + time.s(5), 'nix')
+        assert.are.same('nix', UIManager._task_queue[3].action)
+        -- "barba" is later than "nix" anyway
+        UIManager:scheduleIn(5, 'barba') -- is a bit later than "5s", as time.now() is used internally
+        assert.are.same('barba', UIManager._task_queue[4].action)
+
+        -- "papa" is shortly after "now"
+        UIManager:nextTick('papa') -- is a bit later than "now"
+        assert.are.same('papa', UIManager._task_queue[2].action)
+
+        -- "mama is shedule now and inserted after "now"
+        UIManager:schedule(now, 'mama')
+        assert.are.same('mama', UIManager._task_queue[2].action)
+
+        -- "letta" is shortly after "papa"
+        UIManager:tickAfterNext('letta')
+        assert.are.same("function", type(UIManager._task_queue[4].action))
+
+    end)
+
     it("should unschedule all the tasks with the same action", function()
         now = time.now()
         UIManager:quit()

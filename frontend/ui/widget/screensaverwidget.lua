@@ -10,7 +10,7 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local ScreenSaverWidget = InputContainer:new{
+local ScreenSaverWidget = InputContainer:extend{
     name = "ScreenSaver",
     widget = nil,
     background = nil,
@@ -162,7 +162,6 @@ function ScreenSaverWidget:onClose()
     local Screensaver = require("ui/screensaver")
     if Screensaver.delayed_close then
         UIManager:unschedule(Screensaver.close_widget)
-        Screensaver.delayed_close = nil
     end
 
     UIManager:close(self)

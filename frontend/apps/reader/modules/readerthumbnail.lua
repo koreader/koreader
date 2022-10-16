@@ -2,11 +2,11 @@ local Blitbuffer = require("ffi/blitbuffer")
 local Cache = require("cache")
 local Device = require("device")
 local Geom = require("ui/geometry")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local Persist = require("persist")
 local RenderImage = require("ui/renderimage")
 local TileCacheItem = require("document/tilecacheitem")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = Device.screen
 local ffiutil = require("ffi/util")
 local logger = require("logger")
@@ -18,7 +18,7 @@ local _ = require("gettext")
 -- It handles launching via the menu or Dispatcher/Gestures two fullscreen
 -- widgets related to showing pages and thumbnails that will make use of
 -- its services: BookMap and PageBrowser.
-local ReaderThumbnail = InputContainer:new{}
+local ReaderThumbnail = WidgetContainer:extend{}
 
 function ReaderThumbnail:init()
     if not Device:isTouchDevice() then
@@ -123,7 +123,7 @@ function ReaderThumbnail:setupCache()
         local max_bytes = math.ceil(N * Screen:getWidth() * Screen:getHeight() * Blitbuffer.TYPE_TO_BPP[self.bb_type] / 8)
         -- We don't really care about limiting any number of slots, so allow
         -- for at least 5 pages of 10x10 tiles
-        local avg_itemsize = math.ceil(max_bytes / 500)
+        local avg_itemsize = math.ceil(max_bytes * (1/500))
         self.tile_cache = Cache:new{
             size = max_bytes,
             avg_itemsize = avg_itemsize, -- will make slots=500
@@ -182,7 +182,8 @@ end
 function ReaderThumbnail:resetCachedPagesForBookmarks(...)
     -- Multiple bookmarks may be provided
     local start_page, end_page
-    for _, bm in ipairs({...}) do
+    for i = 1, select("#", ...) do
+        local bm = select(i, ...)
         if self.ui.rolling then
             -- Look at all properties that may be xpointers
             for _, k in ipairs({"page", "pos0", "pos1"}) do

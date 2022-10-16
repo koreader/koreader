@@ -9,7 +9,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local AutoTurn = WidgetContainer:new{
+local AutoTurn = WidgetContainer:extend{
     name = "autoturn",
     is_doc_only = true,
     autoturn_sec = 0,
@@ -148,7 +148,7 @@ function AutoTurn:addToMainMenu(menu_items)
         callback = function(menu)
             local DateTimeWidget = require("ui/widget/datetimewidget")
             local autoturn_seconds = G_reader_settings:readSetting("autoturn_timeout_seconds", 30)
-            local autoturn_minutes = math.floor(autoturn_seconds / 60)
+            local autoturn_minutes = math.floor(autoturn_seconds * (1/60))
             autoturn_seconds = autoturn_seconds % 60
             local autoturn_spin = DateTimeWidget:new {
                 title_text = _("Autoturn time"),

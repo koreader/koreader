@@ -14,7 +14,6 @@ Note: CanvasContext is a singleton and it is not thread safe.
 local Mupdf = require("ffi/mupdf")
 
 local CanvasContext = {
-    should_restrict_JIT = false,
     is_color_rendering_enabled = false,
     is_bgr = false,
 }
@@ -24,7 +23,6 @@ Initialize CanvasContext with settings from device.
 
 The following key is required for a device object:
 
-* should_restrict_JIT: bool
 * hasBGRFrameBuffer: function() -> boolean
 * screen: object with following methods:
     * getWidth() -> int
@@ -51,7 +49,6 @@ function CanvasContext:init(device)
     self.isEmulator = device.isEmulator
     self.isKindle = device.isKindle
     self.isPocketBook = device.isPocketBook
-    self.should_restrict_JIT = device.should_restrict_JIT
     self.hasSystemFonts = device.hasSystemFonts
     self:setColorRenderingEnabled(device.screen:isColorEnabled())
 

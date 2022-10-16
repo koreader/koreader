@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local DictQuickLookup = require("ui/widget/dictquicklookup")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -31,7 +32,7 @@ function ReaderWikipedia:init()
     self.wiki_languages = {}
     self.ui.menu:registerToMainMenu(self)
     if not wikipedia_history then
-        wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", { name = "WikipediaHistory" })
+        wikipedia_history = LuaData:open(DataStorage:getSettingsDir() .. "/wikipedia_history.lua", "WikipediaHistory")
     end
 end
 
@@ -553,11 +554,11 @@ function ReaderWikipedia:getWikiLanguages(first_lang)
         end
     end
     local update_wiki_languages_on_close = false
-    if self.dict_window_list.rotated_update_wiki_languages_on_close ~= nil then
+    if DictQuickLookup.rotated_update_wiki_languages_on_close ~= nil then
         -- Flag set by DictQuickLookup when rotating, forwarding the flag
         -- of the rotated out DictQuickLookup instance: trust it
-        update_wiki_languages_on_close = self.dict_window_list.rotated_update_wiki_languages_on_close
-        self.dict_window_list.rotated_update_wiki_languages_on_close = nil
+        update_wiki_languages_on_close = DictQuickLookup.rotated_update_wiki_languages_on_close
+        DictQuickLookup.rotated_update_wiki_languages_on_close = nil
     else
         -- Not a rotation. Only if it's the first request with the current
         -- first language, we will have it (and any lang rotation from it)
@@ -567,8 +568,8 @@ function ReaderWikipedia:getWikiLanguages(first_lang)
         -- from them) won't update it.
         if is_first_lang then
             update_wiki_languages_on_close = true
-            for i=1, #self.dict_window_list-1 do -- (ignore the last one, which is the one calling this)
-                if self.dict_window_list[i].is_wiki then
+            for i = #DictQuickLookup.window_list-1, 1, -1 do -- (ignore the last one, which is the one calling this)
+                if DictQuickLookup.window_list[i].is_wiki then
                     -- Another upper Wikipedia result: only this one may update it
                     update_wiki_languages_on_close = false
                     break

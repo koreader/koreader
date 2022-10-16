@@ -17,7 +17,7 @@ local UIManager = require("ui/uimanager")
 local Input = Device.input
 local Screen = Device.screen
 
-local ScrollTextWidget = InputContainer:new{
+local ScrollTextWidget = InputContainer:extend{
     text = nil,
     charlist = nil,
     charpos = nil,
@@ -230,6 +230,16 @@ end
 
 function ScrollTextWidget:moveCursorDown()
     self.text_widget:moveCursorDown()
+    self:updateScrollBar()
+end
+
+function ScrollTextWidget:moveCursorHome()
+    self.text_widget:moveCursorHome()
+    self:updateScrollBar()
+end
+
+function ScrollTextWidget:moveCursorEnd()
+    self.text_widget:moveCursorEnd()
     self:updateScrollBar()
 end
 

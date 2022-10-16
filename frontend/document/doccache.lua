@@ -10,10 +10,13 @@ local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local util = require("util")
 
+local DHINTCOUNT = G_defaults:readSetting("DHINTCOUNT")
+
 local function calcCacheMemSize()
-    local min = DGLOBAL_CACHE_SIZE_MINIMUM
-    local max = DGLOBAL_CACHE_SIZE_MAXIMUM
-    local calc = util.calcFreeMem() * (DGLOBAL_CACHE_FREE_PROPORTION or 0)
+    local min = G_defaults:readSetting("DGLOBAL_CACHE_SIZE_MINIMUM")
+    local max = G_defaults:readSetting("DGLOBAL_CACHE_SIZE_MAXIMUM")
+    local memfree, _ = util.calcFreeMem() or 0, 0
+    local calc = memfree * G_defaults:readSetting("DGLOBAL_CACHE_FREE_PROPORTION")
     return math.min(max, math.max(min, calc))
 end
 local doccache_size = calcCacheMemSize()
@@ -42,6 +45,7 @@ local function computeCacheSlots()
     end
 end
 
+-- NOTE: This is a singleton!
 local DocCache = Cache:new{
     slots = computeCacheSlots(),
     size = computeCacheSize(),

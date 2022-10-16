@@ -34,7 +34,6 @@ if not busted_ok then
     end
 end
 
-require "defaults"
 package.path = "?.lua;common/?.lua;rocks/share/lua/5.1/?.lua;frontend/?.lua;" .. package.path
 package.cpath = "?.so;common/?.so;/usr/lib/lua/?.so;rocks/lib/lua/5.1/?.so;" .. package.cpath
 
@@ -43,8 +42,13 @@ require("dbg"):turnOff()
 local logger = require("logger")
 logger:setLevel(logger.levels.warn)
 
--- global reader settings
+-- global defaults
 local DataStorage = require("datastorage")
+os.remove(DataStorage:getDataDir() .. "/defaults.tests.lua")
+os.remove(DataStorage:getDataDir() .. "/defaults.tests.lua.old")
+G_defaults = require("luadefaults"):open(DataStorage:getDataDir() .. "/defaults.tests.lua")
+
+-- global reader settings
 os.remove(DataStorage:getDataDir().."/settings.reader.lua")
 G_reader_settings = require("luasettings"):open(".reader")
 

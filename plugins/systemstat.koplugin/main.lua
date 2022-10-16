@@ -160,10 +160,10 @@ function SystemStat:appendSystemInfo()
         self:put({_("System information"), ""})
         -- @translators Ticks is a highly technical term. See https://superuser.com/a/101202 The correct translation is likely to simply be "ticks".
         self:put({_("  Total ticks (million)"),
-                 string.format("%.2f", stat.cpu.total / 1000000)})
+                 string.format("%.2f", stat.cpu.total * (1/1000000))})
         -- @translators Ticks is a highly technical term. See https://superuser.com/a/101202 The correct translation is likely to simply be "ticks".
         self:put({_("  Idle ticks (million)"),
-                 string.format("%.2f", stat.cpu.idle / 1000000)})
+                 string.format("%.2f", stat.cpu.idle * (1/1000000))})
         self:put({_("  Processor usage %"),
                  string.format("%.2f", (1 - stat.cpu.idle / stat.cpu.total) * 100)})
     end
@@ -209,7 +209,7 @@ function SystemStat:appendProcessInfo()
             self:put({_("  Processor usage %"),
                      string.format("%.2f", n1 / sys_stat.cpu.total * 100)})
         else
-            self:put({_("  Processor usage ticks (million)"), n1 / 1000000})
+            self:put({_("  Processor usage ticks (million)"), n1 * (1/1000000)})
         end
     end
 
@@ -291,7 +291,7 @@ end
 
 SystemStat:init()
 
-local SystemStatWidget = WidgetContainer:new{
+local SystemStatWidget = WidgetContainer:extend{
     name = "systemstat",
 }
 

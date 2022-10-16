@@ -10,7 +10,7 @@ local ffi = require("ffi")
 local C = ffi.C
 local pdf = nil
 
-local PdfDocument = Document:new{
+local PdfDocument = Document:extend{
     _document = false,
     is_pdf = true,
     dc_null = DrawContext.new(),
@@ -74,8 +74,8 @@ function PdfDocument:convertKoptToReflowableFontSize(font_size)
         return size * default_font_size
     elseif G_reader_settings:readSetting("kopt_font_size") then
         return G_reader_settings:readSetting("kopt_font_size") * default_font_size
-    elseif DKOPTREADER_CONFIG_FONT_SIZE then
-        return DKOPTREADER_CONFIG_FONT_SIZE * default_font_size
+    elseif G_defaults:readSetting("DKOPTREADER_CONFIG_FONT_SIZE") then
+        return G_defaults:readSetting("DKOPTREADER_CONFIG_FONT_SIZE") * default_font_size
     else
         return default_font_size
     end

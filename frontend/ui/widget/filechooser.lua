@@ -25,7 +25,7 @@ local FileChooser = Menu:extend{
     file_filter = nil, -- function defined in the caller, returns true for files to be shown
     show_unsupported = false, -- set to true to ignore file_filter
     -- NOTE: Input is *always* a relative entry name
-    exclude_dirs = {
+    exclude_dirs = { -- const
         -- KOReader / Kindle
         "%.sdr$",
         -- Kobo
@@ -54,7 +54,7 @@ local FileChooser = Menu:extend{
         "^%.thumbnail%-previews$",
         "^%.reading%-states$",
     },
-    exclude_files = {
+    exclude_files = { -- const
         -- Kobo
         "^BookReader%.sqlite",
         "^KoboReader%.sqlite",
@@ -74,7 +74,7 @@ local FileChooser = Menu:extend{
     },
     collate = "strcoll", -- or collate = "access",
     reverse_collate = false,
-    path_items = {}, -- store last browsed location (item index) for each path
+    path_items = nil, -- hash, store last browsed location (item index) for each path
     goto_letter = true,
 }
 
@@ -98,6 +98,7 @@ function FileChooser:show_file(filename)
 end
 
 function FileChooser:init()
+    self.path_items = {}
     self.width = Screen:getWidth()
     self.list = function(path, dirs, files, count_only)
         -- lfs.dir directory without permission will give error
@@ -476,7 +477,6 @@ function FileChooser:onMenuSelect(item)
 end
 
 function FileChooser:onMenuHold(item)
-    if self.filemanager and self.filemanager.select_mode then return true end
     self:onFileHold(item.path)
     return true
 end

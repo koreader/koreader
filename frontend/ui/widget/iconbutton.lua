@@ -13,7 +13,9 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 
-local IconButton = InputContainer:new{
+local DGENERIC_ICON_SIZE = G_defaults:readSetting("DGENERIC_ICON_SIZE")
+
+local IconButton = InputContainer:extend{
     icon = "notice-warning",
     icon_rotation_angle = 0,
     dimen = nil,

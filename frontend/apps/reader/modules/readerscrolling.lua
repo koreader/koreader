@@ -1,7 +1,7 @@
 local Device = require("device")
 local Event = require("ui/event")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local time = require("ui/time")
 local _ = require("gettext")
@@ -16,7 +16,7 @@ local SCROLL_METHOD_CLASSIC = "classic"
 local SCROLL_METHOD_TURBO = "turbo"
 local SCROLL_METHOD_ON_RELEASE = "on_release"
 
-local ReaderScrolling = InputContainer:new{
+local ReaderScrolling = WidgetContainer:extend{
     -- Available scrolling methods (make them available to other reader modules)
     SCROLL_METHOD_CLASSIC = SCROLL_METHOD_CLASSIC,
     SCROLL_METHOD_TURBO = SCROLL_METHOD_TURBO,
@@ -221,9 +221,6 @@ function ReaderScrolling:applyScrollSettings()
 end
 
 function ReaderScrolling:setupTouchZones()
-    self.ges_events = {}
-    self.onGesture = nil
-
     local zones = {
         {
             id = "inertial_scrolling_touch",
@@ -384,11 +381,11 @@ function ReaderScrolling:_setupAction()
         end
 
         -- Decrease velocity at each step
-        self._velocity = self._velocity * math.pow(self.scroll_friction, self._inertial_scroll_interval)
+        self._velocity = self._velocity * self.scroll_friction^self._inertial_scroll_interval
         local dist = math.floor(self._velocity * self._inertial_scroll_interval)
         if math.abs(dist) < self.end_scroll_dist then
             -- Decrease it even more so scrolling stops sooner
-            self._velocity = self._velocity / 1.5
+            self._velocity = self._velocity * (2/3)
         end
         -- self._stats_scroll_iterations = self._stats_scroll_iterations + 1
         -- self._stats_scroll_distance = self._stats_scroll_distance + dist

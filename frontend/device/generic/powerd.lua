@@ -73,12 +73,10 @@ function BasePowerD:beforeSuspend() end
 function BasePowerD:afterResume() end
 
 function BasePowerD:isFrontlightOn()
-    assert(self ~= nil)
     return self.is_fl_on
 end
 
 function BasePowerD:_decideFrontlightState()
-    assert(self ~= nil)
     assert(self.device:hasFrontlight())
     self.is_fl_on = self:isFrontlightOnHW()
 end
@@ -88,7 +86,6 @@ function BasePowerD:isFrontlightOff()
 end
 
 function BasePowerD:frontlightIntensity()
-    assert(self ~= nil)
     if not self.device:hasFrontlight() then return 0 end
     if self:isFrontlightOff() then return 0 end
     --- @note: We assume that nothing other than us will set the frontlight level,
@@ -98,7 +95,6 @@ function BasePowerD:frontlightIntensity()
 end
 
 function BasePowerD:toggleFrontlight()
-    assert(self ~= nil)
     if not self.device:hasFrontlight() then return false end
     if self:isFrontlightOn() then
         return self:turnOffFrontlight()
@@ -108,7 +104,6 @@ function BasePowerD:toggleFrontlight()
 end
 
 function BasePowerD:turnOffFrontlight()
-    assert(self ~= nil)
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOff() then return false end
     self:turnOffFrontlightHW()
@@ -118,7 +113,6 @@ function BasePowerD:turnOffFrontlight()
 end
 
 function BasePowerD:turnOnFrontlight()
-    assert(self ~= nil)
     if not self.device:hasFrontlight() then return end
     if self:isFrontlightOn() then return false end
     if self.fl_intensity == self.fl_min then return false end  --- @fixme what the hell?
@@ -129,7 +123,6 @@ function BasePowerD:turnOnFrontlight()
 end
 
 function BasePowerD:frontlightWarmth()
-    assert(self ~= nil)
     if not self.device:hasNaturalLight() then
         return 0
     end
@@ -155,7 +148,7 @@ function BasePowerD:unchecked_read_int_file(file)
         fd:close()
         return int
     else
-        return
+        return nil
     end
 end
 

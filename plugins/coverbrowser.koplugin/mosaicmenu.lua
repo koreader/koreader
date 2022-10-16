@@ -48,7 +48,7 @@ local progress_widget
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
-local ItemShortCutIcon = WidgetContainer:new{
+local ItemShortCutIcon = WidgetContainer:extend{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
     key = nil,
     bordersize = Size.border.default,
@@ -95,7 +95,7 @@ end
 -- The rendering of the TextBoxWidget we're doing below
 -- with decreasing font sizes till it fits is quite expensive.
 
-local FakeCover = FrameContainer:new{
+local FakeCover = FrameContainer:extend{
     width = nil,
     height = nil,
     margin = 0,
@@ -343,8 +343,8 @@ end
 
 
 -- Based on menu.lua's MenuItem
-local MosaicMenuItem = InputContainer:new{
-    entry = {},
+local MosaicMenuItem = InputContainer:extend{
+    entry = nil, -- table, mandatory
     text = nil,
     show_parent = nil,
     detail = nil,

@@ -13,7 +13,7 @@ local util = require("util")
 
 local autostart_done = false
 
-local Profiles = WidgetContainer:new{
+local Profiles = WidgetContainer:extend{
     name = "profiles",
     profiles_file = DataStorage:getSettingsDir() .. "/profiles.lua",
     profiles = nil,
@@ -45,14 +45,11 @@ end
 
 local function dispatcherRegisterProfile(name)
     Dispatcher:registerAction("profile_exec_"..name,
-        {category="none", event="ProfileExecute", arg=name, title=T(_("Profile \u{F144} %1"), name), general=true})
-    Dispatcher:registerAction("profile_menu_"..name,
-        {category="none", event="ProfileShowMenu", arg=name, title=T(_("Profile \u{F0CA} %1"), name), general=true})
+        {category="none", event="ProfileExecute", arg=name, title=T(_("Profile %1"), name), general=true})
 end
 
 local function dispatcherRemoveProfile(name)
     Dispatcher:removeAction("profile_exec_"..name)
-    Dispatcher:removeAction("profile_menu_"..name)
 end
 
 function Profiles:onDispatcherRegisterActions()
@@ -80,6 +77,8 @@ function Profiles:getSubMenuItems()
             callback = function(touchmenu_instance)
                 local function editCallback(new_name)
                     self.data[new_name] = {}
+                    self.data[new_name].settings = {}
+                    self.data[new_name].settings.name = new_name
                     self.updated = true
                     dispatcherRegisterProfile(new_name)
                     touchmenu_instance.item_table = self:getSubMenuItems()
@@ -103,35 +102,6 @@ function Profiles:getSubMenuItems()
                 end,
             },
             {
-                text = _("Show as QuickMenu"),
-                callback = function()
-                    self:onProfileShowMenu(k)
-                end,
-            },
-            {
-                text = _("Show as QuickMenu on long-press"),
-                checked_func = function()
-                    local settings = self.data[k].settings
-                    return settings and settings.long_press_show_menu
-                end,
-                callback = function()
-                    local settings = self.data[k].settings
-                    if settings then
-                        if settings.long_press_show_menu then
-                            settings.long_press_show_menu = nil
-                            if #settings == 0 then
-                                self.data[k].settings = nil
-                            end
-                        else
-                            settings.long_press_show_menu = true
-                        end
-                    else
-                        self.data[k].settings = {["long_press_show_menu"] = true}
-                    end
-                    self.updated = true
-                end,
-            },
-            {
                 text = _("Autostart"),
                 help_text = _("Execute this profile when KOReader is started with 'file browser' or 'last file'."),
                 checked_func = function()
@@ -144,29 +114,8 @@ function Profiles:getSubMenuItems()
                 separator = true,
             },
             {
-                text = _("Edit actions"),
+                text_func = function() return T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(v)) end,
                 sub_item_table = edit_actions_sub_items,
-            },
-            {
-                text = _("Sort actions"),
-                checked_func = function()
-                    local settings = self.data[k].settings
-                    return settings and settings.actions_order
-                end,
-                callback = function(touchmenu_instance)
-                    self:sortActions(k, touchmenu_instance)
-                end,
-                hold_callback = function(touchmenu_instance)
-                    if self.data[k].settings and self.data[k].settings.actions_order then
-                        self.data[k].settings.actions_order = nil
-                        if #self.data[k].settings == 0 then
-                            self.data[k].settings = nil
-                        end
-                        self.updated = true
-                        touchmenu_instance:updateItems()
-                    end
-                end,
-                separator = true,
             },
             {
                 text = T(_("Rename: %1"), k),
@@ -174,6 +123,7 @@ function Profiles:getSubMenuItems()
                 callback = function(touchmenu_instance)
                     local function editCallback(new_name)
                         self.data[new_name] = util.tableDeepCopy(v)
+                        self.data[new_name].settings.name = new_name
                         self.data[k] = nil
                         self.updated = true
                         self:renameAutostart(k, new_name)
@@ -186,11 +136,15 @@ function Profiles:getSubMenuItems()
                 end,
             },
             {
-                text = _("Copy"),
+                text = _("Duplicate"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local function editCallback(new_name)
                         self.data[new_name] = util.tableDeepCopy(v)
+                        if not self.data[new_name].settings then
+                            self.data[new_name].settings = {}
+                        end
+                        self.data[new_name].settings.name = new_name
                         self.updated = true
                         dispatcherRegisterProfile(new_name)
                         touchmenu_instance.item_table = self:getSubMenuItems()
@@ -224,12 +178,7 @@ function Profiles:getSubMenuItems()
             hold_keep_menu_open = false,
             sub_item_table = sub_items,
             hold_callback = function()
-                local settings = self.data[k].settings
-                if settings and settings.long_press_show_menu then
-                    self:onProfileShowMenu(k)
-                else
-                    self:onProfileExecute(k)
-                end
+                self:onProfileExecute(k)
             end,
         })
     end
@@ -237,71 +186,7 @@ function Profiles:getSubMenuItems()
 end
 
 function Profiles:onProfileExecute(name)
-    local profile = self.data[name]
-    if profile and profile.settings and profile.settings.actions_order then
-        self:syncOrder(name)
-        for _, action in ipairs(profile.settings.actions_order) do
-            Dispatcher:execute({[action] = profile[action]})
-        end
-    else
-        Dispatcher:execute(profile)
-    end
-end
-
-function Profiles:onProfileShowMenu(name)
-    if UIManager:getTopWidget() == name then return end
-    local profile = self.data[name]
-    local actions_list = self:getActionsList(name)
-    local quickmenu
-    local buttons = {}
-    for _, v in ipairs(actions_list) do
-        table.insert(buttons, {{
-            text = v.text,
-            align = "left",
-            font_face = "smallinfofont",
-            font_size = 22,
-            font_bold = false,
-            callback = function()
-                UIManager:close(quickmenu)
-                local action = v.label
-                Dispatcher:execute({[action] = profile[action]})
-            end,
-        }})
-    end
-    local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
-    quickmenu = ButtonDialogTitle:new{
-        name = name,
-        title = name,
-        title_align = "center",
-        width_factor = 0.8,
-        use_info_style = false,
-        buttons = buttons,
-    }
-    UIManager:show(quickmenu)
-end
-
-function Profiles:sortActions(name, touchmenu_instance)
-    local profile = self.data[name]
-    local actions_list = self:getActionsList(name)
-    local SortWidget = require("ui/widget/sortwidget")
-    local sort_widget
-    sort_widget = SortWidget:new{
-        title = _("Sort actions"),
-        item_table = actions_list,
-        callback = function()
-            if profile.settings then
-                self.data[name].settings.actions_order = {}
-            else
-                self.data[name].settings = {["actions_order"] = {}}
-            end
-            for i, v in ipairs(sort_widget.item_table) do
-                self.data[name].settings.actions_order[i] = v.label
-            end
-            touchmenu_instance:updateItems()
-            self.updated = true
-        end
-    }
-    UIManager:show(sort_widget)
+    Dispatcher:execute(self.data[name])
 end
 
 function Profiles:editProfileName(editCallback, old_name)
@@ -335,51 +220,6 @@ function Profiles:editProfileName(editCallback, old_name)
     }
     UIManager:show(name_input)
     name_input:onShowKeyboard()
-end
-
-function Profiles:getActionsList(name)
-    local profile = self.data[name]
-    local function getActionFullName (profile_name, action_name)
-        local location = {} -- make this as expected by Dispatcher:getNameFromItem()
-        if type(profile_name[action_name]) ~= "boolean" then
-            location[action_name] = {[action_name] = profile_name[action_name]}
-        end
-        return Dispatcher:getNameFromItem(action_name, location, action_name)
-    end
-    local actions_list = {}
-    if profile and profile.settings and profile.settings.actions_order then
-        self:syncOrder(name)
-        for _, action in ipairs(profile.settings.actions_order) do
-            table.insert(actions_list, {text = getActionFullName(profile, action), label = action})
-        end
-    else
-        for action in pairs(profile) do
-            if action ~= "settings" then
-                table.insert(actions_list, {text = getActionFullName(profile, action), label = action})
-            end
-        end
-    end
-    return actions_list
-end
-
-function Profiles:syncOrder(name)
-    local profile = self.data[name]
-    for i = #profile.settings.actions_order, 1, -1 do
-        if not profile[profile.settings.actions_order[i]] then
-            table.remove(self.data[name].settings.actions_order, i)
-            if not self.updated then
-                self.updated = true
-            end
-        end
-    end
-    for action in pairs(profile) do
-        if action ~= "settings" and not util.arrayContains(profile.settings.actions_order, action) then
-            table.insert(self.data[name].settings.actions_order, action)
-            if not self.updated then
-                self.updated = true
-            end
-        end
-    end
 end
 
 function Profiles:renameAutostart(old_name, new_name)
