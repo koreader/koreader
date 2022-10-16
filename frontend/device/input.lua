@@ -538,7 +538,7 @@ function Input:handleKeyBoardEv(ev)
         keycode = self.rotation_map[self.device.screen:getRotationMode()][keycode]
     end
 
-    if self.fake_event_set[keycode] ~= nil then
+    if self.fake_event_set[keycode] then
         return keycode
     end
 
@@ -585,7 +585,7 @@ function Input:handleKeyBoardEv(ev)
     end
 
     -- handle modifier keys
-    if self.modifiers[keycode] ~= nil then
+    if self.modifiers[keycode] then
         if ev.value == EVENT_VALUE_KEY_PRESS then
             self.modifiers[keycode] = true
         elseif ev.value == EVENT_VALUE_KEY_RELEASE then
@@ -645,7 +645,7 @@ function Input:handlePowerManagementOnlyEv(ev)
         return keycode
     end
 
-    if self.fake_event_set[keycode] ~= nil then
+    if self.fake_event_set[keycode] then
         return keycode
     end
 
