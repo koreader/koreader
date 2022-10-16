@@ -36,7 +36,7 @@ end
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
 
-local ExternalKeyboard = WidgetContainer:new{
+local ExternalKeyboard = WidgetContainer:extend{
     name = "external_keyboard",
     is_doc_only = false,
     original_device_values = nil,
