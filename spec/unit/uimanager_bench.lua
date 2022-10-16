@@ -110,7 +110,7 @@ describe("UIManager schedule massive collision tests", function()
 end)
 
 describe("UIManager schedule massive ridiculous tests", function()
-    print("Doing massive ridiculous collision tests ......... this takes really a lot of time")
+    print("Performing massive ridiculous collision tests ......... this really takes a lot of time")
     UIManager:quit()
 
     for i = 1, 6 do
