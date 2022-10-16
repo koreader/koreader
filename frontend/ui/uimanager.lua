@@ -319,8 +319,7 @@ end
 
 function UIManager:debounce(seconds, immediate, action)
     -- Ported from underscore.js
-    local n = nil
-    local va = nil
+    local args = nil
     local previous_call_at = nil
     local is_scheduled = false
     local result = nil
@@ -334,24 +333,22 @@ function UIManager:debounce(seconds, immediate, action)
         else
             is_scheduled = false
             if not immediate then
-                result = action(unpack(va, 1, n))
+                result = action(unpack(args))
             end
             if not is_scheduled then
                 -- This check is needed because action can recursively call debounced_action_wrapper
-                n = nil
-                va = nil
+                args = nil
             end
         end
     end
     local debounced_action_wrapper = function(...)
-        n = select('#', ...)
-        va = {...}
+        args = table.pack(...)
         previous_call_at = time:now()
         if not is_scheduled then
             self:scheduleIn(seconds, scheduled_action)
             is_scheduled = true
             if immediate then
-                result = action(unpack(va, 1, n))
+                result = action(unpack(args))
             end
         end
         return result
