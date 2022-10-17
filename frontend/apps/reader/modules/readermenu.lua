@@ -178,7 +178,7 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     -- typeset tab
-    self.menu_items.manage_document_settings = {
+    self.menu_items.document_settings = {
         text = _("Document settings"),
         sub_item_table = {
             {
