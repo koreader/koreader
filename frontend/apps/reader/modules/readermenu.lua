@@ -179,7 +179,7 @@ function ReaderMenu:setUpdateItemTable()
 
     -- typeset tab
     self.menu_items.manage_document_settings = {
-        text = _("Manage document settings"),
+        text = _("Document settings"),
         sub_item_table = {
             {
                 text = _("Reset document settings to default"),
@@ -329,44 +329,17 @@ dbg:guard(ReaderMenu, 'setUpdateItemTable',
     end)
 
 function ReaderMenu:saveDocumentSettingsAsDefault()
+    local prefix
     if self.ui.rolling then
         G_reader_settings:saveSetting("cre_font", self.ui.font.font_face)
-        G_reader_settings:saveSetting("copt_font_size", self.ui.font.font_size)
-        G_reader_settings:saveSetting("copt_font_base_weight", self.ui.font.font_base_weight)
-        G_reader_settings:saveSetting("copt_font_hinting", self.ui.font.font_hinting)
-        G_reader_settings:saveSetting("copt_font_kerning", self.ui.font.font_kerning)
-        G_reader_settings:saveSetting("copt_word_spacing", self.ui.font.word_spacing)
-        G_reader_settings:saveSetting("copt_word_expansion", self.ui.font.word_expansion)
-        G_reader_settings:saveSetting("copt_line_spacing", self.ui.font.line_space_percent)
-        G_reader_settings:saveSetting("copt_font_gamma", self.ui.font.gamma_index)
-        G_reader_settings:saveSetting("copt_h_page_margins", { self.ui.typeset.unscaled_margins[1],
-                                                               self.ui.typeset.unscaled_margins[3] })
-        G_reader_settings:saveSetting("copt_t_page_margin", self.ui.typeset.unscaled_margins[2])
-        G_reader_settings:saveSetting("copt_b_page_margin", self.ui.typeset.unscaled_margins[4])
-        G_reader_settings:saveSetting("copt_render_dpi", self.ui.typeset.render_dpi)
-        G_reader_settings:saveSetting("copt_block_rendering_mode", self.ui.typeset.block_rendering_mode)
-        G_reader_settings:saveSetting("copt_embedded_fonts", not self.ui.typeset.embedded_fonts and 0 or nil)
-        G_reader_settings:saveSetting("copt_embedded_css", not self.ui.typeset.embedded_css and 0 or nil)
-        G_reader_settings:saveSetting("copt_smooth_scaling", self.ui.typeset.smooth_scaling and 1 or nil)
-        G_reader_settings:saveSetting("copt_visible_pages", self.ui.rolling.visible_pages)
-        G_reader_settings:saveSetting("copt_view_mode", self.view.view_mode)
         G_reader_settings:saveSetting("copt_css", self.ui.document.default_css)
         G_reader_settings:saveSetting("style_tweaks", self.ui.styletweak.global_tweaks)
+        prefix = "copt_"
     else
-        G_reader_settings:saveSetting("kopt_contrast", self.ui.document.configurable.contrast)
-        G_reader_settings:saveSetting("kopt_font_size", self.ui.document.configurable.font_size)
-        G_reader_settings:saveSetting("kopt_max_columns", self.ui.document.configurable.max_columns)
-        G_reader_settings:saveSetting("kopt_page_margin", self.ui.document.configurable.page_margin)
-        G_reader_settings:saveSetting("kopt_quality", self.ui.document.configurable.quality)
-        G_reader_settings:saveSetting("kopt_text_wrap", self.ui.document.configurable.text_wrap)
-        G_reader_settings:saveSetting("kopt_trim_page", self.ui.document.configurable.trim_page)
-        G_reader_settings:saveSetting("kopt_zoom_direction", self.ui.document.configurable.zoom_direction)
-        G_reader_settings:saveSetting("kopt_zoom_factor", self.ui.document.configurable.zoom_factor)
-        G_reader_settings:saveSetting("kopt_zoom_mode_genus", self.ui.document.configurable.zoom_mode_genus)
-        G_reader_settings:saveSetting("kopt_zoom_mode_type", self.ui.document.configurable.zoom_mode_type)
-        G_reader_settings:saveSetting("kopt_zoom_overlap_h", self.ui.document.configurable.zoom_overlap_h)
-        G_reader_settings:saveSetting("kopt_zoom_overlap_v", self.ui.document.configurable.zoom_overlap_v)
-        G_reader_settings:saveSetting("kopt_page_scroll", self.view.page_scroll)
+        prefix = "kopt_"
+    end
+    for k, v in pairs(self.ui.document.configurable) do
+        G_reader_settings:saveSetting(prefix .. k, v)
     end
 end
 
