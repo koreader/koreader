@@ -127,7 +127,9 @@ describe("UIManager spec", function()
         assert.are.same("5s", UIManager._task_queue[2].action)
 
         -- insert task at the end after "10s"
-        UIManager:scheduleIn(10, 'foo') -- is a bit later than "10s", as time.now() is used internally
+        -- NOTE: Can't use 10, as time.now, which is used internally, may or may not have moved,
+        --       depending on host's performance and clock granularity (especially if host is fast and/or COARSE is available).
+        UIManager:scheduleIn(11, 'foo')
         assert.are.same('foo', UIManager._task_queue[4].action)
 
         -- insert task at the second last position after "10s"
@@ -145,13 +147,14 @@ describe("UIManager spec", function()
         UIManager:scheduleIn(5, 'barba') -- is a bit later than "5s", as time.now() is used internally
         assert.are.same('barba', UIManager._task_queue[4].action)
 
-        -- "papa" is shortly after "now"
-        UIManager:nextTick('papa') -- is a bit later than "now"
-        assert.are.same('papa', UIManager._task_queue[2].action)
-
-        -- "mama is shedule now and inserted after "now"
+        -- "mama" is sheduled now and inserted after "now"
         UIManager:schedule(now, 'mama')
         assert.are.same('mama', UIManager._task_queue[2].action)
+
+        -- "papa" is shortly after "now"
+        -- NOTE: For the same reason as above, test this last, as time.now may not have moved...
+        UIManager:nextTick('papa') -- is a bit later than "now"
+        assert.are.same('papa', UIManager._task_queue[3].action)
 
         -- "letta" is shortly after "papa"
         UIManager:tickAfterNext('letta')
