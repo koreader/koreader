@@ -423,7 +423,7 @@ function Device:info()
     local product_type = android.getPlatformName()
 
     local common_text = T(_("%1\n\nOS: Android %2, api %3 on %4\nBuild flavor: %5\n"),
-        android.prop.product, getCodename(), Device.firmware_rev, android.prop.arch, android.prop.flavor)
+        android.prop.product, getCodename(), Device.firmware_rev, jit.arch, android.prop.flavor)
 
     local platform_text = ""
     if product_type ~= "android" then
