@@ -36,9 +36,9 @@ local Screen = require("device").screen
 local TextBoxWidget = InputContainer:extend{
     text = nil,
     editable = false, -- Editable flag for whether drawing the cursor or not.
-    justified = false, -- Should text be justified (spaces widened to fill width)
+    justified = true, -- Should text be justified (spaces widened to fill width)
     alignment = "left", -- or "center", "right"
-    honor_soft_hyphen = false,
+    honor_soft_hyphen = true,
     dialog = nil, -- parent dialog that will be set dirty
     face = nil,
     bold = nil,   -- use bold=true to use a real bold font (or synthetized if not available),
