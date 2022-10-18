@@ -145,7 +145,7 @@ function AutoStandby:genSpinMenuItem(text, cfg, min, max)
                 value_min = min and min() or 0,
                 value_max = max and max() or 9999,
                 value_hold_step = 10,
-                ok_text = "Update",
+                ok_text = _("Update"),
                 title_text = text,
                 callback = function(spin) self.settings:saveSetting(cfg, spin.value):flush() end,
             }
