@@ -509,7 +509,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                             href = build_href(link.href),
                             title = link.title,
                             stream = true,
-                            count = tonumber(link["pse:count"] or "1"),
+                            count = tonumber(link["p5:count"] or "1"),
                         })
                     elseif link.rel == self.thumbnail_rel then
                         item.thumbnail = build_href(link.href)
