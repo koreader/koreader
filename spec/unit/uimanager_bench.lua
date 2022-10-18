@@ -109,9 +109,8 @@ describe("UIManager schedule massive collision tests", function()
     end
 end)
 
-
-describe("UIManager schedule massive rediculous tests", function()
-    print("Doing massive rediculous collision tests ......... this takes really a lot time")
+describe("UIManager schedule massive ridiculous tests", function()
+    print("Performing massive ridiculous collision tests ......... this really takes a lot of time")
     UIManager:quit()
 
     for i = 1, 6 do
@@ -141,7 +140,6 @@ describe("UIManager schedule massive rediculous tests", function()
         end
         check()
     end
-
 end)
 
 describe("UIManager unschedule benchmark", function()
