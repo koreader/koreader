@@ -18,8 +18,8 @@ fi
 ANDROID_ARCH="${ANDROID_ARCH:-arm}"
 
 # Default to Android 4.0+; required for NDK 15 but with a custom NDK the strict minimum is 9.
-if [[ "${ANDROID_ARCH}" == "arm64" ]]; then
-    # AArch64 support requires at least ABI 21
+if [[ "${ANDROID_ARCH}" == "arm64" ]] || [[ "${ANDROID_ARCH}" == "x86_64" ]]; then
+    # 64bit arches require at least ABI 21
     NDKABI="${NDKABI:-21}"
 else
     NDKABI="${NDKABI:-14}"
