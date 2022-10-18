@@ -507,7 +507,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                         -- This for loop iterates through all keys in a
                         --   Entry and looks for the count tag, then stores
                         --   That key to use for updating the table value.
-                        count_key = ""
+                        local count_key = ""
                         for k, v in pairs(link) do
                             if string.find(k, ".:count") then
                                 count_key = k
