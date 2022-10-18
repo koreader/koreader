@@ -484,7 +484,6 @@ function VirtualKeyPopup:onCloseWidget()
 end
 
 function VirtualKeyPopup:init()
-    FocusManager.init(self)
     local parent_key = self.parent_key
     local key_chars = parent_key.key_chars
     local key_char_orig = key_chars[1]
@@ -781,7 +780,6 @@ local VirtualKeyboard = FocusManager:extend{
 }
 
 function VirtualKeyboard:init()
-    FocusManager.init(self)
     if self.uwrap_func then
         self.uwrap_func()
         self.uwrap_func = nil

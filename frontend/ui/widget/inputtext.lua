@@ -307,7 +307,7 @@ end
 
 -- only use PhysicalKeyboard if the device does not have touch screen
 function InputText.initInputEvents()
-    FocusManagerInstance = FocusManager:new{}
+    FocusManagerInstance = nil
 
     if Device:isTouchDevice() or Device:hasDPad() then
         Keyboard = require("ui/widget/virtualkeyboard")

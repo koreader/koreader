@@ -261,12 +261,12 @@ end
 function FocusManager:onPhysicalKeyboardConnected()
     -- Re-initialize with new keys info. It's called without "self:" in case descendants override init.
     populateEventMappings()
-    FocusManager.init(self)
+    FocusManager._init(self)
 end
 
 function FocusManager:onPhysicalKeyboardDisconnected()
     populateEventMappings()
-    FocusManager.init(self)
+    FocusManager._init(self)
 end
 
 -- constant, used to reset focus widget after layout recreation
