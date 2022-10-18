@@ -2072,5 +2072,4 @@ function ReaderHighlight:_createHighlightGesture(gesture)
     }
 end
 
-
 return ReaderHighlight

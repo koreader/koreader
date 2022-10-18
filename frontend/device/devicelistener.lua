@@ -318,17 +318,9 @@ function DeviceListener:onRestart()
     self.ui.menu:exitOrRestart(function() UIManager:restartKOReader() end)
 end
 
-function DeviceListener:onRequestSuspend()
-    UIManager:suspend()
-end
-
-function DeviceListener:onRequestReboot()
-    UIManager:reboot()
-end
-
-function DeviceListener:onRequestPowerOff()
-    UIManager:powerOff()
-end
+DeviceListener.onRequestSuspend = UIManager.suspend
+DeviceListener.onRequestReboot = UIManager.reboot
+DeviceListener.onRequestPowerOff = UIManager.powerOff
 
 function DeviceListener:onExit(callback)
     self.ui.menu:exitOrRestart(callback)
