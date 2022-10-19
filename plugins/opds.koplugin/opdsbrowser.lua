@@ -514,7 +514,6 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                                 break
                             end
                         end
-                        logger.dbg("---> count key is",count_key)
                         table.insert(item.acquisitions, {
                             type = link.type,
                             href = build_href(link.href),
