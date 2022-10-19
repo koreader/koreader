@@ -511,6 +511,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                         for k, v in pairs(link) do
                             if string.find(k, ".:count") then
                                 count_key = k
+                                break
                             end
                         end
                         table.insert(item.acquisitions, {
