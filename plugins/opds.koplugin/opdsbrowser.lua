@@ -509,10 +509,11 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                         --   That key to use for updating the table value.
                         local count_key = ""
                         for k, v in pairs(link) do
-                            if string.find(k, ".:count") then
+                            if string.sub(k, -6) == ":count" then
                                 count_key = k
                             end
                         end
+                        logger.dbg("---> count key is",count_key)
                         table.insert(item.acquisitions, {
                             type = link.type,
                             href = build_href(link.href),
