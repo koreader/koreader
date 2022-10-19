@@ -511,6 +511,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                         for k, v in pairs(link) do
                             if string.sub(k, -6) == ":count" then
                                 count_key = k
+                                break
                             end
                         end
                         logger.dbg("---> count key is",count_key)
