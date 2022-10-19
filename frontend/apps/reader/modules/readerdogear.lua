@@ -101,10 +101,11 @@ function ReaderDogear:updateDogearOffset()
     end
 end
 
-function ReaderDogear:onUpdatePos()
+function ReaderDogear:onDocumentRerendered()
+    require("logger").warn("ReaderDogear:onDocumentRerendered")
     -- Catching the top status bar toggling with :onSetStatusLine()
-    -- would be too early. But "UpdatePos" is sent after it has
-    -- been applied
+    -- would be too early. But "DocumentRerendered" is sent after
+    -- it has been applied
     self:updateDogearOffset()
 end
 

@@ -931,6 +931,10 @@ function Dispatcher:execute(settings, gesture)
     if settings.settings ~= nil and settings.settings.show_as_quickmenu == true then
         return Dispatcher:_showAsMenu(settings)
     end
+    local has_many = util.tableSize(settings) > (settings.settings ~= nil and 2 or 1)
+    if has_many then
+        UIManager:broadcastEvent(Event:new("BatchedUpdate"))
+    end
     for k, v in iter_func(settings) do
         if type(k) == "number" then
             k = v
@@ -971,6 +975,9 @@ function Dispatcher:execute(settings, gesture)
             end
         end
         Notification:resetNotifySource()
+    end
+    if has_many then
+        UIManager:broadcastEvent(Event:new("BatchedUpdateDone"))
     end
 end
 

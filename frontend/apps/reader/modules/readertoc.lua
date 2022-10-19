@@ -99,10 +99,11 @@ end
 function ReaderToc:onUpdateToc()
     self:resetToc()
     self.ui:handleEvent(Event:new("TocReset"))
-
-    --- @note: Let this propagate, plugins/statistics uses it to react to changes in document pagination
-    --return true
+    return true
 end
+
+-- Be sure to update the ToC after a CRE rerendering
+ReaderToc.onDocumentRerendered = ReaderToc.onUpdateToc
 
 function ReaderToc:onPageUpdate(pageno)
     if UIManager.FULL_REFRESH_COUNT == -1 or G_reader_settings:isTrue("refresh_on_chapter_boundaries") then
