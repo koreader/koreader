@@ -19,7 +19,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local NonDocument = require("document/nondocument")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local logger = require("logger")
 
 -- most of the plugins have some sort of UI. UIs are built with widgets.
 -- In this hello plugin we're using the InfoMessage widget to show a box of text on the screen.
