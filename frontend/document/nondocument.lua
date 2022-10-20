@@ -18,21 +18,25 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
-local function getIcon(path, width, height, zoom)
-    local bb, is_straight_alpha = RenderImage:renderSVGImageFile(path, width, height, zoom)
-    local icon = Blitbuffer.new(width, height, Blitbuffer.TYPE_BBRGB32)
+local frame_size = math.min(Screen:getWidth(), Screen:getHeight()) / 3
+local icon_size = math.floor(frame_size * 0.8)
+local offset = (frame_size - icon_size) / 2
+
+local function renderIcon(path)
+    local bb, is_straight_alpha = RenderImage:renderSVGImageFile(path, icon_size, icon_size)
+    local icon = Blitbuffer.new(frame_size, frame_size, Blitbuffer.TYPE_BBRGB32)
     icon:fill(Blitbuffer.COLOR_WHITE)
     if is_straight_alpha then
         if Screen.sw_dithering then
-            icon:ditheralphablitFrom(bb, 0, 0, 0, 0, icon.w, icon.h)
+            icon:ditheralphablitFrom(bb, offset, offset, 0, 0, icon.w, icon.h)
         else
-            icon:alphablitFrom(bb, 0, 0, 0, 0, icon.w, icon.h)
+            icon:alphablitFrom(bb, offset, offset, 0, 0, icon.w, icon.h)
         end
     else
         if Screen.sw_dithering then
-            icon:ditherpmulalphablitFrom(bb, 0, 0, 0, 0, icon.w, icon.h)
+            icon:ditherpmulalphablitFrom(bb, offset, offset, 0, 0, icon.w, icon.h)
         else
-            icon:pmulalphablitFrom(bb, 0, 0, 0, 0, icon.w, icon.h)
+            icon:pmulalphablitFrom(bb, offset, offset, 0, 0, icon.w, icon.h)
         end
     end
     return icon
@@ -66,7 +70,7 @@ function NonDocument:getCoverPageImage()
     local extension = util.getFileNameSuffix(self.file)
     for __, v in ipairs(self.extensions[extension]) do
         if v.icon_path then
-            return getIcon(v.icon_path, 100, 100, 4)
+            return renderIcon(v.icon_path)
         end
     end
 end

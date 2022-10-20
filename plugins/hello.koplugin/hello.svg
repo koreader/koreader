@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 13.0.1, SVG Export Plug-In  -->
+<svg
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:cc="http://web.resource.org/cc/"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:a="http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:svg="http://www.w3.org/2000/svg"
+    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+    xmlns:ns1="http://sozi.baierouge.fr"
+    enable-background="new -0.515 -0.321 314 271"
+    xml:space="preserve"
+    version="1.1"
+    y="0px"
+    x="0px"
+    viewBox="-0.515 -0.321 314 271"
+  >
+<path
+      stroke="#000000"
+      stroke-width="10"
+      d="m288.65 5h-264.74c-10.443 0-18.91 8.465-18.91 18.909v171.11c0 10.445 8.467 18.91 18.91 18.91h118.18v16.025c-13.85 5.6-23.63 19.17-23.63 35.04h75.639c0-15.873-9.781-29.436-23.638-35.045v-16.025h118.19c10.444 0 18.911-8.465 18.911-18.91v-171.12c0-10.445-8.47-18.91-18.91-18.91z"
+      fill="#E5E5E5"
+  />
+<rect
+      height="148.97"
+      width="264.74"
+      stroke="#000000"
+      y="23.909"
+      x="23.91"
+      stroke-width="5"
+      fill="#5A3E1C"
+  />
+<path
+      d="m73.778 115.27v-52.5h7.5v22.5h22.5v-22.5h7.5v52.5h-7.5v-22.5h-22.5v22.5h-7.502z"
+      fill="#FDBE10"
+  />
+<path
+      d="m118.78 107.77v-22.5h7.5v7.5h15v7.5h-15v7.5h-7.5zm7.5-22.5v-7.5h15v7.5h-15zm0 30v-7.5h22.5v7.5h-22.5zm15-22.5v-7.5h7.5v7.5h-7.5z"
+      fill="#FDBE10"
+  />
+<path
+      d="m156.28 107.77v-45h7.5v45h-7.5zm7.5 7.5v-7.5h7.5v7.5h-7.5z"
+      fill="#FDBE10"
+  />
+<path
+      d="m178.78 107.77v-45h7.5v45h-7.5zm7.5 7.5v-7.5h7.5v7.5h-7.5z"
+      fill="#FDBE10"
+  />
+<path
+      d="m201.28 107.77v-22.5h7.5v22.5h-7.5zm7.5-22.5v-7.5h15v7.5h-15zm0 30v-7.5h15v7.5h-15zm15-7.5v-22.5h7.5v22.5h-7.5z"
+      fill="#FDBE10"
+  />
+<path
+      opacity=".25"
+      d="m23.91 5c-10.443 0-18.907 8.475-18.907 18.917v91.812c4.989-4.43 151.29-86.949 249.12-110.73h-230.21z"
+  />
+<circle
+      r="4.425"
+      cy="192.56"
+      stroke="#000000"
+      cx="254.25"
+      stroke-width="2"
+      fill="#B2B2B2"
+  />
+<circle
+      r="4.425"
+      cy="192.56"
+      stroke="#000000"
+      cx="269.01"
+      stroke-width="2"
+      fill="#B2B2B2"
+  />
+<circle
+      r="4.426"
+      cy="192.56"
+      stroke="#000000"
+      cx="284.13"
+      stroke-width="2"
+      fill="#B2B2B2"
+  />
+<metadata
+    ><rdf:RDF
+      ><cc:Work
+        ><dc:format
+          >image/svg+xml</dc:format
+        ><dc:type
+            rdf:resource="http://purl.org/dc/dcmitype/StillImage"
+        /><cc:license
+            rdf:resource="http://creativecommons.org/licenses/publicdomain/"
+        /><dc:publisher
+          ><cc:Agent
+              rdf:about="http://openclipart.org/"
+            ><dc:title
+              >Openclipart</dc:title
+            ></cc:Agent
+          ></dc:publisher
+        ><dc:title
+          >Computer</dc:title
+        ><dc:date
+          >2008-06-16T10:29:18</dc:date
+        ><dc:description
+          >A desktop computer.</dc:description
+        ><dc:source
+          >https://openclipart.org/detail/17391/computer-by-ytknick</dc:source
+        ><dc:creator
+          ><cc:Agent
+            ><dc:title
+              >ytknick</dc:title
+            ></cc:Agent
+          ></dc:creator
+        ><dc:subject
+          ><rdf:Bag
+            ><rdf:li
+              >computer</rdf:li
+            ><rdf:li
+              >desktop</rdf:li
+            ><rdf:li
+              >hardware</rdf:li
+            ><rdf:li
+              >hello</rdf:li
+            ><rdf:li
+              >lcd</rdf:li
+            ><rdf:li
+              >screen</rdf:li
+            ></rdf:Bag
+          ></dc:subject
+        ></cc:Work
+      ><cc:License
+          rdf:about="http://creativecommons.org/licenses/publicdomain/"
+        ><cc:permits
+            rdf:resource="http://creativecommons.org/ns#Reproduction"
+        /><cc:permits
+            rdf:resource="http://creativecommons.org/ns#Distribution"
+        /><cc:permits
+            rdf:resource="http://creativecommons.org/ns#DerivativeWorks"
+        /></cc:License
+      ></rdf:RDF
+    ></metadata
+  ></svg
+>
