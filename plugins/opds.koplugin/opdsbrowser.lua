@@ -504,12 +504,22 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                             title = link.title,
                         })
                     elseif link.rel == self.stream_rel then
+                        -- This for loop iterates through all keys in a
+                        --   Entry and looks for the count tag, then stores
+                        --   That key to use for updating the table value.
+                        local count_key = ""
+                        for k, v in pairs(link) do
+                            if string.sub(k, -6) == ":count" then
+                                count_key = k
+                                break
+                            end
+                        end
                         table.insert(item.acquisitions, {
                             type = link.type,
                             href = build_href(link.href),
                             title = link.title,
                             stream = true,
-                            count = tonumber(link["pse:count"] or "1"),
+                            count = tonumber(link[count_key] or "1"),
                         })
                     elseif link.rel == self.thumbnail_rel then
                         item.thumbnail = build_href(link.href)
