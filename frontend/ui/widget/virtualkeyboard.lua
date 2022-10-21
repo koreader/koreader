@@ -50,7 +50,11 @@ local VirtualKey = InputContainer:extend{
     radius = 0,
     face = Font:getFace("infont"),
 }
-local ignore_key_release -- for caps lock, after setLayout, not the same virtual key anymore
+
+-- For caps lock, it's necessary because after setLayout, the new shift key is no longer the same virtual key
+-- thus rendering its preset .ignore_key_release property useless
+local ignore_key_release
+
 function VirtualKey:init()
     local label_font_size = G_reader_settings:readSetting("keyboard_key_font_size", DEFAULT_LABEL_SIZE)
     self.face = Font:getFace("infont", label_font_size)
@@ -58,14 +62,17 @@ function VirtualKey:init()
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Sym") end
         self.skiptap = true
-    elseif self.keyboard.shiftmode_keys[self.label] ~= nil then
+    elseif self.keyboard.shiftmode_keys[self.label] ~= nil or self.keyboard.shiftmode_keys[self.key] ~= nil then
+        -- self.key needed because the shift key's label could be the capslock instead of the shift
+        local key = self.key or self.label
+        local releasable = key == ""
         self.callback = function ()
-            self.keyboard.shiftlock = false
+            self.keyboard.release_shift = releasable
             self.keyboard:setLayer("Shift")
         end
         self.hold_callback = function ()
             ignore_key_release = true
-            self.keyboard.shiftlock = true
+            if releasable then self.keyboard.release_shift = false end
             self.keyboard:setLayer("Shift")
         end
         self.skiptap = true
@@ -154,9 +161,8 @@ function VirtualKey:init()
     else
         self.callback = function ()
             self.keyboard:addChar(self.key)
-            if not self.keyboard.always_lock_shift and self.keyboard.shiftmode
-               and not self.keyboard.symbolmode and not self.keyboard.shiftlock then
-                    self.keyboard:setLayer("Shift")
+            if self.keyboard.shiftmode and not self.keyboard.symbolmode and self.keyboard.release_shift then
+                self.keyboard:setLayer("Shift")
             end
         end
         self.hold_callback = function()
@@ -293,7 +299,7 @@ function VirtualKey:init()
             },
         },
     }
-    if (self.keyboard.shiftmode_keys[self.label] ~= nil  and self.keyboard.shiftmode) or
+    if ((self.keyboard.shiftmode_keys[self.label] ~= nil or self.keyboard.shiftmode_keys[self.key])  and self.keyboard.shiftmode) or
         (self.keyboard.umlautmode_keys[self.label] ~= nil and self.keyboard.umlautmode) or
         (self.keyboard.symbolmode_keys[self.label] ~= nil and self.keyboard.symbolmode) then
         self[1].background = Blitbuffer.COLOR_LIGHT_GRAY
@@ -810,7 +816,6 @@ function VirtualKeyboard:init()
     self.symbolmode_keys = keyboard.symbolmode_keys or {}
     self.utf8mode_keys = keyboard.utf8mode_keys or {}
     self.umlautmode_keys = keyboard.umlautmode_keys or {}
-    self.always_lock_shift = keyboard.always_lock_shift
     self.width = Screen:getWidth()
     local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
     self.height = Screen:scaleBySize(keys_height * #self.KEYS)
@@ -978,6 +983,10 @@ function VirtualKeyboard:addKeys()
                             - self.key_padding
             local key_height = base_key_height
             label = label or self.KEYS[i][j].label or key
+            if label == "" and self.shiftmode and (not self.release_shift or self.symbolmode) then
+                key = label
+                label = "" -- capslock symbol
+            end
             local virtual_key = VirtualKey:new{
                 key = key,
                 key_chars = key_chars,
