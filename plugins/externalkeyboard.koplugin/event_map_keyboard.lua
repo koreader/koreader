@@ -12,9 +12,9 @@ return {
     [15] = "Tab",
     [28] = "Press",  -- Enter
     [29] = "LCtrl",
-    [42] = "LShift",
+    [42] = "Shift",  -- Left Shift
     [43] = "\\",
-    [54] = "RShift",
+    [54] = "Shift",  -- Right Shift
     [56] = "LAlt",
     [58] = "CapsLock",
     [57] = " ",
@@ -45,7 +45,7 @@ return {
     [82] = "KP0",
     [87] = "F11",
     [88] = "F12",
-    [96] = "Enter", -- KPEnter
+    [96] = "Press", -- KPEnter
 
     [97] = "Ctrl", -- Right Ctrl
     [98] = "Home",

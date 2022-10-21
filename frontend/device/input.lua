@@ -585,7 +585,7 @@ function Input:handleKeyBoardEv(ev)
     end
 
     -- handle modifier keys
-    if self.modifiers[keycode] then
+    if self.modifiers[keycode] ~= nil then
         if ev.value == EVENT_VALUE_KEY_PRESS then
             self.modifiers[keycode] = true
         elseif ev.value == EVENT_VALUE_KEY_RELEASE then
