@@ -1517,16 +1517,16 @@ function VocabBuilder:setupWidget()
                         end
                     })
                 end
-                return vocab_items
-            end
+            return vocab_items
+        end
 
-            self.widget = VocabularyBuilderWidget:new{
-                title = _("Vocabulary builder"),
-                select_items_callback = function(obj, start_idx, end_idx)
-                    DB:select_items(obj, start_idx, end_idx)
-                end,
-                reload_items_callback = reload_items
-            }
+        self.widget = VocabularyBuilderWidget:new{
+            title = _("Vocabulary builder"),
+            select_items_callback = function(obj, start_idx, end_idx)
+                DB:select_items(obj, start_idx, end_idx)
+            end,
+            reload_items_callback = reload_items
+        }
     end
 end
 
