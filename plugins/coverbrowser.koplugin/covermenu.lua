@@ -238,25 +238,6 @@ function CoverMenu:updateItems(select_number)
                 -- And clear the rendering stack to avoid inheriting its dirty/refresh queue
                 UIManager:clearRenderStack()
 
-                -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
-                local button = self.file_dialog.button_table:getButtonById("reset_settings")
-                local orig_purge_callback = button.callback
-                button.callback = function()
-                    -- Wipe the cache
-                    if self.cover_info_cache and self.cover_info_cache[file] then
-                        self.cover_info_cache[file] = nil
-                    end
-                    -- And then purge the sidecar folder as expected
-                    orig_purge_callback()
-                end
-
-                -- Replace the "Book information" button callback to use directly our bookinfo
-                button = self.file_dialog.button_table:getButtonById("book_information")
-                button.callback = function()
-                    FileManagerBookInfo:show(file, bookinfo)
-                    UIManager:close(self.file_dialog)
-                end
-
                 -- Add some new buttons to original buttons set
                 table.insert(orig_buttons, {
                     { -- Allow user to view real size cover in ImageViewer
@@ -398,6 +379,26 @@ function CoverMenu:updateItems(select_number)
                     title_align = orig_title_align,
                     buttons = orig_buttons,
                 }
+
+                -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
+                local button = self.file_dialog.button_table:getButtonById("reset_settings")
+                local orig_purge_callback = button.callback
+                button.callback = function()
+                    -- Wipe the cache
+                    if self.cover_info_cache and self.cover_info_cache[file] then
+                        self.cover_info_cache[file] = nil
+                    end
+                    -- And then purge the sidecar folder as expected
+                    orig_purge_callback()
+                end
+
+                -- Replace the "Book information" button callback to use directly our bookinfo
+                button = self.file_dialog.button_table:getButtonById("book_information")
+                button.callback = function()
+                    FileManagerBookInfo:show(file, bookinfo)
+                    UIManager:close(self.file_dialog)
+                end
+
                 UIManager:show(self.file_dialog)
                 return true
             end

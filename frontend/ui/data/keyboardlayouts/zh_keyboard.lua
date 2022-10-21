@@ -7,7 +7,7 @@ Supports both simplified and traditional.
 Characters hardcoded on keys are uniform, no translation needed.
 In-place candidates can be turned off in keyboard settings.
 A Separation key 分隔 is used to finish inputting a character.
-A Switch key 换字 is used to iterate candidates.
+A Switch key 下一字 is used to iterate candidates.
 Stroke-wise deletion (input not finished) mapped to the default Del key.
 Character-wise deletion mapped to north of Separation key.
 
@@ -104,7 +104,7 @@ local wrappedAddChars = function(inputbox, char)
     ime:wrappedAddChars(inputbox, char)
 end
 
-local function seperate(inputbox)
+local function separate(inputbox)
     ime:separate(inputbox)
 end
 
@@ -130,19 +130,19 @@ local wrapInputBox = function(inputbox)
         table.insert(wrappers, util.wrapMethod(inputbox, "delToStartOfLine", nil, clear_stack))
         table.insert(wrappers, util.wrapMethod(inputbox, "clear",            nil, clear_stack))
         -- -- Navigation.
-        table.insert(wrappers, util.wrapMethod(inputbox, "leftChar",  nil, seperate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "rightChar", nil, seperate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "upLine",    nil, seperate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "downLine",  nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "leftChar",  nil, separate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "rightChar", nil, separate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "upLine",    nil, separate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "downLine",  nil, separate))
         -- -- Move to other input box.
-        table.insert(wrappers, util.wrapMethod(inputbox, "unfocus",         nil, seperate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "onCloseKeyboard", nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "unfocus",         nil, separate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onCloseKeyboard", nil, separate))
         -- -- Gestures to move cursor.
-        table.insert(wrappers, util.wrapMethod(inputbox, "onTapTextBox",    nil, seperate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "onHoldTextBox",   nil, seperate))
-        table.insert(wrappers, util.wrapMethod(inputbox, "onSwipeTextBox",  nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onTapTextBox",    nil, separate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onHoldTextBox",   nil, separate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onSwipeTextBox",  nil, separate))
         -- -- Others
-        table.insert(wrappers, util.wrapMethod(inputbox, "onSwitchingKeyboardLayout", nil, seperate))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onSwitchingKeyboardLayout", nil, separate))
 
         -- addChars is the only method we need a more complicated wrapper for.
         table.insert(wrappers, util.wrapMethod(inputbox, "addChars", wrappedAddChars, nil))
@@ -160,42 +160,40 @@ end
 
 return {
     min_layer = 1,
-    max_layer = 2,
-    shiftmode_keys = {["123"] = false},
-    symbolmode_keys = {["Sym"] = false},
+    max_layer = 4,
+    symbolmode_keys = {["123"] = true},
     utf8mode_keys = {["🌐"] = true},
-    umlautmode_keys = {["Äéß"] = false},  -- Disabled 'umlaut' keys
     keys = {
         -- first row
         {
             { label = "123" },
-            { JA.s_1, { label = "一", "㇐", north="——"} },
-            { JA.s_2, { label = "丨", "㇑"} },
-            { s_3,    { label = "丿", "㇒"} },
+            { "", { label = "一", "㇐", north="——"}, "", JA.s_1 },
+            { "", { label = "丨", "㇑"}, "", JA.s_2 },
+            { "", { label = "丿", "㇒"}, "", s_3 },
             { label = "", bold = false } -- backspace
         },
         -- second row
         {
             { label = "←" },
-            { JA.s_4, { label = "丶", "㇏", north="、" } },
-            { JA.s_5, { label = "𠃋", "㇜" } },
-            { JA.s_6, { ime.separator, north=ime.local_del, alt_label=ime.local_del } },
+            { "", { label = "丶", "㇏", north="、" }, "", JA.s_4 },
+            { "", { label = "𠃋", "㇜" }, "", JA.s_5 },
+            { "", { ime.separator, north=ime.local_del, alt_label=ime.local_del }, "", JA.s_6 },
             { label = "→" },
         },
         -- third row
         {
             { label = "↑" },
-            { JA.s_7, ime.switch_char },
-            { s_8,    comma_popup },
-            { JA.s_9, period_popup },
+            { "", ime.switch_char, "", JA.s_7 },
+            { "", comma_popup, "", s_8 },
+            { "", period_popup, "", JA.s_9 },
             { label = "↓" },
         },
         -- fourth row
         {
             { label = "🌐" },
-            { label = "空格",  " ", " ", width = 2.0 },
-            { JA.s_0, { label = "＊", W } },
-            { label = "⮠", "\n", "\n", bold = true }, -- return
+            { label = "空格",  " ", " ", " ", " ", width = 2.0 },
+            { "", { label = "＊", W }, "", JA.s_0 },
+            { label = "⮠", "\n", "\n", "\n", "\n", bold = true }, -- return
         },
     },
 
