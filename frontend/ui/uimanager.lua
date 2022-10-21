@@ -125,9 +125,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
         logger.dbg("attempted to show a nil widget")
         return
     end
-    if dbg.is_on then
-        logger.dbg("show widget:", widget.id or widget.name or tostring(widget))
-    end
+    logger.dbg("show widget:", widget.id or widget.name or tostring(widget))
 
     local window = {x = x or 0, y = y or 0, widget = widget}
     -- put this window on top of the topmost non-modal window
@@ -179,9 +177,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         logger.dbg("attempted to close a nil widget")
         return
     end
-    if dbg.is_on then
-        logger.dbg("close widget:", widget.name or widget.id or tostring(widget))
-    end
+    logger.dbg("close widget:", widget.name or widget.id or tostring(widget))
     local dirty = false
     -- First notify the closed widget to save its settings...
     widget:handleEvent(Event:new("FlushSettings"))
@@ -212,12 +208,10 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
                 if w.covers_fullscreen then
                     is_covered = true
                     start_idx = i
-                    if dbg.is_on then
-                        logger.dbg("Lower widget", w.name or w.id or tostring(w), "covers the full screen")
-                        if i > 1 then
-                            logger.dbg("not refreshing", i-1, "covered widget(s)")
-                        end
-                    end
+                    logger.dbg("Lower widget", w.name or w.id or tostring(w), "covers the full screen")
+                    if i > 1 then
+                        logger.dbg("not refreshing", i-1, "covered widget(s)")
+                   end
                 end
             end
 
@@ -519,9 +513,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                 local w = self._window_stack[i].widget
                 if handle_alpha then
                     self._dirty[w] = true
-                    if dbg.is_on then
-                        logger.dbg("setDirty: Marking as dirty widget:", w.name or w.id or tostring(w), "because it's below translucent widget:", widget.name or widget.id or tostring(widget))
-                    end
+                    logger.dbg("setDirty: Marking as dirty widget:", w.name or w.id or tostring(w), "because it's below translucent widget:", widget.name or widget.id or tostring(widget))
                     -- Stop flagging widgets at the uppermost one that covers the full screen
                     if w.covers_fullscreen then
                         break
@@ -677,7 +669,7 @@ end
 
 --- Get top widget (name if possible, ref otherwise).
 function UIManager:getTopWidget()
-    if #self._window_stack < 1 then
+    if not self._window_stack[1] then
         -- No widgets in the stack, bye!
         return nil
     end
@@ -751,12 +743,11 @@ function UIManager:quit(exit_code)
     self._exit_code = exit_code or self._exit_code or 0
     logger.info("quitting uimanager with exit code:", self._exit_code)
     self._task_queue_dirty = false
-    self._running = false
-    self._run_forever = nil
     self._window_stack = {}
     self._task_queue = {}
     for i = #self._zeromqs, 1, -1 do
         self._zeromqs[i]:stop()
+    end
     self._zeromqs = {}
     if self.looper then
         self.looper:close()
@@ -1107,10 +1098,8 @@ function UIManager:_refresh(mode, region, dither)
         end
     end
 
-    if dbg.is_on then
-        -- if we've stopped hitting collisions, enqueue the refresh
-        logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, dither and "w/ HW dithering" or "")
-    end
+    -- if we've stopped hitting collisions, enqueue the refresh
+    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, dither and "w/ HW dithering" or "")
     table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
 end
 
@@ -1161,9 +1150,7 @@ function UIManager:_repaint()
         if dirty or self._dirty[widget] then
             -- pass hint to widget that we got when setting widget dirty
             -- the widget can use this to decide which parts should be refreshed
-            if dbg.is_on then
-                logger.dbg("painting widget:", widget.name or widget.id or tostring(widget))
-            end
+            logger.dbg("painting widget:", widget.name or widget.id or tostring(widget))
             Screen:beforePaint()
             -- NOTE: Nothing actually seems to use the final argument?
             --       Could be used by widgets to know whether they're being repainted because they're actually dirty (it's true),
@@ -1283,9 +1270,7 @@ This is an explicit repaint *now*: it bypasses and ignores the paint queue (unli
 function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
 
-    if dbg.is_on then
-        logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
-    end
+    logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
     if widget.show_parent and widget.show_parent.cropping_widget then
         -- The main widget parent of this subwidget has a cropping container: see if
         -- this widget is a child of this cropping container
@@ -1312,9 +1297,7 @@ Same idea as `widgetRepaint`, but does a simple `bb:invertRect` on the Screen bu
 function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end
 
-    if dbg.is_on then
-        logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
-    end
+    logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
     if widget.show_parent and widget.show_parent.cropping_widget then
         -- The main widget parent of this subwidget has a cropping container: see if
         -- this widget is a child of this cropping container
