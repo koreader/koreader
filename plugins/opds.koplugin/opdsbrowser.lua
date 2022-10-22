@@ -719,7 +719,13 @@ function OPDSBrowser:jumpToPage(viewer, count)
                     is_enter_default = true,
                     callback = function()
                         UIManager:close(input_dialog)
-                        viewer:switchToImageNum(input_dialog:getInputValue())
+                        if (input_dialog:getInputValue() > count) then
+                            viewer:switchToImageNum(count)
+                        elseif (input_dialog:getInputValue() < 0) then
+                            viewer:switchToImageNum(1)
+                        else
+                            viewer:switchToImageNum(input_dialog:getInputValue())
+                        end
                     end,
                 },
             }
