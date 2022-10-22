@@ -721,7 +721,7 @@ function OPDSBrowser:jumpToPage(viewer, count)
                         UIManager:close(input_dialog)
                         if (input_dialog:getInputValue() > count) then
                             viewer:switchToImageNum(count)
-                        elseif (input_dialog:getInputValue() < 0) then
+                        elseif (input_dialog:getInputValue() < 1) then
                             viewer:switchToImageNum(1)
                         else
                             viewer:switchToImageNum(input_dialog:getInputValue())
