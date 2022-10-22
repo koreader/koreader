@@ -698,12 +698,13 @@ end
 -- This function shows a dialog with input fields
 -- for entering information for Page streaming from.
 -- an input page number
-function OPDSBrowser:jumpToPage(viewer)
+function OPDSBrowser:jumpToPage(viewer, count)
     local input_dialog
     input_dialog = InputDialog:new{
-        title = _("Enter Page Number"),
+        title = "Enter Page Number",
         input = "",
-        input_hint = "Page #",
+        input_type = "number",
+        input_hint = "Page # (1 - "..count..")",
         buttons = {
             {
                 {
@@ -718,7 +719,7 @@ function OPDSBrowser:jumpToPage(viewer)
                     is_enter_default = true,
                     callback = function()
                         UIManager:close(input_dialog)
-                        viewer:switchToImageNum(tonumber(input_dialog:getInputValue()))
+                        viewer:switchToImageNum(input_dialog:getInputValue())
                     end,
                 },
             }
@@ -786,7 +787,7 @@ function OPDSBrowser:streamPages(item, remote_url, count, continue)
     viewer._images_list_nb = count
     UIManager:show(viewer)
     if continue then
-        self:jumpToPage(viewer)
+        self:jumpToPage(viewer, count)
     end
 end
 
@@ -805,20 +806,21 @@ function OPDSBrowser:showDownloads(item)
 
     local buttons = {} -- buttons for ButtonDialogTitle
 
-    local type_buttons = {} -- file type download buttons
+    local stream_buttons = {} -- page stream buttons
+    local download_buttons = {} -- file type download buttons
     for i = 1, #acquisitions do -- filter out unsupported file types
         local acquisition = acquisitions[i]
 
         if acquisition.stream then
             -- this is an OPDS PSE stream
-            table.insert(type_buttons, {
+            table.insert(stream_buttons, {
                 text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                 callback = function()
                     self:streamPages(item, acquisition.href, acquisition.count, false)
                     UIManager:close(self.download_dialog)
                 end,
             })
-            table.insert(type_buttons, {
+            table.insert(stream_buttons, {
                 text = _("Stream from page") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                 callback = function()
                     self:streamPages(item, acquisition.href, acquisition.count, true)
@@ -837,7 +839,12 @@ function OPDSBrowser:showDownloads(item)
             end
             if filetype then -- supported file type
                 local text = acquisition.title and acquisition.title or string.upper(filetype)
-                table.insert(type_buttons, {
+
+                -- Got the url decode from here, https://bit.ly/3F0h6sO
+                text = string.gsub(text, "+", " ")
+                text = string.gsub(text, "%%(%x%x)", function(x) return string.char(tonumber(x,16)) end)
+                logger.dbg("==> Download Button:   ",test)
+                table.insert(download_buttons, {
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
                         self:downloadFile(item, filename .. "." .. string.lower(filetype), acquisition.href)
@@ -847,12 +854,22 @@ function OPDSBrowser:showDownloads(item)
             end
         end
     end
-    if (#type_buttons % 2 == 1) then -- we need even number of type buttons
-        table.insert(type_buttons, {text = ""})
+    -- handles adding download button(s)
+    if (download_buttons ~= {}) then
+        if (#download_buttons == 1) then
+            table.insert(buttons, download_buttons)
+            table.insert(buttons, {})  -- add separator for stream buttons
+        elseif (#download_buttons % 2 == 1) then
+            table.insert(download_buttons, {text = ""})
+        end
     end
-    for i = 2, #type_buttons, 2 do
-        table.insert(buttons, {type_buttons[i - 1], type_buttons[i]}) -- type buttons, two in a row
+    if (#stream_buttons % 2 == 1) then -- we need even number of type buttons
+        table.insert(stream_buttons, {text = ""})
     end
+    for i = 2, #stream_buttons, 2 do
+        table.insert(buttons, {stream_buttons[i - 1], stream_buttons[i]}) -- type buttons, two in a row
+    end
+    
 
     table.insert(buttons, {}) -- separator
     table.insert(buttons, { -- action buttons
