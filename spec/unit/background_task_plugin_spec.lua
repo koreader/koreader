@@ -9,7 +9,7 @@ describe("BackgroundTaskPlugin", function()
         MockTime:install()
         local Device = require("device")
         Device.input.waitEvent = function() end
-        UIManager._run_forever = true
+        UIManager:setRunForeverMode()
         requireBackgroundRunner()
         -- Monkey patch this method to notify BackgroundRunner
         -- as it is not accessible to UIManager in these tests
