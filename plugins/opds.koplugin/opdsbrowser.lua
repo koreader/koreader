@@ -719,7 +719,6 @@ function OPDSBrowser:jumpToPage(viewer)
                     callback = function()
                         UIManager:close(input_dialog)
                         viewer:switchToImageNum(tonumber(input_dialog:getInputValue()))
-                        logger.dbg("getPageNumber:    input is ",page)
                     end,
                 },
             }
