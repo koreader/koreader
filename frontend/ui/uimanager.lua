@@ -640,9 +640,13 @@ function UIManager:setRefreshRate(rate, night_rate)
     logger.dbg("set screen full refresh rate", rate, night_rate)
 
     if G_reader_settings:isTrue("night_mode") then
-        self.FULL_REFRESH_COUNT = night_rate or self.FULL_REFRESH_COUNT
+        if night_rate then
+            self.FULL_REFRESH_COUNT = night_rate
+        end
     else
-        self.FULL_REFRESH_COUNT = rate or self.FULL_REFRESH_COUNT
+        if rate then
+            self.FULL_REFRESH_COUNT = rate
+        end
     end
 
     if rate then

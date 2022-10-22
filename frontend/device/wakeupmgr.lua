@@ -240,9 +240,11 @@ end
 --[[--
 Get RTC wakealarm from system.
 
-Simple alias for @{ffi.rtc.getWakeupAlarmSys}.
+Simple wrapper for @{ffi.rtc.getWakeupAlarmSys}.
 --]]
-WakeupMgr.getWakeupAlarmSys = RTC.getWakeupAlarmSys
+function WakeupMgr:getWakeupAlarmSys()
+    return RTC:getWakeupAlarmSys()
+end
 
 --[[--
 Validate wakeup alarm.
