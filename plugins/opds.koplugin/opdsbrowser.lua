@@ -700,7 +700,6 @@ end
 -- an input page number
 function OPDSBrowser:jumpToPage(viewer)
     local input_dialog
-    local page
     input_dialog = InputDialog:new{
         title = _("Enter Page Number"),
         input = "",
