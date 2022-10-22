@@ -843,7 +843,6 @@ function OPDSBrowser:showDownloads(item)
                 -- Got the url decode from here, https://bit.ly/3F0h6sO
                 text = string.gsub(text, "+", " ")
                 text = string.gsub(text, "%%(%x%x)", function(x) return string.char(tonumber(x,16)) end)
-                logger.dbg("==> Download Button:   ",test)
                 table.insert(download_buttons, {
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
@@ -870,7 +869,6 @@ function OPDSBrowser:showDownloads(item)
         table.insert(buttons, {stream_buttons[i - 1], stream_buttons[i]}) -- type buttons, two in a row
     end
     
-
     table.insert(buttons, {}) -- separator
     table.insert(buttons, { -- action buttons
         {
