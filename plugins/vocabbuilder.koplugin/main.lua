@@ -1457,16 +1457,16 @@ function VocabBuilder:addToMainMenu(menu_items)
     }
 end
 
-function VocabBuilder:prepareWidgetToShow()
-    if self.builder_widget then
-        self.builder_widget:reloadItems()
+function VocabBuilder:setupWidget()
+    if self.widget then
+        self.widget:reloadItems()
     else
         -- We initiate the widget with proper
-        -- callback definition for reload_item
-            local reload_items = function(builder_widget)
-                builder_widget.reload_time = os.time()
+        -- callback definition for reload_items
+        local reload_items = function(widget)
+                widget.reload_time = os.time()
                 local vocab_items = {}
-                for i = 1, DB:selectCount(builder_widget) do
+                for i = 1, DB:selectCount(widget) do
                     table.insert(vocab_items, {
                         callback = function(item)
                             -- custom button table
@@ -1482,7 +1482,7 @@ function VocabBuilder:prepareWidgetToShow()
                                                     id = "got_it",
                                                     text = _("Got it"),
                                                     callback = function()
-                                                        self.builder_widget:gotItFromDict(item.word)
+                                                        self.widget:gotItFromDict(item.word)
                                                         UIManager:sendEvent(Event:new("Close"))
                                                     end
                                                 }
@@ -1496,7 +1496,7 @@ function VocabBuilder:prepareWidgetToShow()
                                                     id = "forgot",
                                                     text = _("Forgot"),
                                                     callback = function()
-                                                        self.builder_widget:forgotFromDict(item.word)
+                                                        self.widget:forgotFromDict(item.word)
                                                         UIManager:sendEvent(Event:new("Close"))
                                                     end
                                                 }
@@ -1512,7 +1512,7 @@ function VocabBuilder:prepareWidgetToShow()
                                 end
                             end
 
-                            builder_widget.current_lookup_word = item.word
+                            widget.current_lookup_word = item.word
                             self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, tweak_buttons_func))
                         end
                     })
@@ -1520,7 +1520,7 @@ function VocabBuilder:prepareWidgetToShow()
                 return vocab_items
             end
 
-            self.builder_widget = VocabularyBuilderWidget:new{
+            self.widget = VocabularyBuilderWidget:new{
                 title = _("Vocabulary builder"),
                 select_items_callback = function(obj, start_idx, end_idx)
                     DB:select_items(obj, start_idx, end_idx)
@@ -1536,14 +1536,14 @@ function VocabBuilder:onDispatcherRegisterActions()
 end
 
 function VocabBuilder:onShowVocabBuilder()
-    self:prepareWidgetToShow()
-    UIManager:show(self.builder_widget)
+    self:setupWidget()
+    UIManager:show(self.widget)
 end
 
 -- Event sent by readerdictionary "WordLookedUp"
 function VocabBuilder:onWordLookedUp(word, title, is_manual)
     if not settings.enabled and not is_manual then return end
-    if self.builder_widget and self.builder_widget.current_lookup_word == word then return true end
+    if self.widget and self.widget.current_lookup_word == word then return true end
     local prev_context
     local next_context
     if settings.with_context and self.ui.highlight then
