@@ -624,7 +624,7 @@ function ConfigOption:init()
                         elseif arg == "⋮" then
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             local default_value_original
-                            if self.options[c].more_options_param.names then
+                            if self.options[c].more_options_param and self.options[c].more_options_param.names then
                                 local option1 = self.config:findOptionByName(self.options[c].more_options_param.names[1])
                                 local option2 = self.config:findOptionByName(self.options[c].more_options_param.names[2])
                                 default_value_original = { option1.default_value, option2.default_value }
