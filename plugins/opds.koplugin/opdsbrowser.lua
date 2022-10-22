@@ -868,7 +868,7 @@ function OPDSBrowser:showDownloads(item)
     for i = 2, #stream_buttons, 2 do
         table.insert(buttons, {stream_buttons[i - 1], stream_buttons[i]}) -- type buttons, two in a row
     end
-    
+
     table.insert(buttons, {}) -- separator
     table.insert(buttons, { -- action buttons
         {
