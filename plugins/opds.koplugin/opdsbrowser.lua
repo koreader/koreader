@@ -695,7 +695,42 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
     end
 end
 
-function OPDSBrowser:streamPages(item, remote_url, count)
+-- This function shows a dialog with input fields
+-- for entering information for Page streaming from.
+-- an input page number
+function OPDSBrowser:jumpToPage(viewer)
+    local input_dialog
+    local page
+    input_dialog = InputDialog:new{
+        title = _("Enter Page Number"),
+        input = "",
+        input_hint = "Page #",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Stream"),
+                    is_enter_default = true,
+                    callback = function()
+                        UIManager:close(input_dialog)
+                        viewer:switchToImageNum(tonumber(input_dialog:getInputValue()))
+                        logger.dbg("getPageNumber:    input is ",page)
+                    end,
+                },
+            }
+        },
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
+function OPDSBrowser:streamPages(item, remote_url, count, continue)
     local page_table = {image_disposable = true}
     setmetatable(page_table, {__index = function (_, key)
         if type(key) ~= "number" then
@@ -752,6 +787,9 @@ function OPDSBrowser:streamPages(item, remote_url, count)
     -- in Lua 5.2 we could override __len, but this works too
     viewer._images_list_nb = count
     UIManager:show(viewer)
+    if continue then
+        self:jumpToPage(viewer)
+    end
 end
 
 function OPDSBrowser:showDownloads(item)
@@ -778,7 +816,14 @@ function OPDSBrowser:showDownloads(item)
             table.insert(type_buttons, {
                 text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                 callback = function()
-                    self:streamPages(item, acquisition.href, acquisition.count)
+                    self:streamPages(item, acquisition.href, acquisition.count, false)
+                    UIManager:close(self.download_dialog)
+                end,
+            })
+            table.insert(type_buttons, {
+                text = _("Stream from page") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
+                callback = function()
+                    self:streamPages(item, acquisition.href, acquisition.count, true)
                     UIManager:close(self.download_dialog)
                 end,
             })
