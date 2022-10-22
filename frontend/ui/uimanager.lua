@@ -513,7 +513,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                 local w = self._window_stack[i].widget
                 if handle_alpha then
                     self._dirty[w] = true
-                    logger.dbg("setDirty: Marking as dirty widget:", w.name or w.id or tostring(w), "because it's below translucent widget:", widget.name or widget.id or tostring(widget))
+                    logger.dbg("setDirty: Marking as dirty widget:", w.name or w.id or tostring(w), "because it's below translucent widget:", widget_name)
                     -- Stop flagging widgets at the uppermost one that covers the full screen
                     if w.covers_fullscreen then
                         break
@@ -1099,7 +1099,7 @@ function UIManager:_refresh(mode, region, dither)
     end
 
     -- if we've stopped hitting collisions, enqueue the refresh
-    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, dither and "w/ HW dithering" or "")
+    logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, "dithering:", dither)
     table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
 end
 
