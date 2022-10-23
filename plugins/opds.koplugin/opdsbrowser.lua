@@ -718,19 +718,10 @@ function OPDSBrowser:jumpToPage(viewer, count)
                     text = _("Stream"),
                     is_enter_default = true,
                     callback = function()
-                        if (input_dialog:getInputValue() ~= nil) then
+                        local page_num = input_dialog:getInputValue()
+                        if page_num then
                             UIManager:close(input_dialog)
-                            if (input_dialog:getInputValue() > count) then
-                                viewer:switchToImageNum(count)
-                            elseif (input_dialog:getInputValue() < 1) then
-                                viewer:switchToImageNum(1)
-                            else
-                                viewer:switchToImageNum(input_dialog:getInputValue())
-                            end
-                        else
-                            UIManager:show(InfoMessage:new {
-                                text = T(_("Please Enter a Number.")),
-                            })
+                            viewer:switchToImageNum(math.min(math.max(1, page_num), count))
                         end
                     end,
                 },
