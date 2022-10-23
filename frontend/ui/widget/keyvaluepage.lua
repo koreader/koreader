@@ -134,7 +134,8 @@ function KeyValueItem:init()
         else
             -- Both can fit: break the 1/2 widths
             if self.value_align == "right" or self.value_overflow_align == "right_always"
-                    or (self.value_overflow_align == "right" and value_w_rendered > value_w) then
+                    or (self.value_overflow_align == "right" and value_w_rendered > value_w)
+                    or key_w_rendered < key_w then -- it's the value that can't fit (longer), this way it stays closest to border
                 key_w = available_width - value_w_rendered
                 value_align_right = true
             else
