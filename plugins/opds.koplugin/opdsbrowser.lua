@@ -788,6 +788,7 @@ function OPDSBrowser:streamPages(item, remote_url, count, continue)
     }
     -- in Lua 5.2 we could override __len, but this works too
     viewer._images_list_nb = count
+    logger.dbg("StreamPages:   cur is ",viewer._images_list_cur)
     UIManager:show(viewer)
     if continue then
         self:jumpToPage(viewer, count)
@@ -858,9 +859,14 @@ function OPDSBrowser:showDownloads(item)
     if (download_buttons ~= {} and #download_buttons > 0) then
         if (#download_buttons % 2 == 1 and #download_buttons > 1) then
             table.insert(download_buttons, {text = ""})
+            for i = 2, #download_buttons, 2 do 
+                table.insert(buttons, {download_buttons[i - 1], download_buttons[i]}) -- download buttons, two in a row 
+            end
+        else
+            -- need the else to handle special case where we have one download button,
+            --   and it should span the width of the window
+            table.insert(buttons, download_buttons)
         end
-
-        table.insert(buttons, download_buttons)
         table.insert(buttons, {})  -- add separator for stream buttons
     end
     if (stream_buttons ~= {}) then
