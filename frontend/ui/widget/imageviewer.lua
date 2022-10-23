@@ -816,11 +816,6 @@ function ImageViewer:onClose()
     return true
 end
 
-function ImageViewer:onAnyKeyPressed()
-    self:onClose()
-    return true
-end
-
 function ImageViewer:onCloseWidget()
     -- Our ImageWidget (self._image_wg) is always a proper child widget, so it'll receive this event,
     -- and attempt to free its resources accordingly.
