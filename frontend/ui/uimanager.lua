@@ -1345,12 +1345,10 @@ end
 
 -- NOTE: The Event hook mechanism used to dispatch for *every* event, and would actually pass the event along.
 --       We've simplified that to once per input frame, and without passing anything (as we, in fact, have never made use of it).
---       The fake events have a distinct hook and are passed along.
 function UIManager:handleInputEvent(input_event)
     if Input.fake_event_set[input_event] ~= nil then
-        self.event_hook:execute("FakeInputEvent", input_event)
+        self:broadcastEvent(Event:new(input_event))
     end
-
     local handler = self.event_handlers[input_event]
     if handler then
         handler(input_event)

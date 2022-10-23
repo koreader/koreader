@@ -48,8 +48,6 @@ function ExternalKeyboard:init()
     local role = self:getOTGRole()
     logger.dbg("ExternalKeyboard: role", role)
 
-    UIManager.event_hook:registerWidget("FakeInputEvent", self)
-
     if role == USB_ROLE_DEVICE and G_reader_settings:isTrue("external_keyboard_otg_mode_on_start") then
         self:setOTGRole(USB_ROLE_HOST)
         role = USB_ROLE_HOST
@@ -147,14 +145,6 @@ function ExternalKeyboard:onCloseWidget()
     local role = self:getOTGRole()
     if role == USB_ROLE_HOST then
         self:setOTGRole(USB_ROLE_DEVICE)
-    end
-end
-
-function ExternalKeyboard:onFakeInputEvent(ev)
-    if ev == "UsbDevicePlugIn" then
-        self:onUsbDevicePlugIn()
-    elseif ev == "UsbDevicePlugOut" then
-        self:onUsbDevicePlugOut()
     end
 end
 
