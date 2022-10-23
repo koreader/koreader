@@ -865,9 +865,10 @@ function OPDSBrowser:showDownloads(item)
             table.insert(download_buttons, {text = ""})
         end
     end
-    table.insert(buttons, stream_buttons)
-
-    table.insert(buttons, {}) -- separator
+    if (stream_buttons ~= {}) then
+        table.insert(buttons, stream_buttons)
+        table.insert(buttons, {}) -- separator
+    end
     table.insert(buttons, { -- action buttons
         {
             text = _("Choose folder"),
