@@ -435,6 +435,7 @@ function KeyValuePage:init()
     self.title_bar = TitleBar:new{
         title = self.title,
         fullscreen = self.covers_fullscreen,
+        title_face = Font:getFace("smallinfofontbold"),
         width = self.width,
         align = "left",
         with_bottom_line = true,
@@ -459,16 +460,16 @@ function KeyValuePage:init()
 
     self.items_per_page = force_items_per_page or
         G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
-    self.item_height = math.floor(available_height / self.items_per_page)
+    self.item_height = math.floor(available_height / self.items_per_page - Size.line.thin )
     -- Put half of the pixels lost by floor'ing between title and content
-    local content_height = self.items_per_page * self.item_height
+    local content_height = self.items_per_page * (self.item_height + Size.line.thin)
     local span_height = math.floor((available_height - content_height) / 2)
 
     -- Font size is not configurable: we can get a good one from the following
     local TextBoxWidget = require("ui/widget/textboxwidget")
     local line_extra_height = 1.0 -- ~ 2em -- unscaled_size_check: ignore
         -- (gives a font size similar to the fixed one from former implementation at 14 items per page)
-    self.items_font_size = TextBoxWidget:getFontSizeToFitHeight(self.item_height, 1, line_extra_height)
+    self.items_font_size = math.min(TextBoxWidget:getFontSizeToFitHeight(self.item_height, 1, line_extra_height), 22)
 
     self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
     self.main_content = VerticalGroup:new{}
@@ -485,7 +486,6 @@ function KeyValuePage:init()
         VerticalGroup:new{
             align = "left",
             self.title_bar,
-            VerticalSpan:new{ width = span_height },
             HorizontalGroup:new{
                 HorizontalSpan:new{ width = padding },
                 self.main_content,
@@ -568,16 +568,15 @@ function KeyValuePage:_populateItems()
             }
             table.insert(self.main_content, kv_item)
             table.insert(self.layout, { kv_item })
-            if entry.separator then
-                table.insert(self.main_content, LineWidget:new{
-                    background = Blitbuffer.COLOR_LIGHT_GRAY,
-                    dimen = Geom:new{
-                        w = self.item_width,
-                        h = Size.line.thick
-                    },
-                    style = "solid",
-                })
-            end
+            table.insert(self.main_content, LineWidget:new{
+                background = entry.separator and Blitbuffer.COLOR_GRAY or Blitbuffer.COLOR_LIGHT_GRAY,
+                dimen = Geom:new{
+                    w = self.item_width,
+                    h = entry.separator and Size.line.thick or Size.line.medium
+                },
+                style = "solid",
+            })
+
         elseif type(entry) == "string" then
             -- deprecated, use separator=true on a regular k/v table
             -- (kept in case some user plugins would use this)
