@@ -718,7 +718,6 @@ function OPDSBrowser:jumpToPage(viewer, count)
                     text = _("Stream"),
                     is_enter_default = true,
                     callback = function()
-                        
                         if (input_dialog:getInputValue() ~= nil) then
                             UIManager:close(input_dialog)
                             if (input_dialog:getInputValue() > count) then
