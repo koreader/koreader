@@ -875,12 +875,7 @@ function OPDSBrowser:showDownloads(item)
             table.insert(download_buttons, {text = ""})
         end
     end
-    if (#stream_buttons % 2 == 1) then -- we need even number of type buttons
-        table.insert(stream_buttons, {text = ""})
-    end
-    for i = 2, #stream_buttons, 2 do
-        table.insert(buttons, {stream_buttons[i - 1], stream_buttons[i]}) -- type buttons, two in a row
-    end
+    table.insert(buttons, stream_buttons)
 
     table.insert(buttons, {}) -- separator
     table.insert(buttons, { -- action buttons
