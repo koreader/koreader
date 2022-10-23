@@ -605,6 +605,12 @@ function VirtualKeyPopup:init()
                 -- Support any function as a callback.
                 if v_func then
                     virtual_key.callback = v_func
+                else
+                    local cb = virtual_key.callback
+                    virtual_key.callback = function ()
+                        if cb then cb() end
+                        UIManager:close(self)
+                    end
                 end
                 -- don't open another popup on hold
                 virtual_key.hold_callback = nil
