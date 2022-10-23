@@ -1060,8 +1060,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                 callback = function()
                     self.kv = KeyValuePage:new{
                         title = _("Current statistics"),
-                        kv_pairs = self:getCurrentStat(),
-                        value_align = "right",
+                        kv_pairs = self:getCurrentStat()
                     }
                     UIManager:show(self.kv)
                 end,
@@ -1137,7 +1136,7 @@ function ReaderStatistics:statMenu()
                     UIManager:close(self.kv)
                     self.kv = KeyValuePage:new{
                         title = _("Books by week"),
-                        value_align = "right",
+                        value_overflow_align = "right",
                         kv_pairs = self:getDatesFromAll(0, "weekly", true),
                         callback_return = function()
                             UIManager:show(kv)
@@ -1154,7 +1153,7 @@ function ReaderStatistics:statMenu()
                     UIManager:close(self.kv)
                     self.kv = KeyValuePage:new{
                         title = _("Books by month"),
-                        value_align = "right",
+                        value_overflow_align = "right",
                         kv_pairs = self:getDatesFromAll(0, "monthly", true),
                         callback_return = function()
                             UIManager:show(kv)
@@ -1172,7 +1171,7 @@ function ReaderStatistics:statMenu()
                     UIManager:close(self.kv)
                     self.kv = KeyValuePage:new{
                         title = _("Last week"),
-                        value_align = "right",
+                        value_overflow_align = "right",
                         kv_pairs = self:getDatesFromAll(7, "daily_weekday"),
                         callback_return = function()
                             UIManager:show(kv)
@@ -1189,7 +1188,7 @@ function ReaderStatistics:statMenu()
                     UIManager:close(self.kv)
                     self.kv = KeyValuePage:new{
                         title = _("Last month by day"),
-                        value_align = "right",
+                        value_overflow_align = "right",
                         kv_pairs = self:getDatesFromAll(30, "daily_weekday"),
                         callback_return = function()
                             UIManager:show(kv)
@@ -1206,7 +1205,7 @@ function ReaderStatistics:statMenu()
                     UIManager:close(self.kv)
                     self.kv = KeyValuePage:new{
                         title = _("Last year by day"),
-                        value_align = "right",
+                        value_overflow_align = "right",
                         kv_pairs = self:getDatesFromAll(365, "daily"),
                         callback_return = function()
                             UIManager:show(kv)
@@ -1223,7 +1222,7 @@ function ReaderStatistics:statMenu()
                     UIManager:close(self.kv)
                     self.kv = KeyValuePage:new{
                         title = _("Last year by week"),
-                        value_align = "right",
+                        value_overflow_align = "right",
                         kv_pairs = self:getDatesFromAll(365, "weekly"),
                         callback_return = function()
                             UIManager:show(kv)
@@ -1240,7 +1239,7 @@ function ReaderStatistics:statMenu()
                     UIManager:close(self.kv)
                     self.kv = KeyValuePage:new{
                         title = _("All stats by month"),
-                        value_align = "right",
+                        value_overflow_align = "right",
                         kv_pairs = self:getDatesFromAll(0, "monthly"),
                         callback_return = function()
                             UIManager:show(kv)
@@ -1401,7 +1400,7 @@ function ReaderStatistics:getCurrentStat()
                 UIManager:close(self.kv)
                 self.kv = KeyValuePage:new{
                     title = T(_("Days reading %1"), self.data.title),
-                    value_align = "right",
+                    value_overflow_align = "right",
                     kv_pairs = self:getDatesForBook(id_book),
                     callback_return = function()
                         UIManager:show(kv)
@@ -1503,7 +1502,7 @@ function ReaderStatistics:getBookStat(id_book)
                 UIManager:close(self.kv)
                 self.kv = KeyValuePage:new{
                     title = T(_("Days reading %1"), title),
-                    value_align = "right",
+                    value_overflow_align = "right",
                     kv_pairs = self:getDatesForBook(id_book),
                     callback_return = function()
                         UIManager:show(kv)
@@ -1788,7 +1787,7 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
                 UIManager:close(kv)
                 self.kv = KeyValuePage:new{
                     title = T(_("Books read %1"), result_book[1][i]),
-                    value_align = "right",
+                    value_overflow_align = "right",
                     kv_pairs = self:getBooksFromPeriod(time_begin, time_begin + 86400),
                     callback_return = function()
                         UIManager:show(kv)
@@ -1834,7 +1833,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
                     self.kv = KeyValuePage:new{
                         title = T(_("Days reading %1"), result_book[1][i]),
                         kv_pairs = self:getDatesForBook(tonumber(result_book[4][i])),
-                        value_align = "right",
+                        value_overflow_align = "right",
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
@@ -1845,7 +1844,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
                     self.kv = KeyValuePage:new{
                         title = result_book[1][i],
                         kv_pairs = self:getBookStat(tonumber(result_book[4][i])),
-                        value_align = "right",
+                        value_overflow_align = "right",
                         callback_return = function()
                             UIManager:show(kv)
                             self.kv = kv
@@ -2039,7 +2038,7 @@ function ReaderStatistics:getTotalStats()
                 self.kv = KeyValuePage:new{
                     title = book_title,
                     kv_pairs = self:getBookStat(id_book),
-                    value_align = "right",
+                    value_overflow_align = "right",
                     callback_return = function()
                         UIManager:show(kv)
                         self.kv = kv
