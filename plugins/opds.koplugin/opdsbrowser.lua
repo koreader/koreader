@@ -843,7 +843,7 @@ function OPDSBrowser:showDownloads(item)
             if filetype then -- supported file type
                 local text = acquisition.title and acquisition.title or string.upper(filetype)
 
-                -- Got the url decode from here, https://bit.ly/3F0h6sO
+                -- Got the url decode from here, https://help.interfaceware.com/code/details/urlcode-lua
                 text = string.gsub(text, "+", " ")
                 text = string.gsub(text, "%%(%x%x)", function(x) return string.char(tonumber(x,16)) end)
                 table.insert(download_buttons, {
