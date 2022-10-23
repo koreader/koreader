@@ -859,8 +859,8 @@ function OPDSBrowser:showDownloads(item)
     if (download_buttons ~= {} and #download_buttons > 0) then
         if (#download_buttons % 2 == 1 and #download_buttons > 1) then
             table.insert(download_buttons, {text = ""})
-            for i = 2, #download_buttons, 2 do 
-                table.insert(buttons, {download_buttons[i - 1], download_buttons[i]}) -- download buttons, two in a row 
+            for i = 2, #download_buttons, 2 do
+                table.insert(buttons, {download_buttons[i - 1], download_buttons[i]}) -- download buttons, two in a row
             end
         else
             -- need the else to handle special case where we have one download button,
