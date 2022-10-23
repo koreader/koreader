@@ -28,6 +28,7 @@ describe("ReaderLink module", function()
 
     it("should jump to links in pdf page mode", function()
         UIManager:quit()
+        UIManager._exit_code = nil
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
@@ -44,6 +45,7 @@ describe("ReaderLink module", function()
 
     it("should jump to links in pdf scroll mode", function()
         UIManager:quit()
+        UIManager._exit_code = nil
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
@@ -78,6 +80,7 @@ describe("ReaderLink module", function()
 
     it("should be able to go back after link jump in pdf page mode", function()
         UIManager:quit()
+        UIManager._exit_code = nil
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
@@ -96,6 +99,7 @@ describe("ReaderLink module", function()
 
     it("should be able to go back after link jump in pdf scroll mode", function()
         UIManager:quit()
+        UIManager._exit_code = nil
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
@@ -116,6 +120,7 @@ describe("ReaderLink module", function()
 
     it("should be able to go back to the same position after link jump in pdf scroll mode", function()
         UIManager:quit()
+        UIManager._exit_code = nil
         local expected_page_states = {
             {
                 gamma = 1,

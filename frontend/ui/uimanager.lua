@@ -740,8 +740,10 @@ end
 --- Signals to quit.
 -- An exit_code of false is not allowed.
 function UIManager:quit(exit_code)
-    if exit_code == false then return end
-
+    if exit_code == false then
+        logger.err("UIManager:quit() called with false")
+        return
+    end
     -- Also honor older exit codes; default to 0
     self._exit_code = exit_code or self._exit_code or 0
     logger.info("quitting uimanager with exit code:", self._exit_code)
@@ -762,6 +764,10 @@ function UIManager:quit(exit_code)
     end
     return self._exit_code
 end
+dbg:guard(UIManager, 'quit',
+    function(self, exit_code)
+        assert(exit_code ~= false, "exit_code == false is not supported")
+    end)
 
 -- Disable automatic UIManager quit; for testing purposes
 function UIManager:setRunForeverMode()
@@ -1466,9 +1472,6 @@ This is the main loop of the UI controller.
 It is intended to manage input events and delegate them to dialogs.
 --]]
 function UIManager:run()
-    -- Set _exit_code to nil, as the test suite might have called UIManager:run() earlier.
-    self._exit_code = nil
-
     -- Tell PowerD that we're ready
     Device:getPowerDevice():readyUI()
 
