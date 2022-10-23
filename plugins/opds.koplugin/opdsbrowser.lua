@@ -794,18 +794,6 @@ function OPDSBrowser:streamPages(item, remote_url, count, continue)
     end
 end
 
--- This is used to decode the URL in showDownloads
-local function getPathFromURI(str) 
-    local hexToChar = function(x) 
-        return string.char(tonumber(x, 16)) 
-    end 
- 
-    local unescape = function(url) 
-       return url:gsub("%%(%x%x)", hexToChar) 
-    end 
- 
-    return unescape(str) 
-end
 
 function OPDSBrowser:showDownloads(item)
     local acquisitions = item.acquisitions
@@ -855,7 +843,7 @@ function OPDSBrowser:showDownloads(item)
             end
             if filetype then -- supported file type
                 local text = acquisition.title and acquisition.title or string.upper(filetype)
-                text = getPathFromURI(text)
+                text = url.unescape(text)
                 table.insert(download_buttons, {
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
