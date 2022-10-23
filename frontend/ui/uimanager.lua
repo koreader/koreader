@@ -67,7 +67,11 @@ function UIManager:init()
         self:nextTick(function()
             Device:saveSettings()
             Device:powerOff()
-            self:quit(Device:isKobo() and 88 or nil)
+            if Device:isKobo() then
+                self:quit(88)
+            else
+                self:quit()
+            end
         end)
     end
     self.reboot_action = function()
@@ -80,11 +84,19 @@ function UIManager:init()
         self:nextTick(function()
             Device:saveSettings()
             Device:reboot()
-            self:quit(Device:isKobo() and 88 or nil)
+            if Device:isKobo() then
+                self:quit(88)
+            else
+                self:quit()
+            end
         end)
     end
 
     Device:_setEventHandlers(self)
+
+    -- A simple wrapper for UIManager:quit()
+    -- This may be overwritten by setRunForeverMode(); for testing purposes
+    self._gated_quit = self.quit
 end
 
 --[[--
@@ -751,15 +763,14 @@ function UIManager:quit(exit_code)
     return self._exit_code
 end
 
--- A simple wrapper for UIManager:quit()
--- This may be overwritten by setRunForeverMode(); for testing purposes
-function UIManager:_gated_quit(exit_code)
-    return self:quit(exit_code)
-end
-
 -- Disable automatic UIManager quit; for testing purposes
 function UIManager:setRunForeverMode()
     self._gated_quit = function() return false end
+end
+
+-- Enable automatic UIManager quit; for testing purposes
+function UIManager:unsetRunForeverMode()
+    self._gated_quit = self.quit
 end
 
 --[[--
