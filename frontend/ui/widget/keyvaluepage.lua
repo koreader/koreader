@@ -81,8 +81,9 @@ function KeyValueItem:init()
     local available_width = frame_internal_width - middle_padding
 
     -- Default widths (and position of value widget) if each text fits in 1/2 screen width
-    local key_w = math.floor(frame_internal_width / 2 - middle_padding)
-    local value_w = math.floor(frame_internal_width / 2)
+    local ratio = self.width_ratio or 0.5
+    local key_w = math.floor(frame_internal_width * ratio - middle_padding)
+    local value_w = math.floor(frame_internal_width * (1-ratio))
 
     local key_widget = TextWidget:new{
         text = self.key,
@@ -468,7 +469,7 @@ function KeyValuePage:init()
     local TextBoxWidget = require("ui/widget/textboxwidget")
     local line_extra_height = 1.0 -- ~ 2em -- unscaled_size_check: ignore
         -- (gives a font size similar to the fixed one from former implementation at 14 items per page)
-    self.items_font_size = TextBoxWidget:getFontSizeToFitHeight(self.item_height, 1, line_extra_height)
+    self.items_font_size = math.min(TextBoxWidget:getFontSizeToFitHeight(self.item_height, 1, line_extra_height), 22)
 
     self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
     self.main_content = VerticalGroup:new{}
@@ -543,6 +544,90 @@ function KeyValuePage:_populateItems()
     self.return_button:resetLayout()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
+
+    -- for flexible middle ratio calculation
+    local frame_padding = Size.padding.default
+    local frame_internal_width = self.item_width - frame_padding * 2
+    local middle_padding = Size.padding.default -- min enforced padding between key and value
+    local available_width = frame_internal_width - middle_padding
+    -- Default widths (and position of value widget) if each text fits in 1/2 screen width
+    local key_w = math.floor(frame_internal_width / 2 - middle_padding)
+    local value_w = math.floor(frame_internal_width / 2)
+
+    local key_widget = TextWidget:new{
+        text = " ",
+        max_width = available_width,
+        face = Font:getFace("smallinfofontbold", self.items_font_size),
+    }
+    local value_widget = TextWidget:new{
+        text = " ",
+        max_width = available_width,
+        face = Font:getFace("smallinfofont", self.items_font_size),
+        lang = self.values_lang,
+    }
+    local key_widths = {}
+    local value_widths = {}
+    local tvalue
+    for idx=1, self.items_per_page do
+        local kv_pairs_idx = idx_offset + idx
+        local entry = self.kv_pairs[kv_pairs_idx]
+        if entry == nil then break end
+        if type(entry) == "table" then
+            tvalue = tostring(entry[2])
+            tvalue = tvalue:gsub("[\n\t]", "|")
+
+            key_widget:setText(entry[1])
+            value_widget:setText(tvalue)
+
+            table.insert(key_widths, key_widget:getWidth())
+            table.insert(value_widths, value_widget:getWidth())
+        end
+    end
+
+    table.sort(key_widths)
+    table.sort(value_widths)
+
+    local misplace_count -- count item that needs to displace or truncate key/value
+    -- first we check if no displacement needed at all
+    local width_ratio
+    if key_widths[#key_widths] <= key_w and value_widths[#value_widths] <= value_w then
+        width_ratio = 1/2
+    end
+    if not width_ratio then
+        -- has to displace
+        for vi = #value_widths, 1, -1 do
+            local key_width_limit = available_width - value_widths[vi]
+            local key_cut_count = 0 -- if we were to draw a line at the beginning of this value, how many keys'll be cut
+            for ki = #key_widths, 1, -1 do
+                if key_widths[ki] > key_width_limit then
+                    key_cut_count = key_cut_count + 1
+                else
+                    break -- others are all shorter so no more cut
+                end
+            end
+            local total_cut_count = key_cut_count + (#value_widths - vi) -- latter is value_cut_count
+
+            if misplace_count then -- not the first round of iteration
+                if total_cut_count > misplace_count then
+                    -- previous iteration has the least moved ones
+                    width_ratio = (available_width - value_widths[vi+1] + middle_padding) / frame_internal_width
+                    break
+                elseif total_cut_count == misplace_count then
+                    -- both have the least cut ones, we take the mean
+                    width_ratio = (available_width - (value_widths[vi+1] + value_widths[vi])/2 + middle_padding) / frame_internal_width
+                    break
+                else
+                    -- still could be less
+                    misplace_count = total_cut_count
+                end
+            else
+                misplace_count = total_cut_count
+            end
+        end
+    end
+
+    width_ratio = width_ratio or 0.5
+
     for idx = 1, self.items_per_page do
         local kv_pairs_idx = idx_offset + idx
         local entry = self.kv_pairs[kv_pairs_idx]
@@ -552,6 +637,7 @@ function KeyValuePage:_populateItems()
             local kv_item = KeyValueItem:new{
                 height = self.item_height,
                 width = self.item_width,
+                width_ratio = width_ratio,
                 font_size = self.items_font_size,
                 key = entry[1],
                 value = entry[2],
