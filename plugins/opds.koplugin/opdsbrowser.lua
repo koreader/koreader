@@ -855,10 +855,11 @@ function OPDSBrowser:showDownloads(item)
         end
     end
     -- handles adding download button(s)
-    if (download_buttons ~= {}) then
+    if (download_buttons ~= {} and #download_buttons > 0) then
         if (#download_buttons % 2 == 1 and #download_buttons > 1) then
             table.insert(download_buttons, {text = ""})
         end
+
         table.insert(buttons, download_buttons)
         table.insert(buttons, {})  -- add separator for stream buttons
     end
