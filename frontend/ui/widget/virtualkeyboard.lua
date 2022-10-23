@@ -161,6 +161,9 @@ function VirtualKey:init()
     else
         self.callback = function ()
             self.keyboard:addChar(self.key)
+            if self.close_after_callback_widget then
+                UIManager:close(self.close_after_callback_widget)
+            end
             if self.keyboard.shiftmode and not self.keyboard.symbolmode and self.keyboard.release_shift then
                 self.keyboard:setLayer("Shift")
             end
@@ -601,16 +604,11 @@ function VirtualKeyPopup:init()
                     key_chars = key_chars,
                     width = parent_key.width,
                     height = parent_key.height,
+                    close_after_callback_widget = self,
                 }
                 -- Support any function as a callback.
                 if v_func then
                     virtual_key.callback = v_func
-                else
-                    local cb = virtual_key.callback
-                    virtual_key.callback = function ()
-                        if cb then cb() end
-                        UIManager:close(self)
-                    end
                 end
                 -- don't open another popup on hold
                 virtual_key.hold_callback = nil
