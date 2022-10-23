@@ -20,6 +20,11 @@ function LineWidget:paintTo(bb, x, y)
             bb:paintRect(x + i, y,
                         16, self.dimen.h, self.background)
         end
+    elseif self.style == "dotted" then
+        local step = self.dimen.h * 4
+        for i = 1, self.dimen.w - step, step do
+            bb:paintRect(x + i, y, self.dimen.h, self.dimen.h, self.background)
+        end
     else
         if self.empty_segments then
             bb:paintRect(x, y,

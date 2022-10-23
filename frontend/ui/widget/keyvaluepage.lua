@@ -569,12 +569,12 @@ function KeyValuePage:_populateItems()
             table.insert(self.main_content, kv_item)
             table.insert(self.layout, { kv_item })
             table.insert(self.main_content, LineWidget:new{
-                background = entry.separator and Blitbuffer.COLOR_GRAY or Blitbuffer.COLOR_LIGHT_GRAY,
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
                 dimen = Geom:new{
                     w = self.item_width,
                     h = entry.separator and Size.line.thick or Size.line.medium
                 },
-                style = "solid",
+                style = entry.separator and "solid" or "dotted",
             })
 
         elseif type(entry) == "string" then
