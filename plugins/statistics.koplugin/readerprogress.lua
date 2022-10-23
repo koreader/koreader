@@ -479,10 +479,6 @@ function ReaderProgress:genSummaryWeek(width)
     }
 end
 
-function ReaderProgress:onAnyKeyPressed()
-    return self:onClose()
-end
-
 function ReaderProgress:onSwipe(arg, ges_ev)
     if ges_ev.direction == "south" then
         -- Allow easier closing with swipe up/down
@@ -499,17 +495,15 @@ function ReaderProgress:onSwipe(arg, ges_ev)
     end
 end
 
-function ReaderProgress:onMultiSwipe(arg, ges_ev)
-    -- For consistency with other fullscreen widgets where swipe south can't be
-    -- used to close and where we then allow any multiswipe to close, allow any
-    -- multiswipe to close this widget too.
-    self:onClose()
-    return true
-end
-
 function ReaderProgress:onClose()
     UIManager:close(self)
     return true
 end
+ReaderProgress.onAnyKeyPressed = ReaderProgress.onClose
+-- For consistency with other fullscreen widgets where swipe south can't be
+-- used to close and where we then allow any multiswipe to close, allow any
+-- multiswipe to close this widget too.
+ReaderProgress.onMultiSwipe = ReaderProgress.onClose
+
 
 return ReaderProgress

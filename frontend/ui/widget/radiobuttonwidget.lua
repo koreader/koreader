@@ -218,11 +218,6 @@ function RadioButtonWidget:onShow()
     return true
 end
 
-function RadioButtonWidget:onAnyKeyPressed()
-    self:onClose()
-    return true
-end
-
 function RadioButtonWidget:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.widget_frame.dimen) then
         self:onClose()

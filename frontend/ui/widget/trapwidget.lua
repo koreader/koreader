@@ -108,7 +108,7 @@ function TrapWidget:init()
     end
 end
 
-function TrapWidget:_dismissAndResent(evtype, ev)
+function TrapWidget:_dismissAndResend(evtype, ev)
     self.dismiss_callback()
     UIManager:close(self)
     if self.resend_event and evtype and ev then
@@ -125,19 +125,19 @@ function TrapWidget:_dismissAndResent(evtype, ev)
 end
 
 function TrapWidget:onAnyKeyPressed(_, ev)
-    return self:_dismissAndResent("KeyPress", ev)
+    return self:_dismissAndResend("KeyPress", ev)
 end
 
 function TrapWidget:onTapDismiss(_, ev)
-    return self:_dismissAndResent("Gesture", ev)
+    return self:_dismissAndResend("Gesture", ev)
 end
 
 function TrapWidget:onHoldDismiss(_, ev)
-    return self:_dismissAndResent("Gesture", ev)
+    return self:_dismissAndResend("Gesture", ev)
 end
 
 function TrapWidget:onSwipeDismiss(_, ev)
-    return self:_dismissAndResent("Gesture", ev)
+    return self:_dismissAndResend("Gesture", ev)
 end
 
 function TrapWidget:onShow()

@@ -280,18 +280,12 @@ function InfoMessage:dismiss()
     UIManager:close(self)
 end
 
-function InfoMessage:onAnyKeyPressed()
-    self:dismiss()
-    if self.readonly ~= true then
-        return true
-    end
-end
-
 function InfoMessage:onTapClose()
     self:dismiss()
     if self.readonly ~= true then
         return true
     end
 end
+InfoMessage.onAnyKeyPressed = InfoMessage.onTapClose
 
 return InfoMessage
