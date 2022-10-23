@@ -620,6 +620,9 @@ function KeyValuePage:_populateItems()
                     -- still could be less
                     misplace_count = total_cut_count
                 end
+            elseif total_cut_count == 0 then
+                width_ratio = (key_widths[#key_widths] + middle_padding) / frame_internal_width
+                break
             else
                 misplace_count = total_cut_count
             end
