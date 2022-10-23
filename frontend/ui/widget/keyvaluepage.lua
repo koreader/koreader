@@ -52,6 +52,8 @@ local KeyValueItem = InputContainer:extend{
     value = nil,
     value_lang = nil,
     font_size = 20, -- will be adjusted depending on keyvalues_per_page
+    frame_padding = Size.padding.default,
+    middle_padding = Size.padding.default, -- min enforced padding between key and value
     key_font_name = "smallinfofontbold",
     value_font_name = "smallinfofont",
     width = nil,
@@ -75,9 +77,9 @@ function KeyValueItem:init()
     local tvalue = tostring(self.value)
     tvalue = tvalue:gsub("[\n\t]", "|")
 
-    local frame_padding = Size.padding.default
+    local frame_padding = self.frame_padding
     local frame_internal_width = self.width - frame_padding * 2
-    local middle_padding = Size.padding.default -- min enforced padding between key and value
+    local middle_padding = self.middle_padding
     local available_width = frame_internal_width - middle_padding
 
     -- Default widths (and position of value widget) if each text fits in 1/2 screen width
@@ -546,9 +548,10 @@ function KeyValuePage:_populateItems()
     local idx_offset = (self.show_page - 1) * self.items_per_page
 
     -- for flexible middle ratio calculation
-    local frame_padding = Size.padding.default
+    -- in sync with KeyValueItem actual computation
+    local frame_padding = KeyValueItem.frame_padding
     local frame_internal_width = self.item_width - frame_padding * 2
-    local middle_padding = Size.padding.default -- min enforced padding between key and value
+    local middle_padding = KeyValueItem.middle_padding
     local available_width = frame_internal_width - middle_padding
     -- Default widths (and position of value widget) if each text fits in 1/2 screen width
     local key_w = math.floor(frame_internal_width / 2 - middle_padding)
@@ -583,48 +586,56 @@ function KeyValuePage:_populateItems()
             table.insert(value_widths, value_widget:getWidth())
         end
     end
-
+    key_widget:free()
+    value_widget:free()
     table.sort(key_widths)
     table.sort(value_widths)
-
-    local misplace_count -- count item that needs to displace or truncate key/value
-    -- first we check if no displacement needed at all
+    local unfit_item_count -- count item that needs to move or truncate key/value, not fit 1/2 ratio
+    -- first we check if no unfit item at all
     local width_ratio
     if key_widths[#key_widths] <= key_w and value_widths[#value_widths] <= value_w then
         width_ratio = 1/2
     end
     if not width_ratio then
-        -- has to displace
+        -- has to adjust, not fitting 1/2 ratio
         for vi = #value_widths, 1, -1 do
+            -- from longest to shortest
             local key_width_limit = available_width - value_widths[vi]
-            local key_cut_count = 0 -- if we were to draw a line at the beginning of this value, how many keys'll be cut
+
+            -- if we were to draw a vertical line at the start of the value item,
+            -- i.e. the borde between keys and values, we want the less items cross it the better,
+            -- as the keys/values that cross the line (being cut) make clean alignment impossible
+            -- we track their number and find the line that cuts the least key/value items
+            local key_cut_count = 0
             for ki = #key_widths, 1, -1 do
+                -- from longest to shortest for keys too
                 if key_widths[ki] > key_width_limit then
-                    key_cut_count = key_cut_count + 1
+                    key_cut_count = key_cut_count + 1 -- got cut
                 else
                     break -- others are all shorter so no more cut
                 end
             end
-            local total_cut_count = key_cut_count + (#value_widths - vi) -- latter is value_cut_count
+            local total_cut_count = key_cut_count + (#value_widths - vi) -- latter is value_cut_count, as with each increased index, the previous one got cut
 
-            if misplace_count then -- not the first round of iteration
-                if total_cut_count > misplace_count then
+            if unfit_item_count then -- not the first round of iteration
+                if total_cut_count > unfit_item_count then
                     -- previous iteration has the least moved ones
                     width_ratio = (available_width - value_widths[vi+1] + middle_padding) / frame_internal_width
                     break
-                elseif total_cut_count == misplace_count then
+                elseif total_cut_count == unfit_item_count then
                     -- both have the least cut ones, we take the mean
                     width_ratio = (available_width - (value_widths[vi+1] + value_widths[vi])/2 + middle_padding) / frame_internal_width
                     break
                 else
-                    -- still could be less
-                    misplace_count = total_cut_count
+                    -- still could be less total cut ones
+                    unfit_item_count = total_cut_count
                 end
             elseif total_cut_count == 0 then
+                -- no cross-over, we take the longest key to compute ratio
                 width_ratio = (key_widths[#key_widths] + middle_padding) / frame_internal_width
                 break
             else
-                misplace_count = total_cut_count
+                unfit_item_count = total_cut_count
             end
         end
     end
