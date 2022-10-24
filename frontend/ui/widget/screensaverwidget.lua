@@ -95,7 +95,7 @@ function ScreenSaverWidget:setupGestureEvents()
             InputContainer.handleEvent(this, event)
             return true
         end
-        self.key_events = nil -- also disable exit with keys
+        self.key_events = {} -- also disable exit with keys
     end
 end
 
