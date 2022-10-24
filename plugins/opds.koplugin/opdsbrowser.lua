@@ -966,8 +966,6 @@ function OPDSBrowser:browse(browse_url, username, password)
     end
 end
 
-
-
 function OPDSBrowser:browseSearchable(browse_url, username, password)
     self.search_server_dialog = InputDialog:new{
         title = _("Search OPDS catalog"),
