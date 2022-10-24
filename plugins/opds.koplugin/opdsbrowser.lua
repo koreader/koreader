@@ -701,7 +701,7 @@ end
 function OPDSBrowser:jumpToPage(viewer, count)
     local input_dialog
     input_dialog = InputDialog:new{
-        title = _("Enter Page Number"),
+        title = _("Enter page number"),
         input = "",
         input_type = "number",
         input_hint = "(" .. "1 - " .. count .. ")",
