@@ -66,11 +66,11 @@ function VirtualKey:init()
         -- self.key needed because the shift key's label could be the capslock instead of the shift
         local key = self.key or self.label
         local releasable = key == ""
-        self.callback = function ()
+        self.callback = function()
             self.keyboard.release_shift = releasable
             self.keyboard:setLayer("Shift")
         end
-        self.hold_callback = function ()
+        self.hold_callback = function()
             ignore_key_release = true
             if releasable then self.keyboard.release_shift = false end
             self.keyboard:setLayer("Shift")
@@ -159,7 +159,7 @@ function VirtualKey:init()
             self.keyboard:scrollDown()
         end
     else
-        self.callback = function ()
+        self.callback = function()
             self.keyboard:addChar(self.key)
             if self.close_after_callback_widget then
                 UIManager:close(self.close_after_callback_widget)
