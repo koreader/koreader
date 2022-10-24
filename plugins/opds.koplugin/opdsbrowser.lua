@@ -704,7 +704,7 @@ function OPDSBrowser:jumpToPage(viewer, count)
         title = _("Enter Page Number"),
         input = "",
         input_type = "number",
-        input_hint = "Page # ".."(" .. "1 - " .. count .. ")",
+        input_hint = "(" .. "1 - " .. count .. ")",
         buttons = {
             {
                 {
