@@ -870,6 +870,7 @@ function OPDSBrowser:showDownloads(item)
         table.insert(buttons, {})  -- add separator for stream buttons
     end
     if (stream_buttons ~= {}) then
+        -- Don't need the for loop, there should always be only 2 stream buttons
         table.insert(buttons, stream_buttons)
         table.insert(buttons, {}) -- separator
     end
