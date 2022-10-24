@@ -542,7 +542,7 @@ function InputText:initKeyboard()
     if self.input_type == "number" then
         keyboard_layer = 4
     end
-    self.key_events = nil
+    self.key_events = {}
     self.keyboard = Keyboard:new{
         keyboard_layer = keyboard_layer,
         inputbox = self,
