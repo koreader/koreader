@@ -171,7 +171,7 @@ end
 function time.split_s_us(time_fts)
     if not time_fts then return nil, nil end
     local sec = math.floor(time_fts * FTS2S)
-    local usec = math.floor(time_fts - sec * S2FTS) * FTS2US
+    local usec = math.floor((time_fts - sec * S2FTS) * FTS2US)
     -- Seconds and µs
     return sec, usec
 end
