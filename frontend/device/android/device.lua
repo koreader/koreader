@@ -422,8 +422,8 @@ function Device:info()
     local is_eink, eink_platform = android.isEink()
     local product_type = android.getPlatformName()
 
-    local common_text = T(_("%1\n\nOS: Android %2, api %3\nBuild flavor: %4\n"),
-        android.prop.product, getCodename(), Device.firmware_rev, android.prop.flavor)
+    local common_text = T(_("%1\n\nOS: Android %2, api %3 on %4\nBuild flavor: %5\n"),
+        android.prop.product, getCodename(), Device.firmware_rev, jit.arch, android.prop.flavor)
 
     local platform_text = ""
     if product_type ~= "android" then
