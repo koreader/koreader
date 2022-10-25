@@ -561,7 +561,7 @@ function Dispatcher:menuTextFunc(settings)
             if item == "settings" then item = next(settings, item) end
             action_name = Dispatcher:getNameFromItem(item, settings)
         else
-            action_name = _("Many")
+            action_name = T(_("%1 actions"), count)
         end
     end
     return action_name
@@ -801,7 +801,11 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             return location[settings] ~= nil and next(location[settings]) == nil
         end,
         callback = function(touchmenu_instance)
+            local name = location[settings].settings and location[settings].settings.name
             location[settings] = {}
+            if name then
+                location[settings].settings = { name = name }
+            end
             caller.updated = true
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
