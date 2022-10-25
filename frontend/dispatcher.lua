@@ -488,6 +488,17 @@ local function iter_func(settings)
     end
 end
 
+-- Returns the number of items present in the settings table
+function Dispatcher:_itemsCount(settings)
+    if settings then
+        local count = util.tableSize(settings)
+        if count > 0 and settings.settings ~= nil then
+            count = count - 1
+        end
+        return count
+    end
+end
+
 -- Returns a display name for the item.
 function Dispatcher:getNameFromItem(item, settings)
     if settingsList[item] == nil then
@@ -551,11 +562,8 @@ end
 function Dispatcher:menuTextFunc(settings)
     local action_name = _("Pass through")
     if settings then
-        local count = util.tableSize(settings)
+        local count = Dispatcher:_itemsCount(settings)
         if count == 0 then return _("Nothing") end
-        if count > 1 and settings.settings ~= nil then
-            count = count - 1
-        end
         if count == 1 then
             local item = next(settings)
             if item == "settings" then item = next(settings, item) end
@@ -798,10 +806,10 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
         text = _("Nothing"),
         separator = true,
         checked_func = function()
-            return location[settings] ~= nil and next(location[settings]) == nil
+            return location[settings] ~= nil and Dispatcher:_itemsCount(location[settings]) == 0
         end,
         callback = function(touchmenu_instance)
-            local name = location[settings].settings and location[settings].settings.name
+            local name = location[settings] and location[settings].settings and location[settings].settings.name
             location[settings] = {}
             if name then
                 location[settings].settings = { name = name }
@@ -935,7 +943,7 @@ function Dispatcher:execute(settings, gesture)
     if settings.settings ~= nil and settings.settings.show_as_quickmenu == true then
         return Dispatcher:_showAsMenu(settings)
     end
-    local has_many = util.tableSize(settings) > (settings.settings ~= nil and 2 or 1)
+    local has_many = Dispatcher:_itemsCount(settings) > 1
     if has_many then
         UIManager:broadcastEvent(Event:new("BatchedUpdate"))
     end
