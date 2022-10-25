@@ -99,15 +99,10 @@ function QRMessage:onShow()
     return true
 end
 
-function QRMessage:onAnyKeyPressed()
-    -- triggered by our defined key events
-    self.dismiss_callback()
-    UIManager:close(self)
-end
-
 function QRMessage:onTapClose()
     self.dismiss_callback()
     UIManager:close(self)
 end
+QRMessage.onAnyKeyPressed = QRMessage.onTapClose
 
 return QRMessage

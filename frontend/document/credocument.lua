@@ -716,6 +716,28 @@ function CreDocument:getNextVisibleChar(xp)
     return self._document:getNextVisibleChar(xp)
 end
 
+function CreDocument:getSelectedWordContext(word, nb_words, pos0, pos1)
+    local pos_start = pos0
+    local pos_end = pos1
+
+    for i=0, nb_words do
+        local start = self:getPrevVisibleWordStart(pos_start)
+        if start then pos_start = start
+        else break end
+    end
+
+    for i=0, nb_words do
+        local ending = self:getNextVisibleWordEnd(pos_end)
+        if ending then pos_end = ending
+        else break end
+    end
+
+    local prev = self:getTextFromXPointers(pos_start, pos0)
+    local next = self:getTextFromXPointers(pos1, pos_end)
+
+    return prev, next
+end
+
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
     if self.buffer and (self.buffer.w ~= rect.w or self.buffer.h ~= rect.h) then
         self.buffer:free()

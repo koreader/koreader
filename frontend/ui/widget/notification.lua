@@ -199,17 +199,13 @@ function Notification:onShow()
     return true
 end
 
-function Notification:onAnyKeyPressed()
-    if self.toast then return end -- should not happen
-    UIManager:close(self)
-    return true
-end
 
 function Notification:onTapClose()
     if self.toast then return end -- should not happen
     UIManager:close(self)
     return true
 end
+Notification.onAnyKeyPressed = Notification.onTapClose
 
 -- Toasts should go bye-bye on user input, without stopping the event's propagation.
 function Notification:onKeyPress(key)

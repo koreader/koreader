@@ -14,6 +14,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DictQuickLookUp = require("ui/widget/dictquicklookup")
+local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FocusManager = require("ui/widget/focusmanager")
@@ -517,7 +518,7 @@ function WordInfoDialog:init()
                             VerticalSpan:new{width= Size.padding.default},
                             has_context and
                             TextBoxWidget:new{
-                                text = "..." .. self.prev_context:gsub("\n", " ") .. "【" ..self.title.."】" .. self.next_context:gsub("\n", " ") .. "...",
+                                text = "..." .. (self.prev_context or ""):gsub("\n", " ") .. "【" ..self.title.."】" .. (self.next_context or ""):gsub("\n", " ") .. "...",
                                 width = width,
                                 face = Font:getFace("smallffont"),
                                 alignment = self.title_align or "left",
@@ -1339,6 +1340,7 @@ function VocabularyBuilderWidget:resetItems()
             }
         end
     end
+    self.reload_time = os.time()
     self:_populateItems()
 end
 
@@ -1443,16 +1445,28 @@ local VocabBuilder = WidgetContainer:extend{
 
 function VocabBuilder:init()
     self.ui.menu:registerToMainMenu(self)
+    self:onDispatcherRegisterActions()
 end
 
 function VocabBuilder:addToMainMenu(menu_items)
     menu_items.vocabbuilder = {
         text = _("Vocabulary builder"),
         callback = function()
-            local reload_items = function(builder_widget)
-                builder_widget.reload_time = os.time()
+            self:onShowVocabBuilder()
+        end
+    }
+end
+
+function VocabBuilder:setupWidget()
+    if self.widget then
+        self.widget:reloadItems()
+    else
+        -- We initiate the widget with proper
+        -- callback definition for reload_items
+        local reload_items = function(widget)
+                widget.reload_time = os.time()
                 local vocab_items = {}
-                for i = 1, DB:selectCount(builder_widget) do
+                for i = 1, DB:selectCount(widget) do
                     table.insert(vocab_items, {
                         callback = function(item)
                             -- custom button table
@@ -1468,7 +1482,7 @@ function VocabBuilder:addToMainMenu(menu_items)
                                                     id = "got_it",
                                                     text = _("Got it"),
                                                     callback = function()
-                                                        self.builder_widget:gotItFromDict(item.word)
+                                                        self.widget:gotItFromDict(item.word)
                                                         UIManager:sendEvent(Event:new("Close"))
                                                     end
                                                 }
@@ -1482,7 +1496,7 @@ function VocabBuilder:addToMainMenu(menu_items)
                                                     id = "forgot",
                                                     text = _("Forgot"),
                                                     callback = function()
-                                                        self.builder_widget:forgotFromDict(item.word)
+                                                        self.widget:forgotFromDict(item.word)
                                                         UIManager:sendEvent(Event:new("Close"))
                                                     end
                                                 }
@@ -1498,31 +1512,38 @@ function VocabBuilder:addToMainMenu(menu_items)
                                 end
                             end
 
-                            builder_widget.current_lookup_word = item.word
+                            widget.current_lookup_word = item.word
                             self.ui:handleEvent(Event:new("LookupWord", item.word, true, nil, nil, nil, tweak_buttons_func))
                         end
                     })
                 end
-                return vocab_items
-            end
-
-            self.builder_widget = VocabularyBuilderWidget:new{
-                title = _("Vocabulary builder"),
-                select_items_callback = function(obj, start_idx, end_idx)
-                    DB:select_items(obj, start_idx, end_idx)
-                end,
-                reload_items_callback = reload_items
-            }
-
-            UIManager:show(self.builder_widget)
+            return vocab_items
         end
-    }
+
+        self.widget = VocabularyBuilderWidget:new{
+            title = _("Vocabulary builder"),
+            select_items_callback = function(obj, start_idx, end_idx)
+                DB:select_items(obj, start_idx, end_idx)
+            end,
+            reload_items_callback = reload_items
+        }
+    end
+end
+
+function VocabBuilder:onDispatcherRegisterActions()
+    Dispatcher:registerAction("show_vocab_builder",
+        {category="none", event="ShowVocabBuilder", title=_("Open vocabulary builder"), general=true, separator=true})
+end
+
+function VocabBuilder:onShowVocabBuilder()
+    self:setupWidget()
+    UIManager:show(self.widget)
 end
 
 -- Event sent by readerdictionary "WordLookedUp"
 function VocabBuilder:onWordLookedUp(word, title, is_manual)
     if not settings.enabled and not is_manual then return end
-    if self.builder_widget and self.builder_widget.current_lookup_word == word then return true end
+    if self.widget and self.widget.current_lookup_word == word then return true end
     local prev_context
     local next_context
     if settings.with_context and self.ui.highlight then

@@ -499,7 +499,7 @@ function ReaderThumbnail:onColorRenderingUpdate()
 end
 
 -- CRE: emitted after a re-rendering
-ReaderThumbnail.onTocReset = ReaderThumbnail.resetCache
+ReaderThumbnail.onDocumentRerendered = ReaderThumbnail.resetCache
 -- Emitted When adding/removing/updating bookmarks and highlights
 ReaderThumbnail.onBookmarkAdded = ReaderThumbnail.resetCachedPagesForBookmarks
 ReaderThumbnail.onBookmarkRemoved = ReaderThumbnail.resetCachedPagesForBookmarks

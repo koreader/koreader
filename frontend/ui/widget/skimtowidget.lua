@@ -372,11 +372,6 @@ function SkimToWidget:goToByEvent(event_name)
     end
 end
 
-function SkimToWidget:onAnyKeyPressed()
-    UIManager:close(self)
-    return true
-end
-
 function SkimToWidget:onFirstRowKeyPress(percent)
     local page = Math.round(percent * self.page_count)
     self:addOriginToLocationStack()

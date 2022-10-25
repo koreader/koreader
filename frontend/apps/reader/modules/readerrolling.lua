@@ -127,6 +127,7 @@ function ReaderRolling:init()
         self:onRedrawCurrentView()
     end)
     self.ui.menu:registerToMainMenu(self)
+    self.batched_update_count = 0
 end
 
 function ReaderRolling:onReadSettings(config)
@@ -859,12 +860,35 @@ function ReaderRolling:onZoom()
     self:updatePos()
 end
 
+function ReaderRolling:onBatchedUpdate()
+    -- This is called by Dispatcher, and it may be possible to have re-entrant calls
+    self.batched_update_count = self.batched_update_count + 1
+end
+
+function ReaderRolling:onBatchedUpdateDone()
+    self.batched_update_count = self.batched_update_count - 1
+    if self.batched_update_count <= 0 then
+        self.batched_update_count = 0
+        -- Be sure any Notification gets a chance to be painted before
+        -- a blocking rerendering
+        UIManager:nextTick(function()
+            self:onUpdatePos()
+        end)
+    end
+end
+
 --[[
-    remember to signal this event when the document has been zoomed,
-    font has been changed, or line height has been changed.
+    remember to signal this event when the document layout could
+    have changed (ie. font, line height, margin... change)
     Note that xpointer should not be changed.
+    The only handler of this event should be this one.
+    A "DocumentRerendered" event will be then sent if it has changed.
+    Provide force=true to get it emitted even if nothing has changed.
 --]]
-function ReaderRolling:onUpdatePos()
+function ReaderRolling:onUpdatePos(force)
+    if self.batched_update_count > 0 then
+        return
+    end
     if self.ui.postReaderCallback ~= nil then -- ReaderUI:init() not yet done
         -- Don't schedule any updatePos as long as ReaderUI:init() is
         -- not finished (one will be called in the ui.postReaderCallback
@@ -885,7 +909,7 @@ function ReaderRolling:onUpdatePos()
     -- previously because of some bad setDirty() in ConfigDialog widgets
     -- that were triggering a full repaint of crengine (so, the needed
     -- rerendering) before updatePos() is called.
-    self:updatePos()
+    self:updatePos(force)
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
     Input:inhibitInputUntil(0.2) -- Discard input events, which might have occurred (double tap).
@@ -893,24 +917,26 @@ function ReaderRolling:onUpdatePos()
     -- to allow for quicker setting changes and rendering comparisons.
 end
 
-function ReaderRolling:updatePos()
+function ReaderRolling:updatePos(force)
     if not self.ui.document then
         -- document closed since we were scheduleIn'ed
         return
     end
     -- Check if the document has been re-rendered
     local new_rendering_hash = self.ui.document:getDocumentRenderingHash()
-    if new_rendering_hash ~= self.rendering_hash then
+    if new_rendering_hash ~= self.rendering_hash or force then
         logger.dbg("rendering hash changed:", self.rendering_hash, ">", new_rendering_hash)
         self.rendering_hash = new_rendering_hash
         -- A few things like page numbers may have changed
         self.ui.document:resetCallCache() -- be really sure this cache is reset
         self.ui.document:_readMetadata() -- get updated document height and nb of pages
-        if self.hide_nonlinear_flows then
+        if self.hide_nonlinear_flows or force then
             self.ui.document:cacheFlows()
         end
+        -- Note: ReaderStatistics needs to get these in this order
+        -- ("PageUpdate" event first, and then "DocumentRerendered").
         self:_gotoXPointer(self.xpointer)
-        self.ui:handleEvent(Event:new("UpdateToc"))
+        self.ui:handleEvent(Event:new("DocumentRerendered"))
     end
     self:onUpdateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
@@ -930,7 +956,7 @@ function ReaderRolling:onChangeViewMode()
         if self.visible_pages == 2 then
             -- Switching from 2-pages page mode to scroll mode has crengine switch to 1-page,
             -- and we need to notice this re-rendering and keep things sane
-            self.ui:handleEvent(Event:new("UpdatePos"))
+            self:onUpdatePos()
         end
         self:_gotoXPointer(self.xpointer)
         -- Ensure a whole screen refresh is always enqueued
@@ -1090,7 +1116,7 @@ function ReaderRolling:onSetVisiblePages(visible_pages)
     self.ui.document:setVisiblePageCount(visible_pages)
     local cur_visible_pages = self.ui.document:getVisiblePageCount()
     if cur_visible_pages ~= prev_visible_pages then
-        self.ui:handleEvent(Event:new("UpdatePos"))
+        self:onUpdatePos()
     end
 end
 
@@ -1102,7 +1128,7 @@ function ReaderRolling:onSetStatusLine(status_line)
     -- (We used to toggle the footer when toggling the top status bar,
     -- but people seem to like having them both, and it feels more
     -- practicable to have the independant.)
-    self.ui:handleEvent(Event:new("UpdatePos"))
+    self:onUpdatePos()
 end
 
 function ReaderRolling:onUpdateTopStatusBarMarkers()
@@ -1476,13 +1502,12 @@ function ReaderRolling:onToggleHideNonlinear()
     self.ui.document:setHideNonlinearFlows(self.hide_nonlinear_flows)
     -- The document may change due to forced pagebreaks between flows being
     -- added or removed, so we need to find our location
-    self:onUpdatePos()
     -- Even if the document doesn't change, we must ensure that the
     -- flow and call caches are cleared, to get the right page numbers,
     -- which may have changed, and the correct flow structure. Also,
     -- the footer needs updating, and TOC markers may come or go.
-    self.ui.document:cacheFlows()
-    self.ui:handleEvent(Event:new("UpdateToc"))
+    -- So, provide force=true.
+    self:onUpdatePos(true)
 end
 
 return ReaderRolling

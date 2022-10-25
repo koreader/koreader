@@ -539,11 +539,6 @@ function FrontLightWidget:onShow()
     return true
 end
 
-function FrontLightWidget:onAnyKeyPressed()
-    UIManager:close(self)
-    return true
-end
-
 function FrontLightWidget:onClose()
     UIManager:close(self)
     return true

@@ -293,11 +293,6 @@ function SpinWidget:onShow()
     return true
 end
 
-function SpinWidget:onAnyKeyPressed()
-    self:onClose()
-    return true
-end
-
 function SpinWidget:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.spin_frame.dimen) then
         self:onClose()

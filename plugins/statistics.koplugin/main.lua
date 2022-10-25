@@ -243,7 +243,7 @@ function ReaderStatistics:isEnabled()
 end
 
 -- Reset the (volatile) stats on page count changes (e.g., after a font size update)
-function ReaderStatistics:onUpdateToc()
+function ReaderStatistics:onDocumentRerendered()
     -- Note: this is called *after* onPageUpdate(new current page in new page count), which
     -- has updated the duration for (previous current page in old page count) and created
     -- a tuple for (new current page) with a 0-duration.
@@ -259,7 +259,7 @@ function ReaderStatistics:onUpdateToc()
     --   - it adds/creates self.page_stat[153]={..., {now, 0}}
     --   - it sets self.curr_page=153
     --   - (at this point, we don't know the new page count is 254)
-    -- - OnUpdateToc() is called:
+    -- - OnDocumentRerendered() is called:
     --   - insertDB() is called, which will still use the previous self.data.pages=200 as the
     --     page count, and will go at inserting or not in the DB:
     --       - (127, now-35s, 35, 200) inserted

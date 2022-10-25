@@ -19,7 +19,7 @@ local ScreenSaverWidget = InputContainer:extend{
 function ScreenSaverWidget:init()
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {Device.input.group.Back}, doc = "close widget" },
+            AnyKeyPressed = { { Device.input.group.Any }, seqtext = "any key", doc = "close widget" },
         }
     end
     if Device:isTouchDevice() then
@@ -95,7 +95,7 @@ function ScreenSaverWidget:setupGestureEvents()
             InputContainer.handleEvent(this, event)
             return true
         end
-        self.key_events = nil -- also disable exit with keys
+        self.key_events = {} -- also disable exit with keys
     end
 end
 
@@ -110,11 +110,6 @@ function ScreenSaverWidget:showWaitForGestureMessage(msg)
     infomsg:paintTo(Screen.bb, 0, 0)
     infomsg:onShow() -- get the screen refreshed
     infomsg:free()
-end
-
-function ScreenSaverWidget:onExitScreensaver()
-    self:onClose()
-    return true
 end
 
 function ScreenSaverWidget:update()
@@ -167,11 +162,8 @@ function ScreenSaverWidget:onClose()
     UIManager:close(self)
     return true
 end
-
-function ScreenSaverWidget:onAnyKeyPressed()
-    self:onClose()
-    return true
-end
+ScreenSaverWidget.onAnyKeyPressed = ScreenSaverWidget.onClose
+ScreenSaverWidget.onExitScreensaver = ScreenSaverWidget.onClose
 
 function ScreenSaverWidget:onCloseWidget()
     -- Restore to previous rotation mode, if need be.

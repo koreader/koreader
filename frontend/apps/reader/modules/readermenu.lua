@@ -178,23 +178,46 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     -- typeset tab
-    self.menu_items.reset_document_settings = {
-        text = _("Reset document settings to default"),
-        keep_menu_open = true,
-        callback = function()
-            UIManager:show(ConfirmBox:new{
-                text = _("Reset current document settings to their default values?\n\nReading position, highlights and bookmarks will be kept.\nThe document will be reloaded."),
-                ok_text = _("Reset"),
-                ok_callback = function()
-                    local current_file = self.ui.document.file
-                    self:onTapCloseMenu()
-                    self.ui:onClose()
-                    require("apps/filemanager/filemanagerutil").resetDocumentSettings(current_file)
-                    require("apps/reader/readerui"):showReader(current_file)
+    self.menu_items.document_settings = {
+        text = _("Document settings"),
+        sub_item_table = {
+            {
+                text = _("Reset document settings to default"),
+                keep_menu_open = true,
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Reset current document settings to their default values?\n\nReading position, highlights and bookmarks will be kept.\nThe document will be reloaded."),
+                        ok_text = _("Reset"),
+                        ok_callback = function()
+                            local current_file = self.ui.document.file
+                            self:onTapCloseMenu()
+                            self.ui:onClose()
+                            require("apps/filemanager/filemanagerutil").resetDocumentSettings(current_file)
+                            require("apps/reader/readerui"):showReader(current_file)
+                        end,
+                    })
                 end,
-            })
-        end,
+            },
+            {
+                text = _("Save document settings as default"),
+                keep_menu_open = true,
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Save current document settings as default values?"),
+                        ok_text = _("Save"),
+                        ok_callback = function()
+                            self:onTapCloseMenu()
+                            self:saveDocumentSettingsAsDefault()
+                            UIManager:show(require("ui/widget/notification"):new{
+                                text = _("Default settings updated"),
+                            })
+                        end,
+                    })
+                end,
+            },
+        },
     }
+
     self.menu_items.page_overlap = require("ui/elements/page_overlap")
 
     -- settings tab
@@ -304,6 +327,21 @@ dbg:guard(ReaderMenu, 'setUpdateItemTable',
             widget:addToMainMenu(mock_menu_items)
         end
     end)
+
+function ReaderMenu:saveDocumentSettingsAsDefault()
+    local prefix
+    if self.ui.rolling then
+        G_reader_settings:saveSetting("cre_font", self.ui.font.font_face)
+        G_reader_settings:saveSetting("copt_css", self.ui.document.default_css)
+        G_reader_settings:saveSetting("style_tweaks", self.ui.styletweak.global_tweaks)
+        prefix = "copt_"
+    else
+        prefix = "kopt_"
+    end
+    for k, v in pairs(self.ui.document.configurable) do
+        G_reader_settings:saveSetting(prefix .. k, v)
+    end
+end
 
 function ReaderMenu:exitOrRestart(callback, force)
     if self.menu_container then self:onTapCloseMenu() end

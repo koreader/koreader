@@ -1118,8 +1118,8 @@ function UIManager:_repaint()
     --[[
     if start_idx > 1 then
         for i = 1, start_idx-1 do
-            local widget = self._window_stack[i]
-            logger.dbg("NOT painting widget:", widget.widget.name or widget.widget.id or tostring(widget))
+            local widget = self._window_stack[i].widget
+            logger.dbg("NOT painting widget:", widget.name or widget.id or tostring(widget))
         end
     end
     --]]
@@ -1333,13 +1333,16 @@ function UIManager:handleInput()
     -- for input events:
     repeat
         wait_until, now = self:_checkTasks()
-        --dbg("---------------------------------------------------")
-        --dbg("wait_until", wait_until)
-        --dbg("now", now)
-        --dbg("exec stack", self._task_queue)
-        --dbg("window stack", self._window_stack)
-        --dbg("dirty stack", self._dirty)
-        --dbg("---------------------------------------------------")
+        --[[
+        dbg("---------------------------------------------------")
+        dbg("wait_until", wait_until)
+        dbg("now       ", now)
+        dbg("#exec stack  ", #self._task_queue)
+        dbg("#window stack", #self._window_stack)
+        dbg("#dirty stack ", util.tableSize(self._dirty))
+        dbg("dirty?", self._task_queue_dirty)
+        dbg("---------------------------------------------------")
+        --]]
 
         -- stop when we have no window to show
         if not self._window_stack[1] and not self._run_forever then

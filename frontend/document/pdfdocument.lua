@@ -129,6 +129,10 @@ function PdfDocument:nativeToPageRectTransform(pageno, rect)
     return self.koptinterface:nativeToPageRectTransform(self, pageno, rect)
 end
 
+function PdfDocument:getSelectedWordContext(word, nb_words, pos)
+    return self.koptinterface:getSelectedWordContext(word, nb_words, pos)
+end
+
 function PdfDocument:getOCRWord(pageno, wbox)
     return self.koptinterface:getOCRWord(self, pageno, wbox)
 end

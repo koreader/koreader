@@ -432,11 +432,6 @@ function DateTimeWidget:onShow()
     return true
 end
 
-function DateTimeWidget:onAnyKeyPressed()
-    UIManager:close(self)
-    return true
-end
-
 function DateTimeWidget:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.date_frame.dimen) then
         self:onClose()

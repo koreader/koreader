@@ -337,11 +337,6 @@ function DoubleSpinWidget:onShow()
     return true
 end
 
-function DoubleSpinWidget:onAnyKeyPressed()
-    self:onClose()
-    return true
-end
-
 function DoubleSpinWidget:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.widget_frame.dimen) then
         self:onClose()

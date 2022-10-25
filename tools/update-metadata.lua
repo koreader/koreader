@@ -9,7 +9,7 @@
 --
 -- NOTE: title and screenshots are not translated. These resources are located in metadata/en-US
 
-package.path = "frontend/?.lua;" .. package.path
+package.path = "frontend/?.lua;base/" .. package.path
 local _ = require("gettext")
 
 local metadata = {

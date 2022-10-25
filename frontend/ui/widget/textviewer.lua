@@ -289,11 +289,6 @@ function TextViewer:onShow()
     return true
 end
 
-function TextViewer:onAnyKeyPressed()
-    UIManager:close(self)
-    return true
-end
-
 function TextViewer:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.frame.dimen) then
         self:onClose()
@@ -372,7 +367,7 @@ function TextViewer:findDialog()
     input_dialog:addWidget(self.check_button_case)
 
     UIManager:show(input_dialog)
-    input_dialog:onShowKeyboard()
+    input_dialog:onShowKeyboard(true)
 end
 
 function TextViewer:findCallback(input_dialog)

@@ -18,7 +18,12 @@ fi
 ANDROID_ARCH="${ANDROID_ARCH:-arm}"
 
 # Default to Android 4.0+; required for NDK 15 but with a custom NDK the strict minimum is 9.
-NDKABI="${NDKABI:-14}"
+if [[ "${ANDROID_ARCH}" == "arm64" ]] || [[ "${ANDROID_ARCH}" == "x86_64" ]]; then
+    # 64bit arches require at least ABI 21
+    NDKABI="${NDKABI:-21}"
+else
+    NDKABI="${NDKABI:-14}"
+fi
 export NDKABI
 
 # Default android flavor
@@ -156,7 +161,7 @@ SUPPORTED_TARGETS="
     cervantes
     remarkable
     sony-prstux
-    android
+    android         Supports ANDROID_ARCH arm, arm64, x86 & x86_64
     pocketbook
     ubuntu-touch
     appimage
@@ -799,7 +804,7 @@ TARGET:
         android)
             command -v adb >/dev/null && {
                 if [ -z "${no_build}" ]; then
-                    echo "[*] Building KOReader for Android…"
+                    echo "[*] Building KOReader for Android ${ANDROID_ARCH}…"
                     kodev-release --ignore-translation android
                     assert_ret_zero $?
                 fi
