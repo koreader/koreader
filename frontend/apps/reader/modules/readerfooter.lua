@@ -2093,7 +2093,6 @@ function ReaderFooter:getDataFromStatistics(title, pages)
 end
 
 function ReaderFooter:onUpdateFooter(force_repaint, force_recompute)
-    logger.warn("ReaderFooter:onUpdateFooter")
     if self.pageno then
         self:updateFooterPage(force_repaint, force_recompute)
     else
@@ -2102,7 +2101,6 @@ function ReaderFooter:onUpdateFooter(force_repaint, force_recompute)
 end
 
 function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
-    logger.warn("ReaderFooter:onUpdateFooterPage")
     if type(self.pageno) ~= "number" then return end
     if self.ui.document:hasHiddenFlows() then
         local flow = self.ui.document:getPageFlow(self.pageno)

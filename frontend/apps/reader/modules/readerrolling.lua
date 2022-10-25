@@ -863,15 +863,14 @@ end
 function ReaderRolling:onBatchedUpdate()
     -- This is called by Dispatcher, and it may be possible to have re-entrant calls
     self.batched_update_count = self.batched_update_count + 1
-    logger.warn("onBatchedUpdate", self.batched_update_count)
 end
 
 function ReaderRolling:onBatchedUpdateDone()
-    logger.warn("onBatchedUpdateDone", self.batched_update_count)
     self.batched_update_count = self.batched_update_count - 1
     if self.batched_update_count <= 0 then
         self.batched_update_count = 0
-        logger.warn("onBatchedUpdateDoneNextTick")
+        -- Be sure any Notification gets a chance to be painted before
+        -- a blocking rerendering
         UIManager:nextTick(function()
             self:onUpdatePos()
         end)
@@ -883,8 +882,8 @@ end
     have changed (ie. font, line height, margin... change)
     Note that xpointer should not be changed.
     The only handler of this event should be this one.
-    A "DocumentRerendered" event will be then set if it has changed.
-    Provide force=true to get it emited even if nothing has changed.
+    A "DocumentRerendered" event will be then sent if it has changed.
+    Provide force=true to get it emitted even if nothing has changed.
 --]]
 function ReaderRolling:onUpdatePos(force)
     if self.batched_update_count > 0 then

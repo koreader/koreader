@@ -102,7 +102,6 @@ function ReaderDogear:updateDogearOffset()
 end
 
 function ReaderDogear:onDocumentRerendered()
-    require("logger").warn("ReaderDogear:onDocumentRerendered")
     -- Catching the top status bar toggling with :onSetStatusLine()
     -- would be too early. But "DocumentRerendered" is sent after
     -- it has been applied
