@@ -1,3 +1,44 @@
+--[[--
+A button dialog widget that shows a grid of buttons.
+
+    @usage
+    local button_dialog = ButtonDialog:new{
+        buttons = {
+            {
+                {
+                    text = "First row, left side",
+                    callback = function() end,
+                    hold_callback = function() end
+                },
+                {
+                    text = "First row, middle",
+                    callback = function() end
+                },
+                {
+                    text = "First row, right side",
+                    callback = function() end
+                }
+            },
+            {
+                {
+                    text = "Second row, full span",
+                    callback = function() end
+                }
+            },
+            {
+                {
+                    text = "Third row, left side",
+                    callback = function() end
+                },
+                {
+                    text = "Third row, right side",
+                    callback = function() end
+                }
+            }
+        }
+    }
+--]]
+
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
