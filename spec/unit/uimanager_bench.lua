@@ -29,7 +29,7 @@ describe("UIManager checkTasks benchmark", function()
     for i=1, NB_TESTS do
         table.insert(
             UIManager._task_queue,
-            { time = now + i, action = noop, argc = 0, args = {} }
+            { time = now + i, action = noop, args = {} }
         )
     end
 
@@ -43,8 +43,10 @@ describe("UIManager schedule simple benchmark", function()
     UIManager:quit()
     UIManager._task_queue = {}
 
-    for i=1, NB_TESTS do
+    -- Insert tasks at the beginning and at the end of the _task_queue
+    for i=1, NB_TESTS/2 do
         UIManager:schedule(now + i, noop)
+        UIManager:schedule(now + NB_TESTS - i, noop)
     end
 end)
 
@@ -150,7 +152,7 @@ describe("UIManager unschedule benchmark", function()
     for i=1, NB_TESTS do
         table.insert(
             UIManager._task_queue,
-            { time = now + i, action = 'a', argc=0, args={} }
+            { time = now + i, action = 'a', args={} }
         )
     end
 
