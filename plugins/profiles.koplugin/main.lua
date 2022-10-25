@@ -34,6 +34,17 @@ function Profiles:loadProfiles()
     end
     self.profiles = LuaSettings:open(self.profiles_file)
     self.data = self.profiles.data
+    -- ensure profile name
+    for k, v in pairs(self.data) do
+        if not v.settings then
+            self.data[k].settings = {}
+        end
+        if not self.data[k].settings.name then
+            self.data[k].settings.name = k
+            self.updated = true
+        end
+    end
+    self:onFlushSettings()
 end
 
 function Profiles:onFlushSettings()
@@ -54,8 +65,10 @@ end
 
 function Profiles:onDispatcherRegisterActions()
     self:loadProfiles()
-    for name in pairs(self.data) do
-        dispatcherRegisterProfile(name)
+    for k, v in pairs(self.data) do
+        if v.settings.registered then
+            dispatcherRegisterProfile(k)
+        end
     end
 end
 
@@ -76,11 +89,8 @@ function Profiles:getSubMenuItems()
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 local function editCallback(new_name)
-                    self.data[new_name] = {}
-                    self.data[new_name].settings = {}
-                    self.data[new_name].settings.name = new_name
+                    self.data[new_name] = {["settings"] = {["name"] = new_name}}
                     self.updated = true
-                    dispatcherRegisterProfile(new_name)
                     touchmenu_instance.item_table = self:getSubMenuItems()
                     touchmenu_instance.page = 1
                     touchmenu_instance:updateItems()
@@ -98,7 +108,20 @@ function Profiles:getSubMenuItems()
                 text = _("Execute"),
                 callback = function(touchmenu_instance)
                     touchmenu_instance:onClose()
+                    local show_as_quickmenu = v.settings.show_as_quickmenu
+                    self.data[k].settings.show_as_quickmenu = nil
                     self:onProfileExecute(k)
+                    self.data[k].settings.show_as_quickmenu = show_as_quickmenu
+                end,
+            },
+            {
+                text = _("Show as QuickMenu"),
+                callback = function(touchmenu_instance)
+                    touchmenu_instance:onClose()
+                    local show_as_quickmenu = v.settings.show_as_quickmenu
+                    self.data[k].settings.show_as_quickmenu = true
+                    self:onProfileExecute(k)
+                    self.data[k].settings.show_as_quickmenu = show_as_quickmenu
                 end,
             },
             {
@@ -114,21 +137,43 @@ function Profiles:getSubMenuItems()
                 separator = true,
             },
             {
+                text = _("Show in action list"),
+                checked_func = function()
+                    return v.settings.registered
+                end,
+                callback = function(touchmenu_instance)
+                    if v.settings.registered then
+                        dispatcherRemoveProfile(k)
+                        self.data[k].settings.registered = nil
+                    else
+                        dispatcherRegisterProfile(k)
+                        self.data[k].settings.registered = true
+                    end
+                    self.updated = true
+                    local actions_sub_menu = {}
+                    Dispatcher:addSubMenu(self, actions_sub_menu, self.data, k)
+                    touchmenu_instance.item_table[4].sub_item_table = actions_sub_menu -- item index in submenu
+                end,
+            },
+            {
                 text_func = function() return T(_("Edit actions: (%1)"), Dispatcher:menuTextFunc(v)) end,
                 sub_item_table = edit_actions_sub_items,
+                separator = true,
             },
             {
                 text = T(_("Rename: %1"), k),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local function editCallback(new_name)
+                        if v.settings.registered then
+                            dispatcherRemoveProfile(k)
+                            dispatcherRegisterProfile(new_name)
+                        end
+                        self:renameAutostart(k, new_name)
                         self.data[new_name] = util.tableDeepCopy(v)
                         self.data[new_name].settings.name = new_name
                         self.data[k] = nil
                         self.updated = true
-                        self:renameAutostart(k, new_name)
-                        dispatcherRemoveProfile(k)
-                        dispatcherRegisterProfile(new_name)
                         touchmenu_instance.item_table = self:getSubMenuItems()
                         touchmenu_instance:updateItems()
                       end
@@ -141,12 +186,9 @@ function Profiles:getSubMenuItems()
                 callback = function(touchmenu_instance)
                     local function editCallback(new_name)
                         self.data[new_name] = util.tableDeepCopy(v)
-                        if not self.data[new_name].settings then
-                            self.data[new_name].settings = {}
-                        end
                         self.data[new_name].settings.name = new_name
+                        self.data[new_name].settings.registered = nil
                         self.updated = true
-                        dispatcherRegisterProfile(new_name)
                         touchmenu_instance.item_table = self:getSubMenuItems()
                         touchmenu_instance:updateItems()
                       end
@@ -162,10 +204,12 @@ function Profiles:getSubMenuItems()
                         text = _("Do you want to delete this profile?"),
                         ok_text = _("Delete"),
                         ok_callback = function()
+                            if v.settings.registered then
+                                dispatcherRemoveProfile(k)
+                            end
+                            self:renameAutostart(k)
                             self.data[k] = nil
                             self.updated = true
-                            self:renameAutostart(k)
-                            dispatcherRemoveProfile(k)
                             touchmenu_instance.item_table = self:getSubMenuItems()
                             touchmenu_instance:updateItems()
                         end,
@@ -174,7 +218,9 @@ function Profiles:getSubMenuItems()
             },
         }
         table.insert(sub_item_table, {
-            text = k,
+            text_func = function()
+                return (v.settings.show_as_quickmenu and "\u{F0CA} " or "\u{F144} ") .. k
+            end,
             hold_keep_menu_open = false,
             sub_item_table = sub_items,
             hold_callback = function()
