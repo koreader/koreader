@@ -788,7 +788,6 @@ function OPDSBrowser:streamPages(item, remote_url, count, continue)
     }
     -- in Lua 5.2 we could override __len, but this works too
     viewer._images_list_nb = count
-    logger.dbg("StreamPages:   cur is ",viewer._images_list_cur)
     UIManager:show(viewer)
     if continue then
         self:jumpToPage(viewer, count)
