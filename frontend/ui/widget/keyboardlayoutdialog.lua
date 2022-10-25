@@ -165,7 +165,6 @@ function KeyboardLayoutDialog:init()
             w = Screen:getWidth(),
             h = Screen:getHeight(),
         },
-        ignore_if_over = "height",
         self.movable,
     }
     if Device:hasKeys() then

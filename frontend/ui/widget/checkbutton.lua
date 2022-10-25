@@ -91,6 +91,7 @@ function CheckButton:initCheckButton(checked)
         background = self.background,
         margin = 0,
         padding = 0,
+        show_parent = self.show_parent or self,
         self._horizontalgroup,
     }
     self.dimen = self._frame:getSize()

@@ -319,7 +319,7 @@ function ScrollableContainer:propagateEvent(event)
         -- pass-through
         return InputContainer.propagateEvent(self, event)
     end
-    if event.handler == "onGesture" and event.argc == 1 then
+    if event.handler == "onGesture" and #event.args == 1 then
         local ges = event.args[1]
         -- Don't propagate events that happen out of view (in the hidden
         -- scrolled-out area) to child
