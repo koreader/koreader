@@ -38,6 +38,7 @@ local UIManager = require("ui/uimanager")
 local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
+local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local Dispatcher = {
@@ -569,7 +570,7 @@ function Dispatcher:menuTextFunc(settings)
             if item == "settings" then item = next(settings, item) end
             action_name = Dispatcher:getNameFromItem(item, settings)
         else
-            action_name = T(_("%1 actions"), count)
+            action_name = T(N_("", "%1 actions", count), count)
         end
     end
     return action_name
