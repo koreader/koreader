@@ -908,7 +908,6 @@ function ReaderFooter:disableFooter()
     self.resetLayout = function() end
     self.updateFooterPage = function() end
     self.updateFooterPos = function() end
-    self.onUpdatePos = function() end
     self.mode = self.mode_list.off
     self.view.footer_visible = false
 end
@@ -2225,6 +2224,8 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     end
 end
 
+-- Note: no need for :onDocumentRerendered(), ReaderToc will catch "DocumentRerendered"
+-- and will then emit a "TocReset" after the new ToC is made.
 function ReaderFooter:onTocReset()
     self:setTocMarkers(true)
     if self.view.view_mode == "page" then
@@ -2262,10 +2263,6 @@ function ReaderFooter:onPosUpdate(pos, pageno)
     end
     self:updateFooterPos()
 end
-
--- recalculate footer sizes when document page count is updated
--- see documentation for more info about this event.
-ReaderFooter.onUpdatePos = ReaderFooter.onUpdateFooter
 
 function ReaderFooter:onReaderReady()
     self.ui.menu:registerToMainMenu(self)
