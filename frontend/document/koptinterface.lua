@@ -1037,6 +1037,7 @@ Get word and word box from `doc` position.
 function KoptInterface:getWordFromPosition(doc, pos)
     local text_boxes = self:getTextBoxes(doc, pos.page)
     if text_boxes then
+        self.last_text_boxes = text_boxes
         if doc.configurable.text_wrap == 1 then
             return self:getWordFromReflowPosition(doc, text_boxes, pos)
         else
@@ -1092,6 +1093,51 @@ function KoptInterface:getWordFromNativePosition(doc, boxes, pos)
         pos = pos,
     }
     return word_box
+end
+
+function KoptInterface:getSelectedWordContext(word, nb_words, pos)
+    local boxes = self.last_text_boxes
+    if not pos or not boxes or #boxes == 0 then return end
+    local i, j = getWordBoxIndices(boxes, pos)
+    if boxes[i][j].word ~= word then return end
+
+    local li, wi = i, j
+    local prev_count, next_count = 0, 0
+    local prev_text, next_text = {}, {}
+    while prev_count < nb_words do
+        if li == 1 and wi == 1 then
+            break
+        elseif wi == 1 then
+            li = li - 1
+            wi = #boxes[li]
+        else
+            wi = wi - 1
+        end
+        local current_word = boxes[li][wi].word
+        if #current_word > 0 then
+            table.insert(prev_text, 1, current_word)
+            prev_count = prev_count + 1
+        end
+    end
+
+    li, wi = i, j
+    while next_count < nb_words do
+        if li == #boxes and wi == #boxes[li] then
+            break
+        elseif wi == #boxes[li] then
+            li = li + 1
+            wi = 1
+        else
+            wi = wi + 1
+        end
+        local current_word = boxes[li][wi].word
+        if #current_word > 0 then
+            table.insert(next_text, current_word)
+            next_count = next_count + 1
+        end
+    end
+    if #prev_text == 0 and #next_text == 0 then return end
+    return table.concat(prev_text, " "), table.concat(next_text, " ")
 end
 
 --[[--

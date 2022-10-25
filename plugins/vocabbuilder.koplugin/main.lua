@@ -517,7 +517,7 @@ function WordInfoDialog:init()
                             VerticalSpan:new{width= Size.padding.default},
                             has_context and
                             TextBoxWidget:new{
-                                text = "..." .. self.prev_context:gsub("\n", " ") .. "【" ..self.title.."】" .. self.next_context:gsub("\n", " ") .. "...",
+                                text = "..." .. (self.prev_context or ""):gsub("\n", " ") .. "【" ..self.title.."】" .. (self.next_context or ""):gsub("\n", " ") .. "...",
                                 width = width,
                                 face = Font:getFace("smallffont"),
                                 alignment = self.title_align or "left",
