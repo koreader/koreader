@@ -966,7 +966,8 @@ function OPDSBrowser:browse(browse_url, username, password)
 end
 
 function OPDSBrowser:browseSearchable(browse_url, username, password)
-    self.search_server_dialog = InputDialog:new{
+    local search_server_dialog
+    search_server_dialog = InputDialog:new{
         title = _("Search OPDS catalog"),
         input = "",
         -- @translators: This is an input hint for something to search for in an OPDS catalog, namely a famous author everyone knows. It probably doesn't need to be localized, but this is just here in case another name or book title would be more appropriate outside of a European context.
@@ -996,7 +997,7 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
         },
     }
     UIManager:show(self.search_server_dialog)
-    self.search_server_dialog:onShowKeyboard()
+    search_server_dialog:onShowKeyboard()
 end
 
 -- This function is fired when a list item is selected. The function
