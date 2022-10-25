@@ -695,9 +695,7 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
     end
 end
 
--- This function shows a dialog with input fields
--- for entering information for Page streaming from.
--- an input page number
+-- Shows a page number dialog for page streaming.
 function OPDSBrowser:jumpToPage(viewer, count)
     local input_dialog
     input_dialog = InputDialog:new{
