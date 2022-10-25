@@ -302,6 +302,10 @@ function AutoDim:autodim_task()
         end
         local fl_diff = self.autodim_save_fl - self.autodim_end_fl
         if fl_diff > 0 then
+            if self.trap_widget then
+                UIManager:close(self.trap_widget)
+            end
+
             self.trap_widget = TrapWidget:new{
                 dismiss_callback = function()
                     self:restoreFrontlight()
