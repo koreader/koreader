@@ -55,7 +55,7 @@ Fonts for many languages can be downloaded at:
 
 https://fonts.google.com/noto
 
-Only fonts named "Noto Sans xyz" or "Noto Sans xyz UI" (regular, not bold nor italic, not Serif) will be available in this menu.]])
+Only fonts named "Noto Sans xyz" or "Noto Sans xyz UI" (regular, not bold nor italic, not Serif) will be available in this menu. However, bold fonts will be used if their corresponding regular fonts exist.]])
 
 local getSubMenuItems = function()
     genFallbackCandidates()
