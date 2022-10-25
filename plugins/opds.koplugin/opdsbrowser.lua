@@ -855,7 +855,7 @@ function OPDSBrowser:showDownloads(item)
         end
     end
     -- handles adding download button(s)
-    if (download_buttons ~= {} and #download_buttons > 0) then
+    if (#download_buttons > 0) then
         if (#download_buttons % 2 == 1 and #download_buttons > 1) then
             table.insert(download_buttons, {text = ""})
             for i = 2, #download_buttons, 2 do
@@ -863,12 +863,12 @@ function OPDSBrowser:showDownloads(item)
             end
         else
             -- need the else to handle special case where we have one download button,
-            --   and it should span the width of the window
+            -- and it should span the width of the window
             table.insert(buttons, download_buttons)
         end
         table.insert(buttons, {})  -- add separator for stream buttons
     end
-    if (stream_buttons ~= {}) then
+    if (#stream_buttons > 0) then
         -- Don't need the for loop, there should always be only 2 stream buttons
         table.insert(buttons, stream_buttons)
         table.insert(buttons, {}) -- separator
