@@ -38,7 +38,7 @@ end
 
 function VocabularyBuilder:selectCount(vocab_widget)
     local db_conn = SQ3.open(db_location)
-    local where_clause = vocab_widget:check_reverse() and " WHERE due_time < " .. vocab_widget.reload_time or ""
+    local where_clause = vocab_widget:check_reverse() and " WHERE due_time <= " .. vocab_widget.reload_time or ""
     local sql = "SELECT count(0) FROM vocabulary INNER JOIN title ON filter=true AND title_id=id" .. where_clause .. ";"
     local count = tonumber(db_conn:rowexec(sql))
     db_conn:close()
@@ -138,7 +138,7 @@ function VocabularyBuilder:_select_items(items, start_idx, reload_time)
     else
         sql = string.format([[SELECT * FROM vocabulary INNER JOIN title
                               ON title_id = title.id AND filter = true
-                              WHERE due_time < ]] .. reload_time ..
+                              WHERE due_time <= ]] .. reload_time ..
                             " ORDER BY due_time desc limit %d OFFSET %d;", 32, start_idx-1)
     end
 
