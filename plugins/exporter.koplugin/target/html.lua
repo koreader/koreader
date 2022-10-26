@@ -1,11 +1,10 @@
-local Device = require("device")
 local logger = require("logger")
 local slt2 = require("template/slt2")
 
 -- html exporter
 local HtmlExporter = require("base"):new {
     name = "html",
-    shareable = Device:canShareText(),
+    mimetype = "text/html",
 }
 
 local function format(booknotes)
@@ -68,7 +67,7 @@ end
 
 function HtmlExporter:share(t)
     local content = self:getRenderedContent({t})
-    Device:doShareText(content)
+    self:shareText(content)
 end
 
 return HtmlExporter
