@@ -124,7 +124,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
             if string.sub( item_fullpath, -1 ) == "/" then
                 item_fullpath = string.sub( item_fullpath, 1, -2 )
             end
-            local is_current_dir = self:isCurrentDirectory( item_fullpath, address, path )
+            local is_current_dir = self:isCurrentDirectory( util.urlDecode(item_fullpath), address, folder_path )
 
             local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
             item_name = util.htmlEntitiesToUtf8(item_name)
