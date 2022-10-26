@@ -695,7 +695,42 @@ function OPDSBrowser:downloadFile(item, filename, remote_url)
     end
 end
 
-function OPDSBrowser:streamPages(item, remote_url, count)
+-- Shows a page number dialog for page streaming.
+function OPDSBrowser:jumpToPage(viewer, count)
+    local input_dialog
+    input_dialog = InputDialog:new{
+        title = _("Enter page number"),
+        input = "",
+        input_type = "number",
+        input_hint = "(" .. "1 - " .. count .. ")",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Stream"),
+                    is_enter_default = true,
+                    callback = function()
+                        local page_num = input_dialog:getInputValue()
+                        if page_num then
+                            UIManager:close(input_dialog)
+                            viewer:switchToImageNum(math.min(math.max(1, page_num), count))
+                        end
+                    end,
+                },
+            }
+        },
+    }
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
+function OPDSBrowser:streamPages(item, remote_url, count, continue)
     local page_table = {image_disposable = true}
     setmetatable(page_table, {__index = function (_, key)
         if type(key) ~= "number" then
@@ -752,7 +787,11 @@ function OPDSBrowser:streamPages(item, remote_url, count)
     -- in Lua 5.2 we could override __len, but this works too
     viewer._images_list_nb = count
     UIManager:show(viewer)
+    if continue then
+        self:jumpToPage(viewer, count)
+    end
 end
+
 
 function OPDSBrowser:showDownloads(item)
     local acquisitions = item.acquisitions
@@ -769,16 +808,24 @@ function OPDSBrowser:showDownloads(item)
 
     local buttons = {} -- buttons for ButtonDialogTitle
 
-    local type_buttons = {} -- file type download buttons
+    local stream_buttons = {} -- page stream buttons
+    local download_buttons = {} -- file type download buttons
     for i = 1, #acquisitions do -- filter out unsupported file types
         local acquisition = acquisitions[i]
 
         if acquisition.stream then
             -- this is an OPDS PSE stream
-            table.insert(type_buttons, {
+            table.insert(stream_buttons, {
                 text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                 callback = function()
-                    self:streamPages(item, acquisition.href, acquisition.count)
+                    self:streamPages(item, acquisition.href, acquisition.count, false)
+                    UIManager:close(self.download_dialog)
+                end,
+            })
+            table.insert(stream_buttons, {
+                text = _("Stream from page") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
+                callback = function()
+                    self:streamPages(item, acquisition.href, acquisition.count, true)
                     UIManager:close(self.download_dialog)
                 end,
             })
@@ -794,7 +841,8 @@ function OPDSBrowser:showDownloads(item)
             end
             if filetype then -- supported file type
                 local text = acquisition.title and acquisition.title or string.upper(filetype)
-                table.insert(type_buttons, {
+                text = url.unescape(text)
+                table.insert(download_buttons, {
                     text = text .. "\u{2B07}", -- append DOWNWARDS BLACK ARROW
                     callback = function()
                         self:downloadFile(item, filename .. "." .. string.lower(filetype), acquisition.href)
@@ -804,14 +852,25 @@ function OPDSBrowser:showDownloads(item)
             end
         end
     end
-    if (#type_buttons % 2 == 1) then -- we need even number of type buttons
-        table.insert(type_buttons, {text = ""})
+    -- handles adding download button(s)
+    if #download_buttons > 0 then
+        if (#download_buttons % 2 == 1 and #download_buttons > 1) then
+            table.insert(download_buttons, {text = ""})
+            for i = 2, #download_buttons, 2 do
+                table.insert(buttons, {download_buttons[i - 1], download_buttons[i]}) -- download buttons, two in a row
+            end
+        else
+            -- need the else to handle special case where we have one download button,
+            -- and it should span the width of the window
+            table.insert(buttons, download_buttons)
+        end
+        table.insert(buttons, {})  -- add separator for stream buttons
     end
-    for i = 2, #type_buttons, 2 do
-        table.insert(buttons, {type_buttons[i - 1], type_buttons[i]}) -- type buttons, two in a row
+    if #stream_buttons > 0 then
+        -- Don't need the for loop, there should always be only 2 stream buttons
+        table.insert(buttons, stream_buttons)
+        table.insert(buttons, {}) -- separator
     end
-
-    table.insert(buttons, {}) -- separator
     table.insert(buttons, { -- action buttons
         {
             text = _("Choose folder"),
