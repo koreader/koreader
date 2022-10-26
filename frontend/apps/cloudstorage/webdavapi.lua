@@ -11,7 +11,7 @@ local logger = require("logger")
 local WebDavApi = {
 }
 
-function WebDavApi:joinedPath( address, path )
+function WebDavApi:getJoinedPath( address, path )
     local path_encoded = self:urlEncode( path ) or ""
     local address_strip = address:sub(-1) == "/" and address:sub(1, -2) or address
     local path_strip = path_encoded:sub(1, 1) == "/" and path_encoded:sub(2) or path_encoded
