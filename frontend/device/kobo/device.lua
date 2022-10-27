@@ -428,6 +428,7 @@ local KoboLuna = Kobo:extend{
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
     display_dpi = 212,
+    hasReliableMxcWaitFor = no, -- Board is similar to the Libra 2, but it's such an unpopular device that reports are scarce.
 }
 
 -- Kobo Elipsa
@@ -534,6 +535,9 @@ local KoboGoldfinch = Kobo:extend{
     },
     battery_sysfs = "/sys/class/power_supply/battery",
     power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event",
+    -- Board is eerily similar to the Libra 2, which, unfortunately, means it's also buggy as hell...
+    -- c.f., https://github.com/koreader/koreader/issues/9552#issuecomment-1293000313
+    hasReliableMxcWaitFor = no,
 }
 
 function Kobo:setupChargingLED()
