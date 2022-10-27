@@ -2,6 +2,7 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local SQ3 = require("lua-ljsqlite3/init")
 local LuaData = require("luadata")
+local logger = require("logger")
 
 local db_location = DataStorage:getSettingsDir() .. "/vocabulary_builder.sqlite3"
 
@@ -30,7 +31,9 @@ local VOCABULARY_DB_SCHEMA = [[
     CREATE INDEX IF NOT EXISTS title_name_index ON title(name);
 ]]
 
-local VocabularyBuilder = {}
+local VocabularyBuilder = {
+    path = db_location
+}
 
 function VocabularyBuilder:init()
     VocabularyBuilder:createDB()
@@ -248,6 +251,7 @@ function VocabularyBuilder:batchUpdateItems(items)
             stmt:bind(item.review_count, item.streak_count, item.review_time, item.due_time, item.word)
             stmt:step()
             stmt:clearbind():reset()
+            item.review_time = nil
         end
     end
 
@@ -336,6 +340,99 @@ function VocabularyBuilder:purge()
     local conn = SQ3.open(db_location)
     conn:exec("DELETE FROM vocabulary; DELETE FROM title;")
     conn:close()
+end
+
+
+-- Synchronization
+function VocabularyBuilder.onSync(local_path, cached_path, income_path)
+    -- we try to open income db
+    local conn_income = SQ3.open(income_path)
+    local ok1, v1 = pcall(conn_income.rowexec, conn_income, "PRAGMA schema_version")
+    if not ok1 or tonumber(v1) == 0 then
+        -- no income db or wrong db, first time sync
+        logger.dbg("vocabbuilder open income DB failed", v1)
+        return true
+    end
+
+    local sql = "attach '" .. income_path:gsub("'", "\\'") .."' as income_db;"
+    -- then we try to open cached db
+    local conn_cached = SQ3.open(cached_path)
+    local ok2, v2 = pcall(conn_cached.rowexec, conn_cached, "PRAGMA schema_version")
+    local attached_cache
+    if not ok2 or tonumber(v2) == 0 then
+        -- no cached or error, no item to delete
+        logger.dbg("vocabbuilder open cached DB failed", v2)
+    else
+        attached_cache = true
+        sql = sql .. "attach '" .. cached_path:gsub("'", "\\'") ..[[' as cached_db;
+            -- first we delete from income_db words that exist in cached_db but not in local_db,
+            -- namely the ones that were deleted since last sync
+            DELETE FROM income_db.vocabulary WHERE word IN (
+                SELECT word FROM cached_db.vocabulary WHERE word NOT IN (
+                    SELECT word FROM vocabulary
+                )
+            );
+            -- We need to delete words that were delete in income_db since last sync
+            DELETE FROM vocabulary WHERE word IN (
+                SELECT word FROM cached_db.vocabulary WHERE word NOT IN (
+                    SELECT word FROM income_db.vocabulary
+                )
+            );
+        ]]
+    end
+
+    conn_cached:close()
+    conn_income:close()
+    local conn = SQ3.open(local_path)
+    local ok3, v3 = pcall(conn.exec, conn, "PRAGMA schema_version")
+    if not ok3 or tonumber(v3) == 0 then
+        -- no local db, this is an error
+        logger.err("vocabbuilder open local DB", v3)
+        return false
+    end
+
+    sql = sql .. [[
+        -- We merge the local db with income db to form the synced db.
+        -- First we do the books
+        INSERT OR IGNORE INTO title (name) SELECT name FROM income_db.title;
+
+        -- Then update income db's book title id references
+        UPDATE income_db.vocabulary SET title_id = ifnull(
+            (SELECT mid FROM (
+                SELECT m.id as mid, title_id as i_tid FROM title as m -- main db
+                INNER JOIN income_db.title as i -- income db
+                ON m.name = i.name
+                LEFT JOIN income_db.vocabulary
+                on title_id = i.id
+            ) WHERE income_db.vocabulary.title_id = i_tid
+        ) , title_id);
+
+        -- Then we merge the income_db's contents into the local db
+        INSERT INTO vocabulary
+              (word, create_time, review_time, due_time, review_count, prev_context, next_context, title_id, streak_count)
+        SELECT word, create_time, review_time, due_time, review_count, prev_context, next_context, title_id, streak_count
+        FROM income_db.vocabulary WHERE true
+        ON CONFLICT(word) DO UPDATE SET
+        due_time = MAX(due_time, excluded.due_time),
+        review_count = CASE
+            WHEN create_time = excluded.create_time THEN MAX(review_count, excluded.review_count)
+            ELSE review_count + excluded.review_count
+        END,
+        prev_context = ifnull(excluded.prev_context, prev_context),
+        next_context = ifnull(excluded.next_context, next_context),
+        streak_count = CASE
+            WHEN review_time > excluded.review_time THEN streak_count
+            ELSE excluded.streak_count
+        END,
+        review_time = MAX(review_time, excluded.review_time),
+        create_time = excluded.create_time, -- we always use the remote value to eliminate duplicate review_count sum
+        title_id = excluded.title_id -- use remote in case re-assignable book id be supported
+    ]]
+    conn:exec(sql)
+    pcall(conn.exec, conn, "COMMIT;")
+    conn:exec("DETACH income_db;"..(attached_cache and "DETACH cached_db;" or ""))
+    conn:close()
+    return true
 end
 
 VocabularyBuilder:init()

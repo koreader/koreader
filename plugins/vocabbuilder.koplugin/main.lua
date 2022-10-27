@@ -9,6 +9,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local DB = require("db")
 local Button = require("ui/widget/button")
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -29,12 +30,14 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
+local NetworkMgr = require("ui/network/manager")
 local Notification = require("ui/widget/notification")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Screen = Device.screen
 local Size = require("ui/size")
 local SortWidget = require("ui/widget/sortwidget")
+local SyncService = require("frontend/apps/cloudstorage/syncservice")
 local TextWidget = require("ui/widget/textwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TitleBar = require("ui/widget/titlebar")
@@ -171,7 +174,7 @@ function MenuDialog:init()
     end
 
     local size = Screen:getSize()
-    local width = math.floor(size.w * 0.8)
+    local width = math.floor(size.w * 0.9)
 
     -- Switch text translations could be long
     local temp_text_widget = TextWidget:new{
@@ -277,14 +280,84 @@ function MenuDialog:init()
         end,
     }
 
+    local show_sync_settings = function()
+        if not settings.server then
+            local sync_settings = SyncService:new{}
+            function sync_settings:onClose()
+                UIManager:close(sync_settings)
+            end
+            sync_settings.onConfirm = function(server)
+                settings.server = server
+                saveSettings()
+                DB:batchUpdateItems(self.show_parent.item_table)
+                SyncService.sync(server, DB.path, DB.onSync, false)
+                self.show_parent:reloadItems()
+            end
+            UIManager:close(self.sync_dialogue)
+            UIManager:close(self)
+            UIManager:show(sync_settings)
+            return
+        end
+        local server = settings.server
+        local buttons = {
+            {
+                {
+                    text = _("Delete"),
+                    callback = function()
+                        settings.server = nil
+                        UIManager:close(self.sync_dialogue)
+                    end
+                },
+                {
+                    text = _("Edit"),
+                    callback = function()
+                        UIManager:close(self.sync_dialogue)
+                        UIManager:close(self)
+                        local sync_settings = SyncService:new {}
+                        function sync_settings:onClose()
+                            UIManager:close(sync_settings)
+                        end
+
+                        sync_settings.onConfirm = function(chosen_server)
+                            settings.server = chosen_server
+                        end
+                        UIManager:show(sync_settings)
+                    end
+                },
+                {
+                    text = _("Synchronize now"),
+                    callback = function()
+                        UIManager:close(self.sync_dialogue)
+                        UIManager:close(self)
+                        DB:batchUpdateItems(self.show_parent.item_table)
+                        SyncService.sync(server, DB.path, DB.onSync, false)
+                        self.show_parent:reloadItems()
+                    end
+                }
+            }
+        }
+        local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
+        self.sync_dialogue = ButtonDialogTitle:new {
+            title = _("Cloud storage:") .. " " .. server.name .. type .. "\n".. SyncService.getReadablePath(server),
+            info_face = Font:getFace("smallinfofont"),
+            buttons = buttons,
+        }
+        UIManager:show(self.sync_dialogue)
+    end
+    local sync_button = {
+        text = _("Cloud sync"),
+        callback = function()
+            show_sync_settings()
+        end
+    }
+
     local buttons = ButtonTable:new{
         width = width,
         buttons = {
-            {filter_button},
             {reverse_button},
-            {edit_button},
-            {reset_button},
-            {clean_button}
+            {sync_button},
+            {filter_button, edit_button},
+            {reset_button, clean_button},
         },
         show_parent = self
     }
@@ -1045,6 +1118,8 @@ function VocabularyBuilderWidget:init()
     self.item_width = self.dimen.w - 2 * padding
     self.footer_center_width = math.floor(self.width_widget * (32/100))
     self.footer_button_width = math.floor(self.width_widget * (12/100))
+    self.footer_left_corner_width = math.floor(self.width_widget * (9/100))
+    self.footer_right_corner_width = math.floor(self.width_widget * (11/100))
     -- group for footer
     local chevron_left = "chevron.left"
     local chevron_right = "chevron.right"
@@ -1091,6 +1166,40 @@ function VocabularyBuilderWidget:init()
         show_parent = self,
     }
 
+    self.footer_sync = Button:new{
+        text = "⇅",
+        width = self.footer_left_corner_width,
+        text_font_size = 22,
+        bordersize = 0,
+        radius = 0,
+        padding = Size.padding.large,
+        show_parent = self,
+        callback = function()
+            if not settings.server then
+                local sync_settings = SyncService:new{}
+                function sync_settings:onClose()
+                    UIManager:close(sync_settings)
+                end
+                sync_settings.onConfirm = function(server)
+                    settings.server = server
+                    saveSettings()
+                    DB:batchUpdateItems(self.item_table)
+                    SyncService.sync(server, DB.path, DB.onSync, false)
+                    self:reloadItems()
+                end
+                UIManager:show(sync_settings)
+            else
+                -- manual sync
+                DB:batchUpdateItems(self.item_table)
+                UIManager:nextTick(function()
+                    SyncService.sync(settings.server, DB.path, DB.onSync, false)
+                    self:reloadItems()
+                end)
+            end
+        end
+    }
+    self.footer_sync.label_widget.fgcolor = Blitbuffer.COLOR_DIM_GRAY
+
     self.footer_page = Button:new{
         text = "",
         hold_input = {
@@ -1117,11 +1226,13 @@ function VocabularyBuilderWidget:init()
         show_parent = self,
     }
     self.page_info = HorizontalGroup:new{
+        self.footer_sync,
         self.footer_first_up,
         self.footer_left,
         self.footer_page,
         self.footer_right,
         self.footer_last_down,
+        HorizontalSpan:new{ width = self.footer_right_corner_width }
     }
 
     local bottom_line = LineWidget:new{
@@ -1270,6 +1381,7 @@ function VocabularyBuilderWidget:_populateItems()
             item
         )
     end
+    table.insert(self.layout, #self.layout, {self.footer_sync})
     if #self.main_content == 0 then
         table.insert(self.main_content, HorizontalSpan:new{width = self.item_width})
     end

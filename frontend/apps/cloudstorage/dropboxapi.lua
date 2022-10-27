@@ -117,7 +117,7 @@ end
 function DropBoxApi:downloadFile(path, token, local_path)
     local data1 = "{\"path\": \"" .. path .. "\"}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code, _, status = socket.skip(1, http.request{
+    local code, headers, status = socket.skip(1, http.request{
         url     = API_DOWNLOAD_FILE,
         method  = "GET",
         headers = {
@@ -130,12 +130,12 @@ function DropBoxApi:downloadFile(path, token, local_path)
     if code ~= 200 then
         logger.warn("DropBoxApi: Download failure:", status or code or "network unreachable")
     end
-    return code
+    return code, (headers or {}).etag
 end
 
-function DropBoxApi:uploadFile(path, token, file_path)
+function DropBoxApi:uploadFile(path, token, file_path, etag, overwrite)
     local data = "{\"path\": \"" .. path .. "/" .. BaseUtil.basename(file_path) ..
-        "\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}"
+        "\",\"mode\":" .. (overwrite and "\"overwrite\"" or "\"add\"") .. ",\"autorename\": " .. (overwrite and "false" or "true") .. ",\"mute\": false,\"strict_conflict\": false}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code, _, status = socket.skip(1, http.request{
         url     = API_UPLOAD_FILE,
@@ -145,6 +145,7 @@ function DropBoxApi:uploadFile(path, token, file_path)
             ["Dropbox-API-Arg"] = data,
             ["Content-Type"] = "application/octet-stream",
             ["Content-Length"] = lfs.attributes(file_path, "size"),
+            ["If-Match"] = etag,
         },
         source = ltn12.source.file(io.open(file_path, "r")),
     })
