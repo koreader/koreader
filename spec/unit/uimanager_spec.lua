@@ -188,16 +188,17 @@ describe("UIManager spec", function()
         end
         UIManager:quit()
         UIManager._task_queue = {
-            { time = now - time.us(5), action = task_to_remove, args = {} },
+            { time = now - time.s(15), action = task_to_remove, args = {} }, -- this will be called
             {
                 time = now - time.s(10),
-                action = function()
+                action = function() -- this will be called, too
                     run_count = run_count + 1
                     UIManager:unschedule(task_to_remove)
                 end,
                 args = {},
             },
-            { time = now, action = task_to_remove, args = {} },
+            { time = now - time.us(5), action = task_to_remove, args = {} }, -- this will be removed
+            { time = now, action = task_to_remove, args = {} }, -- this will be removed
         }
         UIManager:_checkTasks()
         assert.are.same(2, run_count)
