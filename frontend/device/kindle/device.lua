@@ -599,13 +599,11 @@ local KindlePaperWhite5 = Kindle:extend{
     canDoSwipeAnimation = yes,
 }
 
-local KindleScribe = Kindle:extend{
-    model = "KindleScribe",
+local KindleBasic4 = Kindle:extend{
+    model = "KindleBasic4",
     isMTK = yes,
     isTouchDevice = yes,
     hasFrontlight = yes,
-    hasNaturalLight = yes,
-    hasNaturalLightMixer = yes,
     display_dpi = 300,
     -- TBD
     touch_dev = "/dev/input/by-path/platform-1001e000.i2c-event",
@@ -1110,7 +1108,7 @@ function KindlePaperWhite5:init()
     self.input.open("fake_events")
 end
 
-function KindleScribe:init()
+function KindleBasic4:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     -- TBD, assume PW5 for now
     self.powerd = require("device/kindle/powerd"):new{
@@ -1170,7 +1168,7 @@ KindlePaperWhite4.exit = KindleTouch.exit
 KindleBasic3.exit = KindleTouch.exit
 KindleOasis3.exit = KindleTouch.exit
 KindlePaperWhite5.exit = KindleTouch.exit
-KindleScribe.exit = KindleTouch.exit
+KindleBasic4.exit = KindleTouch.exit
 
 function Kindle3:exit()
     -- send double menu key press events to trigger screen refresh
@@ -1225,7 +1223,7 @@ local pw4_set = Set { "0PP", "0T1", "0T2", "0T3", "0T4", "0T5", "0T6",
 local kt4_set = Set { "10L", "0WF", "0WG", "0WH", "0WJ", "0VB" }
 local koa3_set = Set { "11L", "0WQ", "0WP", "0WN", "0WM", "0WL" }
 local pw5_set = Set { "1LG", "1Q0", "1PX", "1VD", "219", "21A", "2BH", "2BJ", "2DK" }
-local scribe_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
+local kt5_set = Set { "22D", "25T", "23A", "2AQ", "2AP", "1XH", "22C" }
 
 if kindle_sn_lead == "B" or kindle_sn_lead == "9" then
     local kindle_devcode = string.sub(kindle_sn, 3, 4)
@@ -1270,8 +1268,8 @@ else
         return KindleOasis3
     elseif pw5_set[kindle_devcode_v2] then
         return KindlePaperWhite5
-    elseif scribe_set[kindle_devcode_v2] then
-        return KindleScribe
+    elseif kt5_set[kindle_devcode_v2] then
+        return KindleBasic4
     end
 end
 
