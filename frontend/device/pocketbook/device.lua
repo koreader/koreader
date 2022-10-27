@@ -62,6 +62,10 @@ local PocketBook = Generic:extend{
     --- @fixme: Never actually set anywhere?
     is_using_raw_input = nil,
 
+    -- InkView may have started translating button codes based on rotation on newer devices...
+    -- That historically wasn't the case, hence this defaulting to false.
+    inkview_translates_buttons = false,
+
     -- Will be set appropriately at init
     isB288SoC = no,
 
@@ -215,6 +219,11 @@ function PocketBook:init()
             end
         end,
     }
+
+    -- If InkView translates buttons for us, disable our own translation map
+    if self.inkview_translates_buttons then
+        self.input.rotation_map = nil
+    end
 
     -- in contrast to kobo/kindle, pocketbook-devices do not use linux/input
     -- events directly. To be able to use input.lua nevertheless, we make
@@ -593,6 +602,8 @@ local PocketBook700 = PocketBook:extend{
     display_dpi = 300,
     isAlwaysPortrait = yes,
     hasNaturalLight = yes,
+    -- c.f., https://github.com/koreader/koreader/issues/9556
+    inkview_translates_buttons = true,
 }
 
 -- PocketBook InkPad 3 (740)
