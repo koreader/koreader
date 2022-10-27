@@ -117,18 +117,16 @@ function DateTimeWidget:init()
     end
     self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * width_scale_factor)
     if Device:hasKeys() then
-        self.key_events.Close = { {Device.input.group.Back}, doc = "close date widget" }
+        self.key_events.Close = { { Device.input.group.Back } }
     end
     if Device:isTouchDevice() then
-        self.ges_events = {
-            TapClose = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = Geom:new{
-                        w = self.screen_width,
-                        h = self.screen_height,
-                    }
-                },
+        self.ges_events.TapClose = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    w = self.screen_width,
+                    h = self.screen_height,
+                }
             },
         }
     end

@@ -46,26 +46,26 @@ local function populateEventMappings()
     if Device:hasDPad() then
         local event_keys = {}
         -- these will all generate the same event, just with different arguments
-        table.insert(event_keys, {"FocusUp",    { {"Up"},    doc = "move focus up",    event = "FocusMove", args = {0, -1} } })
-        table.insert(event_keys, {"FocusRight", { {"Right"}, doc = "move focus right", event = "FocusMove", args = {1,  0} } })
-        table.insert(event_keys, {"FocusDown",  { {"Down"},  doc = "move focus down",  event = "FocusMove", args = {0,  1} } })
-        table.insert(event_keys, {"Press",      { {"Press"}, doc = "tap the widget",   event="Press" }})
+        table.insert(event_keys, { "FocusUp",    { { "Up" },    event = "FocusMove", args = {0, -1} } })
+        table.insert(event_keys, { "FocusRight", { { "Right" }, event = "FocusMove", args = {1,  0} } })
+        table.insert(event_keys, { "FocusDown",  { { "Down" },  event = "FocusMove", args = {0,  1} } })
+        table.insert(event_keys, { "Press",      { { "Press" }, event = "Press" } })
         local FEW_KEYS_END_INDEX = #event_keys -- Few keys device: only setup up, down, right and press
 
-        table.insert(event_keys, {"FocusLeft",  { {"Left"},  doc = "move focus left",         event = "FocusMove", args = {-1, 0} } })
+        table.insert(event_keys, { "FocusLeft",  { { "Left" },  event = "FocusMove", args = {-1, 0} } })
         local NORMAL_KEYS_END_INDEX = #event_keys
 
         -- Advanced Feature: following event handlers can be enabled via settings.reader.lua
-        -- Key combinations (Sym, Alt+Up, Tab, Shift+Tab and so on) are not used but shown as examples here
-        table.insert(event_keys, {"Hold",           { {"Sym", "AA"}, doc = "tap and hold the widget", event="Hold" } })
+        -- Key combinations (Sym+AA, Alt+Up, Tab, Shift+Tab and so on) are not used but shown as examples here
+        table.insert(event_keys, { "Hold",           { { "Sym", "AA" },    event = "Hold" } })
         -- half rows/columns move, it is helpful for slow device like Kindle DX to move quickly
-        table.insert(event_keys, {"HalfFocusUp",    { {"Alt", "Up"},    doc = "move focus half columns up",    event = "FocusHalfMove", args = {"up"} } })
-        table.insert(event_keys, {"HalfFocusRight", { {"Alt", "Right"}, doc = "move focus half rows right",    event = "FocusHalfMove", args = {"right"} } })
-        table.insert(event_keys, {"HalfFocusDown",  { {"Alt", "Down"},  doc = "move focus half columns down",  event = "FocusHalfMove", args = {"down"} } })
-        table.insert(event_keys, {"HalfFocusLeft",  { {"Alt", "Left"},  doc = "move focus half rows left",     event = "FocusHalfMove", args = {"left"} } })
+        table.insert(event_keys, { "HalfFocusUp",    { { "Alt", "Up" },    event = "FocusHalfMove", args = {"up"} } })
+        table.insert(event_keys, { "HalfFocusRight", { { "Alt", "Right" }, event = "FocusHalfMove", args = {"right"} } })
+        table.insert(event_keys, { "HalfFocusDown",  { { "Alt", "Down" },  event = "FocusHalfMove", args = {"down"} } })
+        table.insert(event_keys, { "HalfFocusLeft",  { { "Alt", "Left" },  event = "FocusHalfMove", args = {"left"} } })
         -- for PC navigation behavior support
-        table.insert(event_keys, {"FocusNext",      { {"Tab"},            doc = "move focus to next widget",     event="FocusNext"} })
-        table.insert(event_keys, {"FocusPrevious",  { {"Shift", "Tab"},   doc = "move focus to previous widget", event="FocusPrevious"} })
+        table.insert(event_keys, { "FocusNext",      { { "Tab" },          event = "FocusNext" } })
+        table.insert(event_keys, { "FocusPrevious",  { { "Shift", "Tab" }, event = "FocusPrevious" } })
 
         for i = 1, FEW_KEYS_END_INDEX do
             local key_name = event_keys[i][1]

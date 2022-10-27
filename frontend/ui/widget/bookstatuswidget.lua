@@ -98,7 +98,7 @@ function BookStatusWidget:init()
     }
 
     if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back }, doc = "close dialog" }
+        self.key_events.Close = { { Device.input.group.Back } }
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {

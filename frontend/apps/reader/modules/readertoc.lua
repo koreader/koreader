@@ -36,11 +36,7 @@ local ReaderToc = InputContainer:extend{
 
 function ReaderToc:init()
     if Device:hasKeyboard() then
-        self.key_events = {
-            ShowToc = {
-                { "T" },
-                doc = "show Table of Content menu" },
-        }
+        self.key_events.ShowToc = { { "T" } }
     end
 
     if G_reader_settings:hasNot("toc_items_per_page") then

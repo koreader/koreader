@@ -27,24 +27,23 @@ local ReaderLink = InputContainer:extend{
 
 function ReaderLink:init()
     if Device:hasKeys() then
-        self.key_events.SelectNextPageLink = {
-            {"Tab" },
-            doc = "select next page link",
-            event = "SelectNextPageLink",
+        self.key_events = {
+            SelectNextPageLink = {
+                { "Tab" },
+                event = "SelectNextPageLink",
+            },
+            SelectPrevPageLink = {
+                { "Shift", "Tab" },
+                { "Sym", "Tab" }, -- Shift or Sym + Tab
+                event = "SelectPrevPageLink",
+            },
+            GotoSelectedPageLink = {
+                { "Press" },
+                event = "GotoSelectedPageLink",
+            },
+            -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
+            -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
         }
-        self.key_events.SelectPrevPageLink = {
-            {"Shift", "Tab" },
-            {"Sym", "Tab" }, -- Right Shift + Tab
-            doc = "select previous page link",
-            event = "SelectPrevPageLink",
-        }
-        self.key_events.GotoSelectedPageLink = {
-            { "Press" },
-            doc = "go to selected page link",
-            event = "GotoSelectedPageLink",
-        }
-        -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
-        -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
     end
     if Device:isTouchDevice() then
         self.ui:registerTouchZones({

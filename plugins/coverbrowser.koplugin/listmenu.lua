@@ -141,14 +141,12 @@ function ListMenuItem:init()
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = "Select Menu Item",
         },
         HoldSelect = {
             GestureRange:new{
                 ges = "hold",
                 range = self.dimen,
             },
-            doc = "Hold Menu Item",
         },
     }
 

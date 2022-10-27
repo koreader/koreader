@@ -49,9 +49,7 @@ function FileManagerMenu:init()
     self.registered_widgets = {}
 
     if Device:hasKeys() then
-        self.key_events = {
-            ShowMenu = { { "Menu" }, doc = "show menu" },
-        }
+        self.key_events.ShowMenu = { { "Menu" } }
     end
     self.activation_menu = G_reader_settings:readSetting("activate_menu")
     if self.activation_menu == nil then

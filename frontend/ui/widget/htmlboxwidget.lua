@@ -27,12 +27,10 @@ local HtmlBoxWidget = InputContainer:extend{
 
 function HtmlBoxWidget:init()
     if Device:isTouchDevice() then
-        self.ges_events = {
-            TapText = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = function() return self.dimen end,
-                },
+        self.ges_events.TapText = {
+            GestureRange:new{
+                ges = "tap",
+                range = function() return self.dimen end,
             },
         }
     end

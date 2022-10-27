@@ -51,14 +51,14 @@ function BBoxWidget:init()
         }
     else
         self._confirm_stage = 1 -- 1 for left-top, 2 for right-bottom
-        self.key_events.MoveIndicatorUp = { { "Up" }, doc="Move indicator up", event="MoveIndicator", args = { 0, -1 } }
-        self.key_events.MoveIndicatorDown = { { "Down" }, doc="Move indicator down", event="MoveIndicator", args = { 0, 1 } }
-        self.key_events.MoveIndicatorLeft = { { "Left" }, doc="Move indicator left", event="MoveIndicator", args = { -1, 0 } }
-        self.key_events.MoveIndicatorRight = { { "Right" }, doc="Move indicator right", event="MoveIndicator", args = { 1, 0 } }
+        self.key_events.MoveIndicatorUp    = { { "Up" },    event="MoveIndicator", args = { 0, -1 } }
+        self.key_events.MoveIndicatorDown  = { { "Down" },  event="MoveIndicator", args = { 0, 1 } }
+        self.key_events.MoveIndicatorLeft  = { { "Left" },  event="MoveIndicator", args = { -1, 0 } }
+        self.key_events.MoveIndicatorRight = { { "Right" }, event="MoveIndicator", args = { 1, 0 } }
     end
     if Device:hasKeys() then
-        self.key_events.Close = { {Device.input.group.Back}, doc = "close windows" }
-        self.key_events.Select = { {"Press"}, doc = "confirm adjust" }
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.Select = { { "Press" } }
     end
 end
 

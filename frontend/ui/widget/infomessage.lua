@@ -79,10 +79,7 @@ local InfoMessage = InputContainer:extend{
 function InfoMessage:init()
     if self.dismissable then
         if Device:hasKeys() then
-            self.key_events = {
-                AnyKeyPressed = { { Input.group.Any },
-                    seqtext = "any key", doc = "close dialog" }
-            }
+            self.key_events.AnyKeyPressed = { { Input.group.Any } }
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {

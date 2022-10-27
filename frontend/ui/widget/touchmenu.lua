@@ -55,14 +55,12 @@ function TouchMenuItem:init()
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = "Select Menu Item",
         },
         HoldSelect = {
             GestureRange:new{
                 ges = "hold",
                 range = self.dimen,
             },
-            doc = "Hold Menu Item",
         },
     }
 
@@ -496,12 +494,12 @@ function TouchMenu:init()
         }
     }
 
-    self.key_events.Back = { {Input.group.Back}, doc = "back to upper menu or close touchmenu" }
+    self.key_events.Back = { { Input.group.Back } }
     if Device:hasFewKeys() then
-        self.key_events.Back = { {"Left"}, doc = "back to upper menu or close touchmenu" }
+        self.key_events.Back = { { "Left" } }
     end
-    self.key_events.NextPage = { {Input.group.PgFwd}, doc = "next page" }
-    self.key_events.PrevPage = { {Input.group.PgBack}, doc = "previous page" }
+    self.key_events.NextPage = { { Input.group.PgFwd } }
+    self.key_events.PrevPage = { { Input.group.PgBack } }
 
     local icons = {}
     for _, v in ipairs(self.tab_item_table) do

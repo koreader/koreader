@@ -38,11 +38,7 @@ local ReaderBookmark = InputContainer:extend{
 
 function ReaderBookmark:init()
     if Device:hasKeyboard() then
-        self.key_events = {
-            ShowBookmark = {
-                { "B" },
-                doc = "show bookmarks" },
-        }
+        self.key_events.ShowBookmark = { { "B" } }
     end
 
     if G_reader_settings:hasNot("bookmarks_items_per_page") then
