@@ -1130,7 +1130,7 @@ function UIManager:_repaint()
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget.covers_fullscreen then
             start_idx = i
-            if dbg.is_on and i > 1 then
+            if i > 1 then
                 logger.dbg("not painting", i-1, "covered widget(s)")
             end
             break
