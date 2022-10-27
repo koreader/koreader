@@ -184,13 +184,8 @@ local Input = {
         UsbDevicePlugIn = true, UsbDevicePlugOut = true,
     },
 
-    -- NOTE: When looking at the device in Portrait mode, that's assuming PgBack is on TOP, and PgFwd on the BOTTOM
-    rotation_map = {
-        [framebuffer.ORIENTATION_PORTRAIT] = {},
-        [framebuffer.ORIENTATION_LANDSCAPE] = { Up = "Right", Right = "Down", Down = "Left", Left = "Up", LPgBack = "LPgFwd", LPgFwd = "LPgBack", RPgBack = "RPgFwd", RPgFwd = "RPgBack" },
-        [framebuffer.ORIENTATION_PORTRAIT_ROTATED] = { Up = "Down", Right = "Left", Down = "Up", Left = "Right", LPgFwd = "LPgBack", LPgBack = "LPgFwd", RPgFwd = "RPgBack", RPgBack = "RPgFwd" },
-        [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = { Up = "Left", Right = "Up", Down = "Right", Left = "Down" }
-    },
+    -- This might be overloaded or even disabled (post-init) at instance-level, so we don't want any inheritance
+    rotation_map = nil, -- nil or a hash
 
     timer_callbacks = nil, -- instance-specific table, because the object may get destroyed & recreated at runtime
     disable_double_tap = true,
@@ -255,6 +250,16 @@ function Input:init()
         screen = self.device.screen,
         input = self,
     }
+
+    -- NOTE: When looking at the device in Portrait mode, that's assuming PgBack is on TOP, and PgFwd on the BOTTOM
+    if not self.rotation_map then
+        self.rotation_map = {
+            [framebuffer.ORIENTATION_PORTRAIT]          = {},
+            [framebuffer.ORIENTATION_LANDSCAPE]         = { Up = "Right", Right = "Down", Down = "Left",  Left = "Up",    LPgBack = "LPgFwd",  LPgFwd  = "LPgBack", RPgBack = "RPgFwd",  RPgFwd  = "RPgBack" },
+            [framebuffer.ORIENTATION_PORTRAIT_ROTATED]  = { Up = "Down",  Right = "Left", Down = "Up",    Left = "Right", LPgFwd  = "LPgBack", LPgBack = "LPgFwd",  RPgFwd  = "RPgBack", RPgBack = "RPgFwd" },
+            [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = { Up = "Left",  Right = "Up",   Down = "Right", Left = "Down" }
+        }
+    end
 
     -- set up fake event map
     self.event_map[10000] = "IntoSS" -- go into screen saver
@@ -534,8 +539,11 @@ function Input:handleKeyBoardEv(ev)
     end
 
     -- take device rotation into account
-    if self.rotation_map[self.device.screen:getRotationMode()][keycode] then
-        keycode = self.rotation_map[self.device.screen:getRotationMode()][keycode]
+    if self.rotation_map then
+        local rota = self.device.screen:getRotationMode()
+        if self.rotation_map[rota][keycode] then
+            keycode = self.rotation_map[rota][keycode]
+        end
     end
 
     if self.fake_event_set[keycode] then
