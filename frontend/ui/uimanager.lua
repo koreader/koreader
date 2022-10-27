@@ -29,7 +29,6 @@ local UIManager = {
 
     event_handlers = nil,
 
-    _running = true,
     _now = time.now(),
     _window_stack = {},
     _task_queue = {},
@@ -68,7 +67,11 @@ function UIManager:init()
         self:nextTick(function()
             Device:saveSettings()
             Device:powerOff()
-            self:quit(Device:isKobo() and 88)
+            if Device:isKobo() then
+                self:quit(88)
+            else
+                self:quit()
+            end
         end)
     end
     self.reboot_action = function()
@@ -81,11 +84,19 @@ function UIManager:init()
         self:nextTick(function()
             Device:saveSettings()
             Device:reboot()
-            self:quit(Device:isKobo() and 88)
+            if Device:isKobo() then
+                self:quit(88)
+            else
+                self:quit()
+            end
         end)
     end
 
     Device:_setEventHandlers(self)
+
+    -- A simple wrapper for UIManager:quit()
+    -- This may be overwritten by setRunForeverMode(); for testing purposes
+    self._gated_quit = self.quit
 end
 
 --[[--
@@ -116,7 +127,6 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     end
     logger.dbg("show widget:", widget.id or widget.name or tostring(widget))
 
-    self._running = true
     local window = {x = x or 0, y = y or 0, widget = widget}
     -- put this window on top of the topmost non-modal window
     for i = #self._window_stack, 0, -1 do
@@ -728,13 +738,16 @@ function UIManager:isWidgetShown(widget)
 end
 
 --- Signals to quit.
+-- An exit_code of false is not allowed.
 function UIManager:quit(exit_code)
-    if not self._running then return end
-    logger.info("quitting uimanager with exit code:", exit_code or 0)
-    self._exit_code = exit_code
+    if exit_code == false then
+        logger.err("UIManager:quit() called with false")
+        return
+    end
+    -- Also honor older exit codes; default to 0
+    self._exit_code = exit_code or self._exit_code or 0
+    logger.info("quitting uimanager with exit code:", self._exit_code)
     self._task_queue_dirty = false
-    self._running = false
-    self._run_forever = nil
     for i = #self._window_stack, 1, -1 do
         table.remove(self._window_stack, i)
     end
@@ -749,6 +762,21 @@ function UIManager:quit(exit_code)
         self.looper:close()
         self.looper = nil
     end
+    return self._exit_code
+end
+dbg:guard(UIManager, 'quit',
+    function(self, exit_code)
+        assert(exit_code ~= false, "exit_code == false is not supported")
+    end)
+
+-- Disable automatic UIManager quit; for testing purposes
+function UIManager:setRunForeverMode()
+    self._gated_quit = function() return false end
+end
+
+-- Enable automatic UIManager quit; for testing purposes
+function UIManager:unsetRunForeverMode()
+    self._gated_quit = self.quit
 end
 
 --[[--
@@ -1345,10 +1373,11 @@ function UIManager:handleInput()
         --]]
 
         -- stop when we have no window to show
-        if not self._window_stack[1] and not self._run_forever then
+        if not self._window_stack[1] then
             logger.info("no dialog left to show")
-            self:quit()
-            return nil
+            if self:_gated_quit() ~= false then
+                return nil
+            end
         end
 
         self:_repaint()
@@ -1446,8 +1475,6 @@ This is the main loop of the UI controller.
 It is intended to manage input events and delegate them to dialogs.
 --]]
 function UIManager:run()
-    self._running = true
-
     -- Tell PowerD that we're ready
     Device:getPowerDevice():readyUI()
 
@@ -1455,21 +1482,15 @@ function UIManager:run()
     -- currently there is no Turbo support for Windows
     -- use our own main loop
     if not self.looper then
-        while self._running do
+        repeat
             self:handleInput()
-        end
+        until self._exit_code
     else
         self.looper:add_callback(function() self:handleInput() end)
         self.looper:start()
     end
 
     return self._exit_code
-end
-
--- run uimanager forever for testing purpose
-function UIManager:runForever()
-    self._run_forever = true
-    return self:run()
 end
 
 --[[--

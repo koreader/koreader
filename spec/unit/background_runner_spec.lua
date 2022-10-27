@@ -12,7 +12,7 @@ describe("BackgroundRunner widget tests", function()
         MockTime = require("mock_time")
         MockTime:install()
         UIManager = require("ui/uimanager")
-        UIManager._run_forever = true
+        UIManager:setRunForeverMode()
         requireBackgroundRunner()
     end)
 

@@ -45,7 +45,7 @@ describe("AutoFrontlight widget tests", function()
             close()
 
         UIManager = require("ui/uimanager")
-        UIManager._run_forever = true
+        UIManager:setRunForeverMode()
 
         requireBackgroundRunner()
         class = dofile("plugins/autofrontlight.koplugin/main.lua")

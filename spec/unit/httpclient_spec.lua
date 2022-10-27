@@ -35,6 +35,7 @@ describe("HTTP client module #notest #nocov", function()
                 url = url,
             }, response_callback)
         end
-        UIManager:runForever()
+        UIManager:setRunForeverMode()
+        UIManager:run()
     end)
 end)

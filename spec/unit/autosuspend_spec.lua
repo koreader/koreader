@@ -13,7 +13,7 @@ describe("AutoSuspend", function()
             Device.input.waitEvent = function() end
             local UIManager = require("ui/uimanager")
             stub(UIManager, "suspend")
-            UIManager._run_forever = true
+            UIManager:setRunForeverMode()
             G_reader_settings:saveSetting("auto_suspend_timeout_seconds", 10)
             require("mock_time"):install()
             -- Reset UIManager:getTime()
@@ -71,7 +71,7 @@ describe("AutoSuspend", function()
             Device.input.waitEvent = function() end
             local UIManager = require("ui/uimanager")
             stub(UIManager, "poweroff_action")
-            UIManager._run_forever = true
+            UIManager:setRunForeverMode()
             G_reader_settings:saveSetting("autoshutdown_timeout_seconds", 10)
             require("mock_time"):install()
             -- Reset UIManager:getTime()
