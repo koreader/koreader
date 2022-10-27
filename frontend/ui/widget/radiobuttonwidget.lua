@@ -49,19 +49,17 @@ function RadioButtonWidget:init()
         self.width = math.floor(math.min(self.screen_width, self.screen_height) * self.width_factor)
     end
     if Device:hasKeys() then
-        self.key_events.Close = { {Device.input.group.Back}, doc = "close widget" }
+        self.key_events.Close = { { Device.input.group.Back } }
     end
-    self.ges_events = {
-        TapClose = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    w = self.screen_width,
-                    h = self.screen_height,
-                }
-            },
+    self.ges_events.TapClose = {
+        GestureRange:new{
+            ges = "tap",
+            range = Geom:new{
+                w = self.screen_width,
+                h = self.screen_height,
+            }
         },
-        }
+    }
     self:update()
 end
 

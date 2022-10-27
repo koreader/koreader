@@ -162,12 +162,10 @@ function TextBoxWidget:init()
     self.dimen = Geom:new(self:getSize())
 
     if Device:isTouchDevice() then
-        self.ges_events = {
-            TapImage = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = function() return self.dimen end,
-                },
+        self.ges_events.TapImage = {
+            GestureRange:new{
+                ges = "tap",
+                range = function() return self.dimen end,
             },
         }
     end

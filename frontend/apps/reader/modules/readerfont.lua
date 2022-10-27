@@ -34,15 +34,17 @@ function ReaderFont:init()
     if Device:hasKeyboard() then
         -- add shortcut for keyboard
         self.key_events = {
-            ShowFontMenu = { {"F"}, doc = "show font menu" },
+            ShowFontMenu = { { "F" } },
             IncreaseSize = {
                 { "Shift", Input.group.PgFwd },
-                doc = "increase font size",
-                event = "ChangeSize", args = 0.5 },
+                event = "ChangeSize",
+                args = 0.5
+            },
             DecreaseSize = {
                 { "Shift", Input.group.PgBack },
-                doc = "decrease font size",
-                event = "ChangeSize", args = -0.5 },
+                event = "ChangeSize",
+                args = -0.5
+            },
         }
     end
     -- Build face_table for menu

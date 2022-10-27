@@ -216,8 +216,8 @@ describe("FocusManager module", function()
     it("alternative key", function()
         local focusmanager = FocusManager:new{}
         focusmanager.extra_key_events = {
-            Hold = { {"Sym", "AA"}, doc = "tap and hold the widget", event="Hold" },
-            HalfFocusUp = { {"Alt", "Up"},    doc = "move focus half columns up",    event = "FocusHalfMove", args = {"up"} },
+            Hold = { { "Sym", "AA" }, event="Hold" },
+            HalfFocusUp = { { "Alt", "Up" }, event = "FocusHalfMove", args = {"up"} },
         }
         local m = Input.modifiers
         m.Sym = true

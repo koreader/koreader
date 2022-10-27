@@ -74,14 +74,15 @@ function MovableContainer:init()
         -- which is somehow nice and gives a kind of magnetic move that
         -- stick the widget to some invisible rulers.
         -- (Touch is needed for accurate pan)
-        self.ges_events = {}
-        self.ges_events.MovableTouch = not ignore.touch and { GestureRange:new{ ges = "touch", range = range } } or nil
-        self.ges_events.MovableSwipe = not ignore.swipe and { GestureRange:new{ ges = "swipe", range = range } } or nil
-        self.ges_events.MovableHold = not ignore.hold and { GestureRange:new{ ges = "hold", range = range } } or nil
-        self.ges_events.MovableHoldPan = not ignore.hold_pan and { GestureRange:new{ ges = "hold_pan", range = range } } or nil
-        self.ges_events.MovableHoldRelease = not ignore.hold_release and { GestureRange:new{ ges = "hold_release", range = range } } or nil
-        self.ges_events.MovablePan = not ignore.pan and { GestureRange:new{ ges = "pan", range = range } } or nil
-        self.ges_events.MovablePanRelease = not ignore.pan_release and { GestureRange:new{ ges = "pan_release", range = range } } or nil
+        self.ges_events = {
+            MovableTouch       = not ignore.touch        and { GestureRange:new{ ges = "touch", range = range } } or nil,
+            MovableSwipe       = not ignore.swipe        and { GestureRange:new{ ges = "swipe", range = range } } or nil,
+            MovableHold        = not ignore.hold         and { GestureRange:new{ ges = "hold", range = range } } or nil,
+            MovableHoldPan     = not ignore.hold_pan     and { GestureRange:new{ ges = "hold_pan", range = range } } or nil,
+            MovableHoldRelease = not ignore.hold_release and { GestureRange:new{ ges = "hold_release", range = range } } or nil,
+            MovablePan         = not ignore.pan          and { GestureRange:new{ ges = "pan", range = range } } or nil,
+            MovablePanRelease  = not ignore.pan_release  and { GestureRange:new{ ges = "pan_release", range = range } } or nil,
+        }
     end
 end
 

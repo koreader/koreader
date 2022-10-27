@@ -39,12 +39,10 @@ local TouchProbe = InputContainer:extend{
 }
 
 function TouchProbe:init()
-    self.ges_events = {
-        TapProbe = {
-            GestureRange:new{
-                ges = "tap",
-            }
-        },
+    self.ges_events.TapProbe = {
+        GestureRange:new{
+            ges = "tap",
+        }
     }
     self.image_widget = ImageWidget:new{
         file = "tools/kobo-touch-probe.png",

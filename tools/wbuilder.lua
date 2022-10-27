@@ -129,7 +129,7 @@ Background = InputContainer:new{
     key_events = {
         OpenDialog = { { "Press" } },
         OpenConfirmBox = { { "Del" } },
-        QuitApplication = { { {"Home","Back"} } }
+        QuitApplication = { { { "Home", "Back" } } },
     },
     -- contains a gray rectangular desktop
     FrameContainer:new{

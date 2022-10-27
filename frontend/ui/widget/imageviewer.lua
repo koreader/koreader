@@ -84,16 +84,16 @@ function ImageViewer:init()
         if type(self.image) == "table" then
             -- if self.image is a table, then use hardware keys to change image
             self.key_events = {
-                Close = { {Device.input.group.Back}, doc = "close viewer" },
-                ShowPrevImage = { {Device.input.group.PgBack}, doc = "Previous image" },
-                ShowNextImage = { {Device.input.group.PgFwd}, doc = "Next image" },
+                Close = { { Device.input.group.Back } },
+                ShowPrevImage = { { Device.input.group.PgBack } },
+                ShowNextImage = { { Device.input.group.PgFwd } },
             }
         else
             -- otherwise, use hardware keys to zoom in/out
             self.key_events = {
-                Close = { {Device.input.group.Back}, doc = "close viewer" },
-                ZoomIn = { {Device.input.group.PgBack}, doc = "Zoom In" },
-                ZoomOut = { {Device.input.group.PgFwd}, doc = "Zoom out" },
+                Close = { { Device.input.group.Back } },
+                ZoomIn = { { Device.input.group.PgBack } },
+                ZoomOut = { { Device.input.group.PgFwd } },
             }
         end
     end

@@ -27,21 +27,19 @@ function SkimToWidget:init()
     local screen_height = Screen:getHeight()
 
     if Device:hasKeys() then
-        self.key_events.Close = { {Device.input.group.Back}, doc = "close skimto page" }
+        self.key_events.Close = { { Device.input.group.Back } }
     end
     if Device:isTouchDevice() then
-        self.ges_events = {
-            TapProgress = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = Geom:new{
-                        x = 0, y = 0,
-                        w = screen_width,
-                        h = screen_height,
-                    }
-                },
+        self.ges_events.TapProgress = {
+            GestureRange:new{
+                ges = "tap",
+                range = Geom:new{
+                    x = 0, y = 0,
+                    w = screen_width,
+                    h = screen_height,
+                }
             },
-         }
+        }
     end
 
     self.buttons_layout = {}

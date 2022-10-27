@@ -71,7 +71,7 @@ function MultiConfirmBox:init()
             }
         end
         if Device:hasKeys() then
-            self.key_events.Close = { {Device.input.group.Back}, doc = "cancel" }
+            self.key_events.Close = { { Device.input.group.Back } }
         end
     end
     local content = HorizontalGroup:new{
