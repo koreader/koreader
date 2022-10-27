@@ -1023,7 +1023,7 @@ function Kobo:standby(max_duration)
         self.wakeup_mgr:addTask(max_duration, standby_alarm)
     end
 
-    logger.info("Kobo standby: asking to enter standby . . .")
+    logger.dbg("Kobo standby: asking to enter standby . . .")
     local standby_time = time.boottime_or_realtime_coarse()
 
     local ret = writeToSys("standby", "/sys/power/state")
@@ -1032,7 +1032,7 @@ function Kobo:standby(max_duration)
     self.total_standby_time = self.total_standby_time + self.last_standby_time
 
     if ret then
-        logger.info("Kobo standby: zZz zZz zZz zZz... And woke up!")
+        logger.dbg("Kobo standby: zZz zZz zZz zZz... And woke up!")
         if G_reader_settings:isTrue("pm_debug_entry_failure") then
             -- NOTE: This is a debug option where we coopt the charging LED, hence us not using setupChargingLED here.
             --       (It's called on resume anyway).
@@ -1095,7 +1095,7 @@ function Kobo:suspend()
     local curr_wakeup_count
     if has_wakeup_count then
         curr_wakeup_count = "$(cat /sys/power/wakeup_count)"
-        logger.info("Kobo suspend: Current WakeUp count:", curr_wakeup_count)
+        logger.dbg("Kobo suspend: Current WakeUp count:", curr_wakeup_count)
     end
     -]]
 
@@ -1104,16 +1104,16 @@ function Kobo:suspend()
     --       c.f., state_extended_store @ kernel/power/main.c
     local ret = writeToSys("1", "/sys/power/state-extended")
     if ret then
-        logger.info("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
+        logger.dbg("Kobo suspend: successfully asked the kernel to put subsystems to sleep")
     else
         logger.warn("Kobo suspend: the kernel refused to flag subsystems for suspend!")
     end
 
     ffiUtil.sleep(2)
-    logger.info("Kobo suspend: waited for 2s because of reasons...")
+    logger.dbg("Kobo suspend: waited for 2s because of reasons...")
 
     os.execute("sync")
-    logger.info("Kobo suspend: synced FS")
+    logger.dbg("Kobo suspend: synced FS")
 
     --[[
     if has_wakeup_count then
@@ -1123,7 +1123,7 @@ function Kobo:suspend()
             return false
         end
         re, err_msg, err_code = f:write(tostring(curr_wakeup_count), "\n")
-        logger.info("Kobo suspend: wrote WakeUp count:", curr_wakeup_count)
+        logger.dbg("Kobo suspend: wrote WakeUp count:", curr_wakeup_count)
         if not re then
             logger.err("Kobo suspend: failed to write WakeUp count:",
                        err_msg,
@@ -1133,7 +1133,7 @@ function Kobo:suspend()
     end
     --]]
 
-    logger.info("Kobo suspend: asking for a suspend to RAM . . .")
+    logger.dbg("Kobo suspend: asking for a suspend to RAM . . .")
     local suspend_time = time.boottime_or_realtime_coarse()
 
     ret = writeToSys("mem", "/sys/power/state")
@@ -1166,10 +1166,12 @@ function Kobo:suspend()
     --       to wakeup & sleep ad nauseam,
     --       which is where the non-sensical 1 -> mem -> 0 loop idea comes from...
     --       cf. nickel_suspend_strace.txt for more details.
+    -- NOTE: On recent enough kernels, with debugfs enabled and mounted, see also
+    --       /sys/kernel/debug/suspend_stats & /sys/kernel/debug/wakeup_sources
 
     --[[
     if has_wakeup_count then
-        logger.info("wakeup count: $(cat /sys/power/wakeup_count)")
+        logger.dbg("wakeup count: $(cat /sys/power/wakeup_count)")
     end
 
     -- Print tke kernel log since our attempt to sleep...
@@ -1186,7 +1188,7 @@ function Kobo:suspend()
 end
 
 function Kobo:resume()
-    logger.info("Kobo resume: clean up after wakeup")
+    logger.dbg("Kobo resume: clean up after wakeup")
     -- Reset unexpected_wakeup_count ASAP
     self.unexpected_wakeup_count = 0
     -- Unschedule the checkUnexpectedWakeup shenanigans.
@@ -1200,7 +1202,7 @@ function Kobo:resume()
     --       Among other things, this sets up the wakeup pins (e.g., resume on input).
     local ret = writeToSys("0", "/sys/power/state-extended")
     if ret then
-        logger.info("Kobo resume: successfully asked the kernel to resume subsystems")
+        logger.dbg("Kobo resume: successfully asked the kernel to resume subsystems")
     else
         logger.warn("Kobo resume: the kernel refused to flag subsystems for resume!")
     end
