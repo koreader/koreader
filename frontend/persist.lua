@@ -2,12 +2,14 @@ local bitser = require("ffi/bitser")
 local buffer = require("string.buffer")
 local dump = require("dump")
 local ffi = require("ffi")
+local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local serpent = require("ffi/serpent")
 local zstd = require("ffi/zstd")
 
 local C = ffi.C
+require("ffi/posix_h")
 
 local function readFile(file, bytes)
     local f, str, err
@@ -92,6 +94,8 @@ local codecs = {
                 C.free(cbuff)
                 return nil, "failed to write file"
             end
+            C.fflush(f)
+            C.fsync(C.fileno(f))
             C.fclose(f)
             C.free(cbuff)
 
@@ -232,21 +236,21 @@ function Persist:load()
     if not t then
         return nil, err
     end
+
+    self.loaded = true
     return t
 end
 
 function Persist:save(t, as_bytecode)
+    local ok, err
     if codecs[self.codec].writes_to_file then
-        local ok, err = codecs[self.codec].serialize(t, as_bytecode, self.path)
+        ok, err = codecs[self.codec].serialize(t, as_bytecode, self.path)
         if not ok then
             return nil, err
         end
-
-        -- c.f., note above, err is the on-disk size
-        return true, err
     else
-        local str, err = codecs[self.codec].serialize(t, as_bytecode)
-        if not str then
+        ok, err = codecs[self.codec].serialize(t, as_bytecode)
+        if not ok then
             return nil, err
         end
         local file
@@ -254,10 +258,19 @@ function Persist:save(t, as_bytecode)
         if not file then
             return nil, err
         end
-        file:write(str)
+        file:write(ok)
+        ffiUtil.fsyncOpenedFile(file)
         file:close()
     end
-    return true
+
+    -- If we've just created the file, fsync the directory, too
+    if not self.loaded then
+        ffiUtil.fsyncDirectory(self.path)
+        self.loaded = true
+    end
+
+    -- c.f., note above, err is the on-disk size when writes_to_file is supported
+    return true, err
 end
 
 function Persist:delete()
