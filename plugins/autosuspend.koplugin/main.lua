@@ -528,14 +528,16 @@ function AutoSuspend:addToMainMenu(menu_items)
         }
     end
     if Device:canStandby() then
-        --- @fixme: Reword the final warning when we have more data on the hangs on some Kobo kernels (e.g., #9038).
         local standby_help = _([[Standby puts the device into a power-saving state in which the screen is on and user input can be performed.
 
 Standby can not be entered if Wi-Fi is on.
 
-Upon user input, the device needs a certain amount of time to wake up. Generally, the newer the device, the less noticeable this delay will be, but it can be fairly aggravating on slower devices.
-
-This is experimental on most devices, except those running on a sunxi SoC (Kobo Elipsa & Sage), so much so that it might in fact hang some of the more broken kernels out there (Kobo Libra 2).]])
+Upon user input, the device needs a certain amount of time to wake up. Generally, the newer the device, the less noticeable this delay will be, but it can be fairly aggravating on slower devices.]])
+        -- Add a big fat warning on unreliable NTX boards
+        if Device:isKobo() and not Device:hasReliableMxcWaitFor() then
+            standby_help = standby_help .. "\n" ..
+                           _([[Your device is known to be extremely unreliable, as such, failure to enter a power-saving state *may* hang the kernel, resulting in a full device hang or a device restart.]])
+        end
 
         menu_items.autostandby = {
             sorting_hint = "device",
