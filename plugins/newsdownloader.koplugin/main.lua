@@ -678,7 +678,7 @@ function NewsDownloader:viewFeedList()
         }
     )
     -- Show the list of feeds.
-    if self.kv ~= null and #self.kv ~= 0 then
+    if self.kv and #self.kv > 0 then
         UIManager:close(self.kv)
     end
     self.kv = KeyValuePage:new{
