@@ -1,23 +1,33 @@
 --[[--
-An InputContainer is a WidgetContainer that handles user input events including multi touches
-and key presses.
+An InputContainer is a WidgetContainer that handles user input events including multi touches and key presses.
 
 See @{InputContainer:registerTouchZones} for examples of how to listen for multi touch input.
 
-This example illustrates how to listen for a key press input event:
+This example illustrates how to listen for a key press input event via the `key_events` hashmap:
 
-    PanBy20 = {
-        { "Shift", Input.group.Cursor },
-        seqtext = "Shift+Cursor",
-        doc = "pan by 20px",
-        event = "Pan", args = 20, is_inactive = true,
+    key_events = {
+        PanBy20 = {
+            { "Shift", Input.group.Cursor }, -- Shift + (any member of) Cursor
+            event = "Pan",
+            args = 20,
+            is_inactive = true,
+        },
+        PanNormal = {
+            { Input.group.Cursor }, -- Any member of Cursor (itself an array)
+            event = "Pan",
+            args = 10,
+        },
+        Exit = {
+            { "Alt", "F4" }, -- Alt + F4
+            { "Ctrl", "Q" }, -- Ctrl + Q
+        },
+        Home = {
+            { { "Home", "H" } }, -- Any of Home or H (note the extra nesting!)
+        },
+        End = {
+            { "End" }, -- NOTE: For a *single* key, we can forgo the nesting (c.f., match @ device/key).
+        },
     },
-    PanNormal = {
-        { Input.group.Cursor },
-        seqtext = "Cursor",
-        doc = "pan by 10 px", event = "Pan", args = 10,
-    },
-    Quit = { {"Home"} },
 
 It is recommended to reference configurable sequences from another table
 and to store that table as a configuration setting.
@@ -214,6 +224,7 @@ function InputContainer:onKeyPress(key)
     for name, seq in pairs(self.key_events) do
         if not seq.is_inactive then
             for _, oneseq in ipairs(seq) do
+                -- NOTE: key is a device/key object, this isn't string.match!
                 if key:match(oneseq) then
                     local eventname = seq.event or name
                     return self:handleEvent(Event:new(eventname, seq.args, key))

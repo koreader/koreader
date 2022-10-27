@@ -396,9 +396,9 @@ function CalendarView:init()
     end
 
     if Device:hasKeys() then
-        self.key_events.Close = {{Input.group.Back}, doc = "close page" }
-        self.key_events.NextMonth = {{Input.group.PgFwd}, doc = "next page"}
-        self.key_events.PrevMonth = {{Input.group.PgBack}, doc = "prev page"}
+        self.key_events.Close = { { Input.group.Back } }
+        self.key_events.NextMonth = { { Input.group.PgFwd } }
+        self.key_events.PrevMonth = { { Input.group.PgBack } }
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {

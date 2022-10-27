@@ -51,8 +51,10 @@ least one key in this table must match.
 
 E.g.:
 
-Key:match({ "Alt", "K" }) -- match Alt-K
-Key:match({ "Alt", { "K", "L" }}) -- match Alt-K _or_ Alt-L
+Key:match({ "K" }) -- match K
+Key:match({ { "K", "L" } }) -- match K _or_ L
+Key:match({ "Alt", "K" }) -- match Alt+K
+Key:match({ "Alt", { "K", "L" }}) -- match Alt+K _or_ Alt+L
 ]]
 function Key:match(sequence)
     local mod_keys = {} -- a hash table for checked modifiers

@@ -168,7 +168,7 @@ function KeyboardLayoutDialog:init()
         self.movable,
     }
     if Device:hasKeys() then
-        self.key_events.CloseDialog = { {Device.input.group.Back}, doc = "close dialog" }
+        self.key_events.CloseDialog = { { Device.input.group.Back } }
     end
 end
 

@@ -141,9 +141,9 @@ function SortWidget:init()
         h = self.height or Screen:getHeight(),
     }
     if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back }, doc = "close dialog" }
-        self.key_events.NextPage = { { Device.input.group.PgFwd}, doc = "next page"}
-        self.key_events.PrevPage = { { Device.input.group.PgBack}, doc = "prev page"}
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.NextPage = { { Device.input.group.PgFwd } }
+        self.key_events.PrevPage = { { Device.input.group.PgBack } }
     end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {

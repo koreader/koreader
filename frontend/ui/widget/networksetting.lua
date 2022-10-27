@@ -204,12 +204,10 @@ function NetworkItem:init()
     }
 
     if Device:isTouchDevice() then
-        self.ges_events = {
-            TapSelect = {
-                GestureRange:new{
-                    ges = "tap",
-                    range = self.dimen,
-                }
+        self.ges_events.TapSelect = {
+            GestureRange:new{
+                ges = "tap",
+                range = self.dimen,
             }
         }
     end

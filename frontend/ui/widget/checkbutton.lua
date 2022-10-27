@@ -103,14 +103,12 @@ function CheckButton:initCheckButton(checked)
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = "Tap Button",
         },
         HoldCheckButton = {
             GestureRange:new{
                 ges = "hold",
                 range = self.dimen,
             },
-            doc = "Hold Button",
         },
         -- Safe-guard for when used inside a MovableContainer
         HoldReleaseCheckButton = {
@@ -118,7 +116,6 @@ function CheckButton:initCheckButton(checked)
                 ges = "hold_release",
                 range = self.dimen,
             },
-            doc = "Hold Release Button",
         }
     }
 end

@@ -82,9 +82,7 @@ function TextViewer:init()
     self._old_virtual_line_num = 1
 
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {Device.input.group.Back}, doc = "close text viewer" }
-        }
+        self.key_events.Close = { { Device.input.group.Back } }
     end
 
     if Device:isTouchDevice() then

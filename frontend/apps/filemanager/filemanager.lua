@@ -463,9 +463,9 @@ function FileManager:setupLayout()
     }
 
     if Device:hasKeys() then
-        self.key_events.Home = { {"Home"}, doc = "go home" }
+        self.key_events.Home = { { "Home" } }
         -- Override the menu.lua way of handling the back key
-        self.file_chooser.key_events.Back = { {Device.input.group.Back}, doc = "go back" }
+        self.file_chooser.key_events.Back = { { Device.input.group.Back } }
         if not Device:hasFewKeys() then
             -- Also remove the handler assigned to the "Back" key by menu.lua
             self.file_chooser.key_events.Close = nil

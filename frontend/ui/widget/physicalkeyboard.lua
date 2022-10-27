@@ -83,9 +83,7 @@ function PhysicalKeyboard:init()
     for _,row in ipairs(Device.keyboard_layout) do
         util.arrayAppend(all_keys, row)
     end
-    self.key_events = {
-        KeyPress = { { all_keys }, }
-    }
+    self.key_events.KeyPress = { { all_keys } }
 
     self.dimen = Geom:new{ x = 0, y = 0, w = 0, h = 0 }
 
