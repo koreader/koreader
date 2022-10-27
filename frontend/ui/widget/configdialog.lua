@@ -60,14 +60,12 @@ function OptionTextItem:init()
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = "Select Option Item",
         },
         HoldSelect = {
             GestureRange:new{
                 ges = "hold",
                 range = self.dimen,
             },
-            doc = "Hold Option Item",
         },
     }
 end
@@ -134,14 +132,12 @@ function OptionIconItem:init()
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = "Select Option Item",
         },
         HoldSelect = {
             GestureRange:new{
                 ges = "hold",
                 range = self.dimen,
             },
-            doc = "Hold Option Item",
         },
 
     }
@@ -898,7 +894,7 @@ function ConfigDialog:init()
     if Device:hasKeys() then
         -- set up keyboard events
         local close_keys = Device:hasFewKeys() and { "Back", "Left" } or Device.input.group.Back
-        self.key_events.Close = { { close_keys }, doc = "close config menu" }
+        self.key_events.Close = { { close_keys } }
     end
 end
 

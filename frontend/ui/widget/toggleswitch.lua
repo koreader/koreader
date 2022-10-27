@@ -118,14 +118,12 @@ function ToggleSwitch:init()
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = "Toggle switch",
         },
         HoldSelect = {
             GestureRange:new{
                 ges = "hold",
                 range = self.dimen,
             },
-            doc = "Hold switch",
         },
     }
 end

@@ -369,7 +369,6 @@ function Gestures:multiswipeRecorder(touchmenu_instance)
                 w = Screen:getWidth(),
                 h = Screen:getHeight(),
             },
-            doc = "Multiswipe in gesture creator"
         }
     }
 

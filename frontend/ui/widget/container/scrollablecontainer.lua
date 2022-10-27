@@ -79,14 +79,15 @@ function ScrollableContainer:init()
         --   Pan happens if he doesn't hold at start, but holds at end
         --   Swipe happens if he doesn't hold at any moment
         -- (Touch is needed for accurate pan)
-        self.ges_events = {}
-        self.ges_events.ScrollableTouch = not ignore.touch and { GestureRange:new{ ges = "touch", range = range } } or nil
-        self.ges_events.ScrollableSwipe = not ignore.swipe and { GestureRange:new{ ges = "swipe", range = range } } or nil
-        self.ges_events.ScrollableHold = not ignore.hold and { GestureRange:new{ ges = "hold", range = range } } or nil
-        self.ges_events.ScrollableHoldPan = not ignore.hold_pan and { GestureRange:new{ ges = "hold_pan", range = range } } or nil
-        self.ges_events.ScrollableHoldRelease = not ignore.hold_release and { GestureRange:new{ ges = "hold_release", range = range } } or nil
-        self.ges_events.ScrollablePan = not ignore.pan and { GestureRange:new{ ges = "pan", range = range } } or nil
-        self.ges_events.ScrollablePanRelease = not ignore.pan_release and { GestureRange:new{ ges = "pan_release", range = range } } or nil
+        self.ges_events = {
+            ScrollableTouch       = not ignore.touch        and { GestureRange:new{ ges = "touch", range = range } } or nil,
+            ScrollableSwipe       = not ignore.swipe        and { GestureRange:new{ ges = "swipe", range = range } } or nil,
+            ScrollableHold        = not ignore.hold         and { GestureRange:new{ ges = "hold", range = range } } or nil,
+            ScrollableHoldPan     = not ignore.hold_pan     and { GestureRange:new{ ges = "hold_pan", range = range } } or nil,
+            ScrollableHoldRelease = not ignore.hold_release and { GestureRange:new{ ges = "hold_release", range = range } } or nil,
+            ScrollablePan         = not ignore.pan          and { GestureRange:new{ ges = "pan", range = range } } or nil,
+            ScrollablePanRelease  = not ignore.pan_release  and { GestureRange:new{ ges = "pan_release", range = range } } or nil,
+        }
     end
 end
 

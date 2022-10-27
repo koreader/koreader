@@ -128,14 +128,12 @@ function MenuItem:init()
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = "Select Menu Item",
         },
         HoldSelect = {
             GestureRange:new{
                 ges = "hold",
                 range = self.dimen,
             },
-            doc = "Hold Menu Item",
         },
     }
 
@@ -923,16 +921,12 @@ function Menu:init()
 
     if Device:hasKeys() then
         -- set up keyboard events
-        self.key_events.Close = { {Input.group.Back}, doc = "close menu" }
+        self.key_events.Close = { { Input.group.Back } }
         if Device:hasFewKeys() then
-            self.key_events.Close = { {"Left"}, doc = "close menu" }
+            self.key_events.Close = { { "Left" } }
         end
-        self.key_events.NextPage = {
-            {Input.group.PgFwd}, doc = "goto next page of the menu"
-        }
-        self.key_events.PrevPage = {
-            {Input.group.PgBack}, doc = "goto previous page of the menu"
-        }
+        self.key_events.NextPage = { { Input.group.PgFwd } }
+        self.key_events.PrevPage = { { Input.group.PgBack } }
     end
 
     if Device:hasDPad() then
@@ -940,11 +934,9 @@ function Menu:init()
         self.key_events.FocusRight = nil
         -- shortcut icon is not needed for touch device
         if self.is_enable_shortcut then
-            self.key_events.SelectByShortCut = { {self.item_shortcuts} }
+            self.key_events.SelectByShortCut = { { self.item_shortcuts } }
         end
-        self.key_events.Right = {
-            {"Right"}, doc = "hold  menu item"
-        }
+        self.key_events.Right = { { "Right" } }
     end
 
     if #self.item_table > 0 then

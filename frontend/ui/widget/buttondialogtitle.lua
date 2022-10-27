@@ -45,9 +45,7 @@ function ButtonDialogTitle:init()
     if self.dismissable then
         if Device:hasKeys() then
             local close_keys = Device:hasFewKeys() and { "Back", "Left" } or Device.input.group.Back
-            self.key_events = {
-                Close = { { close_keys }, doc = "close button dialog" }
-            }
+            self.key_events.Close = { { close_keys } }
         end
         if Device:isTouchDevice() then
             self.ges_events.TapClose = {

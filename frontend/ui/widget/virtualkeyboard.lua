@@ -666,17 +666,15 @@ function VirtualKeyPopup:init()
     }
     keyboard_frame.dimen = keyboard_frame:getSize()
 
-    self.ges_events = {
-        TapClose = {
-            GestureRange:new{
-                ges = "tap",
-            }
-        },
+    self.ges_events.TapClose = {
+        GestureRange:new{
+            ges = "tap",
+        }
     }
     self.tap_interval_override = time.ms(G_reader_settings:readSetting("ges_tap_interval_on_keyboard_ms", 0))
 
     if Device:hasKeys() then
-        self.key_events.Close = { {Device.input.group.Back}, doc = "close keyboard" }
+        self.key_events.Close = { { Device.input.group.Back } }
     end
 
     local offset_x = 2*keyboard_frame.bordersize + keyboard_frame.padding + parent_key.keyboard.key_padding
@@ -801,7 +799,7 @@ function VirtualKeyboard:init()
     self:initLayer(self.keyboard_layer)
     self.tap_interval_override = time.ms(G_reader_settings:readSetting("ges_tap_interval_on_keyboard_ms", 0))
     if Device:hasKeys() then
-        self.key_events.Close = { {"Back"}, doc = "close keyboard" }
+        self.key_events.Close = { { "Back" } }
     end
     if keyboard.wrapInputBox then
         self.uwrap_func = keyboard.wrapInputBox(self.inputbox) or self.uwrap_func

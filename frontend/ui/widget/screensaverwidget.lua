@@ -18,12 +18,9 @@ local ScreenSaverWidget = InputContainer:extend{
 
 function ScreenSaverWidget:init()
     if Device:hasKeys() then
-        self.key_events = {
-            AnyKeyPressed = { { Device.input.group.Any }, seqtext = "any key", doc = "close widget" },
-        }
+        self.key_events.AnyKeyPressed = { { Device.input.group.Any } }
     end
     if Device:isTouchDevice() then
-        self.ges_events = {}
         if G_reader_settings:readSetting("screensaver_delay") == "gesture" then
             self:setupGestureEvents()
         end
@@ -34,7 +31,7 @@ function ScreenSaverWidget:init()
                 w = Screen:getWidth(),
                 h = Screen:getHeight(),
             }
-            self.ges_events["Tap"] = { GestureRange:new{ ges = "tap", range = range } }
+            self.ges_events.Tap = { GestureRange:new{ ges = "tap", range = range } }
         end
     end
     self:update()
