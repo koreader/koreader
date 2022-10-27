@@ -41,20 +41,19 @@ function TrapWidget:init()
         h = Screen:getHeight(),
     }
     if Device:hasKeys() then
-        self.key_events = {
-            AnyKeyPressed = { { Input.group.Any },
-                seqtext = "any key", doc = "dismiss" }
-        }
+        self.key_events.AnyKeyPressed = { { Input.group.Any } }
     end
     if Device:isTouchDevice() then
-        self.ges_events.TapDismiss = {
-            GestureRange:new{ ges = "tap", range = full_screen, }
-        }
-        self.ges_events.HoldDismiss = {
-            GestureRange:new{ ges = "hold", range = full_screen, }
-        }
-        self.ges_events.SwipeDismiss = {
-            GestureRange:new{ ges = "swipe", range = full_screen, }
+        self.ges_events = {
+            TapDismiss = {
+                GestureRange:new{ ges = "tap", range = full_screen, }
+            },
+            HoldDismiss = {
+                GestureRange:new{ ges = "hold", range = full_screen, }
+            },
+            SwipeDismiss = {
+                GestureRange:new{ ges = "swipe", range = full_screen, }
+            },
         }
     end
     if self.text then

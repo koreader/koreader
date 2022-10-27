@@ -190,14 +190,12 @@ function Button:init()
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = "Tap Button",
         },
         HoldSelectButton = {
             GestureRange:new{
                 ges = "hold",
                 range = self.dimen,
             },
-            doc = "Hold Button",
         },
         -- Safe-guard for when used inside a MovableContainer
         HoldReleaseSelectButton = {

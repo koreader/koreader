@@ -12,13 +12,15 @@ function ReaderRotation:init()
         self.key_events = {
             -- these will all generate the same event, just with different arguments
             RotateLeft = {
-                {"J"},
-                doc = "rotate left by 90 degrees",
-                event = "Rotate", args = -90 },
+                { "J" },
+                event = "Rotate",
+                args = -90
+            },
             RotateRight = {
-                {"K"},
-                doc = "rotate right by 90 degrees",
-                event = "Rotate", args = 90 },
+                { "K" },
+                event = "Rotate",
+                args = 90
+            },
         }
     end
 end

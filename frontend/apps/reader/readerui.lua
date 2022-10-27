@@ -123,8 +123,8 @@ function ReaderUI:init()
     SettingsMigration:migrateSettings(self.doc_settings)
 
     if Device:hasKeys() then
-        self.key_events.Home = { {"Home"}, doc = "open file browser" }
-        self.key_events.Reload = { {"F5"}, doc = "reload document" }
+        self.key_events.Home = { { "Home" } }
+        self.key_events.Reload = { { "F5" } }
     end
 
     -- a view container (so it must be child #1!)

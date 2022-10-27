@@ -41,60 +41,79 @@ local ReaderPaging = InputContainer:extend{
 }
 
 function ReaderPaging:init()
-    self.key_events = {}
     if Device:hasKeys() then
         self.key_events.GotoNextPage = {
-            { {"RPgFwd", "LPgFwd", "Right" } }, doc = "go to next page",
-            event = "GotoViewRel", args = 1,
+            { { "RPgFwd", "LPgFwd", not Device:hasFewKeys() and "Right" } },
+            event = "GotoViewRel",
+            args = 1,
         }
         self.key_events.GotoPrevPage = {
-            { { "RPgBack", "LPgBack", "Left" } }, doc = "go to previous page",
-            event = "GotoViewRel", args = -1,
+            { { "RPgBack", "LPgBack", not Device:hasFewKeys() and "Left" } },
+            event = "GotoViewRel",
+            args = -1,
         }
-        if Device:hasFewKeys() then
-            table.remove(self.key_events.GotoNextPage[1][1], 3) -- right
-            table.remove(self.key_events.GotoPrevPage[1][1], 3) -- left
-        end
         self.key_events.GotoNextPos = {
-            { {"Down" } }, doc = "go to next position",
-            event = "GotoPosRel", args = 1,
+            { "Down" },
+            event = "GotoPosRel",
+            args = 1,
         }
         self.key_events.GotoPrevPos = {
-            { { "Up" } }, doc = "go to previous position",
-            event = "GotoPosRel", args = -1,
+            { "Up" },
+            event = "GotoPosRel",
+            args = -1,
         }
 
     end
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
-            {"1"}, doc = "go to start", event = "GotoPercent", args = 0,
+            { "1" },
+            event = "GotoPercent",
+            args = 0,
         }
         self.key_events.Goto11 = {
-            {"2"}, doc = "go to 11%", event = "GotoPercent", args = 11,
+            { "2" },
+            event = "GotoPercent",
+            args = 11,
         }
         self.key_events.Goto22 = {
-            {"3"}, doc = "go to 22%", event = "GotoPercent", args = 22,
+            { "3" },
+            event = "GotoPercent",
+            args = 22,
         }
         self.key_events.Goto33 = {
-            {"4"}, doc = "go to 33%", event = "GotoPercent", args = 33,
+            { "4" },
+            event = "GotoPercent",
+            args = 33,
         }
         self.key_events.Goto44 = {
-            {"5"}, doc = "go to 44%", event = "GotoPercent", args = 44,
+            { "5" },
+            event = "GotoPercent",
+            args = 44,
         }
         self.key_events.Goto55 = {
-            {"6"}, doc = "go to 55%", event = "GotoPercent", args = 55,
+            { "6" },
+            event = "GotoPercent",
+            args = 55,
         }
         self.key_events.Goto66 = {
-            {"7"}, doc = "go to 66%", event = "GotoPercent", args = 66,
+            { "7" },
+            event = "GotoPercent",
+            args = 66,
         }
         self.key_events.Goto77 = {
-            {"8"}, doc = "go to 77%", event = "GotoPercent", args = 77,
+            { "8" },
+            event = "GotoPercent",
+            args = 77,
         }
         self.key_events.Goto88 = {
-            {"9"}, doc = "go to 88%", event = "GotoPercent", args = 88,
+            { "9" },
+            event = "GotoPercent",
+            args = 88,
         }
         self.key_events.GotoLast = {
-            {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
+            { "0" },
+            event = "GotoPercent",
+            args = 100,
         }
     end
     self.pan_interval = time.s(1 / self.pan_rate)
@@ -106,7 +125,8 @@ function ReaderPaging:onReaderReady()
 end
 
 function ReaderPaging:setupTouchZones()
-    self.ges_events = {}
+    -- delegate gesture listener to readerui
+    self.ges_events = nil
     self.onGesture = nil
     if not Device:isTouchDevice() then return end
 

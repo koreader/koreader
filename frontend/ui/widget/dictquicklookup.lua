@@ -96,9 +96,9 @@ function DictQuickLookup:init()
     self.image_alt_face = Font:getFace("cfont", font_size_alt)
     if Device:hasKeys() then
         self.key_events = {
-            ReadPrevResult = {{Input.group.PgBack}, doc = "read prev result"},
-            ReadNextResult = {{Input.group.PgFwd}, doc = "read next result"},
-            Close = { {Input.group.Back}, doc = "close quick lookup" }
+            ReadPrevResult = { { Input.group.PgBack } },
+            ReadNextResult = { { Input.group.PgFwd } },
+            Close = { { Input.group.Back } },
         }
     end
     if Device:isTouchDevice() then

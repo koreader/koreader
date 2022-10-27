@@ -20,9 +20,7 @@ function ReaderConfig:init()
     self.configurable:loadDefaults(self.options)
 
     if Device:hasKeys() then
-        self.key_events = {
-            ShowConfigMenu = { {{"Press","AA"}}, doc = "show config dialog" },
-        }
+        self.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
     end
     self:initGesListener()
     if G_reader_settings:has("activate_menu") then

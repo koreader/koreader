@@ -57,7 +57,6 @@ function CloseButton:init()
             -- drawn. so use callback to get range at runtime.
             range = function() return self.dimen end,
         },
-        doc = "Tap on close button",
     }
 
     self.ges_events.HoldClose = {
@@ -65,7 +64,6 @@ function CloseButton:init()
             ges = "hold_release",
             range = function() return self.dimen end,
         },
-        doc = "Hold on close button",
     }
 end
 

@@ -58,16 +58,16 @@ function ReaderMenu:init()
 
     if Device:hasKeys() then
         if Device:isTouchDevice() then
-            self.key_events.TapShowMenu = { { "Menu" }, doc = "show menu", }
+            self.key_events.TapShowMenu = { { "Menu" } }
             if Device:hasFewKeys() then
-                self.key_events.TapShowMenu = { { { "Menu", "Right" } }, doc = "show menu", }
+                self.key_events.TapShowMenu = { { { "Menu", "Right" } } }
             end
         else
             -- map menu key to only top menu because bottom menu is only
             -- designed for touch devices
-            self.key_events.ShowMenu = { { "Menu" }, doc = "show menu", }
+            self.key_events.ShowMenu = { { "Menu" } }
             if Device:hasFewKeys() then
-                self.key_events.ShowMenu = { { { "Menu", "Right" } }, doc = "show menu", }
+                self.key_events.ShowMenu = { { { "Menu", "Right" } } }
             end
         end
     end
@@ -83,8 +83,8 @@ function ReaderMenu:getPreviousFile()
 end
 
 function ReaderMenu:onReaderReady()
-    -- deligate gesture listener to readerui
-    self.ges_events = {}
+    -- delegate gesture listener to readerui
+    self.ges_events = nil
     self.onGesture = nil
     if not Device:isTouchDevice() then return end
 

@@ -81,21 +81,18 @@ function IconButton:initGesListener()
                 ges = "tap",
                 range = self.dimen,
             },
-            doc = "Tap IconButton",
         },
         HoldIconButton = {
             GestureRange:new{
                 ges = "hold",
                 range = self.dimen,
             },
-            doc = "Hold IconButton",
         },
         HoldReleaseIconButton = {
             GestureRange:new{
                 ges = "hold_release",
                 range = self.dimen,
             },
-            doc = "Hold Release IconButton",
         }
     }
 end

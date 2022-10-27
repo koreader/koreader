@@ -118,8 +118,8 @@ function ScrollTextWidget:init()
     end
     if Device:hasKeys() then
         self.key_events = {
-            ScrollDown = {{Input.group.PgFwd}, doc = "scroll down"},
-            ScrollUp = {{Input.group.PgBack}, doc = "scroll up"},
+            ScrollDown = { { Input.group.PgFwd } },
+            ScrollUp = { { Input.group.PgBack } },
         }
     end
 end
