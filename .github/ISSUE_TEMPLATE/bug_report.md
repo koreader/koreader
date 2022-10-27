@@ -29,6 +29,7 @@ You can upload the whole `crash.log` file (zipped if necessary) on GitHub by dra
 
 If your issue doesn't directly concern a Lua crash, we'll quite likely need you to reproduce the issue with *verbose* debug logging enabled before providing the logs to us.
 To do so, from the file manager, go to [Tools] → More tools → Developer options, and tick both `Enable debug logging` and `Enable verbose debug logging`.
+You'll need to restart KOReader after toggling these on.
 
 If you instead opt to inline it, please do so behind a spoiler tag:
 <details>
