@@ -456,7 +456,14 @@ if last_migration_date < 20220930 then
     if not load_defaults then
         logger.warn("loadfile:", err)
     else
-        load_defaults()
+        -- User input, there may be syntax errors, go through pcall like we used to.
+        local ok, perr = pcall(load_defaults)
+        if not ok then
+            logger.warn("Failed to execute defaults.persistent.lua:", perr)
+            -- Don't keep *anything* around, to make it more obvious that something went screwy...
+            logger.warn("/!\\ YOU WILL HAVE TO MIGRATE YOUR CUSTOM defaults.lua SETTINGS MANUALLY /!\\")
+            defaults = {}
+        end
     end
 
     for k, v in pairs(defaults) do
