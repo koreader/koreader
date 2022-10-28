@@ -57,6 +57,13 @@ function UIManager:init()
         Power = function(input_event)
             Device:onPowerEvent(input_event)
         end,
+        -- This is for OTG input devices
+        UsbDevicePlugIn = function(input_event)
+            self:broadcastEvent(Event:new(input_event))
+        end,
+        UsbDevicePlugOut = function(input_event)
+            self:broadcastEvent(Event:new(input_event))
+        end,
     }
     self.poweroff_action = function()
         self._entered_poweroff_stage = true
@@ -1346,9 +1353,6 @@ end
 -- NOTE: The Event hook mechanism used to dispatch for *every* event, and would actually pass the event along.
 --       We've simplified that to once per input frame, and without passing anything (as we, in fact, have never made use of it).
 function UIManager:handleInputEvent(input_event)
-    if Input.fake_event_set[input_event] ~= nil then
-        self:broadcastEvent(Event:new(input_event))
-    end
     local handler = self.event_handlers[input_event]
     if handler then
         handler(input_event)
