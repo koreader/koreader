@@ -34,9 +34,9 @@ local FocusManager = InputContainer:extend{
 
 -- Only build the default mappings once on initialization, or when external keyboard is connected.
 -- We'll make copies during instantiation.
-local KEY_EVENTS = {}
-local BUILTIN_KEY_EVENTS = {}
-local EXTRA_KEY_EVENTS = {}
+local KEY_EVENTS
+local BUILTIN_KEY_EVENTS
+local EXTRA_KEY_EVENTS
 
 local function populateEventMappings()
     KEY_EVENTS = {}
@@ -260,14 +260,29 @@ end
 
 function FocusManager:onPhysicalKeyboardConnected()
     -- Re-initialize with new keys info.
-    -- We explicitly call FocusManager._init(self) instead of self:_init() in case descendants override _init.
     populateEventMappings()
-    FocusManager._init(self)
+    -- We can't just call FocusManager._init because it will *reset* the mappings, losing our widget-specific ones (if any),
+    -- and it'll call InputContainer._init, which *also* resets the touch zones.
+    -- Instead, we'll just do a merge ourselves.
+    util.tableMerge(self.key_events, KEY_EVENTS)
+    -- populateEventMappings replaces theses, so, update our refs
+    self.builtin_key_events = BUILTIN_KEY_EVENTS
+    self.extra_key_events = EXTRA_KEY_EVENTS
 end
 
 function FocusManager:onPhysicalKeyboardDisconnected()
+    local prev_key_events = KEY_EVENTS
     populateEventMappings()
-    FocusManager._init(self)
+
+    -- Remove what disappeared from KEY_EVENTS from self.key_events.
+    -- NOTE: This is slightly overkill, we could very well live with a few unreachable mappings for the rest of this widget's life ;).
+    for k, _ in pairs(self.key_events) do
+        if prev_key_events[k] and not KEY_EVENTS[k] then
+            self.key_events[k] = nil
+        end
+    end
+    self.builtin_key_events = BUILTIN_KEY_EVENTS
+    self.extra_key_events = EXTRA_KEY_EVENTS
 end
 
 -- constant, used to reset focus widget after layout recreation
