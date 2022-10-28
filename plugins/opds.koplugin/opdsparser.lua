@@ -72,6 +72,7 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
 end
 
 function OPDSParser:parse(text)
+    text = text:gsub("<%?xml%-stylesheet.-%?>", "")
     -- luxl doesn't handle XML comments, so strip them
     text = text:gsub("<!%-%-.-%-%->", "")
     -- luxl is also particular about the syntax for self-closing, empty & orphaned tags...
