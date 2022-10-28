@@ -82,13 +82,13 @@ function VocabularyBuilder:createDB()
         end
         if db_version < 20220730 then
             ok, re = pcall(db_conn.exec, db_conn, "ALTER TABLE title ADD filter INTEGER NOT NULL DEFAULT 1;")
-            if not ok then log(re)
+            if not ok then log(re) end
         end
         if db_version < 20221002 then
             ok, re = pcall(db_conn.exec, db_conn, [[
                 ALTER TABLE vocabulary ADD streak_count INTEGER NULL DEFAULT 0;
                 UPDATE vocabulary SET streak_count = review_count; ]])
-            if not ok then log(re)
+            if not ok then log(re) end
         end
 
         db_conn:exec("CREATE INDEX IF NOT EXISTS title_id_index ON vocabulary(title_id);")
