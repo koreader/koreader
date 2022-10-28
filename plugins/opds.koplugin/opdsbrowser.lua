@@ -283,7 +283,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
     if headers_only then
         return headers["last-modified"]
     end
-    if code == 200 then 
+    if code == 200 then
         local xml = table.concat(sink)
         return xml ~= "" and xml
     end
@@ -431,7 +431,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url)
                             title = link.title,
                         })
                     elseif link.rel == self.stream_rel then
-                        -- https://vaemendis.net/opds-pse/ 
+                        -- https://vaemendis.net/opds-pse/
                         -- «count» MUST provide the number of pages of the document
                         -- namespace may be not "pse"
                         local count
