@@ -259,7 +259,8 @@ function FocusManager:onFocusMove(args)
 end
 
 function FocusManager:onPhysicalKeyboardConnected()
-    -- Re-initialize with new keys info. It's called without "self:" in case descendants override init.
+    -- Re-initialize with new keys info.
+    -- We explicitly call FocusManager._init(self) instead of self:_init() in case descendants override _init.
     populateEventMappings()
     FocusManager._init(self)
 end
