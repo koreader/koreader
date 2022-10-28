@@ -128,7 +128,7 @@ function ExternalKeyboard:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Automatically enable OTG mode on start"),
+                text = _("Always enable OTG mode"),
                 keep_menu_open = true,
                 checked_func = function()
                      return G_reader_settings:isTrue("external_keyboard_otg_mode_on_start")
@@ -198,8 +198,12 @@ end
 
 function ExternalKeyboard:setOTGRole(role) end
 
+-- Keep in mind this fires every time we tear down the FM or Reader, too.
+-- Then again, so does init when the new view spins up,
+-- which ensures everything works out when switching between the FM & the Reader,
+-- as long as `external_keyboard_otg_mode_on_start` is enabled.
 function ExternalKeyboard:onCloseWidget()
-    logger.info("ExternalKeyboard:onCloseWidget")
+    logger.dbg("ExternalKeyboard:onCloseWidget")
     local role = self:getOTGRole()
     if role == USB_ROLE_HOST then
         self:setOTGRole(USB_ROLE_DEVICE)
