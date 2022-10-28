@@ -58,11 +58,11 @@ function UIManager:init()
             Device:onPowerEvent(input_event)
         end,
         -- This is for OTG input devices
-        UsbDevicePlugIn = function(input_event)
-            self:broadcastEvent(Event:new(input_event))
+        UsbDevicePlugIn = function()
+            self:broadcastEvent(Event:new("UsbDevicePlugIn"))
         end,
-        UsbDevicePlugOut = function(input_event)
-            self:broadcastEvent(Event:new(input_event))
+        UsbDevicePlugOut = function()
+            self:broadcastEvent(Event:new("UsbDevicePlugOut"))
         end,
     }
     self.poweroff_action = function()
