@@ -7,9 +7,8 @@ if ! [ -d /sys/kernel/debug ]; then
     exit 1
 fi
 
-if [ -z "$(ls /sys/kernel/debug)" ]; then
-    mount -t debugfs none /sys/kernel/debug/
-    if [ $? ]; then
+if ! grep -q "^none /sys/kernel/debug debugfs" "/proc/mounts"; then
+    if ! mount -t debugfs none /sys/kernel/debug; then
         echo "Failed to mount debugfs"
         exit 1
     fi
