@@ -214,7 +214,7 @@ ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.5, false, function(se
     logger.dbg("ExternalKeyboard: onUsbDevicePlugOut")
     local is_any_disconnected = false
     -- Check that a keyboard really was disconnected. Another USB device could've been unplugged.
-    for event_path, fd in pairs(self.keyboard_fds) do
+    for event_path, fd in pairs(ExternalKeyboard.keyboard_fds) do
         local event_file_attrs = lfs.attributes(event_path, "mode")
         logger.dbg("ExternalKeyboard: checked if event file exists. path:", event_path, "file mode:", tostring(event_file_attrs))
         if event_file_attrs == nil then
@@ -228,12 +228,13 @@ ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.5, false, function(se
 
     logger.dbg("ExternalKeyboard: USB keyboard was disconnected")
 
-    self.keyboard_fds = {}
-    if self.original_device_values then
-        Device.input.event_map = self.original_device_values.event_map
-        Device.keyboard_layout = self.original_device_values.keyboard_layout
-        Device.hasKeyboard = self.original_device_values.hasKeyboard
-        Device.hasDPad = self.original_device_values.hasDPad
+    ExternalKeyboard.keyboard_fds = {}
+    if ExternalKeyboard.original_device_values then
+        Device.input.event_map = ExternalKeyboard.original_device_values.event_map
+        Device.keyboard_layout = ExternalKeyboard.original_device_values.keyboard_layout
+        Device.hasKeyboard = ExternalKeyboard.original_device_values.hasKeyboard
+        Device.hasDPad = ExternalKeyboard.original_device_values.hasDPad
+        ExternalKeyboard.original_device_values = nil
     end
 
     -- Broadcasting events throught UIManager would only get to InputText if there is an active widget on the window stack.
@@ -257,7 +258,7 @@ function ExternalKeyboard:findAndSetupKeyboard()
     for __, keyboard_info in ipairs(keyboards) do
         logger.dbg("ExternalKeyboard:findAndSetupKeyboard found event path", keyboard_info.event_path, "has_dpad", keyboard_info.has_dpad)
         -- Check if the event file already was open.
-        if self.keyboard_fds[keyboard_info.event_path] == nil then
+        if ExternalKeyboard.keyboard_fds[keyboard_info.event_path] == nil then
             local ok, fd = pcall(Device.input.open, keyboard_info.event_path)
             if not ok then
                 UIManager:show(InfoMessage:new{
@@ -267,7 +268,7 @@ function ExternalKeyboard:findAndSetupKeyboard()
             end
 
             is_new_keyboard_setup = true
-            self.keyboard_fds[keyboard_info.event_path] = fd
+            ExternalKeyboard.keyboard_fds[keyboard_info.event_path] = fd
 
             if keyboard_info.has_dpad then
                 has_dpad_func = yes
@@ -277,7 +278,7 @@ function ExternalKeyboard:findAndSetupKeyboard()
 
     if is_new_keyboard_setup then
         -- The setting for input_invert_page_turn_keys wouldn't mess up the new event map. Device module applies it on initialization, not dynamically.
-        self.original_device_values = {
+        ExternalKeyboard.original_device_values = {
             event_map = Device.input.event_map,
             keyboard_layout = Device.keyboard_layout,
             hasKeyboard = Device.hasKeyboard,
