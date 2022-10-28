@@ -67,7 +67,7 @@ end
 
 local function analyze_key_capabilities(long_bitmap_arr)
     -- The heuristic is that a keyboard has at least as many keys as there are alphabet letters and some more.
-    local keyboard_min_number_keys = 28
+    local keyboard_min_number_keys = 64
     local keys_count = count_set_bits_in_array(long_bitmap_arr)
 
     local is_keyboard = keys_count >= keyboard_min_number_keys
