@@ -1,5 +1,5 @@
 --[[
-event map for the full-size keyboards.
+event map for full-size keyboards.
 --]]
 
 return {
