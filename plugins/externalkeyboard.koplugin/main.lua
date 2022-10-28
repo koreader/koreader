@@ -43,7 +43,25 @@ local OTG_CHIPIDEA_ROLE_PATH = "/sys/kernel/debug/ci_hdrc.0/role"
 local OTG_SUNXI_ROLE_PATH = "/sys/devices/platform/soc/usbc0/otg_role"
 
 local function setupDebugFS()
-    os.execute("plugins/externalkeyboard.koplugin/setup-debugfs.sh")
+    local mounts = io.open("/proc/mounts", "re")
+    if not mounts then
+        return
+    end
+
+    local found = false
+    for line in mounts:lines() do
+        if line:find("^none /sys/kernel/debug debugfs") then
+            found = true
+            break
+        end
+    end
+    mounts:close()
+
+    if not found then
+        if os.execute("mount -t debugfs none /sys/kernel/debug") ~= 0 then
+            logger.warn("ExternalKeyboard: Failed to mount debugfs")
+        end
+    end
 end
 
 if lfs.attributes("/sys/kernel/debug", "mode") == "directory" then
