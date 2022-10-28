@@ -594,7 +594,10 @@ function KeyValuePage:_populateItems()
     local unfit_items_count -- count item that needs to move or truncate key/value, not fit 1/2 ratio
     -- first we check if no unfit item at all
     local width_ratio
-    if key_widths[#key_widths] <= key_w and value_widths[#value_widths] <= value_w then
+    if key_widths[#key_widths] and
+       key_widths[#key_widths] <= key_w and
+       value_widths[#value_widths] and
+       value_widths[#value_widths] <= value_w then
         width_ratio = 1/2
     end
     if not width_ratio then
