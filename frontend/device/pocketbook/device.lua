@@ -216,6 +216,10 @@ function PocketBook:init()
                     quasiSuspended = false
                     return "Resume"
                 end
+            elseif ev.code == C.EVT_EXIT then
+                -- Auto shutdown event from inkview framework,
+                -- gracefully close everything and let the framework shutdown the device.
+                return "Exit"
             end
         end,
     }
@@ -225,33 +229,12 @@ function PocketBook:init()
         self.input.rotation_map = nil
     end
 
-    -- in contrast to kobo/kindle, pocketbook-devices do not use linux/input
-    -- events directly. To be able to use input.lua nevertheless, we make
-    -- inkview-events look like linux/input events or handle them directly
-    -- here.
+    -- In contrast to kobo/kindle, pocketbook-devices do not use linux/input events directly.
+    -- To be able to use input.lua nevertheless,
+    -- we make inkview-events look like linux/input events or handle them directly here.
     -- Unhandled events will leave Input:waitEvent() as "GenericInput"
-    self.input:registerEventAdjustHook(function(_input, ev)
-        if ev.type == C.EVT_KEYDOWN or ev.type == C.EVT_KEYUP then
-            ev.value = ev.type == C.EVT_KEYDOWN and 1 or 0
-            ev.type = C.EV_KEY
-        end
-
-        -- handle C.EVT_BACKGROUND and C.EVT_FOREGROUND as MiscEvent as this makes
-        -- it easy to return a string directly which can be used in
-        -- uimanager.lua as event_handler index.
-        if ev.type == C.EVT_BACKGROUND or ev.type == C.EVT_FOREGROUND
-        or ev.type == C.EVT_SHOW or ev.type == C.EVT_HIDE then
-            ev.code = ev.type
-            ev.type = C.EV_MSC -- handle as MiscEvent, see above
-        end
-
-        -- auto shutdown event from inkview framework, gracefully close
-        -- everything and let the framework shutdown the device
-        if ev.type == C.EVT_EXIT then
-            require("ui/uimanager"):broadcastEvent(
-                require("ui/event"):new("Close"))
-        end
-    end)
+    -- NOTE: This all happens either in ffi/input_pocketbook.lua (if POCKETBOOK_FFI is true, which it always is),
+    --       or in input/input-pocketbook.h if one were to unset the POCKETBOOK_FFI global.
 
     self._model_init()
     if (not self.input.raw_input) or (not pcall(self.input.open, self.input, self.raw_input)) then
@@ -406,6 +389,11 @@ function PocketBook:setEventHandlers(UIManager)
     end
     UIManager.event_handlers.Resume = function()
         self:_afterResume()
+    end
+    UIManager.event_handlers.Exit = function()
+        local Event = require("ui/event")
+        UIManager:broadcastEvent(Event:new("Close"))
+        UIManager:quit(0)
     end
 end
 
