@@ -15,18 +15,24 @@ local _ = require("gettext")
 -- This plugin sticks to Linux naming except when interacting with Chipidea drivers.
 local USB_ROLE_DEVICE = "device"
 local USB_ROLE_HOST = "host"
--- This path exists on Kobo Clara and newer. Other devices Chipidea drivers should have it too.
--- Also, the kernel must be compiled with CONFIG_DEBUG_FS and the debugfs must be mounted.
+-- This path exists on Kobo Clara and newer. Other devices w/ Chipidea drivers should have it too.
+-- Also, the kernel must be compiled with CONFIG_DEBUG_FS and the debugfs must be mounted (we'll ensure the latter).
 local OTG_CHIPIDEA_ROLE_PATH = "/sys/kernel/debug/ci_hdrc.0/role"
+-- This one is for devices on a sunxi SoC (tested on a B300, as found on the Kobo Elipsa & Sage).
+-- It does not require debugfs, but the point is moot as debugfs is mounted by default on those,
+-- as Nickel relies on it for PM interaction with the display driver.
+local OTG_SUNXI_ROLE_PATH = "/sys/devices/platform/soc/usbc0/otg_role"
 
 local function setupDebugFS()
     os.execute("plugins/externalkeyboard.koplugin/setup-debugfs.sh")
 end
 
 if lfs.attributes("/sys/kernel/debug", "mode") == "directory" then
-    -- This should be in init() but the check must come first. So this part of initialization is here. It is quick and safe enough to be in a check.
+    -- This should be in init() but the check must come first. So this part of initialization is here.
+    -- It is quick and harmless enough to be in a check.
     setupDebugFS()
-    if lfs.attributes(OTG_CHIPIDEA_ROLE_PATH, "mode") ~= "file" then
+    if lfs.attributes(OTG_CHIPIDEA_ROLE_PATH, "mode") ~= "file" and
+       lfs.attributes(OTG_SUNXI_ROLE_PATH,    "mode") ~= "file" then
         return { disabled = true }
     end
 else
@@ -45,6 +51,16 @@ local ExternalKeyboard = WidgetContainer:extend{
 
 function ExternalKeyboard:init()
     self.ui.menu:registerToMainMenu(self)
+
+    -- Check if we should go with the sunxi otg manager, of the chipidea driver...
+    if lfs.attributes(OTG_SUNXI_ROLE_PATH, "mode") == "file" then
+        self.getOTGRole = self.sunxiGetOTGRole
+        self.setOTGRole = self.sunxiSetOTGRole
+    else
+        self.getOTGRole = self.chipideaGetOTGRole
+        self.setOTGRole = self.chipideaSetOTGRole
+    end
+
     local role = self:getOTGRole()
     logger.dbg("ExternalKeyboard: role", role)
 
@@ -105,6 +121,16 @@ function ExternalKeyboard:chipideaRoleToUSBRole(role)
     end
 end
 
+function ExternalKeyboard:sunxiRoleToUSBRole(role)
+    if role == "usb_host" then
+        return USB_ROLE_HOST
+    elseif role == "usb_device" then
+        return USB_ROLE_DEVICE
+    else
+        error('Unknown sunxi role: ' .. tostring(role))
+    end
+end
+
 function ExternalKeyboard:USBRoleToChipideaRole(role)
     if role == USB_ROLE_HOST then
         return "host"
@@ -115,7 +141,17 @@ function ExternalKeyboard:USBRoleToChipideaRole(role)
     end
 end
 
-function ExternalKeyboard:getOTGRole()
+function ExternalKeyboard:USBRoleToSunxiRole(role)
+    if role == USB_ROLE_HOST then
+        return "usb_host"
+    elseif role == USB_ROLE_DEVICE then
+        return "usb_device"
+    else
+        error('Invalid USB role: ' .. tostring(role))
+    end
+end
+
+function ExternalKeyboard:chipideaGetOTGRole()
     local role = USB_ROLE_DEVICE
     local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "re")
 
@@ -129,16 +165,41 @@ function ExternalKeyboard:getOTGRole()
     return role
 end
 
-function ExternalKeyboard:setOTGRole(role)
+function ExternalKeyboard:sunxiGetOTGRole()
+    local file = io.open(OTG_SUNXI_ROLE_PATH, "re")
+
+    -- File should always be present
+    if file then
+        local sunxi_role = file:read("l")
+        file:close()
+        return self:sunxiRoleToUSBRole(sunxi_role)
+    end
+end
+
+function ExternalKeyboard:getOTGRole() end
+
+function ExternalKeyboard:chipideaSetOTGRole(role)
     -- Writing role to file will fail if the role is the same as the current role.
     -- Check current role before calling.
-    logger.dbg("ExternalKeyboard:setOTGRole setting to", role)
+    logger.dbg("ExternalKeyboard:chipideaSetOTGRole setting to", role)
     local file = io.open(OTG_CHIPIDEA_ROLE_PATH, "we")
     if file then
         file:write(self:USBRoleToChipideaRole(role))
         file:close()
     end
 end
+
+function ExternalKeyboard:sunxiSetOTGRole(role)
+    -- Sunxi being what it is, there's no sanity check at all, it'll happily reset USB to set the same role again.
+    logger.dbg("ExternalKeyboard:sunxiSetOTGRole setting to", role)
+    local file = io.open(OTG_SUNXI_ROLE_PATH, "we")
+    if file then
+        file:write(self:USBRoleToSunxiRole(role))
+        file:close()
+    end
+end
+
+function ExternalKeyboard:setOTGRole(role) end
 
 function ExternalKeyboard:onCloseWidget()
     logger.info("ExternalKeyboard:onCloseWidget")
