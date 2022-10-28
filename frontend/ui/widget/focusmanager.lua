@@ -32,7 +32,7 @@ local FocusManager = InputContainer:extend{
     movement_allowed = { x = true, y = true },
 }
 
--- Only build the default mappings once on initialization, or when external keyboard is connected.
+-- Only build the default mappings once on initialization, or when an external keyboard is (dis-)/connected.
 -- We'll make copies during instantiation.
 local KEY_EVENTS
 local BUILTIN_KEY_EVENTS
