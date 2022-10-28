@@ -79,6 +79,7 @@ function VocabularyBuilder:createDB()
             ok, re = pcall(db_conn.exec, db_conn, "UPDATE vocabulary SET title_id = (SELECT id FROM title WHERE name = book_title);")
             if not ok then log(re) end
             ok, re = pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary DROP book_title;")
+            if not ok then log(re) end
         end
         if db_version < 20220730 then
             ok, re = pcall(db_conn.exec, db_conn, "ALTER TABLE title ADD filter INTEGER NOT NULL DEFAULT 1;")
