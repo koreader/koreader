@@ -63,27 +63,19 @@ function VocabularyBuilder:createDB()
         db_conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
     elseif db_version < DB_SCHEMA_VERSION then
         if db_version < 20220608 then
-            db_conn:exec([[ ALTER TABLE vocabulary ADD prev_context TEXT;
-                            ALTER TABLE vocabulary ADD next_context TEXT;
-                            ALTER TABLE vocabulary ADD title_id INTEGER;
-
-                            INSERT INTO title (name)
-                            SELECT DISTINCT book_title FROM vocabulary;
-
-                            UPDATE vocabulary SET title_id = (
-                               SELECT id FROM title WHERE name = book_title
-                            );
-
-                            ALTER TABLE vocabulary DROP book_title;]])
+            pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary ADD prev_context TEXT;")
+            pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary ADD next_context TEXT;")
+            pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary ADD title_id INTEGER;")
+            pcall(db_conn.exec, db_conn, "INSERT OR IGNORE INTO title (name) SELECT DISTINCT book_title FROM vocabulary;")
+            pcall(db_conn.exec, db_conn, "UPDATE vocabulary SET title_id = (SELECT id FROM title WHERE name = book_title);")
+            pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary DROP book_title;")
         end
         if db_version < 20220730 then
-            if tonumber(db_conn:rowexec("SELECT COUNT(*) FROM pragma_table_info('title') WHERE name='filter'")) == 0 then
-                db_conn:exec("ALTER TABLE title ADD filter INTEGER NOT NULL DEFAULT 1;")
-            end
+            pcall(db_conn.exec, db_conn, "ALTER TABLE title ADD filter INTEGER NOT NULL DEFAULT 1;")
         end
         if db_version < 20221002 then
-            db_conn:exec([[ ALTER TABLE vocabulary ADD streak_count INTEGER NULL DEFAULT 0;
-                            UPDATE vocabulary SET streak_count = review_count; ]])
+            pcall(db_conn.exec, db_conn, [[ALTER TABLE vocabulary ADD streak_count INTEGER NULL DEFAULT 0;
+                                           UPDATE vocabulary SET streak_count = review_count; ]])
         end
 
         db_conn:exec("CREATE INDEX IF NOT EXISTS title_id_index ON vocabulary(title_id);")
