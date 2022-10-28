@@ -265,7 +265,7 @@ function FocusManager:onPhysicalKeyboardConnected()
     -- and it'll call InputContainer._init, which *also* resets the touch zones.
     -- Instead, we'll just do a merge ourselves.
     util.tableMerge(self.key_events, KEY_EVENTS)
-    -- populateEventMappings replaces theses, so, update our refs
+    -- populateEventMappings replaces these, so, update our refs
     self.builtin_key_events = BUILTIN_KEY_EVENTS
     self.extra_key_events = EXTRA_KEY_EVENTS
 end
@@ -274,10 +274,10 @@ function FocusManager:onPhysicalKeyboardDisconnected()
     local prev_key_events = KEY_EVENTS
     populateEventMappings()
 
-    -- Remove what disappeared from KEY_EVENTS from self.key_events.
+    -- Remove what disappeared from KEY_EVENTS from self.key_events (if any).
     -- NOTE: This is slightly overkill, we could very well live with a few unreachable mappings for the rest of this widget's life ;).
-    for k, _ in pairs(self.key_events) do
-        if prev_key_events[k] and not KEY_EVENTS[k] then
+    for k, _ in pairs(prev_key_events) do
+        if not KEY_EVENTS[k] then
             self.key_events[k] = nil
         end
     end
