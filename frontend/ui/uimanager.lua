@@ -196,20 +196,22 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
             table.remove(self._window_stack, i)
             dirty = true
         else
-            -- If anything else on the stack not already hidden by (i.e., below) a fullscreen widget was dithered, honor the hint
-            if w.dithered and not is_covered then
-                refreshdither = true
-                logger.dbg("Lower widget", w.name or w.id or tostring(w), "was dithered, honoring the dithering hint")
-            end
+            if not is_covered then
+                -- If anything else on the stack not already hidden by (i.e., below) a fullscreen widget was dithered, honor the hint
+                if w.dithered then
+                    refreshdither = true
+                    logger.dbg("Lower widget", w.name or w.id or tostring(w), "was dithered, honoring the dithering hint")
+                end
 
-            -- Remember the uppermost widget that covers the full screen, so we don't bother calling setDirty on hidden (i.e., lower) widgets in the following dirty loop.
-            -- _repaint already does that later on to skip the actual paintTo calls, so this ensures we limit the refresh queue to stuff that will actually get painted.
-            if not is_covered and w.covers_fullscreen then
-                is_covered = true
-                start_idx = i
-                logger.dbg("Lower widget", w.name or w.id or tostring(w), "covers the full screen")
-                if i > 1 then
-                    logger.dbg("not refreshing", i-1, "covered widget(s)")
+                -- Remember the uppermost widget that covers the full screen, so we don't bother calling setDirty on hidden (i.e., lower) widgets in the following dirty loop.
+                -- _repaint already does that later on to skip the actual paintTo calls, so this ensures we limit the refresh queue to stuff that will actually get painted.
+                if w.covers_fullscreen then
+                    is_covered = true
+                    start_idx = i
+                    logger.dbg("Lower widget", w.name or w.id or tostring(w), "covers the full screen")
+                    if i > 1 then
+                        logger.dbg("not refreshing", i-1, "covered widget(s)")
+                   end
                 end
             end
 
@@ -677,10 +679,7 @@ function UIManager:getTopWidget()
     end
 
     local widget = self._window_stack[#self._window_stack].widget
-    if widget.name then
-        return widget.name
-    end
-    return widget
+    return widget.name or widget
 end
 
 --[[--
@@ -691,7 +690,7 @@ Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
 NOTE: Will skip over VirtualKeyboard instances, plural, in case there are multiple (because, apparently, we can do that.. ugh).
 --]]
 function UIManager:getSecondTopmostWidget()
-    if #self._window_stack <= 1 then
+    if #self._window_stack < 2 then
         -- Not enough widgets in the stack, bye!
         return nil
     end
@@ -748,16 +747,12 @@ function UIManager:quit(exit_code)
     self._exit_code = exit_code or self._exit_code or 0
     logger.info("quitting uimanager with exit code:", self._exit_code)
     self._task_queue_dirty = false
-    for i = #self._window_stack, 1, -1 do
-        table.remove(self._window_stack, i)
-    end
-    for i = #self._task_queue, 1, -1 do
-        table.remove(self._task_queue, i)
-    end
+    self._window_stack = {}
+    self._task_queue = {}
     for i = #self._zeromqs, 1, -1 do
         self._zeromqs[i]:stop()
-        table.remove(self._zeromqs, i)
     end
+    self._zeromqs = {}
     if self.looper then
         self.looper:close()
         self.looper = nil
