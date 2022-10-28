@@ -62,20 +62,33 @@ function VocabularyBuilder:createDB()
         -- Update version
         db_conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
     elseif db_version < DB_SCHEMA_VERSION then
+        local logger = require("logger")
+        local ok, re
+        local log = function(msg)
+            logger.warn("[vocab builder db migration]", msg)
+        end
         if db_version < 20220608 then
-            pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary ADD prev_context TEXT;")
-            pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary ADD next_context TEXT;")
-            pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary ADD title_id INTEGER;")
-            pcall(db_conn.exec, db_conn, "INSERT OR IGNORE INTO title (name) SELECT DISTINCT book_title FROM vocabulary;")
-            pcall(db_conn.exec, db_conn, "UPDATE vocabulary SET title_id = (SELECT id FROM title WHERE name = book_title);")
-            pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary DROP book_title;")
+            ok, re = pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary ADD prev_context TEXT;")
+            if not ok then log(re) end
+            ok, re = pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary ADD next_context TEXT;")
+            if not ok then log(re) end
+            ok, re = pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary ADD title_id INTEGER;")
+            if not ok then log(re) end
+            ok, re = pcall(db_conn.exec, db_conn, "INSERT OR IGNORE INTO title (name) SELECT DISTINCT book_title FROM vocabulary;")
+            if not ok then log(re) end
+            ok, re = pcall(db_conn.exec, db_conn, "UPDATE vocabulary SET title_id = (SELECT id FROM title WHERE name = book_title);")
+            if not ok then log(re) end
+            ok, re = pcall(db_conn.exec, db_conn, "ALTER TABLE vocabulary DROP book_title;")
         end
         if db_version < 20220730 then
-            pcall(db_conn.exec, db_conn, "ALTER TABLE title ADD filter INTEGER NOT NULL DEFAULT 1;")
+            ok, re = pcall(db_conn.exec, db_conn, "ALTER TABLE title ADD filter INTEGER NOT NULL DEFAULT 1;")
+            if not ok then log(re)
         end
         if db_version < 20221002 then
-            pcall(db_conn.exec, db_conn, [[ALTER TABLE vocabulary ADD streak_count INTEGER NULL DEFAULT 0;
-                                           UPDATE vocabulary SET streak_count = review_count; ]])
+            ok, re = pcall(db_conn.exec, db_conn, [[
+                ALTER TABLE vocabulary ADD streak_count INTEGER NULL DEFAULT 0;
+                UPDATE vocabulary SET streak_count = review_count; ]])
+            if not ok then log(re)
         end
 
         db_conn:exec("CREATE INDEX IF NOT EXISTS title_id_index ON vocabulary(title_id);")
