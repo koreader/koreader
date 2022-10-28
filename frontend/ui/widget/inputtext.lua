@@ -305,7 +305,7 @@ local function initDPadEvents()
     end
 end
 
--- only use PhysicalKeyboard if the device does not have touch screen
+-- only use PhysicalKeyboard if the device does not support touch input
 function InputText.initInputEvents()
     FocusManagerInstance = nil
 
