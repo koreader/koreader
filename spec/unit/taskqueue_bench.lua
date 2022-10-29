@@ -24,7 +24,7 @@ describe("UIManager simple checkTasks and scheduling benchmark", function()
     end
 end)
 
-describe("UIManager schedule more sophiticated benchmark", function()
+describe("UIManager more advanced checkTasks and scheduling benchmark", function()
     -- This BM is doing schedulings like the are done in real usage
     -- with autosuspend, autodim, autowarmth and friends.
     -- Additional _checkTask is called to better simulate bench this too.
@@ -75,4 +75,3 @@ describe("UIManager schedule more sophiticated benchmark", function()
         end
     end
 end)
-
