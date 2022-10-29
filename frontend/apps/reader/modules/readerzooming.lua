@@ -8,7 +8,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -26,6 +25,17 @@ local ReaderZooming = InputContainer:extend{
         "columns",
         "rows",
         "manual",
+    },
+    zoom_mode_label = { -- const
+        page          = _("page") .. " - " .. _("full"),
+        pagewidth     = _("page") .. " - " .. _("width"),
+        pageheight    = _("page") .. " - " .. _("height"),
+        content       = _("content") .. " - " .. _("full"),
+        contentwidth  = _("content") .. " - " .. _("width"),
+        contentheight = _("content") .. " - " .. _("height"),
+        columns       = _("columns"),
+        rows          = _("rows"),
+        manual        = _("manual"),
     },
     zoom_genus_to_mode = { -- const
         [4] = "page",
@@ -201,9 +211,7 @@ function ReaderZooming:onReadSettings(config)
     local zoom_mode = config:readSetting("zoom_mode")
     if zoom_mode then
         -- Validate it first
-        zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
-                and zoom_mode
-                 or self.DEFAULT_ZOOM_MODE
+        zoom_mode = self.zoom_mode_label[zoom_mode] and zoom_mode or self.DEFAULT_ZOOM_MODE
 
         -- Make sure the split genus & type match, to have an up-to-date ConfigDialog...
         local zoom_mode_genus, zoom_mode_type = self:_updateConfigurable(zoom_mode)
@@ -220,9 +228,7 @@ function ReaderZooming:onReadSettings(config)
         end
 
         -- Validate it
-        zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
-                and zoom_mode
-                 or self.DEFAULT_ZOOM_MODE
+        zoom_mode = self.zoom_mode_label[zoom_mode] and zoom_mode or self.DEFAULT_ZOOM_MODE
     end
 
     -- Import legacy zoom_factor settings
@@ -354,7 +360,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
         zoom_mode = zoom_mode_genus
         self.ui:handleEvent(Event:new("SetScrollMode", false))
     end
-    zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode) and zoom_mode or self.DEFAULT_ZOOM_MODE
+    zoom_mode = self.zoom_mode_label[zoom_mode] and zoom_mode or self.DEFAULT_ZOOM_MODE
     settings.zoom_mode = zoom_mode
 
     if settings.right_to_left then
@@ -409,7 +415,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     horizontal overlap: %3 %
     vertical overlap: %5 %
     zoom factor: %6]]),
-                zoom_mode,
+                self.zoom_mode_label[zoom_mode],
                 ("%.2f"):format(self:getNumberOf("columns", settings.zoom_overlap_h)),
                 settings.zoom_overlap_h,
                 ("%.2f"):format(self:getNumberOf("rows", settings.zoom_overlap_v)),
