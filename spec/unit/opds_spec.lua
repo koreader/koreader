@@ -327,7 +327,7 @@ describe("OPDS module #nocov", function()
                 local item_table = OPDSBrowser:genItemTableFromCatalog(catalog, "https://www.gutenberg.org/ebooks.opds/?format=opds")
 
                 assert.truthy(item_table)
-                assert.are.same(item_table[1].text, "Search")
+                assert.are.same(item_table[1].text, "\u{f002} " .. "Search")
             end)
             it("should generate URL on rel=subsection", function()
                 local catalog = OPDSParser:parse(navigation_sample)

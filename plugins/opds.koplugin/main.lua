@@ -43,7 +43,6 @@ function OPDS:addToMainMenu(menu_items)
     if not self.ui.view then
         menu_items.opds = {
             text = _("OPDS catalog"),
-            sorting_hint = "search",
             callback = function() self:showCatalog() end
         }
     end
