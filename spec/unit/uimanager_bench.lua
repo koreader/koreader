@@ -24,7 +24,6 @@ describe("UIManager checkTasks benchmark", function()
     local now = time.now()
     local wait_until -- luacheck: no unused
     UIManager:quit()
-    UIManager._task_queue = { n = 0 }
 
     for i= NB_TESTS, 1, -1 do
         table.insert(
@@ -41,7 +40,6 @@ end)
 describe("UIManager schedule simple benchmark", function()
     local now = time.now()
     UIManager:quit()
-    UIManager._task_queue = { n = 0 }
 
     for i=1, NB_TESTS/2 do
         UIManager:schedule(now + i, noop)
@@ -146,7 +144,6 @@ end)
 describe("UIManager unschedule benchmark", function()
     local now = time.now()
     UIManager:quit()
-    UIManager._task_queue = { n = 0 }
 
     for i=NB_TESTS, 1, -1 do
         table.insert(

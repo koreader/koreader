@@ -62,7 +62,6 @@ describe("UIManager spec", function()
     it("should insert new task properly in empty task queue", function()
         now = time.now()
         UIManager:quit()
-        UIManager._task_queue = { n = 0 }
         assert.are.same(0, #UIManager._task_queue)
         UIManager:scheduleIn(50, 'foo')
         assert.are.same(1, #UIManager._task_queue)
@@ -128,7 +127,6 @@ describe("UIManager spec", function()
     it("should insert new tasks with same times after existing tasks", function()
         now = time.now()
         UIManager:quit()
-        UIManager._task_queue = { n = 0 }
 
         -- insert task "5s" between "now" and "10s"
         UIManager:schedule(now, "now");
