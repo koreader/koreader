@@ -32,11 +32,17 @@ local FocusManager = InputContainer:extend{
     movement_allowed = { x = true, y = true },
 }
 
--- Only build the default mappings once, we'll make copies during instantiation.
-local KEY_EVENTS = {}
-local BUILTIN_KEY_EVENTS = {}
-local EXTRA_KEY_EVENTS = {}
-do
+-- Only build the default mappings once on initialization, or when an external keyboard is (dis-)/connected.
+-- We'll make copies during instantiation.
+local KEY_EVENTS
+local BUILTIN_KEY_EVENTS
+local EXTRA_KEY_EVENTS
+
+local function populateEventMappings()
+    KEY_EVENTS = {}
+    BUILTIN_KEY_EVENTS = {}
+    EXTRA_KEY_EVENTS = {}
+
     if Device:hasDPad() then
         local event_keys = {}
         -- these will all generate the same event, just with different arguments
@@ -92,6 +98,8 @@ do
         end
     end
 end
+
+populateEventMappings()
 
 function FocusManager:_init()
     InputContainer._init(self)
@@ -248,6 +256,33 @@ function FocusManager:onFocusMove(args)
         end
     end
     return true
+end
+
+function FocusManager:onPhysicalKeyboardConnected()
+    -- Re-initialize with new keys info.
+    populateEventMappings()
+    -- We can't just call FocusManager._init because it will *reset* the mappings, losing our widget-specific ones (if any),
+    -- and it'll call InputContainer._init, which *also* resets the touch zones.
+    -- Instead, we'll just do a merge ourselves.
+    util.tableMerge(self.key_events, KEY_EVENTS)
+    -- populateEventMappings replaces these, so, update our refs
+    self.builtin_key_events = BUILTIN_KEY_EVENTS
+    self.extra_key_events = EXTRA_KEY_EVENTS
+end
+
+function FocusManager:onPhysicalKeyboardDisconnected()
+    local prev_key_events = KEY_EVENTS
+    populateEventMappings()
+
+    -- Remove what disappeared from KEY_EVENTS from self.key_events (if any).
+    -- NOTE: This is slightly overkill, we could very well live with a few unreachable mappings for the rest of this widget's life ;).
+    for k, _ in pairs(prev_key_events) do
+        if not KEY_EVENTS[k] then
+            self.key_events[k] = nil
+        end
+    end
+    self.builtin_key_events = BUILTIN_KEY_EVENTS
+    self.extra_key_events = EXTRA_KEY_EVENTS
 end
 
 -- constant, used to reset focus widget after layout recreation

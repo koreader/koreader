@@ -72,9 +72,7 @@ function InputText:initEventListener() end
 function InputText:onFocus() end
 function InputText:onUnfocus() end
 
--- only use PhysicalKeyboard if the device does not have touch screen
-if Device:isTouchDevice() or Device:hasDPad() then
-    Keyboard = require("ui/widget/virtualkeyboard")
+local function initTouchEvents()
     if Device:isTouchDevice() then
         function InputText:initEventListener()
             self.ges_events = {
@@ -284,6 +282,9 @@ if Device:isTouchDevice() or Device:hasDPad() then
             return false
         end
     end
+end
+
+local function initDPadEvents()
     if Device:hasDPad() then
         function InputText:onFocus()
             -- Event called by the focusmanager
@@ -302,9 +303,22 @@ if Device:isTouchDevice() or Device:hasDPad() then
             return true
         end
     end
-else
-    Keyboard = require("ui/widget/physicalkeyboard")
 end
+
+-- only use PhysicalKeyboard if the device does not support touch input
+function InputText.initInputEvents()
+    FocusManagerInstance = nil
+
+    if Device:isTouchDevice() or Device:hasDPad() then
+        Keyboard = require("ui/widget/virtualkeyboard")
+        initTouchEvents()
+        initDPadEvents()
+    else
+        Keyboard = require("ui/widget/physicalkeyboard")
+    end
+end
+
+InputText.initInputEvents()
 
 function InputText:checkTextEditability()
     -- The split of the 'text' string to a table of utf8 chars may not be
