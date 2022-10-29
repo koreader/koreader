@@ -45,7 +45,7 @@ local OTG_SUNXI_ROLE_PATH = "/sys/devices/platform/soc/usbc0/otg_role"
 local function setupDebugFS()
     local mounts = io.open("/proc/mounts", "re")
     if not mounts then
-        return
+        return false
     end
 
     local found = false
@@ -60,14 +60,19 @@ local function setupDebugFS()
     if not found then
         if os.execute("mount -t debugfs none /sys/kernel/debug") ~= 0 then
             logger.warn("ExternalKeyboard: Failed to mount debugfs")
+            return false
         end
     end
+
+    return true
 end
 
 if lfs.attributes("/sys/kernel/debug", "mode") == "directory" then
     -- This should be in init() but the check must come first. So this part of initialization is here.
     -- It is quick and harmless enough to be in a check.
-    setupDebugFS()
+    if not setupDebugFS() then
+        return { disabled = true }
+    end
     if lfs.attributes(OTG_CHIPIDEA_ROLE_PATH, "mode") ~= "file" and
        lfs.attributes(OTG_SUNXI_ROLE_PATH,    "mode") ~= "file" then
         return { disabled = true }
