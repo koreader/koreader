@@ -49,7 +49,7 @@ describe("UIManager schedule simple benchmark", function()
     end
 end)
 
-describe("UIManager more sophiticated schedule benchmark", function()
+describe("UIManager more sophisticated schedule benchmark", function()
     -- This BM is doing schedulings like the are done in real usage
     -- with autosuspend, autodim, autowarmth and friends.
     local now = time.now()
