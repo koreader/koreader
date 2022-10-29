@@ -911,8 +911,8 @@ function UIManager:_checkTasks()
     -- Tasks due for execution might themselves schedule more tasks (that might also be immediately due for execution ;)).
     -- Flipping this switch ensures we'll consume all such tasks *before* yielding to input polling.
     self._task_queue_dirty = false
-    local task = self._task_queue[self._task_queue.len]
-    while task do
+    while self._task_queue.len > 0 do
+        local task = self._task_queue[self._task_queue.len]
         local task_time = task.time
         if task_time <= self._now then
             -- Remove the upcoming task, as it is due for execution...
@@ -928,7 +928,6 @@ function UIManager:_checkTasks()
             wait_until = task_time
             break
         end
-        task = self._task_queue[self._task_queue.len]
     end
 
     return wait_until, self._now
