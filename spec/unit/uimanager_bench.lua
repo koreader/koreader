@@ -24,7 +24,7 @@ describe("UIManager checkTasks benchmark", function()
     local now = time.now()
     local wait_until -- luacheck: no unused
     UIManager:quit()
-    UIManager._task_queue = {}
+    UIManager._task_queue = { n = 0 }
 
     for i= NB_TESTS, 1, -1 do
         table.insert(
@@ -41,7 +41,7 @@ end)
 describe("UIManager schedule simple benchmark", function()
     local now = time.now()
     UIManager:quit()
-    UIManager._task_queue = {}
+    UIManager._task_queue = { n = 0 }
 
     for i=1, NB_TESTS/2 do
         UIManager:schedule(now + i, noop)
@@ -68,7 +68,7 @@ describe("UIManager more sophisticated schedule benchmark", function()
     end
 
     for i=1, NB_TESTS do
-        UIManager._task_queue = {}
+        UIManager._task_queue = { n = 0 }
         UIManager:schedule(now + time.s(24*60*60), noop) -- shutdown
         UIManager:schedule(now + time.s(15*60*60), noop) -- sleep
         UIManager:schedule(now + time.s(55), noop) -- footer refresh
@@ -93,7 +93,7 @@ describe("UIManager schedule massive collision tests", function()
 
     for i = 1, 6 do
         -- simple test (1000/10 collisions)
-        UIManager._task_queue = {}
+        UIManager._task_queue = { n = 0 }
         for j = 1, 10 do
             UIManager:schedule(math.random(10), j)
             -- check() -- enabling this takes really long O(n^2)
@@ -101,7 +101,7 @@ describe("UIManager schedule massive collision tests", function()
         check()
 
         -- armageddon test (10000 collisions)
-        UIManager._task_queue = {}
+        UIManager._task_queue = { n = 0 }
         for j = 1, 1e5 do
             UIManager:schedule(math.random(100), j)
             -- check() -- enabling this takes really long O(n^2)
@@ -116,7 +116,7 @@ describe("UIManager schedule massive ridiculous tests", function()
 
     for i = 1, 6 do
         -- simple test (1000 collisions)
-        UIManager._task_queue = {}
+        UIManager._task_queue = { n = 0 }
         local offs = 0
         for j = 1, 1e3 do
             UIManager:schedule(math.random(10), j + offs)
@@ -146,7 +146,7 @@ end)
 describe("UIManager unschedule benchmark", function()
     local now = time.now()
     UIManager:quit()
-    UIManager._task_queue = {}
+    UIManager._task_queue = { n = 0 }
 
     for i=NB_TESTS, 1, -1 do
         table.insert(

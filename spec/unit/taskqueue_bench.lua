@@ -11,7 +11,7 @@ describe("UIManager simple checkTasks and scheduling benchmark", function()
     local now = time.now()
     local wait_until -- luacheck: no unused
     UIManager:quit()
-    UIManager._task_queue = {}
+    UIManager._task_queue = { n = 0 }
 
     -- use schedule here, to be agnostic of the _task_queue order (ascending, descending).
     for i=1, NB_TESTS/2 do
@@ -46,7 +46,7 @@ describe("UIManager more advanced checkTasks and scheduling benchmark", function
     end
 
     for i=1, NB_TESTS do
-        UIManager._task_queue = {}
+        UIManager._task_queue = { n = 0 }
         UIManager:schedule(now + time.s(24*60*60), noop) -- shutdown
         UIManager:schedule(now + time.s(15*60*60), noop) -- sleep
         UIManager:schedule(now + time.s(55), noop) -- footer refresh

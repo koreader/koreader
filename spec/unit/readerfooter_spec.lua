@@ -435,7 +435,7 @@ describe("Readerfooter module", function()
         os.remove(DocSettings:getHistoryPath(sample_epub))
         UIManager:quit()
 
-        assert.are.same({}, UIManager._task_queue)
+        assert.are.same(0, #UIManager._task_queue)
 
         local settings = G_reader_settings:readSetting("footer")
         settings.auto_refresh_time = true
@@ -473,7 +473,7 @@ describe("Readerfooter module", function()
         os.remove(DocSettings:getHistoryPath(sample_epub))
         UIManager:quit()
 
-        assert.are.same({}, UIManager._task_queue)
+        assert.are.same(0, #UIManager._task_queue)
 
         local settings = G_reader_settings:readSetting("footer")
         settings.disabled = true
@@ -503,7 +503,7 @@ describe("Readerfooter module", function()
         os.remove(DocSettings:getHistoryPath(sample_pdf))
         UIManager:quit()
 
-        assert.are.same({}, UIManager._task_queue)
+        assert.are.same(0, #UIManager._task_queue)
 
         local settings = G_reader_settings:readSetting("footer")
         settings.disabled = false
@@ -561,7 +561,7 @@ describe("Readerfooter module", function()
         os.remove(DocSettings:getHistoryPath(sample_pdf))
         UIManager:quit()
 
-        assert.are.same({}, UIManager._task_queue)
+        assert.are.same(0, #UIManager._task_queue)
 
         G_reader_settings:saveSetting("reader_footer_mode", 1)
         -- default settings
@@ -602,7 +602,7 @@ describe("Readerfooter module", function()
         os.remove(DocSettings:getHistoryPath(sample_pdf))
         UIManager:quit()
 
-        assert.are.same({}, UIManager._task_queue)
+        assert.are.same(0, #UIManager._task_queue)
 
         local settings = G_reader_settings:readSetting("footer")
         settings.all_at_once = true
@@ -640,7 +640,7 @@ describe("Readerfooter module", function()
         os.remove(DocSettings:getHistoryPath(sample_pdf))
         UIManager:quit()
 
-        assert.are.same({}, UIManager._task_queue)
+        assert.are.same(0, #UIManager._task_queue)
 
         G_reader_settings:saveSetting("reader_footer_mode", 0)
         local settings = G_reader_settings:readSetting("footer")
@@ -666,7 +666,7 @@ describe("Readerfooter module", function()
         os.remove(DocSettings:getHistoryPath(sample_epub))
         UIManager:quit()
 
-        assert.are.same({}, UIManager._task_queue)
+        assert.are.same(0, #UIManager._task_queue)
 
         local settings = G_reader_settings:readSetting("footer")
         settings.battery = false
