@@ -11,6 +11,13 @@ local logger = require("logger")
 local WebDavApi = {
 }
 
+function WebDavApi:getJoinedPath( address, path )
+    local path_encoded = self:urlEncode( path ) or ""
+    local address_strip = address:sub(-1) == "/" and address:sub(1, -2) or address
+    local path_strip = path_encoded:sub(1, 1) == "/" and path_encoded:sub(2) or path_encoded
+    return address_strip .. "/" .. path_strip
+end
+
 function WebDavApi:isCurrentDirectory( current_item, address, path )
     local is_home, is_parent
     local home_path
@@ -32,6 +39,7 @@ function WebDavApi:isCurrentDirectory( current_item, address, path )
         is_home = true
     else
         local temp_path = string.sub( item, string.len(home_path) + 1 )
+        if string.sub( path, -1 ) == "/" then path = string.sub( path, 1, -2 ) end
         if temp_path == path then
             is_parent = true
         end
@@ -61,10 +69,10 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     if string.sub( address, -1 ) == "/" then has_trailing_slash = true end
     if path == nil or path == "/" then
         path = ""
-    elseif string.sub( path, 1, 2 ) == "/" then
+    elseif string.sub( path, 1, 1 ) == "/" then
         if has_trailing_slash then
             -- too many slashes, remove one
-            path = string.sub( path, 1 )
+            path = string.sub( path, 2 )
         end
         has_leading_slash = true
     end
@@ -72,7 +80,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
         address = address .. "/"
     end
     local webdav_url = address .. path
-    if not has_trailing_slash then
+    if not string.sub(webdav_url, -1) == "/" then
         webdav_url = webdav_url .. "/"
     end
 
@@ -116,7 +124,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
             if string.sub( item_fullpath, -1 ) == "/" then
                 item_fullpath = string.sub( item_fullpath, 1, -2 )
             end
-            local is_current_dir = self:isCurrentDirectory( item_fullpath, address, path )
+            local is_current_dir = self:isCurrentDirectory( util.urlDecode(item_fullpath), address, folder_path )
 
             local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
             item_name = util.htmlEntitiesToUtf8(item_name)
