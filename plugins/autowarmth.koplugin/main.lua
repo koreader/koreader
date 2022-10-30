@@ -170,11 +170,22 @@ end
 
 AutoWarmth._onEnterStandby = AutoWarmth._onSuspend
 
+function AutoWarmth:_onToggleNightMode()
+    if self.control_nightmode then
+        UIManager:show(InfoMessage:new{
+            text = _("Night mode changed by the user.\nThe AutoWarmth plugin might change it again."),
+            -- timeout = 4, -- make sure this long message is readable
+        })
+    end
+end
+
 function AutoWarmth:setEventHandlers()
     self.onResume = self._onResume
     self.onSuspend = self._onSuspend
     self.onEnterStandby = self._onEnterStandby
     self.onLeaveStandby = self._onLeaveStandby
+    self.onToggleNightMode = self._onToggleNightMode
+    self.onSetNightMode = self._onToggleNightMode
 end
 
 function AutoWarmth:clearEventHandlers()
@@ -182,6 +193,8 @@ function AutoWarmth:clearEventHandlers()
     self.onSuspend = nil
     self.onEnterStandby = nil
     self.onLeaveStandby = nil
+    self.onToggleNightMode = nil
+    self.onSetNightMode = nil
 end
 
 -- from_resume ... true if called from onResume
