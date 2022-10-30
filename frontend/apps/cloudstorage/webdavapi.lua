@@ -80,7 +80,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
         address = address .. "/"
     end
     local webdav_url = address .. path
-    if not string.sub(webdav_url, -1) == "/" then
+    if string.sub(webdav_url, -1) ~= "/" then
         webdav_url = webdav_url .. "/"
     end
 
