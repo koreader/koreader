@@ -346,19 +346,14 @@ UIManager:unschedule(self.anonymousFunction)
 ]]
 function UIManager:unschedule(action)
     local removed = false
-    local task_queue_len = self._task_queue.n
-    for i = task_queue_len, 1, -1 do
+    for i = self._task_queue.n, 1, -1 do
         if self._task_queue[i].action == action then
             table.remove(self._task_queue, i)
-            task_queue_len = task_queue_len - 1
+            self._task_queue.n = self._task_queue.n - 1
             removed = true
         end
     end
-    if removed then
-        self._task_queue.n = task_queue_len
-        return true
-    end
-    return false
+    return removed
 end
 dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
