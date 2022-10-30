@@ -126,7 +126,7 @@ end
 
 function ReaderPaging:setupTouchZones()
     -- delegate gesture listener to readerui
-    self.ges_events = nil
+    self.ges_events = {}
     self.onGesture = nil
     if not Device:isTouchDevice() then return end
 
