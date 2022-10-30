@@ -907,11 +907,10 @@ function UIManager:_checkTasks()
     -- Flipping this switch ensures we'll consume all such tasks *before* yielding to input polling.
     self._task_queue_dirty = false
     while self._task_queue.n > 0 do
-        local task = self._task_queue[self._task_queue.n]
-        local task_time = task.time
+        local task_time = self._task_queue[self._task_queue.n].time
         if task_time <= self._now then
             -- Remove the upcoming task, as it is due for execution...
-            table.remove(self._task_queue)
+            local task =  table.remove(self._task_queue)
             self._task_queue.n = self._task_queue.n - 1
             -- ...so do it now.
             -- NOTE: Said task's action might modify _task_queue.
