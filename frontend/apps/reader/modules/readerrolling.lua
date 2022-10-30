@@ -148,7 +148,12 @@ function ReaderRolling:init()
     end)
     self.ui.menu:registerToMainMenu(self)
     self.batched_update_count = 0
+
+    -- delegate gesture listener to readerui, NOP our own
+    self.ges_events = nil
 end
+
+function ReaderRolling:onGesture() end
 
 function ReaderRolling:onReadSettings(config)
     -- 20180503: some fix in crengine has changed the way the DOM is built
@@ -331,9 +336,6 @@ function ReaderRolling:onReaderReady()
 end
 
 function ReaderRolling:setupTouchZones()
-    -- delegate gesture listener to readerui
-    self.ges_events = {}
-    self.onGesture = nil
     if not Device:isTouchDevice() then return end
 
     local forward_zone, backward_zone = self.view:getTapZones()

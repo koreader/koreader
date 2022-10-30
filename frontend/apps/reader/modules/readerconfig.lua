@@ -28,7 +28,12 @@ function ReaderConfig:init()
     else
         self.activation_menu = "swipe_tap"
     end
+
+    -- delegate gesture listener to ReaderUI, NOP our own
+    self.ges_events = nil
 end
+
+function ReaderConfig:onGesture() end
 
 function ReaderConfig:initGesListener()
     if not Device:isTouchDevice() then return end
