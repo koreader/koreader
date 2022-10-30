@@ -606,7 +606,8 @@ end
 function ReaderStatistics:upgradeDBto20221022(conn)
     conn:exec([[
         -- We make the index on book's (title, author, md5) unique in order to sync dbs
-        -- First we remove duplicates (most likely none existant?)
+        -- First we fill null authors with '' and remove duplicates
+        UPDATE book SET authors = '' WHERE authors IS NULL;
         UPDATE page_stat_data SET id_book = (
             SELECT map.min_id FROM (
                 SELECT id, (
