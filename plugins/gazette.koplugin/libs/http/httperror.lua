@@ -2,16 +2,14 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local HttpError = {
-
+    RESPONSE_NONSPECIFIC_ERROR = _("There was an error. That's all I know."),
+    REQUEST_UNSUPPORTED_SCHEME = _("Scheme not supported."),
+    REQUEST_INCOMPLETE = _("Request couldn't complete. Code %1."),
+    REQUEST_PAGE_NOT_FOUND = _("Page not found."),
+    RESPONSE_HAS_NO_CONTENT = _("No content found in response."),
 }
 
-HttpError.RESPONSE_NONSPECIFIC_ERROR = _("There was an error. That's all I know.")
-HttpError.REQUEST_UNSUPPORTED_SCHEME = _("Scheme not supported.")
-HttpError.REQUEST_INCOMPLETE = _("Request couldn't complete. Code %1.")
-HttpError.REQUEST_PAGE_NOT_FOUND = _("Page not found.")
-HttpError.RESPONSE_HAS_NO_CONTENT = _("No content found in response.")
-
-function HttpError:new(o)
+function HttpError:extend(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self
