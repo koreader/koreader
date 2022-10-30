@@ -8,6 +8,11 @@ local GazetteMessages = require("gazettemessages")
 local Results = require("subscription/result/results")
 
 Feed = Subscription:new{
+    CONTENT_SOURCE = {
+        SUMMARY = "summary",
+        CONTENT = "content",
+        WEBPAGE = "webpage",
+    },
    subscription_type = "feed",
    url = nil,
    limit = 3,
@@ -16,12 +21,6 @@ Feed = Subscription:new{
    filter_element = nil, -- not implemented
    download_directory = nil,
    content_source = nil,
-}
-
-Feed.CONTENT_SOURCE = {
-   SUMMARY = "summary",
-   CONTENT = "content",
-   WEBPAGE = "webpage",
 }
 
 function Feed:new(o)

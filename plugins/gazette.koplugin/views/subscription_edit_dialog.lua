@@ -5,13 +5,11 @@ local _ = require("gettext")
 local GazetteMessages = require("gazettemessages")
 
 local EditDialog = {
-
+    URL = 1,
+    DOWNLOAD_DIRECTORY = 2,
+    LIMIT = 3,
+    CONTENT_SOURCE = 4,
 }
-
-EditDialog.URL = 1
-EditDialog.DOWNLOAD_DIRECTORY = 2
-EditDialog.LIMIT = 3
-EditDialog.CONTENT_SOURCE = 4
 
 function EditDialog:newFeed(composer)
    local dialog
