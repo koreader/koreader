@@ -56,7 +56,11 @@ function ReaderBookmark:init()
     end
 
     self.ui.menu:registerToMainMenu(self)
+    -- NOP our own gesture handling
+    self.ges_events = nil
 end
+
+function ReaderBookmark:onGesture() end
 
 function ReaderBookmark:addToMainMenu(menu_items)
     menu_items.bookmarks = {

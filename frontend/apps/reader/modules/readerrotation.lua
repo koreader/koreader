@@ -23,7 +23,11 @@ function ReaderRotation:init()
             },
         }
     end
+    -- NOP our own gesture handling
+    self.ges_events = nil
 end
+
+function ReaderRotation:onGesture() end
 
 --- @todo Reset rotation on new document, maybe on new page?
 

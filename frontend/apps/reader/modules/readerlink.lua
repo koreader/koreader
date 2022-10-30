@@ -106,7 +106,12 @@ function ReaderLink:init()
         G_reader_settings:saveSetting("swipe_link_footnote_popup", nil)
         G_reader_settings:saveSetting("footnote_link_in_popup", true)
     end
+
+    -- delegate gesture listener to readerui, NOP our own
+    self.ges_events = nil
 end
+
+function ReaderLink:onGesture() end
 
 function ReaderLink:onReadSettings(config)
     -- called when loading new document

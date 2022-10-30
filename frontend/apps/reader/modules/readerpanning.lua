@@ -38,7 +38,11 @@ function ReaderPanning:init()
             },
         }
     end
+    -- NOP our own gesture handling
+    self.ges_events = nil
 end
+
+function ReaderPanning:onGesture() end
 
 function ReaderPanning:onSetDimensions(dimensions)
     self.dimen = dimensions
