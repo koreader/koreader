@@ -25,6 +25,8 @@ function Package:new(o)
    return o
 end
 
+Package.extend = Package.new
+
 function Package:setTitle(title)
    self.title = title
 end

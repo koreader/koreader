@@ -2,14 +2,12 @@ local HttpError = require("libs/http/httperror")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local FeedError = HttpError:new{
-
+local FeedError = HttpError:extend{
+    FEED_NONSPECIFIC_ERROR = _("There was an error. That's all I know."),
+    FEED_HAS_NO_CONTENT = _("The feed didn't return any content."),
+    RESPONSE_NOT_XML = _("Feed is not an XML document."),
+    FEED_NOT_SUPPORTED_SYNDICATION_FORMAT = _("URL is not a supported syndication format."),
 }
-
-FeedError.FEED_NONSPECIFIC_ERROR = _("There was an error. That's all I know.")
-FeedError.FEED_HAS_NO_CONTENT = _("The feed didn't return any content.")
-FeedError.RESPONSE_NOT_XML = _("Feed is not an XML document.")
-FeedError.FEED_NOT_SUPPORTED_SYNDICATION_FORMAT = _("URL is not a supported syndication format.")
 
 function FeedError:new(o)
     o = o or {}

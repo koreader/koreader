@@ -1,6 +1,6 @@
 local State = require("subscription/state")
 
-local Subscription = State:new{
+local Subscription = State:extend{
    last_fetch = nil
 }
 

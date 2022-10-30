@@ -14,7 +14,7 @@ local ViewSubscriptions = require("composers/view_subscriptions")
 local SyncSubscriptions = require("composers/sync_subscriptions")
 local ViewResults = require("composers/view_results")
 
-local Gazette = WidgetContainer:new{
+local Gazette = WidgetContainer:extend{
     name = "gazette",
 }
 

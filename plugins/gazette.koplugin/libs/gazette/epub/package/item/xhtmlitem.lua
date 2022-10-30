@@ -2,7 +2,7 @@ local EpubError = require("libs/gazette/epuberror")
 local Item = require("libs/gazette/epub/package/item")
 local util = require("util")
 
-local XHtmlItem = Item:new {
+local XHtmlItem = Item:extend {
     title = "Untitled Document",
     add_to_nav = true
 }

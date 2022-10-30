@@ -1,6 +1,6 @@
 local Package = require("libs/gazette/epub/package")
 
-local Epub = Package:new{
+local Epub = Package:extend{
 
 }
 

@@ -18,6 +18,8 @@ function State:new(o)
    return o
 end
 
+State.extend = State.new
+
 function State:init()
    self.lua_settings = LuaSettings:open(("%s/%s"):format(self.DATA_STORAGE_DIR, self.STATE_FILE))
 

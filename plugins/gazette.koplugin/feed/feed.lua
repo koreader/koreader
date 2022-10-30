@@ -17,6 +17,8 @@ function Feed:new(o)
     return o
 end
 
+Feed.extend = Feed.new
+
 function Feed:initializeFeedFromXml(xml)
     self.xml = xml
 end

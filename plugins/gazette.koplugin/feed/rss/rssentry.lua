@@ -1,6 +1,6 @@
 local Entry = require("feed/entry")
 
-local RssEntry = Entry:new {
+local RssEntry = Entry:extend {
     title = nil,
     description = nil,
     content = nil,
