@@ -88,12 +88,12 @@ function SyncService.getReadablePath(server)
     return url
 end
 
--- Prepares three files for sync_cb to call to do the actual syncing: 
+-- Prepares three files for sync_cb to call to do the actual syncing:
 -- * local_file (one that is being used)
 -- * income_file (one that has just been downloaded from Cloud to be merged, then to be deleted)
 -- * cached_file (the one that was uploaded in the previous round of syncing)
--- 
--- How it works: 
+--
+-- How it works:
 --
 -- If we simply merge the local file with the income file (ignore duplicates), then items that have been deleted locally
 -- but not remotely (on other devices) will re-emerge in the result file. The same goes for items deleted remotely but

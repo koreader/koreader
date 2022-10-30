@@ -546,7 +546,7 @@ function ReaderStatistics:createDB(conn)
     conn:exec(sql_stmt)
     -- Index
     sql_stmt = [[
-        CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
+        CREATE UNIQUE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
     ]]
     conn:exec(sql_stmt)
 
