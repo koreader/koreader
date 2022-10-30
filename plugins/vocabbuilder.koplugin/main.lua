@@ -337,7 +337,8 @@ function MenuDialog:init()
         }
         local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
         self.sync_dialogue = ButtonDialogTitle:new {
-            title = _("Cloud storage:") .. " " .. server.name .. type .. "\n".. SyncService.getReadablePath(server),
+            title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nTo sync across devices, set them with the same Cloud folder."),
+                         server.name.." "..type, SyncService.getReadablePath(server)),
             info_face = Font:getFace("smallinfofont"),
             buttons = buttons,
         }

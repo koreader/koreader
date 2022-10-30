@@ -55,7 +55,7 @@ function WebDav:uploadFile(url, address, username, password, local_path, callbac
     local code_response = WebDavApi:uploadFile(path, username, password, local_path)
     if code_response >= 200 and code_response < 300 then
         UIManager:show(InfoMessage:new{
-            text = T(_("File upload succeeded:\n%1"), BD.filepath(address)),
+            text = T(_("File uploaded:\n%1"), BD.filepath(address)),
         })
         if callback_close then callback_close() end
     else

@@ -1085,6 +1085,70 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         end,
                         separator = true,
                     },
+                    {
+                        text = _("Cloud sync"),
+                        callback = function(touchmenu_instance)
+                            local server = self.settings.sync_server
+                            local edit_cb = function()
+                                local sync_settings = SyncService:new {}
+                                function sync_settings:onClose()
+                                    UIManager:close(sync_settings)
+                                end
+                                sync_settings.onConfirm = function(sv)
+                                    self.settings.sync_server = sv
+                                    touchmenu_instance:updateItems()
+                                end
+                                UIManager:show(sync_settings)
+                            end
+                            if not server then
+                                edit_cb()
+                                return
+                            end
+                            local dialogue
+                            local delete_button = {
+                                text = _("Delete"),
+                                callback = function()
+                                    UIManager:close(dialogue)
+                                    UIManager:show(ConfirmBox:new{
+                                        text = _("Delete server info?"),
+                                        cancel_text = _("Cancel"),
+                                        cancel_callback = function()
+                                            return
+                                        end,
+                                        ok_text = _("Delete"),
+                                        ok_callback = function()
+                                            self.settings.sync_server = nil
+                                            touchmenu_instance:updateItems()
+                                        end,
+                                    })
+                                end,
+                            }
+                            local edit_button = {
+                                text = _("Edit"),
+                                callback = function()
+                                    UIManager:close(dialogue)
+                                    edit_cb()
+                                end
+                            }
+                            local close_button = {
+                                text = _("Close"),
+                                callback = function()
+                                    UIManager:close(dialogue)
+                                end
+                            }
+                            local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
+                            dialogue = require("ui/widget/buttondialogtitle"):new {
+                                title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nTo sync across devices, set them with the same Cloud folder."),
+                                             server.name.." "..type, SyncService.getReadablePath(server)),
+                                buttons = {
+                                    {delete_button, edit_button, close_button}
+                                },
+                            }
+                            UIManager:show(dialogue)
+                        end,
+                        enabled_func = function() return self.settings.is_enabled end,
+                        keep_menu_open = true,
+                    },
                 },
             },
             {
@@ -1100,69 +1164,6 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                 enabled_func = function()
                     return self.settings.sync_server ~= nil and self.settings.is_enabled and require("ui/network/manager"):isWifiOn()
                 end,
-                keep_menu_open = true,
-            },
-            {
-                text_func = function() return _("Cloud sync") end,
-                callback = function(touchmenu_instance)
-                    local server = self.settings.sync_server
-                    local edit_cb = function()
-                        local sync_settings = SyncService:new {}
-                        function sync_settings:onClose()
-                            UIManager:close(sync_settings)
-                        end
-                        sync_settings.onConfirm = function(sv)
-                            self.settings.sync_server = sv
-                            touchmenu_instance:updateItems()
-                        end
-                        UIManager:show(sync_settings)
-                    end
-                    if not server then
-                        edit_cb()
-                        return
-                    end
-                    local dialogue
-                    local delete_button = {
-                        text = _("Delete"),
-                        callback = function()
-                            UIManager:close(dialogue)
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Delete server info?"),
-                                cancel_text = _("Cancel"),
-                                cancel_callback = function()
-                                    return
-                                end,
-                                ok_text = _("Delete"),
-                                ok_callback = function()
-                                    self.settings.sync_server = nil
-                                    touchmenu_instance:updateItems()
-                                end,
-                            })
-                        end,
-                    }
-                    local edit_button = {
-                        text = _("Edit"),
-                        callback = function()
-                            UIManager:close(dialogue)
-                            edit_cb()
-                        end
-                    }
-                    local close_button = {
-                        text = _("Close"),
-                        callback = function()
-                            UIManager:close(dialogue)
-                        end
-                    }
-                    local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
-                    dialogue = require("ui/widget/buttondialogtitle"):new {
-                        title = _("Cloud storage:") .. " " .. server.name .. type .. "\n" .. SyncService.getReadablePath(server),
-                        buttons = {
-                            {delete_button, edit_button, close_button}
-                        },
-                    }
-                    UIManager:show(dialogue)
-                end,
-                enabled_func = function() return self.settings.is_enabled end,
                 keep_menu_open = true,
                 separator = true,
             },
