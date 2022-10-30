@@ -146,7 +146,7 @@ function SyncService.sync(server, file_path, sync_cb, is_silent)
         local ok, cb_return = pcall(sync_cb, file_path, cached_file_path, income_file_path)
         if not ok or not cb_return then
             show_msg()
-            if not ok then logger.err("sync service callback failed:", cb_return) end
+            if not ok then require("logger").err("sync service callback failed:", cb_return) end
             return
         end
         if server.type == "dropbox" then
