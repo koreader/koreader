@@ -2,7 +2,7 @@ local Item = require("libs/gazette/epub/package/item")
 local EpubError = require("libs/gazette/epuberror")
 local util = require("util")
 
-local Image = Item:new {
+local Image = Item:extend {
    format = nil,
    add_to_nav = false,
 }

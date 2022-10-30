@@ -1,3 +1,3 @@
-local RdfFeed = Feed:new {
+local RdfFeed = Feed:extend {
 
 }

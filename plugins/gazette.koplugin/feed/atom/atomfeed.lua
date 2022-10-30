@@ -3,7 +3,7 @@ local EntryFactory = require("feed/entryfactory")
 local GazetteMessages = require("gazettemessages")
 local util = require("util")
 
-local AtomFeed = Feed:new {
+local AtomFeed = Feed:extend {
     id = nil,
     title = nil,
     subtitle = nil,

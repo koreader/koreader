@@ -1,7 +1,7 @@
 local util = require("util")
 local Resource = require("libs/gazette/resources/resource")
 
-local Image = Resource:new{
+local Image = Resource:extend{
    filename = nil,
    url = nil,
    payload = nil
@@ -22,9 +22,9 @@ function Image:new(o)
       local payload, err = o:fetchUrlContent(o.url)
       if err
       then
-	 return false, err
+     return false, err
       else
-	 o.payload = payload
+     o.payload = payload
       end
    end
 

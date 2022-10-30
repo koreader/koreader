@@ -33,6 +33,8 @@ function Response:new(o)
     return o
 end
 
+Response.extend = Response.new
+
 function Response:canBeConsumed()
     if self:hasCompleted() and
         self:hasHeaders()

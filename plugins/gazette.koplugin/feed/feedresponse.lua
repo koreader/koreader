@@ -1,6 +1,6 @@
 local Response = require("libs/http/response")
 
-local FeedResponse = Response:new {
+local FeedResponse = Response:extend {
 
 }
 

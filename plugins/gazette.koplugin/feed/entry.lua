@@ -13,6 +13,8 @@ function Entry:new(o)
    return o
 end
 
+Entry.extend = Entry.new
+
 function Entry:getTitle()
    return self.title
 end

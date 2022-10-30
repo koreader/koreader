@@ -4,7 +4,7 @@ local GazetteMessages = require("gazettemessages")
 local T = require("ffi/util").template
 local util = require("util")
 
-local RssFeed = Feed:new {
+local RssFeed = Feed:extend {
     title = nil,
     link = nil,
     description = nil,

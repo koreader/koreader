@@ -14,6 +14,8 @@ function Resource:new(o)
    return o
 end
 
+Resource.extend = Resource.new
+
 function Resource:getData()
    return self.data
 end

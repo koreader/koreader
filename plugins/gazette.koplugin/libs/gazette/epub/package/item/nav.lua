@@ -2,7 +2,7 @@ local GazetteMessages = require("gazettemessages")
 local Item = require("libs/gazette/epub/package/item")
 local xml2lua = require("libs/xml2lua/xml2lua")
 
-local Nav = Item:new{
+local Nav = Item:extend{
     title = nil,
     items = nil,
 }

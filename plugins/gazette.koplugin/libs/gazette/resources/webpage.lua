@@ -6,7 +6,7 @@ local RequestFactory = require("libs/http/requestfactory")
 local util = require("util")
 local socket_url = require("socket.url")
 
-local WebPage = Resource:new {
+local WebPage = Resource:extend {
    url = nil,
    base_url = nil,
    title = nil,

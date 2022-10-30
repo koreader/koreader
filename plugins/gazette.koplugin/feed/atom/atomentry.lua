@@ -1,6 +1,6 @@
 local Entry = require("feed/entry")
 
-local AtomEntry = Entry:new {
+local AtomEntry = Entry:extend {
     id = nil,
     updated = nil,
     link = {

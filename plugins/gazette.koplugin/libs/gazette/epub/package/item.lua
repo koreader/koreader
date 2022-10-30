@@ -24,6 +24,8 @@ function Item:new(o)
     return o
 end
 
+Item.extend = Item.new
+
 function Item:generateId()
     self.id = "a" .. md5(self.path) -- IDs can't start with number
 end
