@@ -293,6 +293,8 @@ local KeyValuePage = FocusManager:extend{
     single_page = nil, -- show all items on one single page (and make them small)
     title_bar_align = "left",
     title_bar_left_icon = nil,
+    title_bar_left_icon_tap_callback = nil,
+    title_bar_left_icon_hold_callback = nil,
 }
 
 function KeyValuePage:init()
@@ -452,8 +454,8 @@ function KeyValuePage:init()
         bottom_line_color = Blitbuffer.COLOR_DARK_GRAY,
         bottom_line_h_padding = padding,
         left_icon = self.title_bar_left_icon,
-        left_icon_tap_callback = function() self:onLeftButtonTap() end,
-        left_icon_hold_callback = function() self:onLeftButtonHold() end,
+        left_icon_tap_callback = self.title_bar_left_icon_tap_callback,
+        left_icon_hold_callback = self.title_bar_left_icon_hold_callback,
         close_callback = function() self:onClose() end,
         show_parent = self.show_parent or self,
     }
@@ -788,12 +790,6 @@ end
 
 function KeyValuePage:setTitleBarLeftIcon(icon)
     self.title_bar:setLeftIcon(icon)
-end
-
-function KeyValuePage:onLeftButtonTap() -- to be overriden and implemented by the caller
-end
-
-function KeyValuePage:onLeftButtonHold() -- to be overriden and implemented by the caller
 end
 
 function KeyValuePage:onClose()
