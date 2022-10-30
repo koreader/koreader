@@ -250,9 +250,9 @@ local SPAN_COLORS = {
     { Blitbuffer.COLOR_BLACK, Blitbuffer.COLOR_GRAY_E },
     { Blitbuffer.COLOR_BLACK, Blitbuffer.COLOR_LIGHT_GRAY },
     { Blitbuffer.COLOR_BLACK, Blitbuffer.COLOR_GRAY },
-    { Blitbuffer.COLOR_WHITE, Blitbuffer.COLOR_WEB_GRAY },
+    { Blitbuffer.COLOR_WHITE, Blitbuffer.COLOR_GRAY_9 },
     { Blitbuffer.COLOR_WHITE, Blitbuffer.COLOR_DARK_GRAY },
-    { Blitbuffer.COLOR_WHITE, Blitbuffer.COLOR_DIM_GRAY },
+    { Blitbuffer.COLOR_WHITE, Blitbuffer.COLOR_GRAY_5 },
     { Blitbuffer.COLOR_WHITE, Blitbuffer.COLOR_BLACK },
 }
 

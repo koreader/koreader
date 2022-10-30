@@ -22,7 +22,7 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local LINE_COLOR = Blitbuffer.COLOR_WEB_GRAY
+local LINE_COLOR = Blitbuffer.COLOR_GRAY_9
 local BG_COLOR = Blitbuffer.COLOR_LIGHT_GRAY
 
 -- Oh, hey, this one actually *is* an InputContainer!

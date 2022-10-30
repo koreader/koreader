@@ -332,7 +332,7 @@ function BookMapRow:init()
             end
             local color = Blitbuffer.COLOR_BLACK
             if self.current_session_duration and self.read_pages[page][2] < self.current_session_duration then
-                color = Blitbuffer.COLOR_DIM_GRAY
+                color = Blitbuffer.COLOR_GRAY_5
             end
             table.insert(self.pages_markers, {
                 x = x, y = y,
