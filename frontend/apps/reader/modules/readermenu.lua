@@ -76,16 +76,18 @@ function ReaderMenu:init()
     else
         self.activation_menu = "swipe_tap"
     end
+
+    -- delegate gesture listener to readerui, NOP our own
+    self.ges_events = nil
 end
+
+function ReaderMenu:onGesture() end
 
 function ReaderMenu:getPreviousFile()
     return require("readhistory"):getPreviousFile(self.ui.document.file)
 end
 
 function ReaderMenu:onReaderReady()
-    -- delegate gesture listener to readerui
-    self.ges_events = {}
-    self.onGesture = nil
     if not Device:isTouchDevice() then return end
 
     local DTAP_ZONE_MENU = G_defaults:readSetting("DTAP_ZONE_MENU")

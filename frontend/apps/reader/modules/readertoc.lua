@@ -55,7 +55,12 @@ function ReaderToc:init()
 
     self:resetToc()
     self.ui.menu:registerToMainMenu(self)
+
+    -- NOP our own gesture handling
+    self.ges_events = nil
 end
+
+function ReaderToc:onGesture() end
 
 function ReaderToc:onReadSettings(config)
     self.toc_ticks_ignored_levels = config:readSetting("toc_ticks_ignored_levels") or {}

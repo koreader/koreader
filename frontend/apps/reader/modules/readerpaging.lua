@@ -118,16 +118,18 @@ function ReaderPaging:init()
     end
     self.pan_interval = time.s(1 / self.pan_rate)
     self.number_of_pages = self.ui.document.info.number_of_pages
+
+    -- delegate gesture listener to readerui, NOP our own
+    self.ges_events = nil
 end
+
+function ReaderPaging:onGesture() end
 
 function ReaderPaging:onReaderReady()
     self:setupTouchZones()
 end
 
 function ReaderPaging:setupTouchZones()
-    -- delegate gesture listener to readerui
-    self.ges_events = {}
-    self.onGesture = nil
     if not Device:isTouchDevice() then return end
 
     local forward_zone, backward_zone = self.view:getTapZones()

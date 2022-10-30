@@ -230,13 +230,14 @@ function ReaderHighlight:init()
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
     end)
+
+    -- delegate gesture listener to readerui, NOP our own
+    self.ges_events = nil
 end
 
-function ReaderHighlight:setupTouchZones()
-    -- delegate gesture listener to readerui
-    self.ges_events = {}
-    self.onGesture = nil
+function ReaderHighlight:onGesture() end
 
+function ReaderHighlight:setupTouchZones()
     if not Device:isTouchDevice() then return end
     local hold_pan_rate = G_reader_settings:readSetting("hold_pan_rate")
     if not hold_pan_rate then

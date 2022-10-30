@@ -126,7 +126,12 @@ function ReaderFont:init()
         return self.font_face
     end
     self.ui.menu:registerToMainMenu(self)
+
+    -- NOP our own gesture handling
+    self.ges_events = nil
 end
+
+function ReaderFont:onGesture() end
 
 function ReaderFont:onSetDimensions(dimen)
     self.dimen = dimen
