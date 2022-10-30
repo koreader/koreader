@@ -199,7 +199,7 @@ function ProgressWidget:updateStyle(thick, height)
         self.bordersize = 0
         self.radius = 0
         self.bgcolor = Blitbuffer.COLOR_GRAY
-        self.fillcolor = Blitbuffer.COLOR_DIM_GRAY
+        self.fillcolor = Blitbuffer.COLOR_GRAY_5
         self.ticks = nil
         self._orig_margin_v = nil
         self._orig_bordersize = nil

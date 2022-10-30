@@ -180,13 +180,11 @@ DMINIBAR_CONTAINER_HEIGHT = 14,  -- Larger means more padding at the bottom, at 
 -- insensitive sort
 DALPHA_SORT_CASE_INSENSITIVE = true,
 
--- Light parameter for Kobo
-KOBO_LIGHT_ON_START = -2,           -- -1, -2 or 0-100.
-                                   -- -1 uses previous koreader session saved brightness
-                                   -- -2 uses 'Kobo eReader.conf' brighness,
-                                   -- other sets light on start to a fix brighness
-KOBO_SYNC_BRIGHTNESS_WITH_NICKEL = true,  -- Save brightness set in KOreader
-                                         -- with nickel's 'Kobo eReader.conf'
+-- Frontlight behavior on Kobo
+KOBO_LIGHT_ON_START = -2,          -- -1, -2 or 0-100.
+                                   -- -1 uses the brightness set by KOReader (if any, 20% otherwise)
+                                   -- -2 uses the brightness set in Nickel
+KOBO_SYNC_BRIGHTNESS_WITH_NICKEL = true,  -- Update Nickel's config to match our own
 
 -- Network proxy settings
 -- proxy url should be a string in the format of "http://localhost:3128"
