@@ -124,7 +124,9 @@ describe("UIManager spec", function()
         assert.are.same('quux', UIManager._task_queue[4].action)
     end)
 
-    it("should insert new tasks with same times after existing tasks", function()
+    it("should insert new tasks with same times before existing tasks", function()
+        local ffiutil = require("ffi/util")
+
         now = time.now()
         UIManager:quit()
 
@@ -136,10 +138,13 @@ describe("UIManager spec", function()
         UIManager:schedule(now + time.s(5), "5s");
         assert.are.same("5s", UIManager._task_queue[2].action)
 
-        -- insert task in place of "10s", as it'll expire later
-        -- NOTE: Can't use 10, as time.now, which is used internally, may or may not have moved,
-        --       depending on host's performance and clock granularity (especially if host is fast and/or COARSE is available).
-        UIManager:scheduleIn(11, 'foo') -- is a bit later than "10s", as time.now() is used internally
+        -- insert task in place of "10s", as it'll expire shortyl afer "10s"
+        -- NOTE: Can't use this here right now, as time.now, which is used internally,
+        -- may or may not have moved, depending on host's performance and clock granularity
+        -- (especially if host is fast and/or COARSE is available).
+        -- But a short wait (with the fts resolution) fixes this here.
+        ffiutil.usleep(1)
+        UIManager:scheduleIn(10, 'foo') -- is a bit later than "10s", as time.now() is used internally
         assert.are.same('foo', UIManager._task_queue[1].action)
 
         -- insert task in place of "10s", which was just shifted by foo
