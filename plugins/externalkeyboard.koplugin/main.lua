@@ -90,6 +90,7 @@ local ExternalKeyboard = WidgetContainer:extend{
     original_device_values = nil,
     keyboard_fds = {},
     connected_keyboards = 0,
+    startup = true,
 }
 
 function ExternalKeyboard:init()
@@ -112,7 +113,14 @@ function ExternalKeyboard:init()
         role = USB_ROLE_HOST
     end
     if role == USB_ROLE_HOST then
-        self:findAndSetupKeyboards()
+        -- NOTE: On startup, if the FM is not in classic mode, the coverbrowser plugin does a funky hostile takeover at runtime.
+        --       Delay our own stuff to make sure we affect the final widget.
+        if ExternalKeyboard.startup then
+            UIManager:nextTick(self.findAndSetupKeyboards, self)
+            ExternalKeyboard.startup = nil
+        else
+            self:findAndSetupKeyboards()
+        end
     end
 end
 
@@ -333,9 +341,6 @@ function ExternalKeyboard:showHelp()
     UIManager:show(InfoMessage:new {
         text = _([[
 Note that in the OTG mode the device would not be recognized as a USB drive by a computer.
-
-Troubleshooting:
-- If the keyboard is not recognized after plugging it in, try switching the USB mode to regular and back to OTG again.
 ]]),
     })
 end
