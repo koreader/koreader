@@ -329,10 +329,13 @@ function ExternalKeyboard:setupKeyboard(event_path)
     Device.hasKeyboard = yes
     Device.hasDPad = has_dpad_func
 
-    UIManager:show(InfoMessage:new{
-        text = _("Keyboard connected"),
-        timeout = 1,
-    })
+    -- Only show this once
+    if ExternalKeyboard.connected_keyboards == 1 then
+        UIManager:show(InfoMessage:new{
+            text = _("Keyboard connected"),
+            timeout = 1,
+        })
+    end
     InputText.initInputEvents()
     UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
 end
