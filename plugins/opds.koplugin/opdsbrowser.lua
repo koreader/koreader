@@ -97,7 +97,8 @@ function OPDSBrowser:genItemTableFromRoot()
     local item_table = {
         {   -- calibre is the first and non-deletable item
             text       = self.calibre_name,
-            url        = string.format("http://%s:%d/opds", self.calibre_opds.host, self.calibre_opds.port),
+            url        = self.calibre_opds.host and self.calibre_opds.port and
+                         string.format("http://%s:%d/opds", self.calibre_opds.host, self.calibre_opds.port),
             username   = self.calibre_opds.username,
             password   = self.calibre_opds.password,
             searchable = false,
