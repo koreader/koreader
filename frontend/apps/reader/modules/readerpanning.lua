@@ -13,6 +13,14 @@ local ReaderPanning = InputContainer:extend{
 }
 
 function ReaderPanning:init()
+    self:registerKeyEvents(true)
+    -- NOP our own gesture handling
+    self.ges_events = nil
+end
+
+function ReaderPanning:onGesture() end
+
+function ReaderPanning:registerKeyEvents(init)
     if Device:hasKeyboard() then
         self.key_events = {
             -- these will all generate the same event, just with different arguments
@@ -37,12 +45,13 @@ function ReaderPanning:init()
                 args = {1,  0}
             },
         }
+    elseif not init then
+        self.key_events = {}
     end
-    -- NOP our own gesture handling
-    self.ges_events = nil
 end
 
-function ReaderPanning:onGesture() end
+ReaderPanning.onPhysicalKeyboardConnected = ReaderPanning.registerKeyEvents
+ReaderPanning.onPhysicalKeyboardDisconnected = ReaderPanning.registerKeyEvents
 
 function ReaderPanning:onPanning(args, _)
     local dx, dy = unpack(args)

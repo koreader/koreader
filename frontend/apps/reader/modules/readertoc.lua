@@ -35,9 +35,7 @@ local ReaderToc = InputContainer:extend{
 }
 
 function ReaderToc:init()
-    if Device:hasKeyboard() then
-        self.key_events.ShowToc = { { "T" } }
-    end
+    self:registerKeyEvents(true)
 
     if G_reader_settings:hasNot("toc_items_per_page") then
         -- The TOC items per page and items' font size can now be
@@ -61,6 +59,17 @@ function ReaderToc:init()
 end
 
 function ReaderToc:onGesture() end
+
+function ReaderToc:registerKeyEvents(init)
+    if Device:hasKeyboard() then
+        self.key_events.ShowToc = { { "T" } }
+    elseif not init then
+        self.key_events.ShowToc = nil
+    end
+end
+
+ReaderToc.onPhysicalKeyboardConnected = ReaderToc.registerKeyEvents
+ReaderToc.onPhysicalKeyboardDisconnected = ReaderToc.registerKeyEvents
 
 function ReaderToc:onReadSettings(config)
     self.toc_ticks_ignored_levels = config:readSetting("toc_ticks_ignored_levels") or {}

@@ -31,22 +31,7 @@ local ReaderFont = InputContainer:extend{
 }
 
 function ReaderFont:init()
-    if Device:hasKeyboard() then
-        -- add shortcut for keyboard
-        self.key_events = {
-            ShowFontMenu = { { "F" } },
-            IncreaseSize = {
-                { "Shift", Input.group.PgFwd },
-                event = "ChangeSize",
-                args = 0.5
-            },
-            DecreaseSize = {
-                { "Shift", Input.group.PgBack },
-                event = "ChangeSize",
-                args = -0.5
-            },
-        }
-    end
+    self:registerKeyEvents(true)
     -- Build face_table for menu
     self.face_table = {}
     -- Font settings
@@ -132,6 +117,30 @@ function ReaderFont:init()
 end
 
 function ReaderFont:onGesture() end
+
+function ReaderFont:registerKeyEvents(init)
+    if Device:hasKeyboard() then
+        -- add shortcut for keyboard
+        self.key_events = {
+            ShowFontMenu = { { "F" } },
+            IncreaseSize = {
+                { "Shift", Input.group.PgFwd },
+                event = "ChangeSize",
+                args = 0.5
+            },
+            DecreaseSize = {
+                { "Shift", Input.group.PgBack },
+                event = "ChangeSize",
+                args = -0.5
+            },
+        }
+    elseif not init then
+        self.key_events = {}
+    end
+end
+
+ReaderFont.onPhysicalKeyboardConnected = ReaderFont.registerKeyEvents
+ReaderFont.onPhysicalKeyboardDisconnected = ReaderFont.registerKeyEvents
 
 function ReaderFont:onSetDimensions(dimen)
     self.dimen = dimen

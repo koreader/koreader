@@ -8,6 +8,14 @@ local ReaderRotation = InputContainer:extend{
 }
 
 function ReaderRotation:init()
+    self:registerKeyEvents(true)
+    -- NOP our own gesture handling
+    self.ges_events = nil
+end
+
+function ReaderRotation:onGesture() end
+
+function ReaderRotation:registerKeyEvents(init)
     if Device:hasKeyboard() then
         self.key_events = {
             -- these will all generate the same event, just with different arguments
@@ -22,12 +30,13 @@ function ReaderRotation:init()
                 args = 90
             },
         }
+    elseif not init then
+        self.key_events = {}
     end
-    -- NOP our own gesture handling
-    self.ges_events = nil
 end
 
-function ReaderRotation:onGesture() end
+ReaderRotation.onPhysicalKeyboardConnected = ReaderRotation.registerKeyEvents
+ReaderRotation.onPhysicalKeyboardDisconnected = ReaderRotation.registerKeyEvents
 
 --- @todo Reset rotation on new document, maybe on new page?
 

@@ -56,6 +56,21 @@ function ReaderMenu:init()
 
     self.registered_widgets = {}
 
+    self:registerKeyEvents(true)
+
+    if G_reader_settings:has("activate_menu") then
+        self.activation_menu = G_reader_settings:readSetting("activate_menu")
+    else
+        self.activation_menu = "swipe_tap"
+    end
+
+    -- delegate gesture listener to readerui, NOP our own
+    self.ges_events = nil
+end
+
+function ReaderMenu:onGesture() end
+
+function ReaderMenu:registerKeyEvents(init)
     if Device:hasKeys() then
         if Device:isTouchDevice() then
             self.key_events.TapShowMenu = { { "Menu" } }
@@ -70,18 +85,14 @@ function ReaderMenu:init()
                 self.key_events.ShowMenu = { { { "Menu", "Right" } } }
             end
         end
+    elseif not init then
+        self.key_events.TapShowMenu = nil
+        self.key_events.ShowMenu = nil
     end
-    if G_reader_settings:has("activate_menu") then
-        self.activation_menu = G_reader_settings:readSetting("activate_menu")
-    else
-        self.activation_menu = "swipe_tap"
-    end
-
-    -- delegate gesture listener to readerui, NOP our own
-    self.ges_events = nil
 end
 
-function ReaderMenu:onGesture() end
+ReaderMenu.onPhysicalKeyboardConnected = ReaderMenu.registerKeyEvents
+ReaderMenu.onPhysicalKeyboardDisconnected = ReaderMenu.registerKeyEvents
 
 function ReaderMenu:getPreviousFile()
     return require("readhistory"):getPreviousFile(self.ui.document.file)
