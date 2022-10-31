@@ -48,10 +48,10 @@ describe("device module", function()
     end)
 
     describe("kobo", function()
-        local TimeVal
+        local time
         local NickelConf
         setup(function()
-            TimeVal = require("ui/timeval")
+            time = require("ui/time")
             NickelConf = require("device/kobo/nickel_conf")
         end)
 
@@ -98,13 +98,13 @@ describe("device module", function()
                 type = C.EV_ABS,
                 code = C.ABS_X,
                 value = y,
-                time = TimeVal:realtime(),
+                time = time:realtime(),
             }
             local ev_y = {
                 type = C.EV_ABS,
                 code = C.ABS_Y,
                 value = Screen:getWidth() - 1 - x,
-                time = TimeVal:realtime(),
+                time = time:realtime(),
             }
 
             kobo_dev.input:eventAdjustHook(ev_x)
