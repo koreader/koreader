@@ -136,44 +136,39 @@ describe("UIManager spec", function()
         UIManager:schedule(now + time.s(5), "5s");
         assert.are.same("5s", UIManager._task_queue[2].action)
 
-        -- insert task at the end after "10s"
+        -- insert task in place of "10s", as it'll expire later
         -- NOTE: Can't use 10, as time.now, which is used internally, may or may not have moved,
         --       depending on host's performance and clock granularity (especially if host is fast and/or COARSE is available).
-        UIManager:scheduleIn(10, 'foo') -- is a bit later than "10s", as time.now() is used internally
+        UIManager:scheduleIn(11, 'foo') -- is a bit later than "10s", as time.now() is used internally
         assert.are.same('foo', UIManager._task_queue[1].action)
 
-        -- insert task at the second last position after "10s"
+        -- insert task in place of "10s", which was just shifted by foo
         UIManager:schedule(now + time.s(10), 'bar')
         assert.are.same('bar', UIManager._task_queue[2].action)
 
-        -- insert task at the second last position after "bar"
+        -- insert task in place of "bar"
         UIManager:schedule(now + time.s(10), 'baz')
         assert.are.same('baz', UIManager._task_queue[2].action)
 
-        -- insert task after "5s"
+        -- insert task in place of "5s"
         UIManager:schedule(now + time.s(5), 'nix')
         assert.are.same('nix', UIManager._task_queue[5].action)
-        -- "barba" is later than "nix" anyway
+        -- "barba" replaces "nix"
         UIManager:scheduleIn(5, 'barba') -- is a bit later than "5s", as time.now() is used internally
         assert.are.same('barba', UIManager._task_queue[5].action)
 
-        -- "papa" is shortly after "now"
+        -- "mama is sheduled now and as such inserted in "now"'s place
+        UIManager:schedule(now, 'mama')
+        assert.are.same('mama', UIManager._task_queue[8].action)
+
+        -- "papa" is shortly after "now", so inserted in its place
+        -- NOTE: For the same reason as above, test this last, as time.now may not have moved...
         UIManager:nextTick('papa') -- is a bit later than "now"
         assert.are.same('papa', UIManager._task_queue[8].action)
 
-        -- "mama is shedule now and inserted after "now"
-        UIManager:schedule(now, 'mama')
-        assert.are.same('mama', UIManager._task_queue[9].action)
-
-        -- "papa" is shortly after "now"
-        -- NOTE: For the same reason as above, test this last, as time.now may not have moved...
-        UIManager:nextTick('papa1') -- is a bit later than "now"
-        assert.are.same('papa1', UIManager._task_queue[8].action)
-
-        -- "letta" is shortly after "papa"
+        -- "letta" is shortly after "papa", so inserted in its place
         UIManager:tickAfterNext('letta')
         assert.are.same("function", type(UIManager._task_queue[8].action))
-
     end)
 
     it("should unschedule all the tasks with the same action", function()
