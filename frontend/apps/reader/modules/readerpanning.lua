@@ -44,16 +44,12 @@ end
 
 function ReaderPanning:onGesture() end
 
-function ReaderPanning:onSetDimensions(dimensions)
-    self.dimen = dimensions
-end
-
 function ReaderPanning:onPanning(args, _)
     local dx, dy = unpack(args)
     -- for now, bounds checking/calculation is done in the view
     self.view:PanningUpdate(
-        dx * self.panning_steps.normal * self.dimen.w * (1/100),
-        dy * self.panning_steps.normal * self.dimen.h * (1/100))
+        dx * self.panning_steps.normal * self.view.visible_area.w * (1/100),
+        dy * self.panning_steps.normal * self.view.visible_area.h * (1/100))
     return true
 end
 
