@@ -1168,7 +1168,6 @@ function Menu:switchItemTable(new_title, new_item_table, itemnumber, itemmatch)
 end
 
 function Menu:onScreenResize(dimen)
-    --- @todo Investigate: could this cause minor memory leaks?
     self:init()
     return false
 end

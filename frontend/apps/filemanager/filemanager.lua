@@ -65,6 +65,13 @@ function FileManager:onSetRotationMode(rotation)
     return true
 end
 
+function FileManager:onPhysicalKeyboardConnected()
+    -- So that the key navigation shortcuts apply right away.
+    -- This will also naturally call registerKeyEvents
+    self:reinit(self.path, self.focused_file)
+end
+FileManager.onPhysicalKeyboardDisconnected = FileManager.onPhysicalKeyboardConnected
+
 function FileManager:setRotationMode()
     local locked = G_reader_settings:isTrue("lock_rotation")
     if not locked then
@@ -462,6 +469,11 @@ function FileManager:setupLayout()
         ui = self
     }
 
+    self:registerKeyEvents()
+end
+
+function FileManager:registerKeyEvents()
+    -- NOTE: There's no init vs. runtime distinction here, because we go through reinit at runtime.
     if Device:hasKeys() then
         self.key_events.Home = { { "Home" } }
         -- Override the menu.lua way of handling the back key
@@ -470,6 +482,10 @@ function FileManager:setupLayout()
             -- Also remove the handler assigned to the "Back" key by menu.lua
             self.file_chooser.key_events.Close = nil
         end
+    else
+        self.key_events.Home = nil
+        self.file_chooser.key_events.Back = nil
+        self.file_chooser.key_events.Close = nil
     end
 end
 
