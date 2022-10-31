@@ -107,6 +107,16 @@ function TextViewer:init()
                     }
                 },
             },
+            MultiSwipe = {
+                GestureRange:new{
+                    ges = "multiswipe",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
+                },
+            },
         }
     end
 
@@ -291,6 +301,14 @@ function TextViewer:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.frame.dimen) then
         self:onClose()
     end
+    return true
+end
+
+function TextViewer:onMultiSwipe(arg, ges_ev)
+    -- For consistency with other fullscreen widgets where swipe south can't be
+    -- used to close and where we then allow any multiswipe to close, allow any
+    -- multiswipe to close this widget too.
+    self:onClose()
     return true
 end
 
