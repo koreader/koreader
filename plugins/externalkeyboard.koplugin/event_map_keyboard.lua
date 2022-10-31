@@ -67,6 +67,6 @@ return {
     [119] = "Pause",
     [125] = "LMeta", -- Meta, Win, Cmd, etc.
     [126] = "RMeta",
-    [127] = "Compose",
-    [139] = "Menu",
+    [127] = "Menu", -- Technically KEY_COMPOSE
+    [139] = "Menu", -- Actually KEY_MENU
 }
