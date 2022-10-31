@@ -26,25 +26,7 @@ local ReaderLink = InputContainer:extend{
 }
 
 function ReaderLink:init()
-    if Device:hasKeys() then
-        self.key_events = {
-            SelectNextPageLink = {
-                { "Tab" },
-                event = "SelectNextPageLink",
-            },
-            SelectPrevPageLink = {
-                { "Shift", "Tab" },
-                { "Sym", "Tab" }, -- Shift or Sym + Tab
-                event = "SelectPrevPageLink",
-            },
-            GotoSelectedPageLink = {
-                { "Press" },
-                event = "GotoSelectedPageLink",
-            },
-            -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
-            -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
-        }
-    end
+    self:registerKeyEvents(true)
     if Device:isTouchDevice() then
         self.ui:registerTouchZones({
             {
@@ -112,6 +94,33 @@ function ReaderLink:init()
 end
 
 function ReaderLink:onGesture() end
+
+function ReaderLink:registerKeyEvents(init)
+    if Device:hasKeys() then
+        self.key_events = {
+            SelectNextPageLink = {
+                { "Tab" },
+                event = "SelectNextPageLink",
+            },
+            SelectPrevPageLink = {
+                { "Shift", "Tab" },
+                { "Sym", "Tab" }, -- Shift or Sym + Tab
+                event = "SelectPrevPageLink",
+            },
+            GotoSelectedPageLink = {
+                { "Press" },
+                event = "GotoSelectedPageLink",
+            },
+            -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
+            -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
+        }
+    elseif not init then
+        self.key_events = {}
+    end
+end
+
+ReaderLink.onPhysicalKeyboardConnected = ReaderLink.registerKeyEvents
+ReaderLink.onPhysicalKeyboardDisconnected = ReaderLink.registerKeyEvents
 
 function ReaderLink:onReadSettings(config)
     -- called when loading new document
