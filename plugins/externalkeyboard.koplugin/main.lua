@@ -130,15 +130,14 @@ function ExternalKeyboard:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Enable OTG mode to connect peripherals"),
-                keep_menu_open = true,
                 checked_func = function()
                     return self:getOTGRole() == USB_ROLE_HOST
                 end,
                 callback = function(touchmenu_instance)
                     local role = self:getOTGRole()
                     local new_role = (role == USB_ROLE_DEVICE) and USB_ROLE_HOST or USB_ROLE_DEVICE
-                    self:setOTGRole(new_role)
-                    touchmenu_instance:updateItems()
+                    -- Let the menu close itself first, as the event cascade might reinit stuff and close it anyway
+                    UIManager:nextTick(self.setOTGRole, self, new_role)
                 end,
             },
             {
