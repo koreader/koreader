@@ -91,6 +91,10 @@ local ReaderZooming = InputContainer:extend{
 }
 
 function ReaderZooming:init()
+    self:registerKeyEvents(true)
+end
+
+function ReaderZooming:registerKeyEvents(init)
     if Device:hasKeyboard() then
         self.key_events = {
             ZoomIn = {
@@ -139,8 +143,13 @@ function ReaderZooming:init()
                 args = "manual",
             },
         }
+    elseif not init then
+        self.key_events = {}
     end
 end
+
+ReaderZooming.onPhysicalKeyboardConnected = ReaderZooming.registerKeyEvents
+ReaderZooming.onPhysicalKeyboardDisconnected = ReaderZooming.registerKeyEvents
 
 -- Conversions between genus/type combos and zoom_mode...
 function ReaderZooming:mode_to_combo(zoom_mode)

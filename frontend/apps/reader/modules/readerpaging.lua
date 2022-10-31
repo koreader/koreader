@@ -41,6 +41,17 @@ local ReaderPaging = InputContainer:extend{
 }
 
 function ReaderPaging:init()
+    self:registerKeyEvents(true)
+    self.pan_interval = time.s(1 / self.pan_rate)
+    self.number_of_pages = self.ui.document.info.number_of_pages
+
+    -- delegate gesture listener to readerui, NOP our own
+    self.ges_events = nil
+end
+
+function ReaderPaging:onGesture() end
+
+function ReaderPaging:registerKeyEvents(init)
     if Device:hasKeys() then
         self.key_events.GotoNextPage = {
             { { "RPgFwd", "LPgFwd", not Device:hasFewKeys() and "Right" } },
@@ -62,7 +73,11 @@ function ReaderPaging:init()
             event = "GotoPosRel",
             args = -1,
         }
-
+    elseif not init then
+        self.key_events.GotoNextPage = nil
+        self.key_events.GotoPrevPage = nil
+        self.key_events.GotoNextPos = nil
+        self.key_events.GotoPrevPos = nil
     end
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
@@ -115,15 +130,22 @@ function ReaderPaging:init()
             event = "GotoPercent",
             args = 100,
         }
+    elseif not init then
+        self.key_events.GotoFirst = nil
+        self.key_events.Goto11 = nil
+        self.key_events.Goto22 = nil
+        self.key_events.Goto33 = nil
+        self.key_events.Goto44 = nil
+        self.key_events.Goto55 = nil
+        self.key_events.Goto66 = nil
+        self.key_events.Goto77 = nil
+        self.key_events.Goto88 = nil
+        self.key_events.GotoLast = nil
     end
-    self.pan_interval = time.s(1 / self.pan_rate)
-    self.number_of_pages = self.ui.document.info.number_of_pages
-
-    -- delegate gesture listener to readerui, NOP our own
-    self.ges_events = nil
 end
 
-function ReaderPaging:onGesture() end
+ReaderPaging.onPhysicalKeyboardConnected = ReaderPaging.registerKeyEvents
+ReaderPaging.onPhysicalKeyboardDisconnected = ReaderPaging.registerKeyEvents
 
 function ReaderPaging:onReaderReady()
     self:setupTouchZones()

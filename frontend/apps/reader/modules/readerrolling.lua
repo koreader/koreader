@@ -57,7 +57,29 @@ local ReaderRolling = InputContainer:extend{
 }
 
 function ReaderRolling:init()
-    self.key_events = {}
+    self:registerKeyEvents(true)
+    self.pan_interval = time.s(1 / self.pan_rate)
+
+    table.insert(self.ui.postInitCallback, function()
+        self.rendering_hash = self.ui.document:getDocumentRenderingHash()
+        self.ui.document:_readMetadata()
+    end)
+    table.insert(self.ui.postReaderCallback, function()
+        self:updatePos()
+        -- Disable crengine internal history, with required redraw
+        self.ui.document:enableInternalHistory(false)
+        self:onRedrawCurrentView()
+    end)
+    self.ui.menu:registerToMainMenu(self)
+    self.batched_update_count = 0
+
+    -- delegate gesture listener to readerui, NOP our own
+    self.ges_events = nil
+end
+
+function ReaderRolling:onGesture() end
+
+function ReaderRolling:registerKeyEvents(init)
     if Device:hasKeys() then
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd", "Right" } },
@@ -69,6 +91,9 @@ function ReaderRolling:init()
             event = "GotoViewRel",
             args = -1,
         }
+    elseif not init then
+        self.key_events.GotoNextView = nil
+        self.key_events.GotoPrevView = nil
     end
     if Device:hasDPad() then
         self.key_events.MoveUp = {
@@ -81,6 +106,9 @@ function ReaderRolling:init()
             event = "Panning",
             args = {0,  1},
         }
+    elseif not init then
+        self.key_events.MoveUp = nil
+        self.key_events.MoveDown = nil
     end
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
@@ -133,27 +161,22 @@ function ReaderRolling:init()
             event = "GotoPercent",
             args = 100,
         }
+    elseif not init then
+        self.key_events.GotoFirst = nil
+        self.key_events.Goto11 = nil
+        self.key_events.Goto22 = nil
+        self.key_events.Goto33 = nil
+        self.key_events.Goto44 = nil
+        self.key_events.Goto55 = nil
+        self.key_events.Goto66 = nil
+        self.key_events.Goto77 = nil
+        self.key_events.Goto88 = nil
+        self.key_events.GotoLast = nil
     end
-    self.pan_interval = time.s(1 / self.pan_rate)
-
-    table.insert(self.ui.postInitCallback, function()
-        self.rendering_hash = self.ui.document:getDocumentRenderingHash()
-        self.ui.document:_readMetadata()
-    end)
-    table.insert(self.ui.postReaderCallback, function()
-        self:updatePos()
-        -- Disable crengine internal history, with required redraw
-        self.ui.document:enableInternalHistory(false)
-        self:onRedrawCurrentView()
-    end)
-    self.ui.menu:registerToMainMenu(self)
-    self.batched_update_count = 0
-
-    -- delegate gesture listener to readerui, NOP our own
-    self.ges_events = nil
 end
 
-function ReaderRolling:onGesture() end
+ReaderRolling.onPhysicalKeyboardConnected = ReaderRolling.registerKeyEvents
+ReaderRolling.onPhysicalKeyboardDisconnected = ReaderRolling.registerKeyEvents
 
 function ReaderRolling:onReadSettings(config)
     -- 20180503: some fix in crengine has changed the way the DOM is built

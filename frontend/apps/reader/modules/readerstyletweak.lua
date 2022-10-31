@@ -50,9 +50,7 @@ function TweakInfoWidget:init()
             }
         }
     end
-    if Device:hasKeys() then
-        self.key_events.Close = { { Device.input.group.Back } }
-    end
+    self:registerKeyEvents(true)
 
     local content = VerticalGroup:new{
         TextBoxWidget:new{
@@ -167,6 +165,17 @@ function TweakInfoWidget:init()
         self.movable
     }
 end
+
+function TweakInfoWidget:registerKeyEvents(init)
+    if Device:hasKeys() then
+        self.key_events.Close = { { Device.input.group.Back } }
+    elseif not init then
+        self.key_events.Close = nil
+    end
+end
+
+TweakInfoWidget.onPhysicalKeyboardConnected = TweakInfoWidget.registerKeyEvents
+TweakInfoWidget.onPhysicalKeyboardDisconnected = TweakInfoWidget.registerKeyEvents
 
 function TweakInfoWidget:onShow()
     UIManager:setDirty(self, function()
