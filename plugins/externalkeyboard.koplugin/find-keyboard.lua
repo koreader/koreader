@@ -80,19 +80,27 @@ local function analyze_key_capabilities(long_bitmap_arr)
     }
 end
 
+function FindKeyboard:check(event_file_name)
+    local capabilities_long_bitmap_arr = read_key_capabilities("/sys/class/input/" .. event_file_name)
+    if capabilities_long_bitmap_arr then
+        local keyboard_info = analyze_key_capabilities(capabilities_long_bitmap_arr)
+        if keyboard_info.is_keyboard then
+            return {
+                event_path = "/dev/input/" .. event_file_name,
+                has_dpad = keyboard_info.has_dpad
+            }
+        end
+    end
+    return nil
+end
+
 function FindKeyboard:find()
     local keyboards = {}
     for event_file_name in lfs.dir("/sys/class/input/") do
         if event_file_name:match("event.*") then
-            local capabilities_long_bitmap_arr = read_key_capabilities("/sys/class/input/" .. event_file_name)
-            if capabilities_long_bitmap_arr then
-                local keyboard_info = analyze_key_capabilities(capabilities_long_bitmap_arr)
-                if keyboard_info.is_keyboard then
-                    table.insert(keyboards, {
-                        event_path = "/dev/input/" .. event_file_name,
-                        has_dpad = keyboard_info.has_dpad
-                    })
-                end
+            local kb = self:check(event_file_name)
+            if kb then
+                table.insert(keyboards, kb)
             end
         end
     end

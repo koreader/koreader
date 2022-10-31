@@ -56,12 +56,15 @@ function UIManager:init()
         Power = function(input_event)
             Device:onPowerEvent(input_event)
         end,
-        -- This is for OTG input devices
-        UsbDevicePlugIn = function()
-            self:broadcastEvent(Event:new("UsbDevicePlugIn"))
+        -- This is for hotpluggable evdev input devices (e.g., USB OTG)
+        UsbDevicePlugIn = function(input_event)
+            -- Retrieve the argument set by Input:handleKeyBoardEv
+            local evdev = table.remove(Input.fake_event_args[input_event])
+            self:broadcastEvent(Event:new("EvdevInputInsert", evdev))
         end,
-        UsbDevicePlugOut = function()
-            self:broadcastEvent(Event:new("UsbDevicePlugOut"))
+        UsbDevicePlugOut = function(input_event)
+            local evdev = table.remove(Input.fake_event_args[input_event])
+            self:broadcastEvent(Event:new("EvdevInputRemove", evdev))
         end,
     }
     self.poweroff_action = function()
