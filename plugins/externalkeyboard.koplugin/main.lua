@@ -261,10 +261,15 @@ function ExternalKeyboard:_onEvdevInputRemove(evdev)
     -- There's a two-pronged approach here:
     -- * Call a static class method to modify the class state for future instances of said class
     -- * Broadcast an Event so that all currently displayed widgets update their own state.
-    --   This must come after, because widgets *may* rely on static class members.
+    --   This must come after, because widgets *may* rely on static class members,
+    --   we have no guarantee about Event delivery order.
+    self:_broadcastDisconnected()
+end
+
+ExternalKeyboard._broadcastDisconnected = UIManager:debounce(0.5, false, function()
     InputText.initInputEvents()
     UIManager:broadcastEvent(Event:new("PhysicalKeyboardDisconnected"))
-end
+end)
 
 -- The keyboard events with the same key codes would override the original events.
 -- That may cause embedded buttons to lose their original function and produce letters,
@@ -342,9 +347,13 @@ function ExternalKeyboard:setupKeyboard(event_path)
             timeout = 1,
         })
     end
+    self:_broadcastConnected()
+end
+
+ExternalKeyboard._broadcastConnected = UIManager:debounce(0.5, false, function()
     InputText.initInputEvents()
     UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
-end
+end)
 
 function ExternalKeyboard:showHelp()
     UIManager:show(InfoMessage:new {
