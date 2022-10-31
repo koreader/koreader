@@ -204,12 +204,8 @@ end
 
 function ExternalKeyboard:setOTGRole(role) end
 
--- Keep in mind this fires every time we tear down the FM or Reader, too.
--- Then again, so does init when the new view spins up,
--- which ensures everything works out when switching between the FM & the Reader,
--- as long as `external_keyboard_otg_mode_on_start` is enabled.
-function ExternalKeyboard:onCloseWidget()
-    logger.dbg("ExternalKeyboard:onCloseWidget")
+function ExternalKeyboard:onExit()
+    logger.dbg("ExternalKeyboard:onExit")
     local role = self:getOTGRole()
     if role == USB_ROLE_HOST then
         self:setOTGRole(USB_ROLE_DEVICE)
