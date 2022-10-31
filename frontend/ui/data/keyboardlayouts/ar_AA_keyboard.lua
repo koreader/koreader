@@ -51,7 +51,7 @@ local arabic_comma = ar_popup.arabic_comma
 return {
     min_layer = 1,
     max_layer = 4,
-    shiftmode_keys = {["بدّل"] = true},                    -- بدّل means "Shift".
+    shiftmode_keys = {[""] = true},
     symbolmode_keys = {["رمز"] = true,["حرف"]=true},      -- رمز means "Symbol", حرف means "letter" (traditionally "ABC" on QWERTY layouts)
     utf8mode_keys = {["🌐"] = true},                      -- The famous globe key for layout switching
     umlautmode_keys = {["Äéß"] = false},                  -- No need for this keyboard panel
@@ -104,7 +104,7 @@ return {
         },
         -- fourth row
         {
-            { "بدّل",     "بدّل",  "بدّل",  "بدّل",
+            { label = "",
               width = 1.40},
             { label = "🌐", },
             { "رمز",     "رمز",  "حرف",  "حرف",
