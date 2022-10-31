@@ -252,6 +252,8 @@ function ExternalKeyboard:_onEvdevInputRemove(evdev)
         Device.input.event_map = ExternalKeyboard.original_device_values.event_map
         Device.keyboard_layout = ExternalKeyboard.original_device_values.keyboard_layout
         Device.hasKeyboard = ExternalKeyboard.original_device_values.hasKeyboard
+        Device.hasKeys = ExternalKeyboard.original_device_values.hasKeys
+        Device.hasFewKeys = ExternalKeyboard.original_device_values.hasFewKeys
         Device.hasDPad = ExternalKeyboard.original_device_values.hasDPad
         ExternalKeyboard.original_device_values = nil
     end
@@ -317,6 +319,8 @@ function ExternalKeyboard:setupKeyboard(event_path)
             event_map = Device.input.event_map,
             keyboard_layout = Device.keyboard_layout,
             hasKeyboard = Device.hasKeyboard,
+            hasKeys = Device.hasKeys,
+            hasFewKeys = Device.hasFewKeys,
             hasDPad = Device.hasDPad,
         }
     end
@@ -327,6 +331,8 @@ function ExternalKeyboard:setupKeyboard(event_path)
     util.tableMerge(event_map, event_map_keyboard)
     Device.input.event_map = event_map
     Device.hasKeyboard = yes
+    Device.hasKeys = yes
+    Device.hasFewKeys = no
     Device.hasDPad = has_dpad_func
 
     -- Only show this once
