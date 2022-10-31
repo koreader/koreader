@@ -89,6 +89,7 @@ local ExternalKeyboard = WidgetContainer:extend{
     is_doc_only = false,
     original_device_values = nil,
     keyboard_fds = {},
+    connected_keyboards = 0,
 }
 
 function ExternalKeyboard:init()
@@ -111,7 +112,7 @@ function ExternalKeyboard:init()
         role = USB_ROLE_HOST
     end
     if role == USB_ROLE_HOST then
-        self:findAndSetupKeyboard()
+        self:findAndSetupKeyboards()
     end
 end
 
@@ -215,30 +216,35 @@ function ExternalKeyboard:onCloseWidget()
     end
 end
 
-ExternalKeyboard.onUsbDevicePlugIn = UIManager:debounce(0.5, false, function(self)
-    self:findAndSetupKeyboard()
-end)
+function ExternalKeyboard:_onEvdevInputInsert(evdev)
+    self:setupKeyboard("/dev/input/event" .. tostring(evdev))
+end
 
-ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.5, false, function(self)
-    logger.dbg("ExternalKeyboard: onUsbDevicePlugOut")
-    local is_any_disconnected = false
-    -- Check that a keyboard really was disconnected. Another USB device could've been unplugged.
-    for event_path, fd in pairs(ExternalKeyboard.keyboard_fds) do
-        local event_file_attrs = lfs.attributes(event_path, "mode")
-        logger.dbg("ExternalKeyboard: checked if event file exists. path:", event_path, "file mode:", tostring(event_file_attrs))
-        if event_file_attrs == nil then
-            is_any_disconnected = true
-        end
-    end
+function ExternalKeyboard:onEvdevInputInsert(evdev)
+    -- Leave time for the kernel to actually create the device
+    UIManager:scheduleIn(0.5, self._onEvdevInputInsert, self, evdev)
+end
 
-    if not is_any_disconnected then
+function ExternalKeyboard:_onEvdevInputRemove(evdev)
+    -- Check that a keyboard we know about really was disconnected. Another input device could've been unplugged.
+    local event_path = "/dev/input/event" .. tostring(evdev)
+    if not ExternalKeyboard.keyboard_fds[event_path] then
+        logger.dbg("ExternalKeyboard:onEvdevInputRemove:", event_path, "was not a keyboard we knew about")
         return
     end
 
-    logger.dbg("ExternalKeyboard: USB keyboard was disconnected")
+    -- Double-check that it's really gone.
+    local event_file_attrs = lfs.attributes(event_path, "mode")
+    if event_file_attrs ~= nil then
+        logger.warn("ExternalKeyboard:onEvdevInputRemove:", event_path, "is still connected?!")
+        return
+    end
 
-    ExternalKeyboard.keyboard_fds = {}
-    if ExternalKeyboard.original_device_values then
+    ExternalKeyboard.keyboard_fds[event_path] = nil
+    ExternalKeyboard.connected_keyboards = ExternalKeyboard.connected_keyboards - 1
+    logger.dbg("ExternalKeyboard: USB keyboard", event_path, "was disconnected; total:", ExternalKeyboard.connected_keyboards)
+    -- If that was the last keyboard we knew about, restore native input-related device caps.
+    if ExternalKeyboard.connected_keyboards == 0 and ExternalKeyboard.original_device_values then
         Device.input.event_map = ExternalKeyboard.original_device_values.event_map
         Device.keyboard_layout = ExternalKeyboard.original_device_values.keyboard_layout
         Device.hasKeyboard = ExternalKeyboard.original_device_values.hasKeyboard
@@ -246,69 +252,85 @@ ExternalKeyboard.onUsbDevicePlugOut = UIManager:debounce(0.5, false, function(se
         ExternalKeyboard.original_device_values = nil
     end
 
-    -- Broadcasting events throught UIManager would only get to InputText if there is an active widget on the window stack.
-    -- So, calling a static function is the only choice.
-    -- InputText.setKeyboard(require("ui/widget/virtualkeyboard"))
-    -- Update the existing input widgets. It must be issued after the static state of InputText is updated.
+    -- There's a two-pronged approach here:
+    -- * Call a static class method to modify the class state for future instances of said class
+    -- * Broadcast an Event so that all currently displayed widgets update their own state.
+    --   This must come after, because widgets *may* rely on static class members.
     InputText.initInputEvents()
     UIManager:broadcastEvent(Event:new("PhysicalKeyboardDisconnected"))
-end)
+end
 
 -- The keyboard events with the same key codes would override the original events.
--- That may cause embedded buttons to lose their original function and produce letters.
--- Can we tell from which device a key press comes? The koreader-base passes values of input_event which do not have file descriptors.
-function ExternalKeyboard:findAndSetupKeyboard()
+-- That may cause embedded buttons to lose their original function and produce letters,
+-- as we cannot tell which device a key press comes from.
+function ExternalKeyboard:findAndSetupKeyboards()
     local keyboards = FindKeyboard:find()
-    local is_new_keyboard_setup = false
-    local has_dpad_func = Device.hasDPad
 
     -- A USB keyboard may be recognized as several devices under a hub. And several of them may
     -- have keyboard capabilities set. Yet, only one would emit the events. The solution is to open all of them.
     for __, keyboard_info in ipairs(keyboards) do
-        logger.dbg("ExternalKeyboard:findAndSetupKeyboard found event path", keyboard_info.event_path, "has_dpad", keyboard_info.has_dpad)
-        -- Check if the event file already was open.
-        if ExternalKeyboard.keyboard_fds[keyboard_info.event_path] == nil then
-            local ok, fd = pcall(Device.input.open, keyboard_info.event_path)
-            if not ok then
-                UIManager:show(InfoMessage:new{
-                    text = "Error opening the keyboard device " .. keyboard_info.event_path .. ":\n" .. tostring(fd),
-                })
-                return
-            end
+        self:setupKeyboard(keyboard_info.event_path)
+    end
+end
 
-            is_new_keyboard_setup = true
-            ExternalKeyboard.keyboard_fds[keyboard_info.event_path] = fd
+function ExternalKeyboard:onEvdevInputRemove(evdev)
+    UIManager:scheduleIn(0.5, self._onEvdevInputRemove, self, evdev)
+end
 
-            if keyboard_info.has_dpad then
-                has_dpad_func = yes
-            end
+function ExternalKeyboard:setupKeyboard(event_path)
+    local keyboard_info = FindKeyboard:check(event_path:match(".+/(.+)")) -- FindKeyboard only wants eventN, not the full path
+    if not keyboard_info then
+        logger.dbg("ExternalKeyboard:setupKeyboard:", event_path, "doesn't look like a keyboard")
+        return
+    end
+    local has_dpad_func = Device.hasDPad
+
+    logger.dbg("ExternalKeyboard:setupKeyboard", keyboard_info.event_path, "has_dpad", keyboard_info.has_dpad)
+    -- Check if we already know about this event file.
+    if ExternalKeyboard.keyboard_fds[keyboard_info.event_path] == nil then
+        local ok, fd = pcall(Device.input.open, keyboard_info.event_path)
+        if not ok then
+            UIManager:show(InfoMessage:new{
+                text = "Error opening keyboard:\n" .. tostring(fd),
+            })
+            logger.warn("Error opening keyboard:", fd)
+            return
+        end
+
+        ExternalKeyboard.keyboard_fds[keyboard_info.event_path] = fd
+        ExternalKeyboard.connected_keyboards = ExternalKeyboard.connected_keyboards + 1
+        logger.dbg("ExternalKeyboard: USB keyboard", keyboard_info.event_path, "was connected; total:", ExternalKeyboard.connected_keyboards)
+
+        if keyboard_info.has_dpad then
+            has_dpad_func = yes
         end
     end
 
-    if is_new_keyboard_setup then
-        -- The setting for input_invert_page_turn_keys wouldn't mess up the new event map. Device module applies it on initialization, not dynamically.
+    -- If this is our first external input device, keep a snapshot of the native input-related device caps.
+    -- The setting for input_invert_page_turn_keys wouldn't mess up the new event map. Device module applies it on initialization, not dynamically.
+    if not ExternalKeyboard.original_device_values then
         ExternalKeyboard.original_device_values = {
             event_map = Device.input.event_map,
             keyboard_layout = Device.keyboard_layout,
             hasKeyboard = Device.hasKeyboard,
             hasDPad = Device.hasDPad,
         }
-
-        -- Using a new table avoids mutating the original event map.
-        local event_map = {}
-        util.tableMerge(event_map, Device.input.event_map)
-        util.tableMerge(event_map, event_map_keyboard)
-        Device.input.event_map = event_map
-        Device.hasKeyboard = yes
-        Device.hasDPad = has_dpad_func
-
-        UIManager:show(InfoMessage:new{
-            text = _("Keyboard connected"),
-            timeout = 1,
-        })
-        InputText.initInputEvents()
-        UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
     end
+
+    -- Using a new table avoids mutating the original event map.
+    local event_map = {}
+    util.tableMerge(event_map, Device.input.event_map)
+    util.tableMerge(event_map, event_map_keyboard)
+    Device.input.event_map = event_map
+    Device.hasKeyboard = yes
+    Device.hasDPad = has_dpad_func
+
+    UIManager:show(InfoMessage:new{
+        text = _("Keyboard connected"),
+        timeout = 1,
+    })
+    InputText.initInputEvents()
+    UIManager:broadcastEvent(Event:new("PhysicalKeyboardConnected"))
 end
 
 function ExternalKeyboard:showHelp()
