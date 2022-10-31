@@ -250,7 +250,7 @@ function UIManager:schedule(sched_time, action, ...)
         --       c.f., https://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/
         local mid = bit.rshift(lo + hi, 1)
         local mid_time = self._task_queue[mid].time
-        if sched_time >= mid_time then
+        if mid_time <= sched_time then
             hi = mid - 1
         else
             lo = mid + 1
