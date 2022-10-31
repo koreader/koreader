@@ -183,6 +183,15 @@ local Input = {
         WakeupFromSuspend = true, ReadyToSuspend = true,
         UsbDevicePlugIn = true, UsbDevicePlugOut = true,
     },
+    -- Subset of fake_event_set for events that require passing a parameter along
+    complex_fake_event_set = {
+        UsbDevicePlugIn = true, UsbDevicePlugOut = true,
+    },
+    -- Crappy FIFO to forward parameters for those events to UIManager
+    fake_event_args = {
+        UsbDevicePlugIn = {},
+        UsbDevicePlugOut = {},
+    },
 
     -- This might be overloaded or even disabled (post-init) at instance-level, so we don't want any inheritance
     rotation_map = nil, -- nil or a hash
@@ -547,6 +556,17 @@ function Input:handleKeyBoardEv(ev)
     end
 
     if self.fake_event_set[keycode] then
+        -- For events that pass a parameter in the input event's value field,
+        -- we kludge it up a bit, because we *want* a broadcastEvent *and* an argument, but...
+        -- * If we return an Event here, UIManager.event_handlers.__default__ will just pass it to UIManager:sendEvent(),
+        --   meaning it won't reach plugins (because these are not, and currently cannot be, registered as active_widgets).
+        -- * If we return a string here, our named UIManager.event_handlers cannot directly receive an argument...
+        -- So, we simply store it somewhere our handler can find and call it a day.
+        -- And we use an array as a FIFO because we cannot guarantee that insertions and removals will interleave nicely.
+        -- (This is all in the name of avoiding complexifying the common codepaths for events that should be few and far between).
+        if self.complex_fake_event_set[keycode] then
+            table.insert(self.fake_event_args[keycode], ev.value)
+        end
         return keycode
     end
 
