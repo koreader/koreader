@@ -31,7 +31,7 @@ local ReaderFont = InputContainer:extend{
 }
 
 function ReaderFont:init()
-    self:registerKeyEvents(true)
+    self:registerKeyEvents()
     -- Build face_table for menu
     self.face_table = {}
     -- Font settings
@@ -118,7 +118,7 @@ end
 
 function ReaderFont:onGesture() end
 
-function ReaderFont:registerKeyEvents(init)
+function ReaderFont:registerKeyEvents()
     if Device:hasKeyboard() then
         -- add shortcut for keyboard
         self.key_events = {
@@ -134,13 +134,10 @@ function ReaderFont:registerKeyEvents(init)
                 args = -0.5
             },
         }
-    elseif not init then
-        self.key_events = {}
     end
 end
 
 ReaderFont.onPhysicalKeyboardConnected = ReaderFont.registerKeyEvents
-ReaderFont.onPhysicalKeyboardDisconnected = ReaderFont.registerKeyEvents
 
 function ReaderFont:onSetDimensions(dimen)
     self.dimen = dimen

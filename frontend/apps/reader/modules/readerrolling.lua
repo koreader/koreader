@@ -57,7 +57,7 @@ local ReaderRolling = InputContainer:extend{
 }
 
 function ReaderRolling:init()
-    self:registerKeyEvents(true)
+    self:registerKeyEvents()
     self.pan_interval = time.s(1 / self.pan_rate)
 
     table.insert(self.ui.postInitCallback, function()
@@ -79,7 +79,7 @@ end
 
 function ReaderRolling:onGesture() end
 
-function ReaderRolling:registerKeyEvents(init)
+function ReaderRolling:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.GotoNextView = {
             { { "RPgFwd", "LPgFwd", "Right" } },
@@ -91,9 +91,6 @@ function ReaderRolling:registerKeyEvents(init)
             event = "GotoViewRel",
             args = -1,
         }
-    elseif not init then
-        self.key_events.GotoNextView = nil
-        self.key_events.GotoPrevView = nil
     end
     if Device:hasDPad() then
         self.key_events.MoveUp = {
@@ -106,9 +103,6 @@ function ReaderRolling:registerKeyEvents(init)
             event = "Panning",
             args = {0,  1},
         }
-    elseif not init then
-        self.key_events.MoveUp = nil
-        self.key_events.MoveDown = nil
     end
     if Device:hasKeyboard() then
         self.key_events.GotoFirst = {
@@ -161,22 +155,10 @@ function ReaderRolling:registerKeyEvents(init)
             event = "GotoPercent",
             args = 100,
         }
-    elseif not init then
-        self.key_events.GotoFirst = nil
-        self.key_events.Goto11 = nil
-        self.key_events.Goto22 = nil
-        self.key_events.Goto33 = nil
-        self.key_events.Goto44 = nil
-        self.key_events.Goto55 = nil
-        self.key_events.Goto66 = nil
-        self.key_events.Goto77 = nil
-        self.key_events.Goto88 = nil
-        self.key_events.GotoLast = nil
     end
 end
 
 ReaderRolling.onPhysicalKeyboardConnected = ReaderRolling.registerKeyEvents
-ReaderRolling.onPhysicalKeyboardDisconnected = ReaderRolling.registerKeyEvents
 
 function ReaderRolling:onReadSettings(config)
     -- 20180503: some fix in crengine has changed the way the DOM is built

@@ -19,7 +19,7 @@ function ReaderConfig:init()
     end
     self.configurable:loadDefaults(self.options)
 
-    self:registerKeyEvents(true)
+    self:registerKeyEvents()
     self:initGesListener()
     if G_reader_settings:has("activate_menu") then
         self.activation_menu = G_reader_settings:readSetting("activate_menu")
@@ -33,16 +33,13 @@ end
 
 function ReaderConfig:onGesture() end
 
-function ReaderConfig:registerKeyEvents(init)
+function ReaderConfig:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.ShowConfigMenu = { { { "Press", "AA" } } }
-    elseif not init then
-        self.key_events.ShowConfigMenu = nil
     end
 end
 
 ReaderConfig.onPhysicalKeyboardConnected = ReaderConfig.registerKeyEvents
-ReaderConfig.onPhysicalKeyboardDisconnected = ReaderConfig.registerKeyEvents
 
 function ReaderConfig:initGesListener()
     if not Device:isTouchDevice() then return end

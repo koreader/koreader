@@ -26,7 +26,7 @@ local ReaderLink = InputContainer:extend{
 }
 
 function ReaderLink:init()
-    self:registerKeyEvents(true)
+    self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ui:registerTouchZones({
             {
@@ -95,7 +95,7 @@ end
 
 function ReaderLink:onGesture() end
 
-function ReaderLink:registerKeyEvents(init)
+function ReaderLink:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events = {
             SelectNextPageLink = {
@@ -114,13 +114,10 @@ function ReaderLink:registerKeyEvents(init)
             -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
             -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
         }
-    elseif not init then
-        self.key_events = {}
     end
 end
 
 ReaderLink.onPhysicalKeyboardConnected = ReaderLink.registerKeyEvents
-ReaderLink.onPhysicalKeyboardDisconnected = ReaderLink.registerKeyEvents
 
 function ReaderLink:onReadSettings(config)
     -- called when loading new document

@@ -37,7 +37,7 @@ local ReaderBookmark = InputContainer:extend{
 }
 
 function ReaderBookmark:init()
-    self:registerKeyEvents(true)
+    self:registerKeyEvents()
 
     if G_reader_settings:hasNot("bookmarks_items_per_page") then
         -- The Bookmarks items per page and items' font size can now be
@@ -60,16 +60,13 @@ end
 
 function ReaderBookmark:onGesture() end
 
-function ReaderBookmark:registerKeyEvents(init)
+function ReaderBookmark:registerKeyEvents()
     if Device:hasKeyboard() then
         self.key_events.ShowBookmark = { { "B" } }
-    elseif not init then
-        self.key_events.ShowBookmark = nil
     end
 end
 
 ReaderBookmark.onPhysicalKeyboardConnected = ReaderBookmark.registerKeyEvents
-ReaderBookmark.onPhysicalKeyboardDisconnected = ReaderBookmark.registerKeyEvents
 
 function ReaderBookmark:addToMainMenu(menu_items)
     menu_items.bookmarks = {

@@ -48,7 +48,7 @@ function FileManagerMenu:init()
 
     self.registered_widgets = {}
 
-    self:registerKeyEvents(true)
+    self:registerKeyEvents()
 
     self.activation_menu = G_reader_settings:readSetting("activate_menu")
     if self.activation_menu == nil then
@@ -56,16 +56,13 @@ function FileManagerMenu:init()
     end
 end
 
-function FileManagerMenu:registerKeyEvents(init)
+function FileManagerMenu:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.ShowMenu = { { "Menu" } }
-    elseif not init then
-        self.key_events.ShowMenu = nil
     end
 end
 
 FileManagerMenu.onPhysicalKeyboardConnected = FileManagerMenu.registerKeyEvents
-FileManagerMenu.onPhysicalKeyboardDisconnected = FileManagerMenu.registerKeyEvents
 
 function FileManagerMenu:initGesListener()
     if not Device:isTouchDevice() then return end

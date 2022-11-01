@@ -473,7 +473,7 @@ function FileManager:setupLayout()
 end
 
 function FileManager:registerKeyEvents()
-    -- NOTE: There's no init vs. runtime distinction here, because we go through reinit at runtime.
+    -- NOTE: We need to be surgical here, because this is called through reinit at runtime.
     if Device:hasKeys() then
         self.key_events.Home = { { "Home" } }
         -- Override the menu.lua way of handling the back key
