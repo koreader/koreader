@@ -138,7 +138,7 @@ describe("UIManager spec", function()
         UIManager:schedule(now + time.s(5), "5s");
         assert.are.same("5s", UIManager._task_queue[2].action)
 
-        -- insert task in place of "10s", as it'll expire shortyl afer "10s"
+        -- insert task in place of "10s", as it'll expire shortly afer "10s"
         -- NOTE: Can't use this here right now, as time.now, which is used internally,
         -- may or may not have moved, depending on host's performance and clock granularity
         -- (especially if host is fast and/or COARSE is available).
