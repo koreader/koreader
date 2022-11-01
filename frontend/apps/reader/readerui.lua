@@ -122,7 +122,7 @@ function ReaderUI:init()
     -- Handle local settings migration
     SettingsMigration:migrateSettings(self.doc_settings)
 
-    self:registerKeyEvents(true)
+    self:registerKeyEvents()
 
     -- a view container (so it must be child #1!)
     -- all paintable widgets need to be a child of reader view
@@ -481,18 +481,14 @@ function ReaderUI:init()
     ReaderUI.instance = self
 end
 
-function ReaderUI:registerKeyEvents(init)
+function ReaderUI:registerKeyEvents()
     if Device:hasKeys() then
         self.key_events.Home = { { "Home" } }
         self.key_events.Reload = { { "F5" } }
-    elseif not init then
-        self.key_events.Home = nil
-        self.key_events.Reload = nil
     end
 end
 
 ReaderUI.onPhysicalKeyboardConnected = ReaderUI.registerKeyEvents
-ReaderUI.onPhysicalKeyboardDisconnected = ReaderUI.registerKeyEvents
 
 function ReaderUI:setLastDirForFileBrowser(dir)
     if dir and #dir > 1 and dir:sub(-1) == "/" then

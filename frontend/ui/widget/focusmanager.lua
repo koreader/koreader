@@ -274,12 +274,17 @@ function FocusManager:onPhysicalKeyboardDisconnected()
     local prev_key_events = KEY_EVENTS
     populateEventMappings()
 
-    -- Remove what disappeared from KEY_EVENTS from self.key_events (if any).
-    -- NOTE: This is slightly overkill, we could very well live with a few unreachable mappings for the rest of this widget's life ;).
-    for k, _ in pairs(prev_key_events) do
-        if not KEY_EVENTS[k] then
-            self.key_events[k] = nil
+    -- If we still have keys, remove what disappeared from KEY_EVENTS from self.key_events (if any).
+    if Device:hasKeys() then
+        -- NOTE: This is slightly overkill, we could very well live with a few unreachable mappings for the rest of this widget's life ;).
+        for k, _ in pairs(prev_key_events) do
+            if not KEY_EVENTS[k] then
+                self.key_events[k] = nil
+            end
         end
+    else
+        -- If we longer have keys at all, that's easy ;).
+        self.key_events = {}
     end
     self.builtin_key_events = BUILTIN_KEY_EVENTS
     self.extra_key_events = EXTRA_KEY_EVENTS

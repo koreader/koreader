@@ -305,4 +305,13 @@ function InputContainer:closeInputDialog()
     UIManager:close(self.input_dialog)
 end
 
+function InputContainer:onPhysicalKeyboardDisconnected()
+    -- Clear the key bindings if Device no longer has keys
+    -- NOTE: hasKeys is the lowest common denominator of key-related Device caps,
+    --       hasDPad/hasFewKeys/hasKeyboard all imply hasKeys ;).
+    if not Device:hasKeys() then
+        self.key_events = {}
+    end
+end
+
 return InputContainer

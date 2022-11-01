@@ -52,7 +52,7 @@ function ReaderHighlight:init()
     self._previous_indicator_pos = nil
     self._last_indicator_move_args = {dx = 0, dy = 0, distance = 0, time = time:now()}
 
-    self:registerKeyEvents(true)
+    self:registerKeyEvents()
 
     self._highlight_buttons = {
         -- highlight and add_note are for the document itself,
@@ -220,41 +220,28 @@ end
 
 function ReaderHighlight:onGesture() end
 
-function ReaderHighlight:registerKeyEvents(init)
-    if Device:hasDPad() then
+function ReaderHighlight:registerKeyEvents()
+    if Device:hasKeys() then
         -- Used for text selection with dpad/keys
         local QUICK_INDICATOR_MOVE = true
-        self.key_events.StopHighlightIndicator  = { { Device.input.group.Back }, args = true } -- true: clear highlight selection
-        self.key_events.UpHighlightIndicator    = { { "Up" },    event = "MoveHighlightIndicator", args = {0, -1} }
-        self.key_events.DownHighlightIndicator  = { { "Down" },  event = "MoveHighlightIndicator", args = {0, 1} }
-        -- let FewKeys device can move indicator left
-        self.key_events.LeftHighlightIndicator  = { { "Left" },  event = "MoveHighlightIndicator", args = {-1, 0} }
-        self.key_events.RightHighlightIndicator = { { "Right" }, event = "MoveHighlightIndicator", args = {1, 0} }
-        self.key_events.HighlightPress          = { { "Press" } }
-        if Device:hasKeys() then
-            self.key_events.QuickUpHighlightIndicator    = { { "Shift", "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
-            self.key_events.QuickDownHighlightIndicator  = { { "Shift", "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
-            self.key_events.QuickLeftHighlightIndicator  = { { "Shift", "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
-            self.key_events.QuickRightHighlightIndicator = { { "Shift", "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
-            self.key_events.StartHighlightIndicator      = { { "H" } }
+        self.key_events.QuickUpHighlightIndicator    = { { "Shift", "Up" },    event = "MoveHighlightIndicator", args = {0, -1, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickDownHighlightIndicator  = { { "Shift", "Down" },  event = "MoveHighlightIndicator", args = {0, 1, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickLeftHighlightIndicator  = { { "Shift", "Left" },  event = "MoveHighlightIndicator", args = {-1, 0, QUICK_INDICATOR_MOVE} }
+        self.key_events.QuickRightHighlightIndicator = { { "Shift", "Right" }, event = "MoveHighlightIndicator", args = {1, 0, QUICK_INDICATOR_MOVE} }
+        self.key_events.StartHighlightIndicator      = { { "H" } }
+        if Device:hasDPad() then
+            self.key_events.StopHighlightIndicator  = { { Device.input.group.Back }, args = true } -- true: clear highlight selection
+            self.key_events.UpHighlightIndicator    = { { "Up" },    event = "MoveHighlightIndicator", args = {0, -1} }
+            self.key_events.DownHighlightIndicator  = { { "Down" },  event = "MoveHighlightIndicator", args = {0, 1} }
+            -- let hasFewKeys device move the indicator left
+            self.key_events.LeftHighlightIndicator  = { { "Left" },  event = "MoveHighlightIndicator", args = {-1, 0} }
+            self.key_events.RightHighlightIndicator = { { "Right" }, event = "MoveHighlightIndicator", args = {1, 0} }
+            self.key_events.HighlightPress          = { { "Press" } }
         end
-    elseif not init then
-        self.key_events.StopHighlightIndicator  = nil
-        self.key_events.UpHighlightIndicator    = nil
-        self.key_events.DownHighlightIndicator  = nil
-        self.key_events.LeftHighlightIndicator  = nil
-        self.key_events.RightHighlightIndicator = nil
-        self.key_events.HighlightPress          = nil
-        self.key_events.QuickUpHighlightIndicator    = nil
-        self.key_events.QuickDownHighlightIndicator  = nil
-        self.key_events.QuickLeftHighlightIndicator  = nil
-        self.key_events.QuickRightHighlightIndicator = nil
-        self.key_events.StartHighlightIndicator      = nil
     end
 end
 
 ReaderHighlight.onPhysicalKeyboardConnected = ReaderHighlight.registerKeyEvents
-ReaderHighlight.onPhysicalKeyboardDisconnected = ReaderHighlight.registerKeyEvents
 
 function ReaderHighlight:setupTouchZones()
     if not Device:isTouchDevice() then return end
