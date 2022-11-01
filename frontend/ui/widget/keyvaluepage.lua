@@ -48,6 +48,7 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 
 local KeyValueItem = InputContainer:extend{
+    show_parent = nil,
     key = nil,
     value = nil,
     value_lang = nil,
@@ -278,6 +279,8 @@ end
 
 
 local KeyValuePage = FocusManager:extend{
+    show_parent = nil,
+    kv_pairs = nil, -- not mandatory
     title = "",
     width = nil,
     height = nil,
@@ -288,9 +291,14 @@ local KeyValuePage = FocusManager:extend{
     -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
     value_overflow_align = "left",
     single_page = nil, -- show all items on one single page (and make them small)
+    title_bar_align = "left",
+    title_bar_left_icon = nil,
+    title_bar_left_icon_tap_callback = nil,
+    title_bar_left_icon_hold_callback = nil,
 }
 
 function KeyValuePage:init()
+    self.show_parent = self.show_parent or self
     self.kv_pairs = self.kv_pairs or {}
     self.dimen = Geom:new{
         x = 0,
@@ -328,7 +336,7 @@ function KeyValuePage:init()
         icon = BD.mirroredUILayout() and "back.top.rtl" or "back.top",
         callback = function() self:onReturn() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     -- group for page info
     local chevron_left = "chevron.left"
@@ -343,25 +351,25 @@ function KeyValuePage:init()
         icon = chevron_left,
         callback = function() self:prevPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_right_chev = self.page_info_right_chev or Button:new{
         icon = chevron_right,
         callback = function() self:nextPage() end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_first_chev = self.page_info_first_chev or Button:new{
         icon = chevron_first,
         callback = function() self:goToPage(1) end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_last_chev = self.page_info_last_chev or Button:new{
         icon = chevron_last,
         callback = function() self:goToPage(self.pages) end,
         bordersize = 0,
-        show_parent = self,
+        show_parent = self.show_parent,
     }
     self.page_info_spacer = HorizontalSpan:new{
         width = Screen:scaleBySize(32),
@@ -441,11 +449,15 @@ function KeyValuePage:init()
         title = self.title,
         fullscreen = self.covers_fullscreen,
         width = self.width,
-        align = "left",
+        align = self.title_bar_align,
         with_bottom_line = true,
         bottom_line_color = Blitbuffer.COLOR_DARK_GRAY,
         bottom_line_h_padding = padding,
+        left_icon = self.title_bar_left_icon,
+        left_icon_tap_callback = self.title_bar_left_icon_tap_callback,
+        left_icon_hold_callback = self.title_bar_left_icon_hold_callback,
         close_callback = function() self:onClose() end,
+        show_parent = self.show_parent or self,
     }
 
     -- setup main content
@@ -665,7 +677,7 @@ function KeyValuePage:_populateItems()
                 value_align = self.value_align,
                 kv_pairs_idx = kv_pairs_idx,
                 kv_page = self,
-                show_parent = self,
+                show_parent = self.show_parent,
             }
             table.insert(self.main_content, kv_item)
             table.insert(self.layout, { kv_item })
@@ -774,6 +786,10 @@ function KeyValuePage:onMultiSwipe(arg, ges_ev)
     -- multiswipe to close this widget too.
     self:onClose()
     return true
+end
+
+function KeyValuePage:setTitleBarLeftIcon(icon)
+    self.title_bar:setLeftIcon(icon)
 end
 
 function KeyValuePage:onClose()
