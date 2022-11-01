@@ -871,7 +871,7 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
             if callback then
                 -- Provide callback with us, so it can call our
                 -- closemenu() or updateItems() when it sees fit
-                -- (if not providing checked or checked_fund, caller
+                -- (if not providing checked or checked_func, caller
                 -- must set keep_menu_open=true if that is wished)
                 callback(self)
                 if refresh then

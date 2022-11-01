@@ -136,13 +136,11 @@ function ExternalKeyboard:addToMainMenu(menu_items)
                 callback = function(touchmenu_instance)
                     local role = self:getOTGRole()
                     local new_role = (role == USB_ROLE_DEVICE) and USB_ROLE_HOST or USB_ROLE_DEVICE
-                    -- Let the menu close itself first, as the event cascade might reinit stuff and close it anyway
-                    UIManager:nextTick(self.setOTGRole, self, new_role)
+                    self:setOTGRole(new_role)
                 end,
             },
             {
                 text = _("Always enable OTG mode"),
-                keep_menu_open = true,
                 checked_func = function()
                      return G_reader_settings:isTrue("external_keyboard_otg_mode_on_start")
                 end,
@@ -257,6 +255,13 @@ function ExternalKeyboard:_onEvdevInputRemove(evdev)
         ExternalKeyboard.original_device_values = nil
     end
 
+    -- Only show this once
+    if ExternalKeyboard.connected_keyboards == 0 then
+        UIManager:show(InfoMessage:new{
+            text = _("Keyboard disconnected"),
+            timeout = 1,
+        })
+    end
     -- There's a two-pronged approach here:
     -- * Call a static class method to modify the class state for future instances of said class
     -- * Broadcast an Event so that all currently displayed widgets update their own state.
