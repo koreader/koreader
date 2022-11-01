@@ -1118,8 +1118,8 @@ function VocabularyBuilderWidget:init()
     self.item_width = self.dimen.w - 2 * padding
     self.footer_center_width = math.floor(self.width_widget * (32/100))
     self.footer_button_width = math.floor(self.width_widget * (12/100))
-    self.footer_left_corner_width = math.floor(self.width_widget * (9/100))
-    self.footer_right_corner_width = math.floor(self.width_widget * (11/100))
+    self.footer_left_corner_width = math.floor(self.width_widget * (8/100))
+    self.footer_right_corner_width = math.floor(self.width_widget * (12/100))
     -- group for footer
     local chevron_left = "chevron.left"
     local chevron_right = "chevron.right"
