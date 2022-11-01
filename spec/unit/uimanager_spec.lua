@@ -142,8 +142,8 @@ describe("UIManager spec", function()
         -- NOTE: Can't use this here right now, as time.now, which is used internally,
         -- may or may not have moved, depending on host's performance and clock granularity
         -- (especially if host is fast and/or COARSE is available).
-        -- But a short wait (with the fts resolution) fixes this here.
-        ffiutil.usleep(1)
+        -- But a short wait fixes this here.
+        ffiutil.usleep(1000)
         UIManager:scheduleIn(10, 'foo') -- is a bit later than "10s", as time.now() is used internally
         assert.are.same('foo', UIManager._task_queue[1].action)
 
