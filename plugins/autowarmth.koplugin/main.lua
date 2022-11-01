@@ -82,6 +82,14 @@ function AutoWarmth:init()
         self.control_nightmode = true
     end
 
+    -- Fix entries not in ascending order (only happens by manual editing of settings.reader.lua)
+    for i = 1, #self.scheduler_times - 1 do
+        if self.scheduler_times[i] > self.scheduler_times[i + 1] then
+            self.scheduler_times[i + 1] = self.scheduler_times[i]
+            logger.warn("AutoWarmth: scheduling times fixed.")
+        end
+    end
+
     -- schedule recalculation shortly afer midnight
     self:scheduleMidnightUpdate()
 end
@@ -130,7 +138,6 @@ function AutoWarmth:onAutoWarmthMode()
 end
 
 function AutoWarmth:leavePowerSavingState(from_resume)
-    logger.dbg("AutoWarmth: onResume/onLeaveStandby")
     local resume_date = os.date("*t")
 
     -- check if resume and suspend are done on the same day
@@ -146,14 +153,17 @@ function AutoWarmth:leavePowerSavingState(from_resume)
 end
 
 function AutoWarmth:_onResume()
+    logger.dbg("AutoWarmth: onResume")
     self:leavePowerSavingState(true)
 end
 
 function AutoWarmth:_onLeaveStandby()
+    logger.dbg("AutoWarmth: onLeaveStandby")
     self:leavePowerSavingState(false)
 end
 
 function AutoWarmth:_onSuspend()
+    logger.dbg("AutoWarmth: onSuspend")
     UIManager:unschedule(self.scheduleMidnightUpdate)
     UIManager:unschedule(self.setWarmth)
 end
@@ -179,7 +189,7 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
     logger.dbg("AutoWarmth: scheduleMidnightUpdate")
     -- first unschedule all old functions
     UIManager:unschedule(self.scheduleMidnightUpdate)
-    UIManager:unschedule(AutoWarmth.setWarmth)
+    UIManager:unschedule(self.setWarmth)
 
     SunTime:setPosition(self.location, self.latitude, self.longitude, self.timezone, self.altitude, true)
     SunTime:setAdvanced()
@@ -290,8 +300,8 @@ end
 -- search_pos ... start searching from that index
 -- from_resume ... true if first call after resume
 function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
-    logger.dbg("AutoWarmth: scheduleNextWarmthChange")
-    UIManager:unschedule(AutoWarmth.setWarmth)
+    logger.dbg("AutoWarmth: scheduleNextWarmthChange", time_s)
+    UIManager:unschedule(self.setWarmth)
 
     if self.activate == 0 or #self.sched_warmths == 0 or search_pos > #self.sched_warmths then
         return
@@ -327,20 +337,15 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
     end
     -- update current warmth immediately
     self:setWarmth(actual_warmth, false) -- no setWarmth rescheduling, don't force warmth
-    if self.sched_warmth_index <= #self.sched_warmths then
-        local next_sched_time_s = self.sched_times_s[self.sched_warmth_index] - time_s
-        if next_sched_time_s > 0 then
-            -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
-            UIManager:scheduleIn(next_sched_time_s, self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
-        elseif self.sched_warmth_index < #self.sched_warmths then
-            -- If this really happens under strange conditions, wait until the next full minute to
-            -- minimize wakeups from standby.
-            UIManager:scheduleIn(61 - tonumber(os.date("%S")),
-                self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
-        else
-            logger.dbg("AutoWarmth: schedule is over, waiting for midnight update")
-        end
+    local next_sched_time_s = self.sched_times_s[self.sched_warmth_index] - time_s
+    if next_sched_time_s <= 0 then
+        -- If this really happens under strange conditions (after true midnight and before 00:00),
+        -- wait until the next full minute to minimize wakeups from standby.
+        next_sched_time_s = 61 - tonumber(os.date("%S"))
     end
+    -- This setWarmth will call scheduleNextWarmthChange which will schedule setWarmth again.
+    UIManager:scheduleIn(next_sched_time_s,
+        self.setWarmth, self, self.sched_warmths[self.sched_warmth_index], true)
 
     if from_resume then
         -- On some strange devices like KA1 setWarmth doesn't work right after a resume so
@@ -729,11 +734,11 @@ function AutoWarmth:getScheduleMenu()
                                     store_times(touchmenu_instance, new_time, num)
                                 end,
                             })
-                        elseif num < 10 and new_time > get_valid_time(num, 1) then
+                        elseif num < 11 and new_time > get_valid_time(num, 1) then
                             UIManager:show(ConfirmBox:new{
                                 text = _("This time is after the subsequent time.\nAdjust the subsequent time?"),
                                 ok_callback = function()
-                                    for i = num + 1, midnight_index - 1 do
+                                    for i = num + 1, midnight_index do
                                         if self.scheduler_times[i] then
                                             if new_time > self.scheduler_times[i] then
                                                 self.scheduler_times[i] = new_time
