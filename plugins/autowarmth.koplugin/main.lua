@@ -300,7 +300,7 @@ end
 -- search_pos ... start searching from that index
 -- from_resume ... true if first call after resume
 function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
-    logger.dbg("AutoWarmth: scheduleNextWarmthChange", time_s)
+    logger.dbg("AutoWarmth: scheduleNextWarmthChange")
     UIManager:unschedule(self.setWarmth)
 
     if self.activate == 0 or #self.sched_warmths == 0 or search_pos > #self.sched_warmths then
@@ -319,27 +319,33 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
     -- before true midnight. OK, this value is actually not quite the right one, as it is calculated
     -- for the current day (and not the previous one), but this is for a corner case
     -- and the error is small.
-    local actual_warmth = self.sched_warmths[self.sched_warmth_index or #self.sched_warmths]
+    local actual_warmth = self.sched_warmths[self.sched_warmth_index]
     local next_warmth = actual_warmth
     for i = self.sched_warmth_index, #self.sched_warmths do
-        if self.sched_times_s[i] <= time_s then
-            actual_warmth = self.sched_warmths[i]
-            local j = i
-            while from_resume and j <= #self.sched_warmths and self.sched_times_s[j] <= time_s + delay_s do
-                -- Most times only one iteration through this loop
-                next_warmth = self.sched_warmths[j]
-                j = j + 1
-            end
-        else
-            self.sched_warmth_index = i
+        -- It might be possible that actual_warmth == self.sched_warmth[#self.sched_warmths]
+        -- in this case next self.sched_warmth_index should be #self.sched_warmths
+        self.sched_warmth_index = i
+
+        if self.sched_times_s[i] > time_s then
             break
         end
+
+        -- update actual_warmth and next_warmth
+        actual_warmth = self.sched_warmths[i]
+        local j = i
+        while from_resume and j <= #self.sched_warmths and self.sched_times_s[j] <= time_s + delay_s do
+            -- Most times only one iteration through this loop
+            next_warmth = self.sched_warmths[j]
+            j = j + 1
+        end
     end
+
     -- update current warmth immediately
     self:setWarmth(actual_warmth, false) -- no setWarmth rescheduling, don't force warmth
     local next_sched_time_s = self.sched_times_s[self.sched_warmth_index] - time_s
     if next_sched_time_s <= 0 then
-        -- If this really happens under strange conditions (after true midnight and before 00:00),
+        -- If this really happens under strange conditions (after the last scheduler entry
+        -- (true midnight) and before 00:00),
         -- wait until the next full minute to minimize wakeups from standby.
         next_sched_time_s = 61 - tonumber(os.date("%S"))
     end
@@ -734,7 +740,7 @@ function AutoWarmth:getScheduleMenu()
                                     store_times(touchmenu_instance, new_time, num)
                                 end,
                             })
-                        elseif num < 11 and new_time > get_valid_time(num, 1) then
+                        elseif num < midnight_index and new_time > get_valid_time(num, 1) then
                             UIManager:show(ConfirmBox:new{
                                 text = _("This time is after the subsequent time.\nAdjust the subsequent time?"),
                                 ok_callback = function()
