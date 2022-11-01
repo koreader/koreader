@@ -143,7 +143,13 @@ end
 
 -- add a book to our books table
 function CalibreMetadata:addBook(book)
-    table.insert(self.books, #self.books + 1, slim(book))
+    -- prevent duplicate entries
+    local _, index = self:getBookUuid(book.lpath)
+    if index then
+        self.books[index] = slim(book)
+    else
+        table.insert(self.books, #self.books + 1, slim(book))
+    end
 end
 
 -- remove a book from our books table
