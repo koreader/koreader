@@ -440,9 +440,11 @@ end
 -- from_resume ... true if first call after resume
 function AutoWarmth:scheduleNextWarmthChange(from_resume)
     logger.dbg("AutoWarmth: scheduleNextWarmthChange")
-    UIManager:unschedule(self.scheduleNextWarmthChange)
+    if UIManager:unschedule(self.scheduleNextWarmthChange) then
+        logger.err("AutoWarmth: this should not happen")
+    end
 
-    if self.activate == 0 or #self.sched_warmths == 0 or self.sched_warmth_index > #self.sched_warmths then
+    if self.activate == 0 or #self.sched_warmths == 0 then
         return
     end
 
@@ -463,37 +465,30 @@ function AutoWarmth:scheduleNextWarmthChange(from_resume)
     local actual_warmth = self.sched_warmths[self.sched_warmth_index]
     local next_warmth = actual_warmth
     local now_s = SunTime:getTimeInSec()
-    for i = self.sched_warmth_index, #self.sched_warmths do
-        -- It might be possible that actual_warmth == self.sched_warmth[#self.sched_warmths]
-        -- in this case next self.sched_warmth_index should be #self.sched_warmths
-        self.sched_warmth_index = i
-
-        if self.sched_times_s[i] > now_s then
+    while self.sched_warmth_index <= #self.sched_warmths do
+        if self.sched_times_s[self.sched_warmth_index] > now_s then
             break
         end
 
         -- update actual_warmth and next_warmth
-        actual_warmth = self.sched_warmths[i]
-        local j = i
+        actual_warmth = self.sched_warmths[self.sched_warmth_index]
+        local j = self.sched_warmth_index
         while from_resume and j <= #self.sched_warmths and self.sched_times_s[j] <= now_s + delay_s do
             -- Most times only one iteration through this loop
             next_warmth = self.sched_warmths[j]
             j = j + 1
         end
+        -- It might be possible that self.sched_warmth_index get > #self.sched_warmths
+        self.sched_warmth_index = self.sched_warmth_index + 1
     end
 
     -- update current warmth immediately
     self:setWarmth(actual_warmth, from_resume) -- force warmth, when from_resume
-    local next_sched_time_s = self.sched_times_s[self.sched_warmth_index] - now_s
-    if next_sched_time_s <= 0 then
-        -- If this really happens under strange conditions (after the last scheduler entry
-        -- (true midnight) and before 00:00),
-        -- wait until the next full minute to minimize wakeups from standby.
-        next_sched_time_s = 61 - tonumber(os.date("%S"))
-    end
 
-    UIManager:scheduleIn(next_sched_time_s,
-        self.scheduleNextWarmthChange, self, false)
+    if self.sched_warmth_index <= #self.sched_warmths then -- and only then, schedule next warmth change
+        local next_sched_time_s = self.sched_times_s[self.sched_warmth_index] - now_s
+        UIManager:scheduleIn(next_sched_time_s, self.scheduleNextWarmthChange, self, false)
+    end
 
     if from_resume then
         -- On some strange devices like KA1 setWarmth doesn't work right after a resume so
@@ -501,6 +496,28 @@ function AutoWarmth:scheduleNextWarmthChange(from_resume)
         -- On sane devices this schedule does no harm.
         -- see https://github.com/koreader/koreader/issues/8363
         UIManager:scheduleIn(delay_s, self.setWarmth, self, next_warmth, true) -- force warmth another time
+    end
+    -- Check if AutoWarmth shall toggle frontlight daytime and twilight
+    if self.fl_off_during_day then
+        if now_s >= self.current_times_h[5]*3600 and now_s < self.current_times_h[7]*3600 then
+            -- during daytime (depending on choosens activation: SunTime, fixed Schedule, closer...
+            -- turn on frontlight off once, user can override this selection by a gesture
+            if AutoWarmth.fl_turned_off ~= true then -- can be false or nil
+                if Powerd:isFrontlightOn() then
+                    self:setFrontlightState(false)
+                end
+            end
+            AutoWarmth.fl_turned_off = true -- in case fl_turned_off was nil
+        else
+            -- outside of selected daytime, turn on frontlight once,
+            -- user can override this selection by a gesture
+            if AutoWarmth.fl_turned_off ~= false then -- can be true or nil
+                if Powerd:isFrontlightOff() then
+                    self:setFrontlightState(true)
+                end
+            end
+            AutoWarmth.fl_turned_off = false -- in case fl_turned_off was nil
+        end
     end
 end
 
@@ -539,7 +556,7 @@ local function tidy_menu(menu, request)
     for i = #menu, 1, -1 do
         if menu[i].mode ~=nil then
             if menu[i].mode ~= request then
-                table.remove(menu,i)
+                table.remove(menu, i)
             else
                 menu[i].mode = nil
             end
