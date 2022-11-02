@@ -134,7 +134,7 @@ function InputContainer:registerTouchZones(zones)
         if self._zones[zone.id] then
             self.touch_zone_dg:removeNode(zone.id)
         end
-        self._zones[zone.id]= {
+        self._zones[zone.id] = {
             def = zone,
             handler = zone.handler,
             gs_range = GestureRange:new{
@@ -267,6 +267,76 @@ function InputContainer:onGesture(ev)
     if self.stop_events_propagation then
         return true
     end
+end
+
+-- Will be overloaded by the Gestures plugin, if enabled, for use in _onGestureFiltered
+function InputContainer:_isGestureAlwaysActive(ges, multiswipe_directions)
+    -- If the plugin isn't enabled, IgnoreTouchInput can still be emitted by Dispatcher (e.g., via Profile or QuickMenu).
+    -- Regardless of that, we still want to block all gestures anyway, as our own onResume handler will ensure
+    -- that the standard onGesture handler is restored on the next resume cycle,
+    -- allowing one to restore input handling automatically.
+    return false
+end
+InputContainer.isGestureAlwaysActive = InputContainer._isGestureAlwaysActive
+
+-- Filtered variant that only lets specific touch zones marked as "always active" through.
+-- (This is used by the "toggle_touch_input" Dispatcher action).
+function InputContainer:_onGestureFiltered(ev)
+    for _, tzone in ipairs(self._ordered_touch_zones) do
+        if self:isGestureAlwaysActive(tzone.def.id, ev.multiswipe_directions) and tzone.gs_range:match(ev) and tzone.handler(ev) then
+            return true
+        end
+    end
+    -- No ges_events at all, although if the need ever arises, we could also support an "always active" marker for those ;).
+    if self.stop_events_propagation then
+        return true
+    end
+end
+
+-- NOTE: Monkey-patching InputContainer.onGesture allows us to effectively disable touch input,
+--       because barely any InputContainer subclasses implement onGesture, meaning they all inherit this one,
+--       making this specific method in this specific widget the only piece of code that handles the Gesture
+--       Events sent by GestureDetector.
+--       We would need to be slightly more creative if subclassed widgets did overload it in in any meaningful way[1].
+--       (i.e., use a broadcast Event, don't stop its propagation, and swap self.onGesture in every instance
+--       while still only swapping Input.onGesture once...).
+--
+--       [1] The most common implementation you'll see is a NOP for ReaderUI modules that defer gesture handling to ReaderUI.
+--           Notification also implements a simple one to dismiss notifications on any user input,
+--           which is something that doesn't impede our goal, which is why we don't need to deal with it.
+function InputContainer:onIgnoreTouchInput(toggle)
+    local Notification = require("ui/widget/notification")
+    if toggle == false then
+        -- Restore the proper onGesture handler if we disabled it
+        if InputContainer._onGesture then
+            InputContainer.onGesture = InputContainer._onGesture
+            InputContainer._onGesture = nil
+            Notification:notify("Restored touch input")
+        end
+    elseif toggle == true then
+        -- Replace the onGesture handler w/ the minimal one if that's not already the case
+        if not InputContainer._onGesture then
+            InputContainer._onGesture = InputContainer.onGesture
+            InputContainer.onGesture = InputContainer._onGestureFiltered
+            Notification:notify("Disabled touch input")
+        end
+    else
+        -- Toggle the current state
+        if InputContainer._onGesture then
+            self:onIgnoreTouchInput(false)
+        else
+            self:onIgnoreTouchInput(true)
+        end
+    end
+
+    -- We only affect the base class, once is enough ;).
+    return true
+end
+
+function InputContainer:onResume()
+    -- Always restore touch input on resume, to avoid confusion for scatter-brained users ;).
+    -- It's also helpful when the IgnoreTouchInput event is emitted by Dispatcher through other means than Gestures.
+    self:onIgnoreTouchInput(false)
 end
 
 function InputContainer:onInput(input, ignore_first_hold_release)
