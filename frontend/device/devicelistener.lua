@@ -206,7 +206,6 @@ if Device:hasFrontlight() then
             new_text = _("Frontlight disabled.")
         end
         Notification:notify(new_text)
-        return true
     end
 
     function DeviceListener:onShowFlDialog()
