@@ -171,23 +171,26 @@ end
 AutoWarmth._onEnterStandby = AutoWarmth._onSuspend
 
 function AutoWarmth:_onToggleNightMode()
-    if self.control_nightmode and not AutoWarmth.hide_nightmode_warning then
-        UIManager:show(ConfirmBox:new{
-            text = _("Night mode changed.\nThe AutoWarmth plugin might change it again."),
-            ok_text = _("Show warning again"),
-            cancel_text = _("Hide warning"),
-            cancel_callback = function()
-                AutoWarmth.hide_nightmode_warning = true
+    if self.control_nightmode and not self.hide_nightmode_warning then
+        local radio_buttons = {
+            { {text = _("Show this warning again."), provider = 1} },
+            { {text = _("Hide the warning until the next book is opened."), provider = 2} },
+            { {text = _("Disable AutoWarmth's nightmode control."), provider = 3} },
+        }
+        UIManager:show(require("ui/widget/radiobuttonwidget"):new{
+            title_text = _("Night mode changed"),
+            info_text = _("The AutoWarmth plugin might change it again."),
+            width_factor = 0.9,
+            radio_buttons = radio_buttons,
+            callback = function(radio)
+                if radio.provider == 2 then
+                    self.hide_nightmode_warning = true
+                elseif radio.provider == 3 then
+                    self.control_nightmode = false
+                    G_reader_settings:makeFalse("autowarmth_control_nightmode")
+                end
+                UIManager:setDirty(self.dialog, "ui")
             end,
-            other_buttons = {{
-                {
-                    text = _("Disable AutoWarmth's nightmode"),
-                    callback = function()
-                        self.control_nightmode = false
-                    end,
-                }
-            }},
-            other_buttons_first = true,
         })
     end
 end
