@@ -563,6 +563,12 @@ function AutoWarmth:getSubMenuItems()
                     self:updateItems(touchmenu_instance)
                 end
             end,
+            hold_callback = function()
+                UIManager:show(InfoMessage:new{
+                    text = _([[This feature turns your front light on at sunset and off at sunrise according to the “Current Active Parameters” in this plugin.
+You can override this change by manually turning the headlight on/off. At the next sunrise/sunset, AutoWarmth will toggle again if needed.]]),
+                })
+            end,
             keep_menu_open = true,
             separator = true,
         },
