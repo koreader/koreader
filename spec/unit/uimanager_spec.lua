@@ -21,7 +21,6 @@ describe("UIManager spec", function()
             { time = now - time.us(5), action = noop, args = {} },
             { time = now - time.s(10), action = noop, args = {} },
         }
-        UIManager._task_queue.n = #UIManager._task_queue
 
         UIManager:_checkTasks()
         assert.are.same(2, #UIManager._task_queue)
@@ -39,7 +38,6 @@ describe("UIManager spec", function()
             { time = now - time.us(5), action = noop, args = {} },
             { time = now - time.s(10), action = noop, args = {} },
         }
-        UIManager._task_queue.n = #UIManager._task_queue
 
         wait_until, now = UIManager:_checkTasks()
         assert.are.same(future_time, wait_until)
@@ -53,7 +51,6 @@ describe("UIManager spec", function()
             { time = now - time.us(5), action = noop, args = {} },
             { time = now - time.s(10), action = noop, args = {} },
         }
-        UIManager._task_queue.n = #UIManager._task_queue
 
         wait_until, now = UIManager:_checkTasks()
         assert.are.same(nil, wait_until)
@@ -75,7 +72,6 @@ describe("UIManager spec", function()
         UIManager._task_queue = {
             { time = future_time, action = '1', args = {} },
         }
-        UIManager._task_queue.n = #UIManager._task_queue
 
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'quz')
@@ -86,7 +82,6 @@ describe("UIManager spec", function()
         UIManager._task_queue = {
             { time = now, action = '1', args = {} },
         }
-        UIManager._task_queue.n = #UIManager._task_queue
 
         assert.are.same(1, #UIManager._task_queue)
         UIManager:scheduleIn(150, 'foo')
@@ -105,7 +100,6 @@ describe("UIManager spec", function()
             { time = now - time.us(5), action = '2', args = {} },
             { time = now - time.s(10), action = '1', args = {} },
         }
-        UIManager._task_queue.n = #UIManager._task_queue
 
         -- insert into the tail slot
         UIManager:scheduleIn(10, 'foo')
@@ -186,14 +180,12 @@ describe("UIManager spec", function()
             { time = now - time.s(10), action = '1', args = {} },
             { time = now - time.s(15), action = '3', args = {} },
         }
-        UIManager._task_queue.n = #UIManager._task_queue
 
         -- insert into the tail slot
         UIManager:unschedule('3')
         assert.are.same({
             { time = now - time.us(5), action = '2', args = {} },
             { time = now - time.s(10), action = '1', args = {} },
-            n = 2,
         }, UIManager._task_queue)
     end)
 
@@ -217,7 +209,6 @@ describe("UIManager spec", function()
             },
             { time = now - time.s(15), action = task_to_remove, args = {} }, -- this will be called
         }
-        UIManager._task_queue.n = #UIManager._task_queue
 
         UIManager:_checkTasks()
         assert.are.same(2, run_count)

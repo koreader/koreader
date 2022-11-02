@@ -31,7 +31,7 @@ local UIManager = {
 
     _now = time.now(),
     _window_stack = {},
-    _task_queue = { n = 0 },
+    _task_queue = {},
     _task_queue_dirty = false,
     _dirty = {},
     _zeromqs = {},
@@ -239,8 +239,7 @@ end
 
 -- Schedule an execution task; task queue is in descending order
 function UIManager:schedule(sched_time, action, ...)
-    local lo, hi = 1, self._task_queue.n
-    self._task_queue.n = hi + 1
+    local lo, hi = 1, #self._task_queue
     -- Leftmost binary insertion
     while lo <= hi do
         -- NOTE: We should be (mostly) free from overflow here, thanks to LuaJIT's BitOp semantics.
@@ -346,10 +345,9 @@ UIManager:unschedule(self.anonymousFunction)
 ]]
 function UIManager:unschedule(action)
     local removed = false
-    for i = self._task_queue.n, 1, -1 do
+    for i = #self._task_queue, 1, -1 do
         if self._task_queue[i].action == action then
             table.remove(self._task_queue, i)
-            self._task_queue.n = self._task_queue.n - 1
             removed = true
         end
     end
@@ -750,7 +748,7 @@ function UIManager:quit(exit_code)
     logger.info("quitting uimanager with exit code:", self._exit_code)
     self._task_queue_dirty = false
     self._window_stack = {}
-    self._task_queue = { n = 0 }
+    self._task_queue = {}
     for i = #self._zeromqs, 1, -1 do
         self._zeromqs[i]:stop()
     end
@@ -883,7 +881,7 @@ end
 
 --[[
 function UIManager:getNextTaskTimes(count)
-    count = math.min(count or 1, self._task_queue.n)
+    count = math.min(count or 1, #self._task_queue)
     local times = {}
     for i = 1, count do
         times[i] = self._task_queue[i].time - time.now()
@@ -893,7 +891,7 @@ end
 --]]
 
 function UIManager:getNextTaskTime()
-    local next_task = self._task_queue[self._task_queue.n]
+    local next_task = self._task_queue[#self._task_queue]
     if next_task then
         return next_task.time - time:now()
     end
@@ -906,12 +904,11 @@ function UIManager:_checkTasks()
     -- Tasks due for execution might themselves schedule more tasks (that might also be immediately due for execution ;)).
     -- Flipping this switch ensures we'll consume all such tasks *before* yielding to input polling.
     self._task_queue_dirty = false
-    while self._task_queue.n > 0 do
-        local task_time = self._task_queue[self._task_queue.n].time
+    while self._task_queue[1] do
+        local task_time = self._task_queue[#self._task_queue].time
         if task_time <= self._now then
             -- Remove the upcoming task, as it is due for execution...
             local task =  table.remove(self._task_queue)
-            self._task_queue.n = self._task_queue.n - 1
             -- ...so do it now.
             -- NOTE: Said task's action might modify _task_queue.
             --       To avoid race conditions and catch new upcoming tasks during this call,

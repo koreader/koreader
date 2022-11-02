@@ -66,7 +66,7 @@ describe("UIManager more sophisticated schedule benchmark", function()
     end
 
     for i=1, NB_TESTS do
-        UIManager._task_queue = { n = 0 }
+        UIManager._task_queue = {}
         UIManager:schedule(now + time.s(24*60*60), noop) -- shutdown
         UIManager:schedule(now + time.s(15*60*60), noop) -- sleep
         UIManager:schedule(now + time.s(55), noop) -- footer refresh
@@ -91,7 +91,7 @@ describe("UIManager schedule massive collision tests", function()
 
     for i = 1, 6 do
         -- simple test (1000/10 collisions)
-        UIManager._task_queue = { n = 0 }
+        UIManager._task_queue = {}
         for j = 1, 10 do
             UIManager:schedule(math.random(10), j)
             -- check() -- enabling this takes really long O(n^2)
@@ -99,7 +99,7 @@ describe("UIManager schedule massive collision tests", function()
         check()
 
         -- armageddon test (10000 collisions)
-        UIManager._task_queue = { n = 0 }
+        UIManager._task_queue = {}
         for j = 1, 1e5 do
             UIManager:schedule(math.random(100), j)
             -- check() -- enabling this takes really long O(n^2)
@@ -114,7 +114,7 @@ describe("UIManager schedule massive ridiculous tests", function()
 
     for i = 1, 6 do
         -- simple test (1000 collisions)
-        UIManager._task_queue = { n = 0 }
+        UIManager._task_queue = {}
         local offs = 0
         for j = 1, 1e3 do
             UIManager:schedule(math.random(10), j + offs)
