@@ -637,9 +637,21 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                          if location[settings][k] then
                              location[settings][k] = nil
                              Dispatcher:_removeFromOrder(location, settings, k)
+                             if k == "toggle_touch_input" then
+                                if caller.ui and caller.ui._zones and caller.ui._zones[settings] then
+                                    caller.ui._zones[settings].def.is_always_active = nil
+                                end
+                             end
                          else
                              location[settings][k] = true
                              Dispatcher:_addToOrder(location, settings, k)
+                             -- Ugly hack for "toggle_touch_input": mark its zone as is_always_active *immediately*,
+                             -- like Gestures:registerGesture would do...
+                             if k == "toggle_touch_input" then
+                                if caller.ui and caller.ui._zones and caller.ui._zones[settings] then
+                                    caller.ui._zones[settings].def.is_always_active = true
+                                end
+                             end
                          end
                          caller.updated = true
                          if touchmenu_instance then touchmenu_instance:updateItems() end
