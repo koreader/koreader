@@ -134,7 +134,7 @@ function InputContainer:registerTouchZones(zones)
         if self._zones[zone.id] then
             self.touch_zone_dg:removeNode(zone.id)
         end
-        self._zones[zone.id]= {
+        self._zones[zone.id] = {
             def = zone,
             handler = zone.handler,
             gs_range = GestureRange:new{
@@ -267,6 +267,64 @@ function InputContainer:onGesture(ev)
     if self.stop_events_propagation then
         return true
     end
+end
+
+-- Will be overloaded by the Gestures plugin, if enabled, for use in _onGestureFiltered
+function InputContainer:isGestureAlwaysActive(ges, multiswipe_directions)
+    -- If the plugin isn't enabled, block everything, we'll restore standard behavior on resume.
+    return false
+end
+
+-- Filtered variant that only lets is_always_active touch zones through.
+-- (This is used by the "toggle_touch_input" Dispatcher action).
+function InputContainer:_onGestureFiltered(ev)
+    for _, tzone in ipairs(self._ordered_touch_zones) do
+        if self:isGestureAlwaysActive(tzone.def.id, ev.multiswipe_directions) and tzone.gs_range:match(ev) and tzone.handler(ev) then
+            return true
+        end
+    end
+    -- No ges_events at all, although if the need ever arises, we could also support an is_always_active field for those ;).
+    if self.stop_events_propagation then
+        return true
+    end
+end
+
+-- NOTE: This works because barely anything overloads onGesture.
+--       We would need to be slightly more creative if things did
+--       (i.e., don't stop the event and swap self.onGesture in every instance
+--       while still only swapping Input.onGesture once...)
+function InputContainer:onIgnoreTouchInput(toggle)
+    local Notification = require("ui/widget/notification")
+    if toggle == false then
+        -- Restore the proper onGesture handler if we disabled it
+        if InputContainer._onGesture then
+            InputContainer.onGesture = InputContainer._onGesture
+            InputContainer._onGesture = nil
+            Notification:notify("Restored touch input")
+        end
+    elseif toggle == true then
+        -- Replace the onGesture handler w/ the minimal one if that's not already the case
+        if not InputContainer._onGesture then
+            InputContainer._onGesture = InputContainer.onGesture
+            InputContainer.onGesture = InputContainer._onGestureFiltered
+            Notification:notify("Disabled touch input")
+        end
+    else
+        -- Toggle the current state
+        if InputContainer._onGesture then
+            self:onIgnoreTouchInput(false)
+        else
+            self:onIgnoreTouchInput(true)
+        end
+    end
+
+    -- We only affect the base class, once is enough ;).
+    return true
+end
+
+function InputContainer:onResume()
+    -- Always restore touch input on resume, to avoid confusion for scatter-brained users ;).
+    self:onIgnoreTouchInput(false)
 end
 
 function InputContainer:onInput(input, ignore_first_hold_release)
