@@ -298,6 +298,36 @@ function VocabularyBuilder:toggleBookFilter(ids)
     conn:close()
 end
 
+function VocabularyBuilder:updateBookIdOfWord(word, id)
+    if not word or type(id) ~= "number" then return end
+    local conn = SQ3.open(db_location)
+    local stmt = conn:prepare("UPDATE vocabulary SET title_id = ? WHERE word = ?;")
+    stmt:bind(id, word)
+    stmt:step()
+    stmt:clearbind():reset()
+    conn:close()
+end
+
+function VocabularyBuilder:insertNewBook(title)
+    local conn = SQ3.open(db_location)
+    local stmt = conn:prepare("INSERT INTO title (name) VALUES (?);")
+    stmt:bind(title):step()
+    stmt:clearbind():reset()
+    stmt = conn:prepare("SELECT id FROM title WHERE name = ?")
+    local result = stmt:bind(title):step()
+    stmt:clearbind():reset()
+    conn:close()
+    return tonumber(result[1])
+end
+
+function VocabularyBuilder:changeBookTitle(old_title, title)
+    local conn = SQ3.open(db_location)
+    local stmt = conn:prepare("UPDATE title SET name = ? WHERE name = ?;")
+    stmt:bind(title, old_title):step()
+    stmt:clearbind():reset()
+    conn:close()
+end
+
 function VocabularyBuilder:selectBooks()
     local conn = SQ3.open(db_location)
     local sql = string.format("SELECT * FROM title")
