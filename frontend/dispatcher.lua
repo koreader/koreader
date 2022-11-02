@@ -81,7 +81,8 @@ local settingsList = {
     reboot = {category="none", event="RequestReboot", title=_("Reboot the device"), device=true, condition=Device:canReboot()},
     poweroff = {category="none", event="RequestPowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(), separator=true},
     exit = {category="none", event="Exit", title=_("Exit KOReader"), device=true},
-    toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true, separator=true},
+    toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true},
+    toggle_touch_input = {category="none", event="IgnoreTouchInput", title=_("Toggle touch input"), device=true, separator=true},
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
     iterate_rotation = {category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true},
@@ -237,6 +238,7 @@ local dispatcher_menu_order = {
     "poweroff",
 
     "toggle_hold_corners",
+    "toggle_touch_input",
     "toggle_gsensor",
     "rotation_mode",
     "toggle_rotation",
@@ -939,9 +941,8 @@ end
 --[[--
 Calls the events in a settings list
 arguments are:
-    1) a reference to the uimanager
-    2) the settings table
-    3) optionally a `gestures`object
+    1) the settings table
+    2) optionally a `gestures` object
 --]]--
 function Dispatcher:execute(settings, gesture)
     if settings.settings ~= nil and settings.settings.show_as_quickmenu == true then
