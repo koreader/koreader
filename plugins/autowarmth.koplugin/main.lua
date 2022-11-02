@@ -173,12 +173,21 @@ AutoWarmth._onEnterStandby = AutoWarmth._onSuspend
 function AutoWarmth:_onToggleNightMode()
     if self.control_nightmode and not AutoWarmth.hide_nightmode_warning then
         UIManager:show(ConfirmBox:new{
-            text = _("Night mode changed by the user.\nThe AutoWarmth plugin might change it again."),
+            text = _("Night mode changed.\nThe AutoWarmth plugin might change it again."),
             ok_text = _("Show warning again"),
             cancel_text = _("Hide warning"),
             cancel_callback = function()
                 AutoWarmth.hide_nightmode_warning = true
             end,
+            other_buttons = {{
+                {
+                    text = _("Disable AutoWarmth's nightmode"),
+                    callback = function()
+                        self.control_nightmode = false
+                    end,
+                }
+            }},
+            other_buttons_first = true,
         })
     end
 end
