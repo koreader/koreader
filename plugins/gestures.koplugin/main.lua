@@ -1057,6 +1057,9 @@ function Gestures:registerGesture(ges, ges_type, zone, overrides, direction, dis
                 return self:gestureAction(ges, gest)
             end,
             overrides = overrides,
+            -- If the gesture contains the "toggle_touch_input" action, mark it as is_always_active
+            -- to make sure that InputContainer won't block it after the IgnoreTouchInput Event.
+            is_always_active = self.gestures[ges] and self.gestures[ges].toggle_touch_input,
         },
     })
 end
