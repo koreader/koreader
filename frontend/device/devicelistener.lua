@@ -224,9 +224,7 @@ if Device:canToggleGSensor() then
         else
             new_text = _("Accelerometer rotation events on.")
         end
-        UIManager:show(Notification:new{
-            text = new_text,
-        })
+        Notification:notify(new_text)
         return true
     end
 end
