@@ -8,7 +8,7 @@ Example:
     local radio_buttons = {
         { {text = _("Radio 1"), provider = 1} },
         { {text = _("Radio 2"), provider = 2, checked = true} },
-        { {text = _("Radio 3"), provider = 3} },
+        { {text = _("Radio 3"), provider = "identifier"} },
     }
     UIManager:show(RadioButtonWidget:new{
         title_text = _("Example Title"),
@@ -22,7 +22,7 @@ Example:
                 -- do something here
             elseif radio.provider == 2 then
                 -- do some other things here
-            elseif radio.provider == 3 then
+            elseif radio.provider == "identifier" then
                 -- or do a third thing here
             end
         end,
