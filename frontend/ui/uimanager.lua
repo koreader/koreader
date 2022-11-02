@@ -247,10 +247,10 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
 end
 
--- Schedule an execution task; task queue is in ascending order
+-- Schedule an execution task; task queue is in descending order
 function UIManager:schedule(sched_time, action, ...)
     local lo, hi = 1, #self._task_queue
-    -- Rightmost binary insertion
+    -- Leftmost binary insertion
     while lo <= hi do
         -- NOTE: We should be (mostly) free from overflow here, thanks to LuaJIT's BitOp semantics.
         --       For more fun details about this particular overflow,
@@ -259,10 +259,10 @@ function UIManager:schedule(sched_time, action, ...)
         --       c.f., https://reprog.wordpress.com/2010/04/19/are-you-one-of-the-10-percent/
         local mid = bit.rshift(lo + hi, 1)
         local mid_time = self._task_queue[mid].time
-        if sched_time >= mid_time then
-            lo = mid + 1
-        else
+        if mid_time <= sched_time then
             hi = mid - 1
+        else
+            lo = mid + 1
         end
     end
 
@@ -941,10 +941,9 @@ end
 --]]
 
 function UIManager:getNextTaskTime()
-    if self._task_queue[1] then
-        return self._task_queue[1].time - time:now()
-    else
-        return nil
+    local next_task = self._task_queue[#self._task_queue]
+    if next_task then
+        return next_task.time - time:now()
     end
 end
 
@@ -956,17 +955,17 @@ function UIManager:_checkTasks()
     -- Flipping this switch ensures we'll consume all such tasks *before* yielding to input polling.
     self._task_queue_dirty = false
     while self._task_queue[1] do
-        local task_time = self._task_queue[1].time
+        local task_time = self._task_queue[#self._task_queue].time
         if task_time <= self._now then
-            -- Pop the upcoming task, as it is due for execution...
-            local task = table.remove(self._task_queue, 1)
+            -- Remove the upcoming task, as it is due for execution...
+            local task =  table.remove(self._task_queue)
             -- ...so do it now.
             -- NOTE: Said task's action might modify _task_queue.
             --       To avoid race conditions and catch new upcoming tasks during this call,
             --       we repeatedly check the head of the queue (c.f., #1758).
             task.action(unpack(task.args))
         else
-            -- As the queue is sorted in ascending order, it's safe to assume all items are currently future tasks.
+            -- As the queue is sorted in descending order, it's safe to assume all items are currently future tasks.
             wait_until = task_time
             break
         end
