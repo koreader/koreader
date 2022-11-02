@@ -199,7 +199,6 @@ function AutoWarmth:_onToggleNightMode()
             radio_buttons = radio_buttons,
             callback = function(radio)
                 radio.provider()
-                UIManager:setDirty(self.dialog, "ui")
             end,
         })
     end
