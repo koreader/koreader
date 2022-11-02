@@ -354,7 +354,7 @@ function VocabularyBuilder.onSync(local_path, cached_path, income_path)
         return true
     end
 
-    local sql = "attach '" .. income_path:gsub("'", "\\'") .."' as income_db;"
+    local sql = "attach '" .. income_path:gsub("'", "''") .."' as income_db;"
     -- then we try to open cached db
     local conn_cached = SQ3.open(cached_path)
     local ok2, v2 = pcall(conn_cached.rowexec, conn_cached, "PRAGMA schema_version")
@@ -364,7 +364,7 @@ function VocabularyBuilder.onSync(local_path, cached_path, income_path)
         logger.dbg("vocabbuilder open cached DB failed", v2)
     else
         attached_cache = true
-        sql = sql .. "attach '" .. cached_path:gsub("'", "\\'") ..[[' as cached_db;
+        sql = sql .. "attach '" .. cached_path:gsub("'", "''") ..[[' as cached_db;
             -- first we delete from income_db words that exist in cached_db but not in local_db,
             -- namely the ones that were deleted since last sync
             DELETE FROM income_db.vocabulary WHERE word IN (
