@@ -41,6 +41,8 @@ local OTG_CHIPIDEA_ROLE_PATH = "/sys/kernel/debug/ci_hdrc.0/role"
 -- It does not require debugfs, but the point is moot as debugfs is mounted by default on those,
 -- as Nickel relies on it for PM interaction with the display driver.
 local OTG_SUNXI_ROLE_PATH = "/sys/devices/platform/soc/usbc0/otg_role"
+-- NOTE: See https://www.mobileread.com/forums/showthread.php?p=4135724 if your keyboard reports itself as an Apple keyboard.
+--       (We currently don't do this here, but that may change in the future).
 
 local function setupDebugFS()
     local mounts = io.open("/proc/mounts", "re")
