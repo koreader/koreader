@@ -173,9 +173,9 @@ AutoWarmth._onEnterStandby = AutoWarmth._onSuspend
 function AutoWarmth:_onToggleNightMode()
     if self.control_nightmode and not self.hide_nightmode_warning then
         local radio_buttons = {
-            { {text = _("Show this warning again."), provider = 1} },
-            { {text = _("Hide the warning until the next book is opened."), provider = 2} },
-            { {text = _("Disable AutoWarmth's nightmode control."), provider = 3} },
+            { {text = _("Show this warning again"), provider = 1} },
+            { {text = _("Hide the warning until the next book is opened"), provider = 2} },
+            { {text = _("Disable AutoWarmth's nightmode control"), provider = 3} },
         }
         UIManager:show(require("ui/widget/radiobuttonwidget"):new{
             title_text = _("Night mode changed"),
