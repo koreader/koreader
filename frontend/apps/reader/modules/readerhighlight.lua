@@ -92,7 +92,7 @@ function ReaderHighlight:init()
         end,
         ["04_add_note"] = function(this)
             return {
-                text = _("Add Note"),
+                text = _("Add note"),
                 callback = function()
                     this:addNote()
                     this:onClose()
@@ -325,6 +325,7 @@ local long_press_action = {
     {_("Do nothing"), "nothing"},
     {_("Highlight"), "highlight"},
     {_("Select and highlight"), "select"},
+    {_("Add note"), "note"},
     {_("Translate"), "translate"},
     {_("Wikipedia"), "wikipedia"},
     {_("Dictionary"), "dictionary"},
@@ -497,7 +498,7 @@ The interval value is in seconds and can range from 3 to 20 seconds.]]),
             },
         },
     }
-    for _, v in ipairs(long_press_action) do
+    for i, v in ipairs(long_press_action) do
         table.insert(menu_items.long_press.sub_item_table, {
             text = v[1],
             checked_func = function()
@@ -505,8 +506,7 @@ The interval value is in seconds and can range from 3 to 20 seconds.]]),
             end,
             radio = true,
             callback = function()
-                G_reader_settings:saveSetting("default_highlight_action", v[2])
-                self.view.highlight.disabled = v[2] == "nothing"
+                self:onSetHighlightAction(i, true) -- no notification
             end,
         })
     end
@@ -821,8 +821,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
                 text = _("Delete"),
                 callback = function()
                     self:deleteHighlight(page, index)
-                    -- other part outside of the dialog may be dirty
-                    UIManager:close(self.edit_highlight_dialog, "ui")
+                    UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
                 end,
             },
@@ -1522,6 +1521,9 @@ function ReaderHighlight:onHoldRelease()
             elseif default_highlight_action == "select" then
                 self:startSelection()
                 self:onClose()
+            elseif default_highlight_action == "note" then
+                self:addNote()
+                self:onClose()
             elseif default_highlight_action == "translate" then
                 self:translate(self.selected_text)
             elseif default_highlight_action == "wikipedia" then
@@ -1540,6 +1542,27 @@ function ReaderHighlight:onHoldRelease()
     return true
 end
 
+function ReaderHighlight:getHighlightActions() -- for Dispatcher
+    local action_nums, action_texts = {}, {}
+    for i, v in ipairs(long_press_action) do
+        table.insert(action_nums, i)
+        table.insert(action_texts, v[1])
+    end
+    return action_nums, action_texts
+end
+
+function ReaderHighlight:onSetHighlightAction(action_num, no_notification)
+    local v = long_press_action[action_num]
+    G_reader_settings:saveSetting("default_highlight_action", v[2])
+    self.view.highlight.disabled = v[2] == "nothing"
+    if not no_notification then -- fired with a gesture
+        UIManager:show(Notification:new{
+            text = T(_("Default highlight action changed to '%1'."), v[1]),
+        })
+    end
+    return true
+end
+
 function ReaderHighlight:onCycleHighlightAction()
     local current_action = G_reader_settings:readSetting("default_highlight_action", "ask")
     local next_action_num
@@ -1552,10 +1575,7 @@ function ReaderHighlight:onCycleHighlightAction()
     if next_action_num > #long_press_action then
         next_action_num = 1
     end
-    G_reader_settings:saveSetting("default_highlight_action", long_press_action[next_action_num][2])
-    UIManager:show(Notification:new{
-        text = T(_("Default highlight action changed to '%1'."), long_press_action[next_action_num][1]),
-    })
+    self:onSetHighlightAction(next_action_num)
     return true
 end
 
