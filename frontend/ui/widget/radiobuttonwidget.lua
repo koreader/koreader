@@ -1,5 +1,5 @@
 --[[--
-Widget that allows to select an entry from a radiobutton list.
+Widget that allows selecting an entry from a @{ui.widget.radiobuttontable|RadioButton} list.
 
 
 Example:

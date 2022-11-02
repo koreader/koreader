@@ -1,3 +1,7 @@
+--[[--
+A button table to be used in dialogs and widgets.
+]]
+
 local Blitbuffer = require("ffi/blitbuffer")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
