@@ -328,30 +328,32 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
     end
 
     if self.easy_mode then
-        self.current_times_h[1] = nil
-        self.current_times_h[2] = nil
-        self.current_times_h[3] = nil
-        self.current_times_h[6] = nil
-        self.current_times_h[9] = nil
-        self.current_times_h[10] = nil
-        self.current_times_h[11] = nil
+        self.current_times_h[1] = nil   -- Solar midnight prev. day
+        self.current_times_h[2] = nil   -- Astronomical dawn
+        self.current_times_h[3] = nil   -- Nautical dawn
+        self.current_times_h[6] = nil   -- Solar noon
+        self.current_times_h[9] = nil   -- Nautical dust
+        self.current_times_h[10] = nil  -- Astronomical dust
+        self.current_times_h[11] = nil  -- Solar midnight
     end
 
     -- here are dragons
-    local i = 1
-    -- find first valid entry
-    while not self.current_times_h[i] and i <= midnight_index do
-        i = i + 1
+    local prev_index = 1
+    -- find first valid entry (~= nil)
+    while not self.current_times_h[prev_index] and prev_index <= midnight_index do
+        prev_index = prev_index + 1
     end
-    local next
-    while i <= midnight_index do
-        next = i + 1
-        -- find next valid entry
-        while not self.current_times_h[next] and next <= midnight_index do
-            next = next + 1
+    local next_index
+    while prev_index <= midnight_index do
+        next_index = prev_index + 1
+        -- find next valid entry (~= nil)
+        while not self.current_times_h[next_index] and next_index <= midnight_index do
+            next_index = next_index + 1
         end
-        prepareSchedule(self.current_times_h, i, next)
-        i = next
+        -- now we have two valid indices: prev_index and next_index
+        prepareSchedule(self.current_times_h, prev_index, next_index)
+        -- move on prev_index to the next valid entry
+        prev_index = next_index
     end
 
     -- Reschedule 1sec after midnight
