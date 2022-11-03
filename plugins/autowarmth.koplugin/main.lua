@@ -43,13 +43,13 @@ local function frac(x)
     return x - math.floor(x)
 end
 
--- Local variable that shall survive reloading of the plugin but not a restart
-local fl_turned_off = nil -- true/false if someone (AutoWarmth, gesture ...) has toggled the frontlight
-
 local AutoWarmth = WidgetContainer:extend{
     name = "autowarmth",
     sched_times_s = nil, -- array
     sched_warmths = nil, -- array
+
+    -- Static member that shall survive reloading of the plugin but not a restart
+    fl_turned_off = nil -- true/false if someone (AutoWarmth, gesture ...) has toggled the frontlight
 }
 
 -- get timezone offset in hours (including dst)
@@ -174,6 +174,7 @@ end
 AutoWarmth._onEnterStandby = AutoWarmth._onSuspend
 
 function AutoWarmth:_onToggleNightMode()
+    logger.dbg("AutoWarmth: onToggleNightMode")
     if self.control_nightmode and not self.hide_nightmode_warning then
         local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
         local radio_buttons = {
@@ -208,11 +209,12 @@ function AutoWarmth:_onToggleNightMode()
 end
 
 function AutoWarmth:_onToggleFrontlight()
+    logger.dbg("AutoWarmth: onToggleFrontlight")
     local now_s = SunTime:getTimeInSec()
     if now_s >= self.current_times_h[5]*3600 and now_s < self.current_times_h[7]*3600 then
-        fl_turned_off = true
+        AutoWarmth.fl_turned_off = true
     else
-        fl_turned_off = false
+        AutoWarmth.fl_turned_off = false
     end
 end
 
@@ -350,7 +352,7 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         if sunset_in_s >= 0 then
             UIManager:scheduleIn(sunset_in_s, self.setFrontlightState, self, true)
             local sunrise_in_s = self.current_times_h[5] * 3600 - now_s
-            if sunrise_in_s >=0 then
+            if sunrise_in_s >= 0 then
                 UIManager:scheduleIn(sunrise_in_s, self.setFrontlightState, self, false)
             end
         end
@@ -362,7 +364,7 @@ end
 -- turns frontlight on or off and notice AutoDim on turning it off
 -- enable ... true to enable frontlight, false/nil to disable it
 function AutoWarmth:setFrontlightState(enable)
-    fl_turned_off = not enable
+    AutoWarmth.fl_turned_off = not enable
     if enable then
         Powerd:turnOnFrontlight()
     else
@@ -441,20 +443,20 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
         if time_s >= self.current_times_h[5]*3600 and time_s < self.current_times_h[7]*3600 then
             -- during daytime (depending on choosens activation: SunTime, fixed Schedule, closer...
             -- turn on frontlight off once, user can override this selection by a gesture
-            if fl_turned_off ~= true then -- can be false or nil
+            if AutoWarmth.fl_turned_off ~= true then -- can be false or nil
                 if Powerd:isFrontlightOn() then
                     self:setFrontlightState(false)
                 end
             end
-            fl_turned_off = true -- in case fl_turned_off was nil
+            AutoWarmth.fl_turned_off = true -- in case fl_turned_off was nil
         else
             -- outside of selected daytime, turn on frontlight once, user can override this selection by a gesture
-            if fl_turned_off ~= false then -- can be true or nil
+            if AutoWarmth.fl_turned_off ~= false then -- can be true or nil
                 if Powerd:isFrontlightOff() then
                     self:setFrontlightState(true)
                 end
             end
-            fl_turned_off = false -- in case fl_turned_off was nil
+            AutoWarmth.fl_turned_off = false -- in case fl_turned_off was nil
         end
     end
 end
@@ -568,13 +570,13 @@ function AutoWarmth:getSubMenuItems()
         {
             text = _("Fixed schedule settings"),
             enabled_func = function()
-                return self.activate ~= activate_sun and self.activate ~=0
+                return self.activate ~= activate_sun and self.activate ~= 0
             end,
             sub_item_table = self:getScheduleMenu(),
         },
         {
             enabled_func = function()
-                return self.activate ~=0
+                return self.activate ~= 0
             end,
             text = Device:hasNaturalLight() and _("Warmth and night mode settings") or _("Night mode settings"),
             sub_item_table = self:getWarmthMenu(),
