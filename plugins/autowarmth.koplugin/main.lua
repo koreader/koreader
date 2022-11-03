@@ -170,11 +170,47 @@ end
 
 AutoWarmth._onEnterStandby = AutoWarmth._onSuspend
 
+function AutoWarmth:_onToggleNightMode()
+    if self.control_nightmode and not self.hide_nightmode_warning then
+        local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
+        local radio_buttons = {
+            {{
+                text = _("Show this warning again"),
+                provider = function() end
+            }},
+            {{
+                text = _("Hide the warning until the next book is opened"),
+                provider = function()
+                    self.hide_nightmode_warning = true
+                end,
+            }},
+            {{
+                text = _("Disable AutoWarmth's nightmode control"),
+                provider = function()
+                    self.control_nightmode = false
+                    G_reader_settings:makeFalse("autowarmth_control_nightmode")
+                end,
+            }},
+        }
+        UIManager:show(RadioButtonWidget:new{
+            title_text = _("Night mode changed"),
+            info_text = _("The AutoWarmth plugin might change it again."),
+            width_factor = 0.9,
+            radio_buttons = radio_buttons,
+            callback = function(radio)
+                radio.provider()
+            end,
+        })
+    end
+end
+
 function AutoWarmth:setEventHandlers()
     self.onResume = self._onResume
     self.onSuspend = self._onSuspend
     self.onEnterStandby = self._onEnterStandby
     self.onLeaveStandby = self._onLeaveStandby
+    self.onToggleNightMode = self._onToggleNightMode
+    self.onSetNightMode = self._onToggleNightMode
 end
 
 function AutoWarmth:clearEventHandlers()
@@ -182,6 +218,8 @@ function AutoWarmth:clearEventHandlers()
     self.onSuspend = nil
     self.onEnterStandby = nil
     self.onLeaveStandby = nil
+    self.onToggleNightMode = nil
+    self.onSetNightMode = nil
 end
 
 -- from_resume ... true if called from onResume
