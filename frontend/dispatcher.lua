@@ -573,7 +573,7 @@ function Dispatcher:menuTextFunc(settings)
             if item == "settings" then item = next(settings, item) end
             action_name = Dispatcher:getNameFromItem(item, settings)
         else
-            action_name = T(NC_("Dispatcher", "", "%1 actions", count), count)
+            action_name = T(NC_("Dispatcher", "1 action", "%1 actions", count), count)
         end
     end
     return action_name
