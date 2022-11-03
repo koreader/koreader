@@ -39,6 +39,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = Device.screen
@@ -273,7 +274,7 @@ end
 -- (This is used by the "toggle_touch_input" Dispatcher action).
 function InputContainer:_onGestureFiltered(ev)
     for _, tzone in ipairs(self._ordered_touch_zones) do
-        if tzone.def.is_always_active and tzone.gs_range:match(ev) and tzone.handler(ev) then
+        if PluginShare.isGestureAlwaysActive(tzone.def.id) and tzone.gs_range:match(ev) and tzone.handler(ev) then
             return true
         end
     end

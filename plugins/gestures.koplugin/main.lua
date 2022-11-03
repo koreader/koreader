@@ -11,6 +11,7 @@ local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
+local PluginShare = require("pluginshare")
 local Screen = require("device").screen
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
@@ -120,6 +121,12 @@ Multiswipes allow you to perform complex gestures built up out of multiple swipe
 
 These advanced gestures consist of either straight swipes or diagonal swipes. To ensure accuracy, they can't be mixed.]])
 
+-- If the gesture contains the "toggle_touch_input" action, mark it always_active
+-- to make sure that InputContainer won't block it after the IgnoreTouchInput Event.
+function Gestures:isGestureAlwaysActive(ges)
+    return self.gestures[ges] and self.gestures[ges].toggle_touch_input or nil
+end
+
 function Gestures:init()
     local defaults_path = FFIUtil.joinPath(self.path, "defaults.lua")
     if not lfs.attributes(gestures_path, "mode") then
@@ -184,6 +191,7 @@ function Gestures:init()
     self.ui.menu:registerToMainMenu(self)
     Dispatcher:init()
     self:initGesture()
+    PluginShare.isGestureAlwaysActive = function(ges) return self:isGestureAlwaysActive(ges) end
 end
 
 function Gestures:gestureTitleFunc(ges)
@@ -1057,9 +1065,6 @@ function Gestures:registerGesture(ges, ges_type, zone, overrides, direction, dis
                 return self:gestureAction(ges, gest)
             end,
             overrides = overrides,
-            -- If the gesture contains the "toggle_touch_input" action, mark it as is_always_active
-            -- to make sure that InputContainer won't block it after the IgnoreTouchInput Event.
-            is_always_active = self.gestures[ges] and self.gestures[ges].toggle_touch_input or nil,
         },
     })
 end
