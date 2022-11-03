@@ -29,6 +29,10 @@ local T = FFIUtil.template
 local Screen = require("device").screen
 local util = require("util")
 
+local math_abs = math.abs
+local math_floor = math.floor
+local math_min = math.min
+
 local activate_sun = 1
 local activate_schedule = 2
 local activate_closer_noon = 3
@@ -40,7 +44,7 @@ local device_max_warmth = Device:hasNaturalLight() and Powerd.fl_warmth_max or 1
 local device_warmth_fit_scale = device_max_warmth * (1/100)
 
 local function frac(x)
-    return x - math.floor(x)
+    return x - math_floor(x)
 end
 
 local AutoWarmth = WidgetContainer:extend{
@@ -153,8 +157,7 @@ function AutoWarmth:leavePowerSavingState(from_resume)
         and resume_date.year == SunTime.date.year then
 
         local now_s = SunTime:getTimeInSec(resume_date)
-
-        self.sched_warmth_index = self.sched_warmth_index - 1
+        self.sched_warmth_index = self.sched_warmth_index - 1 -- scheduleNextWarmth will check this
         self:scheduleNextWarmthChange(from_resume)
         self:scheduleToggleFrontlight(now_s)
         self:toggleFrontlight(now_s)
@@ -186,7 +189,7 @@ AutoWarmth._onEnterStandby = AutoWarmth._onSuspend
 
 function AutoWarmth:_onToggleNightMode()
     logger.dbg("AutoWarmth: onToggleNightMode")
-    if self.control_nightmode and not self.hide_nightmode_warning then
+    if not self.hide_nightmode_warning then
         local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
         local radio_buttons = {
             {{
@@ -235,10 +238,12 @@ function AutoWarmth:setEventHandlers()
     self.onSuspend = self._onSuspend
     self.onEnterStandby = self._onEnterStandby
     self.onLeaveStandby = self._onLeaveStandby
-    self.onToggleNightMode = self._onToggleNightMode
-    self.onSetNightMode = self._onToggleNightMode
     if self.fl_off_during_day then
         self.onToggleFrontlight = self._onToggleFrontlight
+    end
+    if self.control_nightmode then
+        self.onToggleNightMode = self._onToggleNightMode
+        self.onSetNightMode = self._onToggleNightMode
     end
 end
 
@@ -278,13 +283,13 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
 
         local time2_h = times_h[index2]
         if not time2_h then return end -- to near to the pole
-        local warmth_diff = math.min(self.warmth[index2], 100) - math.min(self.warmth[index1], 100)
+        local warmth_diff = math_min(self.warmth[index2], 100) - math_min(self.warmth[index1], 100)
         local time_diff_s = SunTime:getTimeInSec(time2_h) - time1_s
         if warmth_diff ~= 0 and time_diff_s > 0 then
-            local delta_t = time_diff_s / math.abs(warmth_diff) -- cannot be inf, no problem
+            local delta_t = time_diff_s / math_abs(warmth_diff) -- cannot be inf, no problem
             local delta_w = warmth_diff > 0 and 1 or -1
-            for i = 1, math.abs(warmth_diff) - 1 do
-                local next_warmth = math.min(self.warmth[index1], 100) + delta_w * i
+            for i = 1, math_abs(warmth_diff) - 1 do
+                local next_warmth = math_min(self.warmth[index1], 100) + delta_w * i
                 -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
                 -- which map to warmth 0, 10, 20, 30 ... 100)
                 if frac(next_warmth * device_warmth_fit_scale) == 0 then
@@ -306,7 +311,7 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
                 if not self.current_times_h[i] then
                     self.current_times_h[i] = self.scheduler_times[i]
                 elseif self.scheduler_times[i] and
-                    math.abs(self.current_times_h[i]%24 - 12) > math.abs(self.scheduler_times[i]%24 - 12) then
+                    math_abs(self.current_times_h[i]%24 - 12) > math_abs(self.scheduler_times[i]%24 - 12) then
                     self.current_times_h[i] = self.scheduler_times[i]
                 end
             end
@@ -315,7 +320,7 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
                 if not self.current_times_h[i] then
                     self.current_times_h[i] = self.scheduler_times[i]
                 elseif self.scheduler_times[i] and
-                    math.abs(self.current_times_h[i]%24 - 12) < math.abs(self.scheduler_times[i]%24 - 12) then
+                    math_abs(self.current_times_h[i]%24 - 12) < math_abs(self.scheduler_times[i]%24 - 12) then
                     self.current_times_h[i] = self.scheduler_times[i]
                 end
             end
@@ -487,7 +492,7 @@ function AutoWarmth:scheduleNextWarmthChange(from_resume)
 
     if self.sched_warmth_index <= #self.sched_warmths then -- and only then, schedule next warmth change
         local next_sched_time_s = self.sched_times_s[self.sched_warmth_index] - now_s
-        UIManager:scheduleIn(next_sched_time_s, self.scheduleNextWarmthChange, self, false)
+        UIManager:scheduleIn(next_sched_time_s, self.scheduleNextWarmthChange, self, false) -- no force warmth
     end
 
     if from_resume then
@@ -528,8 +533,8 @@ function AutoWarmth:setWarmth(val, force_warmth)
             DeviceListener:onSetNightMode(val > 100)
         end
 
-        if Device:hasNaturalLight() and self.control_warmth then
-            val = math.min(val, 100) -- "mask" night mode
+        if self.control_warmth and Device:hasNaturalLight() then
+            val = math_min(val, 100) -- "mask" night mode
             Powerd:setWarmth(val, force_warmth)
         end
     end
@@ -589,7 +594,7 @@ function AutoWarmth:getSubMenuItems()
             callback = function()
                 UIManager:show(InfoMessage:new{
                     text = about_text,
-                    width = math.floor(Screen:getWidth() * 0.9),
+                    width = math_floor(Screen:getWidth() * 0.9),
                 })
             end,
             keep_menu_open = true,
@@ -893,8 +898,8 @@ function AutoWarmth:getScheduleMenu()
                 local hh = 12
                 local mm = 0
                 if self.scheduler_times[num] then
-                    hh = math.floor(self.scheduler_times[num])
-                    mm = math.floor(frac(self.scheduler_times[num]) * 60 + 0.5)
+                    hh = math_floor(self.scheduler_times[num])
+                    mm = math_floor(frac(self.scheduler_times[num]) * 60 + 0.5)
                 end
                 UIManager:show(DateTimeWidget:new{
                     title_text = _("Set time"),
@@ -1008,7 +1013,7 @@ function AutoWarmth:getWarmthMenu()
                         value_min = 0,
                         value_max = 100,
                         wrap = false,
-                        value_step = math.floor(100 / device_max_warmth),
+                        value_step = math_floor(100 / device_max_warmth),
                         value_hold_step = 10,
                         unit = "%",
                         ok_text = _("Set"),
@@ -1147,7 +1152,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         tmp:free()
 
         -- width of text in spaces
-        local str_len = math.floor(text_w / space_w + 0.5)
+        local str_len = math_floor(text_w / space_w + 0.5)
 
         local tab_width = 18 - indent
         local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - str_len)
@@ -1197,7 +1202,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     local face = Font:getFace("scfont")
     UIManager:show(InfoMessage:new{
         face = face,
-        width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
+        width = math_floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
         text = title .. location_string .. ":\n\n" ..
             info_line(0, _("Solar midnight:"), times[1], 1, face, request_easy) ..
             add_line(2, _("Dawn"), request_easy) ..
