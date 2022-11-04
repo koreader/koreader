@@ -368,8 +368,7 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         self.sched_warmth_index = 1
         self:scheduleNextWarmthChange(from_resume)
         self:setEventHandlers()
-        self:scheduleNextWarmthChange(now_s, 1, from_resume)
-        self:scheduleToggleFrontlight(now_s)
+        self:scheduleToggleFrontlight(now_s) -- reset user toggles at sun set or sun rise
         self:toggleFrontlight(now_s)
     else
         self:clearEventHandlers()
@@ -447,8 +446,8 @@ end
 -- schedules the next warmth change
 -- search_pos ... start searching from that index
 -- from_resume ... true if first call after resume
-function AutoWarmth:scheduleNextWarmthChange(from_resume)
-    logger.dbg("AutoWarmth: scheduleNextWarmthChange")
+function AutoWarmth:scheduleNextWarmthChange(from_resume, now_s)
+    logger.dbg("AutoWarmth: scheduleNextWarmthChange", now_s)
     if UIManager:unschedule(self.scheduleNextWarmthChange) then
         logger.err("AutoWarmth: this should not happen")
     end
@@ -473,7 +472,7 @@ function AutoWarmth:scheduleNextWarmthChange(from_resume)
     -- and the error is small.
     local warmth_now = self.sched_warmths[self.sched_warmth_index]
     local warmth_in_1p5_s = warmth_now
-    local now_s = SunTime:getTimeInSec()
+    now_s = now_s or SunTime:getTimeInSec()
     while self.sched_warmth_index <= #self.sched_warmths do
         if self.sched_times_s[self.sched_warmth_index] > now_s then
             break
