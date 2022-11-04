@@ -435,7 +435,7 @@ function AutoWarmth:scheduleNextWarmthChange(time_s, search_pos, from_resume)
         -- schedule setting of another valid warmth (=`next_warmth`) again (one time).
         -- On sane devices this schedule does no harm.
         -- see https://github.com/koreader/koreader/issues/8363
-        UIManager:scheduleIn(delay_s, self.setWarmth, self, next_warmth, false) -- no setWarmth rescheduling, force warmth
+        UIManager:scheduleIn(delay_s, self.setWarmth, self, next_warmth, false) -- no setWarmth rescheduling, force warmth.
     end
 
     -- Check if AutoWarmth shall toggle frontlight daytime and twilight
@@ -1147,3 +1147,5 @@ function AutoWarmth:getLocationString()
 end
 
 return AutoWarmth
+
+-- end test (just for github)
