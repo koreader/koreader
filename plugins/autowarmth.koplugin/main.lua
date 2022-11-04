@@ -227,8 +227,8 @@ end
 function AutoWarmth:_onToggleFrontlight()
     logger.dbg("AutoWarmth: onToggleFrontlight")
     local now_s = SunTime:getTimeInSec()
-    if now_s >= self.current_times_h[5]*3600 + self.fl_off_during_day_offset_s
-        and now_s < self.current_times_h[7]*3600 - self.fl_off_during_day_offset_s then
+    if now_s >= self.current_times_h[5]*3600 + self.fl_off_during_day_offset_s and
+        now_s < self.current_times_h[7]*3600 - self.fl_off_during_day_offset_s then
         AutoWarmth.fl_turned_off = true
     else
         AutoWarmth.fl_turned_off = false
