@@ -163,6 +163,8 @@ function AutoWarmth:leavePowerSavingState(from_resume)
         self:toggleFrontlight(now_s)
         -- Reschedule 1sec after midnight
         UIManager:scheduleIn(24*3600 + 1 - now_s, self.scheduleMidnightUpdate, self)
+        -- reset user toggles at sun set or sun rise
+        self:scheduleSetFrontlightState(now_s)
     else
         self:scheduleMidnightUpdate(from_resume) -- resume is on the other day, do all calcs again
     end
@@ -506,28 +508,6 @@ function AutoWarmth:scheduleNextWarmthChange(from_resume)
         -- On sane devices this schedule does no harm.
         -- see https://github.com/koreader/koreader/issues/8363
         UIManager:scheduleIn(1.5, self.setWarmth, self, warmth_in_1p5_s, true) -- force warmth one time
-    end
-    -- Check if AutoWarmth shall toggle frontlight daytime and twilight
-    if self.fl_off_during_day then
-        if now_s >= self.current_times_h[5]*3600 and now_s < self.current_times_h[7]*3600 then
-            -- during daytime (depending on choosens activation: SunTime, fixed Schedule, closer...
-            -- turn on frontlight off once, user can override this selection by a gesture
-            if AutoWarmth.fl_turned_off ~= true then -- can be false or nil
-                if Powerd:isFrontlightOn() then
-                    self:setFrontlightState(false)
-                end
-            end
-            AutoWarmth.fl_turned_off = true -- in case fl_turned_off was nil
-        else
-            -- outside of selected daytime, turn on frontlight once,
-            -- user can override this selection by a gesture
-            if AutoWarmth.fl_turned_off ~= false then -- can be true or nil
-                if Powerd:isFrontlightOff() then
-                    self:setFrontlightState(true)
-                end
-            end
-            AutoWarmth.fl_turned_off = false -- in case fl_turned_off was nil
-        end
     end
 end
 
