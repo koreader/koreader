@@ -54,8 +54,9 @@ local AutoWarmth = WidgetContainer:extend{
 
 -- get timezone offset in hours (including dst)
 function AutoWarmth:getTimezoneOffset()
-    local utcdate   = os.date("!*t")
-    local localdate = os.date("*t")
+    local now_ts = os.time()
+    local utcdate   = os.date("!*t", now_ts)
+    local localdate = os.date("*t", now_ts)
     return os.difftime(os.time(localdate), os.time(utcdate)) * (1/3600)
 end
 
