@@ -679,49 +679,49 @@ end
 function ReaderLink:onGoToExternalLink(link_url)
     local text
     -- Set up buttons for alternative external link handling methods
-    self:addButton(function(this, link_url)
+    self.alt_handlers_buttons["01_copy"] = function(this, link_url)
+        return {
+            text = _("Copy"),
+            callback = function()
+                UIManager:close(this.dialog)
+                Device.input.setClipboardText(link_url)
+            end,
+        }
+    end
+    self.alt_handlers_buttons["02_qrcode"] = function(this, link_url)
+        return {
+            text = _("Show QR code"),
+            callback = function()
+                UIManager:close(this.dialog)
+                UIManager:show(QRMessage:new{
+                        text = link_url,
+                        width = Device.screen:getWidth(),
+                        height = Device.screen:getHeight()
+                })
+            end
+        }
+    end
+    if self.ui.wallabag then
+        self.alt_handlers_buttons["03_wallabag"] = function(this, link_url)
             return {
-                text = _("Copy"),
+                text = _("Add to Wallabag"),
                 callback = function()
                     UIManager:close(this.dialog)
-                    Device.input.setClipboardText(link_url)
+                    self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
                 end,
             }
-    end, 1)
-    self:addButton(function(this, link_url)
-            return {
-                text = _("Show QR code"),
-                callback = function()
-                    UIManager:close(this.dialog)
-                    UIManager:show(QRMessage:new{
-                            text = link_url,
-                            width = Device.screen:getWidth(),
-                            height = Device.screen:getHeight()
-                })
-                end
-            }
-    end, 2)
-    if self.ui.wallabag then
-        self:addButton(function(this, link_url)
-                return {
-                    text = _("Add to Wallabag"),
-                    callback = function()
-                        UIManager:close(this.dialog)
-                        self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
-                    end,
-                }
-        end, 3)
+        end
     end
     if Device:canOpenLink() then
-        self:addButton(function(this, link_url)
-                return {
-                    text = _("Open in browser"),
-                    callback = function()
-                        UIManager:close(this.dialog)
-                        Device:openLink(link_url)
-                    end,
-                }
-        end, 4)
+        self.alt_handlers_buttons["04_browser"] = function(this, link_url)
+            return {
+                text = _("Open in browser"),
+                callback = function()
+                    UIManager:close(this.dialog)
+                    Device:openLink(link_url)
+                end,
+            }
+        end
     end
     -- Check if it is a wikipedia link
     local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
@@ -757,7 +757,7 @@ function ReaderLink:onGoToExternalLink(link_url)
             end
         end
         text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " "))
-        self:addButton(function(this, link_url)
+        self.alt_handlers_buttons["05_wiki_lookup"] = function(this, link_url)
                 return {
                     text = _("Read online"),
                     callback = function()
@@ -767,10 +767,10 @@ function ReaderLink:onGoToExternalLink(link_url)
                         end)
                     end,
                 }
-        end, 1)
+        end
         if epub_fullpath then
             text = T("%1\n%2", text, _("This article has previously been saved as EPUB. You may wish to read the saved EPUB instead."))
-            self:addButton(function(this, link_url)
+            self.alt_handlers_buttons["06_wiki_saved"] = function(this, link_url)
                     return {
                         text = _("Read EPUB"),
                         callback = function()
@@ -780,24 +780,20 @@ function ReaderLink:onGoToExternalLink(link_url)
                             end)
                         end,
                     }
-            end)
+            end
         end
     else
-        if #self.alt_handlers_buttons == 0 then
-            -- No external link handler
-            return false
-        end
         text = T(_("External link:\n\n%1"), BD.url(link_url))
     end
 
-    self:addButton(function(this, link_url)
+    self.alt_handlers_buttons["07_cancel"] = function(this, link_url)
             return {
                 text = _("Cancel"),
                 callback = function()
                     UIManager:close(this.dialog)
                 end,
             }
-    end)
+    end
 
     self.dialog = ButtonDialogTitle:new{
         title = text,
@@ -1392,75 +1388,28 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     return true
 end
 
-function ReaderLink:addButton(fn_button, position)
-    local button = fn_button(self)
-    if not button.text and not button.callback then
-        logger.dbg("ReaderLink:addButton, button must have text and callback attribute.")
-        return false
-    end
-
-    if self:hasButton(button) then
-        logger.dbg("ReaderLink:addButton, button already exists with same text attribute.")
-        return false
-    end
-
-    if #self.alt_handlers_buttons == 0 then
-        table.insert(self.alt_handlers_buttons, fn_button)
-        return true
-    end
-
-    local last_position = #self.alt_handlers_buttons + 1
-    position = position or last_position
-    logger.dbg("ReaderLink:addButton, " .. button.text .. " to position " .. position)
-
-    if position >= last_position then
-        -- If a position greater than the number of buttons is specified, the position is ignored and
-        -- the button is added to the end of the list.
-        table.insert(self.alt_handlers_buttons, last_position, fn_button)
-        return true
-    else
-        local reordered_handlers_buttons = {}
-        local offset = 1
-        for index, existing_button in ipairs(self.alt_handlers_buttons) do
-            if position == index then
-                table.insert(reordered_handlers_buttons, offset, fn_button)
-                offset = index + 1
-            end
-            table.insert(reordered_handlers_buttons, offset, existing_button)
-            offset = offset + 1
-        end
-        self.alt_handlers_buttons = reordered_handlers_buttons
-        return true
-    end
+function ReaderLink:addButton(idx, fn_button)
+    self.alt_handlers_buttons[idx] = fn_button
 end
 
-function ReaderLink:hasButton(button)
-    if not button then
-        return true
-    end
-
-    for _, existing_button in ipairs(self.alt_handlers_buttons) do
-        local existing_button = existing_button(self)
-        if button.text == existing_button.text then
-            return true
-        end
-    end
-
-    return false
+function ReaderLink:removeButton(idx)
+    local button = self.alt_handlers_buttons[idx]
+    self.alt_handlers_buttons[idx] = nil
+    return button
 end
 
 function ReaderLink:getButtonsForDialog(link_url)
     local buttons = {{}}
 
     local columns = 2
-    for __, fn_button in ipairs(self.alt_handlers_buttons) do
-        logger.dbg(fn_button)
+    for idx, fn_button in ffiutil.orderedPairs(self.alt_handlers_buttons) do
         local button = fn_button(self, link_url)
         if not button.show_in_dialog_func or button.show_in_dialog_func() then
             if #buttons[#buttons] >= columns then
                 table.insert(buttons, {})
             end
             table.insert(buttons[#buttons], button)
+            logger.dbg("ReaderLink", idx..": line "..#buttons..", col "..#buttons[#buttons])
         end
     end
 
