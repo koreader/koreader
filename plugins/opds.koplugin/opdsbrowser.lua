@@ -600,14 +600,14 @@ function OPDSBrowser:showDownloads(item)
                 {
                     text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
-                        self:streamPages(item, acquisition.href, acquisition.count)
+                        self:streamPages(acquisition.href, acquisition.count, false)
                         UIManager:close(self.download_dialog)
                     end,
                 },
                 {
                     text = _("Stream from page") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
-                        self:streamPages(item, acquisition.href, acquisition.count, true)
+                        self:streamPages(acquisition.href, acquisition.count, true)
                         UIManager:close(self.download_dialog)
                     end,
                 },
@@ -810,6 +810,12 @@ end
 
 -- Streams a book (OPDS-PSE Page Streaming Extension)
 function OPDSBrowser:streamPages(remote_url, count, continue)
+    local last_page = 0
+    -- attempt to pull chapter progress from Kavita if user pressed
+    -- "Page Stream" button
+    if continue == false then
+        last_page = self:getLastPage(remote_url)
+    end
     local page_table = {image_disposable = true}
     setmetatable(page_table, {__index = function (_, key)
         if type(key) ~= "number" then
@@ -817,6 +823,7 @@ function OPDSBrowser:streamPages(remote_url, count, continue)
             return error_bb
         else
             local index = key - 1
+            logger.dbg("   remote_url: ",remote_url)
             local page_url = remote_url:gsub("{pageNumber}", tostring(index))
             page_url = page_url:gsub("{maxWidth}", tostring(Screen:getWidth()))
             local page_data = {}
@@ -867,6 +874,10 @@ function OPDSBrowser:streamPages(remote_url, count, continue)
     UIManager:show(viewer)
     if continue then
         self:jumpToPage(viewer)
+    else
+        -- add 1 since Kavita's Page count is zero based
+        -- and ImageViewer is not.
+        viewer:switchToImageNum(last_page+1)
     end
 end
 
@@ -902,6 +913,82 @@ function OPDSBrowser:jumpToPage(viewer)
     }
     UIManager:show(dialog)
     dialog:onShowKeyboard()
+end
+
+function OPDSBrowser:getLastPage(remote_url)
+    -- This function attempts to pull chapter progress from Kavita.
+    local last_page = 0
+
+    -- create URL's and reference vars
+    local chapter = string.match(remote_url, "chapterId=(%w+)")
+    local api_key = string.match(remote_url, "opds/(.+)/image")
+    local progress_url = string.match(remote_url, "(.+)/api").."/api/Reader/get-progress?chapterId="..chapter
+    local auth_url = string.match(remote_url, "(.+)/api").."/api/Plugin/authenticate?apiKey="..api_key.."&pluginName=KOReader-OPDS"
+
+    -- Do an HTTP POST to get the Bearer Token for authentication of the /api/Reader/get-progress endpoint
+    local auth_parsed = url.parse(auth_url)
+    local auth_data = {}
+    local code, headers, status
+    if auth_parsed.scheme == "http" or auth_parsed.scheme == "https" then
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+        code, headers, status = socket.skip(1, http.request {
+            method = "POST",
+            url         = auth_url,
+            headers     = {
+                ["Accept-Encoding"] = "identity",
+                ["Authentication"] = api_key,
+            },
+            sink        = ltn12.sink.table(auth_data),
+            user        = self.root_catalog_username,
+            password    = self.root_catalog_password,
+        })
+        socketutil:reset_timeout()
+    else
+        UIManager:show(InfoMessage:new {
+            text = T(_("Invalid protocol:\n%1"), auth_parsed.scheme),
+        })
+    end
+    
+    if code == 200 then
+        -- if http request for bearer token was successful, pull bearer token from response and
+        -- attempt to pull progress for chapterId in remote_url
+        local bearer_token = auth_data[1]:match("\"token\":\"(.+)\",\"refresh")
+
+        
+        -- Do HTTP GET request for chapter progress
+        local progress_parsed = url.parse(progress_url)
+        local progress_data = {}
+        local code, headers, status
+        if progress_parsed.scheme == "http" or progress_parsed.scheme == "https" then
+            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+            code, headers, status = socket.skip(1, http.request {
+                url         = progress_url,
+                headers     = {
+                    ["Accept-Encoding"] = "identity",
+                    ["Authorization"] = "Bearer "..bearer_token,
+                },
+                sink        = ltn12.sink.table(progress_data),
+                user        = self.root_catalog_username,
+                password    = self.root_catalog_password,
+            })
+            socketutil:reset_timeout()
+        else
+            UIManager:show(InfoMessage:new {
+                text = T(_("Invalid protocol:\n%1"), progress_parsed.scheme),
+            })
+        end
+        logger.dbg("   code = "..code)
+        
+        if code == 200 then
+            -- if HTTP GET was successful, pull page number from response
+            last_page = progress_data[1]:match("\"pageNum\":(.+),\"seriesId")
+        end
+    end
+    
+    logger.dbg("   Auth URL: ",auth_url)
+
+    -- returns page number. If the HTTP Requests were unsuccessful, defaults to 0.
+    return last_page;
 end
 
 -- Menu action on item tap (Download a book / Show subcatalog / Search in catalog)
