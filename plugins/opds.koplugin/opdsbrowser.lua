@@ -813,7 +813,7 @@ function OPDSBrowser:streamPages(remote_url, count, continue)
     local last_page = 0
     -- attempt to pull chapter progress from Kavita if user pressed
     -- "Page Stream" button
-    if continue == false and pcall(self:getLastPage(remote_url))then
+    if continue == false then
         last_page = self:getLastPage(remote_url)
     end
     local page_table = {image_disposable = true}
