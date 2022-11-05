@@ -928,10 +928,10 @@ function OPDSBrowser:getLastPage(remote_url)
     -- Do an HTTP POST to get the Bearer Token for authentication of the /api/Reader/get-progress endpoint
     local auth_parsed = url.parse(auth_url)
     local auth_data = {}
-    local auth_code, auth_headers, auth_status
+    local auth_code
     if auth_parsed.scheme == "http" or auth_parsed.scheme == "https" then
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-        auth_code, auth_headers, auth_status = socket.skip(1, http.request {
+        auth_code = socket.skip(1, http.request {
             method = "POST",
             url         = auth_url,
             headers     = {
@@ -957,10 +957,10 @@ function OPDSBrowser:getLastPage(remote_url)
         -- Do HTTP GET request for chapter progress
         local progress_parsed = url.parse(progress_url)
         local progress_data = {}
-        local progress_code, progress_headers, progress_status
+        local progress_code
         if progress_parsed.scheme == "http" or progress_parsed.scheme == "https" then
             socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-            progress_code, progress_headers, progress_status = socket.skip(1, http.request {
+            progress_code = socket.skip(1, http.request {
                 url         = progress_url,
                 headers     = {
                     ["Accept-Encoding"] = "identity",
