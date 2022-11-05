@@ -1169,7 +1169,7 @@ function VocabularyBuilderWidget:init()
     self.footer_sync = Button:new{
         text = "⇅",
         width = self.footer_left_corner_width,
-        text_font_size = 22,
+        text_font_size = 18,
         bordersize = 0,
         radius = 0,
         padding = Size.padding.large,
@@ -1198,7 +1198,7 @@ function VocabularyBuilderWidget:init()
             end
         end
     }
-    self.footer_sync.label_widget.fgcolor = Blitbuffer.COLOR_DIM_GRAY
+    self.footer_sync.label_widget.fgcolor = Blitbuffer.COLOR_GRAY_3
 
     self.footer_page = Button:new{
         text = "",
