@@ -810,12 +810,14 @@ end
 
 -- Streams a book (OPDS-PSE Page Streaming Extension)
 function OPDSBrowser:streamPages(remote_url, count, continue)
-    local last_page = 0
     -- attempt to pull chapter progress from Kavita if user pressed
     -- "Page Stream" button
-    if continue == false then
-        last_page = self:getLastPage(remote_url)
+    local ok, last_page = pcall(function() return self:getLastPage(remote_url) end)
+    if not ok then
+        logger.warn("Couldn't pull progress, defaulting to Page 0.")
+        last_page = 0
     end
+    logger.dbg("   Last Page: "..last_page)
     local page_table = {image_disposable = true}
     setmetatable(page_table, {__index = function (_, key)
         if type(key) ~= "number" then
@@ -823,7 +825,6 @@ function OPDSBrowser:streamPages(remote_url, count, continue)
             return error_bb
         else
             local index = key - 1
-            logger.dbg("   remote_url: ",remote_url)
             local page_url = remote_url:gsub("{pageNumber}", tostring(index))
             page_url = page_url:gsub("{maxWidth}", tostring(Screen:getWidth()))
             local page_data = {}
@@ -982,9 +983,8 @@ function OPDSBrowser:getLastPage(remote_url)
             last_page = progress_data[1]:match("\"pageNum\":(.+),\"seriesId")
         end
     end
-
     -- returns page number. If the HTTP Requests were unsuccessful, defaults to 0.
-    return last_page;
+    return last_page
 end
 
 -- Menu action on item tap (Download a book / Show subcatalog / Search in catalog)
