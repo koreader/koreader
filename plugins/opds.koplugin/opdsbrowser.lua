@@ -928,10 +928,10 @@ function OPDSBrowser:getLastPage(remote_url)
     -- Do an HTTP POST to get the Bearer Token for authentication of the /api/Reader/get-progress endpoint
     local auth_parsed = url.parse(auth_url)
     local auth_data = {}
-    local code, headers, status
+    local auth_code, auth_headers, auth_status
     if auth_parsed.scheme == "http" or auth_parsed.scheme == "https" then
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-        code, headers, status = socket.skip(1, http.request {
+        auth_code, auth_headers, auth_status = socket.skip(1, http.request {
             method = "POST",
             url         = auth_url,
             headers     = {
@@ -948,20 +948,19 @@ function OPDSBrowser:getLastPage(remote_url)
             text = T(_("Invalid protocol:\n%1"), auth_parsed.scheme),
         })
     end
-    
-    if code == 200 then
+
+    if auth_code == 200 then
         -- if http request for bearer token was successful, pull bearer token from response and
         -- attempt to pull progress for chapterId in remote_url
         local bearer_token = auth_data[1]:match("\"token\":\"(.+)\",\"refresh")
 
-        
         -- Do HTTP GET request for chapter progress
         local progress_parsed = url.parse(progress_url)
         local progress_data = {}
-        local code, headers, status
+        local progress_code, progress_headers, progress_status
         if progress_parsed.scheme == "http" or progress_parsed.scheme == "https" then
             socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-            code, headers, status = socket.skip(1, http.request {
+            progress_code, progress_headers, progress_status = socket.skip(1, http.request {
                 url         = progress_url,
                 headers     = {
                     ["Accept-Encoding"] = "identity",
@@ -977,15 +976,12 @@ function OPDSBrowser:getLastPage(remote_url)
                 text = T(_("Invalid protocol:\n%1"), progress_parsed.scheme),
             })
         end
-        logger.dbg("   code = "..code)
-        
-        if code == 200 then
+
+        if progress_code == 200 then
             -- if HTTP GET was successful, pull page number from response
             last_page = progress_data[1]:match("\"pageNum\":(.+),\"seriesId")
         end
     end
-    
-    logger.dbg("   Auth URL: ",auth_url)
 
     -- returns page number. If the HTTP Requests were unsuccessful, defaults to 0.
     return last_page;
