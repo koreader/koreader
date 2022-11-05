@@ -22,7 +22,8 @@ local Screen = Device.screen
 local T = ffiutil.template
 
 local ReaderLink = InputContainer:extend{
-    location_stack = nil, -- table, per-instance
+    location_stack = nil, -- table, per-instance,
+    alt_handlers_buttons = {}
 }
 
 function ReaderLink:init()
@@ -688,62 +689,50 @@ end
 
 function ReaderLink:onGoToExternalLink(link_url)
     local text
-    local dialog
-    local buttons = {
-        {
-            {
-                text = _("Cancel"),
-                callback = function()
-                    UIManager:close(dialog)
-                end,
-            },
-        },
-    }
-    local add_button = function(button)
-        if #buttons[#buttons] >= 2 then
-            -- add new row if last contains already 2
-            table.insert(buttons, {})
-        end
-        -- append button to last row
-        table.insert(buttons[#buttons], button)
-    end
     -- Set up buttons for alternative external link handling methods
-    local alt_handlers_buttons = {}
-    table.insert(alt_handlers_buttons, {
-        text = _("Copy"),
-        callback = function()
-            UIManager:close(dialog)
-            Device.input.setClipboardText(link_url)
-        end,
-    })
-    table.insert(alt_handlers_buttons, {
-        text = _("Show QR code"),
-        callback = function()
-            UIManager:close(dialog)
-            UIManager:show(QRMessage:new{
-                text = link_url,
-                width = Device.screen:getWidth(),
-                height = Device.screen:getHeight()
-            })
-        end,
-    })
-    if self.ui.wallabag then
-        table.insert(alt_handlers_buttons, {
-            text = _("Add to Wallabag"),
+    self.alt_handlers_buttons["01_copy"] = function(this, link_url)
+        return {
+            text = _("Copy"),
             callback = function()
-                UIManager:close(dialog)
-                self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
+                UIManager:close(this.dialog)
             end,
-        })
+        }
+    end
+
+    self.alt_handlers_buttons["02_qrcode"] = function(this, link_url)
+        return {
+            text = _("Show QR code"),
+            callback = function()
+                UIManager:close(this.dialog)
+                UIManager:show(QRMessage:new{
+                        text = link_url,
+                        width = Device.screen:getWidth(),
+                        height = Device.screen:getHeight()
+                })
+            end
+        }
+    end
+    if self.ui.wallabag then
+        self.alt_handlers_buttons["03_wallabag"] = function(this, link_url)
+            return {
+                text = _("Add to Wallabag"),
+                callback = function()
+                    UIManager:close(this.dialog)
+                    self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
+                end,
+            }
+        end
     end
     if Device:canOpenLink() then
-        table.insert(alt_handlers_buttons, {
-            text = _("Open in browser"),
-            callback = function()
-                UIManager:close(dialog)
-                Device:openLink(link_url)
-            end,
-        })
+        self.alt_handlers_buttons["04_browser"] = function(this, link_url)
+            return {
+                text = _("Open in browser"),
+                callback = function()
+                    UIManager:close(this.dialog)
+                    Device:openLink(link_url)
+                end,
+            }
+        end
     end
 
     -- Check if it is a wikipedia link
@@ -780,44 +769,49 @@ function ReaderLink:onGoToExternalLink(link_url)
             end
         end
         text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " "))
-        add_button({
-            text = _("Read online"),
-            callback = function()
-                UIManager:nextTick(function()
-                    UIManager:close(dialog)
-                    self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, true, false, true, wiki_lang))
-                end)
-            end,
-        })
+        self.alt_handlers_buttons["05_wiki_lookup"] = function(this, link_url)
+                return {
+                    text = _("Read online"),
+                    callback = function()
+                        UIManager:nextTick(function()
+                                UIManager:close(this.dialog)
+                                self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, true, false, true, wiki_lang))
+                        end)
+                    end,
+                }
+        end
         if epub_fullpath then
             text = T("%1\n%2", text, _("This article has previously been saved as EPUB. You may wish to read the saved EPUB instead."))
-            add_button({
-                text = _("Read EPUB"),
-                callback = function()
-                    UIManager:scheduleIn(0.1, function()
-                        UIManager:close(dialog)
-                        self.ui:switchDocument(epub_fullpath)
-                    end)
-                end,
-            })
+            self.alt_handlers_buttons["06_wiki_saved"] = function(this, link_url)
+                    return {
+                        text = _("Read EPUB"),
+                        callback = function()
+                            UIManager:scheduleIn(0.1, function()
+                                    UIManager:close(this.dialog)
+                                    self.ui:switchDocument(epub_fullpath)
+                            end)
+                        end,
+                    }
+            end
         end
     else
-        if #alt_handlers_buttons == 0 then
-            -- No external link handler
-            return false
-        end
         text = T(_("External link:\n\n%1"), BD.url(link_url))
     end
 
-    -- Add all alternative handlers buttons
-    for __, button in ipairs(alt_handlers_buttons) do
-        add_button(button)
+    self.alt_handlers_buttons["07_cancel"] = function(this, link_url)
+            return {
+                text = _("Cancel"),
+                callback = function()
+                    UIManager:close(this.dialog)
+                end,
+            }
     end
-    dialog = ButtonDialogTitle:new{
+
+    self.dialog = ButtonDialogTitle:new{
         title = text,
-        buttons = buttons,
+        buttons = self:getButtonsForDialog(link_url),
     }
-    UIManager:show(dialog)
+    UIManager:show(self.dialog)
     return true
 end
 
@@ -1403,6 +1397,34 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     }
     UIManager:show(popup)
     return true
+end
+
+function ReaderLink:addButton(idx, fn_button)
+    self.alt_handlers_buttons[idx] = fn_button
+end
+
+function ReaderLink:removeButton(idx)
+    local button = self.alt_handlers_buttons[idx]
+    self.alt_handlers_buttons[idx] = nil
+    return button
+end
+
+function ReaderLink:getButtonsForDialog(link_url)
+    local buttons = {{}}
+
+    local columns = 2
+    for idx, fn_button in ffiutil.orderedPairs(self.alt_handlers_buttons) do
+        local button = fn_button(self, link_url)
+        if not button.show_in_dialog_func or button.show_in_dialog_func() then
+            if #buttons[#buttons] >= columns then
+                table.insert(buttons, {})
+            end
+            table.insert(buttons[#buttons], button)
+            logger.dbg("ReaderLink", idx..": line "..#buttons..", col "..#buttons[#buttons])
+        end
+    end
+
+    return buttons
 end
 
 return ReaderLink
