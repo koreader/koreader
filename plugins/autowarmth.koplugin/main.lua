@@ -168,7 +168,6 @@ function AutoWarmth:_onSuspend()
     logger.dbg("AutoWarmth: onSuspend")
     UIManager:unschedule(self.scheduleMidnightUpdate)
     UIManager:unschedule(self.setWarmth)
-    UIManager:unschedule(self.setFrontlightState)
 end
 
 AutoWarmth._onEnterStandby = AutoWarmth._onSuspend
@@ -212,9 +211,9 @@ function AutoWarmth:_onToggleFrontlight()
     logger.dbg("AutoWarmth: onToggleFrontlight")
     local now_s = SunTime:getTimeInSec()
     if now_s >= self.current_times_h[5]*3600 and now_s < self.current_times_h[7]*3600 then
-        AutoWarmth.fl_turned_off = true
+        AutoWarmth.fl_turned_off = true -- fake a turned off front light, needed for turning it on on sunset
     else
-        AutoWarmth.fl_turned_off = false
+        AutoWarmth.fl_turned_off = false  -- fake a turned on front light, needed for turning it off on sunrise
     end
 end
 
@@ -246,7 +245,6 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
     -- first unschedule all old functions
     UIManager:unschedule(self.scheduleMidnightUpdate)
     UIManager:unschedule(self.setWarmth)
-    UIManager:unschedule(self.setFrontlightState)
 
     SunTime:setPosition(self.location, self.latitude, self.longitude, self.timezone, self.altitude, true)
     SunTime:setAdvanced()
@@ -347,15 +345,6 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         -- Schedule the first warmth change
         self:setEventHandlers()
         self:scheduleNextWarmthChange(now_s, 1, from_resume)
-        -- reset user toggles at sun set or sun rise
-        local sunset_in_s = self.current_times_h[7] * 3600 - now_s
-        if sunset_in_s >= 0 then
-            UIManager:scheduleIn(sunset_in_s, self.setFrontlightState, self, true)
-            local sunrise_in_s = self.current_times_h[5] * 3600 - now_s
-            if sunrise_in_s >= 0 then
-                UIManager:scheduleIn(sunrise_in_s, self.setFrontlightState, self, false)
-            end
-        end
     else
         self:clearEventHandlers()
     end
