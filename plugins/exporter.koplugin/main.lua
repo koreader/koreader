@@ -127,7 +127,7 @@ function Exporter:isReady()
 end
 
 function Exporter:isDocReady()
-    return self.ui and self.ui.document and self.view
+    return self.ui and self.ui.document and self.view or false
 end
 
 function Exporter:isReadyToExport()
