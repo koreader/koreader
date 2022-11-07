@@ -257,7 +257,7 @@ function Device:onPowerEvent(ev)
     if self.screen_saver_mode then
         if ev == "Power" or ev == "Resume" then
             if self.is_cover_closed then
-                -- don't let power key press wake up device when the cover is in closed state
+                -- don't let power key press wake up device when the cover is in closed state.
                 self:rescheduleSuspend()
             else
                 logger.dbg("Resuming...")
@@ -275,7 +275,6 @@ function Device:onPowerEvent(ev)
                 if widget_was_closed and self:needsScreenRefreshAfterResume() then
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
                 end
-                self.screen_saver_mode = false
                 self.powerd:afterResume()
             end
         elseif ev == "Suspend" then
@@ -304,7 +303,6 @@ function Device:onPowerEvent(ev)
         if self:needsScreenRefreshAfterResume() then
             self.screen:refreshFull()
         end
-        self.screen_saver_mode = true
         UIManager:scheduleIn(0.1, function()
             -- NOTE: This side of the check needs to be laxer, some platforms can handle Wi-Fi without WifiManager ;).
             if self:hasWifiToggle() then
