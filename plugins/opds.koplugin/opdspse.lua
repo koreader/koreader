@@ -34,7 +34,7 @@ function OPDSPSE:getLastPage(item, remote_url)
     local auth_code, auth_headers, auth_status
     if auth_parsed.scheme == "http" or auth_parsed.scheme == "https" then
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-        auth_code = socket.skip(1, http.request {
+        auth_code, auth_headers, auth_status = socket.skip(1, http.request {
             method = "POST",
             url         = auth_url,
             headers     = {
@@ -63,7 +63,7 @@ function OPDSPSE:getLastPage(item, remote_url)
         local progress_code, progress_headers, progress_status
         if progress_parsed.scheme == "http" or progress_parsed.scheme == "https" then
             socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-            progress_code = socket.skip(1, http.request {
+            progress_code, progress_headers, progress_status = socket.skip(1, http.request {
                 url         = progress_url,
                 headers     = {
                     ["Accept-Encoding"] = "identity",
