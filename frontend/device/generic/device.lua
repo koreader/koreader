@@ -275,7 +275,10 @@ function Device:onPowerEvent(ev)
                 if widget_was_closed and self:needsScreenRefreshAfterResume() then
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
                 end
-                self.screen_saver_mode = false
+                -- Stay in screen saver mode if we have a screen saver lock enabled
+                if not self.screen_saver_lock then
+                    self.screen_saver_mode = false
+                end
                 self.powerd:afterResume()
             end
         elseif ev == "Suspend" then

@@ -139,6 +139,11 @@ function ScreenSaverWidget:onShow()
     UIManager:setDirty(self, function()
         return "full", self.main_frame.dimen
     end)
+
+    -- If we require a gesture to exit, tell Device about it so that further Power button presses are handled properly...
+    if self.has_exit_screensaver_gesture then
+        Device.screen_saver_lock = true
+    end
     return true
 end
 
@@ -163,6 +168,13 @@ ScreenSaverWidget.onAnyKeyPressed = ScreenSaverWidget.onClose
 ScreenSaverWidget.onExitScreensaver = ScreenSaverWidget.onClose
 
 function ScreenSaverWidget:onCloseWidget()
+    -- Restore standard Power button behavior
+    if Device.screen_saver_lock then
+        Device.screen_saver_lock = false
+        -- This is handled by Device:onPowerEvent when a lock is not involved.
+        Device.screen_saver_mode = false
+    end
+
     -- Restore to previous rotation mode, if need be.
     if Device.orig_rotation_mode then
         Screen:setRotationMode(Device.orig_rotation_mode)
