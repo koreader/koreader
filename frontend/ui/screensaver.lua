@@ -793,6 +793,8 @@ function Screensaver:show()
         end
 
         UIManager:show(self.screensaver_widget, "full")
+    else
+        Device.screen_saver_mode = true
     end
 end
 
@@ -804,6 +806,7 @@ end
 
 function Screensaver:close()
     if self.screensaver_widget == nil then
+        Device.screen_saver_mode = false
         return
     end
 

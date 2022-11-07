@@ -96,7 +96,6 @@ function SonyPRSTUX:intoScreenSaver()
         Screensaver:show()
     end
     self.powerd:beforeSuspend()
-    self.screen_saver_mode = true
 end
 
 function SonyPRSTUX:outofScreenSaver()
@@ -107,7 +106,6 @@ function SonyPRSTUX:outofScreenSaver()
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
-    self.screen_saver_mode = false
 end
 
 function SonyPRSTUX:suspend()

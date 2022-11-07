@@ -49,6 +49,7 @@ local Cervantes = Generic:extend{
     canReboot = yes,
     canPowerOff = yes,
     canSuspend = yes,
+    supportsScreensaver = yes,
     home_dir = "/mnt/public",
 
     -- do we support usb mass storage?
@@ -198,30 +199,6 @@ function Cervantes:initNetworkManager(NetworkMgr)
     end
 end
 
--- screensaver
-function Cervantes:supportsScreensaver()
-    return true
-end
-function Cervantes:intoScreenSaver()
-    local Screensaver = require("ui/screensaver")
-    if self.screen_saver_mode == false then
-        Screensaver:setup()
-        Screensaver:show()
-    end
-    self.powerd:beforeSuspend()
-    self.screen_saver_mode = true
-end
-function Cervantes:outofScreenSaver()
-    if self.screen_saver_mode == true then
-        local Screensaver = require("ui/screensaver")
-        Screensaver:close()
-        local UIManager = require("ui/uimanager")
-        UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
-    end
-    self.powerd:afterResume()
-    self.screen_saver_mode = false
-end
-
 -- power functions: suspend, resume, reboot, poweroff
 function Cervantes:suspend()
     os.execute("./suspend.sh")
@@ -263,7 +240,14 @@ function Cervantes:setEventHandlers(UIManager)
             UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
-                UIManager.event_handlers.Resume()
+                if self.screen_saver_lock then
+                    logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
+                    self:_beforeSuspend()
+                    self.powerd:beforeSuspend() -- this won't be run by onPowerEvent because we're in screen_saver_mode
+                    self:onPowerEvent("Suspend")
+                else
+                    UIManager.event_handlers.Resume()
+                end
             else
                 UIManager.event_handlers.Suspend()
             end

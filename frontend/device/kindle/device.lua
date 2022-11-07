@@ -296,7 +296,6 @@ function Kindle:intoScreenSaver()
         end
     end
     self.powerd:beforeSuspend()
-    self.screen_saver_mode = true
 end
 
 function Kindle:outofScreenSaver()
@@ -349,7 +348,6 @@ function Kindle:outofScreenSaver()
         end
     end
     self.powerd:afterResume()
-    self.screen_saver_mode = false
 end
 
 function Kindle:usbPlugOut()
