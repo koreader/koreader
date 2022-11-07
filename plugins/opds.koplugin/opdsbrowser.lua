@@ -599,7 +599,7 @@ function OPDSBrowser:showDownloads(item)
                 {
                     text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
-                        OPDSPSE:streamPages(item, acquisition.href, acquisition.count)
+                        OPDSPSE:streamPages(item, acquisition.href, acquisition.count, false)
                         UIManager:close(self.download_dialog)
                     end,
                 },
