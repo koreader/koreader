@@ -280,7 +280,7 @@ function Kindle:usbPlugIn()
 end
 
 function Kindle:intoScreenSaver()
-    if self.screen_saver_mode == false then
+    if not self.screen_saver_mode then
         if self:supportsScreensaver() then
             -- NOTE: Meaning this is not a SO device ;)
             local Screensaver = require("ui/screensaver")
@@ -296,11 +296,10 @@ function Kindle:intoScreenSaver()
         end
     end
     self.powerd:beforeSuspend()
-    self.screen_saver_mode = true
 end
 
 function Kindle:outofScreenSaver()
-    if self.screen_saver_mode == true then
+    if self.screen_saver_mode then
         if self:supportsScreensaver() then
             local Screensaver = require("ui/screensaver")
             local widget_was_closed = Screensaver:close()
@@ -349,7 +348,6 @@ function Kindle:outofScreenSaver()
         end
     end
     self.powerd:afterResume()
-    self.screen_saver_mode = false
 end
 
 function Kindle:usbPlugOut()
