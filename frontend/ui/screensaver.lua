@@ -582,10 +582,13 @@ function Screensaver:setup(event, event_message)
 end
 
 function Screensaver:show()
+    -- This should never happen...
     if self.screensaver_widget then
         UIManager:close(self.screensaver_widget)
         self.screensaver_widget = nil
     end
+    -- Notify Device methods that we're in screen saver mode, so they know whether to suspend or resume on Power events.
+    Device.screen_saver_mode = true
 
     -- In as-is mode with no message and no overlay, we've got nothing to show :)
     if self.screensaver_type == "disable" and not self.show_message and not self.overlay_message then
@@ -804,6 +807,8 @@ end
 
 function Screensaver:close()
     if self.screensaver_widget == nil then
+        -- When we *do* have a widget, this is handled by ScreenSaverWidget:onCloseWidget ;).
+        Device.screen_saver_mode = false
         return
     end
 

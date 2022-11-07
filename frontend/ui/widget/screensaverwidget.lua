@@ -163,6 +163,9 @@ ScreenSaverWidget.onAnyKeyPressed = ScreenSaverWidget.onClose
 ScreenSaverWidget.onExitScreensaver = ScreenSaverWidget.onClose
 
 function ScreenSaverWidget:onCloseWidget()
+    Device.screen_saver_mode = false
+    Device.screen_saver_lock = false
+
     -- Restore to previous rotation mode, if need be.
     if Device.orig_rotation_mode then
         Screen:setRotationMode(Device.orig_rotation_mode)
@@ -177,6 +180,19 @@ function ScreenSaverWidget:onCloseWidget()
     -- Will come after the Resume event, iff screensaver_delay is set.
     -- Comes *before* it otherwise.
     UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
+end
+
+function ScreenSaverWidget:onResume()
+    -- If we actually catch this event, it means screensaver_delay is set.
+    -- Tell Device about it, so that further power button presses while we're still shown send us back to suspend.
+    -- NOTE: This only affects devices where we handle Power events ourselves (i.e., rely on Device -> Generic's onPowerEvent),
+    --       and it *always* implies that Device.screen_saver_mode is true.
+    Device.screen_saver_lock = true
+end
+
+function ScreenSaverWidget:onSuspend()
+    -- Also flip this back on suspend, in case we suspend again on a delayed screensaver (e.g., via SleepCover or AutoSuspend).
+    Device.screen_saver_lock = false
 end
 
 return ScreenSaverWidget

@@ -345,9 +345,8 @@ end
 
 function Device:setEventHandlers(UIManager)
     if not self:canSuspend() then
-        -- If we can't suspend, we have no business even trying to, as we may not have overloaded `Device:simulateResume`,
-        -- and since the empty Generic prototype doesn't flip `Device.screen_saver_mode`, we'd be stuck if we tried...
-        -- Instead, rely on the Generic Suspend/Resume handlers, which are sane ;).
+        -- If we can't suspend, we have no business even trying to, as we may not have overloaded `Device:simulateResume`.
+        -- Instead, rely on the Generic Suspend/Resume handlers.
         return
     end
 
@@ -375,13 +374,11 @@ function Emulator:simulateSuspend()
     local Screensaver = require("ui/screensaver")
     Screensaver:setup()
     Screensaver:show()
-    self.screen_saver_mode = true
 end
 
 function Emulator:simulateResume()
     local Screensaver = require("ui/screensaver")
     Screensaver:close()
-    self.screen_saver_mode = false
 end
 
 -- fake network manager for the emulator
