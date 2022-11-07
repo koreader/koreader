@@ -678,7 +678,7 @@ function NewsDownloader:viewFeedList()
         }
     )
     -- Show the list of feeds.
-    if #self.kv ~= 0 then
+    if self.kv then
         UIManager:close(self.kv)
     end
     self.kv = KeyValuePage:new{
@@ -693,7 +693,7 @@ function NewsDownloader:viewFeedList()
 end
 
 function NewsDownloader:viewFeedItem(data)
-    if #self.kv ~= 0 then
+    if self.kv then
         UIManager:close(self.kv)
     end
     self.kv = KeyValuePage:new{
@@ -802,7 +802,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     -- Because this method is called at the menu,
     -- we might not have an active view. So this conditional
     -- statement avoids closing a null reference.
-    if #self.kv ~= 0 then
+    if self.kv then
         UIManager:close(self.kv)
     end
     -- It's possible that we will get a null value.
