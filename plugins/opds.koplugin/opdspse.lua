@@ -31,7 +31,7 @@ function OPDSPSE:getLastPage(item, remote_url)
     -- Do an HTTP POST to get the Bearer Token for authentication of the /api/Reader/get-progress endpoint
     local auth_parsed = url.parse(auth_url)
     local auth_data = {}
-    local auth_code
+    local auth_code, auth_headers, auth_status
     if auth_parsed.scheme == "http" or auth_parsed.scheme == "https" then
         socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
         auth_code = socket.skip(1, http.request {
@@ -60,7 +60,7 @@ function OPDSPSE:getLastPage(item, remote_url)
         -- Do HTTP GET request for chapter progress
         local progress_parsed = url.parse(progress_url)
         local progress_data = {}
-        local progress_code
+        local progress_code, progress_headers, progress_status
         if progress_parsed.scheme == "http" or progress_parsed.scheme == "https" then
             socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
             progress_code = socket.skip(1, http.request {
@@ -83,7 +83,13 @@ function OPDSPSE:getLastPage(item, remote_url)
         if progress_code == 200 then
             -- if HTTP GET was successful, pull page number from response
             last_page = progress_data[1]:match("\"pageNum\":(.+),\"seriesId")
+        else
+            logger.dbg("OPDSPSE:getLastPage: Progress Request failed:", progress_status or progress_code)
+            logger.dbg("OPDSPSE:getLastPage: Progress Response headers:", progress_headers)
         end
+    else
+        logger.dbg("OPDSPSE:getLastPage: Authentication Request failed:", auth_status or auth_code)
+        logger.dbg("OPDSPSE:getLastPage: Authentication Response headers:", auth_headers)
     end
 
     -- returns page number. If the HTTP Requests were unsuccessful, defaults to 0.
