@@ -1091,7 +1091,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     -- text to show
     -- t .. times
     -- num .. index in times
-    local function info_line(indent, text, t, num, face, easy)
+    local function info_line(indent, text, time, face, easy)
         -- get width of space
         local unit = " "
         local tmp = TextWidget:new{
@@ -1114,19 +1114,19 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
 
         local tab_width = 18 - indent
         local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - str_len)
-            .. self:hoursToClock(t[num])
+            .. self:hoursToClock(time)
         if easy then
-            if t[num] and self.current_times_h[num] and self.current_times_h[num] ~= t[num] then
+            if time and self.current_times_h[num] and self.current_times_h[num] ~= time then
                 return text .. "\n"
             else
                 return ""
             end
         end
 
-        if not t[num] then -- entry deactivated
+        if not time then -- entry deactivated
             return retval .. "\n"
         elseif Device:hasNaturalLight() and self.control_warmth then
-            if self.current_times_h[num] == t[num] then
+            if self.current_times_h[num] == time then
                 if self.warmth[num] <= 100 then
                     return retval .. " (💡" .. self.warmth[num] .."%)\n"
                 else
@@ -1136,7 +1136,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
                 return retval .. "\n"
             end
         else
-            if self.current_times_h[num] == t[num] then
+            if self.current_times_h[num] == time then
                 if self.warmth[num] <= 100 then
                     return retval .. " (☼)\n"
                 else
@@ -1153,8 +1153,8 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         location_string = " " .. self:getLocationString()
     end
 
-    local function add_line(text, easy)
-        return easy and "" or ("  " .. text .. "\n")
+    local function add_line(indent, text, easy)
+        return easy and "" or (string.rep(" ", indent) .. text .. "\n")
     end
 
     local face = Font:getFace("scfont")
@@ -1162,26 +1162,34 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         face = face,
         width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
         text = title .. location_string .. ":\n\n" ..
-            info_line(0, _("Solar midnight:"), times, 1, face, request_easy) ..
-            add_line(_("Dawn"), request_easy) ..
-            info_line(4, _("Astronomic:"), times, 2, face, request_easy) ..
-            info_line(4, _("Nautical:"), times, 3, face, request_easy)..
+            info_line(0, _("Solar midnight:"), times[1], face, request_easy) ..
+            add_line(2, _("Dawn"), request_easy) ..
+            info_line(4, _("Astronomic:"), times[2], face, request_easy) ..
+            info_line(4, _("Nautical:"), times[3], face, request_easy)..
             info_line(request_easy and 0 or 4,
-                request_easy and _("Twilight:") or _("Civil:"), times, 4, face) ..
-            add_line(_("Dawn"), request_easy) ..
-            info_line(0, _("Sunrise:"), times, 5, face) ..
+                request_easy and _("Twilight:") or _("Civil:"), times[4], face) ..
+            add_line(2, _("Dawn"), request_easy) ..
+            info_line(0, _("Sunrise:"), times[5], face) ..
             "\n" ..
-            info_line(0, _("Solar noon:"), times, 6, face, request_easy) ..
-            add_line("", request_easy) ..
-            info_line(0, _("Sunset:"), times, 7, face) ..
-            add_line(_("Dusk"), request_easy) ..
+            info_line(0, _("Solar noon:"), times[6], face, request_easy) ..
+            add_line(0, "", request_easy) ..
+            info_line(0, _("Sunset:"), times[7], face) ..
+            add_line(0, _("Dusk"), request_easy) ..
             info_line(request_easy and 0 or 4,
-                request_easy and _("Twilight:") or _("Civil:"), times, 8, face) ..
-            info_line(4, _("Nautical:"), times, 9, face, request_easy) ..
-            info_line(4, _("Astronomic:"), times, 10, face, request_easy) ..
-            add_line(_("Dusk"), request_easy) ..
-            info_line(0, _("Solar midnight:"), times, midnight_index, face, request_easy)
+                request_easy and _("Twilight:") or _("Civil:"), times[8], face) ..
+            info_line(4, _("Nautical:"), times[9], face, request_easy) ..
+            info_line(4, _("Astronomic:"), times[10], face, request_easy) ..
+            add_line(2, _("Dusk"), request_easy) ..
+            info_line(0, _("Solar midnight:"), times[midnight_index], face, request_easy) ..
+            -- add fl toggle
+            add_line(0, "", request_easy) ..
+            add_line(0, _("Toggle frontlight"), not self.fl_off_during_day) ..
+            info_line(4, _("off:"), times[5] + self.fl_off_during_day_offset_s * (1/3600), face,
+                not self.fl_off_during_day) ..
+            info_line(4, _("on:"), times[7] + self.fl_off_during_day_offset_s * (1/3600), face,
+                not self.fl_off_during_day)
     })
+print("xxx", self.fl_off_during_day)
 end
 
 -- title
