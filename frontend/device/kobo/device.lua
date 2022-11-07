@@ -192,9 +192,15 @@ local Kobo = Generic:extend{
     unexpected_wakeup_count = 0
 }
 
--- Kobo Touch A/B:
-local KoboTrilogyAB = Kobo:extend{
-    model = "Kobo_trilogy_AB",
+local KoboTrilogyA = Kobo:extend{
+    model = "Kobo_trilogy_A",
+    -- Unlike its B brethren, this one doesn't do the weird translation dance when ABS_PRESSURE is 0...
+    hasKeys = yes,
+    hasMultitouch = no,
+}
+-- Kobo Touch B:
+local KoboTrilogyB = Kobo:extend{
+    model = "Kobo_trilogy_B",
     touch_kobo_mk3_protocol = true,
     hasKeys = yes,
     hasMultitouch = no,
@@ -1483,7 +1489,15 @@ elseif codename == "kraken" then
 elseif codename == "phoenix" then
     return KoboPhoenix
 elseif codename == "trilogy" and product_id == "310" then
-    return KoboTrilogyAB
+    -- This is where things get interesting...
+    -- The early 'A' variant (the actual model name being N905, without any letter suffix, unlike the two other variants)
+    -- does *NOT* feature an internal SD card, and is manufactured in China instead of Taiwan... because it is *NOT* an NTX board.
+    -- c.f., #9742
+    if os.getenv("PLATFORM") == "freescale" then
+        return KoboTrilogyA
+    else
+        return KoboTrilogyB
+    end
 elseif codename == "trilogy" and product_id == "320" then
     return KoboTrilogyC
 elseif codename == "pixie" then
