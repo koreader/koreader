@@ -249,7 +249,14 @@ function Remarkable:setEventHandlers(UIManager)
             UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
-                UIManager.event_handlers.Resume()
+                if self.screen_saver_lock then
+                    logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
+                    self:_beforeSuspend()
+                    self.powerd:beforeSuspend() -- this won't be run by onPowerEvent because we're in screen_saver_mode
+                    self:onPowerEvent("Suspend")
+                else
+                    UIManager.event_handlers.Resume()
+                end
             else
                 UIManager.event_handlers.Suspend()
             end

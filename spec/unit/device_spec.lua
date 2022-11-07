@@ -350,8 +350,8 @@ describe("device module", function()
             Device.suspend:revert()
             Device.powerd.beforeSuspend:revert()
             Device.isCervantes:revert()
-            Device.screen_saver_mode = false
             readerui.onFlushSettings:revert()
+            Device.screen_saver_mode = false
             readerui:onClose()
         end)
 
@@ -381,8 +381,8 @@ describe("device module", function()
             Device.suspend:revert()
             Device.powerd.beforeSuspend:revert()
             Device.isSDL:revert()
-            Device.screen_saver_mode = false
             readerui.onFlushSettings:revert()
+            Device.screen_saver_mode = false
             readerui:onClose()
         end)
 
@@ -431,8 +431,8 @@ describe("device module", function()
             Device.suspend:revert()
             Device.powerd.beforeSuspend:revert()
             Device.isRemarkable:revert()
-            Device.screen_saver_mode = false
             readerui.onFlushSettings:revert()
+            Device.screen_saver_mode = false
             readerui:onClose()
         end)
     end)
