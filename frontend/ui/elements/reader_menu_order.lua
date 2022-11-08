@@ -111,7 +111,6 @@ local order = {
         "----------------------------",
         "page_turns_non_touch",
         "android_volume_keys",
-        "android_camera_key",
         "android_haptic_feedback",
         "android_back_button",
         "----------------------------",

@@ -67,7 +67,6 @@ local order = {
         "backspace_as_back",
         "----------------------------",
         "android_volume_keys",
-        "android_camera_key",
         "android_haptic_feedback",
         "android_back_button",
         "----------------------------",
