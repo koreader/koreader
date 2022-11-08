@@ -310,13 +310,6 @@ if Device:isAndroid() then
         end,
     }
 
-    -- camera key events
-    common_settings.android_camera_key = {
-        text = _("Camera key toggles touchscreen support"),
-        checked_func = function() return G_reader_settings:isTrue("camera_key_toggles_touchscreen") end,
-        callback = function() G_reader_settings:flipNilOrFalse("camera_key_toggles_touchscreen") end,
-    }
-
     common_settings.android_back_button = {
         text = _("Ignore back button completely"),
         checked_func = function() return android.isBackButtonIgnored() end,
