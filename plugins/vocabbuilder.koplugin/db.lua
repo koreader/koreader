@@ -218,7 +218,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     elseif target_count == 7 then
         due_time = current_time + 24 * 15 * 3600
     else
-        due_time = current_time + 24 * 30 * 3600
+        due_time = current_time + 24 * 3600 * 30 * 2 ^ (math.min(target_count - 8, 6))
     end
 
     item.last_streak_count = item.streak_count
