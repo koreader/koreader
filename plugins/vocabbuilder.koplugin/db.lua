@@ -431,6 +431,11 @@ function VocabularyBuilder.onSync(local_path, cached_path, income_path)
     conn:exec(sql)
     pcall(conn.exec, conn, "COMMIT;")
     conn:exec("DETACH income_db;"..(attached_cache and "DETACH cached_db;" or ""))
+    conn:exec("PRAGMA temp_store = 2;") -- use memory for temp files
+    local ok, errmsg = pcall(conn.exec, conn, "VACUUM;") -- we upload a compact file
+    if not ok then
+        logger.warn("Failed compacting vocab database:", errmsg)
+    end
     conn:close()
     return true
 end
