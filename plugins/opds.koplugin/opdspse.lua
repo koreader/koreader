@@ -16,10 +16,18 @@ local T = require("ffi/util").template
 
 
 
-local OPDSPSE = {}
+local OPDSPSE = {
+    root_catalog_username = nil,
+    root_catalog_password = nil,
+}
+
+function OPDSPSE:storeCatalogCredentials(username, password)
+    self.root_catalog_username = username
+    self.root_catalog_password = password
+end
 
 -- This function attempts to pull chapter progress from Kavita.
-function OPDSPSE:getLastPage(item, remote_url)
+function OPDSPSE:getLastPage(remote_url)
     local last_page = 0
 
     -- create URL's and reference vars
@@ -42,8 +50,8 @@ function OPDSPSE:getLastPage(item, remote_url)
                 ["Authentication"] = api_key,
             },
             sink        = ltn12.sink.table(auth_data),
-            user        = item.username,
-            password    = item.password,
+            user        = self.root_catalog_username,
+            password    = self.root_catalog_password,
         })
         socketutil:reset_timeout()
     else
@@ -102,8 +110,10 @@ function OPDSPSE:streamPages(item, remote_url, count, continue)
     local last_page = 0
     -- attempt to pull chapter progress from Kavita if user pressed
     -- "Page Stream" button
-    if continue == false then
-        last_page = self:getLastPage(item, remote_url)
+    local ok, last_page = pcall(function() return self:getLastPage(remote_url) end)
+    if not ok then
+        logger.warn("Couldn't pull progress, defaulting to Page 0.")
+        last_page = 0
     end
     local page_table = {image_disposable = true}
     setmetatable(page_table, {__index = function (_, key)
