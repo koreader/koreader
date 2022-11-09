@@ -159,12 +159,10 @@ function AutoWarmth:leavePowerSavingState(from_resume)
         local now_s = SunTime:getTimeInSec(resume_date)
         self.sched_warmth_index = self.sched_warmth_index - 1 -- scheduleNextWarmth will check this
         self:scheduleNextWarmthChange(from_resume)
-        self:scheduleToggleFrontlight(now_s)
+        self:scheduleToggleFrontlight(now_s) -- reset user toggles at sun set or sun rise
         self:toggleFrontlight(now_s)
         -- Reschedule 1sec after midnight
         UIManager:scheduleIn(24*3600 + 1 - now_s, self.scheduleMidnightUpdate, self)
-        -- reset user toggles at sun set or sun rise
-        self:scheduleSetFrontlightState(now_s)
     else
         self:scheduleMidnightUpdate(from_resume) -- resume is on the other day, do all calcs again
     end
@@ -227,12 +225,8 @@ end
 function AutoWarmth:_onToggleFrontlight()
     logger.dbg("AutoWarmth: onToggleFrontlight")
     local now_s = SunTime:getTimeInSec()
-    if now_s >= self.current_times_h[5]*3600 + self.fl_off_during_day_offset_s and
-        now_s < self.current_times_h[7]*3600 - self.fl_off_during_day_offset_s then
-        AutoWarmth.fl_turned_off = true
-    else
-        AutoWarmth.fl_turned_off = false
-    end
+    AutoWarmth.fl_turned_off = now_s >= self.current_times_h[5]*3600 + self.fl_off_during_day_offset_s and
+        now_s < self.current_times_h[7]*3600 - self.fl_off_during_day_offset_s
 end
 
 function AutoWarmth:setEventHandlers()
@@ -240,12 +234,12 @@ function AutoWarmth:setEventHandlers()
     self.onSuspend = self._onSuspend
     self.onEnterStandby = self._onEnterStandby
     self.onLeaveStandby = self._onLeaveStandby
-    if self.fl_off_during_day then
-        self.onToggleFrontlight = self._onToggleFrontlight
-    end
     if self.control_nightmode then
         self.onToggleNightMode = self._onToggleNightMode
         self.onSetNightMode = self._onToggleNightMode
+    end
+    if self.fl_off_during_day then
+        self.onToggleFrontlight = self._onToggleFrontlight
     end
 end
 
@@ -358,16 +352,17 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
         prev_index = next_index
     end
 
-    -- Reschedule 1sec after midnight
     local now_s = SunTime:getTimeInSec()
+
+    -- Reschedule 1sec after midnight
     UIManager:scheduleIn(24*3600 + 1 - now_s, self.scheduleMidnightUpdate, self)
 
     -- set event handlers
     if self.activate ~= 0 then
+        self:setEventHandlers()
         -- Schedule the first warmth change
         self.sched_warmth_index = 1
         self:scheduleNextWarmthChange(from_resume)
-        self:setEventHandlers()
         self:scheduleToggleFrontlight(now_s) -- reset user toggles at sun set or sun rise
         self:toggleFrontlight(now_s)
     else
@@ -377,6 +372,9 @@ end
 
 function AutoWarmth:scheduleToggleFrontlight(now_s)
     logger.dbg("AutoWarmth: scheduleToggleFrontlight")
+
+    UIManager:unschedule(self.setFrontlight)
+
     if not self.fl_off_during_day then
         return
     end
@@ -446,11 +444,9 @@ end
 -- schedules the next warmth change
 -- search_pos ... start searching from that index
 -- from_resume ... true if first call after resume
-function AutoWarmth:scheduleNextWarmthChange(from_resume, now_s)
-    logger.dbg("AutoWarmth: scheduleNextWarmthChange", now_s)
-    if UIManager:unschedule(self.scheduleNextWarmthChange) then
-        logger.err("AutoWarmth: this should not happen")
-    end
+function AutoWarmth:scheduleNextWarmthChange(from_resume)
+    logger.dbg("AutoWarmth: scheduleNextWarmthChange")
+    UIManager:unschedule(self.scheduleNextWarmthChange)
 
     if self.activate == 0 or #self.sched_warmths == 0 then
         return
@@ -466,13 +462,12 @@ function AutoWarmth:scheduleNextWarmthChange(from_resume, now_s)
     -- We need both, as we could have a very rapid change in warmth (depending on user settings)
     -- or by chance a change in warmth very shortly after (a few ms) resume time.
     -- Use the last (== solar midnight) warmth value, so that we have a valid value when resuming
-    -- after 24:00:00 but before true midnight.
-    -- OK, this value is actually not quite the right one, as it is calculated
-    -- for the current day (and not the previous one), but this is for a corner case
+    -- before 24:00:00 but after true midnight. OK, this value is actually not quite the right one,
+    -- as it is calculated for the current day (and not the previous one), but this is for a corner case
     -- and the error is small.
     local warmth_now = self.sched_warmths[self.sched_warmth_index]
     local warmth_in_1p5_s = warmth_now
-    now_s = now_s or SunTime:getTimeInSec()
+    local now_s = SunTime:getTimeInSec()
     while self.sched_warmth_index <= #self.sched_warmths do
         if self.sched_times_s[self.sched_warmth_index] > now_s then
             break
@@ -489,7 +484,7 @@ function AutoWarmth:scheduleNextWarmthChange(from_resume, now_s)
                 j = j + 1
             end
         end
-        -- It might be possible that self.sched_warmth_index get > #self.sched_warmths
+        -- It might be possible that self.sched_warmth_index gets > #self.sched_warmths
         self.sched_warmth_index = self.sched_warmth_index + 1
     end
 
@@ -646,7 +641,7 @@ function AutoWarmth:getFlOffDuringDayMenu()
         end,
         text_func = function()
             if self.fl_off_during_day and  self.fl_off_during_day_offset_s ~= 0 and not self.easy_mode then
-                return T(_("Frontlight off during day: %1 min offset"), math.floor(self.fl_off_during_day_offset_s/60))
+                return T(_("Frontlight off during day: %1 min offset"), math_floor(self.fl_off_during_day_offset_s/60))
             else
                 return _("Frontlight off during day")
             end
