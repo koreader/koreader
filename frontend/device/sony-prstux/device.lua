@@ -91,23 +91,21 @@ end
 
 function SonyPRSTUX:intoScreenSaver()
     local Screensaver = require("ui/screensaver")
-    if self.screen_saver_mode == false then
+    if not self.screen_saver_mode then
         Screensaver:setup()
         Screensaver:show()
     end
     self.powerd:beforeSuspend()
-    self.screen_saver_mode = true
 end
 
 function SonyPRSTUX:outofScreenSaver()
-    if self.screen_saver_mode == true then
+    if self.screen_saver_mode then
         local Screensaver = require("ui/screensaver")
         Screensaver:close()
         local UIManager = require("ui/uimanager")
         UIManager:nextTick(function() UIManager:setDirty("all", "full") end)
     end
     self.powerd:afterResume()
-    self.screen_saver_mode = false
 end
 
 function SonyPRSTUX:suspend()

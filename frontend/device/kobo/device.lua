@@ -192,9 +192,15 @@ local Kobo = Generic:extend{
     unexpected_wakeup_count = 0
 }
 
--- Kobo Touch A/B:
-local KoboTrilogyAB = Kobo:extend{
-    model = "Kobo_trilogy_AB",
+local KoboTrilogyA = Kobo:extend{
+    model = "Kobo_trilogy_A",
+    -- Unlike its B brethren, this one doesn't do the weird translation dance when ABS_PRESSURE is 0...
+    hasKeys = yes,
+    hasMultitouch = no,
+}
+-- Kobo Touch B:
+local KoboTrilogyB = Kobo:extend{
+    model = "Kobo_trilogy_B",
     touch_kobo_mk3_protocol = true,
     hasKeys = yes,
     hasMultitouch = no,
@@ -1382,7 +1388,18 @@ function Kobo:setEventHandlers(uimgr)
             UIManager:unschedule(UIManager.poweroff_action)
             -- resume if we were suspended
             if self.screen_saver_mode then
-                UIManager.event_handlers.Resume()
+                if self.screen_saver_lock then
+                    -- This can only happen when some sort of screensaver_delay is set,
+                    -- and the user presses the Power button *after* already having woken up the device.
+                    -- In this case, we want to go back to suspend *without* affecting the screensaver,
+                    -- so we mimic UIManager.event_handlers.Suspend's behavior when *not* in screen_saver_mode ;).
+                    logger.dbg("Pressed power while awake in screen saver mode, going back to suspend...")
+                    self:_beforeSuspend()
+                    self.powerd:beforeSuspend() -- this won't be run by onPowerEvent because we're in screen_saver_mode
+                    self:onPowerEvent("Suspend")
+                else
+                    UIManager.event_handlers.Resume()
+                end
             else
                 UIManager.event_handlers.Suspend()
             end
@@ -1472,7 +1489,15 @@ elseif codename == "kraken" then
 elseif codename == "phoenix" then
     return KoboPhoenix
 elseif codename == "trilogy" and product_id == "310" then
-    return KoboTrilogyAB
+    -- This is where things get interesting...
+    -- The early 'A' variant (the actual model name being N905, without any letter suffix, unlike the two other variants)
+    -- does *NOT* feature an internal SD card, and is manufactured in China instead of Taiwan... because it is *NOT* an NTX board.
+    -- c.f., #9742
+    if os.getenv("PLATFORM") == "freescale" then
+        return KoboTrilogyA
+    else
+        return KoboTrilogyB
+    end
 elseif codename == "trilogy" and product_id == "320" then
     return KoboTrilogyC
 elseif codename == "pixie" then

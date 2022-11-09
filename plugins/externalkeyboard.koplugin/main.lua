@@ -92,7 +92,6 @@ local ExternalKeyboard = WidgetContainer:extend{
     original_device_values = nil,
     keyboard_fds = {},
     connected_keyboards = 0,
-    startup = true,
 }
 
 function ExternalKeyboard:init()
@@ -115,14 +114,8 @@ function ExternalKeyboard:init()
         role = USB_ROLE_HOST
     end
     if role == USB_ROLE_HOST then
-        -- NOTE: On startup, if the FM is not in classic mode, the coverbrowser plugin does a funky hostile takeover at runtime.
-        --       Delay our own stuff to make sure we affect the final widget.
-        if ExternalKeyboard.startup then
-            UIManager:nextTick(self.findAndSetupKeyboards, self)
-            ExternalKeyboard.startup = nil
-        else
-            self:findAndSetupKeyboards()
-        end
+        -- Sweep the full class/input sysfs tree to look for keyboards
+        self:findAndSetupKeyboards()
     end
 end
 

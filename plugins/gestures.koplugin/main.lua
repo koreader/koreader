@@ -9,6 +9,7 @@ local Geom = require("ui/geometry")
 local GestureDetector = require("device/gesturedetector")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Screen = require("device").screen
@@ -120,6 +121,22 @@ Multiswipes allow you to perform complex gestures built up out of multiple swipe
 
 These advanced gestures consist of either straight swipes or diagonal swipes. To ensure accuracy, they can't be mixed.]])
 
+-- If the gesture contains the "toggle_touch_input" action,
+-- mark it "always active" to make sure that InputContainer won't block it after the IgnoreTouchInput Event.
+function Gestures:isGestureAlwaysActive(ges, multiswipe_directions)
+    -- Handle multiswipes properly
+    -- NOTE: This is a bit clunky, as ges comes from the list of registered touch zones,
+    --       while multiswipe_directions comes from the actual input event.
+    --       Alas, all our multiswipe gestures are handled by a single "multiswipe" zone.
+    if self.multiswipes_enabled then
+        if ges == "multiswipe" and multiswipe_directions then
+            ges = "multiswipe_" .. self:safeMultiswipeName(multiswipe_directions)
+        end
+    end
+
+    return self.gestures[ges] and self.gestures[ges].toggle_touch_input
+end
+
 function Gestures:init()
     local defaults_path = FFIUtil.joinPath(self.path, "defaults.lua")
     if not lfs.attributes(gestures_path, "mode") then
@@ -184,6 +201,13 @@ function Gestures:init()
     self.ui.menu:registerToMainMenu(self)
     Dispatcher:init()
     self:initGesture()
+    -- Overload InputContainer's stub to allow it to recognize "always active" gestures
+    InputContainer.isGestureAlwaysActive = function(this, ges, multiswipe_directions) return self:isGestureAlwaysActive(ges, multiswipe_directions) end
+end
+
+function Gestures:onCloseWidget()
+    -- Restore the stub implementation on teardown, to avoid pinning a stale instance of ourselves
+    InputContainer.isGestureAlwaysActive = InputContainer._isGestureAlwaysActive
 end
 
 function Gestures:gestureTitleFunc(ges)
