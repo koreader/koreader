@@ -78,8 +78,8 @@ function OPDSPSE:getLastPage(remote_url)
                     ["Authorization"] = "Bearer "..bearer_token,
                 },
                 sink        = ltn12.sink.table(progress_data),
-                user        = item.username,
-                password    = item.password,
+                user        = self.root_catalog_username,
+                password    = self.root_catalog_password,
             })
             socketutil:reset_timeout()
         else
@@ -107,7 +107,6 @@ end
 
 
 function OPDSPSE:streamPages(item, remote_url, count, continue)
-    local last_page = 0
     -- attempt to pull chapter progress from Kavita if user pressed
     -- "Page Stream" button
     local ok, last_page = pcall(function() return self:getLastPage(remote_url) end)
