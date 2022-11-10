@@ -16,18 +16,11 @@ local T = require("ffi/util").template
 
 
 
-local OPDSPSE = {
-    root_catalog_username = nil,
-    root_catalog_password = nil,
-}
+local OPDSPSE = {}
 
-function OPDSPSE:storeCatalogCredentials(username, password)
-    self.root_catalog_username = username
-    self.root_catalog_password = password
-end
 
 -- This function attempts to pull chapter progress from Kavita.
-function OPDSPSE:getLastPage(remote_url)
+function OPDSPSE:getLastPage(remote_url, username, password)
     local last_page = 0
 
     -- create URL's and reference vars
@@ -50,8 +43,8 @@ function OPDSPSE:getLastPage(remote_url)
                 ["Authentication"] = api_key,
             },
             sink        = ltn12.sink.table(auth_data),
-            user        = self.root_catalog_username,
-            password    = self.root_catalog_password,
+            user        = username,
+            password    = password,
         })
         socketutil:reset_timeout()
     else
@@ -78,8 +71,8 @@ function OPDSPSE:getLastPage(remote_url)
                     ["Authorization"] = "Bearer "..bearer_token,
                 },
                 sink        = ltn12.sink.table(progress_data),
-                user        = self.root_catalog_username,
-                password    = self.root_catalog_password,
+                user        = username,
+                password    = password,
             })
             socketutil:reset_timeout()
         else
@@ -106,10 +99,12 @@ end
 
 
 
-function OPDSPSE:streamPages(item, remote_url, count, continue)
+function OPDSPSE:streamPages(item, remote_url, count, continue, username, password)
     -- attempt to pull chapter progress from Kavita if user pressed
-    -- "Page Stream" button
-    local ok, last_page = pcall(function() return self:getLastPage(remote_url) end)
+    -- "Page Stream" button.
+    -- We have to pull the progress here, otherwise the creation of the page_table
+    -- will overwrite the book progress before we pull it, making it always 0.
+    local ok, last_page = pcall(function() return self:getLastPage(remote_url, username, password) end)
     if not ok then
         logger.warn("Couldn't pull progress, defaulting to Page 0.")
         last_page = 0

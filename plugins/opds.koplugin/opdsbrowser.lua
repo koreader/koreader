@@ -599,16 +599,14 @@ function OPDSBrowser:showDownloads(item)
                 {
                     text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
-                        OPDSPSE:storeCatalogCredentials(self.root_catalog_username, self.root_catalog_password)
-                        OPDSPSE:streamPages(item, acquisition.href, acquisition.count, false)
+                        OPDSPSE:streamPages(item, acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password)
                         UIManager:close(self.download_dialog)
                     end,
                 },
                 {
                     text = _("Stream from page") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
-                        OPDSPSE:storeCatalogCredentials(self.root_catalog_username, self.root_catalog_password)
-                        OPDSPSE:streamPages(item, acquisition.href, acquisition.count, true)
+                        OPDSPSE:streamPages(item, acquisition.href, acquisition.count, true, self.root_catalog_username, self.root_catalog_password)
                         UIManager:close(self.download_dialog)
                     end,
                 },
