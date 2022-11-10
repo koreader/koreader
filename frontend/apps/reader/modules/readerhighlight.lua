@@ -1473,7 +1473,7 @@ function ReaderHighlight:onHoldRelease()
 
     if self.select_mode then -- extended highlighting, ending fragment
         if self.selected_text then
-            if self.ui.document.info.has_pages and self.ui.paging.current_page ~= self.highlight_page then
+            if self.ui.paging and self.hold_pos.page ~= self.highlight_page then
                 self.ui.paging:_gotoPage(self.highlight_page)
                 UIManager:show(Notification:new{
                     text = _("Fragments must be within one page"),
