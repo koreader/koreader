@@ -132,8 +132,8 @@ function OPDSPSE:streamPages(item, remote_url, count, continue, username, passwo
                         ["Accept-Encoding"] = "identity",
                     },
                     sink        = ltn12.sink.table(page_data),
-                    user        = item.username,
-                    password    = item.password,
+                    user        = username,
+                    password    = password,
                 })
                 socketutil:reset_timeout()
             else
