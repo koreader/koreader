@@ -26,6 +26,7 @@ local Input = Device.input
 local Screen = Device.screen
 
 local TrapWidget = InputContainer:extend{
+    name = "TrapWidget",
     modal = true,
     dismiss_callback = function() end,
     text = nil, -- will be invisible if no message given

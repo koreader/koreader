@@ -779,10 +779,12 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
             -- (We want to avoid the footer to be painted over a widget covering it - we would
             -- be fine refreshing it if the widget is not covering it, but this is hard to
             -- guess from here.)
-            if UIManager:getTopWidget() == "ReaderUI" then
+            local top_wg = UIManager:getTopWidget()
+            if top_wg == "ReaderUI" or
+                (top_wg == "TrapWidget" and UIManager:getSecondTopmostWidget() == "ReaderUI") then
                 self:onUpdateFooter(self.view.footer_visible)
             else
-                logger.dbg("Skipping ReaderFooter repaint, because ReaderUI is not the top-level widget")
+                logger.dbg("Skipping ReaderFooter repaint, because neither ReaderUI nor TrapWidget is the top-level widget")
                 -- NOTE: We *do* keep its content up-to-date, though
                 self:onUpdateFooter()
             end
@@ -2462,7 +2464,8 @@ end
 -- Used by event handlers that can trip without direct UI interaction...
 function ReaderFooter:maybeUpdateFooter()
     -- ...so we need to avoid stomping over unsuspecting widgets (usually, ScreenSaver).
-    if UIManager:getTopWidget() == "ReaderUI" then
+    local top_wg = UIManager:getTopWidget()
+    if top_wg == "ReaderUI" or top_wg == "TrapWidget" then
         self:onUpdateFooter(self.view.footer_visible)
     else
         self:onUpdateFooter()
@@ -2472,7 +2475,7 @@ end
 function ReaderFooter:onFrontlightStateChanged()
     -- Custom variant of maybeUpdateFooter that *also* whitelists the FL widget...
     local top_wg = UIManager:getTopWidget()
-    if top_wg == "ReaderUI" or top_wg == "FrontLightWidget" then
+    if top_wg == "ReaderUI" or top_wg == "FrontLightWidget" or top_wg == "TrapWidget" then
         self:onUpdateFooter(self.view.footer_visible)
     else
         self:onUpdateFooter()
