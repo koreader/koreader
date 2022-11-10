@@ -99,7 +99,7 @@ end
 
 
 
-function OPDSPSE:streamPages(item, remote_url, count, continue, username, password)
+function OPDSPSE:streamPages(remote_url, count, continue, username, password)
     -- attempt to pull chapter progress from Kavita if user pressed
     -- "Page Stream" button.
     -- We have to pull the progress here, otherwise the creation of the page_table
