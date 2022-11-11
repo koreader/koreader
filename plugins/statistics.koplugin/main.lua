@@ -1141,7 +1141,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             }
                             local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
                             dialogue = require("ui/widget/buttondialogtitle"):new{
-                                title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nTo sync across devices, set them with the same Cloud folder."),
+                                title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
                                              server.name.." "..type, SyncService.getReadablePath(server)),
                                 buttons = {
                                     {delete_button, edit_button, close_button}
