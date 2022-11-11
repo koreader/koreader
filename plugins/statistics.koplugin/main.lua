@@ -34,7 +34,7 @@ local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
 local DEFAULT_CALENDAR_NB_BOOK_SPANS = 3
 
 -- Current DB schema version
-local DB_SCHEMA_VERSION = 20221022
+local DB_SCHEMA_VERSION = 20221111
 
 -- This is the query used to compute the total time spent reading distinct pages of the book,
 -- capped at self.settings.max_sec per distinct page.
@@ -382,8 +382,8 @@ Do you want to create an empty database?
                 self:upgradeDBto20201022(conn)
             end
 
-            if db_version < 20221022 then
-                self:upgradeDBto20221022(conn)
+            if db_version < 20221111 then
+                self:upgradeDBto20221111(conn)
             end
 
             -- Get back the space taken by the deleted page_stat table
@@ -603,11 +603,13 @@ function ReaderStatistics:upgradeDBto20201022(conn)
     conn:exec("PRAGMA user_version=20201022;")
 end
 
-function ReaderStatistics:upgradeDBto20221022(conn)
+function ReaderStatistics:upgradeDBto20221111(conn)
     conn:exec([[
         -- We make the index on book's (title, author, md5) unique in order to sync dbs
-        -- First we fill null authors with '' and remove duplicates
+        -- First we fill null authors with ''
         UPDATE book SET authors = '' WHERE authors IS NULL;
+        -- Secondly, we unify the id_book in page_stat_data entries for duplicate books
+        -- to the smallest of each, so as to delete the others.
         UPDATE page_stat_data SET id_book = (
             SELECT map.min_id FROM (
                 SELECT id, (
@@ -617,6 +619,7 @@ function ReaderStatistics:upgradeDBto20221022(conn)
                 FROM book WHERE book.id >= min_id
             ) as map WHERE page_stat_data.id_book = map.id
         );
+        -- Delete duplicate books and keep the one with smallest id.
         DELETE FROM book WHERE id > (
             SELECT MIN(id) FROM book b2
             WHERE (book.title, book.authors, book.md5) = (b2.title, b2.authors, b2.md5)
@@ -627,13 +630,12 @@ function ReaderStatistics:upgradeDBto20221022(conn)
                 sum(duration)
          FROM   page_stat
          WHERE  id_book = book.id);
-
         -- Finally we update the index to be unique
         DROP INDEX IF EXISTS book_title_authors_md5;
         CREATE UNIQUE INDEX book_title_authors_md5 ON book(title, authors, md5);]])
 
     -- Update DB schema version
-    conn:exec("PRAGMA user_version=20221022;")
+    conn:exec("PRAGMA user_version=20221111;")
 end
 
 function ReaderStatistics:addBookStatToDB(book_stats, conn)
