@@ -282,8 +282,8 @@ function MenuDialog:init()
     local show_sync_settings = function()
         if not settings.server then
             local sync_settings = SyncService:new{}
-            function sync_settings:onClose()
-                UIManager:close(sync_settings)
+            sync_settings.onClose = function(this)
+                UIManager:close(this)
             end
             sync_settings.onConfirm = function(server)
                 settings.server = server
@@ -313,8 +313,8 @@ function MenuDialog:init()
                         UIManager:close(self.sync_dialogue)
                         UIManager:close(self)
                         local sync_settings = SyncService:new {}
-                        function sync_settings:onClose()
-                            UIManager:close(sync_settings)
+                        sync_settings.onClose = function(this)
+                            UIManager:close(this)
                         end
 
                         sync_settings.onConfirm = function(chosen_server)
@@ -1177,8 +1177,8 @@ function VocabularyBuilderWidget:init()
         callback = function()
             if not settings.server then
                 local sync_settings = SyncService:new{}
-                function sync_settings:onClose()
-                    UIManager:close(sync_settings)
+                sync_settings.onClose = function(this)
+                    UIManager:close(this)
                 end
                 sync_settings.onConfirm = function(server)
                     settings.server = server

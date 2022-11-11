@@ -1092,8 +1092,8 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                             local server = self.settings.sync_server
                             local edit_cb = function()
                                 local sync_settings = SyncService:new {}
-                                function sync_settings:onClose()
-                                    UIManager:close(sync_settings)
+                                sync_settings.onClose = function(this)
+                                    UIManager:close(this)
                                 end
                                 sync_settings.onConfirm = function(sv)
                                     self.settings.sync_server = sv
