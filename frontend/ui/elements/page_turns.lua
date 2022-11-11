@@ -27,8 +27,8 @@ genTapZonesMenu("default")
 genTapZonesMenu("left_right")
 genTapZonesMenu("top_bottom")
 
-default_size_b = math.floor(G_defaults:readSetting("DTAP_ZONE_BACKWARD").w * 100)
-default_size_f = math.floor(G_defaults:readSetting("DTAP_ZONE_FORWARD").w * 100)
+local default_size_b = math.floor(G_defaults:readSetting("DTAP_ZONE_BACKWARD").w * 100)
+local default_size_f = math.floor(G_defaults:readSetting("DTAP_ZONE_FORWARD").w * 100)
 local function readTapZonesSize()
     local size_b, size_f
     if G_reader_settings:has("page_turns_tap_zone_forward_size_ratio") then
