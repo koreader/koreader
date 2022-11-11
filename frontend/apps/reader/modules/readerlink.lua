@@ -1,5 +1,5 @@
 --[[--
-ReaderLink is an abstraction for document-specific link interfaces.
+    ReaderLink is an abstraction for document-specific link interfaces.
 ]]
 
 local BD = require("ui/bidi")
@@ -30,53 +30,53 @@ function ReaderLink:init()
     self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ui:registerTouchZones({
-            {
-                id = "tap_link",
-                ges = "tap",
-                screen_zone = {
-                    ratio_x = 0, ratio_y = 0,
-                    ratio_w = 1, ratio_h = 1,
+                {
+                    id = "tap_link",
+                    ges = "tap",
+                    screen_zone = {
+                        ratio_x = 0, ratio_y = 0,
+                        ratio_w = 1, ratio_h = 1,
+                    },
+                    overrides = {
+                        -- Tap on links have priority over everything (it can
+                        -- be disabled with "Tap to follow links" menu item)
+                        "readerhighlight_tap",
+                        "tap_top_left_corner",
+                        "tap_top_right_corner",
+                        "tap_left_bottom_corner",
+                        "tap_right_bottom_corner",
+                        "readerfooter_tap",
+                        "readerconfigmenu_ext_tap",
+                        "readerconfigmenu_tap",
+                        "readermenu_ext_tap",
+                        "readermenu_tap",
+                        "tap_forward",
+                        "tap_backward",
+                    },
+                    handler = function(ges) return self:onTap(_, ges) end,
                 },
-                overrides = {
-                    -- Tap on links have priority over everything (it can
-                    -- be disabled with "Tap to follow links" menu item)
-                    "readerhighlight_tap",
-                    "tap_top_left_corner",
-                    "tap_top_right_corner",
-                    "tap_left_bottom_corner",
-                    "tap_right_bottom_corner",
-                    "readerfooter_tap",
-                    "readerconfigmenu_ext_tap",
-                    "readerconfigmenu_tap",
-                    "readermenu_ext_tap",
-                    "readermenu_tap",
-                    "tap_forward",
-                    "tap_backward",
+                {
+                    id = "swipe_link",
+                    ges = "swipe",
+                    screen_zone = {
+                        ratio_x = 0, ratio_y = 0,
+                        ratio_w = 1, ratio_h = 1,
+                    },
+                    overrides = {
+                        "paging_swipe",
+                        "rolling_swipe"
+                    },
+                    handler = function(ges) return self:onSwipe(_, ges) end,
                 },
-                handler = function(ges) return self:onTap(_, ges) end,
-            },
-            {
-                id = "swipe_link",
-                ges = "swipe",
-                screen_zone = {
-                    ratio_x = 0, ratio_y = 0,
-                    ratio_w = 1, ratio_h = 1,
-                },
-                overrides = {
-                    "paging_swipe",
-                    "rolling_swipe"
-                },
-                handler = function(ges) return self:onSwipe(_, ges) end,
-            },
         })
     end
     self.ui:registerPostInitCallback(function()
-        self.ui.menu:registerToMainMenu(self)
+            self.ui.menu:registerToMainMenu(self)
     end)
     if G_reader_settings:isTrue("opening_page_location_stack") then
         -- Add location at book opening to stack
         self.ui:registerPostReadyCallback(function()
-            self:addCurrentLocationToStack()
+                self:addCurrentLocationToStack()
         end)
     end
     -- For relative local file links
@@ -84,7 +84,7 @@ function ReaderLink:init()
     self.document_dir = directory
     -- Migrate these old settings to the new common one
     if G_reader_settings:isTrue("tap_link_footnote_popup")
-            or G_reader_settings:isTrue("swipe_link_footnote_popup") then
+        or G_reader_settings:isTrue("swipe_link_footnote_popup") then
         G_reader_settings:saveSetting("tap_link_footnote_popup", nil)
         G_reader_settings:saveSetting("swipe_link_footnote_popup", nil)
         G_reader_settings:saveSetting("footnote_link_in_popup", true)
@@ -148,6 +148,7 @@ function ReaderLink:init()
             callback = function()
                 UIManager:nextTick(function()
                         UIManager:close(this.dialog)
+                        local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
                         self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, true, false, true, wiki_lang))
                 end)
             end,
@@ -163,48 +164,59 @@ function ReaderLink:init()
             end
         }
     end
+    local find_epub_fullpath = function(link_url)
+        if not link_url then
+            return false
+        end
+        local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
+        if wiki_lang and wiki_page then
+            -- Ask for user confirmation before launching lookup (on a
+            -- wikipedia page saved as epub, full of wikipedia links, it's
+            -- too easy to click on links when wanting to change page...)
+            -- But first check if this wikipedia article has been saved as EPUB
+            local epub_filename = wiki_page .. "."..string.upper(wiki_lang)..".epub"
+            local epub_fullpath
+            -- either in current book directory
+            local last_file = G_reader_settings:readSetting("lastfile")
+            if last_file then
+                local current_book_dir = last_file:match("(.*)/")
+                local safe_filename = util.getSafeFilename(epub_filename, current_book_dir):gsub("_", " ")
+                local epub_path = current_book_dir .. "/" .. safe_filename
+                if util.pathExists(epub_path) then
+                    epub_fullpath = epub_path
+                end
+            end
+            -- or in wikipedia save directory
+            if not epub_fullpath then
+                local dir = G_reader_settings:readSetting("wikipedia_save_dir")
+                if not dir then dir = G_reader_settings:readSetting("home_dir") end
+                if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+                if dir then
+                    local safe_filename = util.getSafeFilename(epub_filename, dir):gsub("_", " ")
+                    local epub_path = dir .. "/" .. safe_filename
+                    if util.pathExists(epub_path) then
+                        epub_fullpath = epub_path
+                    end
+                end
+            end
+            return epub_fullpath
+        else
+            return false
+        end
+    end
     self._external_buttons["06_wiki_saved"] = function(this, link_url)
         return {
-            Text = _("Read EPUB"),
+            text = _("Read EPUB"),
             callback = function()
                 UIManager:scheduleIn(0.1, function()
                         UIManager:close(this.dialog)
-                        self.ui:switchDocument(epub_fullpath)
+                        self.ui:switchDocument(find_epub_fullpath(link_url))
                 end)
             end,
             show_in_dialog_func = function()
                 local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
                 if wiki_lang and wiki_page then
-                    -- Ask for user confirmation before launching lookup (on a
-                    -- wikipedia page saved as epub, full of wikipedia links, it's
-                    -- too easy to click on links when wanting to change page...)
-                    -- But first check if this wikipedia article has been saved as EPUB
-                    local epub_filename = wiki_page .. "."..string.upper(wiki_lang)..".epub"
-                    local epub_fullpath
-                    -- either in current book directory
-                    local last_file = G_reader_settings:readSetting("lastfile")
-                    if last_file then
-                        local current_book_dir = last_file:match("(.*)/")
-                        local safe_filename = util.getSafeFilename(epub_filename, current_book_dir):gsub("_", " ")
-                        local epub_path = current_book_dir .. "/" .. safe_filename
-                        if util.pathExists(epub_path) then
-                            epub_fullpath = epub_path
-                        end
-                    end
-                    -- or in wikipedia save directory
-                    if not epub_fullpath then
-                        local dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                        if not dir then dir = G_reader_settings:readSetting("home_dir") end
-                        if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
-                        if dir then
-                            local safe_filename = util.getSafeFilename(epub_filename, dir):gsub("_", " ")
-                            local epub_path = dir .. "/" .. safe_filename
-                            if util.pathExists(epub_path) then
-                                epub_fullpath = epub_path
-                            end
-                        end
-                    end
-                    if epub_fullpath then
+                    if find_epub_fullpath(link_url) then
                         local text = T(_("This article has previously been saved as EPUB. You may wish to read the saved EPUB instead."))
                         return true, text
                     else
@@ -827,21 +839,17 @@ function ReaderLink:onGoToExternalLink(link_url)
         local button = fn_button(self, link_url)
         if button.show_in_dialog_func then
             local show, button_title = button.show_in_dialog_func()
-            logger.dbg(_)
-            logger.dbg(button_title)
             if show and button_title then
                 if title == default_title then
                     -- The default title is replaced by the first non-default button title.
                     title = button_title
                 else
                     -- Every other button title value is appended to the title.
-                    title = title .. "\n" .. button_title
+                    title = title .. "\n\n" .. button_title
                 end
             end
         end
     end
-
-    logger.dbg("title" .. title)
 
     self.dialog = ButtonDialogTitle:new{
         title = title,
