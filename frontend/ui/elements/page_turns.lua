@@ -56,7 +56,7 @@ table.insert(page_turns_tap_zones_sub_items, {
         local is_left_right = G_reader_settings:readSetting("page_turns_tap_zones") == "left_right"
         local size_b, size_f = readTapZonesSize()
         UIManager:show(require("ui/widget/doublespinwidget"):new{
-            title_text = is_left_right and _("Tap zones width") or _("Tap zones height"),
+            title_text = is_left_right and _("Tap zone width") or _("Tap zone height"),
             info_text = is_left_right and _("Percentage of screen width") or _("Percentage of screen height"),
             left_text = _("Backward"),
             left_value = size_b,
