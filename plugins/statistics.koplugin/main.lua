@@ -1091,7 +1091,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         callback = function(touchmenu_instance)
                             local server = self.settings.sync_server
                             local edit_cb = function()
-                                local sync_settings = SyncService:new {}
+                                local sync_settings = SyncService:new{}
                                 sync_settings.onClose = function(this)
                                     UIManager:close(this)
                                 end
@@ -1138,7 +1138,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                 end
                             }
                             local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
-                            dialogue = require("ui/widget/buttondialogtitle"):new {
+                            dialogue = require("ui/widget/buttondialogtitle"):new{
                                 title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nTo sync across devices, set them with the same Cloud folder."),
                                              server.name.." "..type, SyncService.getReadablePath(server)),
                                 buttons = {

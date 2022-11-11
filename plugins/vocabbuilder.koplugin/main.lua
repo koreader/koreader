@@ -312,7 +312,7 @@ function MenuDialog:init()
                     callback = function()
                         UIManager:close(self.sync_dialogue)
                         UIManager:close(self)
-                        local sync_settings = SyncService:new {}
+                        local sync_settings = SyncService:new{}
                         sync_settings.onClose = function(this)
                             UIManager:close(this)
                         end
@@ -336,7 +336,7 @@ function MenuDialog:init()
             }
         }
         local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
-        self.sync_dialogue = ButtonDialogTitle:new {
+        self.sync_dialogue = ButtonDialogTitle:new{
             title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nTo sync across devices, set them with the same Cloud folder."),
                          server.name.." "..type, SyncService.getReadablePath(server)),
             info_face = Font:getFace("smallinfofont"),
