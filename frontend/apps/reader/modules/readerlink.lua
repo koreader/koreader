@@ -23,7 +23,7 @@ local T = ffiutil.template
 
 local ReaderLink = InputContainer:extend{
     location_stack = nil, -- table, per-instance
-    _external_buttons = {}
+    _external_links = nil,
 }
 
 function ReaderLink:init()
@@ -92,9 +92,9 @@ function ReaderLink:init()
 
     -- delegate gesture listener to readerui, NOP our own
     self.ges_events = nil
-
+    self._external_links = {}
     -- Set up buttons for alternative external link handling methods
-    self._external_buttons["01_copy"] = function(this, link_url)
+    self._external_links["10_copy"] = function(this, link_url)
         return {
             text = _("Copy"),
             callback = function()
@@ -103,20 +103,20 @@ function ReaderLink:init()
         }
     end
 
-    self._external_buttons["02_qrcode"] = function(this, link_url)
+    self._external_links["20_qrcode"] = function(this, link_url)
         return {
             text = _("Show QR code"),
             callback = function()
                 UIManager:close(this.dialog)
                 UIManager:show(QRMessage:new{
-                        text = link_url,
-                        width = Device.screen:getWidth(),
-                        height = Device.screen:getHeight()
+                    text = link_url,
+                    width = Device.screen:getWidth(),
+                    height = Device.screen:getHeight()
                 })
             end
         }
     end
-    self._external_buttons["04_browser"] = function(this, link_url)
+    self._external_links["30_browser"] = function(this, link_url)
         return {
             text = _("Open in browser"),
             callback = function()
@@ -130,18 +130,18 @@ function ReaderLink:init()
             end
         }
     end
-    self._external_buttons["05_wiki_lookup"] = function(this, link_url)
+    self._external_links["40_wiki_lookup"] = function(this, link_url)
         return {
             text = _("Read online"),
             callback = function()
                 UIManager:nextTick(function()
-                        UIManager:close(this.dialog)
-                        local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
-                        self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, true, false, true, wiki_lang))
+                    UIManager:close(this.dialog)
+                    local wiki_lang, wiki_page = is_wiki_page(link_url)
+                    self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, true, false, true, wiki_lang))
                 end)
             end,
             show_in_dialog_func = function()
-                local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
+                local wiki_lang, wiki_page = is_wiki_page(link_url)
                 if wiki_lang and wiki_page then
                     logger.dbg("Wikipedia link:", wiki_lang, wiki_page)
                     text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " "))
@@ -152,71 +152,26 @@ function ReaderLink:init()
             end
         }
     end
-    local find_epub_fullpath = function(link_url)
-        if not link_url then
-            return false
-        end
-        local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
-        if wiki_lang and wiki_page then
-            -- Ask for user confirmation before launching lookup (on a
-            -- wikipedia page saved as epub, full of wikipedia links, it's
-            -- too easy to click on links when wanting to change page...)
-            -- But first check if this wikipedia article has been saved as EPUB
-            local epub_filename = wiki_page .. "."..string.upper(wiki_lang)..".epub"
-            local epub_fullpath
-            -- either in current book directory
-            local last_file = G_reader_settings:readSetting("lastfile")
-            if last_file then
-                local current_book_dir = last_file:match("(.*)/")
-                local safe_filename = util.getSafeFilename(epub_filename, current_book_dir):gsub("_", " ")
-                local epub_path = current_book_dir .. "/" .. safe_filename
-                if util.pathExists(epub_path) then
-                    epub_fullpath = epub_path
-                end
-            end
-            -- or in wikipedia save directory
-            if not epub_fullpath then
-                local dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                if not dir then dir = G_reader_settings:readSetting("home_dir") end
-                if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
-                if dir then
-                    local safe_filename = util.getSafeFilename(epub_filename, dir):gsub("_", " ")
-                    local epub_path = dir .. "/" .. safe_filename
-                    if util.pathExists(epub_path) then
-                        epub_fullpath = epub_path
-                    end
-                end
-            end
-            return epub_fullpath
-        else
-            return false
-        end
-    end
-    self._external_buttons["06_wiki_saved"] = function(this, link_url)
+    self._external_links["45_wiki_saved"] = function(this, link_url)
         return {
             text = _("Read EPUB"),
             callback = function()
                 UIManager:scheduleIn(0.1, function()
-                        UIManager:close(this.dialog)
-                        self.ui:switchDocument(find_epub_fullpath(link_url))
+                    UIManager:close(this.dialog)
+                    local _,_ wiki_epub_fullpath = is_wiki_page(link_url)
+                    self.ui:switchDocument(wiki_epub_fullpath)
                 end)
             end,
             show_in_dialog_func = function()
-                local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
-                if wiki_lang and wiki_page then
-                    if find_epub_fullpath(link_url) then
-                        local text = T(_("This article has previously been saved as EPUB. You may wish to read the saved EPUB instead."))
-                        return true, text
-                    else
-                        return false
-                    end
-                else
-                    return false
+                local wiki_lang, wiki_page, wiki_epub_fullpath = is_wiki_page(link_url)
+                if wiki_lang and wiki_page and wiki_epub_fullpath then
+                    local text = T(_("This article has previously been saved as EPUB. You may wish to read the saved EPUB instead."))
+                    return true, text
                 end
             end
         }
     end
-    self._external_buttons["07_cancel"] = function(this, link_url)
+    self._external_links["90_cancel"] = function(this, link_url)
         return {
             text = _("Cancel"),
             callback = function()
@@ -823,7 +778,7 @@ function ReaderLink:onGoToExternalLink(link_url)
     local default_title =  T(_("External link:\n\n%1"), BD.url(link_url))
     local title = default_title
 
-    for _, fn_button in pairs(self._external_buttons) do
+    for _, fn_button in pairs(self._external_links) do
         local button = fn_button(self, link_url)
         if button.show_in_dialog_func then
             local show, button_title = button.show_in_dialog_func()
@@ -841,7 +796,7 @@ function ReaderLink:onGoToExternalLink(link_url)
 
     self.dialog = ButtonDialogTitle:new{
         title = title,
-        buttons = self:getButtonsForDialog(link_url),
+        buttons = self:getButtonsForExternalLinkDialog(link_url),
     }
     UIManager:show(self.dialog)
     return true
@@ -1432,20 +1387,20 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
 end
 
 function ReaderLink:addToExternalLinkDialog(idx, fn_button)
-    self._external_buttons[idx] = fn_button
+    self._external_links[idx] = fn_button
 end
 
-function ReaderLink:removeButton(idx)
-    local button = self._external_buttons[idx]
-    self._external_buttons[idx] = nil
+function ReaderLink:removeFromExternalLinkDialog(idx)
+    local button = self._external_links[idx]
+    self._external_links[idx] = nil
     return button
 end
 
-function ReaderLink:getButtonsForDialog(link_url)
+function ReaderLink:getButtonsForExternalLinkDialog(link_url)
     local buttons = {{}}
     local columns = 2
 
-    for idx, fn_button in ffiutil.orderedPairs(self._external_buttons) do
+    for idx, fn_button in ffiutil.orderedPairs(self._external_links) do
         local button = fn_button(self, link_url)
         if not button.show_in_dialog_func or button.show_in_dialog_func(link_url) then
             if #buttons[#buttons] >= columns then
@@ -1457,6 +1412,47 @@ function ReaderLink:getButtonsForDialog(link_url)
     end
 
     return buttons
+end
+
+function is_wiki_page(link_url)
+    if not link_url then
+        return false
+    end
+    local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
+    if wiki_lang and wiki_page then
+        -- Ask for user confirmation before launching lookup (on a
+        -- wikipedia page saved as epub, full of wikipedia links, it's
+        -- too easy to click on links when wanting to change page...)
+        -- But first check if this wikipedia article has been saved as EPUB
+        local epub_filename = wiki_page .. "."..string.upper(wiki_lang)..".epub"
+        local epub_fullpath
+        -- either in current book directory
+        local last_file = G_reader_settings:readSetting("lastfile")
+        if last_file then
+            local current_book_dir = last_file:match("(.*)/")
+            local safe_filename = util.getSafeFilename(epub_filename, current_book_dir):gsub("_", " ")
+            local epub_path = current_book_dir .. "/" .. safe_filename
+            if util.pathExists(epub_path) then
+                epub_fullpath = epub_path
+            end
+        end
+        -- or in wikipedia save directory
+        if not epub_fullpath then
+            local dir = G_reader_settings:readSetting("wikipedia_save_dir")
+            if not dir then dir = G_reader_settings:readSetting("home_dir") end
+            if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+            if dir then
+                local safe_filename = util.getSafeFilename(epub_filename, dir):gsub("_", " ")
+                local epub_path = dir .. "/" .. safe_filename
+                if util.pathExists(epub_path) then
+                    epub_fullpath = epub_path
+                end
+            end
+        end
+        return wiki_lang, wiki_page, epub_fullpath
+    else
+        return false
+    end
 end
 
 return ReaderLink
