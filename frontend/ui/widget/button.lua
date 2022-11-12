@@ -108,7 +108,7 @@ function Button:init()
                     self.label_widget = TextBoxWidget:new{
                         text = self.text,
                         line_height = 0,
-                        alignment = self.align,
+                        alignment = "center",
                         width = max_width,
                         height = max_height,
                         height_adjust = true,
