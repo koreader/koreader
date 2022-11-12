@@ -23,7 +23,7 @@ local T = ffiutil.template
 
 local ReaderLink = InputContainer:extend{
     location_stack = nil, -- table, per-instance
-    _external_links = nil,
+    _external_link_buttons = nil,
 }
 
 function ReaderLink:init()
@@ -92,9 +92,10 @@ function ReaderLink:init()
 
     -- delegate gesture listener to readerui, NOP our own
     self.ges_events = nil
-    self._external_links = {}
+
     -- Set up buttons for alternative external link handling methods
-    self._external_links["10_copy"] = function(this, link_url)
+    self._external_link_buttons = {}
+    self._external_link_buttons["10_copy"] = function(this, link_url)
         return {
             text = _("Copy"),
             callback = function()
@@ -102,8 +103,7 @@ function ReaderLink:init()
             end,
         }
     end
-
-    self._external_links["20_qrcode"] = function(this, link_url)
+    self._external_link_buttons["20_qrcode"] = function(this, link_url)
         return {
             text = _("Show QR code"),
             callback = function()
@@ -116,7 +116,7 @@ function ReaderLink:init()
             end
         }
     end
-    self._external_links["30_browser"] = function(this, link_url)
+    self._external_link_buttons["30_browser"] = function(this, link_url)
         return {
             text = _("Open in browser"),
             callback = function()
@@ -130,7 +130,7 @@ function ReaderLink:init()
             end
         }
     end
-    self._external_links["40_wiki_lookup"] = function(this, link_url)
+    self._external_link_buttons["40_wiki_lookup"] = function(this, link_url)
         return {
             text = _("Read online"),
             callback = function()
@@ -152,13 +152,13 @@ function ReaderLink:init()
             end
         }
     end
-    self._external_links["45_wiki_saved"] = function(this, link_url)
+    self._external_link_buttons["45_wiki_saved"] = function(this, link_url)
         return {
             text = _("Read EPUB"),
             callback = function()
                 UIManager:scheduleIn(0.1, function()
                     UIManager:close(this.dialog)
-                    local _,_ wiki_epub_fullpath = is_wiki_page(link_url)
+                    local _,_, wiki_epub_fullpath = is_wiki_page(link_url)
                     self.ui:switchDocument(wiki_epub_fullpath)
                 end)
             end,
@@ -171,7 +171,7 @@ function ReaderLink:init()
             end
         }
     end
-    self._external_links["90_cancel"] = function(this, link_url)
+    self._external_link_buttons["90_cancel"] = function(this, link_url)
         return {
             text = _("Cancel"),
             callback = function()
@@ -778,7 +778,7 @@ function ReaderLink:onGoToExternalLink(link_url)
     local default_title =  T(_("External link:\n\n%1"), BD.url(link_url))
     local title = default_title
 
-    for _, fn_button in pairs(self._external_links) do
+    for _, fn_button in pairs(self._external_link_buttons) do
         local button = fn_button(self, link_url)
         if button.show_in_dialog_func then
             local show, button_title = button.show_in_dialog_func()
@@ -1387,12 +1387,12 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
 end
 
 function ReaderLink:addToExternalLinkDialog(idx, fn_button)
-    self._external_links[idx] = fn_button
+    self._external_link_buttons[idx] = fn_button
 end
 
 function ReaderLink:removeFromExternalLinkDialog(idx)
-    local button = self._external_links[idx]
-    self._external_links[idx] = nil
+    local button = self._external_link_buttons[idx]
+    self._external_link_buttons[idx] = nil
     return button
 end
 
@@ -1400,7 +1400,7 @@ function ReaderLink:getButtonsForExternalLinkDialog(link_url)
     local buttons = {{}}
     local columns = 2
 
-    for idx, fn_button in ffiutil.orderedPairs(self._external_links) do
+    for idx, fn_button in ffiutil.orderedPairs(self._external_link_buttons) do
         local button = fn_button(self, link_url)
         if not button.show_in_dialog_func or button.show_in_dialog_func(link_url) then
             if #buttons[#buttons] >= columns then
