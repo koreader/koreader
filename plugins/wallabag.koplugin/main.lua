@@ -18,6 +18,7 @@ local Math = require("optmath")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
+local ReaderLink = require("apps/reader/modules/readerlink")
 local ReadHistory = require("readhistory")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -113,6 +114,19 @@ function Wallabag:init()
         if res then self.is_dateparser_available = true end
         self.is_dateparser_checked = true
     end
+
+    ReaderLink:addToExternalLinkDialog("03_wallabag", function(this, link_url)
+            return {
+                text = _("Add to Wallabag"),
+                callback = function()
+                    UIManager:close(this.dialog)
+                    this.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
+                end,
+                show_in_dialog_func = function()
+                    return this.ui.wallabag
+                end
+            }
+    end)
 end
 
 function Wallabag:addToMainMenu(menu_items)

@@ -116,18 +116,6 @@ function ReaderLink:init()
             end
         }
     end
-    self._external_buttons["03_wallabag"] = function(this, link_url)
-        return {
-            text = _("Add to Wallabag"),
-            callback = function()
-                UIManager:close(this.dialog)
-                self.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
-            end,
-            show_in_dialog_func = function()
-                return self.ui.wallabag
-            end
-        }
-    end
     self._external_buttons["04_browser"] = function(this, link_url)
         return {
             text = _("Open in browser"),
