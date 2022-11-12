@@ -435,6 +435,7 @@ function Dispatcher:init()
                         settingsList[name].default = option.default_value
                     end
                 end
+                settingsList[name].unit = option.more_options_param and option.more_options_param.unit
             end
         end
     end
@@ -588,7 +589,27 @@ function Dispatcher:getDisplayList(settings)
     for item, v in iter_func(settings) do
         if type(item) == "number" then item = v end
         if settingsList[item] ~= nil and (settingsList[item].condition == nil or settingsList[item].condition == true) then
-            table.insert(item_table, {text = Dispatcher:getNameFromItem(item, settings), key = item})
+            local text = Dispatcher:getNameFromItem(item, settings)
+            local value
+            if settingsList[item].category == "string" or settingsList[item].category == "configurable" then
+                if type(settings[item]) == "table" then
+                    value = string.format("%d / %d", unpack(settings[item]))
+                else
+                    local value_num = util.arrayContains(settingsList[item].args, settings[item])
+                    value = settingsList[item].toggle[value_num]
+                end
+            elseif settingsList[item].category == "absolutenumber" then
+                if not string.match(settingsList[item].title, "%d") then
+                    value = tostring(settings[item])
+                end
+            end
+            if value then
+                if settingsList[item].unit then
+                    value = value .. " " .. settingsList[item].unit
+                end
+                text = text .. ": " .. value
+            end
+            table.insert(item_table, {text = text, key = item})
         end
     end
     return item_table
