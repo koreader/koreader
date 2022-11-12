@@ -1157,10 +1157,10 @@ function ReaderView:getTapZones()
         }
     else -- user defined page turns tap zones
         local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", G_defaults:readSetting("DTAP_ZONE_FORWARD").w)
-        local tap_zone_backward_w = 1 - tap_zone_forward_w
+        local tap_zone_backward_w = G_reader_settings:readSetting("page_turns_tap_zone_backward_size_ratio", G_defaults:readSetting("DTAP_ZONE_BACKWARD").w)
         if tap_zones_type == "left_right" then
             forward_zone = {
-                ratio_x = tap_zone_backward_w, ratio_y = 0,
+                ratio_x = 1 - tap_zone_forward_w, ratio_y = 0,
                 ratio_w = tap_zone_forward_w, ratio_h = 1,
             }
             backward_zone = {
@@ -1169,7 +1169,7 @@ function ReaderView:getTapZones()
             }
         else
             forward_zone = {
-                ratio_x = 0, ratio_y = tap_zone_backward_w,
+                ratio_x = 0, ratio_y = 1 - tap_zone_forward_w,
                 ratio_w = 1, ratio_h = tap_zone_forward_w,
             }
             backward_zone = {
