@@ -158,7 +158,7 @@ function ReaderLink:init()
             callback = function()
                 UIManager:scheduleIn(0.1, function()
                     UIManager:close(this.dialog)
-                    local _,_, wiki_epub_fullpath = is_wiki_page(link_url)
+                    local _, _, wiki_epub_fullpath = is_wiki_page(link_url)
                     self.ui:switchDocument(wiki_epub_fullpath)
                 end)
             end,
