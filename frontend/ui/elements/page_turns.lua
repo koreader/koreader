@@ -29,7 +29,7 @@ genTapZonesMenu("top_bottom")
 
 local default_size_b = math.floor(G_defaults:readSetting("DTAP_ZONE_BACKWARD").w * 100)
 local default_size_f = math.floor(G_defaults:readSetting("DTAP_ZONE_FORWARD").w * 100)
-local function readTapZonesSize()
+local function getTapZonesSize()
     local size_b, size_f
     if G_reader_settings:has("page_turns_tap_zone_forward_size_ratio") then
         size_f = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio") * 100)
@@ -46,7 +46,7 @@ local function readTapZonesSize()
 end
 table.insert(page_turns_tap_zones_sub_items, {
     text_func = function()
-        return T(_("Backward / forward tap zone size: %1 % / %2 %"), readTapZonesSize())
+        return T(_("Backward / forward tap zone size: %1 % / %2 %"), getTapZonesSize())
     end,
     enabled_func = function()
         return G_reader_settings:readSetting("page_turns_tap_zones", "default") ~= "default"
@@ -54,7 +54,7 @@ table.insert(page_turns_tap_zones_sub_items, {
     keep_menu_open = true,
     callback = function(touchmenu_instance)
         local is_left_right = G_reader_settings:readSetting("page_turns_tap_zones") == "left_right"
-        local size_b, size_f = readTapZonesSize()
+        local size_b, size_f = getTapZonesSize()
         UIManager:show(require("ui/widget/doublespinwidget"):new{
             title_text = is_left_right and _("Tap zone width") or _("Tap zone height"),
             info_text = is_left_right and _("Percentage of screen width") or _("Percentage of screen height"),
