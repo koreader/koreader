@@ -1,5 +1,5 @@
 --[[--
-    ReaderLink is an abstraction for document-specific link interfaces.
+ReaderLink is an abstraction for document-specific link interfaces.
 ]]
 
 local BD = require("ui/bidi")
@@ -22,7 +22,7 @@ local Screen = Device.screen
 local T = ffiutil.template
 
 local ReaderLink = InputContainer:extend{
-    location_stack = nil, -- table, per-instance,
+    location_stack = nil, -- table, per-instance
     _external_buttons = {}
 }
 
@@ -30,53 +30,53 @@ function ReaderLink:init()
     self:registerKeyEvents()
     if Device:isTouchDevice() then
         self.ui:registerTouchZones({
-                {
-                    id = "tap_link",
-                    ges = "tap",
-                    screen_zone = {
-                        ratio_x = 0, ratio_y = 0,
-                        ratio_w = 1, ratio_h = 1,
-                    },
-                    overrides = {
-                        -- Tap on links have priority over everything (it can
-                        -- be disabled with "Tap to follow links" menu item)
-                        "readerhighlight_tap",
-                        "tap_top_left_corner",
-                        "tap_top_right_corner",
-                        "tap_left_bottom_corner",
-                        "tap_right_bottom_corner",
-                        "readerfooter_tap",
-                        "readerconfigmenu_ext_tap",
-                        "readerconfigmenu_tap",
-                        "readermenu_ext_tap",
-                        "readermenu_tap",
-                        "tap_forward",
-                        "tap_backward",
-                    },
-                    handler = function(ges) return self:onTap(_, ges) end,
+            {
+                id = "tap_link",
+                ges = "tap",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0,
+                    ratio_w = 1, ratio_h = 1,
                 },
-                {
-                    id = "swipe_link",
-                    ges = "swipe",
-                    screen_zone = {
-                        ratio_x = 0, ratio_y = 0,
-                        ratio_w = 1, ratio_h = 1,
-                    },
-                    overrides = {
-                        "paging_swipe",
-                        "rolling_swipe"
-                    },
-                    handler = function(ges) return self:onSwipe(_, ges) end,
+                overrides = {
+                    -- Tap on links have priority over everything (it can
+                    -- be disabled with "Tap to follow links" menu item)
+                    "readerhighlight_tap",
+                    "tap_top_left_corner",
+                    "tap_top_right_corner",
+                    "tap_left_bottom_corner",
+                    "tap_right_bottom_corner",
+                    "readerfooter_tap",
+                    "readerconfigmenu_ext_tap",
+                    "readerconfigmenu_tap",
+                    "readermenu_ext_tap",
+                    "readermenu_tap",
+                    "tap_forward",
+                    "tap_backward",
                 },
+                handler = function(ges) return self:onTap(_, ges) end,
+            },
+            {
+                id = "swipe_link",
+                ges = "swipe",
+                screen_zone = {
+                    ratio_x = 0, ratio_y = 0,
+                    ratio_w = 1, ratio_h = 1,
+                },
+                overrides = {
+                    "paging_swipe",
+                    "rolling_swipe"
+                },
+                handler = function(ges) return self:onSwipe(_, ges) end,
+            },
         })
     end
     self.ui:registerPostInitCallback(function()
-            self.ui.menu:registerToMainMenu(self)
+        self.ui.menu:registerToMainMenu(self)
     end)
     if G_reader_settings:isTrue("opening_page_location_stack") then
         -- Add location at book opening to stack
         self.ui:registerPostReadyCallback(function()
-                self:addCurrentLocationToStack()
+            self:addCurrentLocationToStack()
         end)
     end
     -- For relative local file links
@@ -84,7 +84,7 @@ function ReaderLink:init()
     self.document_dir = directory
     -- Migrate these old settings to the new common one
     if G_reader_settings:isTrue("tap_link_footnote_popup")
-        or G_reader_settings:isTrue("swipe_link_footnote_popup") then
+            or G_reader_settings:isTrue("swipe_link_footnote_popup") then
         G_reader_settings:saveSetting("tap_link_footnote_popup", nil)
         G_reader_settings:saveSetting("swipe_link_footnote_popup", nil)
         G_reader_settings:saveSetting("footnote_link_in_popup", true)
@@ -822,8 +822,8 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
         return true
     end
 
-    -- Not Supported
-    Uimanager:show(InfoMessage:new{
+    -- Not supported
+    UIManager:show(InfoMessage:new{
         text = T(_("Invalid or external link:\n%1"), BD.url(link_url)),
         -- no timeout to allow user to type that link in his web browser
     })
