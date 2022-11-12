@@ -100,6 +100,8 @@ function SortItemWidget:onTap(_, ges)
     elseif self.show_parent.sort_disabled then
         if self.item.callback then
             self.item:callback()
+        else
+            return true
         end
     elseif self.show_parent.marked == self.index then
         self.show_parent.marked = 0
