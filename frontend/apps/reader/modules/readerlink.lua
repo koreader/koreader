@@ -99,7 +99,7 @@ function ReaderLink:init()
         return {
             text = _("Copy"),
             callback = function()
-                UIManager:close(this.dialog)
+                UIManager:close(this.external_link_dialog)
             end,
         }
     end
@@ -107,7 +107,7 @@ function ReaderLink:init()
         return {
             text = _("Show QR code"),
             callback = function()
-                UIManager:close(this.dialog)
+                UIManager:close(this.external_link_dialog)
                 UIManager:show(QRMessage:new{
                     text = link_url,
                     width = Device.screen:getWidth(),
@@ -120,7 +120,7 @@ function ReaderLink:init()
         return {
             text = _("Open in browser"),
             callback = function()
-                UIManager:close(this.dialog)
+                UIManager:close(this.external_link_dialog)
                 Device:openLink(link_url)
             end,
             show_in_dialog_func = function()
@@ -135,7 +135,7 @@ function ReaderLink:init()
             text = _("Read online"),
             callback = function()
                 UIManager:nextTick(function()
-                    UIManager:close(this.dialog)
+                    UIManager:close(this.external_link_dialog)
                     local wiki_lang, wiki_page = is_wiki_page(link_url)
                     self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, true, false, true, wiki_lang))
                 end)
@@ -157,7 +157,7 @@ function ReaderLink:init()
             text = _("Read EPUB"),
             callback = function()
                 UIManager:scheduleIn(0.1, function()
-                    UIManager:close(this.dialog)
+                    UIManager:close(this.external_link_dialog)
                     local _, _, wiki_epub_fullpath = is_wiki_page(link_url)
                     self.ui:switchDocument(wiki_epub_fullpath)
                 end)
@@ -175,7 +175,7 @@ function ReaderLink:init()
         return {
             text = _("Cancel"),
             callback = function()
-                UIManager:close(this.dialog)
+                UIManager:close(this.external_link_dialog)
             end,
         }
     end
@@ -794,11 +794,11 @@ function ReaderLink:onGoToExternalLink(link_url)
         end
     end
 
-    self.dialog = ButtonDialogTitle:new{
+    self.external_link_dialog = ButtonDialogTitle:new{
         title = title,
         buttons = self:getButtonsForExternalLinkDialog(link_url),
     }
-    UIManager:show(self.dialog)
+    UIManager:show(self.external_link_dialog)
     return true
 end
 

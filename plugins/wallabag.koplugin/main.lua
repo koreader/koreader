@@ -120,7 +120,7 @@ function Wallabag:init()
             return {
                 text = _("Add to Wallabag"),
                 callback = function()
-                    UIManager:close(this.dialog)
+                    UIManager:close(this.external_link_dialog)
                     this.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
                 end,
             }
