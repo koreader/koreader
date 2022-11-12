@@ -932,13 +932,17 @@ function VocabItemWidget:getTimeSinceDue()
 
     local rounding = elapsed > 0 and math.floor or math.ceil
     if abs < 60 then
-        readable_time = abs .. C_("Time", "s")
+        readable_time = T(C_("Time", "%1s"), abs)
     elseif abs < 3600 then
-        readable_time = string.format("%d"..C_("Time", "m"), rounding(abs/60))
+        readable_time = T(C_("Time", "%1m"), rounding(abs/60))
     elseif abs < 3600 * 24 then
-        readable_time = string.format("%d"..C_("Time", "h"), rounding(abs/3600))
+        readable_time = T(C_("Time", "%1h"), rounding(abs/3600))
+    elseif abs < 3600 * 24 * 30 then
+        readable_time = T(C_("Time", "%1d"), rounding(abs/3600/24))
+    elseif abs < 3600 * 24 * 365 then
+        readable_time = T(C_("Time", "%1 mo."), rounding(abs/3600/24/3)/10)
     else
-        readable_time = string.format("%d"..C_("Time", "d"), rounding(abs/3600/24))
+        readable_time = T(C_("Time", "%1 yr."), rounding(abs/3600/24/36.5)/10)
     end
 
     if elapsed < 0 then
