@@ -611,13 +611,13 @@ if [ ${RETURN_VALUE} -ne ${KO_RC_HALT} ]; then
         # if we were called from advboot then we must reboot to go to the menu
         # NOTE: This is actually achieved by checking if KSM or a KSM-related script is running:
         #       This might lead to false-positives if you use neither KSM nor advboot to launch KOReader *without nickel running*.
-        if ! pkill -0 kbmenu; then
+        if ! pkill -0 -f kbmenu; then
             /sbin/reboot
         fi
     fi
 else
     if [ "${VIA_NICKEL}" = "false" ]; then
-        if pkill -0 kbmenu; then
+        if pkill -0 -f kbmenu; then
             # If we were started by KSM and requested an exit, attempt to *NOT* exit the script,
             # so as not to re-enter KSM at all, to make sure the device powers off with our own ScreenSaver displayed.
             # NOTE: This might not be fool-proof, as a poweroff might take longer than that,
