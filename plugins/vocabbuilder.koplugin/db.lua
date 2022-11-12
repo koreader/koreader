@@ -65,7 +65,6 @@ function VocabularyBuilder:createDB()
         -- Update version
         db_conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
     elseif db_version < DB_SCHEMA_VERSION then
-        local logger = require("logger")
         local ok, re
         local log = function(msg)
             logger.warn("[vocab builder db migration]", msg)

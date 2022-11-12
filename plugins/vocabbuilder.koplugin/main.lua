@@ -299,7 +299,7 @@ function MenuDialog:init()
         }
         local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
         self.sync_dialogue = ButtonDialogTitle:new{
-            title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices"),
+            title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
                          server.name.." "..type, SyncService.getReadablePath(server)),
             info_face = Font:getFace("smallinfofont"),
             buttons = buttons,
@@ -1095,7 +1095,7 @@ function VocabItemWidget:onShowBookAssignment(title_changed_cb)
                             end,
                         },
                         {
-                            text = _("Set title"),
+                            text = _("Add"),
                             is_enter_default = true,
                             callback = function()
                                 if dialog:getInputText() == "" then return end
@@ -1617,7 +1617,7 @@ function VocabularyBuilderWidget:showChangeBookTitleDialog(sort_item, onSuccess)
                     end,
                 },
                 {
-                    text = _("Set title"),
+                    text = _("Change title"),
                     is_enter_default = true,
                     callback = function()
                         if dialog:getInputText() == "" then return end
