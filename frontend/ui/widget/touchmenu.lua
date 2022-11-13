@@ -876,6 +876,9 @@ function TouchMenu:onMenuSelect(item, tap_on_checkmark)
                 callback(self)
                 if refresh then
                     self:updateItems()
+                    if item.close_on_check then
+                        self:backToUpperMenu()
+                    end
                 elseif not item.keep_menu_open then
                     self:closeMenu()
                 end
