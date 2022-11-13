@@ -771,6 +771,60 @@ function ReaderFooter:unscheduleFooterAutoRefresh()
     UIManager:unschedule(self.autoRefreshFooter)
 end
 
+function ReaderFooter:toBeRepainted() -- xxx a better name here
+    local n = 1
+    local widget = UIManager:getTopWidget(n)
+--[[    while widget do
+        print("xxx n=", n, widget.name, widget.dimen)
+        for i,v in pairs(widget) do
+            print("xxx n-", i, v)
+        end
+        if widget.movable then
+            for i,v in pairs(widget.movable) do
+                print("xxx movable", i, v)
+            end
+        end
+        n = n + 1
+        widget = UIManager:getTopWidget(n)
+    end
+    n = 1
+    widget = UIManager:getTopWidget(n)
+]]
+
+    while widget do
+        if widget.name == "ReaderUI" then
+            return true
+--        elseif widget.name == "VirtualKeyboard" then
+--            return false
+            elseif widget.covers_fullscreen or widget.covers_footer == true then
+            -- (e.g. the virtual keyboard sets widget_covers_footer == true)
+            return false
+        elseif widget.ignore ~= "height" and widget.covers_footer ~= false then
+            -- widget.ignore == "height" is set in menu, widget.covers_footer is an optional hint for this here,
+            -- sample usage can be found in the AutoDim plugin.
+
+            -- This is just a simple check if any of the topmost widgets paint into the statusbar's y position.
+            -- Better would be to check if any topmost widget rectancle intersects with the footer content.
+            -- @todo: xxx
+            local widget_bottom_coordinate = 0 -- a widget may have no dimension (Hello TrapWidget)
+            if widget.movable then
+                widget_bottom_coordinate = widget.movable.dimen.y + widget.movable.dimen.h
+            elseif widget.dimen then
+                widget_bottom_coordinate = widget.dimen.y + widget.dimen.h
+            end
+            local footer_top_coodinate = self.footer_content.dimen.y
+            if widget_bottom_coordinate >= footer_top_coodinate then
+                return false
+            end
+        end
+        -- Here we land if the widget is not "ReaderUI", wieget.cover_footer ~= nil and widget.ignore == "height"
+        n = n + 1
+        widget = UIManager:getTopWidget(n)
+    end
+    return false
+end
+
+
 function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
     if not self.autoRefreshFooter then
         -- Create this function the first time we're called
@@ -779,15 +833,8 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
             -- (We want to avoid the footer to be painted over a widget covering it - we would
             -- be fine refreshing it if the widget is not covering it, but this is hard to
             -- guess from here.)
-            local top_wg = UIManager:getTopWidget()
-            if top_wg == "ReaderUI" or
-                (top_wg == "TrapWidget" and UIManager:getSecondTopmostWidget() == "ReaderUI") then
-                self:onUpdateFooter(self.view.footer_visible)
-            else
-                logger.dbg("Skipping ReaderFooter repaint, because neither ReaderUI nor TrapWidget is the top-level widget")
-                -- NOTE: We *do* keep its content up-to-date, though
-                self:onUpdateFooter()
-            end
+            self:onUpdateFooter(self:toBeRepainted())
+
             self:rescheduleFooterAutoRefreshIfNeeded() -- schedule (or not) next refresh
         end
     end
@@ -2464,22 +2511,12 @@ end
 -- Used by event handlers that can trip without direct UI interaction...
 function ReaderFooter:maybeUpdateFooter()
     -- ...so we need to avoid stomping over unsuspecting widgets (usually, ScreenSaver).
-    local top_wg = UIManager:getTopWidget()
-    if top_wg == "ReaderUI" or top_wg == "TrapWidget" then
-        self:onUpdateFooter(self.view.footer_visible)
-    else
-        self:onUpdateFooter()
-    end
+    self:onUpdateFooter(self:toBeRepainted())
 end
 
+-- is the same as mybeUpdatefooter
 function ReaderFooter:onFrontlightStateChanged()
-    -- Custom variant of maybeUpdateFooter that *also* whitelists the FL widget...
-    local top_wg = UIManager:getTopWidget()
-    if top_wg == "ReaderUI" or top_wg == "FrontLightWidget" or top_wg == "TrapWidget" then
-        self:onUpdateFooter(self.view.footer_visible)
-    else
-        self:onUpdateFooter()
-    end
+    self:onUpdateFooter(self:toBeRepainted())
 end
 
 function ReaderFooter:onNetworkConnected()

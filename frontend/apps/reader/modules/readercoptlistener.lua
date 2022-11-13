@@ -90,13 +90,26 @@ function ReaderCoptListener:onTimeFormatChanged()
     self.ui.document._document:setIntProperty("window.status.clock.12hours", G_reader_settings:isTrue("twelve_hour_clock") and 1 or 0)
 end
 
+function ReaderCoptListener:toBeRepaintedHeader()
+    local n = 1
+    local widget = UIManager:getTopWidget(n)
+    while widget do
+        if widget.name == "ReaderUI"  then
+            return true
+        elseif widget.covers_fullscreen then
+            return false
+        end
+        n = n + 1
+        widget = UIManager:getTopWidget(n)
+    end
+    return false
+end
+
 function ReaderCoptListener:updateHeader()
     -- Have crengine display accurate time and battery on its next drawing
     self.ui.document:resetBufferCache() -- be sure next repaint is a redrawing
     -- Force a refresh if we're not hidden behind another widget
-        local top_wg = UIManager:getTopWidget()
-        if top_wg == "ReaderUI" or
-            (top_wg == "TrapWidget" and UIManager:getSecondTopmostWidget() == "ReaderUI") then
+    if self:toBeRepaintedHeader() then
         UIManager:setDirty(self.view.dialog, "ui",
             Geom:new{
                 x = 0, y = 0,

@@ -943,6 +943,7 @@ function ReaderHighlight:onShowHighlightMenu(page, index)
     end
 
     self.highlight_dialog = ButtonDialog:new{
+        name = "HighlightDialog",
         buttons = highlight_buttons,
         tap_close_callback = function() self:handleEvent(Event:new("Tap")) end,
     }
