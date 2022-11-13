@@ -1241,7 +1241,7 @@ local dictionaries = {
         lang_out = "Vietnamese",
         entries = 70682,
         license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
-        url = "https://khoicandev.github.io/ovdp-mirror/cs-vi.tar.gz"
+        url = "https://khoicandev.github.io/ovdp-mirror/it-vi.tar.gz"
     },
     {
         name = "Japanese-Vietnamese dictionary",
