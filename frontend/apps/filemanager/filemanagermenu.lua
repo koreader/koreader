@@ -411,7 +411,40 @@ To:
         checked_func = function() return self.ui.file_chooser.reverse_collate end,
         callback = function() self.ui:toggleReverseCollate() end
     }
-    self.menu_items.start_with = self.ui:getStartWithMenuTable()
+
+    -- "Start with" menu
+    local start_withs = {
+        filemanager      = _("file browser"),
+        history          = _("history"),
+        favorites        = _("favorites"),
+        folder_shortcuts = _("folder shortcuts"),
+        last             = _("last file"),
+    }
+    local set_sw_table = function(start_with)
+        return {
+            text = start_withs[start_with],
+            checked_func = function()
+                return start_with == G_reader_settings:readSetting("start_with", "filemanager")
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("start_with", start_with)
+            end,
+            close_on_check = true,
+        }
+    end
+    self.menu_items.start_with = {
+        text_func = function()
+            return T(_("Start with: %1"), start_withs[G_reader_settings:readSetting("start_with", "filemanager")])
+        end,
+        sub_item_table = {
+            set_sw_table("filemanager"),
+            set_sw_table("history"),
+            set_sw_table("favorites"),
+            set_sw_table("folder_shortcuts"),
+            set_sw_table("last"),
+        },
+    }
+
     if Device:supportsScreensaver() then
         self.menu_items.screensaver = {
             text = _("Screensaver"),
