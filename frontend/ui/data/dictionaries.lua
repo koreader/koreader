@@ -1201,7 +1201,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4576,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Adyghe-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Adyghe-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Afar-English Wiktionary",
@@ -1209,7 +1209,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1238,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Afar-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Afar-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Afrikaans-English Wiktionary",
@@ -1217,7 +1217,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4175,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Afrikaans-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Afrikaans-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Albanian-English Wiktionary",
@@ -1225,7 +1225,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 6552,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Albanian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Albanian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Alemannic German-English Wiktionary",
@@ -1233,7 +1233,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1710,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Alemannic%20German-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Alemannic%20German-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Ancient Greek-English Wiktionary",
@@ -1241,7 +1241,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 15639,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ancient%20Greek-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ancient%20Greek-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Arabic-English Wiktionary",
@@ -1249,7 +1249,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 15428,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Arabic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Arabic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Aramaic-English Wiktionary",
@@ -1257,7 +1257,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1750,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Aramaic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Aramaic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Armenian-English Wiktionary",
@@ -1265,7 +1265,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 14806,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Armenian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Armenian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Aromanian-English Wiktionary",
@@ -1273,7 +1273,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3011,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Aromanian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Aromanian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Assamese-English Wiktionary",
@@ -1281,7 +1281,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3360,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Assamese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Assamese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Assyrian Neo-Aramaic-English Wiktionary",
@@ -1289,7 +1289,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1194,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Assyrian%20Neo-Aramaic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Assyrian%20Neo-Aramaic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Asturian-English Wiktionary",
@@ -1297,7 +1297,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5028,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Asturian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Asturian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Azerbaijani-English Wiktionary",
@@ -1305,7 +1305,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 7721,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Azerbaijani-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Azerbaijani-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Bashkir-English Wiktionary",
@@ -1313,7 +1313,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2536,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Bashkir-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Bashkir-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Basque-English Wiktionary",
@@ -1321,7 +1321,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4265,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Basque-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Basque-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Belarusian-English Wiktionary",
@@ -1329,7 +1329,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3491,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Belarusian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Belarusian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Bengali-English Wiktionary",
@@ -1337,7 +1337,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4841,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Bengali-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Bengali-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Bikol Central-English Wiktionary",
@@ -1345,7 +1345,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4459,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Bikol%20Central-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Bikol%20Central-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Breton-English Wiktionary",
@@ -1353,7 +1353,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1385,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Breton-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Breton-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Bulgarian-English Wiktionary",
@@ -1361,7 +1361,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 8251,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Bulgarian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Bulgarian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Burmese-English Wiktionary",
@@ -1369,7 +1369,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5382,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Burmese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Burmese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Cantonese-English Wiktionary",
@@ -1377,7 +1377,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5039,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cantonese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cantonese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Cebuano-English Wiktionary",
@@ -1385,7 +1385,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 11161,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cebuano-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cebuano-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Central Nahuatl-English Wiktionary",
@@ -1393,7 +1393,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1534,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Central%20Nahuatl-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Central%20Nahuatl-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Cherokee-English Wiktionary",
@@ -1401,7 +1401,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1833,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cherokee-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cherokee-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Chinese-English Wiktionary",
@@ -1409,7 +1409,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 148734,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Chinese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Chinese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Cimbrian-English Wiktionary",
@@ -1417,7 +1417,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2531,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cimbrian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cimbrian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Classical Nahuatl-English Wiktionary",
@@ -1425,7 +1425,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2267,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Classical%20Nahuatl-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Classical%20Nahuatl-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Classical Syriac-English Wiktionary",
@@ -1433,7 +1433,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2336,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Classical%20Syriac-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Classical%20Syriac-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Coptic-English Wiktionary",
@@ -1441,7 +1441,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1881,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Coptic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Coptic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Cornish-English Wiktionary",
@@ -1449,7 +1449,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1422,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cornish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Cornish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Crimean Tatar-English Wiktionary",
@@ -1457,7 +1457,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2222,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Crimean%20Tatar-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Crimean%20Tatar-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Czech-English Wiktionary",
@@ -1465,7 +1465,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 34065,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Czech-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Czech-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Dalmatian-English Wiktionary",
@@ -1473,7 +1473,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1010,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Dalmatian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Dalmatian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Danish-English Wiktionary",
@@ -1481,7 +1481,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 15118,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Danish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Danish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Dhivehi-English Wiktionary",
@@ -1489,7 +1489,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1007,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Dhivehi-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Dhivehi-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "English-English Wiktionary",
@@ -1497,7 +1497,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 462079,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/English-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/English-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Esperanto-English Wiktionary",
@@ -1505,7 +1505,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 17861,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Esperanto-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Esperanto-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Estonian-English Wiktionary",
@@ -1513,7 +1513,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5647,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Estonian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Estonian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Faroese-English Wiktionary",
@@ -1521,7 +1521,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4690,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Faroese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Faroese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Finnish-English Wiktionary",
@@ -1529,7 +1529,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 144985,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Finnish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Finnish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "French-English Wiktionary",
@@ -1537,7 +1537,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 79451,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/French-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/French-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Friulian-English Wiktionary",
@@ -1545,7 +1545,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1752,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Friulian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Friulian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Galician-English Wiktionary",
@@ -1553,7 +1553,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 13624,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Galician-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Galician-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Georgian-English Wiktionary",
@@ -1561,7 +1561,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 14717,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Georgian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Georgian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "German-English Wiktionary",
@@ -1569,7 +1569,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 70435,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/German-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/German-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Gothic-English Wiktionary",
@@ -1577,7 +1577,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 15889,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Gothic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Gothic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Greek-English Wiktionary",
@@ -1585,7 +1585,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 31707,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Greek-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Greek-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Greenlandic-English Wiktionary",
@@ -1593,7 +1593,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1624,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Greenlandic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Greenlandic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Gujarati-English Wiktionary",
@@ -1601,7 +1601,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3204,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Gujarati-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Gujarati-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Haitian Creole-English Wiktionary",
@@ -1609,7 +1609,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1232,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Haitian%20Creole-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Haitian%20Creole-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Hausa-English Wiktionary",
@@ -1617,7 +1617,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1571,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hausa-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hausa-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Hawaiian-English Wiktionary",
@@ -1625,7 +1625,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1602,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hawaiian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hawaiian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Hebrew-English Wiktionary",
@@ -1633,7 +1633,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 9511,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hebrew-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hebrew-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Hiligaynon-English Wiktionary",
@@ -1641,7 +1641,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1555,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hiligaynon-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hiligaynon-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Hindi-English Wiktionary",
@@ -1649,7 +1649,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 13516,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hindi-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hindi-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Hungarian-English Wiktionary",
@@ -1657,7 +1657,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 33579,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hungarian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hungarian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Hunsrik-English Wiktionary",
@@ -1665,7 +1665,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1373,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hunsrik-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Hunsrik-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Icelandic-English Wiktionary",
@@ -1673,7 +1673,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 16129,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Icelandic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Icelandic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Ido-English Wiktionary",
@@ -1681,7 +1681,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 6441,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ido-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ido-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Indonesian-English Wiktionary",
@@ -1689,7 +1689,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 12569,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Indonesian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Indonesian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Ingrian-English Wiktionary",
@@ -1697,7 +1697,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2308,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ingrian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ingrian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Interlingua-English Wiktionary",
@@ -1705,7 +1705,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2124,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Interlingua-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Interlingua-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Irish-English Wiktionary",
@@ -1713,7 +1713,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 18130,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Irish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Irish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Italian-English Wiktionary",
@@ -1721,7 +1721,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 114426,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Italian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Italian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Japanese-English Wiktionary",
@@ -1729,7 +1729,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 102939,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Japanese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Japanese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Javanese-English Wiktionary",
@@ -1737,7 +1737,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1942,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Javanese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Javanese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Jeju-English Wiktionary",
@@ -1745,7 +1745,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1019,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Jeju-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Jeju-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Kabuverdianu-English Wiktionary",
@@ -1753,7 +1753,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1034,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kabuverdianu-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kabuverdianu-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Kannada-English Wiktionary",
@@ -1761,7 +1761,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1410,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kannada-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kannada-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Kashmiri-English Wiktionary",
@@ -1769,7 +1769,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1335,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kashmiri-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kashmiri-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Kazakh-English Wiktionary",
@@ -1777,7 +1777,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 8148,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kazakh-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kazakh-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Khmer-English Wiktionary",
@@ -1785,7 +1785,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 6770,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Khmer-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Khmer-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Kikuyu-English Wiktionary",
@@ -1793,7 +1793,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1044,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kikuyu-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kikuyu-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Korean-English Wiktionary",
@@ -1801,7 +1801,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 40318,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Korean-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Korean-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Kumyk-English Wiktionary",
@@ -1809,7 +1809,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1135,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kumyk-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kumyk-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Kyrgyz-English Wiktionary",
@@ -1817,7 +1817,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2089,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kyrgyz-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Kyrgyz-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Ladin-English Wiktionary",
@@ -1825,7 +1825,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1410,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ladin-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ladin-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Ladino-English Wiktionary",
@@ -1833,7 +1833,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1526,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ladino-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ladino-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Lao-English Wiktionary",
@@ -1841,7 +1841,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1844,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Lao-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Lao-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Latin-English Wiktionary",
@@ -1849,7 +1849,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 37381,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Latin-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Latin-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Latvian-English Wiktionary",
@@ -1857,7 +1857,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 16341,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Latvian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Latvian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Laz-English Wiktionary",
@@ -1865,7 +1865,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1025,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Laz-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Laz-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Lithuanian-English Wiktionary",
@@ -1873,7 +1873,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 6997,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Lithuanian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Lithuanian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Lower Sorbian-English Wiktionary",
@@ -1881,7 +1881,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1391,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Lower%20Sorbian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Lower%20Sorbian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Luxembourgish-English Wiktionary",
@@ -1889,7 +1889,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5576,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Luxembourgish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Luxembourgish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Macedonian-English Wiktionary",
@@ -1897,7 +1897,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 41484,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Macedonian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Macedonian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Malagasy-English Wiktionary",
@@ -1905,7 +1905,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3620,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Malagasy-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Malagasy-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Malay-English Wiktionary",
@@ -1913,7 +1913,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5898,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Malay-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Malay-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Malayalam-English Wiktionary",
@@ -1921,7 +1921,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 6536,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Malayalam-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Malayalam-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Maltese-English Wiktionary",
@@ -1929,7 +1929,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 6803,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Maltese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Maltese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Manchu-English Wiktionary",
@@ -1937,7 +1937,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2049,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Manchu-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Manchu-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Mandarin-English Wiktionary",
@@ -1945,7 +1945,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 64419,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Mandarin-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Mandarin-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Manx-English Wiktionary",
@@ -1953,7 +1953,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5766,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Manx-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Manx-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Maori-English Wiktionary",
@@ -1961,7 +1961,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1457,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Maori-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Maori-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Maquiritari-English Wiktionary",
@@ -1969,7 +1969,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1091,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Maquiritari-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Maquiritari-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Marathi-English Wiktionary",
@@ -1977,7 +1977,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1995,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Marathi-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Marathi-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Marshallese-English Wiktionary",
@@ -1985,7 +1985,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1029,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Marshallese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Marshallese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Middle Dutch-English Wiktionary",
@@ -1993,7 +1993,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1466,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Middle%20Dutch-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Middle%20Dutch-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Middle English-English Wiktionary",
@@ -2001,7 +2001,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 9469,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Middle%20English-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Middle%20English-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Middle French-English Wiktionary",
@@ -2009,7 +2009,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3252,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Middle%20French-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Middle%20French-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Mongolian-English Wiktionary",
@@ -2017,7 +2017,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3493,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Mongolian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Mongolian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Moroccan Arabic-English Wiktionary",
@@ -2025,7 +2025,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1504,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Moroccan%20Arabic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Moroccan%20Arabic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Navajo-English Wiktionary",
@@ -2033,7 +2033,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4304,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Navajo-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Navajo-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Norman-English Wiktionary",
@@ -2041,7 +2041,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 7421,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Norman-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Norman-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Northern Kurdish-English Wiktionary",
@@ -2049,7 +2049,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2591,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Northern%20Kurdish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Northern%20Kurdish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Northern Sami-English Wiktionary",
@@ -2057,7 +2057,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3773,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Northern%20Sami-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Northern%20Sami-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Norwegian Bokmål-English Wiktionary",
@@ -2065,7 +2065,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 20431,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Norwegian%20Bokmål-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Norwegian%20Bokmål-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Norwegian Nynorsk-English Wiktionary",
@@ -2073,7 +2073,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 20224,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Norwegian%20Nynorsk-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Norwegian%20Nynorsk-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Occitan-English Wiktionary",
@@ -2081,7 +2081,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4035,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Occitan-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Occitan-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Old Armenian-English Wiktionary",
@@ -2089,7 +2089,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4999,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Armenian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Armenian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Old Church Slavonic-English Wiktionary",
@@ -2097,7 +2097,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3033,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Church%20Slavonic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Church%20Slavonic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Old English-English Wiktionary",
@@ -2105,7 +2105,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 8476,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20English-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20English-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Old French-English Wiktionary",
@@ -2113,7 +2113,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5691,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20French-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20French-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Old High German-English Wiktionary",
@@ -2121,7 +2121,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1578,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20High%20German-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20High%20German-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Old Irish-English Wiktionary",
@@ -2129,7 +2129,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2352,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Irish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Irish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Old Norse-English Wiktionary",
@@ -2137,7 +2137,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3756,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Norse-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Norse-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Old Saxon-English Wiktionary",
@@ -2145,7 +2145,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1502,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Saxon-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Old%20Saxon-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Oromo-English Wiktionary",
@@ -2153,7 +2153,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1028,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Oromo-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Oromo-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Ottoman Turkish-English Wiktionary",
@@ -2161,7 +2161,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3149,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ottoman%20Turkish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ottoman%20Turkish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Pali-English Wiktionary",
@@ -2169,7 +2169,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4707,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Pali-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Pali-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Pashto-English Wiktionary",
@@ -2177,7 +2177,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1267,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Pashto-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Pashto-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Pennsylvania German-English Wiktionary",
@@ -2185,7 +2185,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1452,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Pennsylvania%20German-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Pennsylvania%20German-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Persian-English Wiktionary",
@@ -2193,7 +2193,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 9962,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Persian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Persian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Phalura-English Wiktionary",
@@ -2201,7 +2201,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2542,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Phalura-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Phalura-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Phuthi-English Wiktionary",
@@ -2209,7 +2209,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1206,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Phuthi-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Phuthi-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Plautdietsch-English Wiktionary",
@@ -2217,7 +2217,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2993,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Plautdietsch-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Plautdietsch-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Polish-English Wiktionary",
@@ -2225,7 +2225,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 51071,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Polish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Polish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Portuguese-English Wiktionary",
@@ -2233,7 +2233,47 @@ local dictionaries = {
         lang_out = "English",
         entries = 52502,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Portuguese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Portuguese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
+    },
+    {
+        name = "Proto-Finnic-English Wiktionary",
+        lang_in = "Proto-Finnic",
+        lang_out = "English",
+        entries = 1622,
+        license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Proto-Finnic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
+    },
+    {
+        name = "Proto-Germanic-English Wiktionary",
+        lang_in = "Proto-Germanic",
+        lang_out = "English",
+        entries = 4798,
+        license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Proto-Germanic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
+    },
+    {
+        name = "Proto-Samic-English Wiktionary",
+        lang_in = "Proto-Samic",
+        lang_out = "English",
+        entries = 1385,
+        license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Proto-Samic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
+    },
+    {
+        name = "Proto-Slavic-English Wiktionary",
+        lang_in = "Proto-Slavic",
+        lang_out = "English",
+        entries = 3410,
+        license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Proto-Slavic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
+    },
+    {
+        name = "Proto-West Germanic-English Wiktionary",
+        lang_in = "Proto-West Germanic",
+        lang_out = "English",
+        entries = 3559,
+        license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Proto-West%20Germanic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Punjabi-English Wiktionary",
@@ -2241,7 +2281,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1833,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Punjabi-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Punjabi-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Quechua-English Wiktionary",
@@ -2249,7 +2289,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1713,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Quechua-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Quechua-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Romanian-English Wiktionary",
@@ -2257,7 +2297,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 65521,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Romanian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Romanian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Romansch-English Wiktionary",
@@ -2265,7 +2305,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2153,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Romansch-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Romansch-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Russian-English Wiktionary",
@@ -2273,7 +2313,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 46875,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Russian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Russian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Sanskrit-English Wiktionary",
@@ -2281,7 +2321,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 6328,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Sanskrit-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Sanskrit-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Saterland Frisian-English Wiktionary",
@@ -2289,7 +2329,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1483,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Saterland%20Frisian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Saterland%20Frisian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Scots-English Wiktionary",
@@ -2297,7 +2337,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2799,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Scots-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Scots-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Scottish Gaelic-English Wiktionary",
@@ -2305,7 +2345,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 8242,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Scottish%20Gaelic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Scottish%20Gaelic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Serbo-Croatian-English Wiktionary",
@@ -2313,7 +2353,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 52373,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Serbo-Croatian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Serbo-Croatian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Shan-English Wiktionary",
@@ -2321,7 +2361,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2154,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Shan-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Shan-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Sicilian-English Wiktionary",
@@ -2329,7 +2369,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1729,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Sicilian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Sicilian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Slovak-English Wiktionary",
@@ -2337,7 +2377,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5572,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Slovak-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Slovak-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Slovene-English Wiktionary",
@@ -2345,7 +2385,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4043,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Slovene-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Slovene-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "South Levantine Arabic-English Wiktionary",
@@ -2353,7 +2393,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2620,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/South%20Levantine%20Arabic-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/South%20Levantine%20Arabic-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Southern Altai-English Wiktionary",
@@ -2361,7 +2401,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1041,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Southern%20Altai-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Southern%20Altai-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Spanish-English Wiktionary",
@@ -2369,7 +2409,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 98541,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Spanish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Spanish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Sumerian-English Wiktionary",
@@ -2377,7 +2417,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1732,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Sumerian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Sumerian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Sundanese-English Wiktionary",
@@ -2385,7 +2425,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1606,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Sundanese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Sundanese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Swahili-English Wiktionary",
@@ -2393,7 +2433,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 6137,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Swahili-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Swahili-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Swazi-English Wiktionary",
@@ -2401,7 +2441,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1465,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Swazi-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Swazi-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Tagalog-English Wiktionary",
@@ -2409,7 +2449,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 14420,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tagalog-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tagalog-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Tajik-English Wiktionary",
@@ -2417,7 +2457,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1428,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tajik-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tajik-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Tamil-English Wiktionary",
@@ -2425,7 +2465,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 5617,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tamil-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tamil-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Tangut-English Wiktionary",
@@ -2433,7 +2473,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1043,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tangut-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tangut-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Tatar-English Wiktionary",
@@ -2441,7 +2481,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1231,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tatar-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tatar-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Telugu-English Wiktionary",
@@ -2449,7 +2489,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 13154,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Telugu-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Telugu-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Ternate-English Wiktionary",
@@ -2457,7 +2497,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1305,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ternate-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ternate-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Thai-English Wiktionary",
@@ -2465,7 +2505,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 14664,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Thai-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Thai-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Tibetan-English Wiktionary",
@@ -2473,7 +2513,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2798,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tibetan-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tibetan-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Tocharian B-English Wiktionary",
@@ -2481,7 +2521,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1920,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tocharian%20B-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tocharian%20B-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Tok Pisin-English Wiktionary",
@@ -2489,7 +2529,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1555,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tok%20Pisin-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Tok%20Pisin-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Translingual-English Wiktionary",
@@ -2497,7 +2537,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 66205,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Translingual-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Translingual-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Turkish-English Wiktionary",
@@ -2505,7 +2545,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 14131,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Turkish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Turkish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Ukrainian-English Wiktionary",
@@ -2513,7 +2553,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 12883,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ukrainian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Ukrainian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Urdu-English Wiktionary",
@@ -2521,7 +2561,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 4423,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Urdu-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Urdu-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Uyghur-English Wiktionary",
@@ -2529,7 +2569,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1425,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Uyghur-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Uyghur-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Uzbek-English Wiktionary",
@@ -2537,7 +2577,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1613,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Uzbek-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Uzbek-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Venetian-English Wiktionary",
@@ -2545,7 +2585,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2459,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Venetian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Venetian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Veps-English Wiktionary",
@@ -2553,7 +2593,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1985,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Veps-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Veps-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Vietnamese-English Wiktionary",
@@ -2561,7 +2601,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 30996,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Vietnamese-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Vietnamese-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Vilamovian-English Wiktionary",
@@ -2569,7 +2609,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1178,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Vilamovian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Vilamovian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Volapük-English Wiktionary",
@@ -2577,7 +2617,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2548,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Volapük-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Volapük-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Walloon-English Wiktionary",
@@ -2585,7 +2625,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1039,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Walloon-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Walloon-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Welsh-English Wiktionary",
@@ -2593,7 +2633,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 7362,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Welsh-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Welsh-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "West Frisian-English Wiktionary",
@@ -2601,7 +2641,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1639,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/West%20Frisian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/West%20Frisian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Westrobothnian-English Wiktionary",
@@ -2609,7 +2649,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2697,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Westrobothnian-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Westrobothnian-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Xhosa-English Wiktionary",
@@ -2617,7 +2657,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2963,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Xhosa-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Xhosa-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Yakut-English Wiktionary",
@@ -2625,7 +2665,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2951,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Yakut-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Yakut-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Yiddish-English Wiktionary",
@@ -2633,7 +2673,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 6006,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Yiddish-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Yiddish-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Yola-English Wiktionary",
@@ -2641,7 +2681,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1636,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Yola-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Yola-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Yoruba-English Wiktionary",
@@ -2649,7 +2689,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 3344,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Yoruba-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Yoruba-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Zhuang-English Wiktionary",
@@ -2657,7 +2697,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 1291,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Zhuang-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Zhuang-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "Zulu-English Wiktionary",
@@ -2665,7 +2705,7 @@ local dictionaries = {
         lang_out = "English",
         entries = 2710,
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
-        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Zulu-English%20Wiktionary%20dictionary%20stardict.tar.gz",
+        url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Zulu-English%20Wiktionary%20dictionary%20stardict.tar.gz"
     },
     {
         name = "English-Vietnamese dictionary",
