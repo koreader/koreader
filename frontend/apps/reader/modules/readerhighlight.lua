@@ -604,7 +604,7 @@ function ReaderHighlight:onTap(_, ges)
     -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway.
     local cleared = self.hold_pos and self:clear()
     -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
-    if not cleared and ges and not self.select_mode then
+    if not cleared and ges then
         if self.ui.document.info.has_pages then
             return self:onTapPageSavedHighlight(ges)
         else
@@ -776,6 +776,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
 end
 
 function ReaderHighlight:onShowHighlightNoteOrDialog(page, index)
+    if self.select_mode and not (page == self.highlight_page and index == self.highlight_idx) then return end
     local item = self.view.highlight.saved[page][index]
     local bookmark_note = self.ui.bookmark:getBookmarkNote({
         page = self.ui.document.info.has_pages and item.pos0.page or item.pos0,
@@ -821,12 +822,14 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
                 text = _("Delete"),
                 callback = function()
                     self:deleteHighlight(page, index)
+                    self.select_mode = false
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
                 end,
             },
             {
                 text = C_("Highlight", "Style"),
+                enabled = not self.select_mode,
                 callback = function()
                     self:editHighlightStyle(page, index)
                     UIManager:close(self.edit_highlight_dialog)
@@ -835,6 +838,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = is_auto_text and _("Add note") or _("Edit note"),
+                enabled = not self.select_mode,
                 callback = function()
                     self:editHighlight(page, index)
                     UIManager:close(self.edit_highlight_dialog)
@@ -843,6 +847,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = "…",
+                enabled = not self.select_mode,
                 callback = function()
                     self.selected_text = self.view.highlight.saved[page][index]
                     self:onShowHighlightMenu(page, index)
@@ -866,6 +871,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
         table.insert(buttons, {
             {
                 text = start_prev,
+                enabled = not self.select_mode,
                 callback = function()
                     self:updateHighlight(page, index, 0, -1, false)
                 end,
@@ -876,6 +882,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = start_next,
+                enabled = not self.select_mode,
                 callback = function()
                     self:updateHighlight(page, index, 0, 1, false)
                 end,
@@ -886,6 +893,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = end_prev,
+                enabled = not self.select_mode,
                 callback = function()
                     self:updateHighlight(page, index, 1, -1, false)
                 end,
@@ -895,6 +903,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = end_next,
+                enabled = not self.select_mode,
                 callback = function()
                     self:updateHighlight(page, index, 1, 1, false)
                 end,
