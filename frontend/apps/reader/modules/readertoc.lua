@@ -110,7 +110,9 @@ function ReaderToc:onUpdateToc()
 end
 
 -- Be sure to update the ToC after a CRE rerendering
-ReaderToc.onDocumentRerendered = ReaderToc.onUpdateToc
+function ReaderToc:onDocumentRerendered()
+    self:onUpdateToc()
+end
 
 function ReaderToc:onPageUpdate(pageno)
     if UIManager.FULL_REFRESH_COUNT == -1 or G_reader_settings:isTrue("refresh_on_chapter_boundaries") then

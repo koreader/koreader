@@ -59,7 +59,7 @@ function WebDavApi:urlEncode(url_data)
     return url_data
 end
 
-function WebDavApi:listFolder(address, user, pass, folder_path)
+function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
     local path = self:urlEncode( folder_path )
     local webdav_list = {}
     local webdav_file = {}
@@ -169,6 +169,14 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
             type = files.type,
         })
     end
+    if folder_mode then
+        table.insert(webdav_list, 1, {
+            text = _("Long-press to choose current folder"),
+            url = folder_path,
+            type = "folder_long_press",
+            bold = true
+        })
+    end
     return webdav_list
 end
 
@@ -187,7 +195,42 @@ function WebDavApi:downloadFile(file_url, user, pass, local_path)
         logger.warn("WebDavApi: Download failure:", status or code or "network unreachable")
         logger.dbg("WebDavApi: Response headers:", headers)
     end
+    return code, (headers or {}).etag
+end
+
+function WebDavApi:uploadFile(file_url, user, pass, local_path, etag)
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    local code, _, status = socket.skip(1, http.request{
+        url      = file_url,
+        method   = "PUT",
+        source   = ltn12.source.file(io.open(local_path, "r")),
+        user     = user,
+        password = pass,
+        headers = {
+            ["If-Match"] = etag
+        }
+    })
+    socketutil:reset_timeout()
+    if code < 200 or code > 299 then
+        logger.warn("WebDavApi: upload failure:", status or code or "network unreachable")
+    end
     return code
 end
+
+function WebDavApi:createFolder(folder_url, user, pass, folder_name)
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    local code, _, status = socket.skip(1, http.request{
+        url      = folder_url,
+        method   = "MKCOL",
+        user     = user,
+        password = pass,
+    })
+    socketutil:reset_timeout()
+    if code ~= 201 then
+        logger.warn("WebDavApi: create folder failure:", status or code or "network unreachable")
+    end
+    return code
+end
+
 
 return WebDavApi

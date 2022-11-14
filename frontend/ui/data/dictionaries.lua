@@ -2667,6 +2667,150 @@ local dictionaries = {
         license = "Dual-licensed under CC-BY-SA 3.0 and GFDL",
         url = "https://github.com/Vuizur/Wiktionary-Dictionaries/raw/master/Zulu-English%20Wiktionary%20dictionary%20stardict.tar.gz",
     },
+    {
+        name = "English-Vietnamese dictionary",
+        lang_in = "English",
+        lang_out = "Vietnamese",
+        entries = 387517,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/en-vi.tar.gz"
+    },
+    {
+        name = "Vietnamese-English dictionary",
+        lang_in = "Vietnamese",
+        lang_out = "English",
+        entries = 42252,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/vi-en.tar.gz"
+    },
+    {
+        name = "Czech-Vietnamese dictionary",
+        lang_in = "Czech",
+        lang_out = "Vietnamese",
+        entries = 112442,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/cs-vi.tar.gz"
+    },
+    {
+        name = "German-Vietnamese dictionary",
+        lang_in = "German",
+        lang_out = "Vietnamese",
+        entries = 43680,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/de-vi.tar.gz"
+    },
+    {
+        name = "French-Vietnamese dictionary",
+        lang_in = "French",
+        lang_out = "Vietnamese",
+        entries = 47454,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/fr-vi.tar.gz"
+    },
+    {
+        name = "Italian-Vietnamese dictionary",
+        lang_in = "Italian",
+        lang_out = "Vietnamese",
+        entries = 70682,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/it-vi.tar.gz"
+    },
+    {
+        name = "Japanese-Vietnamese dictionary",
+        lang_in = "Japanese",
+        lang_out = "Vietnamese",
+        entries = 172336,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/ja-vi.tar.gz"
+    },
+    {
+        name = "Korean-Vietnamese dictionary",
+        lang_in = "Korean",
+        lang_out = "Vietnamese",
+        entries = 49803,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/ko-vi.tar.gz"
+    },
+    {
+        name = "Norwegian-Vietnamese dictionary",
+        lang_in = "Norwegian",
+        lang_out = "Vietnamese",
+        entries = 39508,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/no-vi.tar.gz"
+    },
+    {
+        name = "Portuguese-Vietnamese dictionary",
+        lang_in = "Portuguese",
+        lang_out = "Vietnamese",
+        entries = 10453,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/pt-vi.tar.gz"
+    },
+    {
+        name = "Russian-Vietnamese dictionary",
+        lang_in = "Russian",
+        lang_out = "Vietnamese",
+        entries = 38039,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/ru-vi.tar.gz"
+    },
+    {
+        name = "Chinese-Vietnamese dictionary",
+        lang_in = "Chinese",
+        lang_out = "Vietnamese",
+        entries = 161200,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/zh-vi.tar.gz"
+    },
+    {
+        name = "Vietnamese-German dictionary",
+        lang_in = "Vietnamese",
+        lang_out = "German",
+        entries = 11926,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/vi-de.tar.gz"
+    },
+    {
+        name = "Vietnamese-French dictionary",
+        lang_in = "Vietnamese",
+        lang_out = "French",
+        entries = 39074,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/vi-fr.tar.gz"
+    },
+    {
+        name = "Vietnamese-Japanese dictionary",
+        lang_in = "Vietnamese",
+        lang_out = "Japanese",
+        entries = 21895,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/vi-ja.tar.gz"
+    },
+    {
+        name = "Vietnamese-Korean dictionary",
+        lang_in = "Vietnamese",
+        lang_out = "Korean",
+        entries = 22431,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/vi-ko.tar.gz"
+    },
+    {
+        name = "Vietnamese-Portuguese dictionary",
+        lang_in = "Vietnamese",
+        lang_out = "Portuguese",
+        entries = 21888,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/vi-pt.tar.gz"
+    },
+    {
+        name = "Vietnamese-Russian dictionary",
+        lang_in = "Vietnamese",
+        lang_out = "Russian",
+        entries = 35948,
+        license = "Open Vietnamese Dictionary Project, https://sourceforge.net/projects/ovdp/",
+        url = "https://khoicandev.github.io/ovdp-mirror/vi-ru.tar.gz"
+    },
 }
 
 return dictionaries

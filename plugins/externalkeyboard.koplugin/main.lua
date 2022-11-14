@@ -11,6 +11,10 @@ local event_map_keyboard = require("event_map_keyboard")
 local util = require("util")
 local _ = require("gettext")
 
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/posix_h")
+
 -- The include/linux/usb/role.h calls the USB roles "host" and "device".
 local USB_ROLE_DEVICE = "device"
 local USB_ROLE_HOST   = "host"
@@ -52,7 +56,8 @@ local function setupDebugFS()
 
     local found = false
     for line in mounts:lines() do
-        if line:find("^none /sys/kernel/debug debugfs") then
+        if line:find("^none /sys/kernel/debug debugfs") or
+           line:find("^debugfs /sys/kernel/debug debugfs") then
             found = true
             break
         end
@@ -60,8 +65,14 @@ local function setupDebugFS()
     mounts:close()
 
     if not found then
+        -- If we're not root, we won't be able to mount it
+        if C.getuid() ~= 0 then
+            logger.dbg("ExternalKeyboard: Cannot mount debugfs (unpriviledged user)")
+            return false
+        end
+
         if os.execute("mount -t debugfs none /sys/kernel/debug") ~= 0 then
-            logger.warn("ExternalKeyboard: Failed to mount debugfs")
+            logger.dbg("ExternalKeyboard: Failed to mount debugfs")
             return false
         end
     end
@@ -69,6 +80,7 @@ local function setupDebugFS()
     return true
 end
 
+-- The mount point probably doesn't exist on kernels built w/o CONFIG_DEBUG_FS
 if lfs.attributes("/sys/kernel/debug", "mode") == "directory" then
     -- This should be in init() but the check must come first. So this part of initialization is here.
     -- It is quick and harmless enough to be in a check.

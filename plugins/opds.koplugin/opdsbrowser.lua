@@ -4,14 +4,13 @@ local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
-local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("opdsparser")
-local RenderImage = require("ui/renderimage")
+local OPDSPSE = require("opdspse")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local http = require("socket.http")
@@ -600,14 +599,14 @@ function OPDSBrowser:showDownloads(item)
                 {
                     text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
-                        self:streamPages(item, acquisition.href, acquisition.count)
+                        OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password)
                         UIManager:close(self.download_dialog)
                     end,
                 },
                 {
                     text = _("Stream from page") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
-                        self:streamPages(item, acquisition.href, acquisition.count, true)
+                        OPDSPSE:streamPages(acquisition.href, acquisition.count, true, self.root_catalog_username, self.root_catalog_password)
                         UIManager:close(self.download_dialog)
                     end,
                 },
@@ -806,102 +805,6 @@ function OPDSBrowser:downloadFile(filename, remote_url)
     else
         download()
     end
-end
-
--- Streams a book (OPDS-PSE Page Streaming Extension)
-function OPDSBrowser:streamPages(remote_url, count, continue)
-    local page_table = {image_disposable = true}
-    setmetatable(page_table, {__index = function (_, key)
-        if type(key) ~= "number" then
-            local error_bb = RenderImage:renderImageFile("resources/koreader.png", false)
-            return error_bb
-        else
-            local index = key - 1
-            local page_url = remote_url:gsub("{pageNumber}", tostring(index))
-            page_url = page_url:gsub("{maxWidth}", tostring(Screen:getWidth()))
-            local page_data = {}
-
-            logger.dbg("Streaming page from", page_url)
-            local parsed = url.parse(page_url)
-
-            local code, headers, status
-            if parsed.scheme == "http" or parsed.scheme == "https" then
-                socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-                code, headers, status = socket.skip(1, http.request {
-                    url      = page_url,
-                    headers  = {
-                        ["Accept-Encoding"] = "identity",
-                    },
-                    sink     = ltn12.sink.table(page_data),
-                    user     = self.root_catalog_username,
-                    password = self.root_catalog_password,
-                })
-                socketutil:reset_timeout()
-            else
-                UIManager:show(InfoMessage:new {
-                    text = T(_("Invalid protocol:\n%1"), parsed.scheme),
-                })
-            end
-
-            local page_bb
-            if code == 200 then
-                local data = table.concat(page_data)
-                page_bb = RenderImage:renderImageData(data, #data, false)
-                       or RenderImage:renderImageFile("resources/koreader.png", false)
-            else
-                logger.dbg("OPDSBrowser:streamPages: Request failed:", status or code)
-                logger.dbg("OPDSBrowser:streamPages: Response headers:", headers)
-                page_bb = RenderImage:renderImageFile("resources/koreader.png", false)
-            end
-            return page_bb
-        end
-    end})
-    local viewer = ImageViewer:new{
-        image = page_table,
-        fullscreen = true,
-        with_title_bar = false,
-        image_disposable = false, -- instead set page_table image_disposable to true
-    }
-    -- in Lua 5.2 we could override __len, but this works too
-    viewer._images_list_nb = count
-    UIManager:show(viewer)
-    if continue then
-        self:jumpToPage(viewer)
-    end
-end
-
--- Shows a page number dialog for page streaming
-function OPDSBrowser:jumpToPage(viewer)
-    local dialog
-    dialog = InputDialog:new{
-        title = _("Enter page number"),
-        input_type = "number",
-        input_hint = "(1 - " .. viewer._images_list_nb .. ")",
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    id = "close",
-                    callback = function()
-                        UIManager:close(dialog)
-                    end,
-                },
-                {
-                    text = _("Stream"),
-                    is_enter_default = true,
-                    callback = function()
-                        local page_num = dialog:getInputValue()
-                        if page_num then
-                            UIManager:close(dialog)
-                            viewer:switchToImageNum(math.min(math.max(1, page_num), viewer._images_list_nb))
-                        end
-                    end,
-                },
-            },
-        },
-    }
-    UIManager:show(dialog)
-    dialog:onShowKeyboard()
 end
 
 -- Menu action on item tap (Download a book / Show subcatalog / Search in catalog)

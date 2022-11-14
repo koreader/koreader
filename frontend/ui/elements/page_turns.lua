@@ -26,10 +26,27 @@ end
 genTapZonesMenu("default")
 genTapZonesMenu("left_right")
 genTapZonesMenu("top_bottom")
+
+local default_size_b = math.floor(G_defaults:readSetting("DTAP_ZONE_BACKWARD").w * 100)
+local default_size_f = math.floor(G_defaults:readSetting("DTAP_ZONE_FORWARD").w * 100)
+local function getTapZonesSize()
+    local size_b, size_f
+    if G_reader_settings:has("page_turns_tap_zone_forward_size_ratio") then
+        size_f = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio") * 100)
+        if G_reader_settings:has("page_turns_tap_zone_backward_size_ratio") then
+            size_b = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_backward_size_ratio") * 100)
+        else
+            size_b = 100 - size_f
+        end
+    else
+        size_b = default_size_b
+        size_f = default_size_f
+    end
+    return size_b, size_f
+end
 table.insert(page_turns_tap_zones_sub_items, {
     text_func = function()
-        local size = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", G_defaults:readSetting("DTAP_ZONE_FORWARD").w) * 100)
-        return T(_("Forward tap zone size: %1%"), size)
+        return T(_("Backward / forward tap zone size: %1 % / %2 %"), getTapZonesSize())
     end,
     enabled_func = function()
         return G_reader_settings:readSetting("page_turns_tap_zones", "default") ~= "default"
@@ -37,16 +54,29 @@ table.insert(page_turns_tap_zones_sub_items, {
     keep_menu_open = true,
     callback = function(touchmenu_instance)
         local is_left_right = G_reader_settings:readSetting("page_turns_tap_zones") == "left_right"
-        local size = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", G_defaults:readSetting("DTAP_ZONE_FORWARD").w) * 100)
-        UIManager:show(require("ui/widget/spinwidget"):new{
-            title_text = is_left_right and _("Forward tap zone width") or _("Forward tap zone height"),
+        local size_b, size_f = getTapZonesSize()
+        UIManager:show(require("ui/widget/doublespinwidget"):new{
+            title_text = is_left_right and _("Tap zone width") or _("Tap zone height"),
             info_text = is_left_right and _("Percentage of screen width") or _("Percentage of screen height"),
-            value = size,
-            value_min = 0,
-            value_max = 100,
-            default_value = math.floor(G_defaults:readSetting("DTAP_ZONE_FORWARD").w * 100),
-            callback = function(spin)
-                G_reader_settings:saveSetting("page_turns_tap_zone_forward_size_ratio", spin.value * (1/100))
+            left_text = _("Backward"),
+            left_value = size_b,
+            left_min = 0,
+            left_max = 100 - size_f,
+            left_default = default_size_b,
+            left_hold_step = 5,
+            right_text = _("Forward"),
+            right_value = size_f,
+            right_min = 0,
+            right_max = 100,
+            right_default = default_size_f,
+            right_hold_step = 5,
+            unit = "%",
+            callback = function(value_b, value_f)
+                if value_b + value_f > 100 then
+                    value_b = 100 - value_f
+                end
+                G_reader_settings:saveSetting("page_turns_tap_zone_backward_size_ratio", value_b * (1/100))
+                G_reader_settings:saveSetting("page_turns_tap_zone_forward_size_ratio", value_f * (1/100))
                 ReaderUI.instance.view:setupTouchZones()
                 if touchmenu_instance then touchmenu_instance:updateItems() end
             end,
@@ -143,7 +173,7 @@ When enabled the UI direction for the Table of Contents, Book Map, and Page Brow
 
 if Device:canDoSwipeAnimation() then
     table.insert(PageTurns.sub_item_table, {
-        text =_("Page Turn Animations"),
+        text =_("Page turn animations"),
         checked_func = function()
             return G_reader_settings:isTrue("swipe_animations")
         end,

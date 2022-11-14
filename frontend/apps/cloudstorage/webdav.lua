@@ -7,13 +7,14 @@ local UIManager = require("ui/uimanager")
 local ReaderUI = require("apps/reader/readerui")
 local WebDavApi = require("apps/cloudstorage/webdavapi")
 local util = require("util")
+local ffiutil = require("ffi/util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
 local WebDav = {}
 
-function WebDav:run(address, user, pass, path)
-    return WebDavApi:listFolder(address, user, pass, path)
+function WebDav:run(address, user, pass, path, folder_mode)
+    return WebDavApi:listFolder(address, user, pass, path, folder_mode)
 end
 
 function WebDav:downloadFile(item, address, username, password, local_path, callback_close)
@@ -44,6 +45,36 @@ function WebDav:downloadFile(item, address, username, password, local_path, call
         UIManager:show(InfoMessage:new{
             text = T(_("Could not save file to:\n%1"), BD.filepath(local_path)),
             timeout = 3,
+        })
+    end
+end
+
+function WebDav:uploadFile(url, address, username, password, local_path, callback_close)
+    local path = WebDavApi:getJoinedPath(address, url)
+    path = WebDavApi:getJoinedPath(path, ffiutil.basename(local_path))
+    local code_response = WebDavApi:uploadFile(path, username, password, local_path)
+    if code_response >= 200 and code_response < 300 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("File uploaded:\n%1"), BD.filepath(address)),
+        })
+        if callback_close then callback_close() end
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("Could not upload file:\n%1"), BD.filepath(address)),
+            timeout = 3,
+        })
+    end
+end
+
+function WebDav:createFolder(url, address, username, password, folder_name, callback_close)
+    local code_response = WebDavApi:createFolder(address .. WebDavApi:urlEncode(url .. "/" .. folder_name), username, password, folder_name)
+    if code_response == 201 then
+        if callback_close then
+            callback_close()
+        end
+    else
+        UIManager:show(InfoMessage:new{
+            text = T(_("Could not create folder:\n%1"), folder_name),
         })
     end
 end

@@ -14,6 +14,7 @@ local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
 local Screensaver = require("ui/screensaver")
 local SQ3 = require("lua-ljsqlite3/init")
+local SyncService = require("frontend/apps/cloudstorage/syncservice")
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local lfs = require("libs/libkoreader-lfs")
@@ -33,7 +34,7 @@ local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
 local DEFAULT_CALENDAR_NB_BOOK_SPANS = 3
 
 -- Current DB schema version
-local DB_SCHEMA_VERSION = 20201022
+local DB_SCHEMA_VERSION = 20221111
 
 -- This is the query used to compute the total time spent reading distinct pages of the book,
 -- capped at self.settings.max_sec per distinct page.
@@ -381,6 +382,10 @@ Do you want to create an empty database?
                 self:upgradeDBto20201022(conn)
             end
 
+            if db_version < 20221111 then
+                self:upgradeDBto20221111(conn)
+            end
+
             -- Get back the space taken by the deleted page_stat table
             conn:exec("PRAGMA temp_store = 2;") -- use memory for temp files
             local ok, errmsg = pcall(conn.exec, conn, "VACUUM;") -- this may take some time
@@ -541,7 +546,7 @@ function ReaderStatistics:createDB(conn)
     conn:exec(sql_stmt)
     -- Index
     sql_stmt = [[
-        CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
+        CREATE UNIQUE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
     ]]
     conn:exec(sql_stmt)
 
@@ -596,6 +601,41 @@ function ReaderStatistics:upgradeDBto20201022(conn)
 
     -- Update DB schema version
     conn:exec("PRAGMA user_version=20201022;")
+end
+
+function ReaderStatistics:upgradeDBto20221111(conn)
+    conn:exec([[
+        -- We make the index on book's (title, author, md5) unique in order to sync dbs
+        -- First we fill null authors with ''
+        UPDATE book SET authors = '' WHERE authors IS NULL;
+        -- Secondly, we unify the id_book in page_stat_data entries for duplicate books
+        -- to the smallest of each, so as to delete the others.
+        UPDATE page_stat_data SET id_book = (
+            SELECT map.min_id FROM (
+                SELECT id, (
+                    SELECT min(id) FROM book b2
+                    WHERE (book.title, book.authors, book.md5) = (b2.title, b2.authors, b2.md5)
+                ) as min_id
+                FROM book WHERE book.id >= min_id
+            ) as map WHERE page_stat_data.id_book = map.id
+        );
+        -- Delete duplicate books and keep the one with smallest id.
+        DELETE FROM book WHERE id > (
+            SELECT MIN(id) FROM book b2
+            WHERE (book.title, book.authors, book.md5) = (b2.title, b2.authors, b2.md5)
+        );
+        -- Then we recompute the book statistics based on merged books
+        UPDATE book SET (total_read_pages, total_read_time) =
+        (SELECT count(DISTINCT page),
+                sum(duration)
+         FROM   page_stat
+         WHERE  id_book = book.id);
+        -- Finally we update the index to be unique
+        DROP INDEX IF EXISTS book_title_authors_md5;
+        CREATE UNIQUE INDEX book_title_authors_md5 ON book(title, authors, md5);]])
+
+    -- Update DB schema version
+    conn:exec("PRAGMA user_version=20221111;")
 end
 
 function ReaderStatistics:addBookStatToDB(book_stats, conn)
@@ -1046,12 +1086,88 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         callback = function()
                             self.settings.calendar_browse_future_months = not self.settings.calendar_browse_future_months
                         end,
+                        separator = true,
+                    },
+                    {
+                        text = _("Cloud sync"),
+                        callback = function(touchmenu_instance)
+                            local server = self.settings.sync_server
+                            local edit_cb = function()
+                                local sync_settings = SyncService:new{}
+                                sync_settings.onClose = function(this)
+                                    UIManager:close(this)
+                                end
+                                sync_settings.onConfirm = function(sv)
+                                    self.settings.sync_server = sv
+                                    touchmenu_instance:updateItems()
+                                end
+                                UIManager:show(sync_settings)
+                            end
+                            if not server then
+                                edit_cb()
+                                return
+                            end
+                            local dialogue
+                            local delete_button = {
+                                text = _("Delete"),
+                                callback = function()
+                                    UIManager:close(dialogue)
+                                    UIManager:show(ConfirmBox:new{
+                                        text = _("Delete server info?"),
+                                        cancel_text = _("Cancel"),
+                                        cancel_callback = function()
+                                            return
+                                        end,
+                                        ok_text = _("Delete"),
+                                        ok_callback = function()
+                                            self.settings.sync_server = nil
+                                            touchmenu_instance:updateItems()
+                                        end,
+                                    })
+                                end,
+                            }
+                            local edit_button = {
+                                text = _("Edit"),
+                                callback = function()
+                                    UIManager:close(dialogue)
+                                    edit_cb()
+                                end
+                            }
+                            local close_button = {
+                                text = _("Close"),
+                                callback = function()
+                                    UIManager:close(dialogue)
+                                end
+                            }
+                            local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
+                            dialogue = require("ui/widget/buttondialogtitle"):new{
+                                title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
+                                             server.name.." "..type, SyncService.getReadablePath(server)),
+                                buttons = {
+                                    {delete_button, edit_button, close_button}
+                                },
+                            }
+                            UIManager:show(dialogue)
+                        end,
+                        enabled_func = function() return self.settings.is_enabled end,
+                        keep_menu_open = true,
                     },
                 },
             },
             {
                 text = _("Reset statistics"),
                 sub_item_table = self:genResetBookSubItemTable(),
+                separator = true,
+            },
+            {
+                text = _("Synchronize now"),
+                callback = function()
+                    SyncService.sync(self.settings.sync_server, db_location, self.onSync )
+                end,
+                enabled_func = function()
+                    return self.settings.sync_server ~= nil and self.settings.is_enabled and require("ui/network/manager"):isWifiOn()
+                end,
+                keep_menu_open = true,
                 separator = true,
             },
             {
@@ -2634,6 +2750,126 @@ function ReaderStatistics:getCurrentBookReadPages()
         read_pages[page][1] = info[1] / max_duration
     end
     return read_pages
+end
+
+function ReaderStatistics.onSync(local_path, cached_path, income_path)
+    local conn_income = SQ3.open(income_path)
+    local ok1, v1 = pcall(conn_income.rowexec, conn_income, "PRAGMA schema_version")
+    if not ok1 or tonumber(v1) == 0 then
+        -- no income db or wrong db, first time sync
+        logger.warn("statistics open income DB failed", v1)
+        return true
+    end
+
+    local sql = "attach '" .. income_path:gsub("'", "''") .."' as income_db;"
+    -- then we try to open cached db
+    local conn_cached = SQ3.open(cached_path)
+    local ok2, v2 = pcall(conn_cached.rowexec, conn_cached, "PRAGMA schema_version")
+    local attached_cache
+    if not ok2 or tonumber(v2) == 0 then
+        -- no cached or error, no item to delete
+        logger.warn("statistics open cached DB failed", v2)
+    else
+        attached_cache = true
+        sql = sql .. "attach '" .. cached_path:gsub("'", "''") ..[[' as cached_db;
+            -- first we delete from income_db books that exist in cached_db but not in local_db,
+            -- namely the ones that were deleted since last sync
+            DELETE FROM income_db.page_stat_data WHERE id_book IN (
+                SELECT id FROM income_db.book WHERE (title, authors, md5) IN (
+                    SELECT title, authors, md5 FROM cached_db.book WHERE (title, authors, md5) NOT IN (
+                        SELECT title, authors, md5 FROM book
+                    )
+                )
+            );
+            DELETE FROM income_db.book WHERE (title, authors, md5) IN (
+                SELECT title, authors, md5 FROM cached_db.book WHERE (title, authors, md5) NOT IN (
+                    SELECT title, authors, md5 FROM book
+                )
+            );
+
+            -- then we delete books from local db that were present in last sync but
+            -- not any more (ie. deleted in other devices)
+            DELETE FROM page_stat_data WHERE id_book IN (
+                SELECT id FROM book WHERE (title, authors, md5) IN (
+                    SELECT title, authors, md5 FROM cached_db.book WHERE (title, authors, md5) NOT IN (
+                        SELECT title, authors, md5 FROM income_db.book
+                    )
+                )
+            );
+            DELETE FROM book WHERE (title, authors, md5) IN (
+                SELECT title, authors, md5 FROM cached_db.book WHERE (title, authors, md5) NOT IN (
+                    SELECT title, authors, md5 FROM income_db.book
+                )
+            );
+        ]]
+    end
+
+    conn_cached:close()
+    conn_income:close()
+    local conn = SQ3.open(local_path)
+    local ok3, v3 = pcall(conn.exec, conn, "PRAGMA schema_version")
+    if not ok3 or tonumber(v3) == 0 then
+        -- no local db, this is an error
+        logger.err("statistics open local DB", v3)
+        return false
+    end
+
+    sql = sql .. [[
+        -- We merge the local db with income db to form the synced db.
+        -- Do the books
+        INSERT INTO book (
+            title, authors, notes, last_open, highlights, pages, series, language, md5, total_read_time, total_read_pages
+        ) SELECT
+            title, authors, notes, last_open, highlights, pages, series, language, md5, total_read_time, total_read_pages
+        FROM income_db.book WHERE true ON CONFLICT (title, authors, md5) DO NOTHING;
+
+        -- We create a book_id mapping temp table (view not possible due to attached db)
+        CREATE TEMP TABLE book_id_map AS
+            SELECT m.id as mid, ifnull(i.id, m.id) as iid FROM book m --main
+            LEFT JOIN income_db.book i
+            ON (m.title, m.authors, m.md5) = (i.title, i.authors, i.md5);
+        ]]
+    if attached_cache then
+        -- more deletion needed
+        sql = sql .. [[
+        -- DELETE stat_data items
+        DELETE FROM income_db.page_stat_data WHERE (id_book, page, start_time) IN (
+            SELECT map.iid, page, start_time FROM cached_db.page_stat_data
+            LEFT JOIN book_id_map AS map ON id_book = map.mid
+            WHERE (id_book, page, start_time) NOT IN (
+                SELECT id_book, page, start_time FROM page_stat_data
+            )
+        );
+        DELETE FROM page_stat_data WHERE (id_book, page, start_time) IN (
+            SELECT id_book, page, start_time FROM cached_db.page_stat_data WHERE (id_book, page, start_time) NOT IN (
+                SELECT map.mid, page, start_time FROM income_db.page_stat_data
+                LEFT JOIN book_id_map AS map on id_book = map.iid
+            )
+        );]]
+    end
+    sql = sql .. [[
+        -- Then we merge the income_db's contents into the local db
+        INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages)
+            SELECT map.mid, page, start_time, duration, total_pages
+            FROM income_db.page_stat_data
+            LEFT JOIN book_id_map as map
+            ON id_book = map.iid
+            WHERE true
+        ON CONFLICT(id_book, page, start_time) DO UPDATE SET
+        duration = MAX(duration, excluded.duration);
+
+        -- finally we update the total numbers of book
+        UPDATE book SET (total_read_pages, total_read_time) =
+        (SELECT count(DISTINCT page),
+                sum(duration)
+         FROM   page_stat
+         WHERE  id_book = book.id);
+    ]]
+    conn:exec(sql)
+    pcall(conn.exec, conn, "COMMIT;")
+    conn:exec("DETACH income_db;"..(attached_cache and "DETACH cached_db;" or ""))
+    conn:close()
+    return true
 end
 
 return ReaderStatistics
