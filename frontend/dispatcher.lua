@@ -38,7 +38,6 @@ local ReaderZooming = require("apps/reader/modules/readerzooming")
 local UIManager = require("ui/uimanager")
 local util = require("util")
 local _ = require("gettext")
-local C_ = _.pgettext
 local NC_ = _.npgettext
 local T = require("ffi/util").template
 
@@ -51,18 +50,18 @@ local settingsList = {
     -- Screen & Lights
     show_frontlight_dialog = {category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), screen=true, condition=Device:hasFrontlight()},
     toggle_frontlight = {category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), screen=true, condition=Device:hasFrontlight()},
-    set_frontlight = {category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness to %1"), screen=true, condition=Device:hasFrontlight()},
-    increase_frontlight = {category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness by %1"), screen=true, condition=Device:hasFrontlight()},
-    decrease_frontlight = {category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness by %1"), screen=true, condition=Device:hasFrontlight()},
-    set_frontlight_warmth = {category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth to %1"), screen=true, condition=Device:hasNaturalLight()},
-    increase_frontlight_warmth = {category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth by %1"), screen=true, condition=Device:hasNaturalLight()},
-    decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth by %1"), screen=true, condition=Device:hasNaturalLight(), separator=true},
+    set_frontlight = {category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
+    increase_frontlight = {category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
+    decrease_frontlight = {category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), screen=true, condition=Device:hasFrontlight()},
+    set_frontlight_warmth = {category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
+    increase_frontlight_warmth = {category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), screen=true, condition=Device:hasNaturalLight()},
+    decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), screen=true, condition=Device:hasNaturalLight(), separator=true},
     full_refresh = {category="none", event="FullRefresh", title=_("Full screen refresh"), screen=true},
     night_mode = {category="none", event="ToggleNightMode", title=_("Toggle night mode"), screen=true},
     set_night_mode = {category="string", event="SetNightMode", title=_("Set night mode"), screen=true, args={true, false}, toggle={_("on"), _("off")}, separator=true},
-    set_refresh_rate = {category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Flash every %1 pages (always)"), screen=true, condition=Device:hasEinkScreen()},
-    set_day_refresh_rate = {category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (not in night mode)"), screen=true, condition=Device:hasEinkScreen()},
-    set_night_refresh_rate = {category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (in night mode)"), screen=true, condition=Device:hasEinkScreen()},
+    set_refresh_rate = {category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Full refresh rate (always)"), screen=true, condition=Device:hasEinkScreen()},
+    set_day_refresh_rate = {category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Full refresh rate (not in night mode)"), screen=true, condition=Device:hasEinkScreen()},
+    set_night_refresh_rate = {category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Full refresh rate (in night mode)"), screen=true, condition=Device:hasEinkScreen()},
     set_flash_on_chapter_boundaries = {category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
     toggle_flash_on_chapter_boundaries = {category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), screen=true, condition=Device:hasEinkScreen()},
     set_no_flash_on_second_chapter_page = {category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
@@ -141,13 +140,13 @@ local settingsList = {
     set_highlight_action = {category="string", event="SetHighlightAction", title=_("Set highlight action"), args_func=ReaderHighlight.getHighlightActions, reader=true},
     cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
     cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true},
-    page_jmp = {category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), reader=true},
+    page_jmp = {category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Turn pages"), reader=true},
     panel_zoom_toggle = {category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true},
 
     -- rolling reader settings
     set_font = {category="string", event="SetFont", title=_("Set font"), rolling=true, args_func=require("fontlist").getFontArgFunc,},
-    increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size by %1"), rolling=true},
-    decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size by %1"), rolling=true},
+    increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size"), rolling=true},
+    decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size"), rolling=true},
 
     -- paging reader settings
     toggle_page_flipping = {category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true},
@@ -165,9 +164,9 @@ local settingsList = {
     b_page_margin = {category="absolutenumber", rolling=true, separator=true},
     view_mode = {category="string", rolling=true},
     block_rendering_mode = {category="string", rolling=true},
-    render_dpi = {category="string", rolling=true},
+    render_dpi = {category="string", title=_("Zoom"), rolling=true},
     line_spacing = {category="absolutenumber", rolling=true, separator=true},
-    font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true, step=0.5},
+    font_size = {category="absolutenumber", title=_("Set font size"), rolling=true, step=0.5},
     font_base_weight = {category="string", rolling=true},
     font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
@@ -512,30 +511,29 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value)
         return _("Unknown item")
     end
     local title, category = settingsList[item].title, settingsList[item].category
-    local amount = settings and settings[item]
-    if dont_show_value or amount == nil or (amount == 0 and category == "incrementalnumber") then
-        amount = C_("Number placeholder", "#")
-    elseif not title:match("%%1") then
-        local value
+    local value = settings and settings[item]
+    if dont_show_value or value == nil or (value == 0 and category == "incrementalnumber") then
+        return title
+    else
+        local display_value
         if category == "string" or category == "configurable" then
-            if type(amount) == "table" then
-                value = string.format("%d / %d", unpack(amount))
+            if type(value) == "table" then
+                display_value = string.format("%d / %d", unpack(value))
             else
-                local value_num = util.arrayContains(settingsList[item].args, amount)
-                value = settingsList[item].toggle[value_num]
+                local value_num = util.arrayContains(settingsList[item].args, value)
+                display_value = settingsList[item].toggle[value_num]
             end
-        elseif category == "absolutenumber" then
-            value = tostring(amount)
+        elseif category == "absolutenumber" or category == "incrementalnumber" then
+            display_value = tostring(value)
         end
-        if value then
+        if display_value then
             if settingsList[item].unit then
-                value = value .. " " .. settingsList[item].unit
+                display_value = display_value .. " " .. settingsList[item].unit
             end
-            title = title .. ": " .. value
+            title = title .. ": " .. display_value
         end
-        amount = nil
     end
-    return T(title, amount)
+    return title
 end
 
 -- Add the item to the end of the execution order.
