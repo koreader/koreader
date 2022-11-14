@@ -59,13 +59,13 @@ local settingsList = {
     decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth by %1"), screen=true, condition=Device:hasNaturalLight(), separator=true},
     full_refresh = {category="none", event="FullRefresh", title=_("Full screen refresh"), screen=true},
     night_mode = {category="none", event="ToggleNightMode", title=_("Toggle night mode"), screen=true},
-    set_night_mode = {category="string", event="SetNightMode", title=_("Set night mode"), screen=true, args={true, false}, toggle={_("On"), _("Off")}, separator=true},
+    set_night_mode = {category="string", event="SetNightMode", title=_("Set night mode"), screen=true, args={true, false}, toggle={_("on"), _("off")}, separator=true},
     set_refresh_rate = {category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Flash every %1 pages (always)"), screen=true, condition=Device:hasEinkScreen()},
     set_day_refresh_rate = {category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (not in night mode)"), screen=true, condition=Device:hasEinkScreen()},
     set_night_refresh_rate = {category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (in night mode)"), screen=true, condition=Device:hasEinkScreen()},
-    set_flash_on_chapter_boundaries = {category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")}},
+    set_flash_on_chapter_boundaries = {category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
     toggle_flash_on_chapter_boundaries = {category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), screen=true, condition=Device:hasEinkScreen()},
-    set_no_flash_on_second_chapter_page = {category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")}},
+    set_no_flash_on_second_chapter_page = {category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
     toggle_no_flash_on_second_chapter_page = {category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), separator=true},
 
     -- Device settings
@@ -507,20 +507,35 @@ function Dispatcher:_itemsCount(settings)
 end
 
 -- Returns a display name for the item.
-function Dispatcher:getNameFromItem(item, settings)
+function Dispatcher:getNameFromItem(item, settings, dont_show_value)
     if settingsList[item] == nil then
         return _("Unknown item")
     end
-    local amount
-    if settings ~= nil and settings[item] ~= nil then
-        amount = settings[item]
-    end
-    if amount == nil
-        or (amount == 0 and settingsList[item].category == "incrementalnumber")
-    then
+    local title, category = settingsList[item].title, settingsList[item].category
+    local amount = settings and settings[item]
+    if dont_show_value or amount == nil or (amount == 0 and category == "incrementalnumber") then
         amount = C_("Number placeholder", "#")
+    elseif not title:match("%%1") then
+        local value
+        if category == "string" or category == "configurable" then
+            if type(amount) == "table" then
+                value = string.format("%d / %d", unpack(amount))
+            else
+                local value_num = util.arrayContains(settingsList[item].args, amount)
+                value = settingsList[item].toggle[value_num]
+            end
+        elseif category == "absolutenumber" then
+            value = tostring(amount)
+        end
+        if value then
+            if settingsList[item].unit then
+                value = value .. " " .. settingsList[item].unit
+            end
+            title = title .. ": " .. value
+        end
+        amount = nil
     end
-    return T(settingsList[item].title, amount)
+    return T(title, amount)
 end
 
 -- Add the item to the end of the execution order.
@@ -589,27 +604,7 @@ function Dispatcher:getDisplayList(settings)
     for item, v in iter_func(settings) do
         if type(item) == "number" then item = v end
         if settingsList[item] ~= nil and (settingsList[item].condition == nil or settingsList[item].condition == true) then
-            local text = Dispatcher:getNameFromItem(item, settings)
-            local value
-            if settingsList[item].category == "string" or settingsList[item].category == "configurable" then
-                if type(settings[item]) == "table" then
-                    value = string.format("%d / %d", unpack(settings[item]))
-                else
-                    local value_num = util.arrayContains(settingsList[item].args, settings[item])
-                    value = settingsList[item].toggle[value_num]
-                end
-            elseif settingsList[item].category == "absolutenumber" then
-                if not string.match(settingsList[item].title, "%d") then
-                    value = tostring(settings[item])
-                end
-            end
-            if value then
-                if settingsList[item].unit then
-                    value = value .. " " .. settingsList[item].unit
-                end
-                text = text .. ": " .. value
-            end
-            table.insert(item_table, {text = text, key = item})
+            table.insert(item_table, {text = Dispatcher:getNameFromItem(item, settings), key = item})
         end
     end
     return item_table
@@ -682,14 +677,14 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                             precision = "%0.1f"
                         end
                         local items = SpinWidget:new{
-                            value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or 0,
+                            value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or settingsList[k].min,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step or 1,
                             precision = precision,
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
                             default_value = settingsList[k].default,
-                            title_text = Dispatcher:getNameFromItem(k, location[settings]),
+                            title_text = Dispatcher:getNameFromItem(k, location[settings], true),
                             ok_always_enabled = true,
                             callback = function(spin)
                                 if location[settings] == nil then
@@ -731,14 +726,13 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         end
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
-                            value = location[settings] ~= nil and location[settings][k] or 0,
+                            value = location[settings] ~= nil and location[settings][k] or settingsList[k].min,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step or 1,
                             precision = precision,
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
-                            default_value = 0,
-                            title_text = Dispatcher:getNameFromItem(k, location[settings]),
+                            title_text = Dispatcher:getNameFromItem(k, location[settings], true),
                             info_text = _([[If called by a gesture the amount of the gesture will be used]]),
                             ok_always_enabled = true,
                             callback = function(spin)
@@ -776,9 +770,13 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                     table.insert(sub_item_table, {
                         text = tostring(settingsList[k].toggle[i]),
                         checked_func = function()
-                            return location[settings] ~= nil
-                                and location[settings][k] ~= nil
-                                and location[settings][k] == settingsList[k].args[i]
+                            if location[settings] ~= nil and location[settings][k] ~= nil then
+                                if type(location[settings][k]) == "table" then
+                                    return location[settings][k][1] == settingsList[k].args[i][1]
+                                else
+                                    return location[settings][k] == settingsList[k].args[i]
+                                end
+                            end
                         end,
                         callback = function()
                             if location[settings] == nil then
