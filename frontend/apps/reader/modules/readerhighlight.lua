@@ -453,37 +453,6 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Long-press on text"),
         sub_item_table = {
             {
-                text_func = function()
-                    return T(_("Highlight long-press interval: %1 s"),
-                        G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local items = SpinWidget:new{
-                        title_text = _("Highlight long-press interval"),
-                        info_text = _([[
-If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will not be triggered.
-
-The interval value is in seconds and can range from 3 to 20 seconds.]]),
-                        width = math.floor(Screen:getWidth() * 0.75),
-                        value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
-                        value_min = 3,
-                        value_max = 20,
-                        value_step = 1,
-                        value_hold_step = 5,
-                        unit = C_("Time", "s"),
-                        ok_text = _("Set interval"),
-                        default_value = 3,
-                        callback = function(spin)
-                            G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end
-                    }
-                    UIManager:show(items)
-                end,
-            },
-            {
                 text = _("Dictionary on single word selection"),
                 checked_func = function()
                     return not self.view.highlight.disabled and G_reader_settings:nilOrFalse("highlight_action_on_single_word")
@@ -510,6 +479,37 @@ The interval value is in seconds and can range from 3 to 20 seconds.]]),
             end,
         })
     end
+    table.insert(menu_items.long_press.sub_item_table, {
+        text_func = function()
+            return T(_("Highlight long-press interval: %1 s"),
+                G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
+        end,
+        keep_menu_open = true,
+        callback = function(touchmenu_instance)
+            local SpinWidget = require("ui/widget/spinwidget")
+            local items = SpinWidget:new{
+                title_text = _("Highlight long-press interval"),
+                info_text = _([[
+If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will not be triggered.
+
+The interval value is in seconds and can range from 3 to 20 seconds.]]),
+                width = math.floor(Screen:getWidth() * 0.75),
+                value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
+                value_min = 3,
+                value_max = 20,
+                value_step = 1,
+                value_hold_step = 5,
+                unit = C_("Time", "s"),
+                ok_text = _("Set interval"),
+                default_value = 3,
+                callback = function(spin)
+                    G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end
+            }
+            UIManager:show(items)
+        end,
+    })
     -- long_press menu is under taps_and_gestures menu which is not available for non touch device
     -- Clone long_press menu and change label making much meaning for non touch devices
     if not Device:isTouchDevice() and Device:hasDPad() then
@@ -776,7 +776,13 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
 end
 
 function ReaderHighlight:onShowHighlightNoteOrDialog(page, index)
-    if self.select_mode and not (page == self.highlight_page and index == self.highlight_idx) then return end
+    if self.select_mode then
+        if page ~= self.highlight_page or index ~= self.highlight_idx then return end
+        -- tap on the first fragment: abort select mode, clear highlight
+        self.select_mode = false
+        self:deleteHighlight(page, index)
+        return true
+    end
     local item = self.view.highlight.saved[page][index]
     local bookmark_note = self.ui.bookmark:getBookmarkNote({
         page = self.ui.document.info.has_pages and item.pos0.page or item.pos0,
@@ -822,14 +828,12 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
                 text = _("Delete"),
                 callback = function()
                     self:deleteHighlight(page, index)
-                    self.select_mode = false
                     UIManager:close(self.edit_highlight_dialog)
                     self.edit_highlight_dialog = nil
                 end,
             },
             {
                 text = C_("Highlight", "Style"),
-                enabled = not self.select_mode,
                 callback = function()
                     self:editHighlightStyle(page, index)
                     UIManager:close(self.edit_highlight_dialog)
@@ -838,7 +842,6 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = is_auto_text and _("Add note") or _("Edit note"),
-                enabled = not self.select_mode,
                 callback = function()
                     self:editHighlight(page, index)
                     UIManager:close(self.edit_highlight_dialog)
@@ -847,7 +850,6 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = "…",
-                enabled = not self.select_mode,
                 callback = function()
                     self.selected_text = self.view.highlight.saved[page][index]
                     self:onShowHighlightMenu(page, index)
@@ -871,7 +873,6 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
         table.insert(buttons, {
             {
                 text = start_prev,
-                enabled = not self.select_mode,
                 callback = function()
                     self:updateHighlight(page, index, 0, -1, false)
                 end,
@@ -882,7 +883,6 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = start_next,
-                enabled = not self.select_mode,
                 callback = function()
                     self:updateHighlight(page, index, 0, 1, false)
                 end,
@@ -893,7 +893,6 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = end_prev,
-                enabled = not self.select_mode,
                 callback = function()
                     self:updateHighlight(page, index, 1, -1, false)
                 end,
@@ -903,7 +902,6 @@ function ReaderHighlight:onShowHighlightDialog(page, index, is_auto_text)
             },
             {
                 text = end_next,
-                enabled = not self.select_mode,
                 callback = function()
                     self:updateHighlight(page, index, 1, 1, false)
                 end,
