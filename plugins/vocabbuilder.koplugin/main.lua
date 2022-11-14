@@ -99,44 +99,6 @@ local function resetButtonOnLookupWindow()
     end
 end
 
-local function onShowFilter(widget)
-    local sort_items = {}
-    local book_data = DB:selectBooks()
-    local toggled = {}
-    for _, ifo in pairs(book_data) do
-        table.insert(sort_items, {
-            text = ifo.name or "",
-            callback = function()
-                ifo.filter = not ifo.filter
-                if toggled[ifo.id] then
-                    toggled[ifo.id] = nil
-                else
-                    toggled[ifo.id] = true
-                end
-            end,
-            checked_func = function()
-                return ifo.filter
-            end,
-            ifo = ifo,
-        })
-    end
-
-    local sort_widget = SortWidget:new{
-        title = _("Filter words from books"),
-        item_table = sort_items,
-        sort_disabled = true,
-        callback = function()
-            if #toggled then
-                DB:toggleBookFilter(toggled)
-                widget:reloadItems()
-            end
-
-            UIManager:setDirty(nil, "ui")
-        end
-    }
-    UIManager:show(sort_widget)
-end
-
 local function saveSettings()
     G_reader_settings:saveSetting("vocabulary_builder", settings)
 end
@@ -227,7 +189,7 @@ function MenuDialog:init()
         text = _("Filter books"),
         callback = function()
             self:onClose()
-            onShowFilter(self.show_parent)
+            self.show_parent:onShowFilter()
         end
     }
 
@@ -337,7 +299,7 @@ function MenuDialog:init()
         }
         local type = server.type == "dropbox" and " (DropBox)" or " (WebDAV)"
         self.sync_dialogue = ButtonDialogTitle:new{
-            title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices"),
+            title = T(_("Cloud storage:\n%1\n\nFolder path:\n%2\n\nSet up the same cloud folder on each device to sync across your devices."),
                          server.name.." "..type, SyncService.getReadablePath(server)),
             info_face = Font:getFace("smallinfofont"),
             buttons = buttons,
@@ -481,6 +443,7 @@ local WordInfoDialog = InputContainer:extend{
     reset_callback = nil,
     dismissable = true, -- set to false if any button callback is required
 }
+local book_title_triangle = BD.mirroredUILayout() and " ⯇" or " ⯈"
 local word_info_dialog_width
 function WordInfoDialog:init()
     if self.dismissable then
@@ -556,6 +519,24 @@ function WordInfoDialog:init()
         end,
         bordersize = 0,
     }
+    self.book_title_button = Button:new{
+        text = self.book_title .. book_title_triangle,
+        width = width,
+        max_width = width,
+        text_font_face = "NotoSans-Italic.ttf",
+        text_font_size = 14,
+        text_font_bold = false,
+        align = self.title_align or "left",
+        padding = Size.padding.button,
+        bordersize = 0,
+        callback = function()
+            self.show_parent:onShowBookAssignment(function(new_book_title)
+                self.book_title = new_book_title
+                self.book_title_button:setText(new_book_title..book_title_triangle, width)
+            end)
+        end,
+        show_parent = self
+    }
     local has_context = self.prev_context or self.next_context
     self[1] = CenterContainer:new{
         dimen = Screen:getSize(),
@@ -582,12 +563,7 @@ function WordInfoDialog:init()
                                 HorizontalSpan:new{ width=Size.padding.default },
                                 copy_button,
                             },
-                            TextBoxWidget:new{
-                                text = self.book_title,
-                                width = width,
-                                face = Font:getFace("NotoSans-Italic.ttf", 15),
-                                alignment = self.title_align or "left",
-                            },
+                            self.book_title_button,
                             VerticalSpan:new{width= Size.padding.default},
                             has_context and
                             TextBoxWidget:new{
@@ -932,13 +908,17 @@ function VocabItemWidget:getTimeSinceDue()
 
     local rounding = elapsed > 0 and math.floor or math.ceil
     if abs < 60 then
-        readable_time = abs .. C_("Time", "s")
+        readable_time = T(C_("Time", "%1s"), abs)
     elseif abs < 3600 then
-        readable_time = string.format("%d"..C_("Time", "m"), rounding(abs/60))
+        readable_time = T(C_("Time", "%1m"), rounding(abs/60))
     elseif abs < 3600 * 24 then
-        readable_time = string.format("%d"..C_("Time", "h"), rounding(abs/3600))
+        readable_time = T(C_("Time", "%1h"), rounding(abs/3600))
+    elseif abs < 3600 * 24 * 30 then
+        readable_time = T(C_("Time", "%1d"), rounding(abs/3600/24))
+    elseif abs < 3600 * 24 * 365 then
+        readable_time = T(C_("Time", "%1 mo."), rounding(abs/3600/24/3)/10)
     else
-        readable_time = string.format("%d"..C_("Time", "d"), rounding(abs/3600/24))
+        readable_time = T(C_("Time", "%1 yr."), rounding(abs/3600/24/36.5)/10)
     end
 
     if elapsed < 0 then
@@ -1043,7 +1023,7 @@ function VocabItemWidget:onTap(_, ges)
 end
 
 function VocabItemWidget:onHold(_, ges)
-    self:onTap(_, ges)
+    self:onShowBookAssignment()
     return true
 end
 
@@ -1069,6 +1049,110 @@ function VocabItemWidget:onForgot(no_lookup)
     end
 end
 
+
+function VocabItemWidget:onShowBookAssignment(title_changed_cb)
+    local sort_items = {}
+    local book_data = DB:selectBooks()
+    local sort_widget
+    local book = self.item.book_title
+    local id
+    for _, info in pairs(book_data) do
+        table.insert(sort_items, {
+            text = info.name or "",
+            callback = function()
+                id = info.id
+                book = info.name
+            end,
+            checked_func = function()
+                return info.name == book
+            end,
+            hold_callback = function(sort_item, onSuccess)
+                self.show_parent:showChangeBookTitleDialog(sort_item, function()
+                    onSuccess()
+                    if self.item.book_title == info.name then
+                        if book == self.item.book_title then
+                            book = sort_item.text
+                        end
+                        self.item.book_title = sort_item.text
+                        if title_changed_cb then title_changed_cb(sort_item.text) end
+                    end
+                end)
+            end
+        })
+    end
+    table.insert(sort_items, {
+        text = _("Add virtual book"),
+        face = Font:getFace("smallinfofontbold"),
+        callback = function()
+            local dialog
+            dialog = require("ui/widget/inputdialog"):new{
+                title = _("Enter book title:"),
+                input = "",
+                input_type = "text",
+                buttons = {
+                    {
+                        {
+                            text = _("Cancel"),
+                            id = "close",
+                            callback = function()
+                                UIManager:close(dialog)
+                            end,
+                        },
+                        {
+                            text = _("Add"),
+                            is_enter_default = true,
+                            callback = function()
+                                if dialog:getInputText() == "" then return end
+                                local new_book_title = dialog:getInputText()
+                                local ok, new_id = pcall(DB.insertNewBook, DB, new_book_title)
+                                if ok then
+                                    UIManager:close(dialog)
+                                    table.insert(sort_items, #sort_items, {
+                                        text = new_book_title,
+                                        callback = function()
+                                            id = new_id
+                                            book = new_book_title
+                                        end,
+                                        checked_func = function()
+                                            return new_book_title == book
+                                        end,
+                                        hold_callback = function(sort_item, onSuccess)
+                                            self.show_parent:showChangeBookTitleDialog(sort_item, onSuccess)
+                                        end
+                                    })
+                                    sort_widget:goToPage(sort_widget.show_page)
+                                else
+                                    UIManager:show(require("ui/widget/notification"):new{
+                                        text = _("Book title already in use."),
+                                        timeout = 3
+                                    })
+                                end
+                            end,
+                        },
+                    }
+                },
+            }
+            UIManager:show(dialog)
+            dialog:onShowKeyboard()
+        end
+    })
+
+    sort_widget = SortWidget:new{
+        title = T(_("Move \"%1\" to book:"), self.item.word),
+        item_table = sort_items,
+        sort_disabled = true,
+        callback = function()
+            if book ~= self.item.book_title then
+                self.item.book_title = book
+                DB:updateBookIdOfWord(self.item.word, id)
+                self:initItemWidget()
+                if title_changed_cb then title_changed_cb(book) end
+            end
+            UIManager:setDirty(nil, "ui")
+        end
+    }
+    UIManager:show(sort_widget)
+end
 
 
 --[[--
@@ -1480,6 +1564,94 @@ function VocabularyBuilderWidget:check_reverse()
     return settings.reverse
 end
 
+
+function VocabularyBuilderWidget:onShowFilter()
+    local sort_items = {}
+    local book_data = DB:selectBooks()
+    local toggled = {}
+    for _, info in pairs(book_data) do
+        table.insert(sort_items, {
+            text = info.name or "",
+            callback = function()
+                info.filter = not info.filter
+                if toggled[info.id] then
+                    toggled[info.id] = nil
+                else
+                    toggled[info.id] = true
+                end
+            end,
+            checked_func = function()
+                return info.filter
+            end,
+            hold_callback = function(sort_item, onSuccess)
+                self:showChangeBookTitleDialog(sort_item, onSuccess)
+            end,
+        })
+    end
+
+    local sort_widget = SortWidget:new{
+        title = _("Filter words from books"),
+        item_table = sort_items,
+        sort_disabled = true,
+        callback = function()
+            if #toggled then
+                DB:toggleBookFilter(toggled)
+                self:reloadItems()
+            end
+
+            UIManager:setDirty(nil, "ui")
+        end
+    }
+    UIManager:show(sort_widget)
+end
+
+function VocabularyBuilderWidget:showChangeBookTitleDialog(sort_item, onSuccess)
+    local dialog
+    dialog = require("ui/widget/inputdialog"):new {
+        title = _("Change book title to:"),
+        input = sort_item.text,
+        input_type = "text",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(dialog)
+                    end,
+                },
+                {
+                    text = _("Change title"),
+                    is_enter_default = true,
+                    callback = function()
+                        if dialog:getInputText() == "" then return end
+                        local new_book_title = dialog:getInputText()
+                        local ok = pcall(DB.changeBookTitle, DB, sort_item.text, new_book_title)
+                        if ok then
+                            for i=1, #self.item_table do
+                                if self.item_table[i].book_title == sort_item.text then
+                                    self.item_table[i].book_title = new_book_title
+                                end
+                            end
+                            sort_item.text = new_book_title
+                            UIManager:close(dialog)
+                            if onSuccess then onSuccess() end
+                            self:_populateItems()
+                        else
+                            UIManager:show(require("ui/widget/notification"):new {
+                                text = _("Book title already in use."),
+                                timeout = 3
+                            })
+                        end
+                    end,
+                },
+            }
+        },
+    }
+    UIManager:show(dialog)
+    dialog:onShowKeyboard()
+end
+
 function VocabularyBuilderWidget:reloadItems()
     DB:batchUpdateItems(self.item_table)
     self.item_table = self:reload_items_callback()
@@ -1512,7 +1684,7 @@ function VocabularyBuilderWidget:onSwipe(arg, ges_ev)
         self:onClose()
     elseif direction == "north" then
         -- open filter
-        onShowFilter(self)
+        self:onShowFilter()
     else -- diagonal swipe
         -- trigger full refresh
         UIManager:setDirty(nil, "full")
