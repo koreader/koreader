@@ -733,38 +733,6 @@ function UIManager:getTopWidget(n)
     return widget
 end
 
---[[--
-Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
-
-Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
-
-NOTE: Will skip over VirtualKeyboard instances, plural, in case there are multiple (because, apparently, we can do that.. ugh).
---]]
-function UIManager:getSecondTopmostWidget()
-    if #self._window_stack < 2 then
-        -- Not enough widgets in the stack, bye!
-        return nil
-    end
-
-    -- Because everything is terrible, you can actually instantiate multiple VirtualKeyboards,
-    -- and they'll stack at the top, so, loop until we get something that *isn't* VK...
-    for i = #self._window_stack - 1, 1, -1 do
-        local widget = self._window_stack[i].widget
-
-        if widget.name then
-            if widget.name ~= "VirtualKeyboard" then
-                return widget.name
-            end
-            -- Meaning if name is set, and is set to VK => continue, as we want the *next* widget.
-            -- I *really* miss the continue keyword, Lua :/.
-        else
-            return widget
-        end
-    end
-
-    return nil
-end
-
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack.
 function UIManager:isSubwidgetShown(widget, max_depth)
     for i = #self._window_stack, 1, -1 do
