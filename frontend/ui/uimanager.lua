@@ -724,10 +724,8 @@ end
 --- Get n.th topmost widget
 function UIManager:getTopWidget(n)
     n = n and n-1 or 0
-    if not self._window_stack[1] then
-        -- No widgets in the stack, bye!
-        return nil
-    elseif #self._window_stack - n < 1 then
+    if #self._window_stack - n < 1 then
+        -- No or not enough widgets in the stack, bye!
         return nil
     end
 

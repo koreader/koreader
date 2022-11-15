@@ -75,7 +75,7 @@ function SortItemWidget:init()
                 w = self.width,
                 h = self.height,
             },
-            HorizontalGroup:new {
+            HorizontalGroup:new{
                 align = "center",
                 CenterContainer:new{
                     dimen = Geom:new{ w = checked_widget:getSize().w },
@@ -146,6 +146,10 @@ function SortWidget:init()
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }
+    if self.dimen.h == Screen:getHeight() then
+        self.covers_footer = true
+    end
+
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }

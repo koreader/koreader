@@ -771,7 +771,7 @@ function ReaderFooter:unscheduleFooterAutoRefresh()
     UIManager:unschedule(self.autoRefreshFooter)
 end
 
-function ReaderFooter:toBeRepainted() -- xxx a better name here
+function ReaderFooter:shouldBeRepainted()
     local n = 1
     local widget = UIManager:getTopWidget(n)
 --[[    while widget do
@@ -814,7 +814,7 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
             -- (We want to avoid the footer to be painted over a widget covering it - we would
             -- be fine refreshing it if the widget is not covering it, but this is hard to
             -- guess from here.)
-            self:onUpdateFooter(self:toBeRepainted())
+            self:onUpdateFooter(self:shouldBeRepainted())
 
             self:rescheduleFooterAutoRefreshIfNeeded() -- schedule (or not) next refresh
         end
@@ -2492,12 +2492,12 @@ end
 -- Used by event handlers that can trip without direct UI interaction...
 function ReaderFooter:maybeUpdateFooter()
     -- ...so we need to avoid stomping over unsuspecting widgets (usually, ScreenSaver).
-    self:onUpdateFooter(self:toBeRepainted())
+    self:onUpdateFooter(self:shouldBeRepainted())
 end
 
 -- is the same as mybeUpdatefooter
 function ReaderFooter:onFrontlightStateChanged()
-    self:onUpdateFooter(self:toBeRepainted())
+    self:onUpdateFooter(self:shouldBeRepainted())
 end
 
 function ReaderFooter:onNetworkConnected()

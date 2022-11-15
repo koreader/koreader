@@ -443,7 +443,6 @@ function ReaderMenu:onShowMenu(tab_index)
     menu_container[1] = main_menu
     -- maintain a reference to menu_container
     self.menu_container = menu_container
-    menu_container.name = "MenuContainer"
     UIManager:show(menu_container)
     return true
 end

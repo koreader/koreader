@@ -23,7 +23,6 @@ local wikipedia_history = nil
 
 -- Wikipedia as a special dictionary
 local ReaderWikipedia = ReaderDictionary:extend{
-    name = "ReaderWikipedia",
     -- identify itself
     is_wiki = true,
     disable_history = G_reader_settings:isTrue("wikipedia_disable_history"),
