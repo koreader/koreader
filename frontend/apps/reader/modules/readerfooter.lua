@@ -794,28 +794,9 @@ function ReaderFooter:toBeRepainted() -- xxx a better name here
     while widget do
         if widget.name == "ReaderUI" then
             return true
---        elseif widget.name == "VirtualKeyboard" then
---            return false
-            elseif widget.covers_fullscreen or widget.covers_footer == true then
+        elseif widget.covers_fullscreen or widget.covers_footer == true then
             -- (e.g. the virtual keyboard sets widget_covers_footer == true)
             return false
-        elseif widget.ignore ~= "height" and widget.covers_footer ~= false then
-            -- widget.ignore == "height" is set in menu, widget.covers_footer is an optional hint for this here,
-            -- sample usage can be found in the AutoDim plugin.
-
-            -- This is just a simple check if any of the topmost widgets paint into the statusbar's y position.
-            -- Better would be to check if any topmost widget rectancle intersects with the footer content.
-            -- @todo: xxx
-            local widget_bottom_coordinate = 0 -- a widget may have no dimension (Hello TrapWidget)
-            if widget.movable then
-                widget_bottom_coordinate = widget.movable.dimen.y + widget.movable.dimen.h
-            elseif widget.dimen then
-                widget_bottom_coordinate = widget.dimen.y + widget.dimen.h
-            end
-            local footer_top_coodinate = self.footer_content.dimen.y
-            if widget_bottom_coordinate >= footer_top_coodinate then
-                return false
-            end
         end
         -- Here we land if the widget is not "ReaderUI", wieget.cover_footer ~= nil and widget.ignore == "height"
         n = n + 1
