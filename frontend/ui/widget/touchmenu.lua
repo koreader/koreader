@@ -656,6 +656,8 @@ function TouchMenu:_recalculatePageLayout()
 end
 
 function TouchMenu:updateItems()
+    UIManager:unschedule(self.updateItems)
+
     local old_dimen = self.dimen and self.dimen:copy()
     self:_recalculatePageLayout()
     self.item_group:clear()
@@ -742,6 +744,8 @@ function TouchMenu:updateItems()
         end
         return refresh_type, refresh_dimen
     end)
+
+    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.updateItems, self)
 end
 
 function TouchMenu:switchMenuTab(tab_num)
@@ -954,6 +958,7 @@ function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
 end
 
 function TouchMenu:onClose()
+    UIManager:unschedule(self.updateItems)
     self:closeMenu()
 end
 
