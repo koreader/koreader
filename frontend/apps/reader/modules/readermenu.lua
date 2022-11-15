@@ -73,13 +73,14 @@ function ReaderMenu:onGesture() end
 function ReaderMenu:registerKeyEvents()
     if Device:hasKeys() then
         if Device:isTouchDevice() then
-            self.key_events.TapShowMenu = { { "Menu" } }
+            self.key_events.PressMenu = { { "Menu" } }
             if Device:hasFewKeys() then
-                self.key_events.TapShowMenu = { { { "Menu", "Right" } } }
+                self.key_events.PressMenu = { { { "Menu", "Right" } } }
             end
         else
-            -- map menu key to only top menu because bottom menu is only
-            -- designed for touch devices
+            -- Map Menu key to top menu only, because the bottom menu is only designed for touch devices.
+            --- @fixme: Is this still the case?
+            ---         (Swapping between top and bottom might not be implemented, though, so it might still be a good idea).
             self.key_events.ShowMenu = { { "Menu" } }
             if Device:hasFewKeys() then
                 self.key_events.ShowMenu = { { { "Menu", "Right" } } }
@@ -433,7 +434,7 @@ function ReaderMenu:onShowMenu(tab_index)
     end
 
     main_menu.close_callback = function()
-        self.ui:handleEvent(Event:new("CloseReaderMenu"))
+        self:onCloseReaderMenu()
     end
 
     main_menu.touch_menu_callback = function ()
@@ -496,7 +497,7 @@ function ReaderMenu:onSwipeShowMenu(ges)
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowMenu", self:_getTabIndexFromLocation(ges)))
+        self:onShowMenu(self:_getTabIndexFromLocation(ges))
         self.ui:handleEvent(Event:new("HandledAsSwipe")) -- cancel any pan scroll made
         return true
     end
@@ -507,13 +508,21 @@ function ReaderMenu:onTapShowMenu(ges)
         if G_reader_settings:nilOrTrue("show_bottom_menu") then
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
-        self.ui:handleEvent(Event:new("ShowMenu", self:_getTabIndexFromLocation(ges)))
+        self:onShowMenu(self:_getTabIndexFromLocation(ges))
         return true
     end
 end
 
+function ReaderMenu:onPressMenu()
+    if G_reader_settings:nilOrTrue("show_bottom_menu") then
+        self.ui:handleEvent(Event:new("ShowConfigMenu"))
+    end
+    self:onShowMenu()
+    return true
+end
+
 function ReaderMenu:onTapCloseMenu()
-    self.ui:handleEvent(Event:new("CloseReaderMenu"))
+    self:onCloseReaderMenu()
     self.ui:handleEvent(Event:new("CloseConfigMenu"))
 end
 
