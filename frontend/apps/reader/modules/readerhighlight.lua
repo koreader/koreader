@@ -1877,9 +1877,6 @@ end
 function ReaderHighlight:startSelection()
     self.highlight_page, self.highlight_idx = self:saveHighlight()
     self.select_mode = true
-    UIManager:show(Notification:new{
-        text = _("Select ending fragment"),
-    })
 end
 
 function ReaderHighlight:extendSelection()
