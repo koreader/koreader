@@ -92,7 +92,7 @@ end
 
 function ReaderCoptListener:shouldHeaderBeRepainted()
     local n = 1
-    local widget = UIManager:getTopWidget(n)
+    local widget = UIManager:getNthTopWidget(n)
     while widget do
         if widget.name == "ReaderUI"  then
             return true
@@ -100,7 +100,7 @@ function ReaderCoptListener:shouldHeaderBeRepainted()
             return false
         end
         n = n + 1
-        widget = UIManager:getTopWidget(n)
+        widget = UIManager:getNthTopWidget(n)
     end
     return false
 end

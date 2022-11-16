@@ -722,7 +722,7 @@ function UIManager:ToggleNightMode(night_mode)
 end
 
 --- Get n.th topmost widget
-function UIManager:getTopWidget(n)
+function UIManager:getNthTopWidget(n)
     n = n and n-1 or 0
     if #self._window_stack - n < 1 then
         -- No or not enough widgets in the stack, bye!

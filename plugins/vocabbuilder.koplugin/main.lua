@@ -64,7 +64,7 @@ local function resetButtonOnLookupWindow()
                 return
             elseif obj.is_wiki then
                 -- make wiki window have the same button_tweak as its presenting dictionary window
-                local widget = UIManager:getTopWidget(2)
+                local widget = UIManager:getNthTopWidget(2)
                 if widget and widget.tweak_buttons_func then
                     widget:tweak_buttons_func(buttons)
                 end

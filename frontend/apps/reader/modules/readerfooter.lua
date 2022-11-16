@@ -773,7 +773,7 @@ end
 
 function ReaderFooter:shouldBeRepainted()
     local n = 1
-    local widget = UIManager:getTopWidget(n)
+    local widget = UIManager:getNthTopWidget(n)
 --[[    while widget do
         print("xxx n=", n, widget.name, widget.dimen)
         for i,v in pairs(widget) do
@@ -785,10 +785,10 @@ function ReaderFooter:shouldBeRepainted()
             end
         end
         n = n + 1
-        widget = UIManager:getTopWidget(n)
+        widget = UIManager:getNthTopWidget(n)
     end
     n = 1
-    widget = UIManager:getTopWidget(n)
+    widget = UIManager:getNthTopWidget(n)
 ]]
 
     while widget do
@@ -800,7 +800,7 @@ function ReaderFooter:shouldBeRepainted()
         end
         -- Here we land if the widget is not "ReaderUI", wieget.cover_footer ~= nil and widget.ignore == "height"
         n = n + 1
-        widget = UIManager:getTopWidget(n)
+        widget = UIManager:getNthTopWidget(n)
     end
     return false
 end
