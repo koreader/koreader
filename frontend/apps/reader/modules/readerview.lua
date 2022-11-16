@@ -225,8 +225,8 @@ function ReaderView:paintTo(bb, x, y)
     if self.footer_visible then
         self.footer:paintTo(bb, x, y)
     end
-    -- paint flipping
-    if self.flipping_visible then
+    -- paint flipping or select mode sign
+    if self.flipping_visible or self.ui.highlight.select_mode then
         self.flipping:paintTo(bb, x, y)
     end
     for _, m in pairs(self.view_modules) do
