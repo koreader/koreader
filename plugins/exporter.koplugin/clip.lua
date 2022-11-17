@@ -242,6 +242,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                                "(.*)",
                                "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
 
+    local orphan_highlight = {}
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
             local clipping = {}
@@ -251,14 +252,22 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             clipping.text = self:getText(item.text)
             clipping.chapter = item.chapter
             clipping.drawer = item.drawer
+            local bookmark_found = false
             for _, bookmark in pairs(bookmarks) do
-                if bookmark.datetime == item.datetime and bookmark.text then
-                    local bookmark_quote = bookmark.text:match(pattern)
-                    if bookmark_quote ~= clipping.text and bookmark.text ~= clipping.text then
-                        -- use modified quoted text or entire bookmark text if it's not a match
-                        clipping.note = bookmark_quote or bookmark.text
+                if bookmark.datetime == item.datetime then
+                    if bookmark.text then
+                        local bookmark_quote = bookmark.text:match(pattern)
+                        if bookmark_quote ~= clipping.text and bookmark.text ~= clipping.text then
+                            -- use modified quoted text or entire bookmark text if it's not a match
+                            clipping.note = bookmark_quote or bookmark.text
+                        end
                     end
+                    bookmark_found = true
+                    break
                 end
+            end
+            if not bookmark_found then
+                table.insert(orphan_highlight, { clipping })
             end
             if item.text == "" and item.pos0 and item.pos1 and
                     item.pos0.x and item.pos0.y and
@@ -274,7 +283,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                 clipping.image = self:getImage(image)
             end
             --- @todo Store chapter info when exporting highlights.
-            if clipping.text and clipping.text ~= "" or clipping.image then
+            if (bookmark_found and clipping.text and clipping.text ~= "") or clipping.image then
                 table.insert(book, { clipping })
             end
         end
@@ -288,6 +297,10 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
     end
     -- Sort clippings by their position in the book.
     table.sort(book, function(v1, v2) return bookmark_indexes[v1[1].time] > bookmark_indexes[v2[1].time] end)
+     -- Place orphans at the end
+    for _, v in ipairs(orphan_highlight) do
+        table.insert(book, v)
+    end
 end
 
 function MyClipping:parseHistoryFile(clippings, history_file, doc_file)
