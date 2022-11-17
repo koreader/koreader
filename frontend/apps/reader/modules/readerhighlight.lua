@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
@@ -249,7 +250,25 @@ function ReaderHighlight:setupTouchZones()
     if not hold_pan_rate then
         hold_pan_rate = Screen.low_pan_rate and 5.0 or 30.0
     end
+    local DTAP_ZONE_TOP_LEFT = G_defaults:readSetting("DTAP_ZONE_TOP_LEFT")
     self.ui:registerTouchZones({
+        {
+            id = "readerhighlight_tap_select_mode",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_TOP_LEFT.x, ratio_y = DTAP_ZONE_TOP_LEFT.y,
+                ratio_w = DTAP_ZONE_TOP_LEFT.w, ratio_h = DTAP_ZONE_TOP_LEFT.h,
+            },
+            overrides = {
+                "readerhighlight_tap",
+                "tap_top_left_corner",
+                "readermenu_ext_tap",
+                "readermenu_tap",
+                "tap_forward",
+                "tap_backward",
+            },
+            handler = function(ges) return self:onTapSelectModeIcon() end
+        },
         {
             id = "readerhighlight_tap",
             ges = "tap",
@@ -594,6 +613,20 @@ end
 
 function ReaderHighlight:onClearHighlight()
     self:clear()
+    return true
+end
+
+function ReaderHighlight:onTapSelectModeIcon()
+    if not self.select_mode then return end
+    UIManager:show(ConfirmBox:new{
+        text = _("You are in select mode.\nTo complete highlighting, long press on the ending word and select Highlight.\nTo exit select mode, tap on the starting highlighted fragment."),
+        ok_text = _("Exit select mode"),
+        cancel_text = _("Close"),
+        ok_callback = function()
+            self.select_mode = false
+            self:deleteHighlight(self.highlight_page, self.highlight_idx)
+        end
+    })
     return true
 end
 
