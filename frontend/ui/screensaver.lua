@@ -19,6 +19,7 @@ local TopContainer = require("ui/widget/container/topcontainer")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local datetime = require("datetime")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -130,7 +131,7 @@ function Screensaver:_calcAverageTimeForPages(pages)
     -- Compare average_time_per_page against itself to make sure it's not nan
     if average_time_per_page and average_time_per_page == average_time_per_page and pages then
         local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
-        sec = util.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
+        sec = datetime.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
     end
     return sec
 end

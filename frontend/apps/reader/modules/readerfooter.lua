@@ -20,8 +20,8 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local datetime = require("datetime")
 local logger = require("logger")
-local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -229,7 +229,7 @@ local footerTextGeneratorMap = {
     time = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].time
-        local clock = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
+        local clock = datetime.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
         if not prefix then
             return clock
         else
@@ -2098,7 +2098,7 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     local average_time_per_page = self:getAvgTimePerPage()
     local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
     if average_time_per_page then
-        sec = util.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
+        sec = datetime.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
     end
     return title .. sec
 end

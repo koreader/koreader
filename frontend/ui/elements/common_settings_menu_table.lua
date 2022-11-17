@@ -91,9 +91,9 @@ common_settings.time = {
             sub_item_table = {
                 {
                     text_func = function()
-                        local util = require('util')
+                        local datetime = require("datetime")
                         -- sample text shows 1:23:45
-                        local duration_format_str = util.secondsToClockDuration("classic", 5025, false)
+                        local duration_format_str = datetime.secondsToClockDuration("classic", 5025, false)
                         return T(_("Classic (%1)"), duration_format_str)
                     end,
                     checked_func = function()
@@ -106,9 +106,9 @@ common_settings.time = {
                 },
                 {
                     text_func = function()
-                        local util = require('util')
+                        local datetime = require("datetime")
                         -- sample text shows 1h23m45s
-                        local duration_format_str = util.secondsToClockDuration("modern", 5025, false)
+                        local duration_format_str = datetime.secondsToClockDuration("modern", 5025, false)
                         return T(_("Modern (%1)"), duration_format_str)
                     end,
                     checked_func = function()
