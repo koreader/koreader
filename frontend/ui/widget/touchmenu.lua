@@ -797,7 +797,7 @@ function TouchMenu:onNextPage()
     elseif self.page == self.page_num then
         self.page = 1
     end
-        self:updateItems()
+    self:updateItems()
     return true
 end
 
