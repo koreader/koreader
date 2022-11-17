@@ -314,6 +314,53 @@ function util.secondsToDate(seconds, twelve_hour_clock)
     return BD.wrap(day) .. " " .. BD.wrap(time)
 end
 
+util.day_names = {
+   Mon = C_("Abbreviated weekday", "Mon"),
+   Tue = C_("Abbreviated weekday", "Tue"),
+   Wed = C_("Abbreviated weekday", "Wed"),
+   Thu = C_("Abbreviated weekday", "Thu"),
+   Fri = C_("Abbreviated weekday", "Fri"),
+   Sat = C_("Abbreviated weekday", "Sat"),
+   Sun = C_("Abbreviated weekday", "Sun"),
+}
+
+util.month_names = {
+    Jan = C_("Abbreviated month name", "Jan"),
+    Feb = C_("Abbreviated month name", "Feb"),
+    Mar = C_("Abbreviated month name", "Mar"),
+    Apr = C_("Abbreviated month name", "Apr"),
+    May = C_("Abbreviated month name", "May"),
+    Jun = C_("Abbreviated month name", "Jun"),
+    Jul = C_("Abbreviated month name", "Jul"),
+    Aug = C_("Abbreviated month name", "Aug"),
+    Sep = C_("Abbreviated month name", "Sep"),
+    Oct = C_("Abbreviated month name", "Oct"),
+    Nov = C_("Abbreviated month name", "Nov"),
+    Dec = C_("Abbreviated month name", "Dec"),
+}
+
+--- Converts timestamp to a string containing date and time
+---- @int date_time as number
+---- @treturn string date_time as string
+function util.getDateTimeString(date_time)
+    date_time = date_time or os.time()
+
+    local wday = os.date("%a", date_time)
+    local month = os.date("%b", date_time)
+    local day = os.date("%d", date_time)
+    local year = os.date("%Y", date_time)
+
+    -- This format string has to be adjusted by translators
+    -- for german the format string would be "%1 %3 %2 %4"
+    local date_string = T(C_("%1 name of day, %2 name of month, %3 day, %4 year", "%1 %2 %3 %4"),
+        util.day_names[wday], util.month_names[month], day, year)
+    local time_string = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
+
+    -- Date and time can be swapped by translators
+    local message_text = T(C_("%1 date, %2 time", "%1 %2"), date_string, time_string)
+    return message_text
+end
+
 --[[--
 Compares values in two different tables.
 
