@@ -553,12 +553,8 @@ function TouchMenu:init()
         face = self.fface,
         text_font_bold = false,
         callback = function()
-            local now_t = os.date("*t")
-            local time = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
-            local message_text = T(_("Current date and time are:\n%1-%2-%3 at %4"),
-                now_t.year, now_t.month, now_t.day, time)
             UIManager:show(InfoMessage:new{
-                text = message_text,
+                text = util.getDateTimeString(),
             })
         end,
         hold_callback = function()
