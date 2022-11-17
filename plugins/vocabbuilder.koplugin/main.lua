@@ -1067,13 +1067,14 @@ function VocabItemWidget:onShowBookAssignment(title_changed_cb)
                 return info.name == book
             end,
             hold_callback = function(sort_item, onSuccess)
+                local book_title = self.item.book_title
                 self.show_parent:showChangeBookTitleDialog(sort_item, function()
                     onSuccess()
-                    if self.item.book_title == info.name then
-                        if book == self.item.book_title then
+                    if book_title == info.name then
+                        if book == book_title then
                             book = sort_item.text
                         end
-                        self.item.book_title = sort_item.text
+                        info.name = sort_item.text
                         if title_changed_cb then title_changed_cb(sort_item.text) end
                     end
                 end)

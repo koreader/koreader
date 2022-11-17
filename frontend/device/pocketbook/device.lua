@@ -192,6 +192,7 @@ function PocketBook:init()
         device = self,
         raw_input = raw_input,
         event_map = setmetatable({
+            [C.KEY_HOME] = "Home",
             [C.KEY_MENU] = "Menu",
             [C.KEY_PREV] = "LPgBack",
             [C.KEY_NEXT] = "LPgFwd",

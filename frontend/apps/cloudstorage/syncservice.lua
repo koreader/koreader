@@ -27,7 +27,6 @@ local SyncService = Menu:extend{
 }
 
 function SyncService:init()
-    self.cs_settings = LuaSettings:open(DataStorage:getSettingsDir().."/cloudstorage.lua")
     self.item_table = self:generateItemTable()
     self.width = Screen:getWidth()
     self.height = Screen:getHeight()
@@ -37,7 +36,7 @@ end
 function SyncService:generateItemTable()
     local item_table = {}
     -- select and/or add server
-    local added_servers = self.cs_settings:readSetting("cs_servers") or {}
+    local added_servers = LuaSettings:open(DataStorage:getSettingsDir().."/cloudstorage.lua"):readSetting("cs_servers") or {}
     for _, server in ipairs(added_servers) do
         if server.type == "dropbox" or server.type == "webdav" then
             local item = {
@@ -73,6 +72,11 @@ function SyncService:generateItemTable()
         bold = true,
         callback = function()
             local cloud_storage = require("apps/cloudstorage/cloudstorage"):new{}
+            local onClose = cloud_storage.onClose
+            cloud_storage.onClose = function(this)
+                onClose(this)
+                self:switchItemTable(nil, self:generateItemTable())
+            end
             UIManager:show(cloud_storage)
         end
     })

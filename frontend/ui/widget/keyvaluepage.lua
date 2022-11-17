@@ -644,8 +644,12 @@ function KeyValuePage:_populateItems()
                     unfit_items_count = total_cut_count
                 end
             elseif total_cut_count == 0 then
-                -- no cross-over, we take the longest key to compute ratio
-                width_ratio = (key_widths[#key_widths] + middle_padding) / frame_internal_width
+                -- no cross-over
+                if key_widths[#key_widths] >= key_w then
+                    width_ratio = (key_widths[#key_widths] + middle_padding) / frame_internal_width
+                else
+                    width_ratio = 1 - value_widths[#value_widths] / frame_internal_width
+                end
                 break
             else
                 unfit_items_count = total_cut_count
