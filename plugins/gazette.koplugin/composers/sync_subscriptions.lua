@@ -11,7 +11,7 @@ local ViewResults = require("composers/view_results")
 
 local SyncSubscriptions = {}
 
-function SyncSubscriptions:sync()
+function SyncSubscriptions:sync(subscriptions_to_sync)
    local Trapper = require("ui/trapper")
    NetworkMgr:runWhenOnline(function()
          Trapper:wrap(function()
@@ -24,7 +24,8 @@ function SyncSubscriptions:sync()
                      Trapper:reset()
                      NetworkMgr:afterWifiAction()
                      ViewResults:listAll()
-                  end
+                  end,
+                  subscriptions_to_sync
                )
          end)
    end)
