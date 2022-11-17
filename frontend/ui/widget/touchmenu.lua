@@ -7,6 +7,7 @@ local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
+local Event = require("ui/event")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -547,9 +548,24 @@ function TouchMenu:init()
         self.page_info_right_chev
     }
     -- group for device info
-    self.time_info = TextWidget:new{
+    self.time_info = Button:new{
         text = "",
         face = self.fface,
+        text_font_bold = false,
+        callback = function()
+            local now_t = os.date("*t")
+            local time = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
+            local message_text = T(_("Current date and time are:\n%1-%2-%3 at %4"),
+                now_t.year, now_t.month, now_t.day, time)
+            UIManager:show(InfoMessage:new{
+                text = message_text,
+            })
+        end,
+        hold_callback = function()
+            UIManager:broadcastEvent(Event:new("ShowBatteryStatistics"))
+        end,
+        bordersize = 0,
+        show_parent = self.show_parent,
     }
     self.device_info = HorizontalGroup:new{
         self.time_info,
