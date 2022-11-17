@@ -619,7 +619,7 @@ end
 function ReaderHighlight:onTapSelectModeIcon()
     if not self.select_mode then return end
     UIManager:show(ConfirmBox:new{
-        text = _("You are in the SELECT mode now.\nTo complete highlighting, long press on the ending part and press the HIGHLIGHT button.\nYou can also exit select mode by tapping on the already highlighted starting part."),
+        text = _("You are currently in SELECT mode.\nTo complete highlighting, long press on the ending part and press the HIGHLIGHT button.\nYou can also exit select mode by tapping on the already highlighted starting part."),
         ok_text = _("Exit select mode"),
         cancel_text = _("Close"),
         ok_callback = function()
