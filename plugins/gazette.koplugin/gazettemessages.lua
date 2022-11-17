@@ -9,6 +9,7 @@ GazetteMessages.MENU_LIST_PREVIOUS_RESULTS = _("View last sync results")
 GazetteMessages.MENU_MANAGE_SUBSCRIPTIONS = _("Manage subscriptions")
 GazetteMessages.MENU_SETTINGS = _("Settings")
 
+GazetteMessages.SUBSCRIPTION_ACTION_DIALOG_SYNC = _("Sync")
 GazetteMessages.SUBSCRIPTION_ACTION_DIALOG_EDIT = _("Edit")
 GazetteMessages.SUBSCRIPTION_ACTION_DIALOG_DELETE = _("Delete")
 GazetteMessages.SUBSCRIPTION_ACTION_DIALOG_CLEAR_RESULTS = _("Clear results")
