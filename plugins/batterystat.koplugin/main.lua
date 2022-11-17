@@ -6,9 +6,9 @@ local LuaSettings = require("luasettings")
 local PowerD = require("device"):getPowerDevice()
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local datetime = require("datetime")
 local dbg = require("dbg")
 local time = require("ui/time")
-local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -81,7 +81,7 @@ end
 local function duration(number)
     local duration_fmt = G_reader_settings:readSetting("duration_format", "classic")
     return type(number) ~= "number" and number or
-        util.secondsToClockDuration(duration_fmt, number, true, true, true)
+        datetime.secondsToClockDuration(duration_fmt, number, true, true, true)
 end
 
 function Usage:dump(kv_pairs, id)

@@ -17,6 +17,7 @@ local SQ3 = require("lua-ljsqlite3/init")
 local SyncService = require("frontend/apps/cloudstorage/syncservice")
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
+local datetime = require("datetime")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -73,43 +74,6 @@ local ReaderStatistics = Widget:extend{
     avg_time = nil,
     page_stat = nil, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
     data = nil, -- table
-}
-
-local weekDays = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" } -- in Lua wday order
-
-local shortDayOfWeekTranslation = {
-    ["Mon"] = _("Mon"),
-    ["Tue"] = _("Tue"),
-    ["Wed"] = _("Wed"),
-    ["Thu"] = _("Thu"),
-    ["Fri"] = _("Fri"),
-    ["Sat"] = _("Sat"),
-    ["Sun"] = _("Sun"),
-}
-
-local longDayOfWeekTranslation = {
-    ["Mon"] = _("Monday"),
-    ["Tue"] = _("Tuesday"),
-    ["Wed"] = _("Wednesday"),
-    ["Thu"] = _("Thursday"),
-    ["Fri"] = _("Friday"),
-    ["Sat"] = _("Saturday"),
-    ["Sun"] = _("Sunday"),
-}
-
-local monthTranslation = {
-    ["January"] = _("January"),
-    ["February"] = _("February"),
-    ["March"] = _("March"),
-    ["April"] = _("April"),
-    ["May"] = _("May"),
-    ["June"] = _("June"),
-    ["July"] = _("July"),
-    ["August"] = _("August"),
-    ["September"] = _("September"),
-    ["October"] = _("October"),
-    ["November"] = _("November"),
-    ["December"] = _("December"),
 }
 
 function ReaderStatistics:isDocless()
@@ -1023,26 +987,26 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     {
                         text_func = function()
                             return T(_("Calendar weeks start on %1"),
-                                longDayOfWeekTranslation[weekDays[self.settings.calendar_start_day_of_week]])
+                                datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[self.settings.calendar_start_day_of_week]])
                         end,
                         sub_item_table = {
                             { -- Friday (Bangladesh and Maldives)
-                                text = longDayOfWeekTranslation[weekDays[6]],
+                                text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[6]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 6 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 6 end
                             },
                             { -- Saturday (some Middle East countries)
-                                text = longDayOfWeekTranslation[weekDays[7]],
+                                text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[7]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 7 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 7 end
                             },
                             { -- Sunday
-                                text = longDayOfWeekTranslation[weekDays[1]],
+                                text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[1]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 1 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 1 end
                             },
                             { -- Monday
-                                text = longDayOfWeekTranslation[weekDays[2]],
+                                text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[2]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 2 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 2 end
                             },
@@ -1491,27 +1455,27 @@ function ReaderStatistics:getCurrentStat()
     return {
         -- Global statistics (may consider other books than current book)
         -- since last resume
-        { _("Time spent reading this session"), util.secondsToClockDuration(user_duration_format, current_duration, false) },
+        { _("Time spent reading this session"), datetime.secondsToClockDuration(user_duration_format, current_duration, false) },
         { _("Pages read this session"), tonumber(current_pages) },
         -- today
-        { _("Time spent reading today"), util.secondsToClockDuration(user_duration_format, today_duration, false) },
+        { _("Time spent reading today"), datetime.secondsToClockDuration(user_duration_format, today_duration, false) },
         { _("Pages read today"), tonumber(today_pages), separator = true },
         -- Current book statistics
         -- Includes re-reads
-        { _("Total time spent on this book"), util.secondsToClockDuration(user_duration_format, total_time_book, false) },
+        { _("Total time spent on this book"), datetime.secondsToClockDuration(user_duration_format, total_time_book, false) },
         -- Capped to self.settings.max_sec per distinct page
-        { _("Time spent reading this book"), util.secondsToClockDuration(user_duration_format, book_read_time, false) },
+        { _("Time spent reading this book"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false) },
         -- per days
         { _("Reading started"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
         { _("Days reading this book"), tonumber(total_days) },
-        { _("Average time per day"), util.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false) },
+        { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false) },
         -- per page (% read)
-        { _("Average time per page"), util.secondsToClockDuration(user_duration_format, self.avg_time, false) },
+        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, self.avg_time, false) },
         { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/self.data.pages)) },
         -- current page (% completed)
         { _("Current page/Total pages"), string.format("%d/%d (%d%%)", self.curr_page, self.data.pages, Math.round(100*self.curr_page/self.data.pages)) },
         -- estimation, from current page to end of book
-        { _("Estimated time to read"), estimates_valid and util.secondsToClockDuration(user_duration_format, time_to_read, false) or _("N/A") },
+        { _("Estimated time to read"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false) or _("N/A") },
         { _("Estimated reading finished"), estimates_valid and
             T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read)
             or _("N/A") },
@@ -1612,10 +1576,10 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Reading started"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
         { _("Last read"), os.date("%Y-%m-%d (%H:%M)", tonumber(last_open))},
         { _("Days reading this book"), tonumber(total_days) },
-        { _("Total time spent on this book"), util.secondsToClockDuration(user_duration_format, total_time_book, false) },
-        { _("Time spent reading this book"), util.secondsToClockDuration(user_duration_format, book_read_time, false) },
-        { _("Average time per day"), util.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false) },
-        { _("Average time per page"), util.secondsToClockDuration(user_duration_format, avg_time_per_page, false) },
+        { _("Total time spent on this book"), datetime.secondsToClockDuration(user_duration_format, total_time_book, false) },
+        { _("Time spent reading this book"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false) },
+        { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false) },
+        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, avg_time_per_page, false) },
         { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/pages)) },
         { _("Last read page/Total pages"), string.format("%d/%d (%d%%)", last_page, pages, Math.round(100*last_page/pages)) },
         { _("Highlights"), highlights, separator = true },
@@ -1813,13 +1777,13 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
         if ptype == "daily_weekday" then
             date_text = string.format("%s (%s)",
                 os.date("%Y-%m-%d", timestamp),
-                shortDayOfWeekTranslation[os.date("%a", timestamp)])
+                datetime.shortDayOfWeekTranslation[os.date("%a", timestamp)])
         elseif ptype == "daily" then
             date_text = result_book[1][i]
         elseif ptype == "weekly" then
             date_text = T(_("%1 Week %2"), os.date("%Y", timestamp), os.date(" %W", timestamp))
         elseif ptype == "monthly" then
-            date_text = monthTranslation[os.date("%B", timestamp)] .. os.date(" %Y", timestamp)
+            date_text = datetime.longMonthTranslation[os.date("%B", timestamp)] .. os.date(" %Y", timestamp)
         else
             date_text = result_book[1][i]
         end
@@ -1839,7 +1803,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
             local stop_month = os.time{year=year_end, month=month_end, day=1, hour=0, min=0 }
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
                 callback = function()
                     self:callbackMonthly(start_month, stop_month, date_text, book_mode)
                 end,
@@ -1853,7 +1817,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
             begin_week = begin_week - weekday * 86400
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
                 callback = function()
                     self:callbackWeekly(begin_week, begin_week + 7 * 86400, date_text, book_mode)
                 end,
@@ -1864,7 +1828,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
                 - 60 * tonumber(string.sub(time_book,3,4)) - tonumber(string.sub(time_book,5,6))
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
                 callback = function()
                     self:callbackDaily(begin_day, begin_day + 86400, date_text)
                 end,
@@ -1905,7 +1869,7 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
             day=string.sub(result_book[1][i],9,10), hour=0, min=0, sec=0 }
         table.insert(results, {
             result_book[1][i],
-            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
+            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
             callback = function()
                 local kv = self.kv
                 UIManager:close(kv)
@@ -1949,7 +1913,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
     for i=1, #result_book.title do
         table.insert(results, {
             result_book[1][i],
-            T(_("%1 (%2)"), util.secondsToClockDuration(user_duration_format, tonumber(result_book[2][i]), false), tonumber(result_book[3][i])),
+            T(_("%1 (%2)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[2][i]), false), tonumber(result_book[3][i])),
             book_id = tonumber(result_book[4][i]),
             callback = function()
                 local kv = self.kv
@@ -2056,7 +2020,7 @@ function ReaderStatistics:getDatesForBook(id_book)
     for i=1, #result_book.dates do
         table.insert(results, {
             result_book[1][i],
-            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
+            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
             hold_callback = function(kv_page, kv_item)
                 self:resetStatsForBookForPeriod(id_book, result_book[4][i], result_book[5][i], result_book[1][i], function()
                     kv_page:removeKeyValueItem(kv_item) -- Reset, refresh what's displayed
@@ -2155,7 +2119,7 @@ function ReaderStatistics:getTotalStats()
         end
         table.insert(total_stats, {
             book_title,
-            util.secondsToClockDuration(user_duration_format, total_time_book, false),
+            datetime.secondsToClockDuration(user_duration_format, total_time_book, false),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
@@ -2176,7 +2140,7 @@ function ReaderStatistics:getTotalStats()
     end
     conn:close()
 
-    return T(_("Total time spent reading: %1"), util.secondsToClockDuration(user_duration_format, total_books_time, false)), total_stats
+    return T(_("Total time spent reading: %1"), datetime.secondsToClockDuration(user_duration_format, total_books_time, false)), total_stats
 end
 
 function ReaderStatistics:genResetBookSubItemTable()
@@ -2256,7 +2220,7 @@ function ReaderStatistics:resetPerBook()
         if id_book ~= self.id_curr_book then
             table.insert(total_stats, {
                 book_title,
-                util.secondsToClockDuration(user_duration_format, total_time_book, false),
+                datetime.secondsToClockDuration(user_duration_format, total_time_book, false),
                 id_book,
                 callback = function(kv_page, kv_item)
                     UIManager:show(ConfirmBox:new{
@@ -2599,9 +2563,9 @@ function ReaderStatistics:onShowCalendarView()
     local CalendarView = require("calendarview")
     UIManager:show(CalendarView:new{
         reader_statistics = self,
-        monthTranslation = monthTranslation,
-        shortDayOfWeekTranslation = shortDayOfWeekTranslation,
-        longDayOfWeekTranslation = longDayOfWeekTranslation,
+        monthTranslation = datetime.longMonthTranslation,
+        shortDayOfWeekTranslation = datetime.shortDayOfWeekTranslation,
+        longDayOfWeekTranslation = datetime.shortDayOfWeekToLongTranslation,
         start_day_of_week = self.settings.calendar_start_day_of_week,
         nb_book_spans = self.settings.calendar_nb_book_spans,
         show_hourly_histogram = self.settings.calendar_show_histogram,
@@ -2616,7 +2580,7 @@ function ReaderStatistics:onShowCalendarDayView()
     local title_callback = function(this)
         local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 03:00 to determine date (summer time change)
         local date = os.date("*t", this.day_ts + 10800)
-        return string.format("%s (%s)", day, longDayOfWeekTranslation[CalendarView.weekdays[date.wday]])
+        return string.format("%s (%s)", day, datetime.longDayOfWeekTranslation[CalendarView.weekdays[date.wday]])
     end
     CalendarView:showCalendarDayView(self, title_callback)
 end

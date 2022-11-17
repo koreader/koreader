@@ -3,7 +3,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
-local util = require("util")
+local datetime = require("datetime")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -70,7 +70,7 @@ function ReadTimer:addToMainMenu(menu_items)
             if self:scheduled() then
                 local user_duration_format = G_reader_settings:readSetting("duration_format")
                 return T(_("Read timer (%1)"),
-                    util.secondsToClockDuration(user_duration_format, self:remaining(), false))
+                    datetime.secondsToClockDuration(user_duration_format, self:remaining(), false))
             else
                 return _("Read timer")
             end
@@ -107,7 +107,7 @@ function ReadTimer:addToMainMenu(menu_items)
                                     -- @translators %1:%2 is a clock time (HH:MM), %3 is a duration
                                     text = T(_("Timer set for %1:%2.\n\nThat's %3 from now."),
                                         string.format("%02d", time.hour), string.format("%02d", time.min),
-                                        util.secondsToClockDuration(user_duration_format, seconds, false)),
+                                        datetime.secondsToClockDuration(user_duration_format, seconds, false)),
                                     timeout = 5,
                                 })
                             else
@@ -151,7 +151,7 @@ function ReadTimer:addToMainMenu(menu_items)
                                 UIManager:show(InfoMessage:new{
                                     -- @translators This is a duration
                                     text = T(_("Timer will expire in %1."),
-                                             util.secondsToClockDuration(user_duration_format, seconds, true)),
+                                             datetime.secondsToClockDuration(user_duration_format, seconds, true)),
                                     timeout = 5,
                                 })
                                 remain_time = {time.hour, time.min}

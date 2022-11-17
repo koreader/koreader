@@ -6,15 +6,15 @@ if not Device:canSuspend() then
 end
 
 local Event = require("ui/event")
+local Math = require("optmath")
 local NetworkMgr = require("ui/network/manager")
 local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local datetime = require("datetime")
 local logger = require("logger")
-local util = require("util")
 local time = require("ui/time")
 local _ = require("gettext")
-local Math = require("optmath")
 local T = require("ffi/util").template
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
@@ -427,14 +427,14 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
                 self:_start()
             end
             if touchmenu_instance then touchmenu_instance:updateItems() end
-            local time_string = util.secondsToClockDuration("modern", self[setting],
+            local time_string = datetime.secondsToClockDuration("modern", self[setting],
                 time_scale == 2 or time_scale == 1, true, true)
             UIManager:show(InfoMessage:new{
                 text = T(_("%1: %2"), title, time_string),
                 timeout = 3,
             })
         end,
-        default_value = util.secondsToClockDuration("modern", default_value,
+        default_value = datetime.secondsToClockDuration("modern", default_value,
             time_scale == 2 or time_scale == 1, true, true),
         default_callback = function()
             local day, hour, min, sec -- luacheck: ignore 431
@@ -481,7 +481,7 @@ function AutoSuspend:addToMainMenu(menu_items)
         end,
         text_func = function()
             if self.auto_suspend_timeout_seconds and self.auto_suspend_timeout_seconds > 0 then
-                local time_string = util.secondsToClockDuration("modern",
+                local time_string = datetime.secondsToClockDuration("modern",
                     self.auto_suspend_timeout_seconds, true, true, true)
                 return T(_("Autosuspend timeout: %1"), time_string)
             else
@@ -507,7 +507,7 @@ function AutoSuspend:addToMainMenu(menu_items)
             end,
             text_func = function()
                 if self.autoshutdown_timeout_seconds and self.autoshutdown_timeout_seconds > 0 then
-                    local time_string = util.secondsToClockDuration("modern", self.autoshutdown_timeout_seconds,
+                    local time_string = datetime.secondsToClockDuration("modern", self.autoshutdown_timeout_seconds,
                         true, true, true)
                     return T(_("Autoshutdown timeout: %1"), time_string)
                 else
@@ -546,7 +546,7 @@ Upon user input, the device needs a certain amount of time to wake up. Generally
             end,
             text_func = function()
                 if self.auto_standby_timeout_seconds and self.auto_standby_timeout_seconds > 0 then
-                    local time_string = util.secondsToClockDuration("modern", self.auto_standby_timeout_seconds,
+                    local time_string = datetime.secondsToClockDuration("modern", self.auto_standby_timeout_seconds,
                         false, true, true, true)
                     return T(_("Autostandby timeout: %1"), time_string)
                 else

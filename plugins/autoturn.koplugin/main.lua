@@ -3,9 +3,9 @@ local Event = require("ui/event")
 local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local datetime = require("datetime")
 local logger = require("logger")
 local time = require("ui/time")
-local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -67,7 +67,7 @@ function AutoTurn:_start()
 
         local text
         if self.autoturn_distance == 1 then
-            local time_string = util.secondsToClockDuration("modern", self.autoturn_sec, false, true, true, true)
+            local time_string = datetime.secondsToClockDuration("modern", self.autoturn_sec, false, true, true, true)
             text = T(_("Autoturn is now active and will automatically turn the page every %1."), time_string)
         else
             text = T(_("Autoturn is now active and will automatically scroll %1 % of the page every %2 seconds."),
@@ -141,7 +141,7 @@ function AutoTurn:addToMainMenu(menu_items)
     menu_items.autoturn = {
         sorting_hint = "navi",
         text_func = function()
-            local time_string = util.secondsToClockDuration("modern", self.autoturn_sec, false, true, true, true)
+            local time_string = datetime.secondsToClockDuration("modern", self.autoturn_sec, false, true, true, true)
             return self:_enabled() and T(_("Autoturn: %1"), time_string) or _("Autoturn")
         end,
         checked_func = function() return self:_enabled() end,

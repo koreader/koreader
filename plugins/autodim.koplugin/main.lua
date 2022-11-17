@@ -10,8 +10,8 @@ local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TrapWidget = require("ui/widget/trapwidget")
+local datetime = require("datetime")
 local time = require("ui/time")
-local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local Powerd = Device.powerd
@@ -55,7 +55,7 @@ function AutoDim:getAutoDimMenu()
                 text_func = function()
                     return self.autodim_starttime_m <= 0 and _("Idle time for dimmer") or
                     T(_("Idle time for dimmer: %1"),
-                        util.secondsToClockDuration("modern", self.autodim_starttime_m * 60, false, true, false, true))
+                        datetime.secondsToClockDuration("modern", self.autodim_starttime_m * 60, false, true, false, true))
                 end,
                 checked_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
@@ -94,7 +94,7 @@ function AutoDim:getAutoDimMenu()
             {
                 text_func = function()
                     return T(_("Dimmer duration: %1"),
-                        util.secondsToClockDuration("modern", self.autodim_duration_s, false, true, false, true))
+                        datetime.secondsToClockDuration("modern", self.autodim_duration_s, false, true, false, true))
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
