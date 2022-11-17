@@ -777,11 +777,10 @@ function ReaderFooter:shouldBeRepainted()
     while widget do
         if widget.name == "ReaderUI" then
             return true
-        elseif widget.covers_fullscreen or widget.covers_footer == true then
+        elseif widget.covers_fullscreen or widget.covers_footer then
             -- (e.g. the virtual keyboard sets widget_covers_footer == true)
             return false
         end
-        -- Here we land if the widget is not "ReaderUI", wieget.cover_footer ~= nil and widget.ignore == "height"
         n = n + 1
         widget = UIManager:getNthTopWidget(n)
     end
@@ -796,7 +795,7 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
             -- (We want to avoid the footer to be painted over a widget covering it - we would
             -- be fine refreshing it if the widget is not covering it, but this is hard to
             -- guess from here.)
-            self:onUpdateFooter(self:shouldBeRepainted())
+            self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
 
             self:rescheduleFooterAutoRefreshIfNeeded() -- schedule (or not) next refresh
         end
@@ -2474,12 +2473,12 @@ end
 -- Used by event handlers that can trip without direct UI interaction...
 function ReaderFooter:maybeUpdateFooter()
     -- ...so we need to avoid stomping over unsuspecting widgets (usually, ScreenSaver).
-    self:onUpdateFooter(self:shouldBeRepainted())
+    self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
 end
 
--- is the same as mybeUpdatefooter
+-- is the same as mybeUpdateFooter
 function ReaderFooter:onFrontlightStateChanged()
-    self:onUpdateFooter(self:shouldBeRepainted())
+    self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
 end
 
 function ReaderFooter:onNetworkConnected()
