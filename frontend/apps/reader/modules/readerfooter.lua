@@ -774,23 +774,6 @@ end
 function ReaderFooter:shouldBeRepainted()
     local n = 1
     local widget = UIManager:getNthTopWidget(n)
---[[    while widget do
-        print("xxx n=", n, widget.name, widget.dimen)
-        for i,v in pairs(widget) do
-            print("xxx n-", i, v)
-        end
-        if widget.movable then
-            for i,v in pairs(widget.movable) do
-                print("xxx movable", i, v)
-            end
-        end
-        n = n + 1
-        widget = UIManager:getNthTopWidget(n)
-    end
-    n = 1
-    widget = UIManager:getNthTopWidget(n)
-]]
-
     while widget do
         if widget.name == "ReaderUI" then
             return true
@@ -804,7 +787,6 @@ function ReaderFooter:shouldBeRepainted()
     end
     return false
 end
-
 
 function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
     if not self.autoRefreshFooter then
