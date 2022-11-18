@@ -561,7 +561,9 @@ local PocketBook632 = PocketBook:extend{
 local PocketBook633 = PocketBook:extend{
     model = "PBColor",
     display_dpi = 300,
+    color_saturation = 1.5,
     hasColorScreen = yes,
+    canHWDither = yes, -- Adjust color saturation with inkview
     canUseCBB = no, -- 24bpp
     isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
@@ -625,7 +627,9 @@ local PocketBook740_2 = PocketBook:extend{
 local PocketBook741 = PocketBook:extend{
     model = "PBInkPadColor",
     display_dpi = 300,
+    color_saturation = 1.5,
     hasColorScreen = yes,
+    canHWDither = yes, -- Adjust color saturation with inkview
     canUseCBB = no, -- 24bpp
     isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
@@ -640,7 +644,9 @@ end
 local PocketBookColorLux = PocketBook:extend{
     model = "PBColorLux",
     display_dpi = 125,
+    color_saturation = 1.5,
     hasColorScreen = yes,
+    canHWDither = yes, -- Adjust color saturation with inkview
     canUseCBB = no, -- 24bpp
 }
 function PocketBookColorLux:_model_init()
