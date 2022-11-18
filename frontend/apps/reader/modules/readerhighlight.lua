@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
@@ -249,7 +250,25 @@ function ReaderHighlight:setupTouchZones()
     if not hold_pan_rate then
         hold_pan_rate = Screen.low_pan_rate and 5.0 or 30.0
     end
+    local DTAP_ZONE_TOP_LEFT = G_defaults:readSetting("DTAP_ZONE_TOP_LEFT")
     self.ui:registerTouchZones({
+        {
+            id = "readerhighlight_tap_select_mode",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_TOP_LEFT.x, ratio_y = DTAP_ZONE_TOP_LEFT.y,
+                ratio_w = DTAP_ZONE_TOP_LEFT.w, ratio_h = DTAP_ZONE_TOP_LEFT.h,
+            },
+            overrides = {
+                "readerhighlight_tap",
+                "tap_top_left_corner",
+                "readermenu_ext_tap",
+                "readermenu_tap",
+                "tap_forward",
+                "tap_backward",
+            },
+            handler = function(ges) return self:onTapSelectModeIcon() end
+        },
         {
             id = "readerhighlight_tap",
             ges = "tap",
@@ -453,37 +472,6 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Long-press on text"),
         sub_item_table = {
             {
-                text_func = function()
-                    return T(_("Highlight long-press interval: %1 s"),
-                        G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
-                end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local items = SpinWidget:new{
-                        title_text = _("Highlight long-press interval"),
-                        info_text = _([[
-If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will not be triggered.
-
-The interval value is in seconds and can range from 3 to 20 seconds.]]),
-                        width = math.floor(Screen:getWidth() * 0.75),
-                        value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
-                        value_min = 3,
-                        value_max = 20,
-                        value_step = 1,
-                        value_hold_step = 5,
-                        unit = C_("Time", "s"),
-                        ok_text = _("Set interval"),
-                        default_value = 3,
-                        callback = function(spin)
-                            G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end
-                    }
-                    UIManager:show(items)
-                end,
-            },
-            {
                 text = _("Dictionary on single word selection"),
                 checked_func = function()
                     return not self.view.highlight.disabled and G_reader_settings:nilOrFalse("highlight_action_on_single_word")
@@ -510,6 +498,35 @@ The interval value is in seconds and can range from 3 to 20 seconds.]]),
             end,
         })
     end
+    table.insert(menu_items.long_press.sub_item_table, {
+        text_func = function()
+            return T(_("Highlight very-long-press interval: %1 s"),
+                G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
+        end,
+        keep_menu_open = true,
+        callback = function(touchmenu_instance)
+            local SpinWidget = require("ui/widget/spinwidget")
+            local items = SpinWidget:new{
+                title_text = _("Highlight very-long-press interval"),
+                info_text = _("If a long-press is not released in this interval, it is considered a very-long-press. On document text, single word selection will not be triggered."),
+                width = math.floor(Screen:getWidth() * 0.75),
+                value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
+                value_min = 2.5,
+                value_max = 20,
+                value_step = 0.1,
+                value_hold_step = 0.5,
+                unit = C_("Time", "s"),
+                precision = "%0.1f",
+                ok_text = _("Set interval"),
+                default_value = 3,
+                callback = function(spin)
+                    G_reader_settings:saveSetting("highlight_long_hold_threshold_s", spin.value)
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end
+            }
+            UIManager:show(items)
+        end,
+    })
     -- long_press menu is under taps_and_gestures menu which is not available for non touch device
     -- Clone long_press menu and change label making much meaning for non touch devices
     if not Device:isTouchDevice() and Device:hasDPad() then
@@ -597,6 +614,20 @@ function ReaderHighlight:onClearHighlight()
     return true
 end
 
+function ReaderHighlight:onTapSelectModeIcon()
+    if not self.select_mode then return end
+    UIManager:show(ConfirmBox:new{
+        text = _("You are currently in SELECT mode.\nTo finish highlighting, long press where the highlight should end and press the HIGHLIGHT button.\nYou can also exit select mode by tapping on the start of the highlight."),
+        ok_text = _("Exit select mode"),
+        cancel_text = _("Close"),
+        ok_callback = function()
+            self.select_mode = false
+            self:deleteHighlight(self.highlight_page, self.highlight_idx)
+        end
+    })
+    return true
+end
+
 function ReaderHighlight:onTap(_, ges)
     -- We only actually need to clear if we have something to clear in the first place.
     -- (We mainly want to avoid CRe's clearSelection,
@@ -604,7 +635,7 @@ function ReaderHighlight:onTap(_, ges)
     -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway.
     local cleared = self.hold_pos and self:clear()
     -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
-    if not cleared and ges and not self.select_mode then
+    if not cleared and ges then
         if self.ui.document.info.has_pages then
             return self:onTapPageSavedHighlight(ges)
         else
@@ -776,6 +807,13 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
 end
 
 function ReaderHighlight:onShowHighlightNoteOrDialog(page, index)
+    if self.select_mode then
+        if page ~= self.highlight_page or index ~= self.highlight_idx then return end
+        -- tap on the first fragment: abort select mode, clear highlight
+        self.select_mode = false
+        self:deleteHighlight(page, index)
+        return true
+    end
     local item = self.view.highlight.saved[page][index]
     local bookmark_note = self.ui.bookmark:getBookmarkNote({
         page = self.ui.document.info.has_pages and item.pos0.page or item.pos0,
@@ -1870,9 +1908,6 @@ end
 function ReaderHighlight:startSelection()
     self.highlight_page, self.highlight_idx = self:saveHighlight()
     self.select_mode = true
-    UIManager:show(Notification:new{
-        text = _("Select ending fragment"),
-    })
 end
 
 function ReaderHighlight:extendSelection()

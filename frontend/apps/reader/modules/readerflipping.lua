@@ -10,14 +10,21 @@ local ReaderFlipping = WidgetContainer:extend{
 
 function ReaderFlipping:init()
     local icon_size = Screen:scaleBySize(32)
-    local widget = IconWidget:new{
+    self.flipping_widget = IconWidget:new{
         icon = "book.opened",
         width = icon_size,
         height = icon_size,
     }
+    -- Re-use this widget to show an indicator when we are in select mode
+    self.select_mode_widget = IconWidget:new{
+        icon = "format-quote-close",
+        width = icon_size,
+        height = icon_size,
+        alpha = true,
+    }
     self[1] = LeftContainer:new{
-        dimen = Geom:new{w = Screen:getWidth(), h = widget:getSize().h},
-        widget,
+        dimen = Geom:new{w = Screen:getWidth(), h = self.flipping_widget:getSize().h},
+        self.flipping_widget,
     }
     self:resetLayout()
 end
@@ -28,6 +35,19 @@ function ReaderFlipping:resetLayout()
     self._last_screen_width = new_screen_width
 
     self[1].dimen.w = new_screen_width
+end
+
+function ReaderFlipping:paintTo(bb, x, y)
+    if self.ui.highlight.select_mode then
+        if self[1][1] ~= self.select_mode_widget then
+            self[1][1] = self.select_mode_widget
+        end
+    else
+        if self[1][1] ~= self.flipping_widget then
+            self[1][1] = self.flipping_widget
+        end
+    end
+    WidgetContainer.paintTo(self, bb, x, y)
 end
 
 return ReaderFlipping
