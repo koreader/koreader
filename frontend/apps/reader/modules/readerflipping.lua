@@ -17,11 +17,10 @@ function ReaderFlipping:init()
     }
     -- Re-use this widget to show an indicator when we are in select mode
     self.select_mode_widget = IconWidget:new{
-        icon = "texture-box",
+        icon = "format-quote-close",
         width = icon_size,
         height = icon_size,
         alpha = true,
-        rotation_angle = 90,
     }
     self[1] = LeftContainer:new{
         dimen = Geom:new{w = Screen:getWidth(), h = self.flipping_widget:getSize().h},
