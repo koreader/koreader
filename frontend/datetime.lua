@@ -9,35 +9,57 @@ local T = BaseUtil.template
 
 local datetime = {}
 
-datetime.day_names = {
-   Mon = C_("Abbreviated weekday", "Mon"),
-   Tue = C_("Abbreviated weekday", "Tue"),
-   Wed = C_("Abbreviated weekday", "Wed"),
-   Thu = C_("Abbreviated weekday", "Thu"),
-   Fri = C_("Abbreviated weekday", "Fri"),
-   Sat = C_("Abbreviated weekday", "Sat"),
-   Sun = C_("Abbreviated weekday", "Sun"),
+datetime.weekDays = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" } -- in Lua wday order
+
+datetime.shortMonthTranslation = {
+    ["Jan"] = C_("Abbreviated month name", "Jan"),
+    ["Feb"] = C_("Abbreviated month name", "Feb"),
+    ["Mar"] = C_("Abbreviated month name", "Mar"),
+    ["Apr"] = C_("Abbreviated month name", "Apr"),
+    ["May"] = C_("Abbreviated month name", "May"),
+    ["Jun"] = C_("Abbreviated month name", "Jun"),
+    ["Jul"] = C_("Abbreviated month name", "Jul"),
+    ["Aug"] = C_("Abbreviated month name", "Aug"),
+    ["Sep"] = C_("Abbreviated month name", "Sep"),
+    ["Oct"] = C_("Abbreviated month name", "Oct"),
+    ["Nov"] = C_("Abbreviated month name", "Nov"),
+    ["Dec"] = C_("Abbreviated month name", "Dec"),
 }
 
-datetime.month_names = {
-    Jan = C_("Abbreviated month name", "Jan"),
-    Feb = C_("Abbreviated month name", "Feb"),
-    Mar = C_("Abbreviated month name", "Mar"),
-    Apr = C_("Abbreviated month name", "Apr"),
-    May = C_("Abbreviated month name", "May"),
-    Jun = C_("Abbreviated month name", "Jun"),
-    Jul = C_("Abbreviated month name", "Jul"),
-    Aug = C_("Abbreviated month name", "Aug"),
-    Sep = C_("Abbreviated month name", "Sep"),
-    Oct = C_("Abbreviated month name", "Oct"),
-    Nov = C_("Abbreviated month name", "Nov"),
-    Dec = C_("Abbreviated month name", "Dec"),
+datetime.longMonthTranslation = {
+    ["January"] = _("January"),
+    ["February"] = _("February"),
+    ["March"] = _("March"),
+    ["April"] = _("April"),
+    ["May"] = _("May"),
+    ["June"] = _("June"),
+    ["July"] = _("July"),
+    ["August"] = _("August"),
+    ["September"] = _("September"),
+    ["October"] = _("October"),
+    ["November"] = _("November"),
+    ["December"] = _("December"),
 }
 
--- Stupid helper for the duration stuff
-local function passthrough(n)
-    return n
-end
+datetime.shortDayOfWeekTranslation = {
+   ["Mon"] = _("Mon"),
+   ["Tue"] = _("Tue"),
+   ["Wed"] = _("Wed"),
+   ["Thu"] = _("Thu"),
+   ["Fri"] = _("Fri"),
+   ["Sat"] = _("Sat"),
+   ["Sun"] = _("Sun"),
+}
+
+datetime.shortDayOfWeekToLongTranslation = {
+    ["Mon"] = _("Monday"),
+    ["Tue"] = _("Tuesday"),
+    ["Wed"] = _("Wednesday"),
+    ["Thu"] = _("Thursday"),
+    ["Fri"] = _("Friday"),
+    ["Sat"] = _("Saturday"),
+    ["Sun"] = _("Sunday"),
+}
 
 --[[--
 Converts seconds to a clock string.
@@ -62,7 +84,7 @@ function datetime.secondsToClock(seconds, withoutSeconds, withDays)
             return "00:00:00"
         end
     else
-        local round = withoutSeconds and require("optmath").round or passthrough
+        local round = withoutSeconds and require("optmath").round or function(n) return n end
         local days = "0"
         local hours
         if withDays then
@@ -242,15 +264,15 @@ end
 function datetime.secondsToDate(seconds, use_locale)
     seconds = seconds or os.time()
     if use_locale then
-        local wday = os.date("%a", seconds)
+        local wday  = os.date("%a", seconds)
         local month = os.date("%b", seconds)
-        local day = os.date("%d", seconds)
-        local year = os.date("%Y", seconds)
+        local day   = os.date("%d", seconds)
+        local year  = os.date("%Y", seconds)
 
         -- This format string has to be adjusted by translators
         -- for german the format string would be "%1 %3 %2 %4"
         return T(C_("%1 name of day, %2 name of month, %3 day, %4 year", "%1 %2 %3 %4"),
-            datetime.day_names[wday], datetime.month_names[month], day, year)
+            datetime.shortDayOfWeekTranslation[wday], datetime.shortMonthTranslation[month], day, year)
     else
         -- @translators This is the date (%Y is the year, %m the month, %d the day)
         return os.date(_("%Y-%m-%d"), seconds)

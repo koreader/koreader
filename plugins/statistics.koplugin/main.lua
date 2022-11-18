@@ -76,43 +76,6 @@ local ReaderStatistics = Widget:extend{
     data = nil, -- table
 }
 
-local weekDays = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" } -- in Lua wday order
-
-local shortDayOfWeekTranslation = {
-    ["Mon"] = _("Mon"),
-    ["Tue"] = _("Tue"),
-    ["Wed"] = _("Wed"),
-    ["Thu"] = _("Thu"),
-    ["Fri"] = _("Fri"),
-    ["Sat"] = _("Sat"),
-    ["Sun"] = _("Sun"),
-}
-
-local longDayOfWeekTranslation = {
-    ["Mon"] = _("Monday"),
-    ["Tue"] = _("Tuesday"),
-    ["Wed"] = _("Wednesday"),
-    ["Thu"] = _("Thursday"),
-    ["Fri"] = _("Friday"),
-    ["Sat"] = _("Saturday"),
-    ["Sun"] = _("Sunday"),
-}
-
-local monthTranslation = {
-    ["January"] = _("January"),
-    ["February"] = _("February"),
-    ["March"] = _("March"),
-    ["April"] = _("April"),
-    ["May"] = _("May"),
-    ["June"] = _("June"),
-    ["July"] = _("July"),
-    ["August"] = _("August"),
-    ["September"] = _("September"),
-    ["October"] = _("October"),
-    ["November"] = _("November"),
-    ["December"] = _("December"),
-}
-
 function ReaderStatistics:isDocless()
     return self.ui == nil or self.ui.document == nil or self.ui.document.is_pic == true
 end
@@ -1023,26 +986,26 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     {
                         text_func = function()
                             return T(_("Calendar weeks start on %1"),
-                                longDayOfWeekTranslation[weekDays[self.settings.calendar_start_day_of_week]])
+                                datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[self.settings.calendar_start_day_of_week]])
                         end,
                         sub_item_table = {
                             { -- Friday (Bangladesh and Maldives)
-                                text = longDayOfWeekTranslation[weekDays[6]],
+                                text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[6]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 6 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 6 end
                             },
                             { -- Saturday (some Middle East countries)
-                                text = longDayOfWeekTranslation[weekDays[7]],
+                                text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[7]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 7 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 7 end
                             },
                             { -- Sunday
-                                text = longDayOfWeekTranslation[weekDays[1]],
+                                text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[1]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 1 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 1 end
                             },
                             { -- Monday
-                                text = longDayOfWeekTranslation[weekDays[2]],
+                                text = datetime.shortDayOfWeekToLongTranslation[datetime.weekDays[2]],
                                 checked_func = function() return self.settings.calendar_start_day_of_week == 2 end,
                                 callback = function() self.settings.calendar_start_day_of_week = 2 end
                             },
@@ -1806,13 +1769,13 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
         if ptype == "daily_weekday" then
             date_text = string.format("%s (%s)",
                 os.date("%Y-%m-%d", timestamp),
-                shortDayOfWeekTranslation[os.date("%a", timestamp)])
+                datetime.shortDayOfWeekTranslation[os.date("%a", timestamp)])
         elseif ptype == "daily" then
             date_text = result_book[1][i]
         elseif ptype == "weekly" then
             date_text = T(_("%1 Week %2"), os.date("%Y", timestamp), os.date(" %W", timestamp))
         elseif ptype == "monthly" then
-            date_text = monthTranslation[os.date("%B", timestamp)] .. os.date(" %Y", timestamp)
+            date_text = datetime.longMonthTranslation[os.date("%B", timestamp)] .. os.date(" %Y", timestamp)
         else
             date_text = result_book[1][i]
         end
@@ -2591,9 +2554,9 @@ function ReaderStatistics:onShowCalendarView()
     local CalendarView = require("calendarview")
     UIManager:show(CalendarView:new{
         reader_statistics = self,
-        monthTranslation = monthTranslation,
-        shortDayOfWeekTranslation = shortDayOfWeekTranslation,
-        longDayOfWeekTranslation = longDayOfWeekTranslation,
+        monthTranslation = datetime.longMonthTranslation,
+        shortDayOfWeekTranslation = datetime.shortDayOfWeekTranslation,
+        longDayOfWeekTranslation = datetime.shortDayOfWeekToLongTranslation,
         start_day_of_week = self.settings.calendar_start_day_of_week,
         nb_book_spans = self.settings.calendar_nb_book_spans,
         show_hourly_histogram = self.settings.calendar_show_histogram,
