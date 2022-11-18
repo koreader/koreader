@@ -500,15 +500,15 @@ function ReaderHighlight:addToMainMenu(menu_items)
     end
     table.insert(menu_items.long_press.sub_item_table, {
         text_func = function()
-            return T(_("Highlight very long-press interval: %1 s"),
+            return T(_("Highlight very-long-press interval: %1 s"),
                 G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3))
         end,
         keep_menu_open = true,
         callback = function(touchmenu_instance)
             local SpinWidget = require("ui/widget/spinwidget")
             local items = SpinWidget:new{
-                title_text = _("Highlight very long-press interval"),
-                info_text = _("If a touch is not released in this interval, it is considered a very long-press. On document text, single word selection will not be triggered."),
+                title_text = _("Highlight very-long-press interval"),
+                info_text = _("If a long-press is not released in this interval, it is considered a very-long-press. On document text, single word selection will not be triggered."),
                 width = math.floor(Screen:getWidth() * 0.75),
                 value = G_reader_settings:readSetting("highlight_long_hold_threshold_s", 3),
                 value_min = 2.5,
