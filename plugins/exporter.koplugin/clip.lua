@@ -242,7 +242,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                                "(.*)",
                                "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d") .. "$"
 
-    local orphan_highlight = {}
+    local orphan_highlights = {}
     for page, items in pairs(highlights) do
         for _, item in ipairs(items) do
             local clipping = {}
@@ -267,7 +267,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
                 end
             end
             if not bookmark_found then
-                table.insert(orphan_highlight, { clipping })
+                table.insert(orphan_highlights, { clipping })
             end
             if item.text == "" and item.pos0 and item.pos1 and
                     item.pos0.x and item.pos0.y and
@@ -298,7 +298,7 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
     -- Sort clippings by their position in the book.
     table.sort(book, function(v1, v2) return bookmark_indexes[v1[1].time] > bookmark_indexes[v2[1].time] end)
      -- Place orphans at the end
-    for _, v in ipairs(orphan_highlight) do
+    for _, v in ipairs(orphan_highlights) do
         table.insert(book, v)
     end
 end
