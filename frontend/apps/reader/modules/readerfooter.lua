@@ -2476,7 +2476,7 @@ function ReaderFooter:maybeUpdateFooter()
     self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
 end
 
--- is the same as mybeUpdateFooter
+-- is the same as maybeUpdateFooter
 function ReaderFooter:onFrontlightStateChanged()
     self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
 end
