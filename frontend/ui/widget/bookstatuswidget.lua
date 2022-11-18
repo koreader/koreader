@@ -24,6 +24,7 @@ local ToggleSwitch = require("ui/widget/toggleswitch")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local datetime = require("datetime")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -144,7 +145,7 @@ end
 function BookStatusWidget:getStatHours()
     if stats_book.time then
         local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
-        return util.secondsToClockDuration(user_duration_format, stats_book.time, false)
+        return datetime.secondsToClockDuration(user_duration_format, stats_book.time, false)
     else
         return _("N/A")
     end

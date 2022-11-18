@@ -18,7 +18,7 @@ local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local util = require("util")
+local datetime = require("datetime")
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -251,7 +251,7 @@ function ReaderProgress:genWeekStats(stats_day)
                 dimen = Geom:new{ w = self.screen_width , h = height * (1/3) },
                 TextWidget:new{
                     padding = Size.padding.small,
-                    text = date_format_show .. " - " .. util.secondsToClockDuration(user_duration_format, select_day_time, true),
+                    text = date_format_show .. " - " .. datetime.secondsToClockDuration(user_duration_format, select_day_time, true),
                     face = Font:getFace("smallffont"),
                 },
             },
@@ -345,7 +345,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClockDuration(user_duration_format, self.current_duration, true),
+                text = datetime.secondsToClockDuration(user_duration_format, self.current_duration, true),
                 face = self.medium_font_face,
             },
         },
@@ -359,7 +359,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClockDuration(user_duration_format, self.today_duration, true),
+                text = datetime.secondsToClockDuration(user_duration_format, self.today_duration, true),
                 face = self.medium_font_face,
             },
         },
@@ -447,7 +447,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClockDuration(user_duration_format, math.floor(total_time), true),
+                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time), true),
                 face = self.medium_font_face,
             },
         },
@@ -461,7 +461,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClockDuration(user_duration_format, math.floor(total_time) * (1/7), true),
+                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time) * (1/7), true),
                 face = self.medium_font_face,
             }
         }

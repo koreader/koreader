@@ -28,7 +28,7 @@ local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local util = require("util")
+local datetime = require("datetime")
 local getMenuText = require("ui/widget/menu").getMenuText
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -554,7 +554,7 @@ function TouchMenu:init()
         text_font_bold = false,
         callback = function()
             UIManager:show(InfoMessage:new{
-                text = util.getDateTimeString(),
+                text = datetime.secondsToDateTime(os.time(), G_reader_settings:isTrue("twelve_hour_clock"), true),
             })
         end,
         hold_callback = function()
@@ -716,7 +716,7 @@ function TouchMenu:updateItems()
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
 
-    local time_info_txt = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
+    local time_info_txt = datetime.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
     local powerd = Device:getPowerDevice()
     if Device:hasBattery() then
         local batt_lvl = powerd:getCapacity()
