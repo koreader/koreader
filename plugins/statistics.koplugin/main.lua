@@ -1942,6 +1942,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
         table.insert(results, {
             result_book[1][i],
             T(_("%1 (%2)"), util.secondsToClockDuration(user_duration_format, tonumber(result_book[2][i]), false), tonumber(result_book[3][i])),
+            book_id = tonumber(result_book[4][i]),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
@@ -2685,6 +2686,44 @@ function ReaderStatistics:getReadBookByDay(month)
         table.insert(per_day[day], { id = tonumber(book_id), title = tostring(book_title) })
     end
     return per_day
+end
+
+function ReaderStatistics:getReadingDurationBySecond(date)
+    local sql_stmt = [[
+        SELECT
+            start_time - strftime('%s', ?, 'utc') as start,
+            start_time - strftime('%s', ?, 'utc') + duration as end,
+            id_book book_id,
+            book.title book_title
+        FROM   page_stat_data
+        JOIN   book ON book.id = page_stat_data.id_book
+        WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
+                              AND strftime('%s', ?, 'utc', '+24 hours', '-1 second')
+        ORDER BY book_id, start;
+    ]]
+    local conn = SQ3.open(db_location)
+    local stmt = conn:prepare(sql_stmt)
+    local res, nb = stmt:reset():bind(date, date, date, date):resultset("i")
+    stmt:close()
+    conn:close()
+    local per_book = {}
+    for i=1, nb do
+        local start, finish, book_id, book_title = tonumber(res[1][i]), tonumber(res[2][i]), tonumber(res[3][i]), tostring(res[4][i])
+        if not per_book[book_id] then
+            per_book[book_id] = {
+                title = book_title,
+                periods = {},
+            }
+        end
+        local periods = per_book[book_id].periods
+        if #periods > 0 and periods[#periods].finish == start then
+            periods[#periods].finish = finish
+        else
+            table.insert(per_book[book_id].periods, { start = start, finish = finish })
+        end
+    end
+    
+    return per_book
 end
 
 function ReaderStatistics:onShowReaderProgress()

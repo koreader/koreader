@@ -3,6 +3,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
@@ -14,6 +15,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local LeftContainer = require("ui/widget/container/leftcontainer")
+local LineWidget = require("ui/widget/linewidget")
 local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
@@ -27,6 +29,7 @@ local Widget = require("ui/widget/widget")
 local Input = Device.input
 local Screen = Device.screen
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local HistogramWidget = Widget:extend{
     width = nil,
@@ -362,6 +365,525 @@ function CalendarWeek:update()
         dimen = self.dimen:copy(),
         overlaps,
     }
+end
+
+local BookDailyItem = InputContainer:extend{
+    item = nil,
+    face = Font:getFace("smallinfofont", 20),
+    value_width = nil,
+    width = nil,
+    height = nil,
+    padding = Size.padding.small,
+}
+
+function BookDailyItem:init()
+    self.dimen = Geom:new{x = 0, y = 0, w = self.width, h = self.height}
+    self.ges_events.Tap = {
+        GestureRange:new{
+            ges = "tap",
+            range = self.dimen,
+        }
+    }
+    self.checkmark_widget = CheckMark:new{
+        checked = self.item.checked,
+    }
+    local checked_widget = CheckMark:new{
+        checked = true
+    }
+
+    local title_max_width = self.dimen.w - 2 * Size.padding.default - checked_widget:getSize().w  - self.value_width
+    local fgcolor, bgcolor = unpack(SPAN_COLORS[(self.item.book_id % #SPAN_COLORS)+1])
+    self.check_container = CenterContainer:new{
+        dimen = Geom:new{ w = checked_widget:getSize().w },
+        self.checkmark_widget,
+    }
+    self[1] = FrameContainer:new{
+        padding = 0,
+        bordersize = 0,
+        focusable = true,
+        focus_border_size = Size.border.thin,
+        LeftContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = self.height,
+            },
+            HorizontalGroup:new{
+                align = "center",
+                self.check_container,
+                HorizontalSpan:new{ w = Size.padding.default },
+                OverlapGroup:new{
+                    dimen = Geom:new{ w = title_max_width, h = self.height},
+                    allow_mirroring = false,
+                    FrameContainer:new{
+                        width = title_max_width,
+                        height = self.height - 2 * Size.padding.small,
+                        padding = 0,
+                        padding_left = self.padding,
+                        padding_right = self.padding,
+                        background = bgcolor,
+                        bordersize = Size.border.thin,
+                        overlap_offset = { 0, Size.padding.small },
+                        LeftContainer:new{
+                            dimen = Geom:new{
+                                w = title_max_width,
+                                h = self.height - 2 * Size.padding.small,
+                            },
+                            TextWidget:new{
+                                text = self.item[1],
+                                max_width = title_max_width - 2 * self.padding,
+                                face = self.face,
+                                bgcolor = bgcolor,
+                                fgcolor = fgcolor,
+                                padding = 0,
+                                bordersize = Size.border.thin,
+                            }
+                        }
+                    }
+                },
+                FrameContainer:new{
+                    width = self.value_width,
+                    padding = 0,
+                    padding_left = Size.padding.default,
+                    bordersize = 0,
+                    LeftContainer:new{
+                        dimen = Geom:new{ w = self.value_width, h = self.height},
+                        padding = 0,
+                        TextWidget:new{
+                            text = self.item[2],
+                            max_width = self.value_width,
+                            face = self.face
+                        }
+                    }
+                }
+            }
+        }
+    }
+    checked_widget:free()
+    self[1].invert = self.invert
+end
+
+function BookDailyItem:onTap(_, ges)
+    local x_intersect = function()
+        local dimen = self.checkmark_widget.dimen
+        return ges.pos.x >= dimen.x - dimen.w and ges.pos.x <= dimen.x + 2 * dimen.w
+    end
+    if self.item.check_cb and x_intersect() then
+        self.item:check_cb()
+        self.checkmark_widget = CheckMark:new{
+            checked = self.item.checked,
+        }
+        self.check_container[1] = self.checkmark_widget
+        UIManager:setDirty(self, function()
+            return "ui", self.check_container.dimen
+        end)
+    elseif self.item.callback then
+        self.item:callback()
+    end
+    return true
+end
+
+local CalendarDayDetail = FocusManager:extend{
+    title = nil,
+    show_page = 1,
+    kv_pairs = {},
+}
+
+function CalendarDayDetail:init()
+    self.dimen = Geom:new{
+        x = 0,
+        y = 0,
+        w = Screen:getWidth(),
+        h = Screen:getHeight(),
+    }
+    if Device:hasKeys() then
+        self.key_events.Close = { { Device.input.group.Back } }
+        self.key_events.NextPage = { { Device.input.group.PgFwd } }
+        self.key_events.PrevPage = { { Device.input.group.PgBack } }
+    end
+    if Device:isTouchDevice() then
+        self.ges_events.Swipe = {
+            GestureRange:new{
+                ges = "swipe",
+                range = self.dimen,
+            }
+        }
+    end
+    self.outer_padding = Size.padding.large
+    self.inner_padding = Size.padding.small
+
+    local title_bar = TitleBar:new{
+        fullscreen = true,
+        width = self.dimen.w,
+        align = "left",
+        title = self.title,
+        title_face = Font:getFace("smalltfont", 22),
+        title_h_padding = self.outer_padding,
+        close_callback = function() self:onClose() end,
+        show_parent = self,
+    }
+
+    self.titlebar_height = title_bar:getHeight()
+
+    for _, kv in ipairs(self.kv_pairs) do
+        kv.check_cb = function(this)
+            this.checked = not this.checked
+            self:refreshTimeline()
+        end
+    end
+
+    self.items_per_page = 5
+    self.pages = #self.kv_pairs <= self.items_per_page+1 and 1 or math.ceil(#self.kv_pairs / self.items_per_page)
+    if self.pages > 1 then
+        local padding = Size.padding.large
+        local footer_width = self.dimen.w - 2 * padding
+        self.footer_center_width = math.floor(footer_width * 0.32)
+        self.footer_button_width = math.floor(footer_width * 0.12)
+
+        local chevron_left = "chevron.left"
+        local chevron_right = "chevron.right"
+        local chevron_first = "chevron.first"
+        local chevron_last = "chevron.last"
+
+        if BD.mirroredUILayout() then
+            chevron_left, chevron_right = chevron_right, chevron_left
+            chevron_first, chevron_last = chevron_last, chevron_first
+        end
+
+        self.footer_left = Button:new{
+            icon = chevron_left,
+            width = self.footer_button_width,
+            callback = function() self:prevPage() end,
+            bordersize = 0,
+            radius = 0,
+            show_parent = self,
+        }
+        self.footer_right = Button:new{
+            icon = chevron_right,
+            width = self.footer_button_width,
+            callback = function() self:nextPage() end,
+            bordersize = 0,
+            radius = 0,
+            show_parent = self,
+        }
+        self.footer_first_up = Button:new{
+            icon = chevron_first,
+            width = self.footer_button_width,
+            callback = function()
+                self:goToPage(1)
+            end,
+            bordersize = 0,
+            radius = 0,
+            show_parent = self,
+        }
+        self.footer_last_down = Button:new{
+            icon = chevron_last,
+            width = self.footer_button_width,
+            callback = function()
+                self:goToPage(self.pages)
+            end,
+            bordersize = 0,
+            radius = 0,
+            show_parent = self,
+        }
+        self.footer_page = Button:new{
+            text = "",
+            hold_input = {
+                title = _("Enter page number"),
+                hint_func = function()
+                    return "(" .. "1 - " .. self.pages .. ")"
+                end,
+                type = "number",
+                deny_blank_input = true,
+                callback = function(input)
+                    local page = tonumber(input)
+                    if page and page >= 1 and page <= self.pages then
+                        self:goToPage(page)
+                    end
+                end,
+                ok_text = _("Go to page"),
+            },
+            call_hold_input_on_tap = true,
+            bordersize = 0,
+            margin = 0,
+            text_font_face = "pgfont",
+            text_font_bold = false,
+            width = self.footer_center_width,
+            show_parent = self,
+        }
+        self.page_info = HorizontalGroup:new{
+            self.footer_first_up,
+            self.footer_left,
+            self.footer_page,
+            self.footer_right,
+            self.footer_last_down,
+        }
+        self.footer_height = self.page_info:getSize().h
+    end
+
+    self.hour_width = math.floor((self.dimen.w - self.outer_padding - Size.padding.default) / 24)
+    self.hour_extra_padding = math.floor((self.dimen.w - self.outer_padding - Size.padding.default - self.hour_width * 24) / 2)
+
+    local found_font_size = false
+    local time_font_height = self.hour_width * 2
+    local temp_text, time_text_height, time_text_width
+    while not found_font_size do
+        time_font_height = time_font_height * 0.9
+        local font_size = TextWidget:getFontSizeToFitHeight("cfont", time_font_height)
+        self.time_text_face = Font:getFace("cfont", font_size)
+        temp_text = TextWidget:new{
+            text = "00",
+            face = self.time_text_face
+        }
+        time_text_width = temp_text:getWidth()
+        time_text_height = temp_text:getSize().h
+        found_font_size = time_text_width < self.hour_width * 0.8
+    end
+    self.time_text_height = time_text_height
+    
+    temp_text = TextWidget:new{
+        text = " ",
+        face = BookDailyItem.face
+    }
+    self.book_item_height = temp_text:getSize().h + 2 * BookDailyItem.padding
+    temp_text:free()
+    
+    self.book_items = VerticalGroup:new{}
+    self.timeline = OverlapGroup:new{
+        dimen = self.dimen:copy(),
+        allow_mirroring = false,
+    }
+    self:_populateBooks()
+
+    self[1] = FrameContainer:new{
+        height = self.dimen.h,
+        padding = 0,
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        OverlapGroup:new{
+            dimen = self.dimen:copy(),
+            FrameContainer:new{
+                height = self.dimen.h,
+                padding = 0,
+                bordersize = 0,
+                background = Blitbuffer.COLOR_WHITE,
+                VerticalGroup:new{
+                    title_bar,
+                    self.book_items
+                }
+            },
+            self.timeline,
+            BottomContainer:new{
+                dimen = self.dimen:copy(),
+                self.page_info or VerticalSpan:new{ w = 0 },
+            }
+        }
+    }
+end
+
+function CalendarDayDetail:nextPage()
+    local new_page = math.min(self.show_page+1, self.pages)
+    if new_page > self.show_page then
+        self.show_page = new_page
+        self:_populateBooks()
+    end
+end
+
+function CalendarDayDetail:prevPage()
+    local new_page = math.max(self.show_page-1, 1)
+    if new_page < self.show_page then
+        self.show_page = new_page
+        self:_populateBooks()
+    end
+end
+
+function CalendarDayDetail:goToPage(page)
+    self.show_page = page
+    self:_populateBooks()
+end
+
+function CalendarDayDetail:onNextPage()
+    self:nextPage()
+    return true
+end
+
+function CalendarDayDetail:onPrevPage()
+    self:prevPage()
+    return true
+end
+
+function CalendarDayDetail:_populateBooks()
+    self.book_items:clear()
+    self.layout = {}
+    local idx_offset = (self.show_page - 1) * self.items_per_page
+    local page_last = #self.kv_pairs
+    if self.pages > 1 and idx_offset + self.items_per_page < #self.kv_pairs then
+        page_last = idx_offset + self.items_per_page
+    end
+
+    local value_width = 0
+    local value_text = TextWidget:new{
+        text = "",
+        face = BookDailyItem.face
+    }
+    for idx = idx_offset+1, page_last do
+        value_text:setText( self.kv_pairs[idx][2] )
+        value_width = math.max(value_width, value_text:getSize().w)
+    end
+    value_text:free()
+
+    for idx = idx_offset+1, page_last do
+        local item = BookDailyItem:new{
+            item = self.kv_pairs[idx], 
+            width = self.dimen.w - 2 * self.outer_padding,
+            value_width = value_width,
+            height = self.book_item_height,
+        }
+        table.insert(self.layout, { item })
+        table.insert(self.book_items, item)
+    end
+    self.timeline_offset = self.titlebar_height + #self.book_items * self.book_item_height + Size.padding.default
+    self.timeline_height = self.dimen.h - self.timeline_offset -- - Size.padding.large
+                         - self.time_text_height * 2
+    if self.pages > 1 then
+        self.footer_page:setText(T(_("Page %1 of %2"), self.show_page, self.pages), self.footer_center_width)
+        self.footer_page:enable()
+
+        self.footer_left:enableDisable(self.show_page > 1)
+        self.footer_right:enableDisable(self.show_page < self.pages)
+        self.footer_first_up:enableDisable(self.show_page > 1)
+        self.footer_last_down:enableDisable(self.show_page < self.pages)
+
+        -- self.timeline_offset = self.timeline_offset + Size.padding.default
+        self.timeline_height = self.timeline_height - self.footer_height
+    else
+        -- self.timeline_offset = self.timeline_offset + Size.padding.default
+        self.timeline_height = self.timeline_height - Size.padding.default
+    end
+
+    self:refreshTimeline()
+
+end
+
+function CalendarDayDetail:refreshTimeline()
+    self.timeline:clear()
+    for _, v in ipairs(self.kv_pairs) do
+        if v.checked and v.periods then
+            local _, bgcolor = unpack(SPAN_COLORS[(v.book_id % #SPAN_COLORS)+1])
+            for _, period in ipairs(v.periods) do
+                local start_hour = math.floor(period.start / 3600)
+                local finish_hour = math.floor(period.finish / 3600)
+                for i=0, finish_hour-start_hour do
+                    local start = i==0 and period.start or (start_hour+i) * 3600
+                    if start >= 24 * 3600 then
+                        break
+                    end
+                    local finish = i==finish_hour-start_hour and period.finish or (start_hour+i+1) * 3600 - 1
+                    local span = self:generateSpan(start, finish, bgcolor)
+                    if span then table.insert(self.timeline, span) end
+                end
+            end
+        end
+    end
+
+    for i=0, 23 do
+        local offset_x = self.outer_padding + i * self.hour_width + self.hour_extra_padding
+        table.insert(self.timeline, FrameContainer:new{
+            width = self.hour_width,
+            height = self.time_text_height,
+            margin = 0,
+            padding = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            bordersize = 0,
+            overlap_offset = {offset_x, self.timeline_offset},
+            CenterContainer:new{
+                dimen = Geom:new{ w= self.hour_width, h = self.time_text_height},
+                TextWidget:new{
+                    text = string.format("%02d", i),
+                    face = self.time_text_face,
+                    padding = 0
+                }
+            }
+        })
+        table.insert(self.timeline, FrameContainer:new{
+            width = self.hour_width,
+            height = self.time_text_height,
+            margin = 0,
+            padding = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            bordersize = 0,
+            overlap_offset = {offset_x, self.timeline_offset + self.timeline_height + self.time_text_height},
+            CenterContainer:new{
+                dimen = Geom:new{ w= self.hour_width, h = self.time_text_height},
+                TextWidget:new{
+                    text = string.format("%02d", i+1),
+                    face = self.time_text_face,
+                    padding = 0
+                }
+            }
+        })
+        if i ~= 0 then
+            table.insert(self.timeline, FrameContainer:new{
+                width = Size.border.thin,
+                height = self.timeline_height,
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
+                bordersize = 0,
+                overlap_offset = { offset_x, self.timeline_offset + self.time_text_height },
+                CenterContainer:new{
+                    dimen = Geom:new{ w = Size.border.thin, h = self.timeline_height },
+                    VerticalSpan:new{ w = 0 }
+                }
+            })
+        end
+    end
+    UIManager:setDirty(self, function()
+        return "ui", self.dimen
+    end)
+end
+
+function CalendarDayDetail:generateSpan(start, finish, color)
+    local height = math.floor((finish - start)/3600*self.timeline_height)
+    if height <= 0 then return end
+    local start_hour = math.floor(start / 3600)
+    local offset_x = self.outer_padding + start_hour * self.hour_width + self.inner_padding + self.hour_extra_padding
+    local offset_y = math.floor((start % 3600) / 3600 * self.timeline_height) + self.time_text_height + self.timeline_offset
+    return FrameContainer:new{
+        width = self.hour_width - 2 * self.inner_padding,
+        height = height,
+        bordersize = Size.border.thin,
+        overlap_offset = {offset_x, offset_y},
+        background = color,
+        CenterContainer:new{
+            dimen = Geom:new{ w = self.hour_width - 2 * self.inner_padding, h = height },
+            HorizontalSpan:new{w=0},
+        }
+    }
+end
+
+function CalendarDayDetail:onSwipe(arg, ges_ev)
+    local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
+    if direction == "west" then
+        self:onNextPage()
+    elseif direction == "east" then
+        self:onPrevPage()
+    elseif direction == "south" then
+        -- Allow easier closing with swipe down
+        self:onClose()
+    elseif direction == "north" then
+        -- no use for now
+        do end -- luacheck: ignore 541
+    else -- diagonal swipe
+        -- trigger full refresh
+        UIManager:setDirty(nil, "full")
+        -- a long diagonal swipe may also be used for taking a screenshot,
+        -- so let it propagate
+        return false
+    end
+end
+
+function CalendarDayDetail:onClose()
+    UIManager:close(self)
+    UIManager:setDirty(nil, "ui")
+    return true
 end
 
 -- Fetched from db, cached as local as it might be expensive
@@ -720,20 +1242,33 @@ function CalendarView:_populateItems()
             show_parent = self,
             callback = not is_future and function()
                 -- Just as ReaderStatistics:callbackDaily(), but without any window stacking
-                UIManager:show(KeyValuePage:new{
+                -- UIManager:show(KeyValuePage:new{
+                --     title = day_text,
+                --     value_align = "right",
+                --     kv_pairs = self.reader_statistics:getBooksFromPeriod(day_ts, day_ts + 86400),
+                --     close_callback = function()
+                --         -- Refresh calendar in case some day stats were reset for some books
+                --         -- (we don't know if some reset were done... so we refresh the current
+                --         -- display always - at tickAfterNext so there is no noticable slowness
+                --         -- when closing, and the re-painting happening after is not noticable;
+                --         -- but if some stat reset were done, this will make a nice noticable
+                --         -- repainting showing dynamically reset books disappearing :)
+                --         UIManager:tickAfterNext(function() self:_populateItems() end)
+                --     end,
+                --     callback_return = function() end, -- to just have that return button shown
+                -- })
+                local kv_pairs = self.reader_statistics:getBooksFromPeriod(day_ts, day_ts + 86400)
+                local seconds_books = self.reader_statistics:getReadingDurationBySecond(day_s)
+                for _, kv in ipairs(kv_pairs) do
+                    if seconds_books[kv.book_id] then
+                        kv.periods = seconds_books[kv.book_id].periods
+                    end
+                    kv.checked = true
+                end
+                table.sort(kv_pairs, function(a,b) return a[2] > b[2] end) --sort by value
+                UIManager:show(CalendarDayDetail:new{
                     title = day_text,
-                    value_align = "right",
-                    kv_pairs = self.reader_statistics:getBooksFromPeriod(day_ts, day_ts + 86400),
-                    close_callback = function()
-                        -- Refresh calendar in case some day stats were reset for some books
-                        -- (we don't know if some reset were done... so we refresh the current
-                        -- display always - at tickAfterNext so there is no noticable slowness
-                        -- when closing, and the re-painting happening after is not noticable;
-                        -- but if some stat reset were done, this will make a nice noticable
-                        -- repainting showing dynamically reset books disappearing :)
-                        UIManager:tickAfterNext(function() self:_populateItems() end)
-                    end,
-                    callback_return = function() end, -- to just have that return button shown
+                    kv_pairs = kv_pairs,
                 })
             end
         }
