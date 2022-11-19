@@ -1249,7 +1249,7 @@ function CalendarView:_populateItems()
                 UIManager:show(CalendarDayDetail:new{
                     title = day_text,
                     kv_pairs = kv_pairs,
-                        close_callback = function()
+                    close_callback = function()
                         -- Refresh calendar in case some day stats were reset for some books
                         -- (we don't know if some reset were done... so we refresh the current
                         -- display always - at tickAfterNext so there is no noticable slowness
