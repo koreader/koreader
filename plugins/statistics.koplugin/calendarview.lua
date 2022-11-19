@@ -13,9 +13,7 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local KeyValuePage = require("ui/widget/keyvaluepage")
 local LeftContainer = require("ui/widget/container/leftcontainer")
-local LineWidget = require("ui/widget/linewidget")
 local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
@@ -508,6 +506,12 @@ function CalendarDayDetail:init()
             }
         }
     end
+    self.ges_events.MultiSwipe = {
+        GestureRange:new{
+            ges = "multiswipe",
+            range = self.dimen,
+        }
+    }
     self.outer_padding = Size.padding.large
     self.inner_padding = Size.padding.small
 
@@ -537,7 +541,7 @@ function CalendarDayDetail:init()
         local padding = Size.padding.large
         local footer_width = self.dimen.w - 2 * padding
         self.footer_center_width = math.floor(footer_width * 0.32)
-        self.footer_button_width = math.floor(footer_width * 0.12)
+        self.footer_button_width = math.floor(footer_width * 0.10)
 
         local chevron_left = "chevron.left"
         local chevron_right = "chevron.right"
@@ -620,37 +624,16 @@ function CalendarDayDetail:init()
         self.footer_height = self.page_info:getSize().h
     end
 
-    self.hour_width = math.floor((self.dimen.w - self.outer_padding - Size.padding.default) / 24)
-    self.hour_extra_padding = math.floor((self.dimen.w - self.outer_padding - Size.padding.default - self.hour_width * 24) / 2)
-
-    local found_font_size = false
-    local time_font_height = self.hour_width * 2
-    local temp_text, time_text_height, time_text_width
-    while not found_font_size do
-        time_font_height = time_font_height * 0.9
-        local font_size = TextWidget:getFontSizeToFitHeight("cfont", time_font_height)
-        self.time_text_face = Font:getFace("cfont", font_size)
-        temp_text = TextWidget:new{
-            text = "00",
-            face = self.time_text_face
-        }
-        time_text_width = temp_text:getWidth()
-        time_text_height = temp_text:getSize().h
-        found_font_size = time_text_width < self.hour_width * 0.8
-    end
-    self.time_text_height = time_text_height
-    
-    temp_text = TextWidget:new{
+    local temp_text = TextWidget:new{
         text = " ",
         face = BookDailyItem.face
     }
     self.book_item_height = temp_text:getSize().h + 2 * BookDailyItem.padding
     temp_text:free()
-    
+
     self.book_items = VerticalGroup:new{}
     self.timeline = OverlapGroup:new{
         dimen = self.dimen:copy(),
-        allow_mirroring = false,
     }
     self:_populateBooks()
 
@@ -733,7 +716,7 @@ function CalendarDayDetail:_populateBooks()
 
     for idx = idx_offset+1, page_last do
         local item = BookDailyItem:new{
-            item = self.kv_pairs[idx], 
+            item = self.kv_pairs[idx],
             width = self.dimen.w - 2 * self.outer_padding,
             value_width = value_width,
             height = self.book_item_height,
@@ -742,8 +725,7 @@ function CalendarDayDetail:_populateBooks()
         table.insert(self.book_items, item)
     end
     self.timeline_offset = self.titlebar_height + #self.book_items * self.book_item_height + Size.padding.default
-    self.timeline_height = self.dimen.h - self.timeline_offset -- - Size.padding.large
-                         - self.time_text_height * 2
+    self.timeline_height = self.dimen.h - self.timeline_offset
     if self.pages > 1 then
         self.footer_page:setText(T(_("Page %1 of %2"), self.show_page, self.pages), self.footer_center_width)
         self.footer_page:enable()
@@ -753,12 +735,20 @@ function CalendarDayDetail:_populateBooks()
         self.footer_first_up:enableDisable(self.show_page > 1)
         self.footer_last_down:enableDisable(self.show_page < self.pages)
 
-        -- self.timeline_offset = self.timeline_offset + Size.padding.default
         self.timeline_height = self.timeline_height - self.footer_height
     else
-        -- self.timeline_offset = self.timeline_offset + Size.padding.default
         self.timeline_height = self.timeline_height - Size.padding.default
     end
+    self.hour_width = math.floor(self.timeline_height / 24)
+    local font_size = TextWidget:getFontSizeToFitHeight("cfont", self.hour_width, Size.padding.small)
+    self.time_text_face = Font:getFace("cfont", font_size)
+    local temp_text = TextWidget:new{
+        text = "00:00",
+        face = self.time_text_face
+    }
+    self.time_text_width = temp_text:getWidth()
+    temp_text:free()
+    self.timeline_width = self.dimen.w - 2 * self.outer_padding - self.time_text_width - Size.padding.small
 
     self:refreshTimeline()
 
@@ -768,7 +758,7 @@ function CalendarDayDetail:refreshTimeline()
     self.timeline:clear()
     for _, v in ipairs(self.kv_pairs) do
         if v.checked and v.periods then
-            local _, bgcolor = unpack(SPAN_COLORS[(v.book_id % #SPAN_COLORS)+1])
+            local fgcolor, bgcolor = unpack(SPAN_COLORS[(v.book_id % #SPAN_COLORS)+1])
             for _, period in ipairs(v.periods) do
                 local start_hour = math.floor(period.start / 3600)
                 local finish_hour = math.floor(period.finish / 3600)
@@ -778,7 +768,7 @@ function CalendarDayDetail:refreshTimeline()
                         break
                     end
                     local finish = i==finish_hour-start_hour and period.finish or (start_hour+i+1) * 3600 - 1
-                    local span = self:generateSpan(start, finish, bgcolor)
+                    local span = self:generateSpan(start, finish, bgcolor, fgcolor, v[1])
                     if span then table.insert(self.timeline, span) end
                 end
             end
@@ -786,50 +776,34 @@ function CalendarDayDetail:refreshTimeline()
     end
 
     for i=0, 23 do
-        local offset_x = self.outer_padding + i * self.hour_width + self.hour_extra_padding
+        local offset_y = self.timeline_offset + self.hour_width * i
         table.insert(self.timeline, FrameContainer:new{
-            width = self.hour_width,
-            height = self.time_text_height,
+            width = self.time_text_width,
+            height = self.hour_width,
             margin = 0,
             padding = 0,
             background = Blitbuffer.COLOR_WHITE,
             bordersize = 0,
-            overlap_offset = {offset_x, self.timeline_offset},
-            CenterContainer:new{
-                dimen = Geom:new{ w= self.hour_width, h = self.time_text_height},
+            overlap_offset = {self.outer_padding - Size.padding.small, offset_y},
+            LeftContainer:new{
+                dimen = Geom:new{ w = self.time_text_width, h = self.hour_width},
                 TextWidget:new{
-                    text = string.format("%02d", i),
+                    text = string.format("%02d:00", i),
                     face = self.time_text_face,
-                    padding = 0
+                    padding = Size.padding.small
                 }
             }
         })
-        table.insert(self.timeline, FrameContainer:new{
-            width = self.hour_width,
-            height = self.time_text_height,
-            margin = 0,
-            padding = 0,
-            background = Blitbuffer.COLOR_WHITE,
-            bordersize = 0,
-            overlap_offset = {offset_x, self.timeline_offset + self.timeline_height + self.time_text_height},
-            CenterContainer:new{
-                dimen = Geom:new{ w= self.hour_width, h = self.time_text_height},
-                TextWidget:new{
-                    text = string.format("%02d", i+1),
-                    face = self.time_text_face,
-                    padding = 0
-                }
-            }
-        })
+
         if i ~= 0 then
             table.insert(self.timeline, FrameContainer:new{
-                width = Size.border.thin,
-                height = self.timeline_height,
+                width = self.timeline_width,
+                height = Size.border.thin,
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
                 bordersize = 0,
-                overlap_offset = { offset_x, self.timeline_offset + self.time_text_height },
+                overlap_offset = { self.outer_padding + self.time_text_width + Size.padding.small, offset_y },
                 CenterContainer:new{
-                    dimen = Geom:new{ w = Size.border.thin, h = self.timeline_height },
+                    dimen = Geom:new{ w = self.timeline_width, h = Size.border.thin },
                     VerticalSpan:new{ w = 0 }
                 }
             })
@@ -840,21 +814,35 @@ function CalendarDayDetail:refreshTimeline()
     end)
 end
 
-function CalendarDayDetail:generateSpan(start, finish, color)
-    local height = math.floor((finish - start)/3600*self.timeline_height)
-    if height <= 0 then return end
+function CalendarDayDetail:generateSpan(start, finish, bgcolor, fgcolor, title)
+    local width = math.floor((finish - start)/3600*self.timeline_width)
+    if width <= 0 then return end
     local start_hour = math.floor(start / 3600)
-    local offset_x = self.outer_padding + start_hour * self.hour_width + self.inner_padding + self.hour_extra_padding
-    local offset_y = math.floor((start % 3600) / 3600 * self.timeline_height) + self.time_text_height + self.timeline_offset
+    local offset_y = start_hour * self.hour_width + self.inner_padding + self.timeline_offset
+    local offset_x = self.outer_padding + self.time_text_width + Size.padding.small + math.floor((start % 3600) / 3600 * self.timeline_width)
+
+    local font_size = TextWidget:getFontSizeToFitHeight("cfont", self.hour_width - 2 * self.inner_padding, 0.3)
+    local min_width = TextWidget:new{
+        text = "…",
+        face = Font:getFace("cfont", font_size),
+        padding = 0.3
+    }:getWidth()
     return FrameContainer:new{
-        width = self.hour_width - 2 * self.inner_padding,
-        height = height,
+        width = width,
+        height = self.hour_width - 2 * self.inner_padding,
         bordersize = Size.border.thin,
         overlap_offset = {offset_x, offset_y},
-        background = color,
+        background = bgcolor,
+        padding = 0.3,
         CenterContainer:new{
-            dimen = Geom:new{ w = self.hour_width - 2 * self.inner_padding, h = height },
-            HorizontalSpan:new{w=0},
+            dimen = Geom:new{ h = self.hour_width - 2 * self.inner_padding, w = width },
+            width > min_width and TextWidget:new{
+                text = title,
+                face = Font:getFace("cfont", font_size),
+                padding = 0,
+                fgcolor = fgcolor,
+                max_width = width
+            } or HorizontalSpan:new{ w = 0 },
         }
     }
 end
@@ -880,9 +868,17 @@ function CalendarDayDetail:onSwipe(arg, ges_ev)
     end
 end
 
+function CalendarDayDetail:onMultiSwipe(arg, ges_ev)
+    self:onClose()
+    return true
+end
+
 function CalendarDayDetail:onClose()
     UIManager:close(self)
     UIManager:setDirty(nil, "ui")
+    if self.close_callback then
+        self:close_callback()
+    end
     return true
 end
 
@@ -1241,22 +1237,6 @@ function CalendarView:_populateItems()
             read_books = books_by_day[day_s],
             show_parent = self,
             callback = not is_future and function()
-                -- Just as ReaderStatistics:callbackDaily(), but without any window stacking
-                -- UIManager:show(KeyValuePage:new{
-                --     title = day_text,
-                --     value_align = "right",
-                --     kv_pairs = self.reader_statistics:getBooksFromPeriod(day_ts, day_ts + 86400),
-                --     close_callback = function()
-                --         -- Refresh calendar in case some day stats were reset for some books
-                --         -- (we don't know if some reset were done... so we refresh the current
-                --         -- display always - at tickAfterNext so there is no noticable slowness
-                --         -- when closing, and the re-painting happening after is not noticable;
-                --         -- but if some stat reset were done, this will make a nice noticable
-                --         -- repainting showing dynamically reset books disappearing :)
-                --         UIManager:tickAfterNext(function() self:_populateItems() end)
-                --     end,
-                --     callback_return = function() end, -- to just have that return button shown
-                -- })
                 local kv_pairs = self.reader_statistics:getBooksFromPeriod(day_ts, day_ts + 86400)
                 local seconds_books = self.reader_statistics:getReadingDurationBySecond(day_s)
                 for _, kv in ipairs(kv_pairs) do
@@ -1269,6 +1249,15 @@ function CalendarView:_populateItems()
                 UIManager:show(CalendarDayDetail:new{
                     title = day_text,
                     kv_pairs = kv_pairs,
+                        close_callback = function()
+                        -- Refresh calendar in case some day stats were reset for some books
+                        -- (we don't know if some reset were done... so we refresh the current
+                        -- display always - at tickAfterNext so there is no noticable slowness
+                        -- when closing, and the re-painting happening after is not noticable;
+                        -- but if some stat reset were done, this will make a nice noticable
+                        -- repainting showing dynamically reset books disappearing :)
+                        UIManager:tickAfterNext(function() self:_populateItems() end)
+                    end,
                 })
             end
         }
