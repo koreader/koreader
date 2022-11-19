@@ -2722,7 +2722,6 @@ function ReaderStatistics:getReadingDurationBySecond(date)
             table.insert(per_book[book_id].periods, { start = start, finish = finish })
         end
     end
-    
     return per_book
 end
 
