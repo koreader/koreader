@@ -38,10 +38,13 @@ function State:load()
       self[key] = value
    end
 
+   -- The following condition will be true if we're trying
+   -- to load a deleted state. If that's the case, then
+   -- nuke the object's id, because that id is no longer used.
    if not state_has_data and
       self.id ~= nil
    then
-      return false
+       self.id = nil
    end
 
    return self
