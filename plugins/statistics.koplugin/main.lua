@@ -2825,8 +2825,8 @@ function ReaderStatistics.onSync(local_path, cached_path, income_path)
 
         -- We create a book_id mapping temp table (view not possible due to attached db)
         CREATE TEMP TABLE book_id_map AS
-            SELECT m.id as mid, ifnull(i.id, m.id) as iid FROM book m --main
-            LEFT JOIN income_db.book i
+            SELECT m.id as mid, i.id as iid FROM book m --main
+            INNER JOIN income_db.book i
             ON (m.title, m.authors, m.md5) = (i.title, i.authors, i.md5);
         ]]
     if attached_cache then
@@ -2835,7 +2835,7 @@ function ReaderStatistics.onSync(local_path, cached_path, income_path)
         -- DELETE stat_data items
         DELETE FROM income_db.page_stat_data WHERE (id_book, page, start_time) IN (
             SELECT map.iid, page, start_time FROM cached_db.page_stat_data
-            LEFT JOIN book_id_map AS map ON id_book = map.mid
+            INNER JOIN book_id_map AS map ON id_book = map.mid
             WHERE (id_book, page, start_time) NOT IN (
                 SELECT id_book, page, start_time FROM page_stat_data
             )
