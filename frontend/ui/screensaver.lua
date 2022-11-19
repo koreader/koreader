@@ -162,7 +162,7 @@ function Screensaver:expandSpecial(message, fallback)
     local series = _("N/A")
     local time_left_chapter = _("N/A")
     local time_left_document = _("N/A")
-    local batt_lvl = 0
+    local batt_lvl = _("N/A")
 
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI:_getRunningInstance()
@@ -194,8 +194,8 @@ function Screensaver:expandSpecial(message, fallback)
         end
         -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
     end
-    local powerd = Device:getPowerDevice()
     if Device:hasBattery() then
+        local powerd = Device:getPowerDevice()
         local main_batt_lvl = powerd:getCapacity()
         if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
             batt_lvl = main_batt_lvl + powerd:getAuxCapacity()
