@@ -28,27 +28,15 @@ function Feed:new(o)
    setmetatable(o, self)
    self.__index = self
 
-   o:_init(o)
    o = o:load()
 
+   -- The subscription should carry and story a table containing a feed object.
+   -- If that object isn't present, but a url is, then please make the object!
+   if not o.feed and o.url then
+      o.feed = Feed:new(o.feed) or nil
+   end
+
    return o
-end
-
-function Feed:_init(o)
-   -- Call the superclass' init function to apply those values to the
-   -- current object.
-   -- getmetatable(o):_init(o)
-
-   self.subscription_type = Feed.subscription_type
-   self.url = o.url
-   self.limit = o.limit
-   self.download_full_article = o.download_full_article -- not implemented
-   self.download_directory = o.download_directory
-   self.include_images = o.enabled_filter -- not implemented
-   self.filter_element = o.filter_element -- not implemented
-   self.content_source = o.content_source
-   -- self.feed isn't initialized here. Instead, it's initialized in the
-   -- SubscriptionFactory.
 end
 
 function Feed:save()
@@ -57,8 +45,7 @@ function Feed:save()
    -- This is pulled from State:save(). I wanted to call this
    -- through the same getmetatable magic used in _init... but
    -- it "didn't work".
-   if not self.id
-   then
+   if not self.id then
       self.id = self:generateUniqueId()
    end
 
@@ -69,8 +56,7 @@ end
 function Feed:sync()
    local feed, err = FeedFactory:make(self.url)
 
-   if err
-   then
+   if err then
       return false, err
    end
 
@@ -89,15 +75,13 @@ end
 
 function Feed:isUrlValid(url)
    if not url or
-      not type(url) == "string"
-   then
+      not type(url) == "string" then
       return false
    end
 
    local parsed_url = socket_url.parse(url)
 
-   if parsed_url.host
-   then
+   if parsed_url.host then
       return true
    else
       return false
@@ -117,15 +101,13 @@ function Feed:setTitle(title)
 end
 
 function Feed:getAllEntries(limit)
-   if not self.feed.entries
-   then
+   if not self.feed.entries then
       return false, GazetteMessages.ERROR_FEED_NOT_SYNCED
    end
 
    if limit == nil or
       type(limit) ~= "number" or
-      (type(limit) == "number" and limit == -1)
-   then
+      (type(limit) == "number" and limit == -1) then
       return self.feed.entries
    else
       local limited_entries = {}
@@ -150,14 +132,12 @@ function Feed:getNewEntries(limit)
    local all_entries = self:getAllEntries(limit)
    local new_entries = {}
 
-   if not results
-   then
+   if not results then
       return all_entries
    end
 
    for id, entry in pairs(all_entries) do
-      if not results:hasEntry(entry)
-      then
+      if not results:hasEntry(entry) then
          table.insert(new_entries, entry)
       end
    end
@@ -169,28 +149,23 @@ function Feed:setDescription(description)
    -- This is a strange place to assign the values.
    -- We're operating on the feed data outside of the object.
    -- Why not just move this logic into the feed object?
-   if self.feed.subtitle
-   then
+   if self.feed.subtitle then
       self.feed.subtitle = description
-   elseif self.feed.description
-   then
+   elseif self.feed.description then
       self.feed.description = description
    end
 end
 
 function Feed:setDownloadDirectory(path)
-   if not util.pathExists(path)
-   then
+   if not util.pathExists(path) then
       util.makePath(path)
    end
    self.download_directory = path
 end
 
 function Feed:getDownloadDirectory()
-   if self.download_directory
-   then
-      if string.sub(self.download_directory, #self.download_directory) == '/'
-      then
+   if self.download_directory then
+      if string.sub(self.download_directory, #self.download_directory) == '/' then
          return string.sub(self.download_directory, 0, #self.download_directory - 1)
       else
          return self.download_directory

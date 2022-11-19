@@ -3,7 +3,6 @@ local util = require("frontend/util")
 local UIManager = require("ui/uimanager")
 local NetworkMgr = require("ui/network/manager")
 local EditDialog = require("views/subscription_edit_dialog")
-local SubscriptionFactory = require("subscription/subscriptionfactory")
 local FeedSubscription = require("subscription/type/feed")
 
 local InfoMessage = require("ui/widget/infomessage")
@@ -15,9 +14,17 @@ local ConfigureSubscription = {
    subscription = nil,
 }
 
+function ConfigureSubscription:new(o)
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+
+    return o
+end
+
 function ConfigureSubscription:newFeed(callback)
    NetworkMgr:runWhenOnline(function()
-         self.subscription = SubscriptionFactory:makeFeed({})
+         self.subscription = FeedSubscription:new{}
          local dialog = EditDialog:newFeed(self)
          dialog.callback = function()
             callback(self.subscription)

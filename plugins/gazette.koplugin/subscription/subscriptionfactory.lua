@@ -1,3 +1,4 @@
+local Subscription = require("subscription/subscription")
 local FeedSubscription = require("subscription/type/feed")
 local Feed = require("feed/feed")
 
@@ -10,30 +11,19 @@ SubscriptionFactory.SUBSCRIPTION_TYPES = {
 }
 
 function SubscriptionFactory:makeFeed(configuration)
-   -- If a feed exists with the ID, it will be loaded.
-   local feed = FeedSubscription:new(configuration)
-   -- If the feed wasn't loaded, there'll be no URL in the object.
-   -- Likely, we're making a new subscription.
-   if not feed.url
-   then
-      local feed = FeedSubscription:new{
-         url = configuration.url,
-         limit = configuration.limit,
-         download_full_article = configuration.download_full_article,
-         download_directory = configuration.download_directory,
-         include_images = configuration.include_images,
-         enabled_filter = configuration.enabled_filter,
-         filter_element = configuration.filter_element,
-         content_source = configuration.content_source
-      }
-   end
+    local subscription = Subscription:new(configuration)
 
-   if not feed.feed or configuration.feed
-   then
-      feed.feed = Feed:new(configuration.feed) or nil
-   end
+    if is_feed(subscription) then
+        return FeedSubscription:new(subscription)
+    else
+        return false, "Subscription not found or type not supported"
+    end
+end
 
-   return feed
+function is_feed(subscription)
+    return (subscription.feed and subscription.url) or
+        (subscription.url and (subscription.subscription_type == SubscriptionFactory.SUBSCRIPTION_TYPES.feed))
+
 end
 
 return SubscriptionFactory
