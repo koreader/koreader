@@ -145,6 +145,7 @@ function Screensaver:expandSpecial(message, fallback)
     -- %S document series
     -- %h time left in chapter
     -- %H time left in document
+    -- %b battery level
 
     if G_reader_settings:hasNot("lastfile") then
         return fallback
@@ -161,6 +162,7 @@ function Screensaver:expandSpecial(message, fallback)
     local series = _("N/A")
     local time_left_chapter = _("N/A")
     local time_left_document = _("N/A")
+    local batt_lvl = 0
 
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI:_getRunningInstance()
@@ -192,6 +194,15 @@ function Screensaver:expandSpecial(message, fallback)
         end
         -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
     end
+    local powerd = Device:getPowerDevice()
+    if Device:hasBattery() then
+        local main_batt_lvl = powerd:getCapacity()
+        if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
+            batt_lvl = main_batt_lvl + powerd:getAuxCapacity()
+        else
+            batt_lvl = main_batt_lvl
+        end
+    end
 
     local replace = {
         ["%c"] = currentpage,
@@ -202,6 +213,7 @@ function Screensaver:expandSpecial(message, fallback)
         ["%S"] = series,
         ["%h"] = time_left_chapter,
         ["%H"] = time_left_document,
+        ["%b"] = batt_lvl,
     }
     ret = ret:gsub("(%%%a)", replace)
 
@@ -392,7 +404,7 @@ function Screensaver:setMessage()
     local input_dialog
     input_dialog = InputDialog:new{
         title = "Screensaver message",
-        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series\n  %h time left in chapter\n  %H time left in document"),
+        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series\n  %h time left in chapter\n  %H time left in document\n  %b battery level"),
         input = screensaver_message,
         buttons = {
             {
