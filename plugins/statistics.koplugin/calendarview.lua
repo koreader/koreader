@@ -1244,8 +1244,6 @@ function CalendarView:_populateItems()
             end
         end
         local day_s = os.date("%Y-%m-%d", cur_ts)
-        local day_text = string.format("%s (%s)", day_s,
-                self.longDayOfWeekTranslation[self.weekdays[cur_date.wday]])
         local day_ts = os.time({
             year = cur_date.year,
             month = cur_date.month,
@@ -1271,10 +1269,10 @@ function CalendarView:_populateItems()
                     day_ts = day_ts,
                     reader_statistics = self.reader_statistics,
                     title_callback = function(this)
-                        local day_s = os.date("%Y-%m-%d", this.day_ts)
-                        local cur_date = os.date("*t", cur_ts)
-                        return string.format("%s (%s)", this.day_ts,
-                            self.longDayOfWeekTranslation[self.weekdays[cur_date.wday]])
+                        local day = os.date("%Y-%m-%d", this.day_ts)
+                        local date = os.date("*t", this.day_ts)
+                        return string.format("%s (%s)", day,
+                            self.longDayOfWeekTranslation[self.weekdays[date.wday]])
                     end,
                     close_callback = function()
                         -- Refresh calendar in case some day stats were reset for some books
