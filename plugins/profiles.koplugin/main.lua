@@ -59,7 +59,7 @@ local function dispatcherRegisterProfile(name)
         {category="none", event="ProfileExecute", arg=name, title=T(_("Profile %1"), name), general=true})
 end
 
-local function dispatcherRemoveProfile(name)
+local function dispatcherUnregisterProfile(name)
     Dispatcher:removeAction("profile_exec_"..name)
 end
 
@@ -143,7 +143,7 @@ function Profiles:getSubMenuItems()
                 end,
                 callback = function(touchmenu_instance)
                     if v.settings.registered then
-                        dispatcherRemoveProfile(k)
+                        dispatcherUnregisterProfile(k)
                         self.data[k].settings.registered = nil
                     else
                         dispatcherRegisterProfile(k)
@@ -166,7 +166,7 @@ function Profiles:getSubMenuItems()
                 callback = function(touchmenu_instance)
                     local function editCallback(new_name)
                         if v.settings.registered then
-                            dispatcherRemoveProfile(k)
+                            dispatcherUnregisterProfile(k)
                             dispatcherRegisterProfile(new_name)
                         end
                         self:renameAutostart(k, new_name)
@@ -205,7 +205,7 @@ function Profiles:getSubMenuItems()
                         ok_text = _("Delete"),
                         ok_callback = function()
                             if v.settings.registered then
-                                dispatcherRemoveProfile(k)
+                                dispatcherUnregisterProfile(k)
                             end
                             self:renameAutostart(k)
                             self.data[k] = nil
