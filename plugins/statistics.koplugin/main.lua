@@ -2716,7 +2716,7 @@ function ReaderStatistics:getReadingDurationBySecond(date)
             }
         end
         local periods = per_book[book_id].periods
-        if #periods > 0 and periods[#periods].finish == start then
+        if #periods > 0 and start - periods[#periods].finish <= self.settings.min_sec then
             periods[#periods].finish = finish
         else
             table.insert(per_book[book_id].periods, { start = start, finish = finish })

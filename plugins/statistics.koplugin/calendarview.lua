@@ -371,7 +371,7 @@ local BookDailyItem = InputContainer:extend{
     value_width = nil,
     width = nil,
     height = nil,
-    padding = Size.padding.small,
+    padding = Size.padding.default,
 }
 
 function BookDailyItem:init()
@@ -628,7 +628,7 @@ function CalendarDayDetail:init()
         text = " ",
         face = BookDailyItem.face
     }
-    self.book_item_height = temp_text:getSize().h + 2 * BookDailyItem.padding
+    self.book_item_height = temp_text:getSize().h + 2 * Size.padding.small
     temp_text:free()
 
     self.book_items = VerticalGroup:new{}
