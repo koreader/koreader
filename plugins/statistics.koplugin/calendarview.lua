@@ -408,7 +408,10 @@ function BookDailyItem:init()
             HorizontalGroup:new{
                 align = "center",
                 self.check_container,
-                HorizontalSpan:new{ w = Size.padding.default },
+                CenterContainer:new{
+                    dimen = Geom:new{ w = Size.padding.default, h = self.height },
+                    HorizontalSpan:new{ w = Size.padding.default },
+                },
                 OverlapGroup:new{
                     dimen = Geom:new{ w = title_max_width, h = self.height},
                     allow_mirroring = false,
@@ -514,6 +517,11 @@ function CalendarDayView:init()
     }
     self.outer_padding = Size.padding.large
     self.inner_padding = Size.padding.small
+    self.min_ts = os.time({
+        year = self.min_month:sub(1, 4),
+        month = self.min_month:sub(6),
+        day = 0
+    })
 
     self.title_bar = TitleBar:new{
         fullscreen = true,
@@ -676,6 +684,29 @@ function CalendarDayView:setupView()
         end
     end
 
+    local temp_check = CheckMark:new{ checked = true }
+    self.time_text_width = temp_check:getSize().w + self.outer_padding + Size.padding.default
+    temp_check:free()
+
+    local font_size = TextWidget:getFontSizeToFitHeight("cfont", self.time_text_width, Size.padding.small)
+    self.time_text_face = Font:getFace("cfont", font_size)
+    local temp_text = TextWidget:new{
+        text = "00:00",
+        face = self.time_text_face
+    }
+    local time_text_width = temp_text:getSize().w
+    while time_text_width > self.time_text_width * 0.8 do
+        font_size = font_size * 0.8
+        self.time_text_face = Font:getFace("cfont", font_size)
+        temp_text = TextWidget:new{
+            text = "00:00",
+            face = self.time_text_face
+        }
+        time_text_width = temp_text:getWidth()
+    end
+
+    temp_text:free()
+
     self.pages = #self.kv_pairs <= self.items_per_page+1 and 1 or math.ceil(#self.kv_pairs / self.items_per_page)
     self.footer_container[1] = self.pages > 1 and self.page_info or VerticalSpan:new{ w = 0 }
 
@@ -707,7 +738,7 @@ function CalendarDayView:goToPage(page)
 end
 
 function CalendarDayView:onNextPage()
-    if not self:nextPage() then
+    if not self:nextPage() and self.day_ts + 86400 < os.time() then
         -- go to next day
         self.day_ts = self.day_ts + 86400
         self:setupView()
@@ -716,7 +747,7 @@ function CalendarDayView:onNextPage()
 end
 
 function CalendarDayView:onPrevPage()
-    if not self:prevPage() then
+    if not self:prevPage() and self.day_ts - 86400 >= self.min_ts then
         -- go to previous day
         self.day_ts = self.day_ts - 86400
         self:setupView()
@@ -770,16 +801,15 @@ function CalendarDayView:_populateBooks()
         self.timeline_height = self.timeline_height - Size.padding.default
     end
     self.hour_width = math.floor(self.timeline_height / 24)
-    local font_size = TextWidget:getFontSizeToFitHeight("cfont", self.hour_width, Size.padding.small)
-    self.time_text_face = Font:getFace("cfont", font_size)
-    local temp_text = TextWidget:new{
-        text = "00:00",
-        face = self.time_text_face
-    }
-    self.time_text_width = temp_text:getWidth()
-    temp_text:free()
-    self.timeline_width = self.dimen.w - 2 * self.outer_padding - self.time_text_width - Size.padding.small
+    self.timeline_width = self.dimen.w - self.outer_padding - self.time_text_width
 
+    if #self.kv_pairs == 0 then
+        -- Needed when the first opened day has no data, then move to another day with data
+        table.insert(self.book_items, CenterContainer:new{
+            dimen = Geom:new { w = self.dimen.w - 2 * self.outer_padding, h = 0},
+            VerticalSpan:new{ w = 0 }
+        })
+    end
     self:refreshTimeline()
 
 end
@@ -814,8 +844,8 @@ function CalendarDayView:refreshTimeline()
             padding = 0,
             background = Blitbuffer.COLOR_WHITE,
             bordersize = 0,
-            overlap_offset = {self.outer_padding - Size.padding.small, offset_y},
-            LeftContainer:new{
+            overlap_offset = {0, offset_y},
+            CenterContainer:new{
                 dimen = Geom:new{ w = self.time_text_width, h = self.hour_width},
                 TextWidget:new{
                     text = string.format("%02d:00", i),
@@ -831,7 +861,8 @@ function CalendarDayView:refreshTimeline()
                 height = Size.border.thin,
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
                 bordersize = 0,
-                overlap_offset = { self.outer_padding + self.time_text_width + Size.padding.small, offset_y },
+                padding = 0,
+                overlap_offset = { self.time_text_width, offset_y },
                 CenterContainer:new{
                     dimen = Geom:new{ w = self.timeline_width, h = Size.border.thin },
                     VerticalSpan:new{ w = 0 }
@@ -849,7 +880,7 @@ function CalendarDayView:generateSpan(start, finish, bgcolor, fgcolor, title)
     if width <= 0 then return end
     local start_hour = math.floor(start / 3600)
     local offset_y = start_hour * self.hour_width + self.inner_padding + self.timeline_offset
-    local offset_x = self.outer_padding + self.time_text_width + Size.padding.small + math.floor((start % 3600) / 3600 * self.timeline_width)
+    local offset_x = self.time_text_width + math.floor((start % 3600) / 3600 * self.timeline_width)
 
     local font_size = TextWidget:getFontSizeToFitHeight("cfont", self.hour_width - 2 * self.inner_padding, 0.3)
     local min_width = TextWidget:new{
@@ -1274,15 +1305,18 @@ function CalendarView:_populateItems()
                         return string.format("%s (%s)", day,
                             self.longDayOfWeekTranslation[self.weekdays[date.wday]])
                     end,
-                    close_callback = function()
+                    close_callback = function(this)
                         -- Refresh calendar in case some day stats were reset for some books
                         -- (we don't know if some reset were done... so we refresh the current
                         -- display always - at tickAfterNext so there is no noticable slowness
                         -- when closing, and the re-painting happening after is not noticable;
                         -- but if some stat reset were done, this will make a nice noticable
                         -- repainting showing dynamically reset books disappearing :)
-                        UIManager:tickAfterNext(function() self:_populateItems() end)
+                        UIManager:tickAfterNext(function() 
+                            self:goToMonth(os.date("%Y-%m", this.day_ts)) 
+                        end)
                     end,
+                    min_month = self.min_month
                 })
             end
         }
