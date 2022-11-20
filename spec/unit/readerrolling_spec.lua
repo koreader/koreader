@@ -1,5 +1,5 @@
 describe("Readerrolling module", function()
-    local DocumentRegistry, ReaderUI, Event, Screen
+    local DocumentRegistry, UIManager, ReaderUI, Event, Screen
     local readerui, rolling
 
     setup(function()
