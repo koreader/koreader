@@ -480,13 +480,13 @@ function BookDailyItem:onTap(_, ges)
     return true
 end
 
-local CalendarDayDetail = FocusManager:extend{
+local CalendarDayView = FocusManager:extend{
     title = nil,
     show_page = 1,
     kv_pairs = {},
 }
 
-function CalendarDayDetail:init()
+function CalendarDayView:init()
     self.dimen = Geom:new{
         x = 0,
         y = 0,
@@ -663,7 +663,7 @@ function CalendarDayDetail:init()
     }
 end
 
-function CalendarDayDetail:nextPage()
+function CalendarDayView:nextPage()
     local new_page = math.min(self.show_page+1, self.pages)
     if new_page > self.show_page then
         self.show_page = new_page
@@ -671,7 +671,7 @@ function CalendarDayDetail:nextPage()
     end
 end
 
-function CalendarDayDetail:prevPage()
+function CalendarDayView:prevPage()
     local new_page = math.max(self.show_page-1, 1)
     if new_page < self.show_page then
         self.show_page = new_page
@@ -679,22 +679,22 @@ function CalendarDayDetail:prevPage()
     end
 end
 
-function CalendarDayDetail:goToPage(page)
+function CalendarDayView:goToPage(page)
     self.show_page = page
     self:_populateBooks()
 end
 
-function CalendarDayDetail:onNextPage()
+function CalendarDayView:onNextPage()
     self:nextPage()
     return true
 end
 
-function CalendarDayDetail:onPrevPage()
+function CalendarDayView:onPrevPage()
     self:prevPage()
     return true
 end
 
-function CalendarDayDetail:_populateBooks()
+function CalendarDayView:_populateBooks()
     self.book_items:clear()
     self.layout = {}
     local idx_offset = (self.show_page - 1) * self.items_per_page
@@ -754,7 +754,7 @@ function CalendarDayDetail:_populateBooks()
 
 end
 
-function CalendarDayDetail:refreshTimeline()
+function CalendarDayView:refreshTimeline()
     self.timeline:clear()
     for _, v in ipairs(self.kv_pairs) do
         if v.checked and v.periods then
@@ -814,7 +814,7 @@ function CalendarDayDetail:refreshTimeline()
     end)
 end
 
-function CalendarDayDetail:generateSpan(start, finish, bgcolor, fgcolor, title)
+function CalendarDayView:generateSpan(start, finish, bgcolor, fgcolor, title)
     local width = math.floor((finish - start)/3600*self.timeline_width)
     if width <= 0 then return end
     local start_hour = math.floor(start / 3600)
@@ -847,7 +847,7 @@ function CalendarDayDetail:generateSpan(start, finish, bgcolor, fgcolor, title)
     }
 end
 
-function CalendarDayDetail:onSwipe(arg, ges_ev)
+function CalendarDayView:onSwipe(arg, ges_ev)
     local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
     if direction == "west" then
         self:onNextPage()
@@ -868,12 +868,12 @@ function CalendarDayDetail:onSwipe(arg, ges_ev)
     end
 end
 
-function CalendarDayDetail:onMultiSwipe(arg, ges_ev)
+function CalendarDayView:onMultiSwipe(arg, ges_ev)
     self:onClose()
     return true
 end
 
-function CalendarDayDetail:onClose()
+function CalendarDayView:onClose()
     UIManager:close(self)
     UIManager:setDirty(nil, "ui")
     if self.close_callback then
@@ -1246,7 +1246,7 @@ function CalendarView:_populateItems()
                     kv.checked = true
                 end
                 table.sort(kv_pairs, function(a,b) return a[2] > b[2] end) --sort by value
-                UIManager:show(CalendarDayDetail:new{
+                UIManager:show(CalendarDayView:new{
                     title = day_text,
                     kv_pairs = kv_pairs,
                     close_callback = function()
