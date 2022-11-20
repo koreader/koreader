@@ -382,6 +382,12 @@ function BookDailyItem:init()
             range = self.dimen,
         }
     }
+    self.ges_events.Hold = {
+        GestureRange:new{
+            ges = "hold",
+            range = self.dimen,
+        }
+    }
     self.checkmark_widget = CheckMark:new{
         checked = self.item.checked,
     }
@@ -479,6 +485,13 @@ function BookDailyItem:onTap(_, ges)
         end)
     elseif self.item.callback then
         self.item:callback()
+    end
+    return true
+end
+
+function BookDailyItem:onHold()
+    if self.item.hold_callback then
+        self.item.hold_callback(self.show_parent, self.item)
     end
     return true
 end
@@ -781,6 +794,7 @@ function CalendarDayView:_populateBooks()
             width = self.dimen.w - 2 * self.outer_padding,
             value_width = value_width,
             height = self.book_item_height,
+            show_parent = self,
         }
         table.insert(self.layout, { item })
         table.insert(self.book_items, item)
@@ -906,6 +920,16 @@ function CalendarDayView:generateSpan(start, finish, bgcolor, fgcolor, title)
             } or HorizontalSpan:new{ w = 0 },
         }
     }
+end
+
+function CalendarDayView:removeKeyValueItem(item)
+    for i, v in ipairs(self.kv_pairs) do
+        if v.book_id == item.book_id then
+            table.remove(self.kv_pairs, i)
+            self:_populateBooks()
+            break
+        end
+    end
 end
 
 function CalendarDayView:onSwipe(arg, ges_ev)
