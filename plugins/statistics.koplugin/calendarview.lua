@@ -5,6 +5,7 @@ local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -530,9 +531,10 @@ function CalendarDayView:init()
     }
     self.outer_padding = Size.padding.large
     self.inner_padding = Size.padding.small
+    local min_month = self.min_month or os.date("%Y-%m", self.reader_statistics:getFirstTimestamp() or os.time())
     self.min_ts = os.time({
-        year = self.min_month:sub(1, 4),
-        month = self.min_month:sub(6),
+        year = min_month:sub(1, 4),
+        month = min_month:sub(6),
         day = 0
     })
 
@@ -876,7 +878,7 @@ function CalendarDayView:refreshTimeline()
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
                 bordersize = 0,
                 padding = 0,
-                overlap_offset = { self.time_text_width, offset_y },
+                overlap_offset = { self.time_text_width, offset_y - Size.border.thin/2 },
                 CenterContainer:new{
                     dimen = Geom:new{ w = self.timeline_width, h = Size.border.thin },
                     VerticalSpan:new{ w = 0 }
@@ -1324,8 +1326,8 @@ function CalendarView:_populateItems()
                     day_ts = day_ts,
                     reader_statistics = self.reader_statistics,
                     title_callback = function(this)
-                        local day = os.date("%Y-%m-%d", this.day_ts)
-                        local date = os.date("*t", this.day_ts)
+                        local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 3:00 to determine date (summer time change)
+                        local date = os.date("*t", this.day_ts + 10800)
                         return string.format("%s (%s)", day,
                             self.longDayOfWeekTranslation[self.weekdays[date.wday]])
                     end,
@@ -1355,6 +1357,16 @@ function CalendarView:_populateItems()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
+end
+
+function CalendarView:showCalendarDayView(reader_statistics, title_callback)
+    local date = os.date("*t", os.time())
+    UIManager:show(CalendarDayView:new{
+        day_ts = os.time({ year = date.year, month = date.month, day = date.day, hour = 0 }),
+        reader_statistics = reader_statistics,
+        title_callback = title_callback,
+        min_month = self.min_month
+    })
 end
 
 function CalendarView:nextMonth()
@@ -1433,6 +1445,8 @@ end
 
 function CalendarView:onClose()
     UIManager:close(self)
+    -- Remove ghosting
+    UIManager:setDirty(nil, "full")
     return true
 end
 

@@ -130,6 +130,7 @@ ReaderStatistics.default_settings = {
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
+    Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Open today's statistics timeline"), general=true, separator=false})
     Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true, separator=true})
     Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=true})
 end
@@ -2599,6 +2600,18 @@ function ReaderStatistics:onShowCalendarView()
         show_hourly_histogram = self.settings.calendar_show_histogram,
         browse_future_months = self.settings.calendar_browse_future_months,
     })
+end
+
+function ReaderStatistics:onShowCalendarDayView()
+    self:insertDB()
+    self.kv = nil -- clean left over stack link
+    local CalendarView = require("calendarview")
+    local title_callback = function(this)
+        local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 03:00 to determine date (summer time change)
+        local date = os.date("*t", this.day_ts + 10800)
+        return string.format("%s (%s)", day, longDayOfWeekTranslation[CalendarView.weekdays[date.wday]])
+    end
+    CalendarView:showCalendarDayView(self, title_callback)
 end
 
 -- Used by calendarview.lua CalendarView
