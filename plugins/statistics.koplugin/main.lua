@@ -2603,6 +2603,8 @@ function ReaderStatistics:onShowCalendarView()
 end
 
 function ReaderStatistics:onShowCalendarDayView()
+    self:insertDB()
+    self.kv = nil -- clean left over stack link
     local CalendarView = require("calendarview")
     local title_callback = function(this)
         local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 03:00 to determine date (summer time change)
