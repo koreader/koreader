@@ -130,8 +130,8 @@ ReaderStatistics.default_settings = {
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
-    Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Open today's statistics timeline"), general=true, separator=false})
-    Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true, separator=true})
+    Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true, separator=false})
+    Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Statistics today's timeline"), general=true, separator=true})
     Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=true})
 end
 
@@ -2603,8 +2603,6 @@ function ReaderStatistics:onShowCalendarView()
 end
 
 function ReaderStatistics:onShowCalendarDayView()
-    self:insertDB()
-    self.kv = nil -- clean left over stack link
     local CalendarView = require("calendarview")
     local title_callback = function(this)
         local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 03:00 to determine date (summer time change)

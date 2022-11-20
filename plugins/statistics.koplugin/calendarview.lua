@@ -873,13 +873,13 @@ function CalendarDayView:refreshTimeline()
         if i ~= 0 then
             table.insert(self.timeline, FrameContainer:new{
                 width = self.timeline_width,
-                height = Size.border.thin,
-                background = Blitbuffer.COLOR_LIGHT_GRAY,
+                height = Size.border.default,
+                background = Blitbuffer.COLOR_GRAY,
                 bordersize = 0,
                 padding = 0,
-                overlap_offset = { self.time_text_width, offset_y - Size.border.thin/2 },
+                overlap_offset = { self.time_text_width, offset_y - Size.border.thin },
                 CenterContainer:new{
-                    dimen = Geom:new{ w = self.timeline_width, h = Size.border.thin },
+                    dimen = Geom:new{ w = self.timeline_width, h = Size.border.default },
                     VerticalSpan:new{ w = 0 }
                 }
             })
@@ -1338,7 +1338,7 @@ function CalendarView:_populateItems()
                         -- but if some stat reset were done, this will make a nice noticable
                         -- repainting showing dynamically reset books disappearing :)
                         UIManager:tickAfterNext(function()
-                            self:goToMonth(os.date("%Y-%m", this.day_ts))
+                            self:goToMonth(os.date("%Y-%m", this.day_ts + 10800))
                         end)
                     end,
                     min_month = self.min_month
