@@ -2712,7 +2712,7 @@ function ReaderStatistics:getReadingDurationBySecond(ts)
         JOIN   book ON book.id = page_stat_data.id_book
         WHERE  start_time BETWEEN ?
                               AND ? + 86399
-        ORDER BY book_id, start;
+        ORDER BY start;
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
@@ -2720,6 +2720,7 @@ function ReaderStatistics:getReadingDurationBySecond(ts)
     stmt:close()
     conn:close()
     local per_book = {}
+    local last_book
     for i=1, nb do
         local start, finish, book_id, book_title = tonumber(res[1][i]), tonumber(res[2][i]), tonumber(res[3][i]), tostring(res[4][i])
         if not per_book[book_id] then
@@ -2729,11 +2730,12 @@ function ReaderStatistics:getReadingDurationBySecond(ts)
             }
         end
         local periods = per_book[book_id].periods
-        if #periods > 0 and start - periods[#periods].finish <= self.settings.min_sec then
+        if #periods > 0 and start - periods[#periods].finish <= math.max(30, self.settings.min_sec) and book_id == last_book then
             periods[#periods].finish = finish
         else
             table.insert(per_book[book_id].periods, { start = start, finish = finish })
         end
+        last_book = book_id
     end
     return per_book
 end
