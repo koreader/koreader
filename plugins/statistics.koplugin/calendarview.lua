@@ -1312,8 +1312,8 @@ function CalendarView:_populateItems()
                         -- when closing, and the re-painting happening after is not noticable;
                         -- but if some stat reset were done, this will make a nice noticable
                         -- repainting showing dynamically reset books disappearing :)
-                        UIManager:tickAfterNext(function() 
-                            self:goToMonth(os.date("%Y-%m", this.day_ts)) 
+                        UIManager:tickAfterNext(function()
+                            self:goToMonth(os.date("%Y-%m", this.day_ts))
                         end)
                     end,
                     min_month = self.min_month
