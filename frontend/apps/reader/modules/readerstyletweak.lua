@@ -450,7 +450,7 @@ local function dispatcherRegisterStyleTweak(tweak_id, tweak_title)
         {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Toggle style tweak: %1"), tweak_title), rolling=true})
 end
 
-local function dispatcherRemoveStyleTweak(tweak_id)
+local function dispatcherUnregisterStyleTweak(tweak_id)
     Dispatcher:removeAction("style_tweak_"..tweak_id)
 end
 
@@ -565,7 +565,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
                         toggle_tweak_registered_callback = function()
                             if self.registered_tweaks[item.id] then
                                 self.registered_tweaks[item.id] = nil
-                                dispatcherRemoveStyleTweak(item.id)
+                                dispatcherUnregisterStyleTweak(item.id)
                             else
                                 self.registered_tweaks[item.id] = item.title
                                 dispatcherRegisterStyleTweak(item.id, item.title)
