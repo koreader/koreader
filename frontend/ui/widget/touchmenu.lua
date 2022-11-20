@@ -681,7 +681,7 @@ function TouchMenu:updateItems()
             if item_tmp:isEnabled() then
                 table.insert(self.layout, {[self.cur_tab] = item_tmp}) -- for the focusmanager
             end
-            if item.separator and c ~= self.perpage then
+            if item.separator and c ~= self.perpage and i ~= #self.item_table then
                 -- insert split line
                 table.insert(self.item_group, self.split_line)
             end
