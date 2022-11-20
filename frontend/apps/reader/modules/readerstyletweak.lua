@@ -5,6 +5,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local CssTweaks = require("ui/data/css_tweaks")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -123,17 +124,28 @@ function TweakInfoWidget:init()
 
     local buttons = {
         {
-            text = _("Close"),
-            callback = function()
-                UIManager:close(self)
-            end,
+            {
+                text = self.is_tweak_registered and _("Don't show in action list") or _("Show in action list"),
+                callback = function()
+                    self.toggle_tweak_registered_callback()
+                    UIManager:close(self)
+                end,
+            },
         },
         {
-            text = self.is_global_default and _("Don't use on all books") or _("Use on all books"),
-            callback = function()
-                self.toggle_global_default_callback()
-                UIManager:close(self)
-            end,
+            {
+                text = _("Close"),
+                callback = function()
+                    UIManager:close(self)
+                end,
+            },
+            {
+                text = self.is_global_default and _("Don't use on all books") or _("Use on all books"),
+                callback = function()
+                    self.toggle_global_default_callback()
+                    UIManager:close(self)
+                end,
+            },
         },
     }
 
@@ -141,7 +153,7 @@ function TweakInfoWidget:init()
         width = content:getSize().w,
         button_font_face = "cfont",
         button_font_size = 20,
-        buttons = { buttons },
+        buttons = buttons,
         zero_sep = true,
         show_parent = self,
     }
@@ -427,12 +439,23 @@ function ReaderStyleTweak:onSaveSettings()
     end
     self.ui.doc_settings:saveSetting("style_tweaks", util.tableSize(self.doc_tweaks) > 0 and self.doc_tweaks or nil)
     G_reader_settings:saveSetting("style_tweaks", self.global_tweaks)
+    G_reader_settings:saveSetting("style_tweaks_registered", self.registered_tweaks)
     self.ui.doc_settings:saveSetting("book_style_tweak", self.book_style_tweak)
     self.ui.doc_settings:saveSetting("book_style_tweak_enabled", self.book_style_tweak_enabled)
     self.ui.doc_settings:saveSetting("book_style_tweak_last_edit_pos", self.book_style_tweak_last_edit_pos)
 end
 
+local function dispatcherRegisterStyleTweak(tweak_id, tweak_title)
+    Dispatcher:registerAction("style_tweak_"..tweak_id,
+        {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Toggle style tweak: %1"), tweak_title), rolling=true})
+end
+
+local function dispatcherRemoveStyleTweak(tweak_id)
+    Dispatcher:removeAction("style_tweak_"..tweak_id)
+end
+
 function ReaderStyleTweak:init()
+    self.registered_tweaks = G_reader_settings:readSetting("style_tweaks_registered") or {}
     self.tweaks_by_id = {}
     self.tweaks_table = {}
 
@@ -503,6 +526,9 @@ You can enable individual tweaks on this book with a tap, or view more details a
                     if self.global_tweaks[item.id] then
                         title = title .. "   ★"
                     end
+                    if self.registered_tweaks[item.id] then
+                        title = title .. "   \u{F144}"
+                    end
                     return title
                 end,
                 hold_callback = function(touchmenu_instance)
@@ -534,27 +560,23 @@ You can enable individual tweaks on this book with a tap, or view more details a
                             end
                             touchmenu_instance:updateItems()
                             self:updateCssText(true) -- apply it immediately
-                        end
+                        end,
+                        is_tweak_registered = self.registered_tweaks[item.id],
+                        toggle_tweak_registered_callback = function()
+                            if self.registered_tweaks[item.id] then
+                                self.registered_tweaks[item.id] = nil
+                                dispatcherRemoveStyleTweak(item.id)
+                            else
+                                self.registered_tweaks[item.id] = item.title
+                                dispatcherRegisterStyleTweak(item.id, item.title)
+                            end
+                            touchmenu_instance:updateItems()
+                        end,
                     })
                 end,
                 callback = function()
                     -- enable/disable only for this book
-                    local enabled, g_enabled = self:isTweakEnabled(item.id)
-                    if enabled then
-                        if g_enabled then
-                            -- if globaly enabled, mark it as disabled
-                            -- for this document only
-                            self.doc_tweaks[item.id] = false
-                        else
-                            self.doc_tweaks[item.id] = nil
-                        end
-                    else
-                        if item.conflicts_with then
-                            self:resolveConflictsBeforeEnabling(item.id, item.conflicts_with)
-                        end
-                        self.doc_tweaks[item.id] = true
-                    end
-                    self:updateCssText(true) -- apply it immediately
+                    self:onToggleStyleTweak(item.id, item)
                 end,
                 separator = item.separator,
             })
@@ -671,6 +693,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
     table.insert(self.tweaks_table, book_tweak_item)
 
     self.ui.menu:registerToMainMenu(self)
+    self:onDispatcherRegisterActions()
 end
 
 function ReaderStyleTweak:addToMainMenu(menu_items)
@@ -685,6 +708,42 @@ function ReaderStyleTweak:addToMainMenu(menu_items)
         end,
         sub_item_table = self.tweaks_table,
     }
+end
+
+function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item)
+    local enabled, g_enabled = self:isTweakEnabled(tweak_id)
+    if enabled then
+        if g_enabled then
+            -- if globaly enabled, mark it as disabled
+            -- for this document only
+            self.doc_tweaks[tweak_id] = false
+        else
+            self.doc_tweaks[tweak_id] = nil
+        end
+    else
+        local conflicts_with
+        if item then
+            conflicts_with = item.conflicts_with
+        else -- called from Dispatcher
+            for _, v in ipairs(CssTweaks) do
+                if v.id == tweak_id then
+                    conflicts_with = v.conflicts_with
+                    break
+                end
+            end
+        end
+        if conflicts_with then
+            self:resolveConflictsBeforeEnabling(tweak_id, conflicts_with)
+        end
+        self.doc_tweaks[tweak_id] = true
+    end
+    self:updateCssText(true) -- apply it immediately
+end
+
+function ReaderStyleTweak:onDispatcherRegisterActions()
+    for tweak_id, tweak_title in pairs(self.registered_tweaks) do
+        dispatcherRegisterStyleTweak(tweak_id, tweak_title)
+    end
 end
 
 local BOOK_TWEAK_SAMPLE_CSS = [[
