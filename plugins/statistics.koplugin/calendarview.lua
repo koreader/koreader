@@ -874,7 +874,7 @@ function CalendarDayView:refreshTimeline()
             table.insert(self.timeline, FrameContainer:new{
                 width = self.timeline_width,
                 height = Size.border.default,
-                background = Blitbuffer.COLOR_GRAY,
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
                 bordersize = 0,
                 padding = 0,
                 overlap_offset = { self.time_text_width, offset_y - Size.border.thin },
