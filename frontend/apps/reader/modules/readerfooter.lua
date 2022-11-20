@@ -771,6 +771,22 @@ function ReaderFooter:unscheduleFooterAutoRefresh()
     UIManager:unschedule(self.autoRefreshFooter)
 end
 
+function ReaderFooter:shouldBeRepainted()
+    local n = 1
+    local widget = UIManager:getNthTopWidget(n)
+    while widget do
+        if widget.name == "ReaderUI" then
+            return true
+        elseif widget.covers_fullscreen or widget.covers_footer then
+            -- (e.g. the virtual keyboard sets widget_covers_footer == true)
+            return false
+        end
+        n = n + 1
+        widget = UIManager:getNthTopWidget(n)
+    end
+    return false
+end
+
 function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
     if not self.autoRefreshFooter then
         -- Create this function the first time we're called
@@ -779,13 +795,8 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
             -- (We want to avoid the footer to be painted over a widget covering it - we would
             -- be fine refreshing it if the widget is not covering it, but this is hard to
             -- guess from here.)
-            if UIManager:getTopWidget() == "ReaderUI" then
-                self:onUpdateFooter(self.view.footer_visible)
-            else
-                logger.dbg("Skipping ReaderFooter repaint, because ReaderUI is not the top-level widget")
-                -- NOTE: We *do* keep its content up-to-date, though
-                self:onUpdateFooter()
-            end
+            self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
+
             self:rescheduleFooterAutoRefreshIfNeeded() -- schedule (or not) next refresh
         end
     end
@@ -2462,21 +2473,12 @@ end
 -- Used by event handlers that can trip without direct UI interaction...
 function ReaderFooter:maybeUpdateFooter()
     -- ...so we need to avoid stomping over unsuspecting widgets (usually, ScreenSaver).
-    if UIManager:getTopWidget() == "ReaderUI" then
-        self:onUpdateFooter(self.view.footer_visible)
-    else
-        self:onUpdateFooter()
-    end
+    self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
 end
 
+-- is the same as maybeUpdateFooter
 function ReaderFooter:onFrontlightStateChanged()
-    -- Custom variant of maybeUpdateFooter that *also* whitelists the FL widget...
-    local top_wg = UIManager:getTopWidget()
-    if top_wg == "ReaderUI" or top_wg == "FrontLightWidget" then
-        self:onUpdateFooter(self.view.footer_visible)
-    else
-        self:onUpdateFooter()
-    end
+    self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
 end
 
 function ReaderFooter:onNetworkConnected()

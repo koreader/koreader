@@ -430,7 +430,7 @@ function InputDialog:init()
             h = self.screen_height - keyboard_height,
         },
         ignore_if_over = "height",
-        frame
+        frame,
     }
     if Device:isTouchDevice() then -- is used to hide the keyboard with a tap outside of inputbox
         self.ges_events.Tap = {

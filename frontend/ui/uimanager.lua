@@ -721,15 +721,16 @@ function UIManager:ToggleNightMode(night_mode)
     end
 end
 
---- Get top widget (name if possible, ref otherwise).
-function UIManager:getTopWidget()
-    if not self._window_stack[1] then
-        -- No widgets in the stack, bye!
+--- Get n.th topmost widget
+function UIManager:getNthTopWidget(n)
+    n = n and n-1 or 0
+    if #self._window_stack - n < 1 then
+        -- No or not enough widgets in the stack, bye!
         return nil
     end
 
-    local widget = self._window_stack[#self._window_stack].widget
-    return widget.name or widget
+    local widget = self._window_stack[#self._window_stack - n].widget
+    return widget
 end
 
 --[[--

@@ -5,7 +5,6 @@ Plugin for automatic dimming of the frontlight after an idle period.
 --]]--
 
 local Device = require("device")
-local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
@@ -41,8 +40,6 @@ function AutoDim:init()
     self.isCurrentlyDimming = false -- true during or after the dimming ramp
     self.last_ramp_scheduling_time = nil -- holds start time of the next scheduled ramp task
     self.trap_widget = nil
-
-    self.top_widget_before_dim = nil
 end
 
 function AutoDim:addToMainMenu(menu_items)
@@ -182,7 +179,6 @@ end
 function AutoDim:restoreFrontlight()
     if self.autodim_save_fl then
         Powerd:setIntensity(self.autodim_save_fl)
-        self:updateFooter(true)
         self.autodim_save_fl = nil
     end
 end
@@ -272,19 +268,6 @@ function AutoDim:onFrontlightTurnedOff()
     self:_schedule_autodim_task() -- reschedule
 end
 
-function AutoDim:updateFooter(clear)
-    -- update footer only if it is not covered by another widget
-    if self.top_widget_before_dim == "ReaderUI" or
-        (self.top_widget_before_dim ~= "ConfigDialog" and self.top_widget_before_dim ~= "ScreenSaver"
-        and self.top_widget_before_dim ~= "VirtualKeyboard") then
-
-        UIManager:broadcastEvent(Event:new("UpdateFooter", self.view and self.view.footer_visible or false))
-    end
-    if clear then
-        self.top_widget_before_dim = nil
-    end
-end
-
 function AutoDim:autodim_task()
     if self.isCurrentlyDimming then return end
     if Powerd:isFrontlightOff() then
@@ -312,9 +295,6 @@ function AutoDim:autodim_task()
                     self.trap_widget = nil
                 end
             }
-
-            -- This is the active widget before showing self.trap_widget
-            self.top_widget_before_dim = UIManager:getTopWidget()
 
             UIManager:show(self.trap_widget) -- suppress taps during dimming
 
@@ -344,7 +324,7 @@ function AutoDim:ramp_task()
         self.ramp_event_countdown = self.ramp_event_countdown - 1
         if self.ramp_event_countdown <= 0 then
             -- Update footer on every self.ramp_event_countdown call
-            self:updateFooter()
+            UIManager:broadcastEvent("UpdateFooter")
             self.ramp_event_countdown = self.ramp_event_countdown_startvalue
             self.last_ramp_scheduling_time = nil
         end

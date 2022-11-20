@@ -54,7 +54,7 @@ function ReaderStatus:onEndOfBook()
         self:onMarkBook(true)
     end
 
-    if (settings == "pop-up" or settings == nil) and UIManager:getTopWidget() ~= "end_document" then
+    if (settings == "pop-up" or settings == nil) and UIManager:getNthTopWidget().name ~= "end_document" then
         local buttons = {
             {
                 {

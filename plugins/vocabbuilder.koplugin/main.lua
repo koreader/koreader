@@ -64,8 +64,8 @@ local function resetButtonOnLookupWindow()
                 return
             elseif obj.is_wiki then
                 -- make wiki window have the same button_tweak as its presenting dictionary window
-                local widget = UIManager:getSecondTopmostWidget()
-                if widget.tweak_buttons_func then
+                local widget = UIManager:getNthTopWidget(2)
+                if widget and widget.tweak_buttons_func then
                     widget:tweak_buttons_func(buttons)
                 end
                 return
@@ -1179,6 +1179,10 @@ function VocabularyBuilderWidget:init()
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }
+    if self.dimen.h == Screen:getHeight() then
+        self.covers_footer = true
+    end
+
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }

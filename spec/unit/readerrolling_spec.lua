@@ -1,9 +1,12 @@
 describe("Readerrolling module", function()
-    local DocumentRegistry, ReaderUI, Event, Screen
+    local DocumentRegistry, UIManager, ReaderUI, Event, Screen
     local readerui, rolling
 
     setup(function()
         require("commonrequire")
+        UIManager = require("ui/uimanager")
+        stub(UIManager, "getNthTopWidget")
+        UIManager.getNthTopWidget.returns({})
         DocumentRegistry = require("document/documentregistry")
         ReaderUI = require("apps/reader/readerui")
         Event = require("ui/event")
