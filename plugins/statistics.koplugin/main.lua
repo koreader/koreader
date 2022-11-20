@@ -2688,22 +2688,22 @@ function ReaderStatistics:getReadBookByDay(month)
     return per_day
 end
 
-function ReaderStatistics:getReadingDurationBySecond(date)
+function ReaderStatistics:getReadingDurationBySecond(ts)
     local sql_stmt = [[
         SELECT
-            start_time - strftime('%s', ?, 'utc') as start,
-            start_time - strftime('%s', ?, 'utc') + duration as end,
+            start_time - ? as start,
+            start_time - ? + duration as end,
             id_book book_id,
             book.title book_title
         FROM   page_stat_data
         JOIN   book ON book.id = page_stat_data.id_book
-        WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
-                              AND strftime('%s', ?, 'utc', '+24 hours', '-1 second')
+        WHERE  start_time BETWEEN ?
+                              AND ? + 86399
         ORDER BY book_id, start;
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(date, date, date, date):resultset("i")
+    local res, nb = stmt:reset():bind(ts, ts, ts, ts):resultset("i")
     stmt:close()
     conn:close()
     local per_book = {}

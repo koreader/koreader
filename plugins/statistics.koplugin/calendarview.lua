@@ -481,7 +481,7 @@ function BookDailyItem:onTap(_, ges)
 end
 
 local CalendarDayView = FocusManager:extend{
-    title = nil,
+    day_ts = nil,
     show_page = 1,
     kv_pairs = {},
 }
@@ -515,114 +515,105 @@ function CalendarDayView:init()
     self.outer_padding = Size.padding.large
     self.inner_padding = Size.padding.small
 
-    local title_bar = TitleBar:new{
+    self.title_bar = TitleBar:new{
         fullscreen = true,
         width = self.dimen.w,
         align = "left",
-        title = self.title,
+        title = self.title or "Title",
         title_face = Font:getFace("smalltfont", 22),
         title_h_padding = self.outer_padding,
         close_callback = function() self:onClose() end,
         show_parent = self,
     }
 
-    self.titlebar_height = title_bar:getHeight()
+    self.titlebar_height = self.title_bar:getHeight()
 
-    for _, kv in ipairs(self.kv_pairs) do
-        kv.check_cb = function(this)
-            this.checked = not this.checked
-            self:refreshTimeline()
-        end
+    local padding = Size.padding.large
+    local footer_width = self.dimen.w - 2 * padding
+    self.footer_center_width = math.floor(footer_width * 0.32)
+    self.footer_button_width = math.floor(footer_width * 0.10)
+
+    local chevron_left = "chevron.left"
+    local chevron_right = "chevron.right"
+    local chevron_first = "chevron.first"
+    local chevron_last = "chevron.last"
+
+    if BD.mirroredUILayout() then
+        chevron_left, chevron_right = chevron_right, chevron_left
+        chevron_first, chevron_last = chevron_last, chevron_first
     end
+
+    self.footer_left = Button:new{
+        icon = chevron_left,
+        width = self.footer_button_width,
+        callback = function() self:prevPage() end,
+        bordersize = 0,
+        radius = 0,
+        show_parent = self,
+    }
+    self.footer_right = Button:new{
+        icon = chevron_right,
+        width = self.footer_button_width,
+        callback = function() self:nextPage() end,
+        bordersize = 0,
+        radius = 0,
+        show_parent = self,
+    }
+    self.footer_first_up = Button:new{
+        icon = chevron_first,
+        width = self.footer_button_width,
+        callback = function()
+            self:goToPage(1)
+        end,
+        bordersize = 0,
+        radius = 0,
+        show_parent = self,
+    }
+    self.footer_last_down = Button:new{
+        icon = chevron_last,
+        width = self.footer_button_width,
+        callback = function()
+            self:goToPage(self.pages)
+        end,
+        bordersize = 0,
+        radius = 0,
+        show_parent = self,
+    }
+    self.footer_page = Button:new{
+        text = "",
+        hold_input = {
+            title = _("Enter page number"),
+            hint_func = function()
+                return "(" .. "1 - " .. self.pages .. ")"
+            end,
+            type = "number",
+            deny_blank_input = true,
+            callback = function(input)
+                local page = tonumber(input)
+                if page and page >= 1 and page <= self.pages then
+                    self:goToPage(page)
+                end
+            end,
+            ok_text = _("Go to page"),
+        },
+        call_hold_input_on_tap = true,
+        bordersize = 0,
+        margin = 0,
+        text_font_face = "pgfont",
+        text_font_bold = false,
+        width = self.footer_center_width,
+        show_parent = self,
+    }
+    self.page_info = HorizontalGroup:new{
+        self.footer_first_up,
+        self.footer_left,
+        self.footer_page,
+        self.footer_right,
+        self.footer_last_down,
+    }
+    self.footer_height = self.page_info:getSize().h
 
     self.items_per_page = 5
-    self.pages = #self.kv_pairs <= self.items_per_page+1 and 1 or math.ceil(#self.kv_pairs / self.items_per_page)
-    if self.pages > 1 then
-        local padding = Size.padding.large
-        local footer_width = self.dimen.w - 2 * padding
-        self.footer_center_width = math.floor(footer_width * 0.32)
-        self.footer_button_width = math.floor(footer_width * 0.10)
-
-        local chevron_left = "chevron.left"
-        local chevron_right = "chevron.right"
-        local chevron_first = "chevron.first"
-        local chevron_last = "chevron.last"
-
-        if BD.mirroredUILayout() then
-            chevron_left, chevron_right = chevron_right, chevron_left
-            chevron_first, chevron_last = chevron_last, chevron_first
-        end
-
-        self.footer_left = Button:new{
-            icon = chevron_left,
-            width = self.footer_button_width,
-            callback = function() self:prevPage() end,
-            bordersize = 0,
-            radius = 0,
-            show_parent = self,
-        }
-        self.footer_right = Button:new{
-            icon = chevron_right,
-            width = self.footer_button_width,
-            callback = function() self:nextPage() end,
-            bordersize = 0,
-            radius = 0,
-            show_parent = self,
-        }
-        self.footer_first_up = Button:new{
-            icon = chevron_first,
-            width = self.footer_button_width,
-            callback = function()
-                self:goToPage(1)
-            end,
-            bordersize = 0,
-            radius = 0,
-            show_parent = self,
-        }
-        self.footer_last_down = Button:new{
-            icon = chevron_last,
-            width = self.footer_button_width,
-            callback = function()
-                self:goToPage(self.pages)
-            end,
-            bordersize = 0,
-            radius = 0,
-            show_parent = self,
-        }
-        self.footer_page = Button:new{
-            text = "",
-            hold_input = {
-                title = _("Enter page number"),
-                hint_func = function()
-                    return "(" .. "1 - " .. self.pages .. ")"
-                end,
-                type = "number",
-                deny_blank_input = true,
-                callback = function(input)
-                    local page = tonumber(input)
-                    if page and page >= 1 and page <= self.pages then
-                        self:goToPage(page)
-                    end
-                end,
-                ok_text = _("Go to page"),
-            },
-            call_hold_input_on_tap = true,
-            bordersize = 0,
-            margin = 0,
-            text_font_face = "pgfont",
-            text_font_bold = false,
-            width = self.footer_center_width,
-            show_parent = self,
-        }
-        self.page_info = HorizontalGroup:new{
-            self.footer_first_up,
-            self.footer_left,
-            self.footer_page,
-            self.footer_right,
-            self.footer_last_down,
-        }
-        self.footer_height = self.page_info:getSize().h
-    end
 
     local temp_text = TextWidget:new{
         text = " ",
@@ -635,7 +626,10 @@ function CalendarDayView:init()
     self.timeline = OverlapGroup:new{
         dimen = self.dimen:copy(),
     }
-    self:_populateBooks()
+    self.footer_container = BottomContainer:new{
+        dimen = self.dimen:copy()
+    }
+    self:setupView()
 
     self[1] = FrameContainer:new{
         height = self.dimen.h,
@@ -650,17 +644,43 @@ function CalendarDayView:init()
                 bordersize = 0,
                 background = Blitbuffer.COLOR_WHITE,
                 VerticalGroup:new{
-                    title_bar,
+                    self.title_bar,
                     self.book_items
                 }
             },
             self.timeline,
-            BottomContainer:new{
-                dimen = self.dimen:copy(),
-                self.page_info or VerticalSpan:new{ w = 0 },
-            }
+            self.footer_container,
         }
     }
+end
+
+function CalendarDayView:setupView()
+    self.kv_pairs = self.reader_statistics:getBooksFromPeriod(self.day_ts, self.day_ts + 86400)
+    local seconds_books = self.reader_statistics:getReadingDurationBySecond(self.day_ts)
+    for _, kv in ipairs(self.kv_pairs) do
+        if seconds_books[kv.book_id] then
+            kv.periods = seconds_books[kv.book_id].periods
+        end
+        kv.checked = true
+    end
+    table.sort(self.kv_pairs, function(a,b) return a[2] > b[2] end) --sort by value
+    self.title = self:title_callback()
+
+    self.show_page = 1
+    self.title_bar:setTitle(self.title)
+
+    for _, kv in ipairs(self.kv_pairs) do
+        kv.check_cb = function(this)
+            this.checked = not this.checked
+            self:refreshTimeline()
+        end
+    end
+
+    self.pages = #self.kv_pairs <= self.items_per_page+1 and 1 or math.ceil(#self.kv_pairs / self.items_per_page)
+    self.footer_container[1] = self.pages > 1 and self.page_info or VerticalSpan:new{ w = 0 }
+
+    self:_populateBooks()
+
 end
 
 function CalendarDayView:nextPage()
@@ -668,6 +688,7 @@ function CalendarDayView:nextPage()
     if new_page > self.show_page then
         self.show_page = new_page
         self:_populateBooks()
+        return true
     end
 end
 
@@ -676,6 +697,7 @@ function CalendarDayView:prevPage()
     if new_page < self.show_page then
         self.show_page = new_page
         self:_populateBooks()
+        return true
     end
 end
 
@@ -685,12 +707,20 @@ function CalendarDayView:goToPage(page)
 end
 
 function CalendarDayView:onNextPage()
-    self:nextPage()
+    if not self:nextPage() then
+        -- go to next day
+        self.day_ts = self.day_ts + 86400
+        self:setupView()
+    end
     return true
 end
 
 function CalendarDayView:onPrevPage()
-    self:prevPage()
+    if not self:prevPage() then
+        -- go to previous day
+        self.day_ts = self.day_ts - 86400
+        self:setupView()
+    end
     return true
 end
 
@@ -1237,18 +1267,15 @@ function CalendarView:_populateItems()
             read_books = books_by_day[day_s],
             show_parent = self,
             callback = not is_future and function()
-                local kv_pairs = self.reader_statistics:getBooksFromPeriod(day_ts, day_ts + 86400)
-                local seconds_books = self.reader_statistics:getReadingDurationBySecond(day_s)
-                for _, kv in ipairs(kv_pairs) do
-                    if seconds_books[kv.book_id] then
-                        kv.periods = seconds_books[kv.book_id].periods
-                    end
-                    kv.checked = true
-                end
-                table.sort(kv_pairs, function(a,b) return a[2] > b[2] end) --sort by value
                 UIManager:show(CalendarDayView:new{
-                    title = day_text,
-                    kv_pairs = kv_pairs,
+                    day_ts = day_ts,
+                    reader_statistics = self.reader_statistics,
+                    title_callback = function(this)
+                        local day_s = os.date("%Y-%m-%d", this.day_ts)
+                        local cur_date = os.date("*t", cur_ts)
+                        return string.format("%s (%s)", this.day_ts,
+                            self.longDayOfWeekTranslation[self.weekdays[cur_date.wday]])
+                    end,
                     close_callback = function()
                         -- Refresh calendar in case some day stats were reset for some books
                         -- (we don't know if some reset were done... so we refresh the current
