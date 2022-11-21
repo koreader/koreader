@@ -525,9 +525,7 @@ function AutoWarmth:addToMainMenu(menu_items)
     menu_items.autowarmth = {
         text = Device:hasNaturalLight() and _("Auto warmth and night mode") or _("Auto night mode"),
         checked_func = function() return self.activate ~= 0 end,
-        sub_item_table_func = function()
-            return self:getSubMenuItems()
-        end,
+        sub_item_table = self:getSubMenuItems(),
     }
 end
 
