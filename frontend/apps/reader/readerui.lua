@@ -38,6 +38,7 @@ local ReaderScrolling = require("apps/reader/modules/readerscrolling")
 local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderMenu = require("apps/reader/modules/readermenu")
+local ReaderMenuSearch = require("apps/reader/modules/readermenusearch")
 local ReaderPageMap = require("apps/reader/modules/readerpagemap")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local ReaderRotation = require("apps/reader/modules/readerrotation")
@@ -208,6 +209,11 @@ function ReaderUI:init()
     self:registerModule("devicestatus", ReaderDeviceStatus:new{
         ui = self,
     })
+    -- menu search controller
+    self:registerModule("menusearch", ReaderMenuSearch:new{
+        ui = self,
+    })
+
     -- configurable controller
     if self.document.info.configurable then
         -- config panel controller

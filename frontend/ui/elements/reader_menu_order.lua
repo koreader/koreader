@@ -216,6 +216,7 @@ local order = {
         "----------------------------",
         "ota_update", -- if Device:hasOTAUpdates()
         "help",
+        "search_menu",
         "----------------------------",
         "exit_menu",
     },
