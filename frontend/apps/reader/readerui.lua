@@ -871,4 +871,11 @@ function ReaderUI:getCurrentPage()
     end
 end
 
+function ReaderUI:onMenuSearch()
+    if not self.ui then
+        self.menu:onShowMenu()
+    end
+    self.menu.menu_container[1]:onShowMenuSearch()
+end
+
 return ReaderUI
