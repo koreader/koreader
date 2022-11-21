@@ -1044,7 +1044,7 @@ function AutoWarmth:getWarmthMenu()
             text_func = function()
                 if Device:hasNaturalLight() then
                     return T(_("Control: %1%2%3"), self.control_warmth and _("warmth") or "",
-                            self.control_warmth and self.control_nightmode and string.format(" %s ", _("and")) or "",
+                            self.control_warmth and self.control_nightmode and T(_(" %1 "), _("and")) or "",
                             self.control_nightmode and _("night mode") or "")
                 else
                     return _("Control: night mode")
@@ -1201,8 +1201,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
             -- add fl toggle
             add_line(0, "", not self.fl_off_during_day) ..
             add_line(0, _("Toggle frontlight off between"), not self.fl_off_during_day) ..
-            add_line(4,
-                string.format(_("%s and %s"),
+            add_line(4, T(_("%1 and %2"),
                         self:hoursToClock(times[5] + self.fl_off_during_day_offset_s * (1/3600)),
                         self:hoursToClock(times[7] - self.fl_off_during_day_offset_s * (1/3600))),
                     not self.fl_off_during_day),
