@@ -10,6 +10,7 @@ local dbg = require("dbg")
 local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local State = {}
 
@@ -212,7 +213,7 @@ function BatteryStat:showStatistics()
                                 end)
                             end})
     self.kv_page = KeyValuePage:new{
-        title = string.format(_("Battery statistics (now %d%%)"), self.awake_state.percentage),
+        title = T(_("Battery statistics (now %1%)"), self.awake_state.percentage),
         kv_pairs = kv_pairs,
         single_page = true,
     }
