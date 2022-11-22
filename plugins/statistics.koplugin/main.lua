@@ -130,7 +130,8 @@ ReaderStatistics.default_settings = {
 }
 
 function ReaderStatistics:onDispatcherRegisterActions()
-    Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true, separator=true})
+    Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true, separator=false})
+    Dispatcher:registerAction("stats_calendar_day_view", {category="none", event="ShowCalendarDayView", title=_("Statistics today's timeline"), general=true, separator=true})
     Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=true})
 end
 
@@ -1942,6 +1943,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
         table.insert(results, {
             result_book[1][i],
             T(_("%1 (%2)"), util.secondsToClockDuration(user_duration_format, tonumber(result_book[2][i]), false), tonumber(result_book[3][i])),
+            book_id = tonumber(result_book[4][i]),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
@@ -2600,6 +2602,18 @@ function ReaderStatistics:onShowCalendarView()
     })
 end
 
+function ReaderStatistics:onShowCalendarDayView()
+    self:insertDB()
+    self.kv = nil -- clean left over stack link
+    local CalendarView = require("calendarview")
+    local title_callback = function(this)
+        local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 03:00 to determine date (summer time change)
+        local date = os.date("*t", this.day_ts + 10800)
+        return string.format("%s (%s)", day, longDayOfWeekTranslation[CalendarView.weekdays[date.wday]])
+    end
+    CalendarView:showCalendarDayView(self, title_callback)
+end
+
 -- Used by calendarview.lua CalendarView
 function ReaderStatistics:getFirstTimestamp()
     local sql_stmt = [[
@@ -2685,6 +2699,45 @@ function ReaderStatistics:getReadBookByDay(month)
         table.insert(per_day[day], { id = tonumber(book_id), title = tostring(book_title) })
     end
     return per_day
+end
+
+function ReaderStatistics:getReadingDurationBySecond(ts)
+    local sql_stmt = [[
+        SELECT
+            start_time - ? as start,
+            start_time - ? + duration as end,
+            id_book book_id,
+            book.title book_title
+        FROM   page_stat_data
+        JOIN   book ON book.id = page_stat_data.id_book
+        WHERE  start_time BETWEEN ?
+                              AND ? + 86399
+        ORDER BY start;
+    ]]
+    local conn = SQ3.open(db_location)
+    local stmt = conn:prepare(sql_stmt)
+    local res, nb = stmt:reset():bind(ts, ts, ts, ts):resultset("i")
+    stmt:close()
+    conn:close()
+    local per_book = {}
+    local last_book
+    for i=1, nb do
+        local start, finish, book_id, book_title = tonumber(res[1][i]), tonumber(res[2][i]), tonumber(res[3][i]), tostring(res[4][i])
+        if not per_book[book_id] then
+            per_book[book_id] = {
+                title = book_title,
+                periods = {},
+            }
+        end
+        local periods = per_book[book_id].periods
+        if #periods > 0 and start - periods[#periods].finish <= math.max(30, self.settings.min_sec) and book_id == last_book then
+            periods[#periods].finish = finish
+        else
+            table.insert(per_book[book_id].periods, { start = start, finish = finish })
+        end
+        last_book = book_id
+    end
+    return per_book
 end
 
 function ReaderStatistics:onShowReaderProgress()
