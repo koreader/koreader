@@ -23,14 +23,6 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local CloudStorage = Menu:extend{
-    cloud_servers = {
-        {
-            text = _("Add new cloud storage"),
-            title = _("Choose cloud type"),
-            url = "add",
-            editable = false,
-        },
-    },
     no_title = false,
     show_parent = nil,
     is_popout = false,
@@ -277,6 +269,7 @@ function CloudStorage:downloadFile(item)
                             {
                                 {
                                     text = _("Cancel"),
+                                    id = "close",
                                     callback = function()
                                         UIManager:close(input_dialog)
                                     end,
@@ -719,8 +712,8 @@ function CloudStorage:configCloud(type)
                 name = fields[1],
                 password = fields[2],
                 address = fields[3],
+                url = fields[4],
                 type = "dropbox",
-                url = "/"
             })
         elseif type == "ftp" then
             table.insert(cs_servers,{
@@ -766,6 +759,7 @@ function CloudStorage:editCloudServer(item)
                     server.name = fields[1]
                     server.password = fields[2]
                     server.address = fields[3]
+                    server.url = fields[4]
                     cs_servers[i] = server
                     break
                 end
