@@ -125,9 +125,9 @@ function TweakInfoWidget:init()
     local buttons = {
         {
             {
-                text = self.is_tweak_registered and _("Don't show in action list") or _("Show in action list"),
+                text = self.is_tweak_in_dispatcher and _("Don't show in action list") or _("Show in action list"),
                 callback = function()
-                    self.toggle_tweak_registered_callback()
+                    self.toggle_tweak_in_dispatcher_callback()
                     UIManager:close(self)
                 end,
             },
@@ -439,7 +439,7 @@ function ReaderStyleTweak:onSaveSettings()
     end
     self.ui.doc_settings:saveSetting("style_tweaks", util.tableSize(self.doc_tweaks) > 0 and self.doc_tweaks or nil)
     G_reader_settings:saveSetting("style_tweaks", self.global_tweaks)
-    G_reader_settings:saveSetting("style_tweaks_registered", self.registered_tweaks)
+    G_reader_settings:saveSetting("style_tweaks_in_dispatcher", self.tweaks_in_dispatcher)
     self.ui.doc_settings:saveSetting("book_style_tweak", self.book_style_tweak)
     self.ui.doc_settings:saveSetting("book_style_tweak_enabled", self.book_style_tweak_enabled)
     self.ui.doc_settings:saveSetting("book_style_tweak_last_edit_pos", self.book_style_tweak_last_edit_pos)
@@ -455,7 +455,7 @@ local function dispatcherUnregisterStyleTweak(tweak_id)
 end
 
 function ReaderStyleTweak:init()
-    self.registered_tweaks = G_reader_settings:readSetting("style_tweaks_registered") or {}
+    self.tweaks_in_dispatcher = G_reader_settings:readSetting("style_tweaks_in_dispatcher") or {}
     self.tweaks_by_id = {}
     self.tweaks_table = {}
 
@@ -526,7 +526,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
                     if self.global_tweaks[item.id] then
                         title = title .. "   ★"
                     end
-                    if self.registered_tweaks[item.id] then
+                    if self.tweaks_in_dispatcher[item.id] then
                         title = title .. "   \u{F144}"
                     end
                     return title
@@ -561,13 +561,13 @@ You can enable individual tweaks on this book with a tap, or view more details a
                             touchmenu_instance:updateItems()
                             self:updateCssText(true) -- apply it immediately
                         end,
-                        is_tweak_registered = self.registered_tweaks[item.id],
-                        toggle_tweak_registered_callback = function()
-                            if self.registered_tweaks[item.id] then
-                                self.registered_tweaks[item.id] = nil
+                        is_tweak_in_dispatcher = self.tweaks_in_dispatcher[item.id],
+                        toggle_tweak_in_dispatcher_callback = function()
+                            if self.tweaks_in_dispatcher[item.id] then
+                                self.tweaks_in_dispatcher[item.id] = nil
                                 dispatcherUnregisterStyleTweak(item.id)
                             else
-                                self.registered_tweaks[item.id] = item.title
+                                self.tweaks_in_dispatcher[item.id] = item.title
                                 dispatcherRegisterStyleTweak(item.id, item.title)
                             end
                             touchmenu_instance:updateItems()
@@ -741,7 +741,7 @@ function ReaderStyleTweak:onToggleStyleTweak(tweak_id, item)
 end
 
 function ReaderStyleTweak:onDispatcherRegisterActions()
-    for tweak_id, tweak_title in pairs(self.registered_tweaks) do
+    for tweak_id, tweak_title in pairs(self.tweaks_in_dispatcher) do
         dispatcherRegisterStyleTweak(tweak_id, tweak_title)
     end
 end
