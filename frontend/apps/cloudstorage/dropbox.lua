@@ -58,11 +58,7 @@ end
 
 function DropBox:downloadFileNoUI(url, password, path)
     local code_response = DropBoxApi:downloadFile(url, password, path)
-    if code_response == 200 then
-        return true
-    else
-        return false
-    end
+    return code_response == 200
 end
 
 function DropBox:uploadFile(url, password, file_path, callback_close)
@@ -98,14 +94,15 @@ end
 function DropBox:config(item, callback)
     local text_info = _([[
 Dropbox access tokens are short-lived (4 hours).
-To generate new access token please use Dropbox refresh token and <APP_KEY>:<APP_SECRET> Base64 encoded string.
+To generate new access token please use Dropbox refresh token and <APP_KEY>:<APP_SECRET> string.
 
 Some of the previously generated long-lived tokens are still valid.]])
-    local text_name, text_token, text_appkey
+    local text_name, text_token, text_appkey, text_url
     if item then
         text_name = item.text
         text_token = item.password
         text_appkey = item.address
+        text_url = item.url
     end
     self.settings_dialog = MultiInputDialog:new {
         title = _("Dropbox cloud storage"),
@@ -121,6 +118,10 @@ Some of the previously generated long-lived tokens are still valid.]])
             {
                 text = text_appkey,
                 hint = _("Dropbox <APP_KEY>:<APP_SECRET>\n(leave blank for long-lived token)"),
+            },
+            {
+                text = text_url,
+                hint = _("Dropbox folder (/ for root)"),
             },
         },
         buttons = {
