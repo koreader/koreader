@@ -175,7 +175,7 @@ local settingsList = {
     embedded_css = {category="string", rolling=true},
     embedded_fonts = {category="string", rolling=true},
     smooth_scaling = {category="string", rolling=true},
-    nightmode_images = {category="string", rolling=true},
+    nightmode_images = {category="string", rolling=true, separator=true},
 
     -- parsed from KoptOptions
     kopt_trim_page = {category="string", paging=true},
@@ -640,23 +640,23 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
         then
             if settingsList[k].category == "none" or settingsList[k].category == "arg" then
                 table.insert(menu, {
-                     text = settingsList[k].title,
-                     checked_func = function()
-                     return location[settings] ~= nil and location[settings][k] ~= nil
-                     end,
-                     callback = function(touchmenu_instance)
-                         if location[settings] == nil then
-                             location[settings] = {}
-                         end
-                         if location[settings][k] then
-                             location[settings][k] = nil
-                             Dispatcher:_removeFromOrder(location, settings, k)
-                         else
-                             location[settings][k] = true
-                             Dispatcher:_addToOrder(location, settings, k)
-                         end
-                         caller.updated = true
-                         if touchmenu_instance then touchmenu_instance:updateItems() end
+                    text = settingsList[k].title,
+                    checked_func = function()
+                        return location[settings] ~= nil and location[settings][k] ~= nil
+                    end,
+                    callback = function(touchmenu_instance)
+                        if location[settings] == nil then
+                            location[settings] = {}
+                        end
+                        if location[settings][k] then
+                            location[settings][k] = nil
+                            Dispatcher:_removeFromOrder(location, settings, k)
+                        else
+                            location[settings][k] = true
+                            Dispatcher:_addToOrder(location, settings, k)
+                        end
+                        caller.updated = true
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                     separator = settingsList[k].separator,
                 })
@@ -666,7 +666,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         return Dispatcher:getNameFromItem(k, location[settings])
                     end,
                     checked_func = function()
-                    return location[settings] ~= nil and location[settings][k] ~= nil
+                        return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
@@ -714,7 +714,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                         return Dispatcher:getNameFromItem(k, location[settings])
                     end,
                     checked_func = function()
-                    return location[settings] ~= nil and location[settings][k] ~= nil
+                        return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
                         local _ = require("gettext")
