@@ -258,8 +258,7 @@ end
 
 --- Converts timestamp to a date string
 ---- @int seconds number of seconds
----- @bool twelve_hour_clock
----- @locale if true allows to translate the date-time string, if false return "%Y-%m-%d time"
+---- @use_locale if true allows to translate the date-time string, if false return "%Y-%m-%d time"
 ---- @treturn string date string
 function datetime.secondsToDate(seconds, use_locale)
     seconds = seconds or os.time()
@@ -282,8 +281,8 @@ end
 --- Converts timestamp to a date+time string
 ---- @int seconds number of seconds
 ---- @bool twelve_hour_clock
----- @locale if true allows to translate the date-time string, if false return "%Y-%m-%d time"
----- @treturn string date string+time
+---- @use_locale if true allows to translate the date-time string, if false return "%Y-%m-%d time"
+---- @treturn string date+time
 function datetime.secondsToDateTime(seconds, twelve_hour_clock, use_locale)
     seconds = seconds or os.time()
     local BD = require("ui/bidi")
