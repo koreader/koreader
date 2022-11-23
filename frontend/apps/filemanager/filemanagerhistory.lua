@@ -41,6 +41,30 @@ function FileManagerHistory:addToMainMenu(menu_items)
     }
 end
 
+function FileManagerHistory:updateItemTable()
+    -- try to stay on current page
+    local select_number = nil
+    if self.hist_menu.page and self.hist_menu.perpage and self.hist_menu.page > 0 then
+        select_number = (self.hist_menu.page - 1) * self.hist_menu.perpage + 1
+    end
+    self.count = { all = #require("readhistory").hist,
+        reading = 0, abandoned = 0, complete = 0, deleted = 0, new = 0, }
+    local item_table = {}
+    for _, v in ipairs(require("readhistory").hist) do
+        if self.filter == "all" or v.status == self.filter then
+            table.insert(item_table, v)
+        end
+        if self.statuses_fetched then
+            self.count[v.status] = self.count[v.status] + 1
+        end
+    end
+    local title = self.hist_menu_title
+    if self.filter ~= "all" then
+        title = title .. " (" .. filter_text[self.filter] .. ": " .. self.count[self.filter] .. ")"
+    end
+    self.hist_menu:switchItemTable(title, item_table, select_number)
+end
+
 function FileManagerHistory:onSetDimensions(dimen)
     self.dimen = dimen
 end
@@ -132,28 +156,7 @@ function FileManagerHistory:MenuSetRotationModeHandler(rotation)
     return true
 end
 
-function FileManagerHistory:updateItemTable()
-    -- try to stay on current page
-    local select_number = nil
-    if self.hist_menu.page and self.hist_menu.perpage and self.hist_menu.page > 0 then
-        select_number = (self.hist_menu.page - 1) * self.hist_menu.perpage + 1
-    end
-    local item_table = {}
-    for _, v in ipairs(require("readhistory").hist) do
-        if self.filter == "all" or v.status == self.filter then
-            table.insert(item_table, v)
-        end
-    end
-    local title = self.hist_menu_title
-    if self.filter ~= "all" then
-        title = title .. " (" .. filter_text[self.filter] .. ": " .. self.count[self.filter] .. ")"
-    end
-    self.hist_menu:switchItemTable(title, item_table, select_number)
-end
-
-function FileManagerHistory:getHistStatuses()
-    self.count = { all = #require("readhistory").hist,
-        reading = 0, abandoned = 0, complete = 0, deleted = 0, new = 0, }
+function FileManagerHistory:fetchStatuses(count)
     local status
     for _, v in ipairs(require("readhistory").hist) do
         if v.dim then
@@ -172,8 +175,11 @@ function FileManagerHistory:getHistStatuses()
             end
         end
         v.status = status
-        self.count[status] = self.count[status] + 1
+        if count then
+            self.count[status] = self.count[status] + 1
+        end
     end
+    self.statuses_fetched = true
 end
 
 function FileManagerHistory:onShowHist()
@@ -193,20 +199,23 @@ function FileManagerHistory:onShowHist()
 
     self.filter = G_reader_settings:readSetting("history_filter", "all")
     if self.filter ~= "all" then
-        self:getHistStatuses()
+        self:fetchStatuses(false)
     end
     self:updateItemTable()
     self.hist_menu.close_callback = function()
+        self.statuses_fetched = nil
         UIManager:close(self.hist_menu)
+        G_reader_settings:saveSetting("history_filter", self.filter)
     end
     UIManager:show(self.hist_menu)
     return true
 end
 
 function FileManagerHistory:showHistDialog()
-    if self.filter == "all" then
-        self:getHistStatuses()
+    if not self.statuses_fetched then
+        self:fetchStatuses(true)
     end
+
     local hist_dialog
     local buttons = {}
     local function genFilterButton(filter)
@@ -216,7 +225,6 @@ function FileManagerHistory:showHistDialog()
                 UIManager:close(hist_dialog)
                 self.filter = filter
                 self:updateItemTable()
-                G_reader_settings:saveSetting("history_filter", self.filter)
             end,
         }
     end
