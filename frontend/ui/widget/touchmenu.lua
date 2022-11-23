@@ -762,23 +762,29 @@ function TouchMenu:_recurse(val, path, text, search_for, depth)
             menu_text = v
         end
 
-        if menu_text and menu_text:lower():find(search_for) then
+        if menu_text and menu_text:lower():find(search_for) then -- todo also use the utf8tolower xxx
             table.insert(TouchMenu.foundMenuItem, {menu_text, path .. "." .. i, text})
         end
     end
 end
 
-function TouchMenu:findMenuEntry(search_for)
+function TouchMenu:onMenuSearch(search_for)
     TouchMenu.foundMenuItem = {}
     for i = 1, #self.tab_item_table do
-        TouchMenu:_recurse(self.tab_item_table[i], i, "ROOT"..i, search_for, 0)
+        TouchMenu:_recurse(self.tab_item_table[i], i, self.tab_item_table[i].text or "ROOT"..i, search_for, 0)
     end
+
+--[[
     for i = 1, #TouchMenu.foundMenuItem do
-        print("xxxxxxx->", i, TouchMenu.foundMenuItem[i][1], TouchMenu.foundMenuItem[i][2], TouchMenu.foundMenuItem[i][3])
+        print("xxxxxxx->", i,
+            TouchMenu.foundMenuItem[i][1],
+            TouchMenu.foundMenuItem[i][2],
+            TouchMenu.foundMenuItem[i][3])
     end
+]]
 end
 
-function TouchMenu:openMenu(path)
+function TouchMenu:onOpenMenu(path)
     local ffiUtil = require("ffi/util")
     local sleep_us = 1000e3
     -- first switch to correct MenuTab
@@ -788,7 +794,6 @@ function TouchMenu:openMenu(path)
     local item = self.tab_item_table[tab_num]
 
     if not tab_num then
-        logger.dbg("ERROR")
         return
     end
     self:switchMenuTab(tab_num)
@@ -796,7 +801,7 @@ function TouchMenu:openMenu(path)
 
     self:updateItems()
 
-    -- now open the menus all the way down
+    -- Now open the menus all the way down
     local dummy, num_of_sep = path:gsub("%.", "%.")
     while num_of_sep > 1 do
         sep_pos = path:find("%.")
@@ -807,7 +812,7 @@ function TouchMenu:openMenu(path)
             item = item[item_num]
 
             ffiUtil.usleep(sleep_us)
-            UIManager:forceRePaint() -- does not work as expected???
+            UIManager:forceRePaint() -- todo: does not work as expected??? need help here
             self:onMenuSelect(item)
         elseif identifier == "sub_item_table" then
             item = item.sub_item_table
@@ -815,15 +820,17 @@ function TouchMenu:openMenu(path)
         num_of_sep = num_of_sep - 1
     end
 
-    -- now we are in the right menu, but maybe in the wrong page
+    -- Now we are in the right menu, but maybe in the wrong page
     sep_pos = path:find("%.")
     local identifier = path:sub(1, sep_pos -1)
     local item_num = tonumber(identifier)
 
-    local desired_page_num = math.floor(item_num / self.perpage)
-    if desired_page_num > 0 then
-        for i = 1, desired_page_num do
-            self:onNextPage()
+    if item_num then -- might be nil on a sub-menu-entry
+        local desired_page_num = math.floor(item_num / self.perpage)
+        if desired_page_num > 0 then
+            for i = 1, desired_page_num do
+                self:onNextPage()
+            end
         end
     end
 end
@@ -924,7 +931,6 @@ function TouchMenu:onSwipe(arg, ges_ev)
 end
 
 function TouchMenu:onMenuSelect(item, tap_on_checkmark)
-    print("xxx1", item)
     if self.touch_menu_callback then
         self.touch_menu_callback()
     end
@@ -1030,15 +1036,6 @@ function TouchMenu:onMenuHold(item, text_truncated)
         })
     end
     return true
-end
-
-function TouchMenu:onMenuSearch(search_for)
-    self:findMenuEntry(search_for)
-end
-
-function TouchMenu:onOpenMenu(path)
-    print("xxxxxxxxxxxxxxxxxxxxxxxx-----------------------------", path)
-    self:openMenu(path)
 end
 
 function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
