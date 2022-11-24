@@ -1385,4 +1385,11 @@ function FileManager:onRefreshContent()
     self:onRefresh()
 end
 
+function FileManager:onMenuSearch()
+    if not self.ui then
+        UIManager:sendEvent(Event:new("ShowMenu"))
+    end
+    UIManager:broadcastEvent(Event:new("MenuSearchDialog"))
+end
+
 return FileManager
