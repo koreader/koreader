@@ -277,15 +277,15 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
     local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
-    if headers == nil then
-        error(status or code or "network unreachable")
-    end
     if headers_only then
-        return headers["last-modified"]
+        return headers and headers["last-modified"]
     end
     if code == 200 then
         local xml = table.concat(sink)
         return xml ~= "" and xml
+    end
+    if headers == nil then
+        error(status or code or "network unreachable")
     end
 
     local text, icon
@@ -315,21 +315,22 @@ end
 -- Parses feed to catalog
 function OPDSBrowser:parseFeed(item_url)
     local feed_last_modified = self:fetchFeed(item_url, true) -- headers only
-    local hash = "opds|catalog|" .. item_url
+    local feed
     if feed_last_modified then
-        hash = hash .. "|" .. feed_last_modified
-    end
-
-    local feed = CatalogCache:check(hash)
-    if feed then
-        logger.dbg("Cache hit for", hash)
-    else
-        logger.dbg("Cache miss for", hash)
-        feed = self:fetchFeed(item_url)
+        local hash = "opds|catalog|" .. item_url .. "|" .. feed_last_modified
+        feed = CatalogCache:check(hash)
         if feed then
-            logger.dbg("Caching", hash)
-            CatalogCache:insert(hash, feed)
+            logger.dbg("Cache hit for", hash)
+        else
+            logger.dbg("Cache miss for", hash)
+            feed = self:fetchFeed(item_url)
+            if feed then
+                logger.dbg("Caching", hash)
+                CatalogCache:insert(hash, feed)
+            end
         end
+    else
+        feed = self:fetchFeed(item_url)
     end
     if feed then
         return OPDSParser:parse(feed)
