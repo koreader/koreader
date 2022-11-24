@@ -1,3 +1,4 @@
+local CheckButton = require("ui/widget/checkbutton")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -54,6 +55,22 @@ function ReaderMenuSearch:addToMainMenu(menu_items)
                     }
                 },
             }
+
+            self.check_button_animation = CheckButton:new{
+                text = _("Animation"),
+                checked = self.animation_time_s ~= 0.0,
+                parent = search_dialog,
+                callback = function()
+                    if self.animation_time_s == 0 then
+                        self.animation_time_s = 1.0
+                    else
+                        self.animation_time_s = 0.0
+                    end
+                    G_reader_settings:saveSetting("menu_search_animation_time_s", self.animation_time_s)
+                end,
+            }
+            search_dialog:addWidget(self.check_button_animation)
+
             UIManager:show(search_dialog)
             search_dialog:onShowKeyboard()
         end,

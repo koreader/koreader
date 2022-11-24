@@ -27,6 +27,7 @@ local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local Utf8Proc = require("ffi/utf8proc")
 local util = require("util")
 local getMenuText = require("ui/widget/menu").getMenuText
 local _ = require("gettext")
@@ -764,7 +765,7 @@ function TouchMenu:_recurse(val, path, text, search_for, depth)
             menu_text = v
         end
 
-        if menu_text and menu_text:lower():find(search_for) then -- todo also use the utf8tolower xxx
+        if menu_text and Utf8Proc.lowercase(menu_text):find(search_for) then -- todo also use the utf8tolower xxx
             table.insert(TouchMenu.foundMenuItem, {menu_text, path .. "." .. i, text})
         end
     end
@@ -788,7 +789,7 @@ end
 
 function TouchMenu:onOpenMenu(path, animate_time_s)
     local function animate_func()
-        if not animate_time_s then return end
+        if not animate_time_s or animate_time_s == 0.0 then return end
         local sleep_us = animate_time_s * 1e6
         print("xxx")
         UIManager:forceRePaint()
