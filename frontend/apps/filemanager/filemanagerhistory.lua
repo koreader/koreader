@@ -41,6 +41,32 @@ function FileManagerHistory:addToMainMenu(menu_items)
     }
 end
 
+function FileManagerHistory:fetchStatuses(count)
+    local status
+    for _, v in ipairs(require("readhistory").hist) do
+        if v.dim then
+            status = "deleted"
+        else
+            if DocSettings:hasSidecarFile(v.file) then
+                local docinfo = DocSettings:open(v.file) -- no io handles created, do not close
+                if docinfo.data.summary and docinfo.data.summary.status
+                        and docinfo.data.summary.status ~= "" then
+                    status = docinfo.data.summary.status
+                else
+                    status = "reading"
+                end
+            else
+                status = "new"
+            end
+        end
+        v.status = status
+        if count then
+            self.count[status] = self.count[status] + 1
+        end
+    end
+    self.statuses_fetched = true
+end
+
 function FileManagerHistory:updateItemTable()
     -- try to stay on current page
     local select_number = nil
@@ -86,6 +112,11 @@ function FileManagerHistory:onMenuHold(item)
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)
                             require("readhistory"):fileSettingsPurged(item.file)
+                            if self.filter ~= "all" then
+                                self._manager:fetchStatuses(true)
+                            else
+                                self.statuses_fetched = false
+                            end
                             self._manager:updateItemTable()
                             UIManager:close(self.histfile_dialog)
                         end,
@@ -154,32 +185,6 @@ function FileManagerHistory:MenuSetRotationModeHandler(rotation)
         self._manager:onShowHist()
     end
     return true
-end
-
-function FileManagerHistory:fetchStatuses(count)
-    local status
-    for _, v in ipairs(require("readhistory").hist) do
-        if v.dim then
-            status = "deleted"
-        else
-            if DocSettings:hasSidecarFile(v.file) then
-                local docinfo = DocSettings:open(v.file) -- no io handles created, do not close
-                if docinfo.data.summary and docinfo.data.summary.status
-                        and docinfo.data.summary.status ~= "" then
-                    status = docinfo.data.summary.status
-                else
-                    status = "reading"
-                end
-            else
-                status = "new"
-            end
-        end
-        v.status = status
-        if count then
-            self.count[status] = self.count[status] + 1
-        end
-    end
-    self.statuses_fetched = true
 end
 
 function FileManagerHistory:onShowHist()
