@@ -757,7 +757,7 @@ function TouchMenu:_recurse(val, path, text, search_for, depth)
 
         if type(v) == "table" and (type(i) == "number" or i:find("item")) then
             local menu_entry = val[i].text or (val[i].text_func and  val[i].text_func())
-            local next_text = menu_entry and (text .. "→ " .. tostring(menu_entry)) or text
+            local next_text = menu_entry and (text .. "→ " .. tostring(menu_entry)) or text -- drop sub_item_table
             TouchMenu:_recurse(val[i], path .. "." .. i, next_text, search_for, depth)
         elseif i == "text_func" then
             menu_text = v()
@@ -765,7 +765,7 @@ function TouchMenu:_recurse(val, path, text, search_for, depth)
             menu_text = v
         end
 
-        if menu_text and Utf8Proc.lowercase(menu_text):find(search_for) then -- todo also use the utf8tolower xxx
+        if menu_text and Utf8Proc.lowercase(menu_text):find(search_for) then
             table.insert(TouchMenu.foundMenuItem, {menu_text, path .. "." .. i, text})
         end
     end
@@ -791,7 +791,6 @@ function TouchMenu:onOpenMenu(path, animate_time_s)
     local function animate_func()
         if not animate_time_s or animate_time_s == 0.0 then return end
         local sleep_us = animate_time_s * 1e6
-        print("xxx")
         UIManager:forceRePaint()
         ffiUtil.usleep(sleep_us)
         UIManager:setDirty(nil, "ui")
@@ -841,6 +840,9 @@ function TouchMenu:onOpenMenu(path, animate_time_s)
             end
         end
     end
+
+    -- clean up
+    TouchMenu.foundMenuItem = {}
 end
 
 function TouchMenu:switchMenuTab(tab_num)

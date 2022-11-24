@@ -20,7 +20,6 @@ function ReaderMenuSearch:init()
     if self.ui then
         self.ui.menu:registerToMainMenu(self)
     end
-    -- todo: missing to restore the last search string
     self.search_for = G_reader_settings:readSetting("menu_search_string", _("Help"))
     self.animation_time_s = G_reader_settings:readSetting("menu_search_animation_time_s", 1.0)
 end
@@ -58,7 +57,7 @@ Attention: Lua patterns are used. If you want to search for '%' or '.' you have 
                 },
             }
 
-            self.check_button_animation = CheckButton:new{
+            check_button_animation = CheckButton:new{
                 text = _("Animation"),
                 checked = self.animation_time_s ~= 0.0,
                 parent = search_dialog,
@@ -71,7 +70,7 @@ Attention: Lua patterns are used. If you want to search for '%' or '.' you have 
                     G_reader_settings:saveSetting("menu_search_animation_time_s", self.animation_time_s)
                 end,
             }
-            search_dialog:addWidget(self.check_button_animation)
+            search_dialog:addWidget(check_button_animation)
 
             UIManager:show(search_dialog)
             search_dialog:onShowKeyboard()
