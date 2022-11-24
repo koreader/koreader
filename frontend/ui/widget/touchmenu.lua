@@ -30,7 +30,8 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
 local getMenuText = require("ui/widget/menu").getMenuText
 local _ = require("gettext")
-local T = require("ffi/util").template
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 local Input = Device.input
 local Screen = Device.screen
 
@@ -744,17 +745,18 @@ function TouchMenu:updateItems()
     end)
 end
 
-local MAX_SEARCH_RECURSION = 10
+local MAX_MENU_DEPTH = 20 -- currently our menu needs at least 12 here
 function TouchMenu:_recurse(val, path, text, search_for, depth)
     depth = depth + 1
-    if depth > MAX_SEARCH_RECURSION then
+    if depth > MAX_MENU_DEPTH then
         return
     end
     for i,v in pairs(val) do
         local menu_text = nil
+
         if type(v) == "table" and (type(i) == "number" or i:find("item")) then
             local menu_entry = val[i].text or (val[i].text_func and  val[i].text_func())
-            local next_text = menu_entry and (text .. "->" .. tostring(menu_entry)) or text
+            local next_text = menu_entry and (text .. "→" .. tostring(menu_entry)) or text
             TouchMenu:_recurse(val[i], path .. "." .. i, next_text, search_for, depth)
         elseif i == "text_func" then
             menu_text = v()
@@ -784,9 +786,15 @@ function TouchMenu:onMenuSearch(search_for)
 ]]
 end
 
-function TouchMenu:onOpenMenu(path)
-    local ffiUtil = require("ffi/util")
-    local sleep_us = 1000e3
+function TouchMenu:onOpenMenu(path, animate_time_s)
+    local function animate_func()
+        if not animate_time_s then return end
+        local sleep_us = animate_time_s * 1e6
+        print("xxx")
+        UIManager:forceRePaint()
+        ffiUtil.usleep(sleep_us)
+        UIManager:setDirty(nil, "ui")
+    end
     -- first switch to correct MenuTab
     local sep_pos = path:find("%.")
     local tab_num = tonumber(path:sub(1, sep_pos - 1))
@@ -809,10 +817,8 @@ function TouchMenu:onOpenMenu(path)
         local item_num = tonumber(identifier)
         path = path:sub(sep_pos + 1)
         if item_num then
+            animate_func()
             item = item[item_num]
-
-            ffiUtil.usleep(sleep_us)
-            UIManager:forceRePaint() -- todo: does not work as expected??? need help here
             self:onMenuSelect(item)
         elseif identifier == "sub_item_table" then
             item = item.sub_item_table
@@ -829,6 +835,7 @@ function TouchMenu:onOpenMenu(path)
         local desired_page_num = math.floor(item_num / self.perpage)
         if desired_page_num > 0 then
             for i = 1, desired_page_num do
+                animate_func()
                 self:onNextPage()
             end
         end
