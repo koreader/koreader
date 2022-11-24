@@ -57,7 +57,7 @@ Attention: Lua patterns are used. If you want to search for '%' or '.' you have 
                 },
             }
 
-            check_button_animation = CheckButton:new{
+            local check_button_animation = CheckButton:new{
                 text = _("Animation"),
                 checked = self.animation_time_s ~= 0.0,
                 parent = search_dialog,
