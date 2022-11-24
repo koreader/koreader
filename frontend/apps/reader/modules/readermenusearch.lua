@@ -5,6 +5,7 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local TouchMenu = require("ui/widget/touchmenu")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local Utf8Proc = require("ffi/utf8proc")
 local ffiUtil  = require("ffi/util")
 local _ = require("gettext")
 local T = ffiUtil.template
@@ -20,7 +21,7 @@ function ReaderMenuSearch:init()
     end
     -- todo: missing to restore the last search string
     self.search_for = G_reader_settings:readSetting("menu_search_string", _("Help"))
-    self.animation_time_s = G_reader_settings:readSetting("menu_search_animation_time_s", 0.5)
+    self.animation_time_s = G_reader_settings:readSetting("menu_search_animation_time_s", 1.0)
 end
 
 function ReaderMenuSearch:addToMainMenu(menu_items)
@@ -46,9 +47,8 @@ function ReaderMenuSearch:addToMainMenu(menu_items)
                             callback = function()
                                 self.search_for = search_dialog:getInputText()
                                 G_reader_settings:saveSetting("menu_search_string", self.search_for)
-                                -- todo here we need the utf8tolower xxx
                                 UIManager:close(search_dialog)
-                                self:hereWeGo(self.search_for:lower())
+                                self:hereWeGo(Utf8Proc.lowercase(self.search_for))
                             end,
                         },
                     }
