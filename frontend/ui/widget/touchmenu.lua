@@ -757,7 +757,7 @@ function TouchMenu:_recurse(val, path, text, search_for, depth)
 
         if type(v) == "table" and (type(i) == "number" or i:find("item")) then
             local menu_entry = val[i].text or (val[i].text_func and  val[i].text_func())
-            local next_text = menu_entry and (text .. "→" .. tostring(menu_entry)) or text
+            local next_text = menu_entry and (text .. "→ " .. tostring(menu_entry)) or text
             TouchMenu:_recurse(val[i], path .. "." .. i, next_text, search_for, depth)
         elseif i == "text_func" then
             menu_text = v()

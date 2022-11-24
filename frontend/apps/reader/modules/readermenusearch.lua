@@ -32,7 +32,9 @@ function ReaderMenuSearch:addToMainMenu(menu_items)
             local search_dialog
             search_dialog = InputDialog:new{
                 title = _("Search menu entry"),
-                description = _("Search for a menu entry containing the following text (case insensitive)."),
+                description = _([[Search for a menu entry containing the following text (case insensitive).
+
+Attention: Lua patterns are used. If you want to search for '%' or '.' you have to enter '%%' or '%.']]),
                 input = self.search_for,
                 buttons = {
                     {
@@ -79,19 +81,26 @@ function ReaderMenuSearch:addToMainMenu(menu_items)
 end
 
 function ReaderMenuSearch:getCurrentSearchResults()
-    local function cb(i)
+    local function item_callback(i)
         self.kv:onClose()
         UIManager:setDirty(nil, "ui")
 
         local path = TouchMenu.foundMenuItem[i][2]
         UIManager:sendEvent(Event:new("OpenMenu", path, self.animation_time_s))
     end
+    local function item_hold_callback(i)
+        UIManager:show(InfoMessage:new{
+            text = T(_("%1\n\n%2"), TouchMenu.foundMenuItem[i][1], TouchMenu.foundMenuItem[i][3]),
+        })
+
+    end
 
     local kv_pairs = {}
     for i = 1, #TouchMenu.foundMenuItem do
         table.insert(kv_pairs, { TouchMenu.foundMenuItem[i][1],
                                  "", --TouchMenu.foundMenuItem[i][3],
-                                 callback = function() cb(i) end,
+                                 callback = function() item_callback(i) end,
+                                 hold_callback = function() item_hold_callback(i) end,
                                })
     end
     return kv_pairs
@@ -102,7 +111,7 @@ function ReaderMenuSearch:hereWeGo(search_string)
 
     self.kv = KeyValuePage:new{
         title = _("Search results"),
-        kv_pairs = self:getCurrentSearchResults()
+        kv_pairs = self:getCurrentSearchResults(),
     }
     UIManager:show(self.kv)
 end
