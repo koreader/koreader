@@ -965,7 +965,7 @@ end
 
 ------ the menu search functionality
 function TouchMenu:search(search_for)
-    local foundMenuItem = {}
+    local found_menu_items = {}
 
     local MAX_MENU_DEPTH = 20 -- currently our menu needs at least 12 here
     local function recurse(val, path, text, depth)
@@ -990,7 +990,7 @@ function TouchMenu:search(search_for)
             end
 
             if menu_text and Utf8Proc.lowercase(menu_text):find(search_for) then
-                table.insert(foundMenuItem, {menu_text, path .. "." .. i, text})
+                table.insert(found_menu_items, {menu_text, path .. "." .. i, text})
             end
         end
     end
@@ -1000,14 +1000,14 @@ function TouchMenu:search(search_for)
     end
 
 --[[
-    for i = 1, #foundMenuItem do
+    for i = 1, #found_menu_items do
         print("xxxxxxx->", i,
-            foundMenuItem[i][1],
-            foundMenuItem[i][2],
-            foundMenuItem[i][3])
+            found_menu_items[i][1],
+            found_menu_items[i][2],
+            found_nenu_items[i][3])
     end
 ]]
-    return foundMenuItem
+    return found_menu_items
 end
 
 function TouchMenu:openMenu(path)
@@ -1045,6 +1045,7 @@ function TouchMenu:openMenu(path)
         local item_num = tonumber(identifier)
         path = path:sub(sep_pos + 1)
         if item_num then
+--            UIManager:widgetInvert(item)
             animate_func()
             item = item[item_num]
             self:onMenuSelect(item)
@@ -1072,41 +1073,43 @@ function TouchMenu:openMenu(path)
     G_reader_settings:saveSetting("flash_ui", old_flash_ui)
 end
 
-function TouchMenu:onMenuSearchDialog()
+function TouchMenu:onShowMenuSearch()
     local InputDialog = require("ui/widget/inputdialog")
     local CheckButton = require("ui/widget/checkbutton")
     local ConfirmBox = require("ui/widget/confirmbox")
 
     local function show_search_results(search_string)
-        local foundMenuItem = self:search(search_string)
+        local found_menu_items = self:search(search_string)
 
         local function get_current_search_results()
             local function item_callback(i)
                 self.kv:onClose()
                 UIManager:setDirty(nil, "ui")
 
-                local path = foundMenuItem[i][2]
+                local path = found_menu_items[i][2]
                 self:openMenu(path)
             end
             local function item_hold_callback(i)
 --                UIManager:show(InfoMessage:new{
---                    text = T(_("%1\n\n%2"), foundMenuItem[i][1], foundMenuItem[i][3]),
+--                    text = T(_("%1\n\n%2"), found_menu_items[i][1], found_menu_items[i][3]),
 --                })
-                UIManager:show(ConfirmBox:new{
-                    text = T(_("Open menu entry:\n'%1'\n\n%2"), foundMenuItem[i][1], foundMenuItem[i][3]),
+                local confirm_box
+                confirm_box = ConfirmBox:new{
+                    text = T(_("Open menu entry:\n'%1'\n\n%2"), found_menu_items[i][1], found_menu_items[i][3]),
                     ok_text = _("Open"),
                     ok_callback = function()
-
+                        UIManager:close(confirm_box)
                         item_callback(i)
                     end,
                     cancel_text = _("Dismiss"),
-                })
+                }
+                UIManager:show(confirm_box)
             end
 
             local kv_pairs = {}
-            for i = 1, #foundMenuItem do
-                table.insert(kv_pairs, { foundMenuItem[i][1],
-                                         "", --foundMenuItem[i][3],
+            for i = 1, #found_menu_items do
+                table.insert(kv_pairs, { found_menu_items[i][1],
+                                         "", --found_menu_items[i][3],
                                          callback = function() item_callback(i) end,
                                          hold_callback = function() item_hold_callback(i) end,
                                        })
@@ -1117,7 +1120,7 @@ function TouchMenu:onMenuSearchDialog()
         local KeyValuePage = require("ui/widget/keyvaluepage")
         self.kv = KeyValuePage:new{
             title = _("Search results"),
-            kv_pairs = get_current_search_results(foundMenuItem),
+            kv_pairs = get_current_search_results(found_menu_items),
         }
         UIManager:show(self.kv)
     end -- show_search_results()

@@ -620,7 +620,7 @@ common_settings.units = {
 common_settings.search_menu = {
     text = _("Menu Search"),
     callback = function()
-        UIManager:sendEvent(Event:new("MenuSearchDialog"))
+        UIManager:sendEvent(Event:new("ShowMenuSearch"))
     end,
     keep_menu_open = true,
 }

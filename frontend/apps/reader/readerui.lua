@@ -875,7 +875,7 @@ function ReaderUI:onMenuSearch()
     if not self.ui then
         UIManager:sendEvent(Event:new("ShowMenu"))
     end
-    UIManager:broadcastEvent(Event:new("MenuSearchDialog"))
+    UIManager:broadcastEvent(Event:new("ShowMenuSearch"))
 end
 
 return ReaderUI

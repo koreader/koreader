@@ -73,10 +73,6 @@ function ReaderMenu:init()
 
     -- delegate gesture listener to readerui, NOP our own
     self.ges_events = nil
-
-    -- for searching menu entries
-    self.search_for = G_reader_settings:readSetting("menu_search_string", _("Help"))
-    self.animation_time_s = G_reader_settings:readSetting("menu_search_animation_time_s", 1.0)
 end
 
 function ReaderMenu:onGesture() end
