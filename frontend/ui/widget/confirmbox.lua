@@ -44,6 +44,7 @@ local ConfirmBox = InputContainer:extend{
     keep_dialog_open = false,
     text = _("no text"),
     face = Font:getFace("infofont"),
+    icon = "notice-question",
     ok_text = _("OK"),
     cancel_text = _("Cancel"),
     ok_callback = function() end,
@@ -83,7 +84,8 @@ function ConfirmBox:init()
     local content = HorizontalGroup:new{
         align = "center",
         IconWidget:new{
-            icon = "notice-question",
+            icon = self.icon,
+            alpha = true,
         },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
         text_widget,
