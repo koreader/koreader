@@ -284,14 +284,11 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
         local xml = table.concat(sink)
         return xml ~= "" and xml
     end
-    if headers == nil then
-        error(status or code or "network unreachable")
-    end
 
     local text, icon
-    if code == 301 then
+    if headers and code == 301 then
         text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."), BD.url(headers.location))
-    elseif code == 302
+    elseif headers and code == 302
         and item_url:match("^https")
         and headers.location:match("^http[^s]") then
         text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."),
@@ -304,7 +301,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
             ["404"] = _("Catalog not found."),
             ["406"] = _("Cannot get catalog. Server refuses to serve uncompressed content."),
         }
-        text = error_message[tostring(code)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
+        text = error_message[tostring(code or 0)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
     end
     UIManager:show(InfoMessage:new{
         text = text,
