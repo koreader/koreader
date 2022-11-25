@@ -845,7 +845,7 @@ function CalendarDayView:refreshTimeline()
         local offset_x = self.time_text_width + self.timeline_width * i / self.NB_VERTICAL_SEPARATORS_PER_HOUR
         table.insert(self.timeline, FrameContainer:new{
             width = Size.border.thin,
-            height = 24 * self.hour_height,
+            height = 24 * self.hour_height, -- unscaled_size_check: ignore
             background = Blitbuffer.COLOR_LIGHT_GRAY,
             bordersize = 0,
             padding = 0,
