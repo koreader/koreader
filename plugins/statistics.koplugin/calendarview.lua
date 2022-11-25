@@ -500,6 +500,7 @@ local CalendarDayView = FocusManager:extend{
     day_ts = nil,
     show_page = 1,
     kv_pairs = {},
+    NB_VERTICAL_SEPARATORS_PER_HOUR = 6 -- one vertical line every 10 minutes
 }
 
 function CalendarDayView:init()
@@ -677,6 +678,14 @@ function CalendarDayView:init()
 end
 
 function CalendarDayView:setupView()
+    local now = os.time()
+    self.is_current_day = now >= self.day_ts and now < self.day_ts + 86400
+    if self.is_current_day then
+        local date = os.date("*t", now)
+        self.current_day_hour = date.hour
+        self.current_hour_second = date.min * 60 + date.sec
+    end
+
     self.kv_pairs = self.reader_statistics:getBooksFromPeriod(self.day_ts, self.day_ts + 86400)
     local seconds_books = self.reader_statistics:getReadingDurationBySecond(self.day_ts)
     for _, kv in ipairs(self.kv_pairs) do
@@ -712,20 +721,19 @@ function CalendarDayView:setupView()
     while time_text_width > self.time_text_width * 0.8 do
         font_size = font_size * 0.8
         self.time_text_face = Font:getFace("cfont", font_size)
+        temp_text:free()
         temp_text = TextWidget:new{
             text = "00:00",
             face = self.time_text_face
         }
         time_text_width = temp_text:getWidth()
     end
-
     temp_text:free()
 
     self.pages = #self.kv_pairs <= self.items_per_page+1 and 1 or math.ceil(#self.kv_pairs / self.items_per_page)
     self.footer_container[1] = self.pages > 1 and self.page_info or VerticalSpan:new{ w = 0 }
 
     self:_populateBooks()
-
 end
 
 function CalendarDayView:nextPage()
@@ -815,7 +823,7 @@ function CalendarDayView:_populateBooks()
     else
         self.timeline_height = self.timeline_height - Size.padding.default
     end
-    self.hour_width = math.floor(self.timeline_height / 24)
+    self.hour_height = math.floor(self.timeline_height / 24)
     self.timeline_width = self.dimen.w - self.outer_padding - self.time_text_width
 
     if #self.kv_pairs == 0 then
@@ -826,11 +834,78 @@ function CalendarDayView:_populateBooks()
         })
     end
     self:refreshTimeline()
-
 end
 
 function CalendarDayView:refreshTimeline()
     self.timeline:clear()
+
+    -- Draw decorations first, so read spans can be drawn over them
+    -- Vertical lines (first, so horizontal lines can override them if we use another color)
+    for i=0, self.NB_VERTICAL_SEPARATORS_PER_HOUR do
+        local offset_x = self.time_text_width + self.timeline_width * i / self.NB_VERTICAL_SEPARATORS_PER_HOUR
+        table.insert(self.timeline, FrameContainer:new{
+            width = Size.border.thin,
+            height = 24 * self.hour_height,
+            background = Blitbuffer.COLOR_LIGHT_GRAY,
+            bordersize = 0,
+            padding = 0,
+            overlap_offset = { offset_x, self.timeline_offset },
+            VerticalSpan:new{ w = 0 }
+        })
+    end
+    -- Hour indicator
+    for i=0, 23 do
+        local offset_y = self.timeline_offset + self.hour_height * i
+        table.insert(self.timeline, FrameContainer:new{
+            width = self.time_text_width,
+            height = self.hour_height,
+            margin = 0,
+            padding = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            bordersize = 0,
+            overlap_offset = {0, offset_y},
+            CenterContainer:new{
+                dimen = Geom:new{ w = self.time_text_width, h = self.hour_height},
+                TextWidget:new{
+                    text = string.format("%02d:00", i),
+                    face = self.time_text_face,
+                    padding = Size.padding.small
+                }
+            }
+        })
+    end
+    -- Horizontal lines
+    for i=0, 24 do
+        local offset_y = self.timeline_offset + self.hour_height * i
+        table.insert(self.timeline, FrameContainer:new{
+            width = self.timeline_width,
+            height = Size.border.default,
+            background = Blitbuffer.COLOR_LIGHT_GRAY,
+            bordersize = 0,
+            padding = 0,
+            overlap_offset = { self.time_text_width, offset_y - Size.border.thin },
+            CenterContainer:new{
+                dimen = Geom:new{ w = self.timeline_width, h = Size.border.default },
+                VerticalSpan:new{ w = 0 }
+            }
+        })
+    end
+    -- Current time arrow indicator
+    if self.is_current_day then
+        -- Get the arrow glyph a bit bigger than what it is with the hour indicator font
+        local font_size = TextWidget:getFontSizeToFitHeight("cfont", self.hour_height*1.1, 0)
+        local current_time_icon = TextWidget:new{
+            text = "\u{25B2}", -- black up-pointing triangle
+            face = Font:getFace("cfont", font_size),
+            padding = 0,
+        }
+        local offset_x = self.time_text_width + math.floor( self.timeline_width * self.current_hour_second / 3600 - current_time_icon:getWidth()/2)
+        local offset_y = self.timeline_offset + self.hour_height * (self.current_day_hour + 1)
+        offset_y = offset_y - math.floor(self.hour_height*0.3) -- move it up so it sits over the horizontal line
+        current_time_icon.overlap_offset = { offset_x, offset_y }
+        table.insert(self.timeline, current_time_icon)
+    end
+    -- Finally, the read books spans
     for _, v in ipairs(self.kv_pairs) do
         if v.checked and v.periods then
             local fgcolor, bgcolor = unpack(SPAN_COLORS[(v.book_id % #SPAN_COLORS)+1])
@@ -849,42 +924,6 @@ function CalendarDayView:refreshTimeline()
             end
         end
     end
-
-    for i=0, 23 do
-        local offset_y = self.timeline_offset + self.hour_width * i
-        table.insert(self.timeline, FrameContainer:new{
-            width = self.time_text_width,
-            height = self.hour_width,
-            margin = 0,
-            padding = 0,
-            background = Blitbuffer.COLOR_WHITE,
-            bordersize = 0,
-            overlap_offset = {0, offset_y},
-            CenterContainer:new{
-                dimen = Geom:new{ w = self.time_text_width, h = self.hour_width},
-                TextWidget:new{
-                    text = string.format("%02d:00", i),
-                    face = self.time_text_face,
-                    padding = Size.padding.small
-                }
-            }
-        })
-
-        if i ~= 0 then
-            table.insert(self.timeline, FrameContainer:new{
-                width = self.timeline_width,
-                height = Size.border.default,
-                background = Blitbuffer.COLOR_LIGHT_GRAY,
-                bordersize = 0,
-                padding = 0,
-                overlap_offset = { self.time_text_width, offset_y - Size.border.thin },
-                CenterContainer:new{
-                    dimen = Geom:new{ w = self.timeline_width, h = Size.border.default },
-                    VerticalSpan:new{ w = 0 }
-                }
-            })
-        end
-    end
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
@@ -894,10 +933,10 @@ function CalendarDayView:generateSpan(start, finish, bgcolor, fgcolor, title)
     local width = math.floor((finish - start)/3600*self.timeline_width)
     if width <= 0 then return end
     local start_hour = math.floor(start / 3600)
-    local offset_y = start_hour * self.hour_width + self.inner_padding + self.timeline_offset
+    local offset_y = start_hour * self.hour_height + self.inner_padding + self.timeline_offset
     local offset_x = self.time_text_width + math.floor((start % 3600) / 3600 * self.timeline_width)
 
-    local font_size = TextWidget:getFontSizeToFitHeight("cfont", self.hour_width - 2 * self.inner_padding, 0.3)
+    local font_size = TextWidget:getFontSizeToFitHeight("cfont", self.hour_height - 2 * self.inner_padding, 0.3)
     local min_width = TextWidget:new{
         text = "…",
         face = Font:getFace("cfont", font_size),
@@ -905,13 +944,13 @@ function CalendarDayView:generateSpan(start, finish, bgcolor, fgcolor, title)
     }:getWidth()
     return FrameContainer:new{
         width = width,
-        height = self.hour_width - 2 * self.inner_padding,
+        height = self.hour_height - 2 * self.inner_padding,
         bordersize = Size.border.thin,
         overlap_offset = {offset_x, offset_y},
         background = bgcolor,
         padding = 0.3,
         CenterContainer:new{
-            dimen = Geom:new{ h = self.hour_width - 2 * self.inner_padding, w = width },
+            dimen = Geom:new{ h = self.hour_height - 2 * self.inner_padding, w = width },
             width > min_width and TextWidget:new{
                 text = title,
                 face = Font:getFace("cfont", font_size),
