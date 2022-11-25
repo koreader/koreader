@@ -301,7 +301,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
             ["404"] = _("Catalog not found."),
             ["406"] = _("Cannot get catalog. Server refuses to serve uncompressed content."),
         }
-        text = error_message[tostring(code or 0)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
+        text = code and error_message[tostring(code)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
     end
     UIManager:show(InfoMessage:new{
         text = text,
