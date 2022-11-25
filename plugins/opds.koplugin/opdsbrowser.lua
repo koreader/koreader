@@ -277,11 +277,8 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
     local code, headers, status = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
 
-    if headers == nil then
-        error(status or code or "network unreachable")
-    end
     if headers_only then
-        return headers["last-modified"]
+        return headers and headers["last-modified"]
     end
     if code == 200 then
         local xml = table.concat(sink)
@@ -289,9 +286,9 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
     end
 
     local text, icon
-    if code == 301 then
+    if headers and code == 301 then
         text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."), BD.url(headers.location))
-    elseif code == 302
+    elseif headers and code == 302
         and item_url:match("^https")
         and headers.location:match("^http[^s]") then
         text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."),
@@ -304,7 +301,7 @@ function OPDSBrowser:fetchFeed(item_url, headers_only)
             ["404"] = _("Catalog not found."),
             ["406"] = _("Cannot get catalog. Server refuses to serve uncompressed content."),
         }
-        text = error_message[tostring(code)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
+        text = code and error_message[tostring(code)] or T(_("Cannot get catalog. Server response status: %1."), status or code)
     end
     UIManager:show(InfoMessage:new{
         text = text,
@@ -315,21 +312,22 @@ end
 -- Parses feed to catalog
 function OPDSBrowser:parseFeed(item_url)
     local feed_last_modified = self:fetchFeed(item_url, true) -- headers only
-    local hash = "opds|catalog|" .. item_url
+    local feed
     if feed_last_modified then
-        hash = hash .. "|" .. feed_last_modified
-    end
-
-    local feed = CatalogCache:check(hash)
-    if feed then
-        logger.dbg("Cache hit for", hash)
-    else
-        logger.dbg("Cache miss for", hash)
-        feed = self:fetchFeed(item_url)
+        local hash = "opds|catalog|" .. item_url .. "|" .. feed_last_modified
+        feed = CatalogCache:check(hash)
         if feed then
-            logger.dbg("Caching", hash)
-            CatalogCache:insert(hash, feed)
+            logger.dbg("Cache hit for", hash)
+        else
+            logger.dbg("Cache miss for", hash)
+            feed = self:fetchFeed(item_url)
+            if feed then
+                logger.dbg("Caching", hash)
+                CatalogCache:insert(hash, feed)
+            end
         end
+    else
+        feed = self:fetchFeed(item_url)
     end
     if feed then
         return OPDSParser:parse(feed)
