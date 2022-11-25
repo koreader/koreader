@@ -112,10 +112,10 @@ function FileManagerHistory:onMenuHold(item)
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)
                             require("readhistory"):fileSettingsPurged(item.file)
-                            if self.filter ~= "all" then
+                            if self._manager.filter ~= "all" then
                                 self._manager:fetchStatuses(false)
                             else
-                                self.statuses_fetched = false
+                                self._manager.statuses_fetched = false
                             end
                             self._manager:updateItemTable()
                             UIManager:close(self.histfile_dialog)
