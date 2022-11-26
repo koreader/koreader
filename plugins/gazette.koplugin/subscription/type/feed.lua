@@ -5,9 +5,9 @@ local FeedFactory = require("feed/feedfactory")
 local socket_url = require("socket.url")
 local DataStorage = require("datastorage")
 local GazetteMessages = require("gazettemessages")
-local Results = require("subscription/result/results")
+local ResultQuery = require("subscription/result/resultquery")
 
-Feed = Subscription:new{
+local Feed = Subscription:extend{
     CONTENT_SOURCE = {
         SUMMARY = "summary",
         CONTENT = "content",
@@ -30,10 +30,10 @@ function Feed:new(o)
 
    o = o:load()
 
-   -- The subscription should carry and story a table containing a feed object.
-   -- If that object isn't present, but a url is, then please make the object!
-   if not o.feed and o.url then
-      o.feed = Feed:new(o.feed) or nil
+   if o.feed and o.url then
+       -- Data and methods related to the feed's RSS or Atom source
+       -- need to be instantiated into the feed instance variable.
+       o.feed = require("feed/feed"):new(o.feed) or nil
    end
 
    return o
@@ -62,8 +62,7 @@ function Feed:sync()
 
    local feed, err = feed:fetch()
 
-   if err
-   then
+   if err then
       return false, err
    end
 
@@ -126,57 +125,57 @@ function Feed:getAllEntries(limit)
 end
 
 function Feed:getNewEntries(limit)
-   local results = Results.forFeed(self.id)
-   -- Need to adjust this so results returns a list of all the results.
-   -- each time we sync, there's gonna be a new sub sync result.
-   local all_entries = self:getAllEntries(limit)
-   local new_entries = {}
+    local results = ResultQuery:new{}:forFeed(self.id)
+    -- Need to adjust this so results returns a list of all the results.
+    -- each time we sync, there's gonna be a new sub sync result.
+    local all_entries = self:getAllEntries(limit)
+    local new_entries = {}
 
-   if not results then
-      return all_entries
-   end
+    if not results then
+        return all_entries
+    end
 
-   for id, entry in pairs(all_entries) do
-      if not results:hasEntry(entry) then
-         table.insert(new_entries, entry)
-      end
-   end
+    for id, entry in pairs(all_entries) do
+        if not results:hasEntry(entry) then
+            table.insert(new_entries, entry)
+        end
+    end
 
-   return new_entries
+    return new_entries
 end
 
 function Feed:setDescription(description)
-   -- This is a strange place to assign the values.
-   -- We're operating on the feed data outside of the object.
-   -- Why not just move this logic into the feed object?
-   if self.feed.subtitle then
-      self.feed.subtitle = description
-   elseif self.feed.description then
-      self.feed.description = description
-   end
+    -- This is a strange place to assign the values.
+    -- We're operating on the feed data outside of the object.
+    -- Why not just move this logic into the feed object?
+    if self.feed.subtitle then
+        self.feed.subtitle = description
+    elseif self.feed.description then
+        self.feed.description = description
+    end
 end
 
 function Feed:setDownloadDirectory(path)
-   if not util.pathExists(path) then
-      util.makePath(path)
-   end
-   self.download_directory = path
+    if not util.pathExists(path) then
+        util.makePath(path)
+    end
+    self.download_directory = path
 end
 
 function Feed:getDownloadDirectory()
-   if self.download_directory then
-      if string.sub(self.download_directory, #self.download_directory) == '/' then
-         return string.sub(self.download_directory, 0, #self.download_directory - 1)
-      else
-         return self.download_directory
-      end
-   else
-      return DataStorage:getDataDir() .. "/news"
-   end
+    if self.download_directory then
+        if string.sub(self.download_directory, #self.download_directory) == '/' then
+            return string.sub(self.download_directory, 0, #self.download_directory - 1)
+        else
+            return self.download_directory
+        end
+    else
+        return DataStorage:getDataDir() .. "/news"
+    end
 end
 
 function Feed:getContentSource()
-   return self.content_source or Feed.CONTENT_SOURCE.CONTENT
+    return self.content_source or Feed.CONTENT_SOURCE.CONTENT
 end
 
 return Feed

@@ -2,7 +2,9 @@ local _ = require("gettext")
 
 local State = require("subscription/state")
 
-local Subscription = State:extend{}
+local Subscription = State:extend{
+    url = nil
+}
 
 function Subscription:new(o)
    o = o or {}

@@ -1,4 +1,5 @@
 local md5 = require("ffi/sha2").md5
+local util = require("frontend/util")
 
 local State = require("subscription/state")
 local ResultFactory = require("subscription/result/resultfactory")
@@ -16,17 +17,9 @@ function SubscriptionSyncResult:new(o)
    setmetatable(o, self)
    self.__index = self
 
-   o:_init(o)
    o = o:load()
 
    return o
-end
-
-function SubscriptionSyncResult:_init(o)
-   self.results = o.results
-   self.id = o.id
-   self.subscription_id = o.subscription_id
-   self.timestamp = o.timestamp
 end
 
 function SubscriptionSyncResult:add(result)
@@ -36,8 +29,7 @@ end
 
 function SubscriptionSyncResult:initializeResults()
    if self.results == nil or
-      type(self.results) ~= "table"
-   then
+      type(self.results) ~= "table" then
       -- Initialize results anew.
       self.results = {}
       return false
@@ -57,8 +49,7 @@ end
 
 function SubscriptionSyncResult:hasEntry(entry)
    local hashed_url = md5(entry:getId())
-   if self.results[hashed_url]
-   then
+   if self.results[hashed_url] then
       return true
    else
       return false
@@ -72,8 +63,7 @@ end
 function SubscriptionSyncResult:totalSuccesses()
    local successes = 0
    for _, result in pairs(self.results) do
-      if result:isSuccessful()
-      then
+      if result:isSuccessful() then
          successes = successes + 1
       end
    end
@@ -89,40 +79,42 @@ function SubscriptionSyncResult:getResultCount()
 end
 
 function SubscriptionSyncResult:getOverviewMessage()
-   return ("%s/%s"):format(self:totalSuccesses(), self:getResultCount())
+    return ("%s • %s/%s"):format(
+        util.secondsToDate(tonumber(self.timestamp)),
+        self:getResultCount(),
+        self:totalSuccesses())
 end
 
 function SubscriptionSyncResult:initializeSubscription()
-   local subscription = Subscription:new({id = self.id})
-   if not self.subscription and
-      subscription
-   then
-      self.subscription = subscription
-      return true
-   elseif self.subscription ~= nil
-   then
-      return true
-   else
-      return false
-   end
+    local subscription = Subscription:new{
+        id = self.id
+    }
+
+    if not self.subscription and
+        subscription then
+        self.subscription = subscription
+        return true
+    elseif self.subscription ~= nil then
+        return true
+    else
+        return false
+    end
 end
 
 function SubscriptionSyncResult:getSubscriptionTitle()
-   if self:initializeSubscription()
-   then
-      return self.subscription:getTitle()
-   else
-      return "No"
-   end
+    if self:initializeSubscription() then
+        return self.subscription:getTitle()
+    else
+        return "No title"
+    end
 end
 
 function SubscriptionSyncResult:getSubscriptionDescription()
-   if self:initializeSubscription()
-   then
-      return self.subscription:getDescription()
-   else
-      return "No"
-   end
+    if self:initializeSubscription() then
+        return self.subscription:getDescription()
+    else
+        return "No description"
+    end
 end
 
 return SubscriptionSyncResult

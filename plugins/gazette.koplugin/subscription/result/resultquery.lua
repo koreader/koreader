@@ -5,12 +5,12 @@ local State = require("subscription/state")
 local SubscriptionSyncResult = require("subscription/result/subscription_sync_result")
 local ResultsFactory = require("subscription/result/resultsfactory")
 
-local Results = State:new{
+local ResultQuery = State:new{
    lua_settings = nil,
    STATE_FILE = SubscriptionSyncResult.STATE_FILE,
 }
 
-function Results:new(o)
+function ResultQuery:newp(o)
    o = o or {}
    setmetatable(o, self)
    self.__index = self
@@ -18,13 +18,13 @@ function Results:new(o)
    return o
 end
 
-function Results:all()
+function ResultQuery:all()
    local initialized_results = {}
 
-   if not self
-   then
-      self = Results:new{}
-   end
+   -- if not self
+   -- then
+   --    self = ResultQuery:new{}
+   -- end
 
    for id, data in pairs(self.lua_settings.data) do
       local results = ResultsFactory:makeResults(data)
@@ -34,14 +34,13 @@ function Results:all()
    return initialized_results
 end
 
-function Results.forFeed(id)
-   local results = Results.all()
+function ResultQuery:forFeed(id)
+   local results = self:all()
 
    local collected_results = {}
 
    for _, subscription_sync_results in pairs(results) do
-      if subscription_sync_results.subscription_id == id
-      then
+      if subscription_sync_results.subscription_id == id then
          table.insert(collected_results, subscription_sync_results)
       end
    end
@@ -49,8 +48,7 @@ function Results.forFeed(id)
    collected_results.hasEntry = function(self, entry)
       local has_entry = false
       for _, results in ipairs(collected_results) do
-         if results:hasEntry(entry)
-         then
+         if results:hasEntry(entry) then
             has_entry = true
             ::continue::
          end
@@ -61,16 +59,12 @@ function Results.forFeed(id)
    return collected_results
 end
 
-function Results.getMostRecentForSubscription(subscription_id)
-
-end
-
-function Results.deleteForSubscription(subscription_id)
-   local results = Results.forFeed(subscription_id)
+function ResultQuery:deleteForSubscription(subscription_id)
+   local results = self:forFeed(subscription_id)
 
    for _, subscription_sync_results in ipairs(results) do
       subscription_sync_results:delete()
    end
 end
 
-return Results
+return ResultQuery
