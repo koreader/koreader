@@ -671,6 +671,7 @@ function TouchMenu:updateItems()
         if i <= #self.item_table then
             local item = self.item_table[i]
             local item_tmp = TouchMenuItem:new{
+                name = "touch_menu_item " .. tostring(item.text),
                 item = item,
                 menu = self,
                 dimen = Geom:new{
@@ -799,7 +800,7 @@ function TouchMenu:onNextPage()
     elseif self.page == self.page_num then
         self.page = 1
     end
-        self:updateItems()
+    self:updateItems()
     return true
 end
 
@@ -963,48 +964,72 @@ function TouchMenu:onBack()
     self:backToUpperMenu()
 end
 
+local CALLS = 0
 ------ the menu search functionality
 function TouchMenu:search(search_for)
     local found_menu_items = {}
 
+    local restrict_search = G_reader_settings:readSetting("menu_search_restrict", true)
+
     local MAX_MENU_DEPTH = 20 -- currently our menu needs at least 12 here
     local function recurse(val, path, text, depth)
+        CALLS = CALLS + 1
+--        print("xxx calls", CALLS)
+
         depth = depth + 1
         if depth > MAX_MENU_DEPTH then
             return
         end
-        for i,v in pairs(val) do
-            local menu_text = nil
 
-            if type(v) == "table" and (type(i) == "number" or i:find("item")) then
-                local menu_entry
-                if type(i) ~= "string" then
-                    menu_entry = val[i].text_func and val[i].text_func() or val[i].text
-                end
-                local next_text = menu_entry and (text .. "→\n" .. tostring(menu_entry)) or text -- drop sub_item_table
+        local menu_text
+
+        if val.text_func then
+            menu_text = val.text_func()
+        elseif val.text then
+            menu_text = val.text
+        end
+
+        for i,v in ipairs(val) do
+            if type(v) == "table" then
+                local entry_text = v.text_func and v.text_func() or v.text or ""
+                local next_text = entry_text and (text .. "→" ..  entry_text) or text
                 recurse(val[i], path .. "." .. i, next_text, depth)
-            elseif i == "text_func" then
-                menu_text = v()
-            elseif i == "text" then
-                menu_text = v
-            end
-
-            if menu_text and Utf8Proc.lowercase(menu_text):find(search_for) then
-                table.insert(found_menu_items, {menu_text, path .. "." .. i, text})
+                if entry_text and Utf8Proc.lowercase(entry_text):find(search_for) then
+                    table.insert(found_menu_items, {entry_text, path .. "." .. i, next_text})
+                end
             end
         end
-    end
 
+        if val.sub_item_table_func and not restrict_search then
+            local sub_item_table = val.sub_item_table_func()
+            local perpage = ""
+            if sub_item_table.max_per_page then
+                perpage = "[" .. sub_item_table.max_per_page .."]"
+            end
+            recurse(sub_item_table, path .. ".sub_item_table_func" .. perpage , text, depth)
+        elseif val.sub_item_table then
+            local perpage = ""
+            if val.sub_item_table.max_per_page then
+                perpage = "[" .. val.sub_item_table.max_per_page .."]"
+            end
+            recurse(val.sub_item_table, path .. ".sub_item_table" .. perpage , text, depth)
+        end
+    end -- recurse
+
+
+    -- initial call of recurse
     for i = 1, #self.tab_item_table do
+--    for i = 3,3 do
         recurse(self.tab_item_table[i], i, self.tab_item_table[i].text or "ROOT"..i, 0)
     end
+
 
 --[[
     for i = 1, #found_menu_items do
         print("xxxxxxx->", i,
             found_menu_items[i][1],
             found_menu_items[i][2],
-            found_nenu_items[i][3])
+            found_menu_items[i][3])
     end
 ]]
     return found_menu_items
@@ -1012,13 +1037,7 @@ end
 
 function TouchMenu:openMenu(path)
     local animation_time_s = G_reader_settings:readSetting("menu_search_animation_time_s", 1.0)
-    local function animate_func()
-        if not animation_time_s or animation_time_s == 0.0 then return end
-        local sleep_us = animation_time_s * 1e6
-        UIManager:forceRePaint()
-        ffiUtil.usleep(sleep_us)
-        UIManager:setDirty(nil, "ui")
-    end
+
     -- first switch to correct MenuTab
     local sep_pos = path:find("%.")
     local tab_num = tonumber(path:sub(1, sep_pos - 1))
@@ -1029,15 +1048,15 @@ function TouchMenu:openMenu(path)
         return
     end
 
-    local old_flash_ui = G_reader_settings:readSetting("flash_ui")
-    G_reader_settings:makeTrue("flash_ui")
-
+    print("xxx tab_num", tab_num, path)
     self:switchMenuTab(tab_num)
     self.bar:switchToTab(tab_num)
 
     self:updateItems()
 
-    -- Now open the menus all the way down
+    local logger = require("logger")
+    -- Now go the menu path down the way
+    local items_to_show = {}
     local dummy, num_of_sep = path:gsub("%.", "%.")
     while num_of_sep > 1 do
         sep_pos = path:find("%.")
@@ -1045,32 +1064,108 @@ function TouchMenu:openMenu(path)
         local item_num = tonumber(identifier)
         path = path:sub(sep_pos + 1)
         if item_num then
---            UIManager:widgetInvert(item)
-            animate_func()
+            self:updateItems(item_num)
             item = item[item_num]
-            self:onMenuSelect(item)
-        elseif identifier == "sub_item_table" then
+            table.insert(items_to_show, {item_num, item})
+        elseif identifier:find("sub_item_table_func") then
+            item = item.sub_item_table_func()
+        elseif identifier:find("sub_item_table") then
             item = item.sub_item_table
         end
+--        print("xxx path", path, "item_num", item_num, #items_to_show)
         num_of_sep = num_of_sep - 1
     end
 
     -- Now we are in the right menu, but maybe in the wrong page
     sep_pos = path:find("%.")
-    local identifier = path:sub(1, sep_pos -1)
+    if not sep_pos then
+        logger.err("TouchMenu: search; internal error") -- should not happen
+        return
+    end
+    local identifier = path:sub(sep_pos + 1)
     local item_num = tonumber(identifier)
+    print("xxxxxxxxxxxxxxxxx", path, identifier, item_num)
+    print("xxx item_num", item_num)
 
-    if item_num then -- might be nil on a sub-menu-entry
-        local desired_page_num = math.floor(item_num / self.perpage)
-        if desired_page_num > 0 then
-            for i = 1, desired_page_num do
-                animate_func()
-                self:onNextPage()
+    local perpage = self.perpage
+    if path:find("sub_item_table_func%[") then
+        perpage = path:sub(#("sub_item_table_func%["), sep_pos - 2)
+        perpage = tonumber(perpage) or self.perpage
+    elseif path:find("sub_item_table%[") then
+        perpage = path:sub(#("sub_item_table%["), sep_pos - 2)
+        perpage = tonumber(perpage) or self.perpage
+    end
+
+
+    print("xxx item_num", item_num)
+
+    local function invertWidget(widget)
+        if not widget then return end
+        local highlight_dimen = widget.dimen
+        highlight_dimen.w = widget.width
+
+        -- Highlight
+        --
+        widget.invert = true
+        UIManager:widgetInvert(widget, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+        UIManager:setDirty(nil, "fast", highlight_dimen)
+
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+
+        -- Unhighlight
+        --
+        UIManager:scheduleIn(0.5, function()
+            widget.invert = false
+            UIManager:widgetInvert(widget, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
+        end)
+    end
+
+    local function open_next_page(desired_page_num, force_first_page)
+        print("xxx open_next_page")
+        print("xxx item_num", item_num)
+
+        if force_first_page then
+            self:onFirstPage()
+        else
+            invertWidget(self.page_info_right_chev)
+            UIManager:scheduleIn(0.40, self.onNextPage, self)
+
+            if desired_page_num > 1 then
+                desired_page_num = desired_page_num - 1
+            else
+                return -- stop the animation here
             end
+        end
+        UIManager:scheduleIn(animation_time_s, open_next_page, desired_page_num, false)
+    end
+
+    local function open_next_menu()
+--        if #items_to_show < 1 then return end
+        local x = table.remove(items_to_show, 1)
+        local next_menu_num, next_menu_item = x and x[1] or nil, x and x[2] or nil
+
+        if x then
+            print("xxx------", #items_to_show,  self.item_group[next_menu_num].name)
+        end
+
+        if next_menu_item then
+            invertWidget(self.item_group[next_menu_num].item_frame)
+            UIManager:scheduleIn(0.6, function()
+                self:onMenuSelect(next_menu_item)
+            end)
+            -- open next menu item
+            UIManager:scheduleIn(animation_time_s, open_next_menu)
+        else
+            -- no items left, but maybe on another page
+            print("xxx item_num", item_num, "perpage", perpage)
+            local page_num = math.floor(item_num / perpage)
+            UIManager:nextTick(open_next_page, page_num, page_num > 1)
         end
     end
 
-    G_reader_settings:saveSetting("flash_ui", old_flash_ui)
+    UIManager:scheduleIn(animation_time_s, open_next_menu)
 end
 
 function TouchMenu:onShowMenuSearch()
@@ -1090,12 +1185,9 @@ function TouchMenu:onShowMenuSearch()
                 self:openMenu(path)
             end
             local function item_hold_callback(i)
---                UIManager:show(InfoMessage:new{
---                    text = T(_("%1\n\n%2"), found_menu_items[i][1], found_menu_items[i][3]),
---                })
                 local confirm_box
                 confirm_box = ConfirmBox:new{
-                    text = T(_("Open menu entry:\n'%1'\n\n%2"), found_menu_items[i][1], found_menu_items[i][3]),
+                    text = T(_("Open menu entry:\n'%1'\n%2\n\n%3"), found_menu_items[i][1], found_menu_items[i][3], found_menu_items[i][2]),
                     ok_text = _("Open"),
                     ok_callback = function()
                         UIManager:close(confirm_box)
@@ -1158,11 +1250,24 @@ function TouchMenu:onShowMenuSearch()
         checked = animation_time_s ~= 0.0,
         parent = search_dialog,
         callback = function()
-            animation_time_s = animation_time_s == 0.0 and 1.0 or 0.0
+            animation_time_s = animation_time_s ~= 0.0 and 0.0 or 1.0
             G_reader_settings:saveSetting("menu_search_animation_time_s", animation_time_s)
         end,
     }
     search_dialog:addWidget(check_button_animation)
+
+    local restrict = G_reader_settings:readSetting("menu_search_restrict", true)
+    local check_button_restrict = CheckButton:new{
+        text = _("Restrict search"),
+        checked = restrict,
+        parent = search_dialog,
+        callback = function()
+            restrict = not restrict
+            G_reader_settings:saveSetting("menu_search_restrict", restrict)
+        end,
+    }
+    search_dialog:addWidget(check_button_restrict)
+
 
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
