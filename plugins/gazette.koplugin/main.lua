@@ -80,11 +80,11 @@ function Gazette:syncSubscriptions()
 end
 
 function Gazette:viewSubscriptions()
-   ViewSubscriptions:list()
+    ViewSubscriptions:new{}:list()
 end
 
 function Gazette:viewResults()
-   ViewResults:listAll()
+    ViewResults:new{}:listAll()
 end
 
 return Gazette

@@ -1,9 +1,7 @@
 local SubscriptionFactory = require("subscription/subscriptionfactory")
 local State = require("subscription/state")
 
-local SubscriptionQuery = State:new{
-    lua_settings = nil
-}
+local SubscriptionQuery = State:new{}
 
 function SubscriptionQuery:new(o)
     o = o or {}
@@ -18,8 +16,7 @@ end
 function SubscriptionQuery:all()
     local initialized_subscriptions = {}
 
-    if not self
-    then
+    if not self then
         self = SubscriptionQuery:new{}
     end
 
