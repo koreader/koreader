@@ -1220,6 +1220,13 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     self:onShowCalendarView()
                 end,
             },
+            {
+                text = _("Today's timeline"),
+                keep_menu_open = true,
+                callback = function()
+                    self:onShowCalendarDayView()
+                end,
+            },
         },
     }
 end
