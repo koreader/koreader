@@ -671,7 +671,6 @@ function TouchMenu:updateItems()
         if i <= #self.item_table then
             local item = self.item_table[i]
             local item_tmp = TouchMenuItem:new{
-                name = "touch_menu_item " .. tostring(item.text), -- xxx testing only, squish later
                 item = item,
                 menu = self,
                 dimen = Geom:new{

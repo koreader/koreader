@@ -873,7 +873,7 @@ end
 
 function ReaderUI:onMenuSearch()
     if not self.ui then
-        UIManager:sendEvent(Event:new("ShowMenu"))
+        self.menu:onShowMenu()
     end
     UIManager:broadcastEvent(Event:new("ShowMenuSearch"))
 end
