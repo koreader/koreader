@@ -416,7 +416,7 @@ function CalibreSearch:browse(option)
     self.search_menu.paths = {}
     self.search_menu.onReturn = function ()
         local path_entry = table.remove(self.search_menu.paths)
-        local page = path_entry.page or 1
+        local page = path_entry and path_entry.page or 1
         if #self.search_menu.paths < 1 then
             -- If nothing is left in paths we switch to original items and title
             self.search_menu.paths = {}
