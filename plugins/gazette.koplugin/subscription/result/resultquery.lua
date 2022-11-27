@@ -10,7 +10,7 @@ local ResultQuery = State:new{
    STATE_FILE = SubscriptionSyncResult.STATE_FILE,
 }
 
-function ResultQuery:newp(o)
+function ResultQuery:new(o)
    o = o or {}
    setmetatable(o, self)
    self.__index = self
