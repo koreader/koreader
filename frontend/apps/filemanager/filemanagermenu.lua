@@ -310,7 +310,7 @@ function FileManagerMenu:setUpdateItemTable()
                                 home_dir = Device.home_dir
                             end
                             UIManager:show(ConfirmBox:new{
-                                text = text .. "\nChoose new folder to set as home?",
+                                text = text .. "\n" .. _("Choose new folder to set as home?"),
                                 ok_text = _("Choose folder"),
                                 ok_callback = function()
                                     local path_chooser = require("ui/widget/pathchooser"):new{
