@@ -1046,10 +1046,6 @@ function TouchMenu:openMenu(path)
 
     self:switchMenuTab(tab_num)
     self.bar:switchToTab(tab_num)
-
-    local logger = require("logger")
-    -- Now go the menu path down the way
-    local items_to_show = {}
     local dummy, num_of_sep = path:gsub("%.", "%.")
     while num_of_sep > 1 do
         sep_pos = path:find("%.")
@@ -1057,9 +1053,8 @@ function TouchMenu:openMenu(path)
         local item_num = tonumber(identifier)
         path = path:sub(sep_pos + 1)
         if item_num then
-            self:updateItems(item_num)
             item = item[item_num]
-            table.insert(items_to_show, item)
+            self:onMenuSelect(item)
         elseif identifier:find("sub_item_table_func") then
             item = item.sub_item_table_func()
         elseif identifier:find("sub_item_table") then
@@ -1071,6 +1066,7 @@ function TouchMenu:openMenu(path)
     -- Now we are in the right menu, but maybe in the wrong page
     sep_pos = path:find("%.")
     if not sep_pos then
+        local logger = require("logger")
         logger.err("TouchMenu: search; internal error") -- should not happen
         return
     end
@@ -1085,21 +1081,8 @@ function TouchMenu:openMenu(path)
     end
     perpage = tonumber(perpage) or self.perpage
 
-    local function open_next_menu()
-        local next_menu_item = table.remove(items_to_show, 1)
-
-        if next_menu_item then
-            self:onMenuSelect(next_menu_item)
-            -- open next menu item
-            UIManager:nextTick(open_next_menu)
-        else
-            -- no items left, but maybe on another page
-            local page_num = math.ceil(item_num / perpage)
-            UIManager:nextTick(self.onPage, self, page_num)
-        end
-    end
-
-    UIManager:nextTick(open_next_menu)
+    local page_num = math.ceil(item_num / perpage)
+    UIManager:nextTick(self.onPage, self, page_num)
 end
 
 function TouchMenu:onShowMenuSearch()
@@ -1174,9 +1157,18 @@ function TouchMenu:onShowMenuSearch()
                     text = _("Search"),
                     callback = function()
                         local search_for = search_dialog:getInputText()
-                        G_reader_settings:saveSetting("menu_search_string", search_for)
-                        UIManager:close(search_dialog)
-                        show_search_results(Utf8Proc.lowercase(search_for))
+                        local status, err = pcall( function() ("test_string"):find(search_for) end)
+                        if status then
+                            search_for = Utf8Proc.lowercase(search_for)
+                            G_reader_settings:saveSetting("menu_search_string", search_for)
+                            UIManager:close(search_dialog)
+                            show_search_results(search_for)
+                        else
+                            err = err:sub(err:find("lua") + 10)  -- 10 = strlen("lua:1165: ")
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Malformed message:\n%1"), err)
+                            })
+                        end
                     end,
                 },
             }
