@@ -826,6 +826,18 @@ function TouchMenu:onLastPage()
     return true
 end
 
+function TouchMenu:onPage(nb)
+    if nb > self.page_num then
+        self.page = self.page_num
+    elseif nb < 1 then
+        self.page = 1
+    else
+        self.page = nb
+    end
+    self:updateItems()
+    return true
+end
+
 function TouchMenu:onSwipe(arg, ges_ev)
     local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
     if direction == "west" then
@@ -979,11 +991,12 @@ function TouchMenu:search(search_for)
 
         for i,v in ipairs(val) do
             if type(v) == "table" then
-                local entry_text = v.text_func and v.text_func() or v.text or ""
-                local next_text = entry_text and (text .. "→" ..  entry_text) or text
-                recurse(val[i], path .. "." .. i, next_text, depth)
-                if entry_text and Utf8Proc.lowercase(entry_text):find(search_for) then
-                    table.insert(found_menu_items, {entry_text, path .. "." .. i, next_text})
+                local entry_text = v.text_func and v.text_func() or v.text
+                local next_text = text .. "→" .. entry_text
+                local next_path = path .. "." .. i
+                recurse(val[i], next_path, next_text, depth)
+                if Utf8Proc.lowercase(entry_text):find(search_for) then
+                    table.insert(found_menu_items, {entry_text, next_path, next_text})
                 end
             end
         end
@@ -1006,7 +1019,6 @@ function TouchMenu:search(search_for)
 
     -- initial call of recurse
     for i = 1, #self.tab_item_table do
---    for i = 3,3 do
         recurse(self.tab_item_table[i], i, self.tab_item_table[i].text or "ROOT"..i, 0)
     end
 
@@ -1073,21 +1085,6 @@ function TouchMenu:openMenu(path)
     end
     perpage = tonumber(perpage) or self.perpage
 
-    local function open_next_page(desired_page_num, force_first_page)
-        if force_first_page then
-            UIManager:nextTick(self.onFirstPage, self)
-        else
-            UIManager:nextTick(self.onNextPage, self)
-        end
-
-        if desired_page_num < 1 then
-            return -- stop the recursion here
-        end
-
-        desired_page_num = desired_page_num - 1
-        UIManager:tickAfterNext(open_next_page, desired_page_num, false)
-    end
-
     local function open_next_menu()
         local next_menu_item = table.remove(items_to_show, 1)
 
@@ -1097,8 +1094,8 @@ function TouchMenu:openMenu(path)
             UIManager:nextTick(open_next_menu)
         else
             -- no items left, but maybe on another page
-            local page_num = math.ceil(item_num / perpage) - 1 -- because we start on the first page
-            UIManager:nextTick(open_next_page, page_num, true)
+            local page_num = math.ceil(item_num / perpage)
+            UIManager:nextTick(self.onPage, self, page_num)
         end
     end
 
@@ -1109,6 +1106,7 @@ function TouchMenu:onShowMenuSearch()
     local InputDialog = require("ui/widget/inputdialog")
     local CheckButton = require("ui/widget/checkbutton")
     local ConfirmBox = require("ui/widget/confirmbox")
+    local KeyValuePage = require("ui/widget/keyvaluepage")
 
     local function show_search_results(search_string)
         local found_menu_items = self:search(search_string)
@@ -1145,12 +1143,17 @@ function TouchMenu:onShowMenuSearch()
             return kv_pairs
         end -- get_current_search_results()
 
-        local KeyValuePage = require("ui/widget/keyvaluepage")
-        self.kv = KeyValuePage:new{
-            title = _("Search results"),
-            kv_pairs = get_current_search_results(found_menu_items),
-        }
-        UIManager:show(self.kv)
+        if #found_menu_items > 0 then
+            self.kv = KeyValuePage:new{
+                title = _("Search results"),
+                kv_pairs = get_current_search_results(found_menu_items),
+            }
+            UIManager:show(self.kv)
+        else
+            UIManager:show(InfoMessage:new{
+                text = T(_("No menus containing '%1' found."), search_string),
+            })
+        end
     end -- show_search_results()
 
     local search_dialog
@@ -1182,7 +1185,7 @@ function TouchMenu:onShowMenuSearch()
 
     -- Extensive_search will enable to scan sub_item_table_func() results too.
     -- This can take (with a lot of system fonts enabled) quite some time and should not be done.
-    -- @todo Maybe caching of sub_item_table_func() results can improve things?
+    --- @todo Maybe caching of sub_item_table_func() results can improve things?
     local extensive_search = G_reader_settings:readSetting("search_menu_extensive", false)
     local check_button_restrict = CheckButton:new{
         text = _("Extensive search"),
