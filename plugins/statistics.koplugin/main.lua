@@ -2709,40 +2709,91 @@ function ReaderStatistics:getReadBookByDay(month)
 end
 
 function ReaderStatistics:getReadingDurationBySecond(ts)
+    -- Two read spans, separated by a duration smaller than this, will be merged and appear as one span
+    local ignorable_gap = math.max(30, self.settings.min_sec)
     local sql_stmt = [[
         SELECT
             start_time - ? as start,
-            start_time - ? + duration as end,
+            start_time - ? + duration as finish,
             id_book book_id,
             book.title book_title
         FROM   page_stat_data
         JOIN   book ON book.id = page_stat_data.id_book
-        WHERE  start_time BETWEEN ?
-                              AND ? + 86399
+        WHERE  start_time BETWEEN ? AND ?
         ORDER BY start;
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(ts, ts, ts, ts):resultset("i")
+    local res, nb = stmt:reset():bind(ts, ts, ts - self.settings.max_sec - ignorable_gap, ts + 86400 - 1 + ignorable_gap):resultset("i")
     stmt:close()
     conn:close()
     local per_book = {}
-    local last_book
+    local last_book_id
+    local last_book_finish
+    local done = false
     for i=1, nb do
         local start, finish, book_id, book_title = tonumber(res[1][i]), tonumber(res[2][i]), tonumber(res[3][i]), tostring(res[4][i])
-        if not per_book[book_id] then
-            per_book[book_id] = {
-                title = book_title,
-                periods = {},
-            }
-        end
-        local periods = per_book[book_id].periods
-        if #periods > 0 and start - periods[#periods].finish <= math.max(30, self.settings.min_sec) and book_id == last_book then
-            periods[#periods].finish = finish
+        -- This is a bit complex as we want to ensure a page read span continuation
+        -- from/to previous/next day if the gap is low enough
+        if start >= 0 or finish >= 0 then
+            -- Page read the current day (or started the next day before ignorable_gap seconds)
+            if start < 0 then -- started previous day
+                start = 0
+            end
+            if finish >= 86400 then -- next day
+                finish = 86400 - 1 -- cap to this day's last second
+                done = true -- no need to handle next results
+            end
+            if start < 86400 then
+                -- Page read the current day: account for it
+                if not per_book[book_id] then
+                    per_book[book_id] = {
+                        title = book_title,
+                        periods = {},
+                    }
+                end
+                local periods = per_book[book_id].periods
+                if book_id == last_book_id and start - last_book_finish <= ignorable_gap then
+                    -- Same book as previous span, no or small gap: previous span/period can be continued
+                    if #periods > 0 then
+                        periods[#periods].finish = finish -- extend previous span
+                    else
+                        -- No period yet accounted: this is a continuation from previous day's last page read:
+                        -- make it start at 0, so the continuation is visible
+                        table.insert(periods, { start = 0, finish = finish })
+                    end
+                else
+                    -- Different book, or gap from previous read page of same book is not ignorable: add a new period
+                    table.insert(periods, { start = start, finish = finish })
+                end
+            else
+                -- Page started the next day
+                if book_id == last_book_id and start - last_book_finish <= ignorable_gap then
+                    -- Same book as current day's last span, no or small gap: current day's last
+                    -- span can be continued: extend it (if it exists) to the end of current day
+                    if per_book[book_id] then
+                        local periods = per_book[book_id].periods
+                        if #periods > 0 then
+                            periods[#periods].finish = 86400 - 1
+                        end
+                    end
+                end
+                done = true -- last interesting slot
+            end
+            last_book_id = book_id
+            last_book_finish = finish
         else
-            table.insert(per_book[book_id].periods, { start = start, finish = finish })
+            -- Page read the previous day
+            if finish >= - ignorable_gap then
+                -- Page reading ended near 23h59mNNs: we may have to make the first
+                -- page read the current day start at 00h00m00s
+                last_book_id = book_id
+                last_book_finish = finish
+            end
         end
-        last_book = book_id
+        if done then
+            break
+        end
     end
     return per_book
 end
