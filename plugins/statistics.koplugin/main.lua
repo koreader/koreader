@@ -2783,10 +2783,10 @@ function ReaderStatistics:getReadingDurationBySecond(ts)
             last_book_id = book_id
             last_book_finish = finish
         else
-            -- page read the previous day
+            -- Page read the previous day
             if finish >= - ignorable_gap then
-                -- page reading ended near 23h59mNNs: we may have to make the first
-                -- page read the next day start at 00h00m00s
+                -- Page reading ended near 23h59mNNs: we may have to make the first
+                -- page read the current day start at 00h00m00s
                 last_book_id = book_id
                 last_book_finish = finish
             end
