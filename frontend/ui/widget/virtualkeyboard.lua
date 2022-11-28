@@ -799,11 +799,13 @@ local VirtualKeyboard = FocusManager:extend{
         tr = "tr_keyboard",
         vi = "vi_keyboard",
         zh = "zh_keyboard",
+        zh_CN = "zh_CN_keyboard",
     },
 
     lang_has_submenu = {
         ja = true,
         zh = true,
+        zh_CN = true,
     },
 }
 
