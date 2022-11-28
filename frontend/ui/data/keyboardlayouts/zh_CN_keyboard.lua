@@ -4,14 +4,15 @@ local _ = require("gettext")
 
 -- Start with the english keyboard layout (deep copy, to not alter it)
 local py_keyboard = require("util").tableDeepCopy(require("ui/data/keyboardlayouts/en_keyboard"))
-local SHOW_CANDI_KEY = "keyboard_chinese_pinyin_show_candidates"
+local SETTING_NAME = "keyboard_chinese_pinyin_settings"
 
 local code_map = require("frontend/ui/data/keyboardlayouts/zh_pinyin_data")
+local settings = G_reader_settings:readSetting(SETTING_NAME, {show_candi=true})
 local ime = IME:new {
     code_map = code_map,
     partial_separators = {" "},
     show_candi_callback = function()
-        return G_reader_settings:nilOrTrue(SHOW_CANDI_KEY)
+        return settings.show_candi
     end,
     switch_char = "→",
     switch_char_prev = "←",
@@ -69,10 +70,11 @@ local genMenuItems = function(self)
         {
             text = _("Show character candidates"),
             checked_func = function()
-                return G_reader_settings:nilOrTrue(SHOW_CANDI_KEY)
+                return settings.show_candi
             end,
             callback = function()
-                G_reader_settings:flipNilOrTrue(SHOW_CANDI_KEY)
+                settings.show_candi = not settings.show_candi
+                G_reader_settings:saveSetting(SETTING_NAME, settings)
             end
         }
     }
