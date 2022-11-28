@@ -1,5 +1,6 @@
 local DateTimeWidget = require("ui/widget/datetimewidget")
 local InfoMessage = require("ui/widget/infomessage")
+local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -10,6 +11,9 @@ local T = require("ffi/util").template
 local ReadTimer = WidgetContainer:extend{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
+    dialog = nil,
+    last_interval_time = 0,
+    timer_way = nil
 }
 
 function ReadTimer:init()
@@ -18,9 +22,26 @@ function ReadTimer:init()
         if self.time == 0 then return end
 
         self.time = 0
-        UIManager:show(InfoMessage:new{
-            text = T(_("Read timer alarm\nTime's up. It's %1 now."), os.date("%c")),
-        })
+        local tip_text = T(_("Read timer alarm\nTime's up. It's %1 now.", os.date("%c")))
+        local confirb_box
+        if self.timer_way == "interval_time" then
+            logger.dbg("timer_way is interval_time, show confirb_box")
+            confirb_box = ConfirmBox:new{
+                text = tip_text,
+                ok_text = _("Again"),
+                ok_callback = function()
+                    logger.dbg("Schedule a new time:", self.last_interval_time)
+                    UIManager:close(confirb_box)
+                    self:rescheduleIn(self.last_interval_time)
+                end,
+            }
+            UIManager:show(confirb_box)
+        else
+            logger.dbg("timer_way is absulte_time, show infomessage")
+            UIManager:show(InfoMessage:new{
+                    text = tip_text,
+            })
+        end
     end
     self.ui.menu:registerToMainMenu(self)
 end
@@ -83,6 +104,7 @@ function ReadTimer:addToMainMenu(menu_items)
                 text = _("Set time"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
+                    self.timer_way = "absolute_time"
                     local now_t = os.date("*t")
                     local curr_hour = now_t.hour
                     local curr_min = now_t.min
@@ -125,6 +147,7 @@ function ReadTimer:addToMainMenu(menu_items)
                 text = _("Set interval"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
+                    self.timer_way = "interval_time"
                     local remain_time = {}
                     local remain_hours, remain_minutes = self:remainingTime()
                     if not remain_hours and not remain_minutes then
@@ -146,6 +169,7 @@ function ReadTimer:addToMainMenu(menu_items)
                             self:unschedule()
                             local seconds = time.hour * 3600 + time.min * 60
                             if seconds > 0 then
+                                self.last_interval_time = seconds
                                 self:rescheduleIn(seconds)
                                 local user_duration_format = G_reader_settings:readSetting("duration_format")
                                 UIManager:show(InfoMessage:new{
