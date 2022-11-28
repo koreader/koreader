@@ -54,7 +54,7 @@ py_keyboard.keys[5][3][2] = {
 py_keyboard.keys[1][2][3] = { alt_label = "「", north = "「", "‘" }
 py_keyboard.keys[1][3][3] = { alt_label = "」", north = "」", "’" }
 py_keyboard.keys[1][1][4] = { alt_label = "!", north = "!", "！"}
-py_keyboard.keys[2][1][4] = { alt_label = "?", north = "？", "？"}
+py_keyboard.keys[2][1][4] = { alt_label = "?", north = "?", "？"}
 py_keyboard.keys[1][2][4] = "、"
 py_keyboard.keys[2][2][4] = "——"
 py_keyboard.keys[1][4][3] = { alt_label = "『", north = "『", "“" }
