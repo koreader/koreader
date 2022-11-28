@@ -1,6 +1,5 @@
 local IME = require("frontend/ui/data/keyboardlayouts/generic_ime")
 local util = require("util")
-local JA = require("ui/data/keyboardlayouts/ja_keyboard_keys")
 local _ = require("gettext")
 
 -- Start with the english keyboard layout (deep copy, to not alter it)
