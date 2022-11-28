@@ -76,7 +76,7 @@ local settingsList = {
     show_network_info = {category="none", event="ShowNetworkInfo", title=_("Show network info"), device=true, separator=true},
     exit_screensaver = {category="none", event="ExitScreensaver", title=_("Exit screensaver"), device=true},
     restart = {category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart()},
-    suspend = {category="none", event="RequestSuspend", title=_("Suspend"), device=true},
+    suspend = {category="none", event="RequestSuspend", title=_("Suspend"), device=true, condition=Device:canSuspend()},
     reboot = {category="none", event="RequestReboot", title=_("Reboot the device"), device=true, condition=Device:canReboot()},
     poweroff = {category="none", event="RequestPowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(), separator=true},
     exit = {category="none", event="Exit", title=_("Exit KOReader"), device=true},
