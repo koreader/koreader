@@ -118,7 +118,7 @@ function CoverImage:createCoverImage(doc_settings)
                 return
             end
 
-            local s_w, s_h = Device.screen:getWidth(), Device.screen:getHeight()
+            local s_w, s_h = Screen:getWidth(), Screen:getHeight()
             local i_w, i_h = cover_image:getWidth(), cover_image:getHeight()
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
