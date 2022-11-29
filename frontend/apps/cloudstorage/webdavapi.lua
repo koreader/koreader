@@ -133,7 +133,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
                 item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
 
             local item_path = (path == "" and has_trailing_slash) and item_name or path .. "/" .. item_name
-            if item:find("<[^:]*:collection/>") then
+            if item:find("<[^:]*:collection[^<]*/>") then
                 item_name = item_name .. "/"
                 if not is_current_dir then
                     table.insert(webdav_list, {
