@@ -298,12 +298,18 @@ function ImageViewer:init()
 
     -- Container for the above elements, that we will reset and refill
     self.frame_elements = VerticalGroup:new{ align = "left" }
+    local bg_color
+    if G_reader_settings:isTrue("night_mode") then
+        bg_color = Blitbuffer.COLOR_BLACK
+    else
+        bg_color = Blitbuffer.COLOR_WHITE
+    end
 
     self.main_frame = FrameContainer:new{
         radius = not self.fullscreen and 8 or nil,
         padding = 0,
         margin = 0,
-        background = Blitbuffer.COLOR_WHITE,
+        background = bg_color,
         self.frame_elements,
     }
     self[1] = WidgetContainer:new{
