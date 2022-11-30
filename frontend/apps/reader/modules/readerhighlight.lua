@@ -1788,13 +1788,13 @@ function ReaderHighlight:writePdfAnnotation(action, page, hl_or_bm, content)
     else
         item = hl_or_bm
     end
-    local function doAction(action, page, item, content)
-        if action == "save" then
-            return self.ui.document:saveHighlight(page, item)
-        elseif action == "delete" then
-            return self.ui.document:deleteHighlight(page, item)
-        elseif action == "content" then
-            return self.ui.document:updateHighlightContents(page, item, content)
+    local function doAction(_action, _page, _item, _content)
+        if _action == "save" then
+            return self.ui.document:saveHighlight(_page, _item)
+        elseif _action == "delete" then
+            return self.ui.document:deleteHighlight(_page, _item)
+        elseif _action == "content" then
+            return self.ui.document:updateHighlightContents(_page, _item, _content)
         end
     end
     local can_write
