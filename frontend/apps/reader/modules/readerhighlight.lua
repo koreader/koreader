@@ -654,7 +654,7 @@ function ReaderHighlight:onTapPageSavedHighlight(ges)
             for i, item in ipairs(items) do
                 local boxes = self.ui.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
                 if boxes then
-                    for _, box in pairs(boxes) do
+                    for _, box in ipairs(boxes) do
                         if inside_box(pos, box) then
                             logger.dbg("Tap on highlight")
                             local hl_page, hl_i
@@ -1777,17 +1777,11 @@ function ReaderHighlight:saveHighlight(extend_to_sentence)
     end
 end
 
-function ReaderHighlight:writePdfAnnotation(action, page, hl_or_bm, content)
+function ReaderHighlight:writePdfAnnotation(action, page, item, content)
     if self.ui.rolling or G_reader_settings:readSetting("save_document") == "disable" then
         return
     end
     logger.dbg("write to pdf document", action, hl_or_bm)
-    local item
-    if hl_or_bm.highlighted then -- called from bookmarks to write bookmark note
-        item = self:getBookmarkPboxes(hl_or_bm)
-    else
-        item = hl_or_bm
-    end
     local function doAction(_action, _page, _item, _content)
         if _action == "save" then
             return self.ui.document:saveHighlight(_page, _item)
@@ -1798,8 +1792,19 @@ function ReaderHighlight:writePdfAnnotation(action, page, hl_or_bm, content)
         end
     end
     local can_write
-    if item.pos0.page == item.pos1.page then
-        can_write = doAction(action, page, item, content)
+    if item.pos0.page == item.pos1.page then -- single-page highlight
+        local item_
+        if item.pboxes then
+            item_ = item
+        else -- called from bookmarks to write bookmark note to annotation
+            for _, hl in ipairs(self.view.highlight.saved[page]) do
+                if hl.datetime == item.datetime then
+                    item_ = {pboxes = hl.pboxes}
+                    break
+                end
+            end
+        end
+        can_write = doAction(action, page, item_, content)
     else -- multi-page highlight
         local is_reflow = self.ui.document.configurable.text_wrap
         for hl_page = item.pos0.page, item.pos1.page do
@@ -1807,15 +1812,9 @@ function ReaderHighlight:writePdfAnnotation(action, page, hl_or_bm, content)
             local hl_part = self:getSavedExtendedHighlightPage(item, hl_page)
             self.ui.document.configurable.text_wrap = is_reflow
             can_write = doAction(action, hl_page, hl_part, content)
-            if can_write == false
-                    -- content is written to the first page annotation
-                    or (action == "content" and hl_page == item.pos0.page) then
-                break
-            end
+            if can_write == false then break end
             if action == "save" then -- update pboxes from quadpoints
-                for i, pbox in ipairs(hl_part.pboxes) do
-                    item.pboxes[item.ext[hl_page].pboxi0 + i - 1] = pbox
-                end
+                item.ext[hl_page].pboxes = hl_part.pboxes
             end
         end
     end
@@ -1829,26 +1828,6 @@ If you wish your highlights to be saved in the document, just move it to a writa
             timeout = 5,
         })
     end
-end
-
-function ReaderHighlight:getBookmarkPboxes(bookmark)
-    local highlight
-    for _, hl in ipairs(self.view.highlight.saved[bookmark.page]) do
-        if hl.datetime == bookmark.datetime then
-            highlight = hl
-            break
-        end
-    end
-    local item = {}
-    item.page = bookmark.page
-    item.datetime = bookmark.datetime
-    item.pos0 = bookmark.pos0
-    item.pos1 = bookmark.pos1
-    item.pboxes = {}
-    for _, pbox in ipairs(highlight.pboxes) do
-        table.insert(item.pboxes, pbox)
-    end
-    return item
 end
 
 function ReaderHighlight:addNote(text)
@@ -1966,7 +1945,7 @@ function ReaderHighlight:extendSelection()
     local item2_pos0, item2_pos1 = self.selected_text.pos0, self.selected_text.pos1
     -- getting starting and ending positions, text and pboxes of extended highlight
     local new_pos0, new_pos1, new_text, new_pboxes, ext
-    if self.ui.document.info.has_pages then
+    if self.ui.paging then
         local cur_page = self.hold_pos.page
         local is_reflow = self.ui.document.configurable.text_wrap
         -- pos0 and pos1 are not in order within highlights, hence sorting all
@@ -1986,20 +1965,14 @@ function ReaderHighlight:extendSelection()
             temp_pos0, temp_pos1 = new_pos0, new_pos1
         else -- multi-page highlight
             new_text = ""
-            new_pboxes = {}
-            ext = {} -- additional information saved in multi-page highlight
+            ext = {}
             for page = new_pos0.page, new_pos1.page do
                 local item = self:getExtendedHighlightPage(new_pos0, new_pos1, page)
                 new_text = new_text .. item.text
-                local start_nb = #new_pboxes + 1
-                for _, pbox in ipairs(item.pboxes) do
-                    table.insert(new_pboxes, pbox)
-                end
-                ext[page] = {
+                ext[page] = { -- for every page of multi-page highlight
                     pos0 = item.pos0,
                     pos1 = item.pos1,
-                    pboxi0 = start_nb,
-                    pboxi1 = #new_pboxes,
+                    pboxes = item.pboxes,
                 }
                 if page == cur_page then
                     temp_pos0, temp_pos1 = item.pos0, item.pos1
@@ -2028,7 +2001,7 @@ function ReaderHighlight:extendSelection()
 end
 
 -- Calculates positions, text, pboxes of one page of selected multi-page highlight
--- (reflow mode must be off)
+-- (For pdf documents only, reflow mode must be off)
 function ReaderHighlight:getExtendedHighlightPage(pos0, pos1, cur_page)
     local item = {}
     for page = pos0.page, pos1.page do
@@ -2070,6 +2043,7 @@ function ReaderHighlight:getExtendedHighlightPage(pos0, pos1, cur_page)
 end
 
 -- Returns one page of saved multi-page highlight
+-- (For pdf documents only)
 function ReaderHighlight:getSavedExtendedHighlightPage(hl_or_bm, page, index)
     local highlight
     if hl_or_bm.ext then
@@ -2091,10 +2065,7 @@ function ReaderHighlight:getSavedExtendedHighlightPage(hl_or_bm, page, index)
     item.pos1 = highlight.ext[page].pos1
     item.pos1.zoom = highlight.pos0.zoom
     item.pos1.rotation = highlight.pos0.rotation
-    item.pboxes = {}
-    for i = highlight.ext[page].pboxi0, highlight.ext[page].pboxi1 do
-        table.insert(item.pboxes, highlight.pboxes[i])
-    end
+    item.pboxes = highlight.ext[page].pboxes
     item.parent = {highlight.pos0.page, index}
     return item
 end
