@@ -1781,7 +1781,7 @@ function ReaderHighlight:writePdfAnnotation(action, page, item, content)
     if self.ui.rolling or G_reader_settings:readSetting("save_document") == "disable" then
         return
     end
-    logger.dbg("write to pdf document", action, hl_or_bm)
+    logger.dbg("write to pdf document", action, item)
     local function doAction(_action, _page, _item, _content)
         if _action == "save" then
             return self.ui.document:saveHighlight(_page, _item)
