@@ -121,6 +121,10 @@ function PdfDocument:getTextFromPositions(spos0, spos1)
     return self.koptinterface:getTextFromPositions(self, spos0, spos1)
 end
 
+function PdfDocument:getTextBoxes(pageno)
+    return self.koptinterface:getTextBoxes(self, pageno)
+end
+
 function PdfDocument:getPageBoxesFromPositions(pageno, ppos0, ppos1)
     return self.koptinterface:getPageBoxesFromPositions(self, pageno, ppos0, ppos1)
 end
