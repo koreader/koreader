@@ -526,9 +526,7 @@ function AutoWarmth:addToMainMenu(menu_items)
     menu_items.autowarmth = {
         text = Device:hasNaturalLight() and _("Auto warmth and night mode") or _("Auto night mode"),
         checked_func = function() return self.activate ~= 0 end,
-        sub_item_table_func = function()
-            return self:getSubMenuItems()
-        end,
+        sub_item_table = self:getSubMenuItems(),
     }
 end
 
@@ -1145,7 +1143,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         elseif Device:hasNaturalLight() and self.control_warmth then
             if self.current_times_h[num] == time then
                 if self.warmth[num] <= 100 then
-                    return retval .. " (💡" .. self.warmth[num] .."%)\n"
+                    return retval .. " (💡" .. self.warmth[num] .. "%)\n"
                 else
                     return retval .. " (💡100%" .. (self.control_nightmode and " + ☾" or "") .. ")\n"
                 end
