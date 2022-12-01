@@ -590,9 +590,11 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                         local draw_note_mark = self.highlight.note_mark and
                             self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
                         for _, box in ipairs(boxes) do
-                            self:drawHighlightRect(bb, x, y, box, drawer, draw_note_mark)
-                            if draw_note_mark and self.highlight.note_mark == "sidemark" then
-                                draw_note_mark = false -- side mark in the first line only
+                            if box.h ~= 0 then
+                                self:drawHighlightRect(bb, x, y, box, drawer, draw_note_mark)
+                                if draw_note_mark and self.highlight.note_mark == "sidemark" then
+                                    draw_note_mark = false -- side mark in the first line only
+                                end
                             end
                         end -- end for each box
                     end -- end if boxes
