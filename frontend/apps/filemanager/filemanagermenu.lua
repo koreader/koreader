@@ -501,7 +501,7 @@ To:
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_startup_no_fbdepth")
-                UIManager:restart()
+                UIManager:askForRestart()
             end,
         })
     end
@@ -514,7 +514,7 @@ To:
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_abort_on_crash")
-                UIManager:restart()
+                UIManager:askForRestart()
             end,
         })
     end
@@ -593,7 +593,7 @@ To:
                     mxcfb_bypass_wait_for = not Device:hasReliableMxcWaitFor()
                 end
                 G_reader_settings:saveSetting("mxcfb_bypass_wait_for", not mxcfb_bypass_wait_for)
-                UIManager:restart()
+                UIManager:askForRestart()
             end,
         })
     end
@@ -610,7 +610,7 @@ To:
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("pb_ignore_b288_quirks")
-                UIManager:restart()
+                UIManager:askForRestart()
             end,
         })
     end
@@ -630,7 +630,7 @@ To:
         end,
         callback = function()
             G_reader_settings:flipNilOrTrue("use_xtext")
-            UIManager:restart()
+            UIManager:askForRestart()
         end,
     })
     table.insert(self.menu_items.developer_options.sub_item_table, {
@@ -643,7 +643,7 @@ To:
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("dev_reverse_ui_layout_mirroring")
-                    UIManager:restart()
+                    UIManager:askForRestart()
                 end
             },
             {
@@ -653,7 +653,7 @@ To:
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("dev_reverse_ui_text_direction")
-                    UIManager:restart()
+                    UIManager:askForRestart()
                 end
             }
         }

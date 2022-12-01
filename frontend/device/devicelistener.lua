@@ -320,11 +320,11 @@ function DeviceListener:onRequestSuspend()
 end
 
 function DeviceListener:onRequestReboot()
-    UIManager:reboot()
+    UIManager:askForReboot()
 end
 
 function DeviceListener:onRequestPowerOff()
-    UIManager:powerOff()
+    UIManager:askForPowerOff()
 end
 
 function DeviceListener:onExit(callback)

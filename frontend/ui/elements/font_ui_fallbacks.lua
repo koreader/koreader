@@ -145,7 +145,7 @@ local getSubMenuItems = function()
                         return
                     end
                 end
-                UIManager:restart()
+                UIManager:askForRestart()
             end,
         }
         table.insert(menu_items, item)

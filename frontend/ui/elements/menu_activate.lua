@@ -15,7 +15,7 @@ return {
                 else
                     G_reader_settings:saveSetting("activate_menu", "swipe_tap")
                 end
-                UIManager:restart()
+                UIManager:askForRestart()
             end,
         },
         {
@@ -29,7 +29,7 @@ return {
                 else
                     G_reader_settings:saveSetting("activate_menu", "swipe_tap")
                 end
-                UIManager:restart()
+                UIManager:askForRestart()
             end,
             separator = true,
         },

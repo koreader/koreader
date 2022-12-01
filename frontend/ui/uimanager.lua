@@ -1552,29 +1552,29 @@ function UIManager:suspend()
     end
 end
 
-function UIManager:reboot()
+function UIManager:askForReboot(message_text)
     -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
     if self.event_handlers.Reboot then
         -- Give the other event handlers a chance to be executed.
         -- 'Reboot' event will be sent by the handler
-        UIManager:nextTick(self.event_handlers.Reboot)
+        UIManager:nextTick(self.event_handlers.Reboot, message_text)
     end
 end
 
-function UIManager:powerOff()
+function UIManager:askForPowerOff(message_text)
     -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
     if self.event_handlers.PowerOff then
         -- Give the other event handlers a chance to be executed.
         -- 'PowerOff' event will be sent by the handler
-        UIManager:nextTick(self.event_handlers.PowerOff)
+        UIManager:nextTick(self.event_handlers.PowerOff, message_text)
     end
 end
 
-function UIManager:restart(message_text)
+function UIManager:askForRestart(message_text)
     -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
     if self.event_handlers.PowerOff then
         -- Give the other event handlers a chance to be executed.
-        -- 'PowerOff' event will be sent by the handler
+        -- 'Restart' event will be sent by the handler
         UIManager:nextTick(self.event_handlers.Restart, message_text)
     end
 end

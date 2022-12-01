@@ -573,10 +573,10 @@ end
 -- Set device event handlers common to all devices
 function Device:_setEventHandlers(UIManager)
     if self:canReboot() then
-        UIManager.event_handlers.Reboot = function()
+        UIManager.event_handlers.Reboot = function(message_text)
             local ConfirmBox = require("ui/widget/confirmbox")
             UIManager:show(ConfirmBox:new{
-                text = _("Are you sure you want to reboot the device?"),
+                text = message_text or _("Are you sure you want to reboot the device?"),
                 ok_text = _("Reboot"),
                 ok_callback = function()
                     local Event = require("ui/event")
@@ -590,10 +590,10 @@ function Device:_setEventHandlers(UIManager)
     end
 
     if self:canPowerOff() then
-        UIManager.event_handlers.PowerOff = function()
+        UIManager.event_handlers.PowerOff = function(message_text)
             local ConfirmBox = require("ui/widget/confirmbox")
             UIManager:show(ConfirmBox:new{
-                text = _("Are you sure you want to power off the device?"),
+                text = message_text or _("Are you sure you want to power off the device?"),
                 ok_text = _("Power off"),
                 ok_callback = function()
                     local Event = require("ui/event")
@@ -620,7 +620,7 @@ function Device:_setEventHandlers(UIManager)
             })
         end
     else
-        UIManager.event_handlers.Restart =  function(message_text)
+        UIManager.event_handlers.Restart = function(message_text)
             local InfoMessage = require("ui/widget/infomessage")
             UIManager:show(InfoMessage:new{
                 text = message_text or _("This will take effect on next restart."),

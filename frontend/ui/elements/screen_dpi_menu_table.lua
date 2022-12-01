@@ -17,7 +17,7 @@ local function setDPI(dpi_val)
     G_reader_settings:saveSetting("screen_dpi", dpi_val)
     -- Passing a nil properly resets to defaults/auto
     Device:setScreenDPI(dpi_val)
-    UIManager:restart(text)
+    UIManager:askForRestart(text)
 end
 
 local function spinWidgetSetDPI(touchmenu_instance)

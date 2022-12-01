@@ -9,6 +9,6 @@ return {
     callback = function()
         local disabled = G_reader_settings:nilOrTrue("disable_double_tap")
         G_reader_settings:saveSetting("disable_double_tap", not disabled)
-        UIManager:restart()
+        UIManager:askForRestart()
     end,
 }

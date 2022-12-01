@@ -185,7 +185,7 @@ function PluginLoader:genPluginManagerSubItem()
                 G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
                 if self.show_info then
                     self.show_info = false
-                    UIManager:restart()
+                    UIManager:askForRestart()
                 end
             end,
             help_text = plugin.description,

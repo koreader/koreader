@@ -198,7 +198,7 @@ if Device:isKobo() then
         callback = function()
             G_reader_settings:toggle("ignore_power_sleepcover")
             G_reader_settings:makeFalse("ignore_open_sleepcover")
-            UIManager:restart()
+            UIManager:askForRestart()
         end
     }
 
@@ -210,7 +210,7 @@ if Device:isKobo() then
         callback = function()
             G_reader_settings:toggle("ignore_open_sleepcover")
             G_reader_settings:makeFalse("ignore_power_sleepcover")
-            UIManager:restart()
+            UIManager:askForRestart()
         end
     }
 end
@@ -268,7 +268,7 @@ if not Device:isAlwaysFullscreen() then
                 local api = Device.firmware_rev
                 local needs_restart = api < 19 and api >= 16
                 if needs_restart then
-                    UIManager:restart()
+                    UIManager:askForRestart()
                 end
             end
         end,
@@ -444,7 +444,7 @@ if Device:hasKeyboard() then
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("backspace_as_back")
-            UIManager:restart()
+            UIManager:askForRestart()
         end,
     }
 end
