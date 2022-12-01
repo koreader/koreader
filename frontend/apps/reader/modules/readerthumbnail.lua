@@ -199,12 +199,15 @@ function ReaderThumbnail:resetCachedPagesForBookmarks(...)
             end
         else
             if bm.page and type(bm.page) == "number" then
-                local p = bm.page
-                if not start_page or p < start_page then
-                    start_page = p
-                end
-                if not end_page or p > end_page then
-                    end_page = p
+                local bm_page0 = (bm.pos0 and bm.pos0.page) or bm.page
+                local bm_page1 = (bm.pos1 and bm.pos1.page) or bm.page
+                for p = bm_page0, bm_page1 do
+                    if not start_page or p < start_page then
+                        start_page = p
+                    end
+                    if not end_page or p > end_page then
+                        end_page = p
+                    end
                 end
             end
         end
