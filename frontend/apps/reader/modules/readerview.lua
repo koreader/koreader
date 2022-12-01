@@ -540,8 +540,8 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
             if boxes then
                 local drawer = item.drawer or self.highlight.saved_drawer
                 local draw_note_mark = self.highlight.note_mark and
-                    self.ui.bookmark:getBookmarkNote({ page = page, datetime = item.datetime, })
-                for _, box in pairs(boxes) do
+                    self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+                for _, box in ipairs(boxes) do
                     local rect = self:pageToScreenTransform(page, box)
                     if rect then
                         self:drawHighlightRect(bb, x, y, rect, drawer, draw_note_mark)
@@ -588,8 +588,8 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                     if boxes then
                         local drawer = item.drawer or self.highlight.saved_drawer
                         local draw_note_mark = self.highlight.note_mark and
-                            self.ui.bookmark:getBookmarkNote({ page = item.pos0, datetime = item.datetime, })
-                        for _, box in pairs(boxes) do
+                            self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+                        for _, box in ipairs(boxes) do
                             self:drawHighlightRect(bb, x, y, box, drawer, draw_note_mark)
                             if draw_note_mark and self.highlight.note_mark == "sidemark" then
                                 draw_note_mark = false -- side mark in the first line only
