@@ -88,6 +88,7 @@ local wrappedRightChar = function(inputbox)
     if ime:hasCandidates() then
         ime:wrappedAddChars(inputbox, "→")
     else
+        ime:separate(inputbox)
         inputbox.rightChar:raw_method_call()
     end
 end
@@ -96,6 +97,7 @@ local wrappedLeftChar = function(inputbox)
     if ime:hasCandidates() then
         ime:wrappedAddChars(inputbox, "←")
     else
+        ime:separate(inputbox)
         inputbox.leftChar:raw_method_call()
     end
 end
