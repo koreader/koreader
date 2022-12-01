@@ -606,6 +606,28 @@ function Device:_setEventHandlers(UIManager)
         UIManager.event_handlers.PowerOff = function() end
     end
 
+    if self:canRestart() then
+        UIManager.event_handlers.Restart = function(message_text)
+            local ConfirmBox = require("ui/widget/confirmbox")
+            UIManager:show(ConfirmBox:new{
+                text = message_text or _("This will take effect on next restart."),
+                ok_text = _("Restart now"),
+                ok_callback = function()
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("Restart"))
+                end,
+                cancel_text = _("Restart later"),
+            })
+        end
+    else
+        UIManager.event_handlers.Restart =  function(message_text)
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{
+                text = message_text or _("This will take effect on next restart."),
+            })
+        end
+    end
+
     self:setEventHandlers(UIManager)
 end
 

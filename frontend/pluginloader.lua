@@ -173,7 +173,6 @@ function PluginLoader:genPluginManagerSubItem()
                 return plugin.enable
             end,
             callback = function()
-                local InfoMessage = require("ui/widget/infomessage")
                 local UIManager = require("ui/uimanager")
                 local _ = require("gettext")
                 local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
@@ -185,10 +184,8 @@ function PluginLoader:genPluginManagerSubItem()
                 end
                 G_reader_settings:saveSetting("plugins_disabled", plugins_disabled)
                 if self.show_info then
-                    UIManager:show(InfoMessage:new{
-                        text = _("This will take effect on next restart."),
-                    })
                     self.show_info = false
+                    UIManager:restart()
                 end
             end,
             help_text = plugin.description,

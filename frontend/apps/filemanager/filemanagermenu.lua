@@ -453,10 +453,7 @@ To:
                             -- Also remove from the Cache objet references to the cache files we've just deleted
                             local Cache = require("cache")
                             Cache.cached = {}
-                            local InfoMessage = require("ui/widget/infomessage")
-                            UIManager:show(InfoMessage:new{
-                                text = _("Caches cleared. Please restart KOReader."),
-                            })
+                            UIManager:restart(_("Caches cleared. Please restart KOReader."))
                         end,
                     })
                 end,
@@ -504,10 +501,7 @@ To:
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_startup_no_fbdepth")
-                local InfoMessage = require("ui/widget/infomessage")
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                UIManager:restart()
             end,
         })
     end
@@ -520,10 +514,7 @@ To:
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_abort_on_crash")
-                local InfoMessage = require("ui/widget/infomessage")
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                UIManager:restart()
             end,
         })
     end
@@ -602,10 +593,7 @@ To:
                     mxcfb_bypass_wait_for = not Device:hasReliableMxcWaitFor()
                 end
                 G_reader_settings:saveSetting("mxcfb_bypass_wait_for", not mxcfb_bypass_wait_for)
-                local InfoMessage = require("ui/widget/infomessage")
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                UIManager:restart()
             end,
         })
     end
@@ -622,10 +610,7 @@ To:
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("pb_ignore_b288_quirks")
-                local InfoMessage = require("ui/widget/infomessage")
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                UIManager:restart()
             end,
         })
     end
@@ -645,10 +630,7 @@ To:
         end,
         callback = function()
             G_reader_settings:flipNilOrTrue("use_xtext")
-            local InfoMessage = require("ui/widget/infomessage")
-            UIManager:show(InfoMessage:new{
-                text = _("This will take effect on next restart."),
-            })
+            UIManager:restart()
         end,
     })
     table.insert(self.menu_items.developer_options.sub_item_table, {
@@ -661,10 +643,7 @@ To:
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("dev_reverse_ui_layout_mirroring")
-                    local InfoMessage = require("ui/widget/infomessage")
-                    UIManager:show(InfoMessage:new{
-                        text = _("This will take effect on next restart."),
-                    })
+                    UIManager:restart()
                 end
             },
             {
@@ -674,10 +653,7 @@ To:
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("dev_reverse_ui_text_direction")
-                    local InfoMessage = require("ui/widget/infomessage")
-                    UIManager:show(InfoMessage:new{
-                        text = _("This will take effect on next restart."),
-                    })
+                    UIManager:restart()
                 end
             }
         }

@@ -1570,6 +1570,15 @@ function UIManager:powerOff()
     end
 end
 
+function UIManager:restart(message_text)
+    -- Should always exist, as defined in `generic/device` or overwritten with `setEventHandlers`
+    if self.event_handlers.PowerOff then
+        -- Give the other event handlers a chance to be executed.
+        -- 'PowerOff' event will be sent by the handler
+        UIManager:nextTick(self.event_handlers.Restart, message_text)
+    end
+end
+
 --[[--
 Release standby lock.
 
