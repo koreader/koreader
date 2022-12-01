@@ -821,10 +821,7 @@ function ReaderHighlight:onShowHighlightNoteOrDialog(page, index)
         return true
     end
     local item = self.view.highlight.saved[page][index]
-    local bookmark_note = self.ui.bookmark:getBookmarkNote({
-        page = self.ui.document.info.has_pages and item.pos0.page or item.pos0,
-        datetime = item.datetime,
-    })
+    local bookmark_note = self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
     if bookmark_note then
         local textviewer
         textviewer = TextViewer:new{
