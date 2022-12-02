@@ -453,7 +453,7 @@ To:
                             -- Also remove from the Cache objet references to the cache files we've just deleted
                             local Cache = require("cache")
                             Cache.cached = {}
-                            UIManager:restart(_("Caches cleared. Please restart KOReader."))
+                            UIManager:askForRestart(_("Caches cleared. Please restart KOReader."))
                         end,
                     })
                 end,
