@@ -206,11 +206,15 @@ function ReaderBookmark:isBookmarkInPositionOrder(a, b)
         if a.page == b.page then -- both bookmarks in the same page
             if a.highlighted and b.highlighted then -- both are highlights, compare positions
                 local is_reflow = self.ui.document.configurable.text_wrap -- save reflow mode
-                -- reflow mode doesn't set page in positions
-                a.pos0.page = a.page
-                a.pos1.page = a.page
-                b.pos0.page = b.page
-                b.pos1.page = b.page
+                -- reflow mode didn't set page in positions (in older bookmarks)
+                if not a.pos0.page then
+                    a.pos0.page = a.page
+                    a.pos1.page = a.page
+                end
+                if not b.pos0.page then
+                    b.pos0.page = b.page
+                    b.pos1.page = b.page
+                end
                 self.ui.document.configurable.text_wrap = 0 -- native positions
                 -- sort start and end positions of each highlight
                 local compare_pos, a_start, a_end, b_start, b_end, result
@@ -1022,10 +1026,8 @@ function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note, new_te
     local bookmark
     if from_highlight then
         -- Called by ReaderHighlight:editHighlight, we need to find the bookmark
-        local pboxes = item.pboxes
         for __, bm in ipairs(self.bookmarks) do
             if item.datetime == bm.datetime and item.page == bm.page then
-                bm.pboxes = pboxes
                 if bm.text == nil or bm.text == "" then
                     bm.text = self:getBookmarkAutoText(bm)
                 end
@@ -1093,13 +1095,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight, is_new_note, new_te
                             if bookmark.datetime == bm.datetime and bookmark.page == bm.page then
                                 bm.text = value
                                 self.ui:handleEvent(Event:new("BookmarkEdited", bm))
-                                -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
-                                if bookmark.pboxes then
-                                    local setting = G_reader_settings:readSetting("save_document")
-                                    if setting ~= "disable" then
-                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, bookmark.text)
-                                    end
-                                end
+                                self.ui.highlight:writePdfAnnotation("content", bookmark.page, bookmark, bookmark.text)
                                 break
                             end
                         end
@@ -1438,7 +1434,7 @@ end
 
 function ReaderBookmark:getBookmarkNote(item)
     for _, bm in ipairs(self.bookmarks) do
-        if item.datetime == bm.datetime and item.page == bm.page then
+        if item.datetime == bm.datetime then
             return not self:isBookmarkAutoText(bm) and bm.text
         end
     end

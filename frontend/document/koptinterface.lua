@@ -1184,7 +1184,7 @@ Transform position in native page to reflowed page.
 ]]--
 function KoptInterface:nativeToReflowPosTransform(doc, pageno, pos)
     local kc = self:getCachedContext(doc, pageno)
-    local rpos = {}
+    local rpos = {page = pageno}
     rpos.x, rpos.y = kc:nativeToReflowPosTransform(pos.x, pos.y)
     return rpos
 end
@@ -1194,7 +1194,7 @@ Transform position in reflowed page to native page.
 ]]--
 function KoptInterface:reflowToNativePosTransform(doc, pageno, abs_pos, rel_pos)
     local kc = self:getCachedContext(doc, pageno)
-    local npos = {}
+    local npos = {page = pageno}
     npos.x, npos.y = kc:reflowToNativePosTransform(abs_pos.x, abs_pos.y, rel_pos.x, rel_pos.y)
     return npos
 end
@@ -1294,6 +1294,11 @@ Returns 1 if positions are ordered (if ppos2 is after ppos1), -1 if not, 0 if sa
 Positions of the word boxes containing ppos1 and ppos2 are compared.
 --]]
 function KoptInterface:comparePositions(doc, ppos1, ppos2)
+    if ppos1.page < ppos2.page then
+        return 1
+    elseif ppos1.page > ppos2.page then
+        return -1
+    end
     local box1 = self:getWordFromPosition(doc, ppos1).pbox
     local box2 = self:getWordFromPosition(doc, ppos2).pbox
     if box1.y == box2.y then

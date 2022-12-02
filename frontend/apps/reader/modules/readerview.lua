@@ -506,32 +506,53 @@ function ReaderView:drawSavedHighlight(bb, x, y)
     end
 end
 
+-- Returns the list of highlights in page.
+-- The list includes full single-page highlights and parts of multi-page highlights.
+function ReaderView:getPageSavedHighlights(page)
+    local highlights = {}
+    local is_reflow = self.document.configurable.text_wrap
+    self.document.configurable.text_wrap = 0
+    for page_num, page_highlights in pairs(self.highlight.saved) do
+        for i, highlight in ipairs(page_highlights) do
+            -- old single-page reflow highlights do not have page in position
+            local pos0_page = highlight.pos0.page or page_num
+            local pos1_page = highlight.pos1.page or page_num
+            if pos0_page <= page and page <= pos1_page then
+                if pos0_page == pos1_page then -- single-page highlight
+                    table.insert(highlights, highlight)
+                else -- multi-page highlight
+                    local item = self.ui.highlight:getSavedExtendedHighlightPage(highlight, page, i)
+                    table.insert(highlights, item)
+                end
+            end
+        end
+    end
+    self.document.configurable.text_wrap = is_reflow
+    return highlights
+end
+
 function ReaderView:drawPageSavedHighlight(bb, x, y)
     local pages = self:getCurrentPageList()
-    for _, page in pairs(pages) do
-        local items = self.highlight.saved[page]
-        if items then
-            for i = 1, #items do
-                local item = items[i]
-                local pos0, pos1 = item.pos0, item.pos1
-                local boxes = self.document:getPageBoxesFromPositions(page, pos0, pos1)
-                if boxes then
-                    local drawer = item.drawer or self.highlight.saved_drawer
-                    local draw_note_mark = self.highlight.note_mark and
-                        self.ui.bookmark:getBookmarkNote({ page = page, datetime = item.datetime, })
-                    for _, box in pairs(boxes) do
-                        local rect = self:pageToScreenTransform(page, box)
-                        if rect then
-                            self:drawHighlightRect(bb, x, y, rect, drawer, draw_note_mark)
-                            if draw_note_mark and self.highlight.note_mark == "sidemark" then
-                                draw_note_mark = false -- side mark in the first line only
-                            end
+    for _, page in ipairs(pages) do
+        local items = self:getPageSavedHighlights(page)
+        for _, item in ipairs(items) do
+            local boxes = self.document:getPageBoxesFromPositions(page, item.pos0, item.pos1)
+            if boxes then
+                local drawer = item.drawer or self.highlight.saved_drawer
+                local draw_note_mark = self.highlight.note_mark and
+                    self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+                for _, box in ipairs(boxes) do
+                    local rect = self:pageToScreenTransform(page, box)
+                    if rect then
+                        self:drawHighlightRect(bb, x, y, rect, drawer, draw_note_mark)
+                        if draw_note_mark and self.highlight.note_mark == "sidemark" then
+                            draw_note_mark = false -- side mark in the first line only
                         end
-                    end -- end for each box
-                end -- end if boxes
-            end -- end for each highlight
+                    end
+                end
+            end
         end
-    end -- end for each page
+    end
 end
 
 function ReaderView:drawXPointerSavedHighlight(bb, x, y)
@@ -567,11 +588,13 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
                     if boxes then
                         local drawer = item.drawer or self.highlight.saved_drawer
                         local draw_note_mark = self.highlight.note_mark and
-                            self.ui.bookmark:getBookmarkNote({ page = item.pos0, datetime = item.datetime, })
-                        for _, box in pairs(boxes) do
-                            self:drawHighlightRect(bb, x, y, box, drawer, draw_note_mark)
-                            if draw_note_mark and self.highlight.note_mark == "sidemark" then
-                                draw_note_mark = false -- side mark in the first line only
+                            self.ui.bookmark:getBookmarkNote({datetime = item.datetime})
+                        for _, box in ipairs(boxes) do
+                            if box.h ~= 0 then
+                                self:drawHighlightRect(bb, x, y, box, drawer, draw_note_mark)
+                                if draw_note_mark and self.highlight.note_mark == "sidemark" then
+                                    draw_note_mark = false -- side mark in the first line only
+                                end
                             end
                         end -- end for each box
                     end -- end if boxes
