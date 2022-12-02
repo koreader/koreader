@@ -318,6 +318,10 @@ function IME:tweak_case(new_candi, old_imex, new_stroke_upper)
     end
 end
 
+function IME:hasCandidates()
+    return #(_stack[#_stack].candi) > 0
+end
+
 function IME:wrappedDelChar(inputbox)
     local imex = _stack[#_stack]
     -- stepped deletion
@@ -358,6 +362,24 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
                 imex.char = imex.candi[imex.index - self.last_index]
             end
         elseif #imex.candi > 1 then
+            local remainder = imex.index % #imex.candi
+            imex.char = imex.candi[remainder==0 and #imex.candi or remainder]
+        else
+            return
+        end
+        self:refreshHintChars(inputbox)
+    elseif char == self.switch_char_prev then
+        if self.W and imex.code:find(self.W) then
+            if #imex.candi == 0 then
+                return
+            elseif imex.index <= self.last_index + 1 then
+                return
+            else
+                imex.index = imex.index - 1
+                imex.char = imex.candi[imex.index - self.last_index]
+            end
+        elseif #imex.candi > 1 then
+            imex.index = math.max(imex.index-1, 1)
             local remainder = imex.index % #imex.candi
             imex.char = imex.candi[remainder==0 and #imex.candi or remainder]
         else
