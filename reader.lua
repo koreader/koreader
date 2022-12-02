@@ -48,7 +48,7 @@ end
 
 local lang_locale = G_reader_settings:readSetting("language")
 -- Allow quick switching to Arabic for testing RTL/UI mirroring
-if os.getenv("KO_RTL") then lang_locale = "ar_AA" end
+if os.getenv("KO_RTL") then lang_locale = "ar" end
 local _ = require("gettext")
 if lang_locale then
     _.changeLang(lang_locale)

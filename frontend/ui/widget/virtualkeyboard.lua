@@ -777,7 +777,7 @@ local VirtualKeyboard = FocusManager:extend{
     key_padding = Size.padding.small,
 
     lang_to_keyboard_layout = {
-        ar_AA = "ar_AA_keyboard",
+        ar = "ar_keyboard",
         bg_BG = "bg_keyboard",
         bn = "bn_keyboard",
         de = "de_keyboard",
