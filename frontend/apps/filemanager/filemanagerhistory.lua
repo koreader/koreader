@@ -18,7 +18,7 @@ local FileManagerHistory = WidgetContainer:extend{
     hist_menu_title = _("History"),
 }
 
-local status_text = {
+local filter_text = {
     all = C_("Book status filter", "All"),
     reading = C_("Book status filter", "Reading"),
     abandoned = C_("Book status filter", "On hold"),
@@ -41,6 +41,32 @@ function FileManagerHistory:addToMainMenu(menu_items)
     }
 end
 
+function FileManagerHistory:fetchStatuses(count)
+    local status
+    for _, v in ipairs(require("readhistory").hist) do
+        if v.dim then
+            status = "deleted"
+        else
+            if DocSettings:hasSidecarFile(v.file) then
+                local docinfo = DocSettings:open(v.file) -- no io handles created, do not close
+                if docinfo.data.summary and docinfo.data.summary.status
+                        and docinfo.data.summary.status ~= "" then
+                    status = docinfo.data.summary.status
+                else
+                    status = "reading"
+                end
+            else
+                status = "new"
+            end
+        end
+        v.status = status
+        if count then
+            self.count[status] = self.count[status] + 1
+        end
+    end
+    self.statuses_fetched = true
+end
+
 function FileManagerHistory:updateItemTable()
     -- try to stay on current page
     local select_number = nil
@@ -51,7 +77,7 @@ function FileManagerHistory:updateItemTable()
         reading = 0, abandoned = 0, complete = 0, deleted = 0, new = 0, }
     local item_table = {}
     for _, v in ipairs(require("readhistory").hist) do
-        if not self.filter or v.status == self.filter then
+        if self.filter == "all" or v.status == self.filter then
             table.insert(item_table, v)
         end
         if self.statuses_fetched then
@@ -59,8 +85,8 @@ function FileManagerHistory:updateItemTable()
         end
     end
     local title = self.hist_menu_title
-    if self.filter then
-        title = title .. " (" .. status_text[self.filter] .. ")"
+    if self.filter ~= "all" then
+        title = title .. " (" .. filter_text[self.filter] .. ": " .. self.count[self.filter] .. ")"
     end
     self.hist_menu:switchItemTable(title, item_table, select_number)
 end
@@ -86,6 +112,11 @@ function FileManagerHistory:onMenuHold(item)
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)
                             require("readhistory"):fileSettingsPurged(item.file)
+                            if self._manager.filter ~= "all" then
+                                self._manager:fetchStatuses(false)
+                            else
+                                self._manager.statuses_fetched = false
+                            end
                             self._manager:updateItemTable()
                             UIManager:close(self.histfile_dialog)
                         end,
@@ -171,11 +202,15 @@ function FileManagerHistory:onShowHist()
         _manager = self,
     }
 
+    self.filter = G_reader_settings:readSetting("history_filter", "all")
+    if self.filter ~= "all" then
+        self:fetchStatuses(false)
+    end
     self:updateItemTable()
     self.hist_menu.close_callback = function()
         self.statuses_fetched = nil
-        self.filter = nil
         UIManager:close(self.hist_menu)
+        G_reader_settings:saveSetting("history_filter", self.filter)
     end
     UIManager:show(self.hist_menu)
     return true
@@ -183,37 +218,17 @@ end
 
 function FileManagerHistory:showHistDialog()
     if not self.statuses_fetched then
-        local status
-        for _, v in ipairs(require("readhistory").hist) do
-            if v.dim then
-                status = "deleted"
-            else
-                if DocSettings:hasSidecarFile(v.file) then
-                    local docinfo = DocSettings:open(v.file) -- no io handles created, do not close
-                    if docinfo.data.summary and docinfo.data.summary.status
-                            and docinfo.data.summary.status ~= "" then
-                        status = docinfo.data.summary.status
-                    else
-                        status = "reading"
-                    end
-                else
-                    status = "new"
-                end
-            end
-            v.status = status
-            self.count[status] = self.count[status] + 1
-        end
-        self.statuses_fetched = true
+        self:fetchStatuses(true)
     end
 
     local hist_dialog
     local buttons = {}
-    local function genFilterButton(status)
+    local function genFilterButton(filter)
         return {
-            text = T(_("%1 (%2)"), status_text[status], self.count[status]),
+            text = T(_("%1 (%2)"), filter_text[filter], self.count[filter]),
             callback = function()
                 UIManager:close(hist_dialog)
-                self.filter = status ~= "all" and status
+                self.filter = filter
                 self:updateItemTable()
             end,
         }
