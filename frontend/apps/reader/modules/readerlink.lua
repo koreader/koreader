@@ -144,7 +144,7 @@ function ReaderLink:init()
                 local wiki_lang, wiki_page = is_wiki_page(link_url)
                 if wiki_lang and wiki_page then
                     logger.dbg("Wikipedia link:", wiki_lang, wiki_page)
-                    text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " "))
+                    local text = T(_("Would you like to read this Wikipedia %1 article?\n\n%2\n"), wiki_lang:upper(), wiki_page:gsub("_", " "))
                     return true, text
                 else
                     return false
@@ -775,28 +775,10 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
 end
 
 function ReaderLink:onGoToExternalLink(link_url)
-    local default_title =  T(_("External link:\n\n%1"), BD.url(link_url))
-    local title = default_title
-
-    for _, fn_button in pairs(self._external_link_buttons) do
-        local button = fn_button(self, link_url)
-        if button.show_in_dialog_func then
-            local show, button_title = button.show_in_dialog_func()
-            if show and button_title then
-                if title == default_title then
-                    -- The default title is replaced by the first non-default button title.
-                    title = button_title
-                else
-                    -- Every other button title value is appended to the title.
-                    title = title .. "\n\n" .. button_title
-                end
-            end
-        end
-    end
-
+    local buttons, title = self:getButtonsForExternalLinkDialog(link_url)
     self.external_link_dialog = ButtonDialogTitle:new{
         title = title,
-        buttons = self:getButtonsForExternalLinkDialog(link_url),
+        buttons = buttons,
     }
     UIManager:show(self.external_link_dialog)
     return true
@@ -1400,18 +1382,41 @@ function ReaderLink:getButtonsForExternalLinkDialog(link_url)
     local buttons = {{}}
     local columns = 2
 
+    local default_title =  T(_("External link:\n\n%1"), BD.url(link_url))
+    local title = default_title
+
     for idx, fn_button in ffiutil.orderedPairs(self._external_link_buttons) do
         local button = fn_button(self, link_url)
-        if not button.show_in_dialog_func or button.show_in_dialog_func(link_url) then
+        local show, button_title
+
+        if type(button.show_in_dialog_func) == "function" then
+            show, button_title = button.show_in_dialog_func(link_url)
+        else
+            -- If the button doesn't have the show_in_dialog_func, then assume that the button
+            -- should be shown. Default buttons (which are always shown) will be like this.
+            show = true
+        end
+        if show then
+            -- Add button to the buttons table
             if #buttons[#buttons] >= columns then
                 table.insert(buttons, {})
             end
             table.insert(buttons[#buttons], button)
             logger.dbg("ReaderLink", idx..": line "..#buttons..", col "..#buttons[#buttons])
         end
+        if button_title then
+            -- Create the title for the button
+            if title == default_title then
+                -- The default title is replaced by the first non-default button title.
+                title = button_title
+            else
+                -- Every other button title value is appended to the title.
+                title = title .. "\n\n" .. button_title
+            end
+        end
     end
 
-    return buttons
+    return buttons, title
 end
 
 function is_wiki_page(link_url)
