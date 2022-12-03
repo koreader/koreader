@@ -89,7 +89,7 @@ function SyncService.getReadablePath(server)
     url = util.stringEndsWith(url, "/") and url or url .. "/"
     if server.type == "dropbox" then
         url = "/" .. url
-    elseif sever.type == "webdav" then
+    elseif server.type == "webdav" then
         url = (server.address:sub(-1) == "/" and server.address or server.address .. "/") .. url
     end
     if url:sub(-2) == "//" then url = url:sub(1, -2) end
