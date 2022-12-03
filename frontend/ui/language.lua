@@ -91,14 +91,10 @@ function Language:isLanguageRTL(lang_locale)
 end
 
 function Language:changeLanguage(lang_locale)
-    local InfoMessage = require("ui/widget/infomessage")
     local UIManager = require("ui/uimanager")
     _.changeLang(lang_locale)
     G_reader_settings:saveSetting("language", lang_locale)
-    UIManager:show(InfoMessage:new{
-        text = _("Please restart KOReader for the new language setting to take effect."),
-        timeout = 3,
-    })
+    UIManager:askForRestart(_("Please restart KOReader for the new language setting to take effect."))
 end
 
 function Language:genLanguageSubItem(lang_locale)

@@ -1,4 +1,3 @@
-local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
@@ -16,9 +15,7 @@ return {
                 else
                     G_reader_settings:saveSetting("activate_menu", "swipe_tap")
                 end
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                UIManager:askForRestart()
             end,
         },
         {
@@ -32,9 +29,7 @@ return {
                 else
                     G_reader_settings:saveSetting("activate_menu", "swipe_tap")
                 end
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                UIManager:askForRestart()
             end,
             separator = true,
         },

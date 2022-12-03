@@ -145,9 +145,7 @@ local getSubMenuItems = function()
                         return
                     end
                 end
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                UIManager:askForRestart()
             end,
         }
         table.insert(menu_items, item)

@@ -1,6 +1,5 @@
 local _ = require("gettext")
 local Device = require("device")
-local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -22,9 +21,7 @@ for i=0, Screen.wf_level_max do
         callback = function()
             Screen.wf_level = i
             G_reader_settings:saveSetting("wf_level", i)
-            UIManager:show(InfoMessage:new{
-                text = _("This will take effect on next restart."),
-            })
+            UIManager:askForRestart()
         end,
     })
 end

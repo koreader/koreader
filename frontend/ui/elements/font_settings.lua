@@ -76,10 +76,7 @@ function FontSettings:getSystemFontMenuItems()
         callback = function()
             G_reader_settings:saveSetting("system_fonts", not usesSystemFonts())
             local UIManager = require("ui/uimanager")
-            local InfoMessage = require("ui/widget/infomessage")
-            UIManager:show(InfoMessage:new{
-                text = _("This will take effect on next restart.")
-            })
+            UIManager:askForRestart()
         end,
     }}
 
