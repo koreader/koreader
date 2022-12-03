@@ -3,6 +3,7 @@ local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
+local NetworkMgr = require("ui/network/manager")
 local Notification = require("ui/widget/notification")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
@@ -117,6 +118,9 @@ end
 -- and renamed to replace the old cached file (thus the naming). The cached file stays (in the same folder) till being replaced
 -- in the next round.
 function SyncService.sync(server, file_path, sync_cb, is_silent)
+    if NetworkMgr:willRerunWhenOnline(function() SyncService.sync(server, file_path, sync_cb, is_silent) end) then
+        return
+    end
     local file_name = ffiutil.basename(file_path)
     local income_file_path = file_path .. ".temp" -- file downloaded from server
     local cached_file_path = file_path .. ".sync" -- file uploaded to server last time
@@ -137,8 +141,8 @@ function SyncService.sync(server, file_path, sync_cb, is_silent)
     local etag
     local api = server.type == "dropbox" and require("apps/cloudstorage/dropboxapi") or require("apps/cloudstorage/webdavapi")
     local token = server.password
-    if server.type == "dropbox" then
-        token = api:getAccessToken(server.password, server.address) or server.password -- in case using long-term token
+    if server.type == "dropbox" and not (server.address == nil or server.address == "") then
+        token = api:getAccessToken(server.password, server.address)
     end
     while code_response == 412 do
         os.remove(income_file_path)

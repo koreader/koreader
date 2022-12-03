@@ -1166,7 +1166,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     SyncService.sync(self.settings.sync_server, db_location, self.onSync )
                 end,
                 enabled_func = function()
-                    return self.settings.sync_server ~= nil and self.settings.is_enabled and require("ui/network/manager"):isWifiOn()
+                    return self.settings.sync_server ~= nil and self.settings.is_enabled
                 end,
                 keep_menu_open = true,
                 separator = true,
