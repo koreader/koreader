@@ -132,11 +132,15 @@ function SyncService.sync(server, file_path, sync_cb, is_silent)
     local code_response = 412 -- If-Match header failed
     local etag
     local api = server.type == "dropbox" and require("apps/cloudstorage/dropboxapi") or require("apps/cloudstorage/webdavapi")
+    local token = server.password
+    if server.type == "dropbox" then
+        token = api:getAccessToken(server.password, server.address) or server.password -- in case using long-term token
+    end
     while code_response == 412 do
         os.remove(income_file_path)
         if server.type == "dropbox" then
             local url_base = server.url:sub(-1) == "/" and server.url or server.url.."/"
-            code_response, etag = api:downloadFile(url_base..file_name, server.password, income_file_path)
+            code_response, etag = api:downloadFile(url_base..file_name, token, income_file_path)
         elseif server.type == "webdav" then
             local path = api:getJoinedPath(server.address, server.url)
             path = api:getJoinedPath(path, file_name)
@@ -155,7 +159,7 @@ function SyncService.sync(server, file_path, sync_cb, is_silent)
         end
         if server.type == "dropbox" then
             local url_base = server.url == "/" and "" or server.url
-            code_response = api:uploadFile(url_base, server.password, file_path, etag, true)
+            code_response = api:uploadFile(url_base, token, file_path, etag, true)
         elseif server.type == "webdav" then
             local path = api:getJoinedPath(server.address, server.url)
             path = api:getJoinedPath(path, file_name)
