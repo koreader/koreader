@@ -7,14 +7,9 @@ permissions:
 
 jobs:
   macos_build:
-
-    # macos-11 and macos-12 are broken at this time being.
-    # https://github.com/koreader/koreader/issues/8686,
-    # https://github.com/koreader/koreader/issues/8686#issuecomment-1172950236
-
     # Please don't update to newer macOS version unless you can test that the new
     # action produces working binaries.
-    runs-on: macos-12.00
+    runs-on: macos-12
 
     steps:
       - name: XCode version
