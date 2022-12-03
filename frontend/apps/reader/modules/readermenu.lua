@@ -31,7 +31,7 @@ function ReaderMenu:init()
         },
         typeset = {
             icon = "appbar.typeset",
-            text = _("Typeset"),
+            text = _("Formatting"),
         },
         setting = {
             icon = "appbar.settings",
