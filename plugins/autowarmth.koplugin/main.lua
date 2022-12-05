@@ -27,7 +27,7 @@ local C_ = _.pgettext
 local Powerd = Device.powerd
 local T = FFIUtil.template
 local Screen = require("device").screen
-local util = require("util")
+local datetime = require("datetime")
 
 local activate_sun = 1
 local activate_schedule = 2
@@ -519,7 +519,7 @@ function AutoWarmth:hoursToClock(hours)
     if hours then
         hours = hours % 24 * 3600 + 0.01 -- round up, due to reduced precision in settings.reader.lua
     end
-    return util.secondsToClock(hours, self.easy_mode)
+    return datetime.secondsToClock(hours, self.easy_mode)
 end
 
 function AutoWarmth:addToMainMenu(menu_items)

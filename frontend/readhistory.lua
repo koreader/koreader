@@ -1,5 +1,6 @@
 local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
+local datetime = require("datetime")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
 local util = require("util")
@@ -41,7 +42,7 @@ local function buildEntry(input_time, input_file)
                 -- we fallback to if no sidecar file)
                 last_read_ts = DocSettings:getLastSaveTime(file_path) or input_time
             end
-            return util.secondsToDate(last_read_ts, G_reader_settings:isTrue("twelve_hour_clock"))
+            return datetime.secondsToDateTime(last_read_ts, G_reader_settings:isTrue("twelve_hour_clock"))
         end,
         select_enabled_func = function()
             return lfs.attributes(file_path, "mode") == "file"

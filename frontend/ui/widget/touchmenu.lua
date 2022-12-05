@@ -7,6 +7,7 @@ local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
+local Event = require("ui/event")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -27,7 +28,7 @@ local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local util = require("util")
+local datetime = require("datetime")
 local getMenuText = require("ui/widget/menu").getMenuText
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -547,9 +548,20 @@ function TouchMenu:init()
         self.page_info_right_chev
     }
     -- group for device info
-    self.time_info = TextWidget:new{
+    self.time_info = Button:new{
         text = "",
         face = self.fface,
+        text_font_bold = false,
+        callback = function()
+            UIManager:show(InfoMessage:new{
+                text = datetime.secondsToDateTime(os.time(), G_reader_settings:isTrue("twelve_hour_clock"), true),
+            })
+        end,
+        hold_callback = function()
+            UIManager:broadcastEvent(Event:new("ShowBatteryStatistics"))
+        end,
+        bordersize = 0,
+        show_parent = self.show_parent,
     }
     self.device_info = HorizontalGroup:new{
         self.time_info,
@@ -704,7 +716,7 @@ function TouchMenu:updateItems()
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
 
-    local time_info_txt = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
+    local time_info_txt = datetime.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
     local powerd = Device:getPowerDevice()
     if Device:hasBattery() then
         local batt_lvl = powerd:getCapacity()
@@ -797,7 +809,7 @@ function TouchMenu:onNextPage()
     elseif self.page == self.page_num then
         self.page = 1
     end
-        self:updateItems()
+    self:updateItems()
     return true
 end
 
