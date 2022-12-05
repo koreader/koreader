@@ -301,7 +301,7 @@ function ReaderBookmark:importSavedHighlight(config)
     if config:hasNot("highlights_imported") then
         for page, marks in pairs(textmarks) do
             for _, mark in ipairs(marks) do
-                mark_page = self.ui.paging and page or mark.pos0
+                local mark_page = self.ui.paging and page or mark.pos0
                 -- highlights saved by some old versions don't have pos0 field
                 -- we just ignore those highlights
                 if mark_page then
@@ -833,7 +833,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         bm_menu:updateItems()
         self:onSaveSettings()
     end
-    
+
     bm_menu:switchItemTable(nil, item_table, curr_page_item_index) -- show page with curr_page_item
     UIManager:show(self.bookmark_menu)
     return true
