@@ -228,6 +228,11 @@ function PocketBook:init()
         self.input:disableRotationMap()
     end
 
+    -- If InkView tells us this device has a gsensor enable the event based functionality
+    if inkview.QueryGSensor() ~= 0 then
+        self.hasGSensor = yes
+    end
+
     -- In contrast to kobo/kindle, pocketbook-devices do not use linux/input events directly.
     -- To be able to use input.lua nevertheless,
     -- we make inkview-events look like linux/input events or handle them directly here.
