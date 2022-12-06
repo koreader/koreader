@@ -688,7 +688,7 @@ To:
     })
     if Device:isKobo() and Device:canToggleChargingLED() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
-            --@translators This is a debug option to help determine cases when standby failed to initiate standby properly. PM = power management.
+            -- @translators This is a debug option to help determine cases when standby failed to initiate properly. PM = power management.
             text = _("Turn on the LED on PM entry failure"),
             checked_func = function()
                 return G_reader_settings:isTrue("pm_debug_entry_failure")
