@@ -14,7 +14,7 @@ jobs:
 
     # Please don't update to newer macOS version unless you can test that the new
     # action produces working binaries.
-    runs-on: macos-12.00
+    runs-on: macos-10.15
 
     steps:
       - name: XCode version
@@ -35,9 +35,9 @@ jobs:
 
       - name: Building in progress…
         run: |
-          export MACOSX_DEPLOYMENT_TARGET=12.00;
+          export MACOSX_DEPLOYMENT_TARGET=10.15;
           export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}";
-          ./kodev release macos -d
+          ./kodev release macos
 
       - name: Uploading artifacts
         uses: actions/upload-artifact@v3
