@@ -1351,28 +1351,6 @@ function TouchMenu:onShowMenuSearch()
     }
     search_dialog:addWidget(check_button_animation)
 
---[[
-    -- Extensive_search will enable to scan sub_item_table_func() results too.
-    -- This can take (with a lot of system fonts enabled) quite some time and should not be done.
-    --- @todo Maybe caching of sub_item_table_func() results can improve things?
-    local extensive_search = G_reader_settings:readSetting("search_menu_extensive", false)
-    local check_button_restrict = CheckButton:new{
-        text = _("Extensive search"),
-        checked = extensive_search,
-        parent = search_dialog,
-        callback = function()
-            extensive_search = not extensive_search
-            G_reader_settings:saveSetting("search_menu_extensive", extensive_search)
-        end,
-        hold_callback = function()
-            UIManager:show(InfoMessage:new{
-                text = _("You can expand you search.\n(Attention: This can take a lot of time.)"),
-            })
-        end,
-    }
-    search_dialog:addWidget(check_button_restrict)
-]]
-
     UIManager:show(search_dialog)
     search_dialog:onShowKeyboard()
 end
