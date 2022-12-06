@@ -26,12 +26,14 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
+local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local datetime = require("datetime")
 local getMenuText = require("ui/widget/menu").getMenuText
 local _ = require("gettext")
-local T = require("ffi/util").template
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 local Input = Device.input
 local Screen = Device.screen
 
@@ -477,6 +479,7 @@ function TouchMenu:init()
     end
 
     self.layout = {}
+    self.search_layout = {}
 
     self.ges_events.TapCloseAllMenus = {
         GestureRange:new{
@@ -672,8 +675,10 @@ function TouchMenu:updateItems()
     self:_recalculatePageLayout()
     self.item_group:clear()
     self.layout = {}
+    self.search_layout = {}
     table.insert(self.item_group, self.bar)
     table.insert(self.layout, self.bar.icon_widgets) -- for the focusmanager
+    table.insert(self.search_layout, self.bar.icon_widgets) -- for the menu search
 
     for c = 1, self.perpage do
         -- calculate index in item_table
@@ -681,6 +686,7 @@ function TouchMenu:updateItems()
         if i <= #self.item_table then
             local item = self.item_table[i]
             local item_tmp = TouchMenuItem:new{
+                name = "touch_menu_item " .. tostring(item.text) .. " xxx", -- xxx testing only, squish later
                 item = item,
                 menu = self,
                 dimen = Geom:new{
@@ -693,6 +699,7 @@ function TouchMenu:updateItems()
             if item_tmp:isEnabled() then
                 table.insert(self.layout, {[self.cur_tab] = item_tmp}) -- for the focusmanager
             end
+            table.insert(self.search_layout, {[self.cur_tab] = item_tmp}) -- for the menu search
             if item.separator and c ~= self.perpage and i ~= #self.item_table then
                 -- insert split line
                 table.insert(self.item_group, self.split_line)
@@ -835,6 +842,18 @@ function TouchMenu:onLastPage()
     return true
 end
 
+function TouchMenu:onGotoPage(nb)
+    if nb > self.page_num then
+        self.page = self.page_num
+    elseif nb < 1 then
+        self.page = 1
+    else
+        self.page = nb
+    end
+    self:updateItems()
+    return true
+end
+
 function TouchMenu:onSwipe(arg, ges_ev)
     local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
     if direction == "west" then
@@ -971,6 +990,367 @@ end
 
 function TouchMenu:onBack()
     self:backToUpperMenu()
+end
+
+------ the menu search functionality
+function TouchMenu:search(search_for)
+    local found_menu_items = {}
+
+    local MAX_MENU_DEPTH = 20 -- currently our menu needs at least 12 here
+    local function recurse(val, path, text, icon, depth)
+        depth = depth + 1
+        if depth > MAX_MENU_DEPTH then
+            return
+        end
+
+        for i,v in ipairs(val) do
+            if type(v) == "table" then
+                local entry_text = v.text_func and v.text_func() or v.text
+                local indent = text and ((" "):rep(math.min(depth-1, 6)) .. "→ ") or "→ " -- all spaces here are Hair Space U+200A
+                local next_text = text and (text .. "\n" .. indent .. entry_text) or (indent .. entry_text)
+                local next_path = path .. "." .. i
+                recurse(val[i], next_path, next_text, icon, depth)
+                if Utf8Proc.lowercase(entry_text):find(search_for) then
+                    table.insert(found_menu_items, {entry_text, icon, next_path, next_text})
+                end
+            end
+        end
+
+        if val.sub_item_table_func then
+            local sub_item_table = val.sub_item_table_func()
+            local perpage = ""
+            if sub_item_table.max_per_page then
+                perpage = "[" .. sub_item_table.max_per_page .."]"
+            end
+            recurse(sub_item_table, path .. ".sub_item_table_func" .. perpage, text, icon, depth)
+        elseif val.sub_item_table then
+            local perpage = ""
+            if val.sub_item_table.max_per_page then
+                perpage = "[" .. val.sub_item_table.max_per_page .."]"
+            end
+            recurse(val.sub_item_table, path .. ".sub_item_table" .. perpage, text, icon, depth)
+        end
+    end -- recurse
+
+    -- initial call of recurse
+    for i = 1, #self.tab_item_table do
+        recurse(self.tab_item_table[i], i, self.tab_item_table[i].text, self.tab_item_table[i].icon, 0)
+    end
+
+--[[
+    for i = 1, #found_menu_items do
+        print("xxxxxxx->", i,
+            found_menu_items[i][1],
+            found_menu_items[i][2],
+            found_menu_items[i][3])
+    end
+]]
+    return found_menu_items
+end
+
+-- maybe this could be placed in UIManager?
+local function highlightWidget(widget, unhilight_in_s)
+    if not widget then return end
+    local highlight_dimen = widget.dimen
+    if highlight_dimen.w == 0 then
+        highlight_dimen.w = widget.width
+    end
+
+    UIManager:nextTick(function()
+        -- Highlight
+        widget.invert = true
+        UIManager:widgetInvert(widget, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+        UIManager:setDirty(nil, "fast", highlight_dimen)
+
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+    end)
+
+    if unhilight_in_s then
+        -- Unhighlight
+        UIManager:scheduleIn(unhilight_in_s, function()
+            widget.invert = false
+            UIManager:widgetInvert(widget, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
+        end)
+    end
+end
+
+function TouchMenu:_get_widget(tab_nb, nb)
+    return self.search_layout[nb + 1][tab_nb]
+end
+
+function TouchMenu:openMenu(path)
+    local TrapWidget = require("ui/widget/trapwidget")
+
+    local animation_time_s = G_reader_settings:readSetting("menu_search_animation_time_s", 1.0)
+
+    -- first switch to correct MenuTab
+    local sep_pos = path:find("%.")
+    local tab_nb = tonumber(path:sub(1, sep_pos - 1))
+
+    if not tab_nb then return end
+
+    path = path:sub(sep_pos + 1)
+    local item = self.tab_item_table[tab_nb]
+
+    self:switchMenuTab(tab_nb)
+    self.bar:switchToTab(tab_nb)
+    self:onMenuSelect(self.item_table)
+
+    -- Now go the menu path down the way
+    local items_to_show = {}
+    local dummy, num_of_sep = path:gsub("%.", "%.")
+    while num_of_sep > 1 do
+        sep_pos = path:find("%.")
+        local identifier = path:sub(1, sep_pos -1)
+        local item_nb = tonumber(identifier)
+        path = path:sub(sep_pos + 1)
+        if item_nb then
+            self:updateItems()
+            item = item[item_nb]
+            table.insert(items_to_show, {item_nb, item})
+        elseif identifier:find("sub_item_table_func") then
+            item = item.sub_item_table_func()
+        elseif identifier:find("sub_item_table") then
+            item = item.sub_item_table
+        end
+        num_of_sep = num_of_sep - 1
+    end
+
+    -- Now we are in the right menu, but maybe in the wrong page
+    sep_pos = path:find("%.")
+    if not sep_pos then
+        local logger = require("logger")
+        logger.err("TouchMenu: search; internal error") -- should not happen
+        return
+    end
+    local identifier = path:sub(sep_pos + 1)
+    local item_nb = tonumber(identifier)
+
+    local perpage
+    if path:find("sub_item_table_func%[") then
+        perpage = path:sub(#("sub_item_table_func%["), sep_pos - 2)
+    elseif path:find("sub_item_table%[") then
+        perpage = path:sub(#("sub_item_table%["), sep_pos - 2)
+    end
+    perpage = tonumber(perpage) or self.perpage
+
+    local function open_final_menu()
+        print("xxx", #items_to_show)
+        if #items_to_show > 0 then -- can be zero, if in the last menu
+            self:onMenuSelect(items_to_show[#items_to_show][2])
+        end
+        local page_nb = math.floor((item_nb - 1) / perpage) + 1
+        self:onGotoPage(page_nb)
+    end
+
+    if not (animation_time_s and animation_time_s > 0.0) then
+        open_final_menu()
+    else
+        self.trap_widget = TrapWidget:new{
+            dismiss_callback = function()
+                animation_time_s = 0
+                self.trap_widget = nil
+            end
+        }
+        UIManager:show(self.trap_widget) -- suppress taps during animaton
+
+        -- Animation functions
+        local function open_next_page(pages_to_show, force_first_page)
+            if animation_time_s == 0.0 then
+                UIManager.close(self.trap_widget)
+                self.trap_widget = nil
+                open_final_menu()
+                -- end of the animation here!
+                return
+            end
+            print("xxx pages_to_show", pages_to_show, force_first_page)
+            if force_first_page then
+                self:onFirstPage()
+            end
+
+            if pages_to_show == 1 then -- if we are on the last page
+                if self.page_num > 1 then
+                    highlightWidget(self.page_info_right_chev, animation_time_s)
+                end
+                highlightWidget(self:_get_widget(tab_nb, (item_nb - 1) % perpage + 1))
+                -- end of the animation here!
+            else
+                if self.page_num ~= 1 then
+                    highlightWidget(self.page_info_right_chev)
+                end
+                UIManager:scheduleIn(animation_time_s, function()
+                    self:onNextPage()
+                    if pages_to_show > 1 then
+                        UIManager:nextTick(open_next_page, pages_to_show - 1, false)
+                    end
+                end)
+            end
+        end
+
+        local function open_next_menu()
+            if animation_time_s == 0.0 then
+                UIManager:close(self.trap_widget)
+                self.trap_widget = nil
+                open_final_menu()
+                -- end of the animation here!
+                return
+            end
+
+            local x = table.remove(items_to_show, 1)
+            local next_menu_num, next_menu_item = x and x[1], x and x[2] -- might be nil
+
+            if next_menu_item then
+                highlightWidget(self:_get_widget(tab_nb, next_menu_num))
+                UIManager:scheduleIn(animation_time_s, function()
+                    self:onMenuSelect(next_menu_item)
+                    UIManager:nextTick(open_next_menu)
+                end)
+            else
+                -- no items left, but maybe on another page
+                local page_nb = math.floor(item_nb / perpage) + 1
+                UIManager:nextTick(open_next_page, page_nb, page_nb > 1)
+            end
+        end
+
+        -- Animate
+        UIManager:nextTick(open_next_menu)
+    end
+end
+
+function TouchMenu:onShowMenuSearch()
+    local InputDialog = require("ui/widget/inputdialog")
+    local CheckButton = require("ui/widget/checkbutton")
+    local ConfirmBox = require("ui/widget/confirmbox")
+    local Menu = require("ui/widget/menu")
+
+    local function show_search_results(search_string)
+        local found_menu_items = self:search(search_string)
+
+        local function get_current_search_results()
+            local function item_callback(i)
+                UIManager:close(self.results_menu_container)
+                UIManager:setDirty(nil, "ui")
+                self:openMenu(found_menu_items[i][3])
+            end
+            local function item_hold_callback(i)
+                local confirm_box
+                confirm_box = ConfirmBox:new{
+                    text = T(_("Open menu entry:\n'%1'\n\n%2"), found_menu_items[i][1], found_menu_items[i][4]),
+                    icon = found_menu_items[i][2],
+                    ok_text = _("Open"),
+                    ok_callback = function()
+                        UIManager:close(confirm_box)
+                        item_callback(i)
+                    end,
+                    cancel_text = _("Dismiss"),
+                    width_percent = 0.95,
+                }
+                UIManager:show(confirm_box)
+            end
+
+            local result_items = {}
+            for i = 1, #found_menu_items do
+                table.insert(result_items,
+                    {
+                        text = found_menu_items[i][1],
+                        callback = function() item_callback(i) end,
+                        hold_callback = function() item_hold_callback(i) end,
+                    }
+                )
+            end
+            return result_items
+        end -- get_current_search_results()
+
+        if #found_menu_items > 0 then
+            local results_menu = Menu:new{
+                title = _("Search results"),
+                item_table = get_current_search_results(found_menu_items),
+                item_shortcuts = {},
+                width = math.floor(Screen:getWidth() * 0.9),
+                height = math.floor(Screen:getHeight() * 0.9),
+                single_line = true,
+                items_per_page = 10,
+                items_font_size = Menu.getItemFontSize(10),
+                onMenuSelect = function(item, pos)
+                    if pos.callback then pos.callback() end
+                end,
+                onMenuHold = function(item, pos)
+                    if pos.hold_callback then pos.hold_callback() end
+                end,
+                close_callback = function()
+                    UIManager:close(self.results_menu_container)
+                end
+            }
+
+            -- build container
+            self.results_menu_container = CenterContainer:new{
+                dimen = Screen:getSize(),
+                results_menu,
+            }
+
+            results_menu.show_parent = self.results_menu_container
+
+            UIManager:show(self.results_menu_container)
+
+        else
+            UIManager:show(InfoMessage:new{
+                text = T(_("No menus containing '%1' found."), search_string),
+            })
+        end
+    end -- show_search_results()
+
+    local search_dialog
+    search_dialog = InputDialog:new{
+        title = _("Search menu entry"),
+        description = _("Search for a menu entry containing the following text (case insensitive)."),
+        input = G_reader_settings:readSetting("menu_search_string", _("Help")),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(search_dialog)
+                    end,
+                },
+                {
+                    text = _("Search"),
+                    callback = function()
+                        local search_for = search_dialog:getInputText()
+                        local status, err = pcall( function() ("test_string"):find(search_for) end)
+                        if status then
+                            search_for = Utf8Proc.lowercase(search_for)
+                            G_reader_settings:saveSetting("menu_search_string", search_for)
+                            UIManager:close(search_dialog)
+                            show_search_results(search_for)
+                        else
+                            err = err:sub(err:find("lua") + 10)  -- 10 = strlen("lua:1165: ")
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Malformed message:\n%1"), err)
+                            })
+                        end
+                    end,
+                },
+            }
+        },
+    }
+
+    local animation_time_s = G_reader_settings:readSetting("menu_search_animation_time_s", 1.0)
+    local check_button_animation = CheckButton:new{
+        text = _("Animation"),
+        checked = animation_time_s ~= 0.0,
+        parent = search_dialog,
+        callback = function()
+            animation_time_s = animation_time_s ~= 0.0 and 0.0 or 1.0
+            G_reader_settings:saveSetting("menu_search_animation_time_s", animation_time_s)
+        end,
+    }
+    search_dialog:addWidget(check_button_animation)
+
+    UIManager:show(search_dialog)
+    search_dialog:onShowKeyboard()
 end
 
 return TouchMenu
