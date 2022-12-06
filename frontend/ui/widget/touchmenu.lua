@@ -1016,7 +1016,14 @@ function TouchMenu:search(search_for)
             end
         end
 
-        if val.sub_item_table then
+        if val.sub_item_table_func then
+            local sub_item_table = val.sub_item_table_func()
+            local perpage = ""
+            if sub_item_table.max_per_page then
+                perpage = "[" .. sub_item_table.max_per_page .."]"
+            end
+            recurse(sub_item_table, path .. ".sub_item_table_func" .. perpage, text, icon, depth)
+        elseif val.sub_item_table then
             local perpage = ""
             if val.sub_item_table.max_per_page then
                 perpage = "[" .. val.sub_item_table.max_per_page .."]"
