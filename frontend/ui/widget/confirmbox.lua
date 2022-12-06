@@ -28,7 +28,6 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconWidget = require("ui/widget/iconwidget")
-local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local Size = require("ui/size")
@@ -36,7 +35,6 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -81,34 +79,14 @@ function ConfirmBox:init()
     local text_widget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * (self.width_percent or 2/3)),
+        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 2/3),
     }
-
-    local image_widget
-    if self.show_icon then
-        --- @todo remove self.image support, only used in filemanagersearch
-        -- this requires self.image's lifecycle to be managed by ImageWidget
-        -- instead of caller, which is easy to introduce bugs
-        if self.image then
-            image_widget = ImageWidget:new{
-                image = self.image,
-                width = self.image_width,
-                height = self.image_height,
-                alpha = self.alpha ~= nil and self.alpha or false, -- default to false
-            }
-        else
-            image_widget = IconWidget:new{
-                icon = self.icon,
-                alpha = self.alpha == nil and true or self.alpha, -- default to true
-            }
-        end
-    else
-        image_widget = WidgetContainer:new()
-    end
-
     local content = HorizontalGroup:new{
         align = "center",
-        image_widget,
+        IconWidget:new{
+            icon = self.icon,
+            alpha = true,
+        },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
         text_widget,
     }
