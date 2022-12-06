@@ -31,7 +31,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local datetime = require("datetime")
 local getMenuText = require("ui/widget/menu").getMenuText
-local util = require("util")
 local _ = require("gettext")
 local ffiUtil = require("ffi/util")
 local T = ffiUtil.template
