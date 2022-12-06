@@ -1802,10 +1802,9 @@ function VocabularyBuilderWidget:onSwipe(arg, ges_ev)
 end
 
 function VocabularyBuilderWidget:onMultiSwipe(arg, ges_ev)
-    -- For consistency with other fullscreen widgets where swipe south can't be
-    -- used to close and where we then allow any multiswipe to close, allow any
-    -- multiswipe to close this widget too.
-    self:onClose()
+    -- since swipe south is closing, we reload items here
+    self:reloadItems()
+    UIManager:show(Notification:new{ text = _("Words reloaded.") })
     return true
 end
 
