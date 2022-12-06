@@ -163,12 +163,13 @@ local order = {
         "----------------------------",
         "ota_update", -- if Device:hasOTAUpdates()
         "help",
-        "search_menu",
         "----------------------------",
         "exit_menu",
     },
     help = {
         "quickstart_guide",
+        "----------------------------",
+        "search_menu",
         "----------------------------",
         "report_bug",
         "----------------------------",
