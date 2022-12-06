@@ -1309,9 +1309,6 @@ function VocabularyBuilderWidget:refreshFooter()
     if has_sync and not has_search then
         left_ratio = 9
         right_ratio = 11
-    elseif not has_sync and has_search then
-        left_ratio = 11
-        right_ratio = 9
     end
     self.footer_left_corner_width = math.floor(self.width_widget * left_ratio/100)
     self.footer_right_corner_width = math.floor(self.width_widget * right_ratio/100)
