@@ -31,6 +31,15 @@ local VOCABULARY_DB_SCHEMA = [[
     CREATE INDEX IF NOT EXISTS title_name_index ON title(name);
 ]]
 
+local function convertToSqlLike(str)
+    local like_str = str:gsub("'", "''")
+    if str:find("%", 1, true) or str:find("_") then
+        return like_str
+    else
+        return "%" .. like_str .. "%"
+    end
+end
+
 local VocabularyBuilder = {
     path = db_location
 }
@@ -41,8 +50,13 @@ end
 
 function VocabularyBuilder:selectCount(vocab_widget)
     local db_conn = SQ3.open(db_location)
-    local where_clause = vocab_widget:check_reverse() and " WHERE due_time <= " .. vocab_widget.reload_time or ""
-    local sql = "SELECT count(0) FROM vocabulary INNER JOIN title ON filter=true AND title_id=id" .. where_clause .. ";"
+    local sql
+    if vocab_widget.search_text and vocab_widget.search_text ~= "" then
+        sql = "SELECT count(0) FROM vocabulary WHERE word LIKE '" .. convertToSqlLike(vocab_widget.search_text) .. "'"
+    else
+        local where_clause = vocab_widget:check_reverse() and " WHERE due_time <= " .. vocab_widget.reload_time or ""
+        sql = "SELECT count(0) FROM vocabulary INNER JOIN title ON filter=true AND title_id=id" .. where_clause .. ";"
+    end
     local count = tonumber(db_conn:rowexec(sql))
     db_conn:close()
     return count
@@ -138,10 +152,12 @@ function VocabularyBuilder:insertLookupData(db_conn)
     end
 end
 
-function VocabularyBuilder:_select_items(items, start_idx, reload_time)
+function VocabularyBuilder:_select_items(items, start_idx, reload_time, search_text)
     local conn = SQ3.open(db_location)
     local sql
-    if not reload_time then
+    if search_text and search_text ~= "" then
+        sql = string.format("SELECT * FROM vocabulary INNER JOIN title ON title_id = title.id WHERE word LIKE '%s' LIMIT 32 OFFSET %d", convertToSqlLike(search_text), start_idx-1)
+    elseif not reload_time then
         sql = string.format("SELECT * FROM vocabulary INNER JOIN title ON title_id = title.id AND filter = true ORDER BY due_time limit %d OFFSET %d;", 32, start_idx-1)
     else
         sql = string.format([[SELECT * FROM vocabulary INNER JOIN title
@@ -199,7 +215,7 @@ function VocabularyBuilder:select_items(vocab_widget, start_idx, end_idx)
     end
 
     if not start_cursor then return end
-    self:_select_items(items, start_cursor, vocab_widget:check_reverse() and vocab_widget.reload_time)
+    self:_select_items(items, start_cursor, vocab_widget:check_reverse() and vocab_widget.reload_time, vocab_widget.search_text)
 end
 
 
