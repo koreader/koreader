@@ -1000,7 +1000,7 @@ function TouchMenu:search(search_for)
     local extensive_search = G_reader_settings:readSetting("search_menu_extensive", false)
 
     local MAX_MENU_DEPTH = 20 -- currently our menu needs at least 12 here
-    local function recurse(val, path, text, depth)
+    local function recurse(val, path, text, icon, depth)
         depth = depth + 1
         if depth > MAX_MENU_DEPTH then
             return
@@ -1012,9 +1012,9 @@ function TouchMenu:search(search_for)
                 local indent = (" "):rep(math.min(depth, 6)) .."→ " -- all spaces here are Hair Space U+200A
                 local next_text = text .. "\n" .. indent .. entry_text
                 local next_path = path .. "." .. i
-                recurse(val[i], next_path, next_text, depth)
+                recurse(val[i], next_path, next_text, icon, depth)
                 if Utf8Proc.lowercase(entry_text):find(search_for) then
-                    table.insert(found_menu_items, {entry_text, next_path, next_text})
+                    table.insert(found_menu_items, {entry_text, icon, next_path, next_text})
                 end
             end
         end
@@ -1025,19 +1025,19 @@ function TouchMenu:search(search_for)
             if sub_item_table.max_per_page then
                 perpage = "[" .. sub_item_table.max_per_page .."]"
             end
-            recurse(sub_item_table, path .. ".sub_item_table_func" .. perpage , text, depth)
+            recurse(sub_item_table, path .. ".sub_item_table_func" .. perpage, text, icon, depth)
         elseif val.sub_item_table then
             local perpage = ""
             if val.sub_item_table.max_per_page then
                 perpage = "[" .. val.sub_item_table.max_per_page .."]"
             end
-            recurse(val.sub_item_table, path .. ".sub_item_table" .. perpage , text, depth)
+            recurse(val.sub_item_table, path .. ".sub_item_table" .. perpage, text, icon, depth)
         end
     end -- recurse
 
     -- initial call of recurse
     for i = 1, #self.tab_item_table do
-        recurse(self.tab_item_table[i], i, self.tab_item_table[i].text or "ROOT"..i, 0)
+        recurse(self.tab_item_table[i], i, self.tab_item_table[i].text or "ROOT"..i, self.tab_item_table[i].icon, 0)
     end
 
 --[[
@@ -1235,13 +1235,13 @@ function TouchMenu:onShowMenuSearch()
             local function item_callback(i)
                 UIManager:close(self.results_menu_container)
                 UIManager:setDirty(nil, "ui")
-                self:openMenu(found_menu_items[i][2])
+                self:openMenu(found_menu_items[i][3])
             end
             local function item_hold_callback(i)
                 local confirm_box
                 confirm_box = ConfirmBox:new{
-                    text = T(_("Open menu entry:\n'%1'\n\n%2"), found_menu_items[i][1], found_menu_items[i][3]),
-                    icon = "",
+                    text = T(_("Open menu entry:\n'%1'\n\n%2"), found_menu_items[i][1], found_menu_items[i][4]),
+                    icon = found_menu_items[i][2],
                     ok_text = _("Open"),
                     ok_callback = function()
                         UIManager:close(confirm_box)
