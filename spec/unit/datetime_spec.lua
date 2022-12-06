@@ -153,9 +153,9 @@ describe("datetime module", function()
                             datetime.secondsToDate(time_s))
             assert.is_equal("2022-12-07",
                             datetime.secondsToDate(time_s + 86400)) -- one day later
-            assert.is_equal("Tue Dec/06/2022",
+            assert.is_equal("Tue Dec 06 2022",
                             datetime.secondsToDate(time_s, true))
-            assert.is_equal("Wed Dec/07/2022",
+            assert.is_equal("Wed Dec 07 2022",
                             datetime.secondsToDate(time_s + 86400, true))
         end)
     end)
@@ -174,14 +174,14 @@ describe("datetime module", function()
             assert.is_equal("2022-11-21  9:57 AM",
                             datetime.secondsToDateTime(time_s + 86400, true))
 
-            assert.is_equal("Sun Nov/20/2022 9:57",
+            assert.is_equal("Sun Nov 20 2022 9:57",
                             datetime.secondsToDateTime(time_s, false, true))
-            assert.is_equal("Mon Nov/21/2022 9:57",
+            assert.is_equal("Mon Nov 21 2022 9:57",
                             datetime.secondsToDateTime(time_s + 86400, false, true))
 
-            assert.is_equal("Sun Nov/20/2022 9:57 AM",
+            assert.is_equal("Sun Nov 20 2022 9:57 AM",
                             datetime.secondsToDateTime(time_s, true, true))
-            assert.is_equal("Mon Nov/21/2022 9:57 AM",
+            assert.is_equal("Mon Nov 21 2022 9:57 AM",
                             datetime.secondsToDateTime(time_s + 86400, true, true))
         end)
     end)
