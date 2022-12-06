@@ -27,27 +27,21 @@ function ReaderMenu:init()
         -- items in top menu
         navi = {
             icon = "appbar.navigation",
-            text = _("Navigation"),
         },
         typeset = {
             icon = "appbar.typeset",
-            text = _("Formatting"),
         },
         setting = {
             icon = "appbar.settings",
-            text = _("Settings"),
         },
         tools = {
             icon = "appbar.tools",
-            text = _("Tools"),
         },
         search = {
             icon = "appbar.search",
-            text = _("Search"),
         },
         filemanager = {
             icon = "appbar.filebrowser",
-            text = _("Filebrowser"),
             remember = false,
             callback = function()
                 self:onTapCloseMenu()
@@ -57,7 +51,6 @@ function ReaderMenu:init()
         },
         main = {
             icon = "appbar.menu",
-            text = _("Hamburger"),
         }
     }
 

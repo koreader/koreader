@@ -1006,8 +1006,8 @@ function TouchMenu:search(search_for)
         for i,v in ipairs(val) do
             if type(v) == "table" then
                 local entry_text = v.text_func and v.text_func() or v.text
-                local indent = (" "):rep(math.min(depth, 6)) .."→ " -- all spaces here are Hair Space U+200A
-                local next_text = text .. "\n" .. indent .. entry_text
+                local indent = text and ((" "):rep(math.min(depth-1, 6)) .. "→ ") or "→ " -- all spaces here are Hair Space U+200A
+                local next_text = text and (text .. "\n" .. indent .. entry_text) or (indent .. entry_text)
                 local next_path = path .. "." .. i
                 recurse(val[i], next_path, next_text, icon, depth)
                 if Utf8Proc.lowercase(entry_text):find(search_for) then
@@ -1027,7 +1027,7 @@ function TouchMenu:search(search_for)
 
     -- initial call of recurse
     for i = 1, #self.tab_item_table do
-        recurse(self.tab_item_table[i], i, self.tab_item_table[i].text or "ROOT"..i, self.tab_item_table[i].icon, 0)
+        recurse(self.tab_item_table[i], i, self.tab_item_table[i].text, self.tab_item_table[i].icon, 0)
     end
 
 --[[

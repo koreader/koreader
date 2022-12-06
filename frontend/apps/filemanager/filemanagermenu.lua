@@ -31,23 +31,18 @@ function FileManagerMenu:init()
         -- items in top menu
         filemanager_settings = {
             icon = "appbar.filebrowser",
-            text = _("Filebrowser"),
         },
         setting = {
             icon = "appbar.settings",
-            text = _("Settings"),
         },
         tools = {
             icon = "appbar.tools",
-            text = _("Tools"),
         },
         search = {
             icon = "appbar.search",
-            text = _("Search"),
         },
         main = {
             icon = "appbar.menu",
-            text = _("Hamburger"),
         },
     }
 
