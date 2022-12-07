@@ -222,8 +222,6 @@ local order = {
     help = {
         "quickstart_guide",
         "----------------------------",
-        "search_menu",
-        "----------------------------",
         "report_bug",
         "----------------------------",
         "system_statistics",  -- if enabled (Plugin)

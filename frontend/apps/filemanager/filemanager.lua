@@ -1385,11 +1385,4 @@ function FileManager:onRefreshContent()
     self:onRefresh()
 end
 
-function FileManager:onMenuSearch()
-    if not self.ui then
-        self.menu:onShowMenu()
-    end
-    self.menu.menu_container[1]:onShowMenuSearch()
-end
-
 return FileManager

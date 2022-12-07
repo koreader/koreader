@@ -97,7 +97,6 @@ local settingsList = {
     fulltext_search = {category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), general=true},
     file_search = {category="none", event="ShowFileSearch", title=_("File search"), general=true, separator=true},
     show_menu = {category="none", event="ShowMenu", title=_("Show menu"), general=true},
-    menu_search = {category="none", event="MenuSearch", title=_("Menu search"), general=true},
     favorites = {category="none", event="ShowColl", arg="favorites", title=_("Favorites"), general=true},
     screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
 
@@ -228,7 +227,6 @@ local dispatcher_menu_order = {
     "file_search",
 
     "show_menu",
-    "menu_search",
     "screenshot",
 
     "exit_screensaver",
