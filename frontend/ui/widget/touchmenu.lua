@@ -1319,18 +1319,10 @@ function TouchMenu:onShowMenuSearch()
                     text = _("Search"),
                     callback = function()
                         local search_for = search_dialog:getInputText()
-                        local status, err = pcall( function() ("test_string"):find(search_for, 1, true) end)
-                        if status then
-                            search_for = Utf8Proc.lowercase(search_for)
-                            G_reader_settings:saveSetting("menu_search_string", search_for)
-                            UIManager:close(search_dialog)
-                            show_search_results(search_for)
-                        else
-                            err = err:sub(err:find("lua") + 10)  -- 10 = strlen("lua:1165: ")
-                            UIManager:show(InfoMessage:new{
-                                text = T(_("Malformed message:\n%1"), err)
-                            })
-                        end
+                        search_for = Utf8Proc.lowercase(search_for)
+                        G_reader_settings:saveSetting("menu_search_string", search_for)
+                        UIManager:close(search_dialog)
+                        show_search_results(search_for)
                     end,
                 },
             }
