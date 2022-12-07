@@ -1287,7 +1287,7 @@ end
 
 function VocabularyBuilderWidget:refreshFooter()
     local has_sync = settings.server ~= nil
-    local has_search = self.search_text and self.search_text ~= ""
+    local has_search = self.search_text_sql
     if self.footer_left ~= nil then -- check whether refresh needed
         local should_refresh = has_sync and self.page_info[1] ~= self.footer_sync
                                or not has_sync and self.page_info[1] == self.footer_sync
@@ -1472,6 +1472,13 @@ If no wildcard is used, the searched text will be enclosed with two %'s by defau
                     is_enter_default = true,
                     callback = function()
                         self.search_text = dialog:getInputText()
+                        if self.search_text == "" then
+                            self.search_text_sql = nil
+                        elseif self.search_text:find("%", 1, true) or self.search_text:find("_") then
+                            self.search_text_sql = self.search_text:gsub("'", "''")
+                        else
+                            self.search_text_sql = "%" .. self.search_text:gsub("'", "''") .. "%"
+                        end
                         UIManager:close(dialog)
                         self:reloadItems()
                     end,
@@ -1576,7 +1583,7 @@ function VocabularyBuilderWidget:_populateItems()
     end
     if self.pages == 0 then
         local text
-        if self.search_text and self.search_text ~= "" then
+        if self.search_text_sql then
             text = _("Search in effect")
         else
             local has_filtered_book = DB:hasFilteredBook()
@@ -1799,9 +1806,19 @@ function VocabularyBuilderWidget:onSwipe(arg, ges_ev)
 end
 
 function VocabularyBuilderWidget:onMultiSwipe(arg, ges_ev)
-    -- since swipe south is closing, we reload items here
-    self:reloadItems()
-    UIManager:show(Notification:new{ text = _("Words reloaded.") })
+    -- if user is drawing a circle or half circle (full circle not always easy), reload
+    if ges_ev.multiswipe_directions == "east south west"
+        or ges_ev.multiswipe_directions == "east south west north"
+        or ges_ev.multiswipe_directions == "west south east"
+        or ges_ev.multiswipe_directions == "west south east north" then
+            self:reloadItems()
+            UIManager:show(Notification:new{ text = _("Words reloaded.") })
+    else
+        -- For consistency with other fullscreen widgets where swipe south can't be
+        -- used to close and where we then allow any multiswipe to close, allow any
+        -- multiswipe to close this widget too.
+        self:onClose()
+    end
     return true
 end
 
