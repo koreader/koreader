@@ -1010,7 +1010,7 @@ function TouchMenu:search(search_for)
                 local next_text = text and (text .. "\n" .. indent .. entry_text) or (indent .. entry_text)
                 local next_path = path .. "." .. i
                 recurse(val[i], next_path, next_text, icon, depth)
-                if Utf8Proc.lowercase(entry_text):find(search_for) then
+                if Utf8Proc.lowercase(entry_text):find(search_for, 1, true) then
                     table.insert(found_menu_items, {entry_text, icon, next_path, next_text})
                 end
             end
@@ -1319,7 +1319,7 @@ function TouchMenu:onShowMenuSearch()
                     text = _("Search"),
                     callback = function()
                         local search_for = search_dialog:getInputText()
-                        local status, err = pcall( function() ("test_string"):find(search_for) end)
+                        local status, err = pcall( function() ("test_string"):find(search_for, 1, true) end)
                         if status then
                             search_for = Utf8Proc.lowercase(search_for)
                             G_reader_settings:saveSetting("menu_search_string", search_for)
