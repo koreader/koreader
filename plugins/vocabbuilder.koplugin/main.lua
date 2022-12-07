@@ -1807,12 +1807,17 @@ end
 
 function VocabularyBuilderWidget:onMultiSwipe(arg, ges_ev)
     -- if user is drawing a circle or half circle (full circle not always easy), reload
-    if ges_ev.multiswipe_directions == "east south west"
-        or ges_ev.multiswipe_directions == "east south west north"
-        or ges_ev.multiswipe_directions == "west south east"
-        or ges_ev.multiswipe_directions == "west south east north" then
-            self:reloadItems()
-            UIManager:show(Notification:new{ text = _("Words reloaded.") })
+    local space_count = 0
+    for space in ges_ev.multiswipe_directions:gmatch(" ") do
+        space_count = space_count + 1
+        if space_count == 2 then break end
+    end
+    if space_count == 2 and (
+        string.find("east south west north east south west", ges_ev.multiswipe_directions)
+        or string.find("east north west south east north west", ges_ev.multiswipe_directions)
+    ) then
+        self:reloadItems()
+        UIManager:show(Notification:new{ text = _("Words reloaded") })
     else
         -- For consistency with other fullscreen widgets where swipe south can't be
         -- used to close and where we then allow any multiswipe to close, allow any
