@@ -29,7 +29,6 @@ local DISPLAY_PREFIX = {
     highlight = "\u{2592}\u{2002}", -- "medium shade"
     note = "\u{F040}\u{2002}", -- "pencil"
     bookmark = "\u{F097}\u{2002}", -- "empty bookmark"
-    curr_page = "\u{2605}\u{2002}", -- "star"
 }
 
 local ReaderBookmark = InputContainer:extend{
@@ -419,21 +418,10 @@ function ReaderBookmark:onShowBookmark(match_table)
     local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
     local curr_page_num = self:getCurrentPageNumber()
     local curr_page_string = self:getBookmarkPageString(curr_page_num)
-    local curr_page_item = {
-        page = curr_page_num,
-        text = DISPLAY_PREFIX["curr_page"] .. _("Book current page"),
-        mandatory = curr_page_string,
-        bold = true,
-    }
-    local curr_page_index = self:getBookmarkInsertionIndexBinary(curr_page_item)
-    local curr_page_item_index
+    local curr_page_index = self:getBookmarkInsertionIndexBinary({page = curr_page_num}) - 1
     local num = #self.bookmarks + 1
-    curr_page_index = is_reverse_sorting and curr_page_index or num + 1 - curr_page_index
+    curr_page_index = is_reverse_sorting and curr_page_index or num - curr_page_index
     for i = 1, #self.bookmarks do
-        if i == curr_page_index then
-            table.insert(item_table, curr_page_item)
-            curr_page_item_index = #item_table
-        end
         -- bookmarks are internally sorted by descending page numbers
         local v = self.bookmarks[is_reverse_sorting and i or num - i]
         if v.text == nil or v.text == "" then
@@ -445,15 +433,17 @@ function ReaderBookmark:onShowBookmark(match_table)
             item.text_orig = item.text or item.notes
             item.text = DISPLAY_PREFIX[item.type] .. item.text_orig
             item.mandatory = self:getBookmarkPageString(item.page)
+            if (not is_reverse_sorting and i >= curr_page_index) or (is_reverse_sorting and i <= curr_page_index) then
+                item.after_curr_page = true
+                item.mandatory_dim = true
+            end
             if item.mandatory == curr_page_string then
                 item.bold = true
+                item.after_curr_page = nil
+                item.mandatory_dim = nil
             end
             table.insert(item_table, item)
         end
-    end
-    if not curr_page_item_index then -- curr_page_item after all bookmark items
-        table.insert(item_table, curr_page_item)
-        curr_page_item_index = #item_table
     end
 
     local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page")
@@ -492,31 +482,29 @@ function ReaderBookmark:onShowBookmark(match_table)
     }
     table.insert(self.bookmark_menu, bm_menu)
 
-    -- buid up menu widget method as closure
     local bookmark = self
+
     function bm_menu:onMenuSelect(item)
         if self.select_mode then
-            if item.type then -- skip curr_page_item
-                if item.dim then
-                    item.dim = nil
-                    self.select_count = self.select_count - 1
-                else
-                    item.dim = true
-                    self.select_count = self.select_count + 1
+            if item.dim then
+                item.dim = nil
+                if item.after_curr_page then
+                    item.mandatory_dim = true
                 end
-                bm_menu:updateItems()
+                self.select_count = self.select_count - 1
+            else
+                item.dim = true
+                self.select_count = self.select_count + 1
             end
+            bm_menu:updateItems()
         else
-            if item.type then
-                bookmark.ui.link:addCurrentLocationToStack()
-                bookmark:gotoBookmark(item.page, item.pos0)
-            end
+            bookmark.ui.link:addCurrentLocationToStack()
+            bookmark:gotoBookmark(item.page, item.pos0)
             bm_menu.close_callback()
         end
     end
 
     function bm_menu:onMenuHold(item)
-        if not item.type then return true end -- curr_page_item
         local bm_view = T(_("Page: %1"), item.mandatory) .. "     " .. T(_("Time: %1"), item.datetime) .. "\n\n"
         if item.type == "bookmark" then
             bm_view = bm_view .. item.text
@@ -599,9 +587,12 @@ function ReaderBookmark:onShowBookmark(match_table)
                 if v.dim then
                     v.dim = nil
                 end
+                if v.after_curr_page then
+                    v.mandatory_dim = true
+                end
             end
             bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)")
-                or _("Bookmarks"), item_table)
+                or _("Bookmarks"), item_table, curr_page_index)
             bm_menu:setTitleBarLeftIcon("appbar.menu")
         end
     end
@@ -611,7 +602,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         local buttons = {}
         if self.select_mode then
             local actions_enabled = self.select_count > 0
-            local more_selections_enabled = self.select_count < #item_table - 1
+            local more_selections_enabled = self.select_count < #item_table
             if actions_enabled then
                 dialog_title = T(N_("1 bookmark selected", "%1 bookmarks selected", self.select_count), self.select_count)
             else
@@ -624,11 +615,9 @@ function ReaderBookmark:onShowBookmark(match_table)
                     callback = function()
                         UIManager:close(bm_dialog)
                         for _, v in ipairs(item_table) do
-                            if v.type then -- skip curr_page_item
-                                v.dim = true
-                            end
+                            v.dim = true
                         end
-                        self.select_count = #item_table - 1
+                        self.select_count = #item_table
                         bm_menu:updateItems()
                     end,
                 },
@@ -641,7 +630,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                         local item_last = math.min(item_first + bm_menu.perpage - 1, #item_table)
                         for i = item_first, item_last do
                             local v = item_table[i]
-                            if v.type and v.dim == nil then
+                            if v.dim == nil then
                                 v.dim = true
                                 self.select_count = self.select_count + 1
                             end
@@ -659,6 +648,9 @@ function ReaderBookmark:onShowBookmark(match_table)
                         for _, v in ipairs(item_table) do
                             if v.dim then
                                 v.dim = nil
+                            end
+                            if v.after_curr_page then
+                                v.mandatory_dim = true
                             end
                         end
                         self.select_count = 0
@@ -720,7 +712,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                 },
             })
         else
-            local actions_enabled = #item_table > 1
+            local actions_enabled = #item_table > 0
             local hl_count = 0
             local nt_count = 0
             local bm_count = 0
@@ -778,7 +770,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                     text = _("Book current page"),
                     callback = function()
                         UIManager:close(bm_dialog)
-                        bm_menu:switchItemTable(nil, item_table, curr_page_item_index)
+                        bm_menu:switchItemTable(nil, item_table, curr_page_index)
                     end,
                 },
                 {
@@ -834,7 +826,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         self:onSaveSettings()
     end
 
-    bm_menu:switchItemTable(nil, item_table, curr_page_item_index) -- show page with curr_page_item
+    bm_menu:switchItemTable(nil, item_table, curr_page_index)
     UIManager:show(self.bookmark_menu)
     return true
 end
@@ -1156,7 +1148,6 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
 end
 
 function ReaderBookmark:doesBookmarkMatchTable(item, match_table)
-    if not item.type then return true end -- always show curr_page_item in search results
     if match_table[item.type] then
         if match_table.search_str == "" then
             return true
