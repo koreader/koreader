@@ -78,7 +78,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
     if not Device:isTouchDevice() then
         menu_items.toggle_bookmark = {
             text_func = function()
-                return self:isCurrentPageBookmarked() and _("Remove bookmark for current page") or _("Bookmark current page")
+                return self:isPageBookmarked() and _("Remove bookmark for current page") or _("Bookmark current page")
             end,
             callback = function()
                 self:onToggleBookmark()
@@ -377,21 +377,21 @@ function ReaderBookmark:onSaveSettings()
     self.ui.doc_settings:makeTrue("highlights_imported")
 end
 
-function ReaderBookmark:isCurrentPageBookmarked()
-    return self:getDogearBookmarkIndex(self:getCurrentPageNumber()) and true or false
-end
-
 function ReaderBookmark:onToggleBookmark()
-    self:toggleBookmark(self:getCurrentPageNumber())
+    self:toggleBookmark()
     self.view.footer:onUpdateFooter(self.view.footer_visible)
     self.ui:handleEvent(Event:new("SetDogearVisibility", not self.view.dogear_visible))
     UIManager:setDirty(self.view.dialog, "ui")
     return true
 end
 
+function ReaderBookmark:isPageBookmarked(pn_or_xp)
+    local page = pn_or_xp or self:getCurrentPageNumber()
+    return self:getDogearBookmarkIndex(page) and true or false
+end
+
 function ReaderBookmark:setDogearVisibility(pn_or_xp)
-    local is_index = self:getDogearBookmarkIndex(pn_or_xp) and true or false
-    self.ui:handleEvent(Event:new("SetDogearVisibility", is_index))
+    self.ui:handleEvent(Event:new("SetDogearVisibility", self:isPageBookmarked(pn_or_xp)))
 end
 
 function ReaderBookmark:onPageUpdate(pageno)
@@ -421,6 +421,7 @@ function ReaderBookmark:onShowBookmark(match_table)
     local curr_page_index = self:getBookmarkInsertionIndexBinary({page = curr_page_num}) - 1
     local num = #self.bookmarks + 1
     curr_page_index = is_reverse_sorting and curr_page_index or num - curr_page_index
+    curr_page_index_filtered = curr_page_index
     for i = 1, #self.bookmarks do
         -- bookmarks are internally sorted by descending page numbers
         local v = self.bookmarks[is_reverse_sorting and i or num - i]
@@ -443,6 +444,8 @@ function ReaderBookmark:onShowBookmark(match_table)
                 item.mandatory_dim = nil
             end
             table.insert(item_table, item)
+        else
+            curr_page_index_filtered = curr_page_index_filtered - 1
         end
     end
 
@@ -592,7 +595,7 @@ function ReaderBookmark:onShowBookmark(match_table)
                 end
             end
             bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)")
-                or _("Bookmarks"), item_table, curr_page_index)
+                or _("Bookmarks"), item_table, curr_page_index_filtered)
             bm_menu:setTitleBarLeftIcon("appbar.menu")
         end
     end
@@ -767,10 +770,10 @@ function ReaderBookmark:onShowBookmark(match_table)
             table.insert(buttons, {})
             table.insert(buttons, {
                 {
-                    text = _("Book current page"),
+                    text = _("Current page"),
                     callback = function()
                         UIManager:close(bm_dialog)
-                        bm_menu:switchItemTable(nil, item_table, curr_page_index)
+                        bm_menu:switchItemTable(nil, item_table, curr_page_index_filtered)
                     end,
                 },
                 {
@@ -826,7 +829,7 @@ function ReaderBookmark:onShowBookmark(match_table)
         self:onSaveSettings()
     end
 
-    bm_menu:switchItemTable(nil, item_table, curr_page_index)
+    bm_menu:switchItemTable(nil, item_table, curr_page_index_filtered)
     UIManager:show(self.bookmark_menu)
     return true
 end
@@ -868,7 +871,7 @@ function ReaderBookmark:isBookmarkSame(item1, item2)
     end
 end
 
-function ReaderBookmark:getBookmarkIndex(item)
+function ReaderBookmark:getBookmarkIndexFullScan(item)
     for i, v in ipairs(self.bookmarks) do
         if item.datetime == v.datetime and item.page == v.page then
             return i
@@ -876,7 +879,7 @@ function ReaderBookmark:getBookmarkIndex(item)
     end
 end
 
-function ReaderBookmark:getBookmarkIndexBinary(item)
+function ReaderBookmark:getBookmarkIndexBinarySearch(item)
     local _start, _end, _middle = 1, #self.bookmarks
     while _start <= _end do
         _middle = bit.rshift(_start + _end, 1)
@@ -943,7 +946,7 @@ function ReaderBookmark:removeBookmark(item, reset_auto_text_only)
     -- bookmarks on the same page, and the above binary search decided to
     -- not search on one side of one it found on page, where item could be.
     -- Fallback to do a full scan.
-    local index = self:getBookmarkIndexBinary(item) or self:getBookmarkIndex(item)
+    local index = self:getBookmarkIndexBinarySearch(item) or self:getBookmarkIndexFullScan(item)
     local v = self.bookmarks[index]
     if reset_auto_text_only then
         if self:isBookmarkAutoText(v) then
@@ -959,7 +962,7 @@ end
 function ReaderBookmark:updateBookmark(item)
     -- Called from Highlights when changing highlight boundaries (positions).
     -- Binary search cannot be used.
-    local index = self:getBookmarkIndex(item)
+    local index = self:getBookmarkIndexFullScan(item)
     local v = self.bookmarks[index]
     local bookmark_before = util.tableDeepCopy(v)
     local is_auto_text_before = self:isBookmarkAutoText(v)
@@ -979,7 +982,7 @@ end
 function ReaderBookmark:setBookmarkNote(item, from_highlight, is_new_note, new_text)
     local bookmark
     if from_highlight then
-        local bm = self.bookmarks[self:getBookmarkIndex(item)]
+        local bm = self.bookmarks[self:getBookmarkIndexFullScan(item)]
         if bm.text == nil or bm.text == "" then
             bm.text = self:getBookmarkAutoText(bm)
         end
@@ -1013,7 +1016,7 @@ function ReaderBookmark:setBookmarkNote(item, from_highlight, is_new_note, new_t
                     callback = function()
                         UIManager:close(self.input)
                         if is_new_note then -- "Add note" cancelled, remove saved highlight
-                            local index = self:getBookmarkIndexBinary(bookmark) or self:getBookmarkIndex(bookmark)
+                            local index = self:getBookmarkIndexBinarySearch(bookmark) or self:getBookmarkIndexFullScan(bookmark)
                             self:removeHighlight(self.bookmarks[index])
                         end
                     end,
@@ -1033,7 +1036,7 @@ function ReaderBookmark:setBookmarkNote(item, from_highlight, is_new_note, new_t
                             value = self:getBookmarkAutoText(bookmark)
                         end
                         bookmark.text = value or bookmark.notes
-                        local index = self:getBookmarkIndexBinary(bookmark) or self:getBookmarkIndex(bookmark)
+                        local index = self:getBookmarkIndexBinarySearch(bookmark) or self:getBookmarkIndexFullScan(bookmark)
                         local bm = self.bookmarks[index]
                         bm.text = value
                         self.ui:handleEvent(Event:new("BookmarkEdited", bm))
@@ -1164,7 +1167,8 @@ function ReaderBookmark:doesBookmarkMatchTable(item, match_table)
     end
 end
 
-function ReaderBookmark:toggleBookmark(pn_or_xp)
+function ReaderBookmark:toggleBookmark()
+    local pn_or_xp = self:getCurrentPageNumber()
     local index = self:getDogearBookmarkIndex(pn_or_xp)
     if index then
         self.ui:handleEvent(Event:new("BookmarkRemoved", self.bookmarks[index]))
@@ -1380,7 +1384,7 @@ function ReaderBookmark:getBookmarkNote(item)
 end
 
 function ReaderBookmark:getBookmarkForHighlight(item)
-    return self.bookmarks[self:getBookmarkIndex(item)]
+    return self.bookmarks[self:getBookmarkIndexFullScan(item)]
 end
 
 return ReaderBookmark
