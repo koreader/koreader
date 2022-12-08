@@ -421,7 +421,7 @@ function ReaderBookmark:onShowBookmark(match_table)
     local curr_page_index = self:getBookmarkInsertionIndexBinary({page = curr_page_num}) - 1
     local num = #self.bookmarks + 1
     curr_page_index = is_reverse_sorting and curr_page_index or num - curr_page_index
-    curr_page_index_filtered = curr_page_index
+    local curr_page_index_filtered = curr_page_index
     for i = 1, #self.bookmarks do
         -- bookmarks are internally sorted by descending page numbers
         local v = self.bookmarks[is_reverse_sorting and i or num - i]
