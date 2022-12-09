@@ -196,7 +196,7 @@ function MenuItem:init()
         text = mandatory,
         face = self.info_face,
         bold = self.bold,
-        fgcolor = self.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+        fgcolor = self.mandatory_dim and Blitbuffer.COLOR_DARK_GRAY or nil,
     }
     local mandatory_w = mandatory_widget:getWidth()
 
@@ -1060,6 +1060,7 @@ function Menu:updateItems(select_number)
                 bidi_wrap_func = self.item_table[i].bidi_wrap_func,
                 mandatory = self.item_table[i].mandatory,
                 mandatory_func = self.item_table[i].mandatory_func,
+                mandatory_dim = self.item_table[i].mandatory_dim or self.item_table[i].dim,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 dim = self.item_table[i].dim,
                 font = "smallinfofont",

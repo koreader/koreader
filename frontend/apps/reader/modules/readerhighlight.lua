@@ -1708,16 +1708,11 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
             end
         end
     end
-    if bookmark_item and not idx then
-        logger.warn("unhighlight: bookmark_item not found among highlights", bookmark_item)
-        -- Remove it from bookmarks anyway, so we're not stuck with an
-        -- unremovable bookmark
-        self.ui.bookmark:removeBookmark(bookmark_item)
-        return
+    if idx then
+        logger.dbg("found highlight to delete on page", page, idx)
+        self:deleteHighlight(page, idx, bookmark_item)
+        return true
     end
-    logger.dbg("found highlight to delete on page", page, idx)
-    self:deleteHighlight(page, idx, bookmark_item)
-    return true
 end
 
 function ReaderHighlight:getHighlightBookmarkItem()
@@ -1887,7 +1882,7 @@ end
 
 function ReaderHighlight:editHighlight(page, i, is_new_note, text)
     local item = self.view.highlight.saved[page][i]
-    self.ui.bookmark:renameBookmark({
+    self.ui.bookmark:setBookmarkNote({
         page = self.ui.document.info.has_pages and page or item.pos0,
         datetime = item.datetime,
     }, true, is_new_note, text)
