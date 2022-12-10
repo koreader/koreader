@@ -488,6 +488,7 @@ local KoboCadmus = Kobo:extend{
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
+    automagic_sysfs = true,
 }
 
 -- Kobo Libra 2:
@@ -675,6 +676,12 @@ function Kobo:init()
             -- Libra 2 w/ a BD71828 PMIC
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
         end
+                
+        if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
+            -- Fix for Kobo Sage, presumably w/ a BD71828 PMIC?
+            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
+        end
+        
     end
 
     -- NOTE: i.MX5 devices have a wonky RTC that doesn't like alarms set further away that UINT16_MAX seconds from now...
