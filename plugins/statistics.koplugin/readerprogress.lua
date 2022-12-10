@@ -30,16 +30,6 @@ local ReaderProgress = InputContainer:extend{
     padding = Size.padding.fullscreen,
 }
 
-local dayOfWeekTranslation = {
-    ["Monday"] = _("Monday"),
-    ["Tuesday"] = _("Tuesday"),
-    ["Wednesday"] = _("Wednesday"),
-    ["Thursday"] = _("Thursday"),
-    ["Friday"] = _("Friday"),
-    ["Saturday"] = _("Saturday"),
-    ["Sunday"] = _("Sunday"),
-}
-
 function ReaderProgress:init()
     self.current_pages = tostring(self.current_pages)
     self.today_pages = tostring(self.today_pages)
@@ -243,7 +233,7 @@ function ReaderProgress:genWeekStats(stats_day)
         else
             select_day_time = 0
         end
-        date_format_show = dayOfWeekTranslation[os.date("%A", diff_time)] .. os.date(" (%d.%m)", diff_time)
+        date_format_show = datetime.shortDayOfWeekToLongTranslation[os.date("%a", diff_time)] .. os.date(" (%d.%m)", diff_time)
         local total_group = HorizontalGroup:new{
             align = "center",
             padding = Size.padding.small,
