@@ -675,9 +675,7 @@ function Kobo:init()
         if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey-event") then
             -- Libra 2 w/ a BD71828 PMIC
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
-        end
-                
-        if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
+        elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
             -- Fix for Kobo Sage, presumably w/ a BD71828 PMIC?
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
         end
