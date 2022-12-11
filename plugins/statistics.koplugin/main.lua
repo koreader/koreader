@@ -1452,15 +1452,20 @@ function ReaderStatistics:getCurrentStat()
 
     local current_page
     local total_pages
-    local pages_format
+    local page_progress
     if (self.view.document:hasHiddenFlows()) then
+        local flow = self.view.document:getPageFlow(self.view.state.page)
         current_page = self.view.document:getPageNumberInFlow(self.view.state.page)
-        total_pages = self.view.document:getTotalPagesInFlow(self.view.document:getPageFlow(current_page))
-        pages_format = "%d // %d (%d%%)"
+        total_pages = self.view.document:getTotalPagesInFlow(flow)
+        if flow == 0 then
+            page_progress = ("%d // %d (%d%%)"):format(current_page, total_pages, Math.round(100*current_page/total_pages))
+        else
+            page_progress = ("[%d / %d]%d (%d%%)"):format(current_page, total_pages, flow, Math.round(100*current_page/total_pages))
+        end
     else
         current_page = self.view.state.page
         total_pages = self.data.pages
-        pages_format = "%d / %d (%d%%)"
+        page_progress = ("%d / %d (%d%%)"):format(current_page, total_pages, Math.round(100*current_page/total_pages))
     end
     local time_to_read = current_page and ((total_pages - current_page) * self.avg_time) or 0
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
@@ -1517,7 +1522,7 @@ function ReaderStatistics:getCurrentStat()
 
         -- Book progression
         { _("Book start date"), datetime.secondsToDate(tonumber(first_open), true)},
-        { _("Current page/Total pages"), string.format(pages_format, current_page, total_pages, Math.round(100*current_page/total_pages)) },
+        { _("Current page/Total pages"), page_progress },
         -- estimation, from current page to end of book
         { _("Estimated time left"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true, true) or _("N/A") },
         { _("Estimated finish date"), estimates_valid and T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) or _("N/A"), separator = true },
