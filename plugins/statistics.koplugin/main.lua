@@ -1456,11 +1456,11 @@ function ReaderStatistics:getCurrentStat()
     if (self.view.document:hasHiddenFlows()) then
         current_page = self.view.document:getPageNumberInFlow(self.view.state.page)
         total_pages = self.view.document:getTotalPagesInFlow(self.view.document:getPageFlow(current_page))
-        pages_format = "%d//%d (%d%%)"
+        pages_format = "%d // %d (%d%%)"
     else
         current_page = self.view.state.page
         total_pages = self.data.pages
-        pages_format = "%d/%d (%d%%)"
+        pages_format = "%d / %d (%d%%)"
     end
     local time_to_read = current_page and ((total_pages - current_page) * self.avg_time) or 0
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
@@ -1629,7 +1629,7 @@ function ReaderStatistics:getBookStat(id_book)
 
         -- Book progression
         { _("Book start date"), datetime.secondsToDate(tonumber(first_open), true) },
-        { _("Last read page/Total pages"), string.format("%d/%d (%d%%)", last_page, pages, Math.round(100*last_page/pages)) },
+        { _("Last read page/Total pages"), string.format("%d / %d (%d%%)", last_page, pages, Math.round(100*last_page/pages)) },
         { _("Last read date"), datetime.secondsToDate(tonumber(last_open), true), separator = true },
 
         -- Highlights
