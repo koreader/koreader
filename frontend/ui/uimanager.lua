@@ -825,6 +825,23 @@ function UIManager:unsetRunForeverMode()
     self._gated_quit = self.quit
 end
 
+-- Ignore an empty window stack *once*; for startup w/ a missing last_file shenanigans...
+function UIManager:runOnce()
+    -- We don't actually want to call self.quit, and we need to deal with a bit of trickery in there anyway...
+    self._gated_quit = function()
+        -- We need this set to break the loop in UIManager:run()
+        self._exit_code = 0
+        -- And this is to break the loop in UIManager:handleInput()
+        return true
+    end
+    -- The idea being that we want to *return* from this run call, but *without* quitting.
+    -- NOTE: This implies that calling run multiple times across a single session *needs* to be safe.
+    self:run()
+    -- Restore standard behavior
+    self:unsetRunForeverMode()
+    self._exit_code = nil
+end
+
 --[[--
 Transmits an @{ui.event.Event|Event} to active widgets, top to bottom.
 Stops at the first handler that returns `true`.
