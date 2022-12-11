@@ -101,7 +101,7 @@ function ReaderProgress:getStatusContent(width)
         self:genSummaryWeek(width),
         self:genSingleHeader(_("Week progress")),
         self:genWeekStats(7),
-        self:genDoubleHeader(_("Current"), _("Today") ),
+        self:genDoubleHeader(_("Session"), _("Today") ),
         self:genSummaryDay(width),
     }
 end
@@ -233,7 +233,7 @@ function ReaderProgress:genWeekStats(stats_day)
         else
             select_day_time = 0
         end
-        date_format_show = datetime.shortDayOfWeekToLongTranslation[os.date("%a", diff_time)] .. os.date(" (%d.%m)", diff_time)
+        date_format_show = datetime.shortDayOfWeekToLongTranslation[os.date("%a", diff_time)] .. os.date(" (%Y-%m-%d)", diff_time)
         local total_group = HorizontalGroup:new{
             align = "center",
             padding = Size.padding.small,
@@ -241,7 +241,7 @@ function ReaderProgress:genWeekStats(stats_day)
                 dimen = Geom:new{ w = self.screen_width , h = height * (1/3) },
                 TextWidget:new{
                     padding = Size.padding.small,
-                    text = date_format_show .. " - " .. datetime.secondsToClockDuration(user_duration_format, select_day_time, true),
+                    text = date_format_show .. " — " .. datetime.secondsToClockDuration(user_duration_format, select_day_time, true, true),
                     face = Font:getFace("smallffont"),
                 },
             },
@@ -335,7 +335,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = datetime.secondsToClockDuration(user_duration_format, self.current_duration, true),
+                text = datetime.secondsToClockDuration(user_duration_format, self.current_duration, true, true, true),
                 face = self.medium_font_face,
             },
         },
@@ -349,7 +349,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = datetime.secondsToClockDuration(user_duration_format, self.today_duration, true),
+                text = datetime.secondsToClockDuration(user_duration_format, self.today_duration, true, true),
                 face = self.medium_font_face,
             },
         },
@@ -400,7 +400,7 @@ function ReaderProgress:genSummaryWeek(width)
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextBoxWidget:new{
                 alignment = "center",
-                text = _("Average\npages"),
+                text = _("Average\npages/day"),
                 face = self.small_font_face,
                 width = tile_width * 0.95,
             }
@@ -409,7 +409,7 @@ function ReaderProgress:genSummaryWeek(width)
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextBoxWidget:new{
                 alignment = "center",
-                text = _("Average\ntime"),
+                text = _("Average\ntime/day"),
                 face = self.small_font_face,
                 width = tile_width * 0.95,
             }
@@ -437,7 +437,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time), true),
+                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time), true, true, true),
                 face = self.medium_font_face,
             },
         },
@@ -451,7 +451,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time) * (1/7), true),
+                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time) * (1/7), true, true),
                 face = self.medium_font_face,
             }
         }
