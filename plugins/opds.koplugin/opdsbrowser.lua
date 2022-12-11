@@ -595,6 +595,7 @@ function OPDSBrowser:showDownloads(item)
         if acquisition.count then
             stream_buttons = {
                 {
+                    -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
                     text = _("Page stream") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
                         OPDSPSE:streamPages(acquisition.href, acquisition.count, false, self.root_catalog_username, self.root_catalog_password)
@@ -602,6 +603,7 @@ function OPDSBrowser:showDownloads(item)
                     end,
                 },
                 {
+                    -- @translators "Stream" here refers to being able to read documents from an OPDS server without downloading them completely, on a page by page basis.
                     text = _("Stream from page") .. "\u{2B0C}", -- append LEFT RIGHT BLACK ARROW
                     callback = function()
                         OPDSPSE:streamPages(acquisition.href, acquisition.count, true, self.root_catalog_username, self.root_catalog_password)
