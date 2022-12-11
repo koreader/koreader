@@ -1774,13 +1774,13 @@ function ReaderHighlight:writePdfAnnotation(action, page, item, content)
         return
     end
     logger.dbg("write to pdf document", action, item)
-    local function doAction(_action, _page, _item, _content)
-        if _action == "save" then
-            return self.ui.document:saveHighlight(_page, _item)
-        elseif _action == "delete" then
-            return self.ui.document:deleteHighlight(_page, _item)
-        elseif _action == "content" then
-            return self.ui.document:updateHighlightContents(_page, _item, _content)
+    local function doAction(action_, page_, item_, content_)
+        if action_ == "save" then
+            return self.ui.document:saveHighlight(page_, item_)
+        elseif action_ == "delete" then
+            return self.ui.document:deleteHighlight(page_, item_)
+        elseif action_ == "content" then
+            return self.ui.document:updateHighlightContents(page_, item_, content_)
         end
     end
     local can_write
