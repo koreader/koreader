@@ -1481,7 +1481,7 @@ function ReaderStatistics:getCurrentStat()
         { _("Pages read this session"), tonumber(current_pages), separator = true },
 
         -- Today
-        { _("Time spent reading today ▶"), datetime.secondsToClockDuration(user_duration_format, today_duration, false, true, true),
+        { _("Time spent reading today ▸"), datetime.secondsToClockDuration(user_duration_format, today_duration, false, true, true),
             callback = function()
                 local now_t = os.date("*t")
                 local seconds_from_midnight = now_t.hour * 3600 + now_t.min * 60 + now_t.sec
@@ -1501,7 +1501,7 @@ function ReaderStatistics:getCurrentStat()
         { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, self.avg_time, false, true, true), separator = true },
 
         -- Day-focused book stats
-        { _("Days reading this book ▶"), tonumber(total_days),
+        { _("Days reading this book ▸"), tonumber(total_days),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
@@ -1613,7 +1613,7 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, avg_time_per_page, false, true, true), separator = true },
 
         -- Day-focused book stats
-        { _("Days reading this book ▶"), tonumber(total_days),
+        { _("Days reading this book ▸"), tonumber(total_days),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
