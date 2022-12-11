@@ -113,6 +113,18 @@ function Wallabag:init()
         if res then self.is_dateparser_available = true end
         self.is_dateparser_checked = true
     end
+
+    if self.ui and self.ui.link then
+        self.ui.link:addToExternalLinkDialog("25_wallabag", function(this, link_url)
+            return {
+                text = _("Add to Wallabag"),
+                callback = function()
+                    UIManager:close(this.external_link_dialog)
+                    this.ui:handleEvent(Event:new("AddWallabagArticle", link_url))
+                end,
+            }
+        end)
+    end
 end
 
 function Wallabag:addToMainMenu(menu_items)
