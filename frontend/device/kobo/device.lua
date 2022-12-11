@@ -488,6 +488,7 @@ local KoboCadmus = Kobo:extend{
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
+    automagic_sysfs = true,
 }
 
 -- Kobo Libra 2:
@@ -674,6 +675,9 @@ function Kobo:init()
         if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey-event") then
             -- Libra 2 w/ a BD71828 PMIC
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
+        elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
+            -- Fix for Kobo Sage, presumably w/ a BD71828 PMIC?
+            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
         end
     end
 
