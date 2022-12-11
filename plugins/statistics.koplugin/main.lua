@@ -2563,9 +2563,6 @@ function ReaderStatistics:onShowCalendarView()
     local CalendarView = require("calendarview")
     UIManager:show(CalendarView:new{
         reader_statistics = self,
-        monthTranslation = datetime.longMonthTranslation,
-        shortDayOfWeekTranslation = datetime.shortDayOfWeekTranslation,
-        longDayOfWeekTranslation = datetime.shortDayOfWeekToLongTranslation,
         start_day_of_week = self.settings.calendar_start_day_of_week,
         nb_book_spans = self.settings.calendar_nb_book_spans,
         show_hourly_histogram = self.settings.calendar_show_histogram,
@@ -2580,7 +2577,7 @@ function ReaderStatistics:onShowCalendarDayView()
     local title_callback = function(this)
         local day = os.date("%Y-%m-%d", this.day_ts + 10800) -- use 03:00 to determine date (summer time change)
         local date = os.date("*t", this.day_ts + 10800)
-        return string.format("%s (%s)", day, datetime.longDayOfWeekTranslation[CalendarView.weekdays[date.wday]])
+        return string.format("%s (%s)", day, datetime.shortDayOfWeekToLongTranslation[CalendarView.weekdays[date.wday]])
     end
     CalendarView:showCalendarDayView(self, title_callback)
 end
