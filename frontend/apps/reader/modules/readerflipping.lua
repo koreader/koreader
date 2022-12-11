@@ -16,8 +16,9 @@ function ReaderFlipping:init()
         height = icon_size,
     }
     -- Re-use this widget to show an indicator when we are in select mode
+    icon_size = Screen:scaleBySize(36)
     self.select_mode_widget = IconWidget:new{
-        icon = "format-quote-close",
+        icon = "texture-box",
         width = icon_size,
         height = icon_size,
         alpha = true,
