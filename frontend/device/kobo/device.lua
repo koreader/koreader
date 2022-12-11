@@ -679,7 +679,6 @@ function Kobo:init()
             -- Fix for Kobo Sage, presumably w/ a BD71828 PMIC?
             self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
         end
-        
     end
 
     -- NOTE: i.MX5 devices have a wonky RTC that doesn't like alarms set further away that UINT16_MAX seconds from now...
