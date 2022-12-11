@@ -21,6 +21,47 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = ffiutil.template
 
+local function is_wiki_page(link_url)
+    if not link_url then
+        return false
+    end
+    local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
+    if wiki_lang and wiki_page then
+        -- Ask for user confirmation before launching lookup (on a
+        -- wikipedia page saved as epub, full of wikipedia links, it's
+        -- too easy to click on links when wanting to change page...)
+        -- But first check if this wikipedia article has been saved as EPUB
+        local epub_filename = wiki_page .. "."..string.upper(wiki_lang)..".epub"
+        local epub_fullpath
+        -- either in current book directory
+        local last_file = G_reader_settings:readSetting("lastfile")
+        if last_file then
+            local current_book_dir = last_file:match("(.*)/")
+            local safe_filename = util.getSafeFilename(epub_filename, current_book_dir):gsub("_", " ")
+            local epub_path = current_book_dir .. "/" .. safe_filename
+            if util.pathExists(epub_path) then
+                epub_fullpath = epub_path
+            end
+        end
+        -- or in wikipedia save directory
+        if not epub_fullpath then
+            local dir = G_reader_settings:readSetting("wikipedia_save_dir")
+            if not dir then dir = G_reader_settings:readSetting("home_dir") end
+            if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+            if dir then
+                local safe_filename = util.getSafeFilename(epub_filename, dir):gsub("_", " ")
+                local epub_path = dir .. "/" .. safe_filename
+                if util.pathExists(epub_path) then
+                    epub_fullpath = epub_path
+                end
+            end
+        end
+        return wiki_lang, wiki_page, epub_fullpath
+    else
+        return false
+    end
+end
+
 local ReaderLink = InputContainer:extend{
     location_stack = nil, -- table, per-instance
     _external_link_buttons = nil,
@@ -1417,47 +1458,6 @@ function ReaderLink:getButtonsForExternalLinkDialog(link_url)
     end
 
     return buttons, title
-end
-
-function is_wiki_page(link_url)
-    if not link_url then
-        return false
-    end
-    local wiki_lang, wiki_page = link_url:match([[https?://([^%.]+).wikipedia.org/wiki/([^/]+)]])
-    if wiki_lang and wiki_page then
-        -- Ask for user confirmation before launching lookup (on a
-        -- wikipedia page saved as epub, full of wikipedia links, it's
-        -- too easy to click on links when wanting to change page...)
-        -- But first check if this wikipedia article has been saved as EPUB
-        local epub_filename = wiki_page .. "."..string.upper(wiki_lang)..".epub"
-        local epub_fullpath
-        -- either in current book directory
-        local last_file = G_reader_settings:readSetting("lastfile")
-        if last_file then
-            local current_book_dir = last_file:match("(.*)/")
-            local safe_filename = util.getSafeFilename(epub_filename, current_book_dir):gsub("_", " ")
-            local epub_path = current_book_dir .. "/" .. safe_filename
-            if util.pathExists(epub_path) then
-                epub_fullpath = epub_path
-            end
-        end
-        -- or in wikipedia save directory
-        if not epub_fullpath then
-            local dir = G_reader_settings:readSetting("wikipedia_save_dir")
-            if not dir then dir = G_reader_settings:readSetting("home_dir") end
-            if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
-            if dir then
-                local safe_filename = util.getSafeFilename(epub_filename, dir):gsub("_", " ")
-                local epub_path = dir .. "/" .. safe_filename
-                if util.pathExists(epub_path) then
-                    epub_fullpath = epub_path
-                end
-            end
-        end
-        return wiki_lang, wiki_page, epub_fullpath
-    else
-        return false
-    end
 end
 
 return ReaderLink
