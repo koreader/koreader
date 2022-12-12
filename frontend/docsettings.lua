@@ -24,12 +24,18 @@ local function buildCandidates(list)
         -- Ignore missing files.
         if file_path ~= "" and lfs.attributes(file_path, "mode") == "file" then
             local mtime = lfs.attributes(file_path, "modification")
-            -- NOTE: Extra trickery: if we're inserting a "backup" file, and its main buddy exists,
-            --       make sure it will *never* sort ahead of it by negating its mtime.
+            -- NOTE: Extra trickery: if we're inserting a "backup" file, and its primary buddy exists,
+            --       make sure it will *never* sort ahead of it by using the same mtime.
             --       This aims to avoid weird UTC/localtime issues when USBMS is involved,
             --       c.f., https://github.com/koreader/koreader/issues/9227#issuecomment-1345263324
             if file_path:sub(-4) == ".old" and previous_entry_exists then
-                mtime = -mtime
+                local primary_mtime = candidates[#candidates].mtime
+                -- Only proceed with the switcheroo when necessary, and warn about it.
+                if primary_mtime < mtime then
+                    logger.warn("DocSettings: Backup", file_path, "is newer (", mtime, ") than its primary (", primary_mtime, "), fudging timestamps!")
+                    -- Use the most recent timestamp for both (i.e., the backup's).
+                    candidates[#candidates].mtime = mtime
+                end
             end
             table.insert(candidates, {
                     path = file_path,
@@ -44,7 +50,7 @@ local function buildCandidates(list)
     end
 
     -- MRU sort, tie breaker is insertion order (higher priority locations were inserted first).
-    -- Iff a main/backup pair of file both exist, of the two of them, the main one *always* has priority,
+    -- Iff a primary/backup pair of file both exist, of the two of them, the primary one *always* has priority,
     -- regardless of mtime (c.f., NOTE above).
     table.sort(candidates, function(l, r)
                                if l.mtime == r.mtime then
