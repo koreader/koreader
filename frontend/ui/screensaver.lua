@@ -170,8 +170,18 @@ function Screensaver:expandSpecial(message, fallback)
     if ui and ui.document then
         -- If we have a ReaderUI instance, use it.
         local doc = ui.document
-        currentpage = ui.view.state.page or currentpage
-        totalpages = doc:getPageCount() or totalpages
+        if (doc:hasHiddenFlows()) then
+            local currentpageAll = ui.view.state.page or currentpage
+            currentpage = doc:getPageNumberInFlow(ui.view.state.page or currentpageAll)
+            totalpages = doc:getTotalPagesInFlow(doc:getPageFlow(currentpageAll))
+            time_left_chapter = self:_calcAverageTimeForPages(ui.toc:getChapterPagesLeft(currentpageAll) or (totalpages - currentpage))
+            time_left_document = self:_calcAverageTimeForPages(totalpages - currentpage)
+        else
+            currentpage = ui.view.state.page or currentpage
+            totalpages = doc:getPageCount() or totalpages
+            time_left_chapter = self:_calcAverageTimeForPages(ui.toc:getChapterPagesLeft(currentpage) or doc:getTotalPagesLeft(currentpage))
+            time_left_document = self:_calcAverageTimeForPages(doc:getTotalPagesLeft(currentpage))
+        end
         percent = Math.round((currentpage * 100) / totalpages)
         local props = doc:getProps()
         if props then
@@ -179,8 +189,6 @@ function Screensaver:expandSpecial(message, fallback)
             authors = props.authors and props.authors ~= "" and props.authors or authors
             series = props.series and props.series ~= "" and props.series or series
         end
-        time_left_chapter = self:_calcAverageTimeForPages(ui.toc:getChapterPagesLeft(currentpage) or doc:getTotalPagesLeft(currentpage))
-        time_left_document = self:_calcAverageTimeForPages(doc:getTotalPagesLeft(currentpage))
     elseif DocSettings:hasSidecarFile(lastfile) then
         -- If there's no ReaderUI instance, but the file has sidecar data, use that
         local docinfo = DocSettings:open(lastfile)
