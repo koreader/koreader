@@ -1467,6 +1467,7 @@ function ReaderStatistics:getCurrentStat()
         total_pages = self.data.pages
         page_progress = ("%d / %d (%d%%)"):format(current_page, total_pages, Math.round(100*current_page/total_pages))
     end
+    local first_open_days_ago = math.floor(tonumber(now_ts - first_open)/86400)
     local time_to_read = current_page and ((total_pages - current_page) * self.avg_time) or 0
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
     local estimate_end_of_read_date = datetime.secondsToDate(tonumber(now_ts + estimate_days_to_read * 86400), true)
@@ -1523,8 +1524,8 @@ function ReaderStatistics:getCurrentStat()
         { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true, true), separator = true },
 
         -- Book progression
-        { _("Book start date"), datetime.secondsToDate(tonumber(first_open), true)},
-        { _("Estimated finish date"), estimates_valid and T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) or _("N/A") },
+        { _("Book start date"), T(N_("(1 day ago) %1", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
+        { _("Estimated finish date"), estimates_valid and T(N_("(in 1 day) %1", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A") },
         -- estimation, from current page to end of book
         { _("Estimated time left"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true, true) or _("N/A") },
         { _("Current page/Total pages"), page_progress, separator = true },
@@ -1581,6 +1582,7 @@ function ReaderStatistics:getBookStat(id_book)
     conn:close()
 
     local book_read_pages, book_read_time = self:getPageTimeTotalStats(id_book)
+    local now_ts = os.time()
 
     if total_time_book == nil then
         total_time_book = 0
@@ -1589,7 +1591,7 @@ function ReaderStatistics:getBookStat(id_book)
         total_read_pages = 0
     end
     if first_open == nil then
-        first_open = os.time()
+        first_open = now_ts
     end
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
@@ -1601,6 +1603,8 @@ function ReaderStatistics:getBookStat(id_book)
     if pages == nil or pages == 0 then
         pages = 1
     end
+    local first_open_days_ago = math.floor(tonumber(now_ts - first_open)/86400)
+    local last_open_days_ago = math.floor(tonumber(now_ts - last_open)/86400)
     local avg_time_per_page = book_read_time / book_read_pages
     local user_duration_format = G_reader_settings:readSetting("duration_format")
     return {
@@ -1635,8 +1639,8 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true, true), separator = true },
 
         -- Book progression
-        { _("Book start date"), datetime.secondsToDate(tonumber(first_open), true) },
-        { _("Last read date"), datetime.secondsToDate(tonumber(last_open), true) },
+        { _("Book start date"), T(N_("(1 day ago) %1", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
+        { _("Last read date"), T(N_("(1 day ago) %1", "(%1 days ago) %2", last_open_days_ago), last_open_days_ago, datetime.secondsToDate(tonumber(last_open), true)) },
         { _("Last read page/Total pages"), string.format("%d / %d (%d%%)", last_page, pages, Math.round(100*last_page/pages)), separator = true },
 
         -- Highlights
