@@ -1524,8 +1524,8 @@ function ReaderStatistics:getCurrentStat()
         { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true, true), separator = true },
 
         -- Book progression
-        { _("Book start date"), T(N_("(1 day ago) %1", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
-        { _("Estimated finish date"), estimates_valid and T(N_("(in 1 day) %1", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A") },
+        { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
+        { _("Estimated finish date"), estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A") },
         -- estimation, from current page to end of book
         { _("Estimated time left"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true, true) or _("N/A") },
         { _("Current page/Total pages"), page_progress, separator = true },
@@ -1639,8 +1639,8 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true, true), separator = true },
 
         -- Book progression
-        { _("Book start date"), T(N_("(1 day ago) %1", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
-        { _("Last read date"), T(N_("(1 day ago) %1", "(%1 days ago) %2", last_open_days_ago), last_open_days_ago, datetime.secondsToDate(tonumber(last_open), true)) },
+        { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
+        { _("Last read date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", last_open_days_ago), last_open_days_ago, datetime.secondsToDate(tonumber(last_open), true)) },
         { _("Last read page/Total pages"), string.format("%d / %d (%d%%)", last_page, pages, Math.round(100*last_page/pages)), separator = true },
 
         -- Highlights
