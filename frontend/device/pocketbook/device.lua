@@ -11,10 +11,6 @@ require("ffi/posix_h")
 require("ffi/linux_input_h")
 require("ffi/inkview_h")
 
--- FIXME: Signal ffi/input.lua (brought in by device/input later on) that we want to use poll mode backend.
--- Remove this once backend becomes poll-only.
-_G.POCKETBOOK_FFI = true
-
 local function yes() return true end
 local function no() return false end
 
@@ -234,8 +230,7 @@ function PocketBook:init()
     -- To be able to use input.lua nevertheless,
     -- we make inkview-events look like linux/input events or handle them directly here.
     -- Unhandled events will leave Input:waitEvent() as "GenericInput"
-    -- NOTE: This all happens either in ffi/input_pocketbook.lua (if POCKETBOOK_FFI is true, which it always is),
-    --       or in input/input-pocketbook.h if one were to unset the POCKETBOOK_FFI global.
+    -- NOTE: This all happens in ffi/input_pocketbook.lua
 
     self._model_init()
     if (not self.input.raw_input) or (not pcall(self.input.open, self.input, self.raw_input)) then
