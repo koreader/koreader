@@ -9,6 +9,7 @@ local Event = require("ui/event")
 local Math = require("optmath")
 local NetworkMgr = require("ui/network/manager")
 local PluginShare = require("pluginshare")
+local PowerD = Device:getPowerDevice()
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local datetime = require("datetime")
@@ -20,6 +21,7 @@ local T = require("ffi/util").template
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
 local default_auto_suspend_timeout_seconds = 15*60 -- 15 minutes
 local default_auto_standby_timeout_seconds = 4 -- 4 seconds; should be safe on Kobo/Sage
+local default_kindle_t1_timeout_reset_seconds = 5*60 -- 5 minutes (i.e., half of the standard t1 timeout).
 
 local AutoSuspend = WidgetContainer:extend{
     name = "autosuspend",
@@ -30,6 +32,7 @@ local AutoSuspend = WidgetContainer:extend{
     last_action_time = 0,
     is_standby_scheduled = nil,
     task = nil,
+    kindle_task = nil,
     standby_task = nil,
     leave_standby_task = nil,
     wrapped_leave_standby_task = nil,
@@ -58,11 +61,10 @@ function AutoSuspend:_schedule(shutdown_only)
     local suspend_delay_seconds, shutdown_delay_seconds
     local is_charging
     -- On devices with an auxiliary battery, we only care about the auxiliary battery being charged...
-    local powerd = Device:getPowerDevice()
-    if Device:hasAuxBattery() and powerd:isAuxBatteryConnected() then
-        is_charging = powerd:isAuxCharging() and not powerd:isAuxCharged()
+    if Device:hasAuxBattery() and PowerD:isAuxBatteryConnected() then
+        is_charging = PowerD:isAuxCharging() and not PowerD:isAuxCharged()
     else
-        is_charging = powerd:isCharging() and not powerd:isCharged()
+        is_charging = PowerD:isCharging() and not PowerD:isCharged()
     end
     -- We *do* want to make sure we attempt to go into suspend/shutdown again while *fully* charged, though.
     if PluginShare.pause_auto_suspend or is_charging then
@@ -122,6 +124,51 @@ function AutoSuspend:_restart()
     end
 end
 
+if Device:isKindle() then
+    function AutoSuspend:_schedule_kindle()
+        -- NOTE: Would technically only need to be enabled if autosuspend timeout is larger than t1_timeout (10 minutes)...
+        if not self:_enabled() then
+            logger.dbg("AutoSuspend: t1 timeout timer is disabled")
+            return
+        end
+
+        -- NOTE: Unlike us, powerd doesn't care about charging, so we always use the delta since the last user input.
+        local now = UIManager:getElapsedTimeSinceBoot()
+        local kindle_t1_reset_seconds = default_kindle_t1_timeout_reset_seconds - time.to_number(now - self.last_action_time)
+
+        if self:_enabled() and kindle_t1_reset_seconds <= 0 then
+            logger.dbg("AutoSuspend: will reset the system's t1 timeout, re-scheduling check")
+            PowerD:resetT1Timeout()
+            -- Re-schedule ourselves, as, unlike suspend/shutdown/standby, we don't have a specific Event to handle that for us.
+            UIManager:scheduleIn(default_kindle_t1_timeout_reset_seconds, self.kindle_task)
+        else
+            if self:_enabled() then
+                logger.dbg("AutoSuspend: scheduling next t1 timeout check in", kindle_t1_reset_seconds)
+                UIManager:scheduleIn(kindle_t1_reset_seconds, self.kindle_task)
+            end
+        end
+    end
+
+    function AutoSuspend:_unschedule_kindle()
+        if self.kindle_task then
+            logger.dbg("AutoSuspend: unschedule t1 timeout timer")
+            UIManager:unschedule(self.kindle_task)
+        end
+    end
+
+    function AutoSuspend:_start_kindle()
+        if self:_enabled() then
+            logger.dbg("AutoSuspend: start t1 timeout timer at", time.format_time(self.last_action_time))
+            self:_schedule_kindle()
+        end
+    end
+else
+    -- NOP these on other platforms to avoid a proliferation of Device:isKindle() checks everywhere
+    function AutoSuspend:_schedule_kindle() end
+    function AutoSuspend:_unschedule_kindle() end
+    function AutoSuspend:_start_kindle() end
+end
+
 function AutoSuspend:init()
     logger.dbg("AutoSuspend: init")
     self.autoshutdown_timeout_seconds = G_reader_settings:readSetting("autoshutdown_timeout_seconds",
@@ -146,6 +193,11 @@ function AutoSuspend:init()
     self.task = function(shutdown_only)
         self:_schedule(shutdown_only)
     end
+    if Device:isKindle() then
+        self.kindle_task = function()
+            self:_schedule_kindle()
+        end
+    end
     self.standby_task = function()
         self:_schedule_standby()
     end
@@ -163,6 +215,7 @@ function AutoSuspend:init()
 
     self.last_action_time = UIManager:getElapsedTimeSinceBoot()
     self:_start()
+    self:_start_kindle()
     self:_start_standby()
 
     -- self.ui is nil in the testsuite
@@ -176,6 +229,9 @@ function AutoSuspend:onCloseWidget()
 
     self:_unschedule()
     self.task = nil
+
+    self:_unschedule_kindle()
+    self.kindle_task = nil
 
     self:_unschedule_standby()
     self.standby_task = nil
@@ -289,6 +345,7 @@ function AutoSuspend:onSuspend()
     -- We do not want auto suspend procedure to waste battery during suspend. So let's unschedule it
     -- when suspending and restart it after resume.
     self:_unschedule()
+    self:_unschedule_kindle()
     self:_unschedule_standby()
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:addTask(self.autoshutdown_timeout_seconds, UIManager.poweroff_action)
@@ -324,6 +381,7 @@ function AutoSuspend:onResume()
     self:_unschedule()
     -- We should always follow an InputEvent, so last_action_time is already up to date :).
     self:_start()
+    self:_start_kindle()
     self:_unschedule_standby()
     self:_start_standby()
 end
