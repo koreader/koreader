@@ -1607,6 +1607,7 @@ function ReaderStatistics:getBookStat(id_book)
     local last_open_days_ago = math.floor(tonumber(now_ts - last_open)/86400)
     local avg_time_per_page = book_read_time / book_read_pages
     local user_duration_format = G_reader_settings:readSetting("duration_format")
+    local more_arrow = BD.mirroredUILayout() and "◂" or "▸"
     return {
         -- Book metadata
         { _("Title"), title},
@@ -1619,7 +1620,7 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, avg_time_per_page, false, true), separator = true },
 
         -- Day-focused book stats
-        { _("Days reading this book ▸"), tonumber(total_days),
+        { _("Days reading this book") .. " " .. more_arrow, tonumber(total_days),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
