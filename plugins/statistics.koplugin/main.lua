@@ -1479,11 +1479,11 @@ function ReaderStatistics:getCurrentStat()
         -- Global statistics (may consider other books than current book)
 
         -- Since last resume
-        { _("Time spent reading this session"), datetime.secondsToClockDuration(user_duration_format, current_duration, false, true, true) },
+        { _("Time spent reading this session"), datetime.secondsToClockDuration(user_duration_format, current_duration, false, true) },
         { _("Pages read this session"), tonumber(current_pages), separator = true },
 
         -- Today
-        { _("Time spent reading today") .. " " .. more_arrow, datetime.secondsToClockDuration(user_duration_format, today_duration, false, true, true),
+        { _("Time spent reading today") .. " " .. more_arrow, datetime.secondsToClockDuration(user_duration_format, today_duration, false, true),
             callback = function()
                 local CalendarView = require("calendarview")
                 local title_callback = function(this)
@@ -1497,11 +1497,11 @@ function ReaderStatistics:getCurrentStat()
         -- Current book statistics (includes re-reads)
 
         -- General book stats
-        { _("Total time spent on this book"), datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true, true) },
+        { _("Total time spent on this book"), datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true) },
         -- Capped to self.settings.max_sec per distinct page
-        { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true, true) },
+        { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true) },
         { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/self.data.pages)) },
-        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, self.avg_time, false, true, true), separator = true },
+        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, self.avg_time, false, true), separator = true },
 
         -- Day-focused book stats
         { _("Days reading this book") .. " " .. more_arrow, tonumber(total_days),
@@ -1521,13 +1521,13 @@ function ReaderStatistics:getCurrentStat()
                 UIManager:show(self.kv)
             end,
         },
-        { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true, true), separator = true },
+        { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true), separator = true },
 
         -- Book progression
         { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
         { _("Estimated finish date"), estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A") },
         -- estimation, from current page to end of book
-        { _("Estimated time left"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true, true) or _("N/A") },
+        { _("Estimated time left"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true) or _("N/A") },
         { _("Current page/Total pages"), page_progress, separator = true },
 
         -- Highlights
@@ -1613,10 +1613,10 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Author(s)"), authors, separator = true },
 
         -- General book stats
-        { _("Total time spent on this book"), datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true, true) },
-        { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true, true) },
+        { _("Total time spent on this book"), datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true) },
+        { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true) },
         { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/pages)) },
-        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, avg_time_per_page, false, true, true), separator = true },
+        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, avg_time_per_page, false, true), separator = true },
 
         -- Day-focused book stats
         { _("Days reading this book ▸"), tonumber(total_days),
@@ -1636,7 +1636,7 @@ function ReaderStatistics:getBookStat(id_book)
                 UIManager:show(self.kv)
             end,
         },
-        { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true, true), separator = true },
+        { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true), separator = true },
 
         -- Book progression
         { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
@@ -1848,7 +1848,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
             local stop_month = os.time{year=year_end, month=month_end, day=1, hour=0, min=0 }
             table.insert(results, {
                 date_text,
-                T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
+                T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true), tonumber(result_book[2][i])),
                 callback = function()
                     self:callbackMonthly(start_month, stop_month, date_text, book_mode)
                 end,
@@ -1862,7 +1862,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
             begin_week = begin_week - weekday * 86400
             table.insert(results, {
                 date_text,
-                T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
+                T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true), tonumber(result_book[2][i])),
                 callback = function()
                     self:callbackWeekly(begin_week, begin_week + 7 * 86400, date_text, book_mode)
                 end,
@@ -1873,7 +1873,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
                 - 60 * tonumber(string.sub(time_book,3,4)) - tonumber(string.sub(time_book,5,6))
             table.insert(results, {
                 date_text,
-                T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
+                T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true), tonumber(result_book[2][i])),
                 callback = function()
                     self:callbackDaily(begin_day, begin_day + 86400, date_text)
                 end,
@@ -1914,7 +1914,7 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
             day=string.sub(result_book[1][i],9,10), hour=0, min=0, sec=0 }
         table.insert(results, {
             result_book[1][i],
-            T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
+            T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true), tonumber(result_book[2][i])),
             callback = function()
                 local kv = self.kv
                 UIManager:close(kv)
@@ -1958,7 +1958,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
     for i=1, #result_book.title do
         table.insert(results, {
             result_book[1][i],
-            T(_("%1 (%2)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[2][i]), false, true, true), tonumber(result_book[3][i])),
+            T(_("%1 (%2)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[2][i]), false, true), tonumber(result_book[3][i])),
             book_id = tonumber(result_book[4][i]),
             callback = function()
                 local kv = self.kv
@@ -2066,7 +2066,7 @@ function ReaderStatistics:getDatesForBook(id_book)
     for i=1, #result_book.dates do
         table.insert(results, {
             result_book[1][i],
-            T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
+            T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true), tonumber(result_book[2][i])),
             hold_callback = function(kv_page, kv_item)
                 self:resetStatsForBookForPeriod(id_book, result_book[4][i], result_book[5][i], result_book[1][i], function()
                     kv_page:removeKeyValueItem(kv_item) -- Reset, refresh what's displayed
@@ -2165,7 +2165,7 @@ function ReaderStatistics:getTotalStats()
         end
         table.insert(total_stats, {
             book_title,
-            datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true, true),
+            datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
@@ -2187,7 +2187,7 @@ function ReaderStatistics:getTotalStats()
     end
     conn:close()
 
-    return T(_("Total time spent reading: %1"), datetime.secondsToClockDuration(user_duration_format, total_books_time, false, true, true)), total_stats
+    return T(_("Total time spent reading: %1"), datetime.secondsToClockDuration(user_duration_format, total_books_time, false, true)), total_stats
 end
 
 function ReaderStatistics:genResetBookSubItemTable()
@@ -2267,7 +2267,7 @@ function ReaderStatistics:resetPerBook()
         if id_book ~= self.id_curr_book then
             table.insert(total_stats, {
                 book_title,
-                datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true, true),
+                datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true),
                 id_book,
                 callback = function(kv_page, kv_item)
                     UIManager:show(ConfirmBox:new{
