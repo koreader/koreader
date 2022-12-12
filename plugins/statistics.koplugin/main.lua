@@ -1726,7 +1726,7 @@ function ReaderStatistics:callbackMonthly(begin, finish, date_text, book_mode)
     else
         self.kv = KeyValuePage:new{
             title = date_text,
-            value_align = "right",
+            value_overflow_align = "right",
             kv_pairs = self:getDaysFromPeriod(begin, finish),
             callback_return = function()
                 UIManager:show(kv)
@@ -1755,7 +1755,7 @@ function ReaderStatistics:callbackWeekly(begin, finish, date_text, book_mode)
     else
         self.kv = KeyValuePage:new{
             title = date_text,
-            value_align = "right",
+            value_overflow_align = "right",
             kv_pairs = self:getDaysFromPeriod(begin, finish),
             callback_return = function()
                 UIManager:show(kv)
@@ -1920,7 +1920,7 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
                 UIManager:close(kv)
                 self.kv = KeyValuePage:new{
                     title = T(_("Books read %1"), result_book[1][i]),
-                    value_overflow_align = "right",
+                    value_align = "right",
                     kv_pairs = self:getBooksFromPeriod(time_begin, time_begin + 86400),
                     callback_return = function()
                         UIManager:show(kv)
@@ -1958,7 +1958,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
     for i=1, #result_book.title do
         table.insert(results, {
             result_book[1][i],
-            T(_("%1 (%2)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[2][i]), false, true), tonumber(result_book[3][i])),
+            T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[2][i]), false, true), tonumber(result_book[3][i])),
             book_id = tonumber(result_book[4][i]),
             callback = function()
                 local kv = self.kv
