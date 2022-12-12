@@ -1486,7 +1486,7 @@ function ReaderStatistics:getCurrentStat()
                 local now_t = os.date("*t")
                 local seconds_from_midnight = now_t.hour * 3600 + now_t.min * 60 + now_t.sec
                 local today_midnight = now_ts - seconds_from_midnight
-                self:callbackDaily(today_midnight, today_midnight + 86400, os.date("Today (%A, %Y-%m-%d)", now_ts))
+                self:callbackDaily(today_midnight, today_midnight + 86400, T(_("Today (%1)"), datetime.secondsToDate(now_ts, true)))
             end,
         },
         { _("Pages read today"), tonumber(today_pages), separator = true },
