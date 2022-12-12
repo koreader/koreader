@@ -1148,6 +1148,8 @@ function KindleTouch:exit()
         self.framework_lipc_handle:close()
     end
 
+    self.powerd:__gc()
+
     Generic.exit(self)
 
     if self.isSpecialOffers then
