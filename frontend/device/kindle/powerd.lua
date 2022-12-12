@@ -255,7 +255,20 @@ function KindlePowerD:initWakeupMgr()
     self.device.wakeup_mgr = WakeupMgr:new{rtc = require("device/kindle/mockrtc")}
 end
 
---- @fixme: This won't ever fire, as KindlePowerD is already a metatable on a plain table.
+-- Ask powerd to reset the t1 timeout, so that AutoSuspend can do its thing properly
+function KindlePowerD:resetT1Timeout()
+    -- NOTE: powerd will only send a t1TimerReset event every $(kdb get system/daemon/powerd/send_t1_reset_interval) (15s),
+    --       which is just fine, as we should only request it at most every 5 minutes ;).
+    -- NOTE: This will fail if the device is already showing the screensaver.
+    if self.lipc_handle then
+        -- AFAIK, the value is irrelevant
+        self.lipc_handle:set_int_property("com.lab126.powerd", "touchScreenSaverTimeout", 1)
+    else
+        os.execute("lipc-set-prop -i com.lab126.powerd touchScreenSaverTimeout 1")
+    end
+end
+
+--- @fixme: This won't ever fire on its own, as KindlePowerD is already a metatable on a plain table.
 function KindlePowerD:__gc()
     if self.lipc_handle then
         self.lipc_handle:close()
