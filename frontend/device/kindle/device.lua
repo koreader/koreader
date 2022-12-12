@@ -293,6 +293,10 @@ function Kindle:intoScreenSaver()
             elseif os.getenv("CVM_STOPPED") == "yes" then
                 os.execute("killall -CONT cvm")
             end
+
+            -- Don't forget to flag ourselves in ScreenSaver mode like Screensaver:show would,
+            -- so that we do the right thing on resume ;).
+            self.screen_saver_mode = true
         end
     end
     self.powerd:beforeSuspend()
@@ -344,7 +348,9 @@ function Kindle:outofScreenSaver()
             local UIManager = require("ui/uimanager")
             -- NOTE: We redraw after a slightly longer delay to take care of the potentially dynamic ad screen...
             --       This is obviously brittle as all hell. Tested on a slow-ass PW1.
-            UIManager:scheduleIn(1.5, function() UIManager:setDirty("all", "full") end)
+            UIManager:scheduleIn(3, function() UIManager:setDirty("all", "full") end)
+            -- Flip the switch again
+            self.screen_saver_mode = false
         end
     end
     self.powerd:afterResume()
