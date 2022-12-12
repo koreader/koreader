@@ -18,20 +18,34 @@ local HISTORY_DIR = DataStorage:getHistoryDir()
 
 local function buildCandidates(list)
     local candidates = {}
+    local previous_entry_exists = false
 
     for i, file_path in ipairs(list) do
         -- Ignore missing files.
         if file_path ~= "" and lfs.attributes(file_path, "mode") == "file" then
+            local mtime = lfs.attributes(file_path, "modification")
+            -- NOTE: Extra trickery: if we're inserting a "backup" file, and its main buddy exists,
+            --       make sure it will *never* sort ahead of it by negating its mtime.
+            --       This aims to avoid weird UTC/localtime issues when USBMS is involved,
+            --       c.f., https://github.com/koreader/koreader/issues/9227#issuecomment-1345263324
+            if file_path:sub(-4) == ".old" and previous_entry_exists then
+                mtime = -mtime
+            end
             table.insert(candidates, {
                     path = file_path,
-                    mtime = lfs.attributes(file_path, "modification"),
+                    mtime = mtime,
                     prio = i,
                 }
             )
+            previous_entry_exists = true
+        else
+            previous_entry_exists = false
         end
     end
 
     -- MRU sort, tie breaker is insertion order (higher priority locations were inserted first).
+    -- Iff a main/backup pair of file both exist, of the two of them, the main one *always* has priority,
+    -- regardless of mtime (c.f., NOTE above).
     table.sort(candidates, function(l, r)
                                if l.mtime == r.mtime then
                                    return l.prio < r.prio
