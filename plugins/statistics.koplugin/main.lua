@@ -1842,7 +1842,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
             local stop_month = os.time{year=year_end, month=month_end, day=1, hour=0, min=0 }
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true)),
+                T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
                 callback = function()
                     self:callbackMonthly(start_month, stop_month, date_text, book_mode)
                 end,
@@ -1856,7 +1856,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
             begin_week = begin_week - weekday * 86400
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true)),
+                T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
                 callback = function()
                     self:callbackWeekly(begin_week, begin_week + 7 * 86400, date_text, book_mode)
                 end,
@@ -1867,7 +1867,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
                 - 60 * tonumber(string.sub(time_book,3,4)) - tonumber(string.sub(time_book,5,6))
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true)),
+                T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
                 callback = function()
                     self:callbackDaily(begin_day, begin_day + 86400, date_text)
                 end,
@@ -1908,7 +1908,7 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
             day=string.sub(result_book[1][i],9,10), hour=0, min=0, sec=0 }
         table.insert(results, {
             result_book[1][i],
-            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true)),
+            T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
             callback = function()
                 local kv = self.kv
                 UIManager:close(kv)
@@ -2060,7 +2060,7 @@ function ReaderStatistics:getDatesForBook(id_book)
     for i=1, #result_book.dates do
         table.insert(results, {
             result_book[1][i],
-            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true)),
+            T(_("%1 (%2 pages)"), datetime.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false, true, true), tonumber(result_book[2][i])),
             hold_callback = function(kv_page, kv_item)
                 self:resetStatsForBookForPeriod(id_book, result_book[4][i], result_book[5][i], result_book[1][i], function()
                     kv_page:removeKeyValueItem(kv_item) -- Reset, refresh what's displayed
