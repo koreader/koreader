@@ -170,7 +170,7 @@ function Screensaver:expandSpecial(message, fallback)
     if ui and ui.document then
         -- If we have a ReaderUI instance, use it.
         local doc = ui.document
-        if (doc:hasHiddenFlows()) then
+        if doc:hasHiddenFlows() then
             local currentpageAll = ui.view.state.page or currentpage
             currentpage = doc:getPageNumberInFlow(ui.view.state.page or currentpageAll)
             totalpages = doc:getTotalPagesInFlow(doc:getPageFlow(currentpageAll))
