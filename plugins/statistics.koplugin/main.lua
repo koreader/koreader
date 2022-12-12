@@ -1473,6 +1473,7 @@ function ReaderStatistics:getCurrentStat()
     local estimates_valid = time_to_read > 0 -- above values could be 'nan' and 'nil'
 
     local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
+    local more_arrow = BD.mirroredUILayout() and "◂" or "▸"
     return {
         -- Global statistics (may consider other books than current book)
 
@@ -1481,12 +1482,13 @@ function ReaderStatistics:getCurrentStat()
         { _("Pages read this session"), tonumber(current_pages), separator = true },
 
         -- Today
-        { _("Time spent reading today ▸"), datetime.secondsToClockDuration(user_duration_format, today_duration, false, true, true),
+        { _("Time spent reading today") .. " " .. more_arrow, datetime.secondsToClockDuration(user_duration_format, today_duration, false, true, true),
             callback = function()
-                local now_t = os.date("*t")
-                local seconds_from_midnight = now_t.hour * 3600 + now_t.min * 60 + now_t.sec
-                local today_midnight = now_ts - seconds_from_midnight
-                self:callbackDaily(today_midnight, today_midnight + 86400, T(_("Today (%1)"), datetime.secondsToDate(now_ts, true)))
+                local CalendarView = require("calendarview")
+                local title_callback = function(this)
+                    return T(_("Today (%1)"), datetime.secondsToDate(now_ts, true))
+                end
+                CalendarView:showCalendarDayView(self, title_callback)
             end,
         },
         { _("Pages read today"), tonumber(today_pages), separator = true },
@@ -1501,7 +1503,7 @@ function ReaderStatistics:getCurrentStat()
         { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, self.avg_time, false, true, true), separator = true },
 
         -- Day-focused book stats
-        { _("Days reading this book ▸"), tonumber(total_days),
+        { _("Days reading this book") .. " " .. more_arrow, tonumber(total_days),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
@@ -1522,10 +1524,10 @@ function ReaderStatistics:getCurrentStat()
 
         -- Book progression
         { _("Book start date"), datetime.secondsToDate(tonumber(first_open), true)},
-        { _("Current page/Total pages"), page_progress },
+        { _("Estimated finish date"), estimates_valid and T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) or _("N/A") },
         -- estimation, from current page to end of book
         { _("Estimated time left"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true, true) or _("N/A") },
-        { _("Estimated finish date"), estimates_valid and T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) or _("N/A"), separator = true },
+        { _("Current page/Total pages"), page_progress, separator = true },
 
         -- Highlights
         { _("Book highlights"), tonumber(highlights) }
@@ -1634,8 +1636,8 @@ function ReaderStatistics:getBookStat(id_book)
 
         -- Book progression
         { _("Book start date"), datetime.secondsToDate(tonumber(first_open), true) },
-        { _("Last read page/Total pages"), string.format("%d / %d (%d%%)", last_page, pages, Math.round(100*last_page/pages)) },
-        { _("Last read date"), datetime.secondsToDate(tonumber(last_open), true), separator = true },
+        { _("Last read date"), datetime.secondsToDate(tonumber(last_open), true) },
+        { _("Last read page/Total pages"), string.format("%d / %d (%d%%)", last_page, pages, Math.round(100*last_page/pages)), separator = true },
 
         -- Highlights
         { _("Book highlights"), highlights }
