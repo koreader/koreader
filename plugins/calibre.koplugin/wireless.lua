@@ -146,12 +146,15 @@ function CalibreWireless:JSONReceiveCallback(host, port)
                     msg = _("Invalid password")
                     this.invalid_password = nil
                     this:disconnect()
+                    logger.warn("invalid password, disconnecting")
                 elseif this.disconnected_by_server then
                     msg = _("Disconnected by calibre")
                     this.disconnected_by_server = nil
+                    logger.info("disconnected by calibre")
                 else
                     msg = T(_("Connected to calibre server at %1"),
                         BD.ltr(T("%1:%2", this.calibre_socket.host, this.calibre_socket.port)))
+                    logger.info("connected successfully")
                 end
                 UIManager:show(InfoMessage:new{
                     text = msg,
@@ -175,7 +178,7 @@ function CalibreWireless:initCalibreMQ(host, port)
         self.calibre_socket:start()
         self.calibre_messagequeue = UIManager:insertZMQ(self.calibre_socket)
     end
-    logger.info("connected to calibre", host, port)
+    logger.info(string.format("connecting to calibre @ %s:%s", host, port))
 end
 
 -- will callback initCalibreMQ if inbox is confirmed to be set
