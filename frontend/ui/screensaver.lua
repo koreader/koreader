@@ -138,12 +138,12 @@ end
 
 function Screensaver:expandSpecial(message, fallback)
     -- Expand special character sequences in given message.
-    -- %p percentage read
-    -- %c current page
-    -- %t total pages
     -- %T document title
     -- %A document authors
     -- %S document series
+    -- %c current page
+    -- %t total pages
+    -- %p percentage read
     -- %h time left in chapter
     -- %H time left in document
     -- %b battery level
@@ -213,12 +213,12 @@ function Screensaver:expandSpecial(message, fallback)
     end
 
     local replace = {
-        ["%c"] = currentpage,
-        ["%t"] = totalpages,
-        ["%p"] = percent,
         ["%T"] = title,
         ["%A"] = authors,
         ["%S"] = series,
+        ["%c"] = currentpage,
+        ["%t"] = totalpages,
+        ["%p"] = percent,
         ["%h"] = time_left_chapter,
         ["%H"] = time_left_document,
         ["%b"] = batt_lvl,
@@ -412,7 +412,7 @@ function Screensaver:setMessage()
     local input_dialog
     input_dialog = InputDialog:new{
         title = "Screensaver message",
-        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series\n  %h time left in chapter\n  %H time left in document\n  %b battery level"),
+        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %T  title\n  %A  author(s)\n  %S  series\n  %c  current page (or current page in flow)\n  %t  total pages (or total pages in flow)\n  %p  percentage read (or percentage read of flow)\n  %h  time left in chapter\n  %H  time left in document (or time left in flow)\n  %b  battery level"),
         input = screensaver_message,
         buttons = {
             {
