@@ -86,37 +86,85 @@ if Device:isEmulator() then
     Screensaver.default_screensaver_message = Screensaver.default_screensaver_message .. "\n" .. _("(Press F2 to resume)")
 end
 
+-- Recursively traverse a directory and its subdirectories for image files
+function Screensaver:_walkDirForImages(dir, relDir, list, count)
+    local ok, iter, dir_obj = pcall(lfs.dir, dir)
+    if ok then
+        for filename in iter, dir_obj do
+            -- Always ignore macOS resource forks, too.
+            if lfs.attributes(dir .. filename, "mode") == "file" and not util.stringStartsWith(filename, "._") then
+                local extension = string.lower(string.match(filename, ".+%.([^.]+)") or "")
+                if self.screensaver_provider[extension] then
+                    count = count + 1
+                    list[count] = relDir .. filename
+                end
+            elseif lfs.attributes(dir .. filename, "mode") == "directory" and filename ~= "." and filename ~= ".." then
+                list, count = self:_walkDirForImages(dir .. filename .. "/", relDir .. filename .. "/", list, count)
+            end
+        end
+    end
+    return list, count
+end
+
 function Screensaver:_getRandomImage(dir)
     if not dir then
         return nil
     end
-
     if string.sub(dir, string.len(dir)) ~= "/" then
-       dir = dir .. "/"
+        dir = dir .. "/"
     end
-    local pics = {}
-    local i = 0
     math.randomseed(os.time())
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if ok then
-        for f in iter, dir_obj do
-            -- Always ignore macOS resource forks, too.
-            if lfs.attributes(dir .. f, "mode") == "file" and not util.stringStartsWith(f, "._") then
-                local extension = string.lower(string.match(f, ".+%.([^.]+)") or "")
-                if self.screensaver_provider[extension] then
-                    i = i + 1
-                    pics[i] = f
-                end
+    local imageCount
+
+    -- Cache structure
+    -- Line 1: timestamp of the last modification time of the screenshots dir when this cache was built
+    -- Line 2: how many images are noted in this cache
+    -- Lines 3+: relative path of a cached image in this directory, followed by a newline and then padded by spaces to 99 chars
+    -- (The newline after the path allows us to stop reading with file:read("*l") when we hit a newline,
+    -- and the padding with spaces allows us to performantly seek block-by-block with file:seek() when looking for the nth path)
+
+    -- Try to use the cache
+    local cache = io.open(dir .. ".screensaverCache")
+    if cache then
+        -- If cache exists
+        if cache:read("*n") == lfs.attributes(dir, "modification") then
+            -- If screenshot directory contents have not been modified since last cache write
+            imageCount = cache:read("*n") -- Read the cached file count
+            if imageCount <= 0 then
+                return nil
             end
+            -- Seek to a random file (max path length 99 bytes b/c Lua can't do >99 in string.format when building cache)
+            cache:seek("cur", (math.random(imageCount) - 1) * 99 + 1)
+            local randomRelPath = cache:read("*l")
+            cache.close()
+            logger.dbg("Random image screensaver: Used cache")
+            return dir .. randomRelPath
         end
-        if i == 0 then
-            return nil
-        end
-    else
-        return nil
     end
 
-    return dir .. pics[math.random(i)]
+    -- If cache outdated or doesn't exist, enumerate files anew and (re-)build cache
+    local imageList = {}
+    imageCount = 0
+    imageList, imageCount = self:_walkDirForImages(dir, "", imageList, imageCount)
+    if imageCount > 0 then
+        cache = io.open(dir .. ".screensaverCache", "w")
+        if cache then
+            cache:flush()
+            -- Calculate mod time after creating cache file with flush so the mtime doesn't change up on us
+            cache:write(lfs.attributes(dir, "modification") .. "\n")
+            cache:write(imageCount .. "\n")
+            for _, imageRelPath in pairs(imageList) do
+                cache:write(string.format("%-99s", imageRelPath .. "\n"))
+            end
+            cache:flush()
+            cache.close()
+        else
+            logger.dbg("Random image screensaver: Could not open cache for write")
+        end
+        logger.dbg("Random image screensaver: Did not use cache")
+        return dir .. imageList[math.random(imageCount)]
+    end
+    return nil
 end
 
 -- This is implemented by the Statistics plugin
