@@ -111,7 +111,7 @@ function CalibreWireless:find_calibre_server()
             if dgram and host then
                 -- replied diagram has greet message from calibre and calibre hostname
                 -- calibre opds port and calibre socket port we will later connect to
-                local _, _, _, replied_port = dgram:match("(.-)%(on (.-)%);(.-),(.-)$")
+                local _, _, replied_port = dgram:match("calibre wireless device client %(on (.-)%);(%d+),(%d+)$")
                 return host, replied_port
             end
         end
