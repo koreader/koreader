@@ -1480,6 +1480,9 @@ function ReaderStatistics:getCurrentStat()
     local avg_page_time_string = datetime.secondsToClockDuration(user_duration_format, self.avg_time, false, true)
     local avg_day_time_string = datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true)
     local time_to_read_string = estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true) or _("N/A")
+
+    -- Use more_arrow to indicate that an option shows another view
+    -- Use "*" to indicate that an option will show an info message
     local more_arrow = BD.mirroredUILayout() and "◂" or "▸"
 
     local estimated_popup = function()
@@ -1517,7 +1520,7 @@ function ReaderStatistics:getCurrentStat()
         -- capped to self.settings.max_sec per distinct page
         { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true) },
         -- estimation, from current page to end of book
-        { _("Estimated time left"), time_to_read_string, callback = estimated_popup, separator = true },
+        { _("Estimated reading time left") .. "*", time_to_read_string, callback = estimated_popup, separator = true },
 
         -- Day-focused book stats
         { _("Days reading this book") .. " " .. more_arrow, tonumber(total_days),
@@ -1541,7 +1544,7 @@ function ReaderStatistics:getCurrentStat()
 
         -- Date-focused book stats
         { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
-        { _("Estimated finish date"), estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), callback = estimated_popup, separator = true },
+        { _("Estimated finish date") .. "*", estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), callback = estimated_popup, separator = true },
 
         -- Page-focused book stats
         { _("Current page/Total pages"), page_progress_string },
