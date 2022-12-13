@@ -250,7 +250,7 @@ function ReaderMenu:setUpdateItemTable()
 
     if Device:supportsScreensaver() then
         local ss_book_settings = {
-            text = _("Exclude this book's cover and text from screensaver"),
+            text = _("Exclude this book's content and cover from screensaver"),
             enabled_func = function()
                 if self.ui and self.ui.document then
                     local screensaverType = G_reader_settings:readSetting("screensaver_type")
