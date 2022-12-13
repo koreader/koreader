@@ -86,35 +86,17 @@ if Device:isEmulator() then
     Screensaver.default_screensaver_message = Screensaver.default_screensaver_message .. "\n" .. _("(Press F2 to resume)")
 end
 
--- Recursively traverse a directory and its subdirectories for image files
-function Screensaver:_walkDirForImages(dir, relDir, list, count)
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if ok then
-        for filename in iter, dir_obj do
-            -- Always ignore macOS resource forks, too.
-            if lfs.attributes(dir .. filename, "mode") == "file" and not util.stringStartsWith(filename, "._") then
-                local extension = string.lower(string.match(filename, ".+%.([^.]+)") or "")
-                if self.screensaver_provider[extension] then
-                    count = count + 1
-                    list[count] = relDir .. filename
-                end
-            elseif lfs.attributes(dir .. filename, "mode") == "directory" and filename ~= "." and filename ~= ".." then
-                list, count = self:_walkDirForImages(dir .. filename .. "/", relDir .. filename .. "/", list, count)
-            end
-        end
-    end
-    return list, count
-end
-
 function Screensaver:_getRandomImage(dir)
     if not dir then
         return nil
     end
+
     if string.sub(dir, string.len(dir)) ~= "/" then
         dir = dir .. "/"
     end
-    math.randomseed(os.time())
     local imageCount
+
+    math.randomseed(os.time())
 
     -- Cache structure
     -- Line 1: timestamp of the last modification time of the screenshots dir when this cache was built
@@ -142,10 +124,22 @@ function Screensaver:_getRandomImage(dir)
         end
     end
 
-    -- If cache outdated or doesn't exist, enumerate files anew and (re-)build cache
+    -- If cache is outdated or doesn't exist, enumerate files anew and (re-)build cache
     local imageList = {}
     imageCount = 0
-    imageList, imageCount = self:_walkDirForImages(dir, "", imageList, imageCount)
+    local ok, iter, dir_obj = pcall(lfs.dir, dir)
+    if ok then
+        for filename in iter, dir_obj do
+            -- Always ignore macOS resource forks, too.
+            if lfs.attributes(dir .. filename, "mode") == "file" and not util.stringStartsWith(filename, "._") then
+                local extension = string.lower(string.match(filename, ".+%.([^.]+)") or "")
+                if self.screensaver_provider[extension] then
+                    imageCount = imageCount + 1
+                    imageList[imageCount] = filename
+                end
+            end
+        end
+    end
     if imageCount > 0 then
         cache = io.open(dir .. ".screensaverCache", "w")
         if cache then
