@@ -558,39 +558,32 @@ function Screensaver:setup(event, event_message)
         end
     end
     if self.screensaver_type == "bookstatus" then
-        if lastfile and lfs.attributes(lastfile, "mode") == "file" then
-            if not ui then
-                self.screensaver_type = "disable"
-                self.show_message = true
-            end
-        else
-            self.screensaver_type = "disable"
-            self.show_message = true
-        end
-    end
-    if self.screensaver_type == "random_image" then
-        local screensaver_dir = G_reader_settings:readSetting(self.prefix .. "screensaver_dir")
-                             or G_reader_settings:readSetting("screensaver_dir")
-        self.image_file = self:_getRandomImage(screensaver_dir)
-        if self.image_file == nil then
-            self.screensaver_type = "disable"
-            self.show_message = true
+        if not ui or not lastfile or lfs.attributes(lastfile, "mode") ~= "file" or (ui.doc_settings and ui.doc_settings:isTrue("exclude_screensaver")) then
+            self.screensaver_type = "random_image"
         end
     end
     if self.screensaver_type == "image_file" then
         self.image_file = G_reader_settings:readSetting(self.prefix .. "screensaver_image")
                        or G_reader_settings:readSetting("screensaver_image")
         if self.image_file == nil or lfs.attributes(self.image_file, "mode") ~= "file" then
-            self.screensaver_type = "disable"
-            self.show_message = true
+            self.screensaver_type = "random_image"
         end
     end
     if self.screensaver_type == "readingprogress" then
         -- This is implemented by the Statistics plugin
         if Screensaver.getReaderProgress == nil then
-            self.screensaver_type = "disable"
-            self.show_message = true
+            self.screensaver_type = "random_image"
         end
+    end
+    if self.screensaver_type == "disable" then
+        if ui and ui.doc_settings and ui.doc_settings:isTrue("exclude_screensaver") then
+            self.screensaver_type = "random_image"
+        end
+    end
+    if self.screensaver_type == "random_image" then
+        local screensaver_dir = G_reader_settings:readSetting(self.prefix .. "screensaver_dir")
+                             or G_reader_settings:readSetting("screensaver_dir")
+        self.image_file = self:_getRandomImage(screensaver_dir) or "resources/koreader.png" -- Fallback image
     end
 
     -- Use the right background setting depending on the effective mode, now that fallbacks have kicked in.
