@@ -17,7 +17,7 @@ function StreamMessageQueue:start()
     self.socket = czmq.zsocket_new(self.context, C.ZMQ_STREAM)
     self.poller = czmq.zpoller_new(self.socket, nil)
     local endpoint = string.format("tcp://%s:%d", self.host, self.port)
-    logger.warn("connect to endpoint", endpoint)
+    logger.info("connecting to endpoint", endpoint)
     local rc = czmq.zsocket_connect(self.socket, endpoint)
     if rc ~= 0 then
         error("cannot connect to " .. endpoint)

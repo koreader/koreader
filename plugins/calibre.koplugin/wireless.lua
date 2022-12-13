@@ -267,7 +267,7 @@ function CalibreWireless:connect()
 end
 
 function CalibreWireless:disconnect()
-    logger.info("disconnect from calibre")
+    logger.info("disconnecting from calibre")
     self.connect_message = false
     if self.calibre_socket then
         self.calibre_socket:stop()
