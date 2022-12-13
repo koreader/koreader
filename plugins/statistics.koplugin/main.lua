@@ -1496,12 +1496,12 @@ function ReaderStatistics:getCurrentStat()
 
         -- Current book statistics (includes re-reads)
 
-        -- General book stats
+        -- Time-focused book stats
         { _("Total time spent on this book"), datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true) },
-        -- Capped to self.settings.max_sec per distinct page
+        -- capped to self.settings.max_sec per distinct page
         { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true) },
-        { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/self.data.pages)) },
-        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, self.avg_time, false, true), separator = true },
+        -- estimation, from current page to end of book
+        { _("Estimated time left"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true) or _("N/A"), separator = true },
 
         -- Day-focused book stats
         { _("Days reading this book") .. " " .. more_arrow, tonumber(total_days),
@@ -1523,12 +1523,14 @@ function ReaderStatistics:getCurrentStat()
         },
         { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true), separator = true },
 
-        -- Book progression
+        -- Date-focused book stats
         { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
-        { _("Estimated finish date"), estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A") },
-        -- estimation, from current page to end of book
-        { _("Estimated time left"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true) or _("N/A") },
-        { _("Current page/Total pages"), page_progress, separator = true },
+        { _("Estimated finish date"), estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), separator = true },
+
+        -- Page-focused book stats
+        { _("Current page/Total pages"), page_progress },
+        { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/self.data.pages)) },
+        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, self.avg_time, false, true), separator = true },
 
         -- Highlights
         { _("Book highlights"), tonumber(highlights) }
@@ -1613,11 +1615,9 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Title"), title},
         { _("Author(s)"), authors, separator = true },
 
-        -- General book stats
+        -- Time-focused book stats
         { _("Total time spent on this book"), datetime.secondsToClockDuration(user_duration_format, total_time_book, false, true) },
-        { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true) },
-        { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/pages)) },
-        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, avg_time_per_page, false, true), separator = true },
+        { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true), separator = true },
 
         -- Day-focused book stats
         { _("Days reading this book") .. " " .. more_arrow, tonumber(total_days),
@@ -1639,10 +1639,14 @@ function ReaderStatistics:getBookStat(id_book)
         },
         { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true), separator = true },
 
-        -- Book progression
+        -- Date-focused book stats
         { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
-        { _("Last read date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", last_open_days_ago), last_open_days_ago, datetime.secondsToDate(tonumber(last_open), true)) },
-        { _("Last read page/Total pages"), string.format("%d / %d (%d%%)", last_page, pages, Math.round(100*last_page/pages)), separator = true },
+        { _("Last read date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", last_open_days_ago), last_open_days_ago, datetime.secondsToDate(tonumber(last_open), true)), separator = true },
+
+        -- Page-focused book stats
+        { _("Last read page/Total pages"), string.format("%d / %d (%d%%)", last_page, pages, Math.round(100*last_page/pages)) },
+        { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/pages)) },
+        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, avg_time_per_page, false, true), separator = true },
 
         -- Highlights
         { _("Book highlights"), highlights }
