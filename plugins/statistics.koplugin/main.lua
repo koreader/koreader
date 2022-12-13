@@ -1452,29 +1452,45 @@ function ReaderStatistics:getCurrentStat()
 
     local current_page
     local total_pages
-    local page_progress
+    local page_progress_string
+    local percent_read
     if (self.view.document:hasHiddenFlows()) then
         local flow = self.view.document:getPageFlow(self.view.state.page)
         current_page = self.view.document:getPageNumberInFlow(self.view.state.page)
         total_pages = self.view.document:getTotalPagesInFlow(flow)
+        percent_read = Math.round(100*current_page/total_pages)
         if flow == 0 then
-            page_progress = ("%d // %d (%d%%)"):format(current_page, total_pages, Math.round(100*current_page/total_pages))
+            page_progress_string = ("%d // %d (%d%%)"):format(current_page, total_pages, percent_read)
         else
-            page_progress = ("[%d / %d]%d (%d%%)"):format(current_page, total_pages, flow, Math.round(100*current_page/total_pages))
+            page_progress_string = ("[%d / %d]%d (%d%%)"):format(current_page, total_pages, flow, percent_read)
         end
     else
         current_page = self.view.state.page
         total_pages = self.data.pages
-        page_progress = ("%d / %d (%d%%)"):format(current_page, total_pages, Math.round(100*current_page/total_pages))
+        percent_read = Math.round(100*current_page/total_pages)
+        page_progress_string = ("%d / %d (%d%%)"):format(current_page, total_pages, percent_read)
     end
+
     local first_open_days_ago = math.floor(tonumber(now_ts - first_open)/86400)
     local time_to_read = current_page and ((total_pages - current_page) * self.avg_time) or 0
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
     local estimate_end_of_read_date = datetime.secondsToDate(tonumber(now_ts + estimate_days_to_read * 86400), true)
     local estimates_valid = time_to_read > 0 -- above values could be 'nan' and 'nil'
-
     local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
+    local avg_page_time_string = datetime.secondsToClockDuration(user_duration_format, self.avg_time, false, true)
+    local avg_day_time_string = datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true)
+    local time_to_read_string = estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true) or _("N/A")
     local more_arrow = BD.mirroredUILayout() and "◂" or "▸"
+
+    local estimated_popup = function()
+        UIManager:show(InfoMessage:new{
+            text = T(N_("%1 page (%2%) of the book left.", "%1 pages (%2%) of the book left.", total_pages - current_page), total_pages - current_page, 100 - percent_read) ..
+                "\n\n" .. T(_("At the current rate of %1 per page, the book will be finished in %2 of reading time."), avg_page_time_string, time_to_read_string) ..
+                "\n\n" .. T(N_("At the current rate of %1 read per day, the book will be finished in %2 typical day of reading.", "At the current rate of %1 read per day, the book will be finished in %2 typical days of reading.", estimate_days_to_read), avg_day_time_string, estimate_days_to_read),
+            icon = "book.opened"
+        })
+    end
+
     return {
         -- Global statistics (may consider other books than current book)
 
@@ -1501,7 +1517,7 @@ function ReaderStatistics:getCurrentStat()
         -- capped to self.settings.max_sec per distinct page
         { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true) },
         -- estimation, from current page to end of book
-        { _("Estimated time left"), estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true) or _("N/A"), separator = true },
+        { _("Estimated time left"), time_to_read_string, callback = estimated_popup, separator = true },
 
         -- Day-focused book stats
         { _("Days reading this book") .. " " .. more_arrow, tonumber(total_days),
@@ -1521,16 +1537,16 @@ function ReaderStatistics:getCurrentStat()
                 UIManager:show(self.kv)
             end,
         },
-        { _("Average time per day"), datetime.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false, true), separator = true },
+        { _("Average time per day"), avg_day_time_string, separator = true },
 
         -- Date-focused book stats
         { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
-        { _("Estimated finish date"), estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), separator = true },
+        { _("Estimated finish date"), estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), callback = estimated_popup, separator = true },
 
         -- Page-focused book stats
-        { _("Current page/Total pages"), page_progress },
+        { _("Current page/Total pages"), page_progress_string },
         { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/self.data.pages)) },
-        { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, self.avg_time, false, true), separator = true },
+        { _("Average time per page"), avg_page_time_string, separator = true },
 
         -- Highlights
         { _("Book highlights"), tonumber(highlights) }
