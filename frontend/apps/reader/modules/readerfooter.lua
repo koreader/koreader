@@ -1413,7 +1413,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     elseif self.settings.item_style == "compact" then
                         prefix_text = _("Compact")
                     end
-                    return T(_("Style: %1"), prefix_text)
+                    return T(_("Item style: %1"), prefix_text)
                 end,
                 sub_item_table = {
                     {
