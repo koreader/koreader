@@ -91,7 +91,7 @@ function ReaderStatus:onEndOfBook()
                     text = _("Open next file"),
                     enabled = collate,
                     callback = function()
-                        self:onOpenNextDocInFolder()
+                        self:onOpenNextDocumentInFolder()
                         UIManager:close(choose_action)
                     end,
                 },
@@ -141,7 +141,7 @@ function ReaderStatus:onEndOfBook()
             UIManager:close(info)
             -- Delay until the next tick, as this will destroy the Document instance, but we may not be the final Event caught by said Document...
             UIManager:nextTick(function()
-                self:onOpenNextDocInFolder()
+                self:onOpenNextDocumentInFolder()
             end)
         else
             UIManager:show(InfoMessage:new{
@@ -183,7 +183,7 @@ function ReaderStatus:openFileBrowser()
     end
 end
 
-function ReaderStatus:onOpenNextDocInFolder()
+function ReaderStatus:onOpenNextDocumentInFolder()
     local FileManager = require("apps/filemanager/filemanager")
     if not FileManager.instance then
         self.ui:showFileManager()
