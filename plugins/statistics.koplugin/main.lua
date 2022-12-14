@@ -1482,14 +1482,14 @@ function ReaderStatistics:getCurrentStat()
     local time_to_read_string = estimates_valid and datetime.secondsToClockDuration(user_duration_format, time_to_read, false, true) or _("N/A")
 
     -- Use more_arrow to indicate that an option shows another view
-    -- Use "*" to indicate that an option will show an info message
+    -- Use " ⓘ" to indicate that an option will show an info message
     local more_arrow = BD.mirroredUILayout() and "◂" or "▸"
 
     local estimated_popup = function()
         UIManager:show(InfoMessage:new{
-            text = T(N_("%1 page (%2%) of the book left.", "%1 pages (%2%) of the book left.", total_pages - current_page), total_pages - current_page, 100 - percent_read) ..
-                "\n\n" .. T(_("At the current rate of %1 per page, the book will be finished in %2 of reading time."), avg_page_time_string, time_to_read_string) ..
-                "\n\n" .. T(N_("At the current rate of %1 read per day, the book will be finished in %2 typical day of reading.", "At the current rate of %1 read per day, the book will be finished in %2 typical days of reading.", estimate_days_to_read), avg_day_time_string, estimate_days_to_read),
+            text = T(N_("There is 1 page (%2%) left to read.", "There are %1 pages (%2%) left to read.", total_pages - current_page), total_pages - current_page, 100 - percent_read) ..
+                "\n\n" .. T(_("At the current rate of %1 per page, that will take %2 of reading time."), avg_page_time_string, time_to_read_string) ..
+                "\n\n" .. T(N_("At the current rate of %1 per day, that will take 1 day.", "At the current rate of %1 per day, that will take %2 days.", estimate_days_to_read), avg_day_time_string, estimate_days_to_read),
             icon = "book.opened"
         })
     end
@@ -1520,7 +1520,7 @@ function ReaderStatistics:getCurrentStat()
         -- capped to self.settings.max_sec per distinct page
         { _("Time spent reading"), datetime.secondsToClockDuration(user_duration_format, book_read_time, false, true) },
         -- estimation, from current page to end of book
-        { _("Estimated reading time left") .. "*", time_to_read_string, callback = estimated_popup, separator = true },
+        { _("Estimated reading time left") .. " ⓘ", time_to_read_string, callback = estimated_popup, separator = true },
 
         -- Day-focused book stats
         { _("Days reading this book") .. " " .. more_arrow, tonumber(total_days),
@@ -1544,7 +1544,7 @@ function ReaderStatistics:getCurrentStat()
 
         -- Date-focused book stats
         { _("Book start date"), T(N_("(1 day ago) %2", "(%1 days ago) %2", first_open_days_ago), first_open_days_ago, datetime.secondsToDate(tonumber(first_open), true)) },
-        { _("Estimated finish date") .. "*", estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), callback = estimated_popup, separator = true },
+        { _("Estimated finish date") .. " ⓘ", estimates_valid and T(N_("(in 1 day) %2", "(in %1 days) %2", estimate_days_to_read), estimate_days_to_read, estimate_end_of_read_date) or _("N/A"), callback = estimated_popup, separator = true },
 
         -- Page-focused book stats
         { _("Current page/Total pages"), page_progress_string },
