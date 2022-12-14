@@ -138,14 +138,14 @@ end
 
 function Screensaver:expandSpecial(message, fallback)
     -- Expand special character sequences in given message.
-    -- %p percentage read
-    -- %c current page
-    -- %t total pages
     -- %T document title
     -- %A document authors
     -- %S document series
+    -- %c current page (if there are hidden flows, current page in current flow)
+    -- %t total pages (if there are hidden flows, total pages in current flow)
+    -- %p percentage read (if there are hidden flows, percentage read of current flow)
     -- %h time left in chapter
-    -- %H time left in document
+    -- %H time left in document (if there are hidden flows, time left in current flow)
     -- %b battery level
 
     if G_reader_settings:hasNot("lastfile") then
@@ -213,12 +213,12 @@ function Screensaver:expandSpecial(message, fallback)
     end
 
     local replace = {
-        ["%c"] = currentpage,
-        ["%t"] = totalpages,
-        ["%p"] = percent,
         ["%T"] = title,
         ["%A"] = authors,
         ["%S"] = series,
+        ["%c"] = currentpage,
+        ["%t"] = totalpages,
+        ["%p"] = percent,
         ["%h"] = time_left_chapter,
         ["%H"] = time_left_document,
         ["%b"] = batt_lvl,
@@ -412,7 +412,17 @@ function Screensaver:setMessage()
     local input_dialog
     input_dialog = InputDialog:new{
         title = "Screensaver message",
-        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series\n  %h time left in chapter\n  %H time left in document\n  %b battery level"),
+        description = _([[
+Enter the message to be displayed by the screensaver. The following escape sequences can be used:
+  %T title
+  %A author(s)
+  %S series
+  %c current page number
+  %t total page number
+  %p percentage read
+  %h time left in chapter
+  %H time left in document
+  %b battery level]]),
         input = screensaver_message,
         buttons = {
             {
