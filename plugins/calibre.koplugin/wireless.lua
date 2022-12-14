@@ -254,9 +254,12 @@ function CalibreWireless:connect()
     end
 
     if not ok then
-        logger.warn(string.format("Cannot connect to %s calibre server at %s:%s (%s)", address_type, host or "????", port or "??", err or "N/A"))
+        host = host or "????"
+        port = port or "??"
+        logger.warn(string.format("Cannot connect to %s calibre server at %s:%s (%s)", address_type, host, port, err or "N/A"))
         UIManager:show(InfoMessage:new{
-            text = _("Cannot connect to calibre server."),
+            text = T(_("Cannot connect to calibre server at %1"),
+                        BD.ltr(T("%1:%2", host, port)))
         })
     else
         local inbox_dir = G_reader_settings:readSetting("inbox_dir")
