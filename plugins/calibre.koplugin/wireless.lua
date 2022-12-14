@@ -240,7 +240,7 @@ function CalibreWireless:connect()
             address_type = "discovered"
         else
             ok = false
-            err = "Couldn't discover a calibre instance on the local network"
+            err = _("Couldn't discover a calibre instance on the local network")
             address_type = "unavailable"
         end
     else
@@ -256,10 +256,11 @@ function CalibreWireless:connect()
     if not ok then
         host = host or "????"
         port = port or "??"
-        logger.warn(string.format("Cannot connect to %s calibre server at %s:%s (%s)", address_type, host, port, err or "N/A"))
+        err = err or _("N/A")
+        logger.warn(string.format("Cannot connect to %s calibre server at %s:%s (%s)", address_type, host, port, err))
         UIManager:show(InfoMessage:new{
-            text = T(_("Cannot connect to calibre server at %1"),
-                        BD.ltr(T("%1:%2", host, port)))
+            text = T(_("Cannot connect to calibre server at %1 (%2)"),
+                        BD.ltr(T("%1:%2", host, port)), err)
         })
     else
         local inbox_dir = G_reader_settings:readSetting("inbox_dir")
