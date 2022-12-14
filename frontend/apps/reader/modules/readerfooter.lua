@@ -1408,11 +1408,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text_func = function()
                     local prefix_text = ""
                     if self.settings.item_prefix == "icons" then
-                        prefix_text = C_("Status bar", "Icon")
+                        prefix_text = C_("Status bar", "Icons")
                     elseif self.settings.item_prefix == "compact_items" then
                         prefix_text = C_("Status bar", "Compact")
                     elseif self.settings.item_prefix == "letters" then
-                        prefix_text = C_("Status bar", "Letter")
+                        prefix_text = C_("Status bar", "Letters")
                     end
                     return T(_("Item style: %1"), prefix_text)
                 end,
@@ -1423,7 +1423,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             for _, letter in pairs(symbol_prefix.icons) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(C_("Status bar", "Icon (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "Icons (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "icons"
@@ -1439,7 +1439,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             for _, letter in pairs(symbol_prefix.letters) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(C_("Status bar", "Letter (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "Letters (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "letters"
