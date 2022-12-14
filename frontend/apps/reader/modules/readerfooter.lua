@@ -341,8 +341,7 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].chapter_time_to_read
         local left = footer.ui.toc:getChapterPagesLeft(footer.pageno) or footer.ui.document:getTotalPagesLeft(footer.pageno)
-        return footer:getDataFromStatistics(
-            prefix .. " ", left)
+        return footer:getDataFromStatistics(prefix .. " ", left)
     end,
     mem_usage = function(footer)
         local symbol_type = footer.settings.item_prefix
@@ -1408,13 +1407,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text_func = function()
                     local prefix_text = ""
                     if self.settings.item_prefix == "icons" then
-                        prefix_text = _("Icons")
-                    elseif self.settings.item_prefix == "compact_items" then
-                        prefix_text = _("Compact items")
+                        prefix_text = _("Icon prefixes")
                     elseif self.settings.item_prefix == "letters" then
-                        prefix_text = _("Letters")
+                        prefix_text = _("Letter prefixes")
+                    elseif self.settings.item_prefix == "compact_items" then
+                        prefix_text = _("Compact")
                     end
-                    return T(_("Prefix: %1"), prefix_text)
+                    return T(_("Style: %1"), prefix_text)
                 end,
                 sub_item_table = {
                     {
@@ -1423,7 +1422,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             for _, letter in pairs(symbol_prefix.icons) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(_("Icons (%1)"), table.concat(sym_tbl, " "))
+                            return T(_("Icon Prefixes (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "icons"
@@ -1436,32 +1435,32 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text_func = function()
                             local sym_tbl = {}
-                            for _, letter in pairs(symbol_prefix.compact_items) do
-                                table.insert(sym_tbl, letter)
-                            end
-                            return T(_("Compact Items (%1)"), table.concat(sym_tbl, " "))
-                        end,
-                        checked_func = function()
-                            return self.settings.item_prefix == "compact_items"
-                        end,
-                        callback = function()
-                            self.settings.item_prefix = "compact_items"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            local sym_tbl = {}
                             for _, letter in pairs(symbol_prefix.letters) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(_("Letters (%1)"), table.concat(sym_tbl, " "))
+                            return T(_("Letter Prefixes (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "letters"
                         end,
                         callback = function()
                             self.settings.item_prefix = "letters"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local sym_tbl = {}
+                            for _, letter in pairs(symbol_prefix.compact_items) do
+                                table.insert(sym_tbl, letter)
+                            end
+                            return T(_("Compact (%1)"), table.concat(sym_tbl, " "))
+                        end,
+                        checked_func = function()
+                            return self.settings.item_prefix == "compact_items"
+                        end,
+                        callback = function()
+                            self.settings.item_prefix = "compact_items"
                             self:refreshFooter(true)
                         end,
                     },
@@ -2098,7 +2097,7 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     local average_time_per_page = self:getAvgTimePerPage()
     local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
     if average_time_per_page then
-        sec = datetime.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
+        sec = datetime.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true, self.settings.item_prefix ~= "compact_items")
     end
     return title .. sec
 end
