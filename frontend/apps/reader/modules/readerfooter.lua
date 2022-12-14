@@ -140,7 +140,7 @@ local material_pixels = Screen:scaleByDPI(16)
 local footerTextGeneratorMap = {
     empty = function() return "" end,
     frontlight = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].frontlight
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
@@ -158,7 +158,7 @@ local footerTextGeneratorMap = {
         end
     end,
     frontlight_warmth = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].frontlight_warmth
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
@@ -175,7 +175,7 @@ local footerTextGeneratorMap = {
         end
     end,
     battery = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].battery
         local powerd = Device:getPowerDevice()
         local batt_lvl = 0
@@ -218,7 +218,7 @@ local footerTextGeneratorMap = {
         end
     end,
     bookmark_count = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].bookmark_count
         local bookmark_count = footer.ui.bookmark:getNumberOfBookmarks()
         if footer.settings.all_at_once and footer.settings.hide_empty_generators and bookmark_count == 0 then
@@ -227,7 +227,7 @@ local footerTextGeneratorMap = {
         return prefix .. " " .. tostring(bookmark_count)
     end,
     time = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].time
         local clock = datetime.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
         if not prefix then
@@ -261,7 +261,7 @@ local footerTextGeneratorMap = {
         end
     end,
     pages_left_book = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].pages_left_book
         if footer.pageno then
             if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
@@ -296,7 +296,7 @@ local footerTextGeneratorMap = {
         end
     end,
     pages_left = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].pages_left
         local left = footer.ui.toc:getChapterPagesLeft(footer.pageno) or footer.ui.document:getTotalPagesLeft(footer.pageno)
         if footer.settings.pages_left_includes_current_page then
@@ -316,7 +316,7 @@ local footerTextGeneratorMap = {
         return current .. " ⁄⁄ " .. total
     end,
     percentage = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].percentage
         local digits = footer.settings.progress_pct_format
         local string_percentage = "%." .. digits .. "f%%"
@@ -332,19 +332,19 @@ local footerTextGeneratorMap = {
         return string_percentage:format(footer.progress_bar.percentage * 100)
     end,
     book_time_to_read = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].book_time_to_read
         local left = footer.ui.document:getTotalPagesLeft(footer.pageno)
         return footer:getDataFromStatistics(prefix and (prefix .. " ") or "", left)
     end,
     chapter_time_to_read = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].chapter_time_to_read
         local left = footer.ui.toc:getChapterPagesLeft(footer.pageno) or footer.ui.document:getTotalPagesLeft(footer.pageno)
         return footer:getDataFromStatistics(prefix .. " ", left)
     end,
     mem_usage = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].mem_usage
         local statm = io.open("/proc/self/statm", "r")
         if statm then
@@ -358,7 +358,7 @@ local footerTextGeneratorMap = {
     end,
     wifi_status = function(footer)
         -- NOTE: This one deviates a bit from the mold because, in icons mode, we simply use two different icons and no text.
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local NetworkMgr = require("ui/network/manager")
         if symbol_style == "icons" or symbol_style == "compact" then
             if NetworkMgr:isWifiOn() then
@@ -424,7 +424,7 @@ local footerTextGeneratorMap = {
         end
     end,
     custom_text = function(footer)
-        local symbol_style = footer.settings.item_prefix
+        local symbol_style = footer.settings.item_style
         local prefix = symbol_prefix[symbol_style].custom_text
         -- if custom_text contains only spaces, request to merge it with the text before and after,
         -- in other words, don't add a separator then.
@@ -472,7 +472,7 @@ ReaderFooter.default_settings = {
     book_chapter = false,
     bookmark_count = false,
     chapter_progress = false,
-    item_prefix = "icons",
+    item_style = "icons",
     toc_markers_width = 2, -- unscaled_size_check: ignore
     text_font_size = 14, -- unscaled_size_check: ignore
     text_font_bold = false,
@@ -954,7 +954,7 @@ function ReaderFooter:updateFooterTextGenerator()
 end
 
 function ReaderFooter:progressPercentage(digits)
-    local symbol_style = self.settings.item_prefix
+    local symbol_style = self.settings.item_style
     local prefix = symbol_prefix[symbol_style].percentage
 
     local string_percentage
@@ -967,7 +967,7 @@ function ReaderFooter:progressPercentage(digits)
 end
 
 function ReaderFooter:textOptionTitles(option)
-    local symbol = self.settings.item_prefix
+    local symbol = self.settings.item_style
     local option_titles = {
         all_at_once = _("Show all at once"),
         reclaim_height = _("Reclaim bar height from bottom margin"),
@@ -1406,11 +1406,11 @@ function ReaderFooter:addToMainMenu(menu_items)
             {
                 text_func = function()
                     local prefix_text = ""
-                    if self.settings.item_prefix == "icons" then
+                    if self.settings.item_style == "icons" then
                         prefix_text = _("Icon prefixes")
-                    elseif self.settings.item_prefix == "letters" then
+                    elseif self.settings.item_style == "letters" then
                         prefix_text = _("Letter prefixes")
-                    elseif self.settings.item_prefix == "compact" then
+                    elseif self.settings.item_style == "compact" then
                         prefix_text = _("Compact")
                     end
                     return T(_("Style: %1"), prefix_text)
@@ -1425,10 +1425,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                             return T(_("Icon prefixes (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
-                            return self.settings.item_prefix == "icons"
+                            return self.settings.item_style == "icons"
                         end,
                         callback = function()
-                            self.settings.item_prefix = "icons"
+                            self.settings.item_style = "icons"
                             self:refreshFooter(true)
                         end,
                     },
@@ -1441,10 +1441,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                             return T(_("Letter prefixes (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
-                            return self.settings.item_prefix == "letters"
+                            return self.settings.item_style == "letters"
                         end,
                         callback = function()
-                            self.settings.item_prefix = "letters"
+                            self.settings.item_style = "letters"
                             self:refreshFooter(true)
                         end,
                     },
@@ -1457,10 +1457,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                             return T(_("Compact (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
-                            return self.settings.item_prefix == "compact"
+                            return self.settings.item_style == "compact"
                         end,
                         callback = function()
-                            self.settings.item_prefix = "compact"
+                            self.settings.item_style = "compact"
                             self:refreshFooter(true)
                         end,
                     },
@@ -2002,7 +2002,7 @@ end
 function ReaderFooter:genAllFooterText()
     local info = {}
     local separator = "  "
-    if self.settings.item_prefix == "compact" then
+    if self.settings.item_style == "compact" then
         separator = " "
     end
     local separator_symbol = self:get_separator_symbol()
@@ -2018,7 +2018,7 @@ function ReaderFooter:genAllFooterText()
         -- Skip empty generators, so they don't generate bogus separators
         local text, merge = gen(self)
         if text and text ~= "" then
-            if self.settings.item_prefix == "compact" then
+            if self.settings.item_style == "compact" then
                 -- remove whitespace from footer items if symbol_style is compact
                 -- use a hair-space to avoid issues with RTL display
                 text = text:gsub("%s", "\xE2\x80\x8A")
@@ -2097,7 +2097,7 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     local average_time_per_page = self:getAvgTimePerPage()
     local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
     if average_time_per_page then
-        sec = datetime.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true, self.settings.item_prefix ~= "compact")
+        sec = datetime.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true, self.settings.item_style ~= "compact")
     end
     return title .. sec
 end

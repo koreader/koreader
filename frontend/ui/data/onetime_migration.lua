@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20221027
+local CURRENT_MIGRATION_DATE = 20221213
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -495,6 +495,18 @@ if last_migration_date < 20221027 then
         G_reader_settings:makeFalse("followed_link_marker")
     end
 end
+
+-- 20221213, Rename footer.item_prefix to footer.style (#9915)
+if last_migration_date < 20221213 then
+    logger.info("Performing one-time migration for 20221213")
+
+    local footer = G_reader_settings:child("footer")
+    if footer and footer:has("item_prefix") then
+        local item_prefix = footer:readSetting("item_prefix")
+        footer:saveSetting("item_style", item_prefix)
+        footer:delSetting("item_prefix")
+    end
+  end
 
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
