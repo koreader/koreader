@@ -97,8 +97,7 @@ local symbol_prefix = {
         pages_left_book = BD.mirroredUILayout() and "‹" or "›",
         pages_left = BD.mirroredUILayout() and "‹" or "›",
         battery = "",
-        -- @translators This is the footer compact item prefix for the number of bookmarks (bookmark count).
-        bookmark_count = C_("FooterCompactItemsPrefix", "BM"),
+        bookmark_count = "☆",
         percentage = nil,
         book_time_to_read = nil,
         chapter_time_to_read = BD.mirroredUILayout() and "«" or "»",
@@ -1408,13 +1407,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                 text_func = function()
                     local prefix_text = ""
                     if self.settings.item_prefix == "icons" then
-                        prefix_text = _("Icons")
+                        prefix_text = C_("Status bar", "Icons")
                     elseif self.settings.item_prefix == "compact_items" then
-                        prefix_text = _("Compact items")
+                        prefix_text = C_("Status bar", "Compact")
                     elseif self.settings.item_prefix == "letters" then
-                        prefix_text = _("Letters")
+                        prefix_text = C_("Status bar", "Letters")
                     end
-                    return T(_("Prefix: %1"), prefix_text)
+                    return T(_("Item style: %1"), prefix_text)
                 end,
                 sub_item_table = {
                     {
@@ -1423,7 +1422,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             for _, letter in pairs(symbol_prefix.icons) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(_("Icons (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "Icons (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "icons"
@@ -1436,32 +1435,32 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text_func = function()
                             local sym_tbl = {}
-                            for _, letter in pairs(symbol_prefix.compact_items) do
-                                table.insert(sym_tbl, letter)
-                            end
-                            return T(_("Compact Items (%1)"), table.concat(sym_tbl, " "))
-                        end,
-                        checked_func = function()
-                            return self.settings.item_prefix == "compact_items"
-                        end,
-                        callback = function()
-                            self.settings.item_prefix = "compact_items"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            local sym_tbl = {}
                             for _, letter in pairs(symbol_prefix.letters) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(_("Letters (%1)"), table.concat(sym_tbl, " "))
+                            return T(C_("Status bar", "Letters (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
                             return self.settings.item_prefix == "letters"
                         end,
                         callback = function()
                             self.settings.item_prefix = "letters"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local sym_tbl = {}
+                            for _, letter in pairs(symbol_prefix.compact_items) do
+                                table.insert(sym_tbl, letter)
+                            end
+                            return T(C_("Status bar", "Compact (%1)"), table.concat(sym_tbl, " "))
+                        end,
+                        checked_func = function()
+                            return self.settings.item_prefix == "compact_items"
+                        end,
+                        callback = function()
+                            self.settings.item_prefix = "compact_items"
                             self:refreshFooter(true)
                         end,
                     },
