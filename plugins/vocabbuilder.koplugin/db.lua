@@ -436,7 +436,7 @@ function VocabularyBuilder.onSync(local_path, cached_path, income_path)
     sql = sql .. [[
         -- We merge the local db with income db to form the synced db.
         -- First we do the books
-        INSERT OR IGNORE INTO title (name) SELECT name FROM income_db.title;
+        INSERT INTO title (name) SELECT name FROM income_db.title WHERE name NOT IN (SELECT name FROM title);
 
         -- Then update income db's book title id references
         UPDATE income_db.vocabulary SET title_id = ifnull(
