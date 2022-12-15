@@ -97,7 +97,6 @@ local symbol_prefix = {
         pages_left_book = BD.mirroredUILayout() and "‹" or "›",
         pages_left = BD.mirroredUILayout() and "‹" or "›",
         battery = "",
-        -- @translators This is the footer compact item prefix for the number of bookmarks (bookmark count).
         bookmark_count = "☆",
         percentage = nil,
         book_time_to_read = nil,
