@@ -2,12 +2,12 @@ local DataStorage = require("datastorage")
 local LuaSettings = require("frontend/luasettings")
 
 local State = require("subscription/state")
-local SubscriptionSyncResult = require("subscription/result/subscription_sync_result")
-local ResultsFactory = require("subscription/result/resultsfactory")
+local SubscriptionResult = require("subscription/result/subscriptionresult")
+local ResultFactory = require("subscription/result/resultfactory")
 
 local ResultQuery = State:new{
    lua_settings = nil,
-   STATE_FILE = SubscriptionSyncResult.STATE_FILE,
+   STATE_FILE = SubscriptionResult.STATE_FILE,
 }
 
 function ResultQuery:new(o)
@@ -21,13 +21,8 @@ end
 function ResultQuery:all()
    local initialized_results = {}
 
-   -- if not self
-   -- then
-   --    self = ResultQuery:new{}
-   -- end
-
    for id, data in pairs(self.lua_settings.data) do
-      local results = ResultsFactory:makeResults(data)
+      local results = ResultFactory:makeSubscriptionResult(data)
       initialized_results[id] = results
    end
 

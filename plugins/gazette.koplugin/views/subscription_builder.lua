@@ -49,7 +49,7 @@ function SubscriptionBuilder:buildSingleEntry(subscription, entry)
       return ResultFactory:makeResult(entry):setError(err)
    end
 
-   return ResultFactory:makeResult(entry):setSuccess()
+   return ResultFactory:makeEntryResult(entry):setSuccess()
 end
 
 function SubscriptionBuilder:createWebpage(subscription, entry)
