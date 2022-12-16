@@ -55,7 +55,7 @@ function AutoDim:getAutoDimMenu()
                 text_func = function()
                     return self.autodim_starttime_m <= 0 and _("Idle time for dimmer") or
                     T(_("Idle time for dimmer: %1"),
-                        datetime.secondsToClockDuration("modern", self.autodim_starttime_m * 60, false, true, false, true))
+                        datetime.secondsToClockDuration("literal", self.autodim_starttime_m * 60, false, false, true))
                 end,
                 checked_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
@@ -94,7 +94,7 @@ function AutoDim:getAutoDimMenu()
             {
                 text_func = function()
                     return T(_("Dimmer duration: %1"),
-                        datetime.secondsToClockDuration("modern", self.autodim_duration_s, false, true, false, true))
+                        datetime.secondsToClockDuration("literal", self.autodim_duration_s, false, false, true))
                 end,
                 enabled_func = function() return self.autodim_starttime_m > 0 end,
                 callback = function(touchmenu_instance)
