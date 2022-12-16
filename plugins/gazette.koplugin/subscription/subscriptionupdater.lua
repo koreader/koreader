@@ -13,10 +13,16 @@ function SubscriptionUpdater:new(o)
     return o
 end
 
-function SubscriptionUpdater:download(progress_callback, finished_callback)
-    local initialized_subscriptions = SubscriptionQuery:new{}:all()
+function SubscriptionUpdater:download(progress_callback, finished_callback, subscription)
+    local initialized_subscriptions
+    if subscription then
+        initialized_subscriptions = {subscription}
+    else
+        initialized_subscriptions = SubscriptionQuery:new{}:all()
+    end
+
     local sync_results = {}
-    local timestamp = os.date()
+    local timestamp = os.time()
 
     for id, subscription in pairs(initialized_subscriptions) do
         subscription:sync()
