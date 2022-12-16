@@ -13,115 +13,115 @@ local Feed = Subscription:extend{
         CONTENT = "content",
         WEBPAGE = "webpage",
     },
-   subscription_type = "feed",
-   url = nil,
-   limit = 3,
-   include_images = false, -- not implemented
-   enabled_filter = false, -- not implemented
-   filter_element = nil, -- not implemented
-   download_directory = nil,
-   content_source = nil,
+    subscription_type = "feed",
+    url = nil,
+    limit = 3,
+    include_images = false, -- not implemented
+    enabled_filter = false, -- not implemented
+    filter_element = nil, -- not implemented
+    download_directory = nil,
+    content_source = nil,
 }
 
 function Feed:new(o)
-   o = o or {}
-   setmetatable(o, self)
-   self.__index = self
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
 
-   o = o:load()
+    o = o:load()
 
-   if o.feed and o.url then
-       -- Data and methods related to the feed's RSS or Atom source
-       -- need to be instantiated into the feed instance variable.
-       o.feed = require("feed/feed"):new(o.feed) or nil
-   end
+    if o.feed and o.url then
+        -- Data and methods related to the feed's RSS or Atom source
+        -- need to be instantiated into the feed instance variable.
+        o.feed = require("feed/feed"):new(o.feed) or nil
+    end
 
-   return o
+    return o
 end
 
 function Feed:save()
-   self.feed.xml = nil
-   self.feed.entries = nil
-   -- This is pulled from State:save(). I wanted to call this
-   -- through the same getmetatable magic used in _init... but
-   -- it "didn't work".
-   if not self.id then
-      self.id = self:generateUniqueId()
-   end
+    self.feed.xml = nil
+    self.feed.entries = nil
+    -- This is pulled from State:save(). I wanted to call this
+    -- through the same getmetatable magic used in _init... but
+    -- it "didn't work".
+    if not self.id then
+        self.id = self:generateUniqueId()
+    end
 
-   self.lua_settings:saveSetting(self.id, self)
-   self.lua_settings:flush()
+    self.lua_settings:saveSetting(self.id, self)
+    self.lua_settings:flush()
 end
 
 function Feed:sync()
-   local feed, err = FeedFactory:make(self.url)
+    local feed, err = FeedFactory:make(self.url)
 
-   if err then
-      return false, err
-   end
+    if err then
+        return false, err
+    end
 
-   local feed, err = feed:fetch()
+    local feed, err = feed:fetch()
 
-   if err then
-      return false, err
-   end
+    if err then
+        return false, err
+    end
 
-   self.feed = feed
-   self:onSuccessfulSync()
+    self.feed = feed
+    self:onSuccessfulSync()
 
-   return true
+    return true
 end
 
 function Feed:isUrlValid(url)
-   if not url or
-      not type(url) == "string" then
-      return false
-   end
+    if not url or
+        not type(url) == "string" then
+        return false
+    end
 
-   local parsed_url = socket_url.parse(url)
+    local parsed_url = socket_url.parse(url)
 
-   if parsed_url.host then
-      return true
-   else
-      return false
-   end
+    if parsed_url.host then
+        return true
+    else
+        return false
+    end
 end
 
 function Feed:getTitle()
-   return self.feed.title
+    return self.feed.title
 end
 
 function Feed:getDescription()
-   return self.feed:getDescription()
+    return self.feed:getDescription()
 end
 
 function Feed:setTitle(title)
-   self.feed.title = title
+    self.feed.title = title
 end
 
 function Feed:getAllEntries(limit)
-   if not self.feed.entries then
-      return false, GazetteMessages.ERROR_FEED_NOT_SYNCED
-   end
+    if not self.feed.entries then
+        return false, GazetteMessages.ERROR_FEED_NOT_SYNCED
+    end
 
-   if limit == nil or
-      type(limit) ~= "number" or
-      (type(limit) == "number" and limit == -1) then
-      return self.feed.entries
-   else
-      local limited_entries = {}
-      local count = 0
+    if limit == nil or
+        type(limit) ~= "number" or
+        (type(limit) == "number" and limit == -1) then
+        return self.feed.entries
+    else
+        local limited_entries = {}
+        local count = 0
 
-      for _, entry in pairs(self.feed.entries) do
-         table.insert(limited_entries, entry)
-         count = count + 1
-         if count >= limit
-         then
-            break
-         end
-      end
-      return limited_entries
-   end
+        for _, entry in pairs(self.feed.entries) do
+            table.insert(limited_entries, entry)
+            count = count + 1
+            if count >= limit
+            then
+                break
+            end
+        end
+        return limited_entries
+    end
 end
 
 function Feed:getNewEntries(limit)
