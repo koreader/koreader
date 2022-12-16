@@ -1,4 +1,4 @@
-local FeedResult = require("subscription/result/feedresult")
+local EntryResult = require("subscription/result/entryresult")
 local SubscriptionResult = require("subscription/result/subscriptionresult")
 
 local ResultFactory = {}
@@ -37,18 +37,13 @@ function ResultFactory:makeEntryResult(entry_or_data)
       -- If the result's being made with this constructor, the context
       -- is the subscription builder. So the success and error message
       -- are added in after the result's been returned.
-      result = FeedResult:new{
+      result = EntryResult:new{
          id = entry:getId(),
          entry_title = entry:getTitle()
       }
    else
       local data = entry_or_data
-      result = FeedResult:new{
-            id = data.id,
-            error_message = data.error_message,
-            success = data.success,
-            entry_title = data.entry_title
-      }
+      result = EntryResult:new{data}
    end
    return result
 end
