@@ -147,7 +147,7 @@ function EditDialog:editFeed(composer, subscription)
                   composer:chooseDownloadDirectory(function(path)
                      if path
                      then
-                        dialog:getInputFields()[2]:setText(path)
+                        dialog:getRawFields()[2]:setText(path)
                      end
                   end)
                end

@@ -1,8 +1,33 @@
-local Result = require("subscription/result/result")
+local FeedResult = require("subscription/result/feedresult")
+local SubscriptionResult = require("subscription/result/subscriptionresult")
 
 local ResultFactory = {}
 
-function ResultFactory:makeResult(entry_or_data)
+function ResultFactory:makeSubscriptionResult(data)
+    local id
+    local subscription_id
+
+    if data.subscription_id then
+        id = data.id
+        subscription_id = data.subscription_id
+    else
+        -- Don't set ID, because it's probably a new result.
+        id = nil
+        subscription_id = data.subscription_id
+    end
+
+    local results = SubscriptionResult:new{
+        id = id,
+        subscription_id = subscription_id,
+        results = data.results
+    }
+
+    results:initializeResults()
+
+    return results
+end
+
+function ResultFactory:makeEntryResult(entry_or_data)
    local result
    if entry_or_data.getId and
       type(entry_or_data.getId) == "function" and
@@ -12,13 +37,13 @@ function ResultFactory:makeResult(entry_or_data)
       -- If the result's being made with this constructor, the context
       -- is the subscription builder. So the success and error message
       -- are added in after the result's been returned.
-      result = Result:new{
+      result = FeedResult:new{
          id = entry:getId(),
          entry_title = entry:getTitle()
       }
    else
       local data = entry_or_data
-      result = Result:new{
+      result = FeedResult:new{
             id = data.id,
             error_message = data.error_message,
             success = data.success,

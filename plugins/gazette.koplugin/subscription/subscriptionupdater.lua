@@ -1,8 +1,7 @@
 local SubscriptionQuery = require("subscription/subscriptionquery")
 local SubscriptionFactory = require("subscription/subscriptionfactory")
 local SubscriptionBuilder = require("views/subscription_builder")
-local SubscriptionSyncResult = require("subscription/result/subscription_sync_result")
-local ResultsFactory = require("subscription/result/resultsfactory")
+local SubscriptionSyncResult = require("subscription/result/subscriptionresult")
 
 local SubscriptionUpdater = {}
 
@@ -25,7 +24,7 @@ function SubscriptionUpdater:download(progress_callback, finished_callback)
         local subscription_results = SubscriptionSyncResult:new{
             subscription_id = subscription.id,
             results = {}
-        } --ResultsFactory:makeResults(subscription)
+        }
         subscription_results.timestamp = timestamp
 
         for _, entry in pairs(subscription:getNewEntries(subscription.limit)) do
