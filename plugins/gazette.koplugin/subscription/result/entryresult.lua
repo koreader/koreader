@@ -1,6 +1,6 @@
 local GazetteMessages = require("gazettemessages")
 
-local FeedResult = {
+local EntryResult = {
    id = nil,
    success = nil,
    error_message = nil,
@@ -8,7 +8,7 @@ local FeedResult = {
    timestamp = nil,
 }
 
-function FeedResult:new(o)
+function EntryResult:new(o)
    o = o or {}
    self.__index = self
    setmetatable(o, self)
@@ -16,26 +16,26 @@ function FeedResult:new(o)
    return o
 end
 
-function FeedResult:getId()
+function EntryResult:getId()
    return self.id
 end
 
-function FeedResult:setError(error_message)
+function EntryResult:setError(error_message)
    self.success = false
    self.error_message = error_message
    return self
 end
 
-function FeedResult:setSuccess()
+function EntryResult:setSuccess()
    self.success = true
    return self
 end
 
-function FeedResult:isSuccessful()
+function EntryResult:isSuccessful()
    return self.success
 end
 
-function FeedResult:getStatus()
+function EntryResult:getStatus()
    if self:isSuccessful()
    then
       return GazetteMessages.RESULT_SUCCESS
@@ -44,7 +44,7 @@ function FeedResult:getStatus()
    end
 end
 
-function FeedResult:getStatusMessage()
+function EntryResult:getStatusMessage()
    if self:isSuccessful()
    then
       return GazetteMessages.RESULT_SUCCESS
@@ -53,8 +53,8 @@ function FeedResult:getStatusMessage()
    end
 end
 
-function FeedResult:getIdentifier()
+function EntryResult:getIdentifier()
    return self.id
 end
 
-return FeedResult
+return EntryResult
