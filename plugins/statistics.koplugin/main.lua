@@ -2966,7 +2966,10 @@ function ReaderStatistics.onSync(local_path, cached_path, income_path)
             title, authors, notes, last_open, highlights, pages, series, language, md5, total_read_time, total_read_pages
         ) SELECT
             title, authors, notes, last_open, highlights, pages, series, language, md5, total_read_time, total_read_pages
-        FROM income_db.book WHERE true ON CONFLICT (title, authors, md5) DO NOTHING;
+        FROM income_db.book
+        WHERE (title, authors, md5) NOT IN (
+            SELECT title, authors, md5 FROM book
+        );
 
         -- We create a book_id mapping temp table (view not possible due to attached db)
         CREATE TEMP TABLE book_id_map AS
