@@ -904,6 +904,11 @@ function FileManagerMenu:onSetDimensions(dimen)
     end
 end
 
+function FileManagerMenu:onMenuSearch()
+    self:onShowMenu()
+    self.menu_container[1]:onShowMenuSearch()
+end
+
 function FileManagerMenu:registerToMainMenu(widget)
     table.insert(self.registered_widgets, widget)
 end

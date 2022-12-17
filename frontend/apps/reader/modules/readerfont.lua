@@ -593,6 +593,7 @@ Enabling this will ignore such font names and make sure your preferred family fo
                 self:updateFontFamilyFonts()
             end,
             sub_item_table = {
+                ignored_by_menu_search = true, -- those would be duplicated
                 {
                     text = T(_("Font for %1"), BD.wrap(T("'font-family: %1'", family_tag))),
                     separator = true,

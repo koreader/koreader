@@ -830,6 +830,7 @@ example usage:
 --]]--
 function Dispatcher:addSubMenu(caller, menu, location, settings)
     Dispatcher:init()
+    menu.ignored_by_menu_search = true -- all those would be duplicated
     table.insert(menu, {
         text = _("Nothing"),
         separator = true,
