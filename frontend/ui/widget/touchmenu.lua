@@ -480,7 +480,6 @@ function TouchMenu:init()
     end
 
     self.layout = {}
-    self.search_layout = {}
 
     self.ges_events.TapCloseAllMenus = {
         GestureRange:new{
@@ -676,10 +675,8 @@ function TouchMenu:updateItems()
     self:_recalculatePageLayout()
     self.item_group:clear()
     self.layout = {}
-    self.search_layout = {}
     table.insert(self.item_group, self.bar)
     table.insert(self.layout, self.bar.icon_widgets) -- for the focusmanager
-    table.insert(self.search_layout, self.bar.icon_widgets) -- for the menu search
 
     for c = 1, self.perpage do
         -- calculate index in item_table
@@ -694,12 +691,12 @@ function TouchMenu:updateItems()
                     h = self.item_height,
                 },
                 show_parent = self.show_parent,
+                item_visible_index = c,
             }
             table.insert(self.item_group, item_tmp)
             if item_tmp:isEnabled() then
                 table.insert(self.layout, {[self.cur_tab] = item_tmp}) -- for the focusmanager
             end
-            table.insert(self.search_layout, {[self.cur_tab] = item_tmp}) -- for the menu search
             if item.separator and c ~= self.perpage and i ~= #self.item_table then
                 -- insert split line
                 table.insert(self.item_group, self.split_line)
@@ -1141,7 +1138,16 @@ function TouchMenu:openMenu(path, with_animation)
             if with_animation or #parts == 0 then
                 -- Even if no animation, highlight the final item (and don't unhighlight it)
                 local item_visible_index = (item_nb - 1) % self.perpage + 1
-                highlightWidget(self.search_layout[item_visible_index + 1][tab_nb])
+                local item_widget
+                for i, w in ipairs(self.item_group) do
+                    if w.item_visible_index == item_visible_index then
+                        item_widget = w
+                        break
+                    end
+                end
+                if item_widget then
+                    highlightWidget(item_widget)
+                end
             end
             if #parts == 0 then
                 step = STEPS.DONE
