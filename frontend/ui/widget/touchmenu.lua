@@ -1197,7 +1197,7 @@ function TouchMenu:openMenu(path, with_animation)
                 end
             end
         end,
-        resend_event = not with_animation, -- if not animation, don't eat the tap 
+        resend_event = not with_animation, -- if not animation, don't eat the tap
     }
     UIManager:show(trap_widget) -- catch taps during animaton
 
