@@ -1177,7 +1177,7 @@ function TouchMenu:openMenu(path, with_animation)
     -- cancel the delayed final highlight
     local TrapWidget = require("ui/widget/trapwidget")
     trap_widget = TrapWidget:new{
-        text = with_animation and "Walking you there…" or nil,
+        text = with_animation and _("Walking you there…") or nil,
         dismiss_callback = function()
             trap_widget = nil
             if walkStep_scheduled then
@@ -1231,7 +1231,7 @@ function TouchMenu:onShowMenuSearch()
             local function item_callback(i)
                 local confirm_box
                 confirm_box = ConfirmBox:new{
-                    text = T(_("Open menu entry:\n'%1'\n\n%2"), found_menu_items[i][1], found_menu_items[i][4]),
+                    text = found_menu_items[i][4],
                     icon = found_menu_items[i][2],
                     ok_text = _("Open"),
                     ok_callback = function()
