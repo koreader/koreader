@@ -1238,7 +1238,6 @@ function TouchMenu:onShowMenuSearch()
                         UIManager:close(confirm_box)
                         open_menu(i)
                     end,
-                    cancel_text = _("Dismiss"),
                     other_buttons = {{
                         {
                             text = _("Walk me there"),
