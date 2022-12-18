@@ -538,6 +538,11 @@ function ReaderMenu:onSaveSettings()
     self.ui.doc_settings:saveSetting("readermenu_tab_index", self.last_tab_index)
 end
 
+function ReaderMenu:onMenuSearch()
+    self:onShowMenu()
+    self.menu_container[1]:onShowMenuSearch()
+end
+
 function ReaderMenu:registerToMainMenu(widget)
     table.insert(self.registered_widgets, widget)
 end
