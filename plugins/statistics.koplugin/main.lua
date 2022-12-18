@@ -191,7 +191,6 @@ function ReaderStatistics:initData()
         self.data.md5 = self:partialMd5(self.document.file)
     end
     -- Update these numbers to what's actually stored in the settings
-    -- (not that "notes" is invalid and does not represent edited highlights)
     self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
     self.book_read_pages, self.book_read_time = self:getPageTimeTotalStats(self.id_curr_book)
@@ -1408,7 +1407,7 @@ function ReaderStatistics:getCurrentStat()
     local current_duration, current_pages = self:getCurrentBookStats()
 
     local conn = SQ3.open(db_location)
-    local highlights, notes = conn:rowexec(string.format("SELECT highlights, notes FROM book WHERE id = %d;", id_book)) -- luacheck: no unused
+    local highlights, notes = conn:rowexec(string.format("SELECT highlights, notes FROM book WHERE id = %d;", id_book))
     local sql_stmt = [[
         SELECT count(*)
         FROM   (
@@ -1551,9 +1550,9 @@ function ReaderStatistics:getCurrentStat()
         { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/self.data.pages)) },
         { _("Average time per page"), avg_page_time_string, separator = true },
 
-        -- Highlights
-        { _("Book highlights"), tonumber(highlights) }
-        -- { _("Book notes"), tonumber(notes) }, -- not accurate, don't show it
+        -- Highlights and notes
+        { _("Book highlights"), tonumber(highlights) },
+        { _("Book notes"), tonumber(notes) },
     }
 end
 
@@ -1577,7 +1576,7 @@ function ReaderStatistics:getBookStat(id_book)
     -- Show "?" when these values are not known (they will be
     -- fixed next time this book is opened).
     highlights = highlights and tonumber(highlights) or "?"
-    notes = notes and tonumber(notes) or "?" -- luacheck: no unused
+    notes = notes and tonumber(notes) or "?"
 
     sql_stmt = [[
         SELECT count(*)
@@ -1668,8 +1667,8 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Average time per page"), datetime.secondsToClockDuration(user_duration_format, avg_time_per_page, false, true), separator = true },
 
         -- Highlights
-        { _("Book highlights"), highlights }
-        -- { _("Book notes"), notes }, -- not accurate, don't show it
+        { _("Book highlights"), highlights },
+        { _("Book notes"), notes },
     }
 end
 
@@ -2557,15 +2556,19 @@ end
 
 function ReaderStatistics:onDelHighlight()
     if self.settings.is_enabled then
-        if self.data.highlights > 0 then
-            self.data.highlights = self.data.highlights - 1
-        end
+        self.data.highlights = self.data.highlights - 1
     end
 end
 
 function ReaderStatistics:onAddNote()
     if self.settings.is_enabled then
         self.data.notes = self.data.notes + 1
+    end
+end
+
+function ReaderStatistics:onDelNote()
+    if self.settings.is_enabled then
+        self.data.notes = self.data.notes - 1
     end
 end
 

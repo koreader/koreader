@@ -933,10 +933,10 @@ function ReaderBookmark:isBookmarkAdded(item)
 end
 
 function ReaderBookmark:removeHighlight(item)
-    self:removeBookmark(item)
     if item.pos0 then
         self.ui:handleEvent(Event:new("Unhighlight", item))
     else -- dogear bookmark, update it in case we removed a bookmark for current page
+        self:removeBookmark(item)
         self:setDogearVisibility(self:getCurrentPageNumber())
     end
 end
@@ -947,13 +947,19 @@ function ReaderBookmark:removeBookmark(item, reset_auto_text_only)
     -- not search on one side of one it found on page, where item could be.
     -- Fallback to do a full scan.
     local index = self:getBookmarkIndexBinarySearch(item) or self:getBookmarkIndexFullScan(item)
-    local v = self.bookmarks[index]
+    local bookmark = self.bookmarks[index]
     if reset_auto_text_only then
-        if self:isBookmarkAutoText(v) then
-            v.text = nil
+        if self:isBookmarkAutoText(bookmark) then
+            bookmark.text = nil
         end
     else
-        self.ui:handleEvent(Event:new("BookmarkRemoved", v))
+        local bookmark_type = item.type or self:getBookmarkType(bookmark)
+        if bookmark_type == "highlight" then
+            self.ui:handleEvent(Event:new("DelHighlight"))
+        elseif bookmark_type == "note" then
+            self.ui:handleEvent(Event:new("DelNote"))
+        end
+        self.ui:handleEvent(Event:new("BookmarkRemoved", bookmark))
         table.remove(self.bookmarks, index)
         self.view.footer:onUpdateFooter(self.view.footer_visible)
     end
@@ -987,6 +993,7 @@ function ReaderBookmark:setBookmarkNote(item, from_highlight, is_new_note, new_t
             bm.text = self:getBookmarkAutoText(bm)
         end
         bookmark = util.tableDeepCopy(bm)
+        bookmark.type = self:getBookmarkType(bookmark)
         bookmark.text_orig = bm.text or bm.notes
         bookmark.mandatory = self:getBookmarkPageString(bm.page)
         self.ui:handleEvent(Event:new("BookmarkEdited", bm))
@@ -1031,11 +1038,22 @@ function ReaderBookmark:setBookmarkNote(item, from_highlight, is_new_note, new_t
                     text = _("Save"),
                     is_enter_default = true,
                     callback = function()
-                        local value = self.input:getInputValue()
+                        local value = self.input:getInputText()
                         if value == "" then -- blank input resets the 'text' field to auto-text
                             value = self:getBookmarkAutoText(bookmark)
                         end
                         bookmark.text = value or bookmark.notes
+                        local bookmark_type = bookmark.type
+                        bookmark.type = self:getBookmarkType(bookmark)
+                        if bookmark_type ~= bookmark.type then
+                            if bookmark_type == "highlight" then
+                                self.ui:handleEvent(Event:new("DelHighlight"))
+                                self.ui:handleEvent(Event:new("AddNote"))
+                            else
+                                self.ui:handleEvent(Event:new("AddHighlight"))
+                                self.ui:handleEvent(Event:new("DelNote"))
+                            end
+                        end
                         local index = self:getBookmarkIndexBinarySearch(bookmark) or self:getBookmarkIndexFullScan(bookmark)
                         local bm = self.bookmarks[index]
                         bm.text = value
@@ -1047,7 +1065,6 @@ function ReaderBookmark:setBookmarkNote(item, from_highlight, is_new_note, new_t
                                 UIManager:setDirty(self.dialog, "ui") -- refresh note marker
                             end
                         else
-                            bookmark.type = self:getBookmarkType(bookmark)
                             bookmark.text_orig = bookmark.text
                             bookmark.text = DISPLAY_PREFIX[bookmark.type] .. bookmark.text
                             self.refresh()
@@ -1292,15 +1309,14 @@ function ReaderBookmark:getNumberOfBookmarks()
 end
 
 function ReaderBookmark:getNumberOfHighlightsAndNotes() -- for Statistics plugin
-    local highlights = 0 -- Statistics show highlights+notes total amount
+    local highlights = 0
     local notes = 0
     for _, v in ipairs(self.bookmarks) do
         local bm_type = self:getBookmarkType(v)
-        if bm_type ~= "bookmark" then
+        if bm_type == "highlight" then
             highlights = highlights + 1
-            if bm_type == "note" then
-                notes = notes + 1
-            end
+        elseif bm_type == "note" then
+            notes = notes + 1
         end
     end
     return highlights, notes

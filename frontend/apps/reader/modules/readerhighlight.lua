@@ -590,7 +590,7 @@ function ReaderHighlight:clear(clear_id)
         -- might happen if scheduled and run after document is closed
         return
     end
-    if self.ui.document.info.has_pages then
+    if self.ui.paging then
         self.view.highlight.temp = {}
     else
         self.ui.document:clearSelection()
@@ -637,7 +637,7 @@ function ReaderHighlight:onTap(_, ges)
     local cleared = self.hold_pos and self:clear()
     -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
     if not cleared and ges then
-        if self.ui.document.info.has_pages then
+        if self.ui.paging then
             return self:onTapPageSavedHighlight(ges)
         else
             return self:onTapXPointerSavedHighlight(ges)
@@ -725,10 +725,7 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
 end
 
 function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_char)
-    if self.ui.document.info.has_pages then -- we do this only if it's epub file
-        return
-    end
-
+    if self.ui.paging then return end
     local highlight = self.view.highlight.saved[page][index]
     local highlight_time = highlight.datetime
     local highlight_beginning = highlight.pos0
@@ -1108,7 +1105,7 @@ function ReaderHighlight:onHold(arg, ges)
             end
         end
 
-        if self.ui.document.info.has_pages then
+        if self.ui.paging then
             self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
             -- Unfortunately, getWordFromPosition() may not return good coordinates,
             -- so refresh the whole page
@@ -1338,9 +1335,7 @@ function ReaderHighlight:getSelectedWordContext(nb_words)
 end
 
 function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
-    if self.ui.document.info.has_pages then
-        return
-    end
+    if self.ui.paging then return end
     if self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
         -- For available flags, see the "#define WRITENODEEX_*" in crengine/src/lvtinydom.cpp
         -- Start with valid and classic displayed HTML (with only block nodes indented),
@@ -1670,7 +1665,7 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
         sel_text = cleanupSelectedText(self.selected_text.text)
         sel_pos0 = self.selected_text.pos0
     end
-    if self.ui.document.info.has_pages then -- We can safely use page
+    if self.ui.paging then -- We can safely use page
         -- As we may have changed spaces and hyphens handling in the extracted
         -- text over the years, check text identities with them removed
         local sel_text_cleaned = sel_text:gsub("[ -]", ""):gsub("\xC2\xAD", "")
@@ -1828,7 +1823,6 @@ function ReaderHighlight:addNote(text)
     self:editHighlight(page, index, true, text)
     UIManager:close(self.edit_highlight_dialog)
     self.edit_highlight_dialog = nil
-    self.ui:handleEvent(Event:new("AddNote"))
 end
 
 function ReaderHighlight:lookupWikipedia()
@@ -1860,7 +1854,6 @@ function ReaderHighlight:onHighlightDictLookup()
 end
 
 function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
-    self.ui:handleEvent(Event:new("DelHighlight"))
     logger.dbg("delete highlight", page, i)
     -- The per-page table is a pure array
     local removed = table.remove(self.view.highlight.saved[page], i)
@@ -1872,7 +1865,7 @@ function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
         self.ui.bookmark:removeBookmark(bookmark_item)
     else
         self.ui.bookmark:removeBookmark({
-            page = self.ui.document.info.has_pages and page or removed.pos0,
+            page = self.ui.paging and page or removed.pos0,
             datetime = removed.datetime,
         })
     end
@@ -1883,7 +1876,7 @@ end
 function ReaderHighlight:editHighlight(page, i, is_new_note, text)
     local item = self.view.highlight.saved[page][i]
     self.ui.bookmark:setBookmarkNote({
-        page = self.ui.document.info.has_pages and page or item.pos0,
+        page = self.ui.paging and page or item.pos0,
         datetime = item.datetime,
     }, true, is_new_note, text)
 end
