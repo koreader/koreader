@@ -3,7 +3,7 @@
   <id>org.koreader.KOReader</id>
   <launchable type="desktop-id">org.koreader.KOReader.desktop</launchable>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>AGPL</project_license>
+  <project_license>AGPL-3.0-only</project_license>
   <name>KOReader</name>
   <summary>A document viewer for DjVu, PDF, EPUB and more</summary>
   <description>
@@ -24,4 +24,5 @@
     <category>Document viewers</category>
   </categories>
   <update_contact></update_contact>
+  <content_rating type="oars-1.1" />
 </component>
