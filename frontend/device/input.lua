@@ -22,9 +22,9 @@ require("ffi/linux_input_h")
 -- luacheck: push
 -- luacheck: ignore
 -- key press event values (KEY.value)
-local EVENT_VALUE_KEY_PRESS   = 1
-local EVENT_VALUE_KEY_REPEAT  = 2
-local EVENT_VALUE_KEY_RELEASE = 0
+local KEY_PRESS   = 1
+local KEY_REPEAT  = 2
+local KEY_RELEASE = 0
 
 -- For Kindle Oasis orientation events (ABS.code)
 -- the ABS code of orientation event will be adjusted to -24 from 24 (C.ABS_PRESSURE)
@@ -573,9 +573,9 @@ function Input:handleKeyBoardEv(ev)
     if keycode == "Power" then
         -- Kobo generates Power keycode only, we need to decide whether it's
         -- power-on or power-off ourselves.
-        if ev.value == EVENT_VALUE_KEY_PRESS then
+        if ev.value == KEY_PRESS then
             return "PowerPress"
-        elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+        elseif ev.value == KEY_RELEASE then
             return "PowerRelease"
         end
     end
@@ -596,9 +596,9 @@ function Input:handleKeyBoardEv(ev)
 
     -- handle modifier keys
     if self.modifiers[keycode] ~= nil then
-        if ev.value == EVENT_VALUE_KEY_PRESS then
+        if ev.value == KEY_PRESS then
             self.modifiers[keycode] = true
-        elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+        elseif ev.value == KEY_RELEASE then
             self.modifiers[keycode] = false
         end
         return
@@ -606,9 +606,9 @@ function Input:handleKeyBoardEv(ev)
 
     local key = Key:new(keycode, self.modifiers)
 
-    if ev.value == EVENT_VALUE_KEY_PRESS then
+    if ev.value == KEY_PRESS then
         return Event:new("KeyPress", key)
-    elseif ev.value == EVENT_VALUE_KEY_REPEAT then
+    elseif ev.value == KEY_REPEAT then
         -- NOTE: We only care about repeat events from the pageturn buttons...
         --       And we *definitely* don't want to flood the Event queue with useless SleepCover repeats!
         if keycode == "LPgBack"
@@ -629,7 +629,7 @@ function Input:handleKeyBoardEv(ev)
                 self.repeat_count = 0
             end
         end
-    elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+    elseif ev.value == KEY_RELEASE then
         self.repeat_count = 0
         return Event:new("KeyRelease", key)
     end
@@ -662,9 +662,9 @@ function Input:handlePowerManagementOnlyEv(ev)
     if keycode == "Power" then
         -- Kobo generates Power keycode only, we need to decide whether it's
         -- power-on or power-off ourselves.
-        if ev.value == EVENT_VALUE_KEY_PRESS then
+        if ev.value == KEY_PRESS then
             return "PowerPress"
-        elseif ev.value == EVENT_VALUE_KEY_RELEASE then
+        elseif ev.value == KEY_RELEASE then
             return "PowerRelease"
         end
     end
@@ -1096,15 +1096,15 @@ function Input:setupSlotData(value)
 end
 
 function Input:isEvKeyPress(ev)
-    return ev.value == EVENT_VALUE_KEY_PRESS
+    return ev.value == KEY_PRESS
 end
 
 function Input:isEvKeyRepeat(ev)
-    return ev.value == EVENT_VALUE_KEY_REPEAT
+    return ev.value == KEY_REPEAT
 end
 
 function Input:isEvKeyRelease(ev)
-    return ev.value == EVENT_VALUE_KEY_RELEASE
+    return ev.value == KEY_RELEASE
 end
 
 
