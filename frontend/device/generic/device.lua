@@ -495,12 +495,12 @@ function Device:retrieveNetworkInfo()
                 pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
             end
             if pingok == 0 then
-                result = result .. "Gateway ping successful"
+                result = result .. _("Gateway ping successful")
             else
-                result = result .. "Gateway ping FAILED"
+                result = result .. _("Gateway ping FAILED")
             end
         else
-            result = result .. "No default gateway to ping"
+            result = result .. _("No default gateway to ping")
         end
         return result
     end
