@@ -89,6 +89,7 @@ local linux_evdev_abs_code_map = {
 
 local linux_evdev_msc_code_map = {
     [C.MSC_RAW] = "MSC_RAW",
+    [C.MSC_GYRO] = "MSC_GYRO",
 }
 
 local linux_evdev_rep_code_map = {
