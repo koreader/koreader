@@ -908,9 +908,10 @@ function Kobo:setTouchEventHandler()
     end
 end
 
--- HAL for gyro orientation switches (EV_MSC:MSC_RAW w/ custom values to EV_MSC:MSC_GYRO w/ our own custom values)
+-- HAL for gyro orientation switches (NTX's EV_MSC:MSC_RAW w/ custom values to EV_MSC:MSC_GYRO w/ our own custom values)
 local function gyroTranslation(ev)
-    -- c.f., drivers/hwmon/mma8x5x.c (holds true on devices with a KX122, too)
+    -- c.f., include/uapi/linux/input.h,
+    -- implementations in drivers/hwmon/mma8x5x.c & drivers/input/touchscreen/kx122.c
     local MSC_RAW_GSENSOR_PORTRAIT_DOWN   = 0x17
     local MSC_RAW_GSENSOR_PORTRAIT_UP     = 0x18
     local MSC_RAW_GSENSOR_LANDSCAPE_RIGHT = 0x19
