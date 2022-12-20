@@ -955,17 +955,17 @@ function Kobo:initEventAdjustHooks()
     -- NOTE: touch_switch_xy is *always* true, but not touch_mirrored_x...
     if self.touch_switch_xy and self.touch_mirrored_x then
         local max_x = self.screen:getWidth() - 1
-        koboInputMangling = function(ev)
+        koboInputMangling = function(this, ev)
             if ev.type == C.EV_ABS then
-                self.input.adjustABS_SwitchAxesAndMirrorX(ev, max_x)
+                this:adjustABS_SwitchAxesAndMirrorX(ev, max_x)
             elseif ev.type == C.EV_MSC and ev.code == C.MSC_RAW then
                 gyroTranslation(ev)
             end
         end
     elseif self.touch_switch_xy and not self.touch_mirrored_x then
-        koboInputMangling = function(ev)
+        koboInputMangling = function(this, ev)
             if ev.type == C.EV_ABS then
-                self.input.adjustABS_SwitchXY(ev)
+                this:adjustABS_SwitchXY(ev)
             elseif ev.type == C.EV_MSC and ev.code == C.MSC_RAW then
                 gyroTranslation(ev)
             end

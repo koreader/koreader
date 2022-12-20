@@ -375,14 +375,14 @@ end
 function Input:adjustABS_SwitchAxesAndMirrorX(ev, max_x)
     if ev.code == C.ABS_X then
         ev.code = C.ABS_Y
-        ev.value = max_x - ev.value
     elseif ev.code == C.ABS_Y then
         ev.code = C.ABS_X
+        ev.value = max_x - ev.value
     elseif ev.code == C.ABS_MT_POSITION_X then
         ev.code = C.ABS_MT_POSITION_Y
-        ev.value = max_x - ev.value
     elseif ev.code == C.ABS_MT_POSITION_Y then
         ev.code = C.ABS_MT_POSITION_X
+        ev.value = max_x - ev.value
     end
 end
 
