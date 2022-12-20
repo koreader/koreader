@@ -919,18 +919,25 @@ function Kobo:setTouchEventHandler()
 end
 
 function Kobo:initEventAdjustHooks()
-    -- NOTE: adjustTouchSwitchXY needs to be called before adjustTouchMirrorX
-    if self.touch_switch_xy then
-        self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
+    -- Build a single composite hook, to avoid duplicated branches...
+    local koboInputMangling
+    -- NOTE: touch_switch_xy is *always* true, but not touch_mirrored_x...
+    if self.touch_switch_xy and self.touch_mirrored_x then
+        local max_x = self.screen:getWidth() - 1
+        koboInputMangling = function(ev)
+            if ev.type == C.EV_ABS then
+                self.input.adjustABS_SwitchAxesAndMirrorX(ev, max_x)
+            end
+        end
+    else
+        koboInputMangling = function(ev)
+            if ev.type == C.EV_ABS then
+                self.input.adjustABS_SwitchXY(ev)
+            end
+        end
     end
 
-    if self.touch_mirrored_x then
-        self.input:registerEventAdjustHook(
-            self.input.adjustTouchMirrorX,
-            --- NOTE: This is safe, we enforce the canonical portrait rotation on startup.
-            (self.screen:getWidth() - 1)
-        )
-    end
+    self.input:registerEventAdjustHook(koboInputMangling)
 end
 
 local function getCodeName()
