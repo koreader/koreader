@@ -3,6 +3,13 @@ local time = require("ui/time")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
+-- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/linux_fb_h")
+require("ffi/linux_input_h")
+require("ffi/posix_h")
+
 local function yes() return true end
 local function no() return false end  -- luacheck: ignore
 
@@ -823,6 +830,46 @@ function KindlePaperWhite3:init()
     self.input.open("fake_events")
 end
 
+-- HAL for gyro orientation switches (EV_ABS:ABS_PRESSURE (?!) w/ custom values to EV_MSC:MSC_GYRO w/ our own custom values)
+local function OasisGyroTranslation(this, ev)
+    local DEVICE_ORIENTATION_PORTRAIT_LEFT          = 15
+    local DEVICE_ORIENTATION_PORTRAIT_RIGHT         = 17
+    local DEVICE_ORIENTATION_PORTRAIT               = 19
+    local DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT  = 16
+    local DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT = 18
+    local DEVICE_ORIENTATION_PORTRAIT_ROTATED       = 20
+    local DEVICE_ORIENTATION_LANDSCAPE              = 21
+    local DEVICE_ORIENTATION_LANDSCAPE_ROTATED      = 22
+
+    if ev.type == C.EV_ABS and ev.code == C.ABS_PRESSURE then
+        if ev.value == DEVICE_ORIENTATION_PORTRAIT
+            or ev.value == DEVICE_ORIENTATION_PORTRAIT_LEFT
+            or ev.value == DEVICE_ORIENTATION_PORTRAIT_RIGHT then
+            -- i.e., UR
+            ev.type = C.EV_MSC
+            ev.code = C.MSC_GYRO
+            ev.value = C.DEVICE_ORIENTATION_UPRIGHT
+        elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE then
+            -- i.e., CW
+            ev.type = C.EV_MSC
+            ev.code = C.MSC_GYRO
+            ev.value = C.DEVICE_ORIENTATION_CLOCKWISE
+        elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED
+            or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT
+            or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT then
+            -- i.e., UD
+            ev.type = C.EV_MSC
+            ev.code = C.MSC_GYRO
+            ev.value = C.DEVICE_ORIENTATION_UPSIDE_DOWN
+        elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE_ROTATED then
+            -- i.e., CCW
+            ev.type = C.EV_MSC
+            ev.code = C.MSC_GYRO
+            ev.value = C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE
+        end
+    end
+end
+
 function KindleOasis:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
@@ -872,7 +919,12 @@ function KindleOasis:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
+    self.input:registerEventAdjustHook(OasisGyroTranslation)
+    self.input.handleMiscEv = function(this, ev)
+        if ev.code == C.MSC_GYRO then
+            return this:handleGyroEv(ev)
+        end
+    end
 
     self.input.open(self.touch_dev)
     self.input.open("/dev/input/by-path/platform-gpiokey.0-event")
@@ -888,6 +940,39 @@ function KindleOasis:init()
     end
 
     self.input.open("fake_events")
+end
+
+-- HAL for gyro orientation switches (EV_ABS:ABS_PRESSURE (?!) w/ custom values to EV_MSC:MSC_GYRO w/ our own custom values)
+local function ZeldaGyroTranslation(this, ev)
+    -- c.f., drivers/input/misc/accel/bma2x2.c
+    local UPWARD_PORTRAIT_UP_INTERRUPT_HAPPENED     = 15
+    local UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED   = 16
+    local UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED  = 17
+    local UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED = 18
+
+    if ev.type == C.EV_ABS and ev.code == C.ABS_PRESSURE then
+        if ev.value == UPWARD_PORTRAIT_UP_INTERRUPT_HAPPENED then
+            -- i.e., UR
+            ev.type = C.EV_MSC
+            ev.code = C.MSC_GYRO
+            ev.value = C.DEVICE_ORIENTATION_UPRIGHT
+        elseif ev.value == UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED then
+            -- i.e., CW
+            ev.type = C.EV_MSC
+            ev.code = C.MSC_GYRO
+            ev.value = C.DEVICE_ORIENTATION_CLOCKWISE
+        elseif ev.value == UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED then
+            -- i.e., UD
+            ev.type = C.EV_MSC
+            ev.code = C.MSC_GYRO
+            ev.value = C.DEVICE_ORIENTATION_UPSIDE_DOWN
+        elseif ev.value == UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED then
+            -- i.e., CCW
+            ev.type = C.EV_MSC
+            ev.code = C.MSC_GYRO
+            ev.value = C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE
+        end
+    end
 end
 
 function KindleOasis2:init()
@@ -947,7 +1032,12 @@ function KindleOasis2:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
+    self.input:registerEventAdjustHook(ZeldaGyroTranslation)
+    self.input.handleMiscEv = function(this, ev)
+        if ev.code == C.MSC_GYRO then
+            return this:handleGyroEv(ev)
+        end
+    end
 
     self.input.open(self.touch_dev)
     self.input.open("/dev/input/by-path/platform-gpio-keys-event")
@@ -1018,7 +1108,12 @@ function KindleOasis3:init()
 
     Kindle.init(self)
 
-    self.input:registerEventAdjustHook(self.input.adjustKindleOasisOrientation)
+    self.input:registerEventAdjustHook(ZeldaGyroTranslation)
+    self.input.handleMiscEv = function(this, ev)
+        if ev.code == C.MSC_GYRO then
+            return this:handleGyroEv(ev)
+        end
+    end
 
     self.input.open(self.touch_dev)
     self.input.open("/dev/input/by-path/platform-gpio-keys-event")
