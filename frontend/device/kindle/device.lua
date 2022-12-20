@@ -898,13 +898,13 @@ function KindleOasis:init()
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "V" then
-                    rotation_mode = self.screen.ORIENTATION_PORTRAIT
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
                 elseif orientation_code == "R" then
-                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE
+                    rotation_mode = self.screen.DEVICE_ROTATED_CLOCKWISE
                 elseif orientation_code == "D" then
-                    rotation_mode = self.screen.ORIENTATION_PORTRAIT_ROTATED
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPSIDE_DOWN
                 elseif orientation_code == "L" then
-                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+                    rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
 
@@ -1011,13 +1011,13 @@ function KindleOasis2:init()
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
-                    rotation_mode = self.screen.ORIENTATION_PORTRAIT
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
                 elseif orientation_code == "R" then
-                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE
+                    rotation_mode = self.screen.DEVICE_ROTATED_CLOCKWISE
                 elseif orientation_code == "D" then
-                    rotation_mode = self.screen.ORIENTATION_PORTRAIT_ROTATED
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPSIDE_DOWN
                 elseif orientation_code == "L" then
-                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+                    rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
 
@@ -1087,13 +1087,13 @@ function KindleOasis3:init()
             local rotation_mode = 0
             if orientation_code then
                 if orientation_code == "U" then
-                    rotation_mode = self.screen.ORIENTATION_PORTRAIT
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
                 elseif orientation_code == "R" then
-                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE
+                    rotation_mode = self.screen.DEVICE_ROTATED_CLOCKWISE
                 elseif orientation_code == "D" then
-                    rotation_mode = self.screen.ORIENTATION_PORTRAIT_ROTATED
+                    rotation_mode = self.screen.DEVICE_ROTATED_UPSIDE_DOWN
                 elseif orientation_code == "L" then
-                    rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+                    rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end
             end
 

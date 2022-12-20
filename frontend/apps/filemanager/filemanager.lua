@@ -75,7 +75,7 @@ FileManager.onPhysicalKeyboardDisconnected = FileManager.onPhysicalKeyboardConne
 function FileManager:setRotationMode()
     local locked = G_reader_settings:isTrue("lock_rotation")
     if not locked then
-        local rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.ORIENTATION_PORTRAIT
+        local rotation_mode = G_reader_settings:readSetting("fm_rotation_mode") or Screen.DEVICE_ROTATED_UPRIGHT
         self:onSetRotationMode(rotation_mode)
     end
 end

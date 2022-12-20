@@ -13,10 +13,10 @@ describe("gesturedetector module", function()
                 multiswipe_directions = direction,
             }
             GestureDetector.screen = {
-                                        ORIENTATION_PORTRAIT = 0,
-                                        ORIENTATION_LANDSCAPE = 1,
-                                        ORIENTATION_PORTRAIT_ROTATED = 2,
-                                        ORIENTATION_LANDSCAPE_ROTATED = 3,
+                                        DEVICE_ROTATED_UPRIGHT = 0,
+                                        DEVICE_ROTATED_CLOCKWISE = 1,
+                                        DEVICE_ROTATED_UPSIDE_DOWN = 2,
+                                        DEVICE_ROTATED_COUNTER_CLOCKWISE = 3,
                                      }
             GestureDetector.screen.getTouchRotation = function() return rotation_mode end
 

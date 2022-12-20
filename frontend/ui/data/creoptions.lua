@@ -55,7 +55,7 @@ local CreOptions = {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
                 item_icons_func = function()
-                    if Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
+                    if Screen:getRotationMode() == Screen.DEVICE_ROTATED_UPRIGHT then
                         -- P, 0UR
                         return {
                             "rotation.P.90CCW",
@@ -63,7 +63,7 @@ local CreOptions = {
                             "rotation.P.90CW",
                             "rotation.P.180UD",
                         }
-                    elseif Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT_ROTATED then
+                    elseif Screen:getRotationMode() == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
                         -- P, 180UD
                         return {
                             "rotation.P.90CW",
@@ -71,7 +71,7 @@ local CreOptions = {
                             "rotation.P.90CCW",
                             "rotation.P.0UR",
                         }
-                    elseif Screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE then
+                    elseif Screen:getRotationMode() == Screen.DEVICE_ROTATED_CLOCKWISE then
                         -- L, 90CW
                         return {
                             "rotation.L.90CCW",
@@ -92,8 +92,8 @@ local CreOptions = {
                 -- For Dispatcher & onMakeDefault's sake
                 labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
                 alternate = false,
-                values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
-                args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
+                values = {Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN},
+                args = {Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE, Screen.DEVICE_ROTATED_UPRIGHT, Screen.DEVICE_ROTATED_CLOCKWISE, Screen.DEVICE_ROTATED_UPSIDE_DOWN},
                 default_arg = 0,
                 current_func = function() return Screen:getRotationMode() end,
                 event = "SetRotationMode",
