@@ -956,34 +956,29 @@ function Input:handleOasisOrientationEv(ev)
     end
 end
 
---- Accelerometer, in a platform-agnostic format.
---- This is spun into a custom, dedicated event type to ease toggling for platforms where EV_MSC is actively used.
---- (Translation should be done via registerEventAdjustHook in Device implementations)
-function Input:handleTranslatedGyroEv(ev)
+--- Accelerometer, in a platform-agnostic, custom format (EV_MSC:MSC_GYRO).
+--- (Translation should be done via registerEventAdjustHook in Device implementations).
+--- This needs to be called *via handleGyroEv* in a handleMiscEv implementation (c.f., Kobo or PocketBook).
+function Input:handleMiscGyroEv(ev)
     local rotation_mode, screen_mode
-    if ev.code == C.GYRO_HANDLED then
-        if ev.value == C.DEVICE_ORIENTATION_UPRIGHT then
-            -- i.e., UR
-            rotation_mode = framebuffer.ORIENTATION_PORTRAIT
-            screen_mode = 'portrait'
-        elseif ev.value == C.DEVICE_ORIENTATION_CLOCKWISE then
-            -- i.e., CW
-            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
-            screen_mode = 'landscape'
-        elseif ev.value == C.DEVICE_ORIENTATION_UPSIDE_DOWN then
-            -- i.e., UD
-            rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
-            screen_mode = 'portrait'
-        elseif ev.value == C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE then
-            -- i.e., CCW
-            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
-            screen_mode = 'landscape'
-        else
-            -- Discard FRONT/BACK
-            return
-        end
+    if ev.value == C.DEVICE_ORIENTATION_UPRIGHT then
+        -- i.e., UR
+        rotation_mode = framebuffer.ORIENTATION_PORTRAIT
+        screen_mode = 'portrait'
+    elseif ev.value == C.DEVICE_ORIENTATION_CLOCKWISE then
+        -- i.e., CW
+        rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
+        screen_mode = 'landscape'
+    elseif ev.value == C.DEVICE_ORIENTATION_UPSIDE_DOWN then
+        -- i.e., UD
+        rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
+        screen_mode = 'portrait'
+    elseif ev.value == C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE then
+        -- i.e., CCW
+        rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
+        screen_mode = 'landscape'
     else
-        -- Discard unhandled event codes, just to future-proof this ;).
+        -- Discard FRONT/BACK
         return
     end
 
@@ -1007,20 +1002,20 @@ end
 function Input:toggleGyroEvents(toggle)
     if toggle == true then
         -- Honor Gyro events
-        if self.handleGyroEv ~= self.handleTranslatedGyroEv then
-            self.handleGyroEv = self.handleTranslatedGyroEv
+        if self.handleGyroEv ~= self.handleMiscGyroEv then
+            self.handleGyroEv = self.handleMiscGyroEv
         end
     elseif toggle == false then
         -- Ignore Gyro events
-        if self.handleGyroEv == self.handleTranslatedGyroEv then
+        if self.handleGyroEv == self.handleMiscGyroEv then
             self.handleGyroEv = self.voidEv
         end
     else
         -- Toggle it
-        if self.handleGyroEv == self.handleTranslatedGyroEv then
+        if self.handleGyroEv == self.handleMiscGyroEv then
             self.handleGyroEv = self.voidEv
         else
-            self.handleGyroEv = self.handleTranslatedGyroEv
+            self.handleGyroEv = self.handleMiscGyroEv
         end
     end
 end
@@ -1365,11 +1360,6 @@ function Input:waitEvent(now, deadline)
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
-            elseif event.type == C.EV_GYRO then
-                local handled_ev = self:handleGyroEv(event)
-                if handled_ev then
-                    table.insert(handled, handled_ev)
-                end
             elseif event.type == C.EV_SDL then
                 local handled_ev = self:handleSdlEv(event)
                 if handled_ev then
@@ -1414,16 +1404,8 @@ function Input:inhibitInput(toggle)
             self._abs_ev_handler = self.handleTouchEv
             self.handleTouchEv = self.voidEv
         end
-        if not self._msc_ev_handler then
-            if not self.device:isPocketBook() and not self.device:isAndroid() then
-                -- NOTE: PocketBook is a special snowflake, synthetic Power events are sent as EV_MSC.
-                --       Thankfully, that's all that EV_MSC is used for on that platform.
-                -- NOTE: Android, on the other hand, handles a *lot* of critical stuff over EV_MSC,
-                --       as it's used to communicate between Android and Lua land ;).
-                self._msc_ev_handler = self.handleMiscEv
-                self.handleMiscEv = self.voidEv
-            end
-        end
+        -- NOTE: We leave handleMiscEv alone, as EV_MSC is used for critical low-level stuff on some platforms (PB, Android),
+        --       and the only thing we might want to skip in there are gyro events anyway, which we'll handle separately.
         if not self._gyro_ev_handler then
             self._gyro_ev_handler = self.handleGyroEv
             self.handleGyroEv = self.voidEv
@@ -1453,10 +1435,6 @@ function Input:inhibitInput(toggle)
         if self._abs_ev_handler then
             self.handleTouchEv = self._abs_ev_handler
             self._abs_ev_handler = nil
-        end
-        if self._msc_ev_handler then
-            self.handleMiscEv = self._msc_ev_handler
-            self._msc_ev_handler = nil
         end
         if self._gyro_ev_handler then
             self.handleGyroEv = self._gyro_ev_handler
