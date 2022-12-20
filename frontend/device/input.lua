@@ -101,7 +101,7 @@ local _internal_clipboard_text = nil -- holds the last copied text
 local Input = {
     -- must point to the device implementation when instantiating
     device = nil,
-    -- this depends on keyboard layout and should be overridden:
+    -- this depends on keyboard layout and should be overridden
     event_map = nil, -- hash
     -- adapters are post processing functions that transform a given event to another event
     event_map_adapter = nil, -- hash
@@ -159,8 +159,8 @@ local Input = {
         UsbDevicePlugOut = {},
     },
 
-    -- This might be overloaded or even disabled (post-init) at instance-level, so we don't want any inheritance
-    rotation_map = nil, -- nil or a hash
+    -- This might be modified at runtime, so we don't want any inheritance
+    rotation_map = nil, -- hash
 
     timer_callbacks = nil, -- instance-specific table, because the object may get destroyed & recreated at runtime
     disable_double_tap = true,
@@ -239,7 +239,7 @@ function Input:init()
             [framebuffer.ORIENTATION_PORTRAIT]          = {},
             [framebuffer.ORIENTATION_LANDSCAPE]         = { Up = "Right", Right = "Down", Down = "Left",  Left = "Up",    LPgBack = "LPgFwd",  LPgFwd  = "LPgBack", RPgBack = "RPgFwd",  RPgFwd  = "RPgBack" },
             [framebuffer.ORIENTATION_PORTRAIT_ROTATED]  = { Up = "Down",  Right = "Left", Down = "Up",    Left = "Right", LPgFwd  = "LPgBack", LPgBack = "LPgFwd",  RPgFwd  = "RPgBack", RPgBack = "RPgFwd" },
-            [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = { Up = "Left",  Right = "Up",   Down = "Right", Left = "Down" }
+            [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = { Up = "Left",  Right = "Up",   Down = "Right", Left = "Down" },
         }
     end
 
@@ -272,6 +272,18 @@ function Input:init()
 
     -- setup inhibitInputUntil scheduling function
     self._inhibitInputUntil_func = function() self:inhibitInputUntil() end
+end
+
+--[[--
+Setup a rotation_map that does nothing (for platforms where the events we get are already translated).
+--]]
+function Input:disableRotationMap()
+    self.rotation_map = {
+        [framebuffer.ORIENTATION_PORTRAIT]          = {},
+        [framebuffer.ORIENTATION_LANDSCAPE]         = {},
+        [framebuffer.ORIENTATION_PORTRAIT_ROTATED]  = {},
+        [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = {},
+    }
 end
 
 --[[--
@@ -552,11 +564,9 @@ function Input:handleKeyBoardEv(ev)
     end
 
     -- take device rotation into account
-    if self.rotation_map then
-        local rota = self.device.screen:getRotationMode()
-        if self.rotation_map[rota][keycode] then
-            keycode = self.rotation_map[rota][keycode]
-        end
+    local rota = self.device.screen:getRotationMode()
+    if self.rotation_map[rota][keycode] then
+        keycode = self.rotation_map[rota][keycode]
     end
 
     if self.fake_event_set[keycode] then
