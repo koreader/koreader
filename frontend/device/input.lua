@@ -1344,8 +1344,10 @@ function Input:inhibitInput(toggle)
             self._abs_ev_handler = self.handleTouchEv
             self.handleTouchEv = self.voidEv
         end
-        -- NOTE: We leave handleMiscEv alone, as EV_MSC is used for critical low-level stuff on some platforms (PB, Android),
-        --       and the only thing we might want to skip in there are gyro events anyway, which we'll handle separately.
+        -- NOTE: We leave handleMiscEv alone, as some platforms make extensive use of EV_MSC for critical low-level stuff:
+        --       e.g., on PocketBook, it is used to handle InkView task management events (i.e., PM);
+        --       and on Android, for the critical purpose of forwarding Android events to Lua-land.
+        --       The only thing we might want to skip in there are gyro events anyway, which we'll handle separately.
         if not self._gyro_ev_handler then
             self._gyro_ev_handler = self.handleGyroEv
             self.handleGyroEv = self.voidEv
