@@ -1,5 +1,6 @@
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
+local Input = require("device/input")
 local UIManager -- Updated on UIManager init
 local WakeupMgr = require("device/wakeupmgr")
 local time = require("ui/time")
@@ -737,7 +738,7 @@ function Kobo:init()
         aux_battery_sysfs = self.aux_battery_sysfs,
     }
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
-    self.input = require("device/input"):new{
+    self.input = Input:new{
         device = self,
         event_map = {
             [35] = "SleepCover",  -- KEY_H, Elipsa
@@ -918,6 +919,34 @@ function Kobo:setTouchEventHandler()
     end
 end
 
+-- HAL for gyro orientation switches
+local function gyroTranslation(ev)
+    -- c.f., drivers/hwmon/mma8x5x.c (holds true on devices with a KX122, too)
+    local MSC_RAW_GSENSOR_PORTRAIT_DOWN   = 0x17
+    local MSC_RAW_GSENSOR_PORTRAIT_UP     = 0x18
+    local MSC_RAW_GSENSOR_LANDSCAPE_RIGHT = 0x19
+    local MSC_RAW_GSENSOR_LANDSCAPE_LEFT  = 0x1a
+    -- Not that we care about those, but they are reported, and accurate ;).
+    local MSC_RAW_GSENSOR_BACK            = 0x1b
+    local MSC_RAW_GSENSOR_FRONT           = 0x1c
+
+    if ev.value == MSC_RAW_GSENSOR_PORTRAIT_UP then
+        -- i.e., UR
+        ev.type = C.EV_GYRO
+        ev.code = Input.GYRO_HANDLED
+        ev.value = Input.DEVICE_ORIENTATION_UPRIGHT
+    elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_RIGHT then
+        -- i.e., CW
+        ev.value = Input.DEVICE_ORIENTATION_CLOCKWISE
+    elseif ev.value == MSC_RAW_GSENSOR_PORTRAIT_DOWN then
+        -- i.e., UD
+        ev.value = Input.DEVICE_ORIENTATION_UPSIDE_DOWN
+    elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_LEFT then
+        -- i.e., CCW
+        ev.value = Input.DEVICE_ORIENTATION_COUNTER_CLOCKWISE
+    end
+end
+
 function Kobo:initEventAdjustHooks()
     -- Build a single composite hook, to avoid duplicated branches...
     local koboInputMangling
@@ -927,12 +956,16 @@ function Kobo:initEventAdjustHooks()
         koboInputMangling = function(ev)
             if ev.type == C.EV_ABS then
                 self.input.adjustABS_SwitchAxesAndMirrorX(ev, max_x)
+            elseif ev.type == C.EV_MSC and ev.code == C.MSC_RAW then
+                gyroTranslation(ev)
             end
         end
     elseif self.touch_switch_xy and not self.touch_mirrored_x then
         koboInputMangling = function(ev)
             if ev.type == C.EV_ABS then
                 self.input.adjustABS_SwitchXY(ev)
+            elseif ev.type == C.EV_MSC and ev.code == C.MSC_RAW then
+                gyroTranslation(ev)
             end
         end
     end
