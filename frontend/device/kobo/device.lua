@@ -1,6 +1,5 @@
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
-local Input = require("device/input")
 local UIManager -- Updated on UIManager init
 local WakeupMgr = require("device/wakeupmgr")
 local time = require("ui/time")
@@ -379,7 +378,6 @@ local KoboFrost = Kobo:extend{
     hasFrontlight = yes,
     hasKeys = yes,
     hasGSensor = yes,
-    canToggleGSensor = yes,
     touch_snow_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
@@ -403,7 +401,6 @@ local KoboStorm = Kobo:extend{
     hasFrontlight = yes,
     hasKeys = yes,
     hasGSensor = yes,
-    canToggleGSensor = yes,
     touch_snow_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
@@ -445,7 +442,6 @@ local KoboEuropa = Kobo:extend{
     led_uses_channel_3 = true,
     hasFrontlight = yes,
     hasGSensor = yes,
-    canToggleGSensor = yes,
     pressure_event = C.ABS_MT_PRESSURE,
     display_dpi = 227,
     boot_rota = C.FB_ROTATE_CCW,
@@ -465,7 +461,6 @@ local KoboCadmus = Kobo:extend{
     hasFrontlight = yes,
     hasKeys = yes,
     hasGSensor = yes,
-    canToggleGSensor = yes,
     pressure_event = C.ABS_MT_PRESSURE,
     display_dpi = 300,
     hasNaturalLight = yes,
@@ -497,7 +492,6 @@ local KoboIo = Kobo:extend{
     hasFrontlight = yes,
     hasKeys = yes,
     hasGSensor = yes,
-    canToggleGSensor = yes,
     pressure_event = C.ABS_MT_PRESSURE,
     touch_mirrored_x = false,
     display_dpi = 300,
@@ -733,7 +727,7 @@ function Kobo:init()
         aux_battery_sysfs = self.aux_battery_sysfs,
     }
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
-    self.input = Input:new{
+    self.input = require("device/input"):new{
         device = self,
         event_map = {
             [35] = "SleepCover",  -- KEY_H, Elipsa
@@ -1311,13 +1305,6 @@ end
 
 function Kobo:reboot()
     os.execute("sleep 1 && reboot &")
-end
-
--- FIXME: Get rid of canToggleGSensor, as it'll be true for all hasGSensor devices once I'm done...
-function Kobo:toggleGSensor(toggle)
-    if self:canToggleGSensor() and self.input then
-        self.input:toggleGyroEvents(toggle)
-    end
 end
 
 function Kobo:toggleChargingLED(toggle)

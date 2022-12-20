@@ -11,7 +11,7 @@ return {
     sub_item_table_func = function()
         local rotation_table = {}
 
-        if Device:hasGSensor() and Device:canToggleGSensor() then
+        if Device:hasGSensor() then
             table.insert(rotation_table, {
                 text = _("Ignore accelerometer rotation events"),
                 help_text = _("This will inhibit automatic rotations triggered by your device's gyro."),

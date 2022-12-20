@@ -214,7 +214,7 @@ if Device:hasFrontlight() then
 
 end
 
-if Device:canToggleGSensor() then
+if Device:hasGSensor() then
     function DeviceListener:onToggleGSensor()
         _toggleSetting("input_ignore_gsensor")
         Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
