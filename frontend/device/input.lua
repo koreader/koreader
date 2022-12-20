@@ -959,7 +959,8 @@ function Input:handleOasisOrientationEv(ev)
     end
 end
 
---- Accelerometer, in a platform-agnostic format
+--- Accelerometer, in a platform-agnostic format.
+--- This is spun into a custom, dedicated event type to ease toggling for platforms where EV_MSC is actively used.
 --- (Translation should be done via registerEventAdjustHook in Device implementations)
 function Input:handleTranslatedGyroEv(ev)
     local rotation_mode, screen_mode
@@ -1367,6 +1368,11 @@ function Input:waitEvent(now, deadline)
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
+            elseif event.type == C.EV_GYRO then
+                local handled_ev = self:handleGyroEv(event)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
             elseif event.type == C.EV_SDL then
                 local handled_ev = self:handleSdlEv(event)
                 if handled_ev then
@@ -1421,6 +1427,10 @@ function Input:inhibitInput(toggle)
                 self.handleMiscEv = self.voidEv
             end
         end
+        if not self._gyro_ev_handler then
+            self._gyro_ev_handler = self.handleGyroEv
+            self.handleGyroEv = self.voidEv
+        end
         if not self._sdl_ev_handler then
             self._sdl_ev_handler = self.handleSdlEv
             self.handleSdlEv = self.voidEv
@@ -1450,6 +1460,10 @@ function Input:inhibitInput(toggle)
         if self._msc_ev_handler then
             self.handleMiscEv = self._msc_ev_handler
             self._msc_ev_handler = nil
+        end
+        if self._gyro_ev_handler then
+            self.handleGyroEv = self._gyro_ev_handler
+            self._gyro_ev_handler = nil
         end
         if self._sdl_ev_handler then
             self.handleSdlEv = self._sdl_ev_handler
