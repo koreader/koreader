@@ -19,30 +19,10 @@ local C = ffi.C
 require("ffi/posix_h")
 require("ffi/linux_input_h")
 
--- key press event values (KEY.value)
+-- EV_KEY values
 local KEY_PRESS   = 1
 local KEY_REPEAT  = 2
 local KEY_RELEASE = 0
-
--- For Kindle Oasis orientation events (ABS.code)
--- the ABS code of orientation event will be adjusted to -24 from 24 (C.ABS_PRESSURE)
--- as C.ABS_PRESSURE is also used to detect touch input in KOBO devices.
-local ABS_OASIS_ORIENTATION                     = -24
-local DEVICE_ORIENTATION_PORTRAIT_LEFT          = 15
-local DEVICE_ORIENTATION_PORTRAIT_RIGHT         = 17
-local DEVICE_ORIENTATION_PORTRAIT               = 19
-local DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT  = 16
-local DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT = 18
-local DEVICE_ORIENTATION_PORTRAIT_ROTATED       = 20
-local DEVICE_ORIENTATION_LANDSCAPE              = 21
-local DEVICE_ORIENTATION_LANDSCAPE_ROTATED      = 22
-
--- Kindle Oasis 2 & 3 variant
--- c.f., drivers/input/misc/accel/bma2x2.c
-local UPWARD_PORTRAIT_UP_INTERRUPT_HAPPENED     = 15
-local UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED   = 16
-local UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED  = 17
-local UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED = 18
 
 -- Based on ABS_MT_TOOL_TYPE values on Elan panels
 local TOOL_TYPE_FINGER = 0
@@ -391,13 +371,6 @@ function Input:adjustABS_Translate(ev, by)
         ev.value = by.x + ev.value
     elseif ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y then
         ev.value = by.y + ev.value
-    end
-end
-
--- FIXME: Move to Kindle Device
-function Input:adjustKindleOasisOrientation(ev)
-    if ev.type == C.EV_ABS and ev.code == C.ABS_PRESSURE then
-        ev.code = ABS_OASIS_ORIENTATION
     end
 end
 
@@ -894,66 +867,6 @@ function Input:handleTouchEvLegacy(ev)
     end
 end
 
-function Input:handleOasisOrientationEv(ev)
-    local rotation_mode, screen_mode
-    if self.device:isZelda() then
-        if ev.value == UPWARD_PORTRAIT_UP_INTERRUPT_HAPPENED then
-            -- i.e., UR
-            rotation_mode = framebuffer.ORIENTATION_PORTRAIT
-            screen_mode = 'portrait'
-        elseif ev.value == UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED then
-            -- i.e., CW
-            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
-            screen_mode = 'landscape'
-        elseif ev.value == UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED then
-            -- i.e., UD
-            rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
-            screen_mode = 'portrait'
-        elseif ev.value == UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED then
-            -- i.e., CCW
-            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
-            screen_mode = 'landscape'
-        end
-    else
-        if ev.value == DEVICE_ORIENTATION_PORTRAIT
-            or ev.value == DEVICE_ORIENTATION_PORTRAIT_LEFT
-            or ev.value == DEVICE_ORIENTATION_PORTRAIT_RIGHT then
-            -- i.e., UR
-            rotation_mode = framebuffer.ORIENTATION_PORTRAIT
-            screen_mode = 'portrait'
-        elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE then
-            -- i.e., CW
-            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
-            screen_mode = 'landscape'
-        elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED
-            or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT
-            or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT then
-            -- i.e., UD
-            rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
-            screen_mode = 'portrait'
-        elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE_ROTATED then
-            -- i.e., CCW
-            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
-            screen_mode = 'landscape'
-        end
-    end
-
-    local old_rotation_mode = self.device.screen:getRotationMode()
-    if self.device:isGSensorLocked() then
-        local old_screen_mode = self.device.screen:getScreenMode()
-        if rotation_mode ~= old_rotation_mode and screen_mode == old_screen_mode then
-            -- Cheaper than a full SetRotationMode event, as we don't need to re-layout anything.
-            self.device.screen:setRotationMode(rotation_mode)
-            local UIManager = require("ui/uimanager")
-            UIManager:onRotation()
-        end
-    else
-        if rotation_mode ~= old_rotation_mode then
-            return Event:new("SetRotationMode", rotation_mode)
-        end
-    end
-end
-
 --- Accelerometer, in a platform-agnostic, custom format (EV_MSC:MSC_GYRO).
 --- (Translation should be done via registerEventAdjustHook in Device implementations).
 --- This needs to be called *via handleGyroEv* in a handleMiscEv implementation (c.f., Kobo or PocketBook).
@@ -1339,11 +1252,6 @@ function Input:waitEvent(now, deadline)
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
-            elseif event.type == C.EV_ABS and event.code == ABS_OASIS_ORIENTATION then
-                local handled_ev = self:handleOasisOrientationEv(event)
-                if handled_ev then
-                    table.insert(handled, handled_ev)
-                end
             elseif event.type == C.EV_ABS or event.type == C.EV_SYN then
                 local handled_evs = self:handleTouchEv(event)
                 -- handleTouchEv only returns an array of Events once it gets a SYN_REPORT,
@@ -1394,10 +1302,6 @@ function Input:inhibitInput(toggle)
             self.handleKeyBoardEv = self.handlePowerManagementOnlyEv
         end
         -- And send everything else to the void
-        if not self._oasis_ev_handler then
-            self._oasis_ev_handler = self.handleOasisOrientationEv
-            self.handleOasisOrientationEv = self.voidEv
-        end
         if not self._abs_ev_handler then
             self._abs_ev_handler = self.handleTouchEv
             self.handleTouchEv = self.voidEv
@@ -1425,10 +1329,6 @@ function Input:inhibitInput(toggle)
             logger.info("Restoring user input handling")
             self.handleKeyBoardEv = self._key_ev_handler
             self._key_ev_handler = nil
-        end
-        if self._oasis_ev_handler then
-            self.handleOasisOrientationEv = self._oasis_ev_handler
-            self._oasis_ev_handler = nil
         end
         if self._abs_ev_handler then
             self.handleTouchEv = self._abs_ev_handler
