@@ -320,6 +320,7 @@ function Input:gestureAdjustHook(ges)
 end
 
 --- Catalog of predefined hooks.
+-- These are *not* usable directly as hooks, they're just building blocks
 function Input:adjustABS_SwitchXY(ev)
     if ev.code == C.ABS_X then
         ev.code = C.ABS_Y
@@ -371,6 +372,25 @@ function Input:adjustABS_Translate(ev, by)
         ev.value = by.x + ev.value
     elseif ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y then
         ev.value = by.y + ev.value
+    end
+end
+
+-- These *are* usable directly as hooks
+function Input:adjustTouchScale(ev, by)
+    if ev.type == C.EV_ABS then
+        self:adjustABS_Scale(ev, by)
+    end
+end
+
+function Input:adjustTouchSwitchAxesAndMirrorX(ev, max_x)
+    if ev.type == C.EV_ABS then
+        self:adjustABS_SwitchAxesAndMirrorX(ev, max_x)
+    end
+end
+
+function Input:adjustTouchTranslate(ev, by)
+    if ev.type == C.EV_ABS then
+        self:adjustABS_Translate(ev, by)
     end
 end
 

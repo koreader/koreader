@@ -382,11 +382,10 @@ function Device:_toggleStatusBarVisibility()
     if not is_fullscreen and self.viewport then
         statusbar_height = 0
         -- reset touchTranslate to normal
-        self.input:registerEventAdjustHook(function(this, ev)
-            if ev.type == C.EV_ABS then
-                this:adjustABS_Translate(ev, {x = 0 + self.viewport.x, y = 0 + self.viewport.y})
-            end
-        end)
+        self.input:registerEventAdjustHook(
+            self.input.adjustTouchTranslate,
+            {x = 0 + self.viewport.x, y = 0 + self.viewport.y}
+        )
     end
 
     local viewport = Geom:new{x=0, y=statusbar_height, w=width, h=new_height}
@@ -395,11 +394,10 @@ function Device:_toggleStatusBarVisibility()
 
     self.screen:setViewport(viewport)
     if is_fullscreen and self.viewport then
-        self.input:registerEventAdjustHook(function(this, ev)
-            if ev.type == C.EV_ABS then
-                this:adjustABS_Translate(ev, {x = 0 - self.viewport.x, y = 0 - self.viewport.y})
-            end
-        end)
+        self.input:registerEventAdjustHook(
+            self.input.adjustTouchTranslate,
+            {x = 0 - self.viewport.x, y = 0 - self.viewport.y}
+        )
     end
 
     self.fullscreen = is_fullscreen

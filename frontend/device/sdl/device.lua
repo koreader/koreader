@@ -5,13 +5,6 @@ local ffi = require("ffi")
 local logger = require("logger")
 local time = require("ui/time")
 
--- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
-local ffi = require("ffi")
-local C = ffi.C
-require("ffi/linux_fb_h")
-require("ffi/linux_input_h")
-require("ffi/posix_h")
-
 -- SDL computes WM_CLASS on X11/Wayland based on process's binary name.
 -- Some desktop environments rely on WM_CLASS to name the app and/or to assign the proper icon.
 if jit.os == "Linux" or jit.os == "BSD" or jit.os == "POSIX" then
@@ -308,12 +301,10 @@ function Device:init()
     end
 
     if portrait then
-        local max_x = self.screen:getScreenWidth() - 1
-        self.input:registerEventAdjustHook(function(this, ev)
-            if ev.type == C.EV_ABS then
-                this:adjustABS_SwitchAxesAndMirrorX(ev, max_x)
-            end
-        end)
+        self.input:registerEventAdjustHook(
+            self.input.adjustTouchSwitchAxesAndMirrorX,
+            (self.screen:getScreenWidth() - 1)
+        )
     end
 
     Generic.init(self)
