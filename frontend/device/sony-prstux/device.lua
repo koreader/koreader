@@ -64,7 +64,7 @@ function SonyPRSTUX:init()
     self.input.open("fake_events") -- usb plug-in/out and charging/not-charging
     self.input:registerEventAdjustHook(adjustTouchEvt)
 
-    local rotation_mode = self.screen.ORIENTATION_LANDSCAPE_ROTATED
+    local rotation_mode = self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
     self.screen.native_rotation_mode = rotation_mode
     self.screen.cur_rotation_mode = rotation_mode
 

@@ -647,8 +647,8 @@ local PocketBookColorLux = PocketBook:extend{
     canUseCBB = no, -- 24bpp
 }
 function PocketBookColorLux:_model_init()
-    self.screen.blitbuffer_rotation_mode = self.screen.ORIENTATION_PORTRAIT
-    self.screen.native_rotation_mode = self.screen.ORIENTATION_PORTRAIT
+    self.screen.blitbuffer_rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
+    self.screen.native_rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
 end
 function PocketBookColorLux._fb_init(fb, finfo, vinfo)
     -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer

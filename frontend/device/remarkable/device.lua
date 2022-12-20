@@ -159,7 +159,7 @@ function Remarkable:init()
     -- USB plug/unplug, battery charge/not charging are generated as fake events
     self.input.open("fake_events")
 
-    local rotation_mode = self.screen.ORIENTATION_PORTRAIT
+    local rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
     self.screen.native_rotation_mode = rotation_mode
     self.screen.cur_rotation_mode = rotation_mode
 

@@ -237,10 +237,10 @@ function Input:init()
     -- NOTE: When looking at the device in Portrait mode, that's assuming PgBack is on TOP, and PgFwd on the BOTTOM
     if not self.rotation_map then
         self.rotation_map = {
-            [framebuffer.ORIENTATION_PORTRAIT]          = {},
-            [framebuffer.ORIENTATION_LANDSCAPE]         = { Up = "Right", Right = "Down", Down = "Left",  Left = "Up",    LPgBack = "LPgFwd",  LPgFwd  = "LPgBack", RPgBack = "RPgFwd",  RPgFwd  = "RPgBack" },
-            [framebuffer.ORIENTATION_PORTRAIT_ROTATED]  = { Up = "Down",  Right = "Left", Down = "Up",    Left = "Right", LPgFwd  = "LPgBack", LPgBack = "LPgFwd",  RPgFwd  = "RPgBack", RPgBack = "RPgFwd" },
-            [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = { Up = "Left",  Right = "Up",   Down = "Right", Left = "Down" },
+            [framebuffer.DEVICE_ROTATED_UPRIGHT]           = {},
+            [framebuffer.DEVICE_ROTATED_CLOCKWISE]         = { Up = "Right", Right = "Down", Down = "Left",  Left = "Up",    LPgBack = "LPgFwd",  LPgFwd  = "LPgBack", RPgBack = "RPgFwd",  RPgFwd  = "RPgBack" },
+            [framebuffer.DEVICE_ROTATED_UPSIDE_DOWN]       = { Up = "Down",  Right = "Left", Down = "Up",    Left = "Right", LPgFwd  = "LPgBack", LPgBack = "LPgFwd",  RPgFwd  = "RPgBack", RPgBack = "RPgFwd" },
+            [framebuffer.DEVICE_ROTATED_COUNTER_CLOCKWISE] = { Up = "Left",  Right = "Up",   Down = "Right", Left = "Down" },
         }
     end
 
@@ -280,10 +280,10 @@ Setup a rotation_map that does nothing (for platforms where the events we get ar
 --]]
 function Input:disableRotationMap()
     self.rotation_map = {
-        [framebuffer.ORIENTATION_PORTRAIT]          = {},
-        [framebuffer.ORIENTATION_LANDSCAPE]         = {},
-        [framebuffer.ORIENTATION_PORTRAIT_ROTATED]  = {},
-        [framebuffer.ORIENTATION_LANDSCAPE_ROTATED] = {},
+        [framebuffer.DEVICE_ROTATED_UPRIGHT]           = {},
+        [framebuffer.DEVICE_ROTATED_CLOCKWISE]         = {},
+        [framebuffer.DEVICE_ROTATED_UPSIDE_DOWN]       = {},
+        [framebuffer.DEVICE_ROTATED_COUNTER_CLOCKWISE] = {},
     }
 end
 
@@ -912,20 +912,20 @@ function Input:handleMiscGyroEv(ev)
     local rotation_mode, screen_mode
     if ev.value == C.DEVICE_ROTATED_UPRIGHT then
         -- i.e., UR
-        rotation_mode = framebuffer.ORIENTATION_PORTRAIT
-        screen_mode = 'portrait'
+        rotation_mode = framebuffer.DEVICE_ROTATED_UPRIGHT
+        screen_mode = "portrait"
     elseif ev.value == C.DEVICE_ROTATED_CLOCKWISE then
         -- i.e., CW
-        rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
-        screen_mode = 'landscape'
+        rotation_mode = framebuffer.DEVICE_ROTATED_CLOCKWISE
+        screen_mode = "landscape"
     elseif ev.value == C.DEVICE_ROTATED_UPSIDE_DOWN then
         -- i.e., UD
-        rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
-        screen_mode = 'portrait'
+        rotation_mode = framebuffer.DEVICE_ROTATED_UPSIDE_DOWN
+        screen_mode = "portrait"
     elseif ev.value == C.DEVICE_ROTATED_COUNTER_CLOCKWISE then
         -- i.e., CCW
-        rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
-        screen_mode = 'landscape'
+        rotation_mode = framebuffer.DEVICE_ROTATED_COUNTER_CLOCKWISE
+        screen_mode = "landscape"
     else
         -- Discard FRONT/BACK
         return
