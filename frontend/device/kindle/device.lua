@@ -709,7 +709,11 @@ function KindleTouch:init()
     }
 
     -- Kindle Touch needs event modification for proper coordinates
-    self.input:registerEventAdjustHook(self.input.adjustTouchScale, {x=600/4095, y=800/4095})
+    self.input:registerEventAdjustHook(function(this, ev)
+        if ev.type == C.EV_ABS then
+            this:adjustABS_Scale(ev, {x = 600/4095, y = 800/4095})
+        end
+    end)
 
     -- event0 in KindleTouch is "WM8962 Beep Generator" (useless)
     -- event1 in KindleTouch is "imx-yoshi Headset" (useless)

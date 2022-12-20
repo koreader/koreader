@@ -12,6 +12,13 @@ local _ = require("gettext")
 local ffiUtil = require("ffi/util")
 local T = ffiUtil.template
 
+-- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/linux_fb_h")
+require("ffi/linux_input_h")
+require("ffi/posix_h")
+
 local function yes() return true end
 local function no() return false end
 
@@ -203,9 +210,11 @@ function Device:init()
     if self.viewport then
         logger.dbg("setting a viewport:", self.viewport)
         self.screen:setViewport(self.viewport)
-        self.input:registerEventAdjustHook(
-            self.input.adjustTouchTranslate,
-            {x = 0 - self.viewport.x, y = 0 - self.viewport.y})
+        self.input:registerEventAdjustHook(function(this, ev)
+            if ev.type == C.EV_ABS then
+                this:adjustABS_Translate(ev, {x = 0 - self.viewport.x, y = 0 - self.viewport.y})
+            end
+        end)
     end
 
     -- Handle button mappings shenanigans
