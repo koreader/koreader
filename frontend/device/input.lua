@@ -869,7 +869,7 @@ end
 
 --- Accelerometer, in a platform-agnostic, custom format (EV_MSC:MSC_GYRO).
 --- (Translation should be done via registerEventAdjustHook in Device implementations).
---- This needs to be called *via handleGyroEv* in a handleMiscEv implementation (c.f., Kobo or PocketBook).
+--- This needs to be called *via handleGyroEv* in a handleMiscEv implementation (c.f., Kobo, Kindle or PocketBook).
 function Input:handleMiscGyroEv(ev)
     local rotation_mode, screen_mode
     if ev.value == C.DEVICE_ORIENTATION_UPRIGHT then
