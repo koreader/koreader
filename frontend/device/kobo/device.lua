@@ -381,7 +381,6 @@ local KoboFrost = Kobo:extend{
     hasGSensor = yes,
     canToggleGSensor = yes,
     touch_snow_protocol = true,
-    misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
@@ -406,7 +405,6 @@ local KoboStorm = Kobo:extend{
     hasGSensor = yes,
     canToggleGSensor = yes,
     touch_snow_protocol = true,
-    misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
@@ -449,7 +447,6 @@ local KoboEuropa = Kobo:extend{
     hasGSensor = yes,
     canToggleGSensor = yes,
     pressure_event = C.ABS_MT_PRESSURE,
-    misc_ntx_gsensor_protocol = true,
     display_dpi = 227,
     boot_rota = C.FB_ROTATE_CCW,
     battery_sysfs = "/sys/class/power_supply/battery",
@@ -470,7 +467,6 @@ local KoboCadmus = Kobo:extend{
     hasGSensor = yes,
     canToggleGSensor = yes,
     pressure_event = C.ABS_MT_PRESSURE,
-    misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
@@ -504,7 +500,6 @@ local KoboIo = Kobo:extend{
     canToggleGSensor = yes,
     pressure_event = C.ABS_MT_PRESSURE,
     touch_mirrored_x = false,
-    misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
     frontlight_settings = {
@@ -909,7 +904,7 @@ function Kobo:setTouchEventHandler()
     end
 
     -- Accelerometer
-    if self.misc_ntx_gsensor_protocol then
+    if self:hasGSensor() then
         if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
             self.input.handleGyroEv = self.input.handleTranslatedGyroEv
         end
@@ -1317,9 +1312,7 @@ end
 -- FIXME: Get rid of canToggleGSensor, as it'll be true for all hasGSensor devices once I'm done...
 function Kobo:toggleGSensor(toggle)
     if self:canToggleGSensor() and self.input then
-        if self.misc_ntx_gsensor_protocol then
-            self.input:toggleGyroEvents(toggle)
-        end
+        self.input:toggleGyroEvents(toggle)
     end
 end
 
