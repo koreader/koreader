@@ -19,8 +19,6 @@ local C = ffi.C
 require("ffi/posix_h")
 require("ffi/linux_input_h")
 
--- luacheck: push
--- luacheck: ignore
 -- key press event values (KEY.value)
 local KEY_PRESS   = 1
 local KEY_REPEAT  = 2
@@ -119,7 +117,6 @@ local linux_evdev_rep_code_map = {
     [C.REP_DELAY] = "REP_DELAY",
     [C.REP_PERIOD] = "REP_PERIOD",
 }
--- luacheck: pop
 
 local _internal_clipboard_text = nil -- holds the last copied text
 
