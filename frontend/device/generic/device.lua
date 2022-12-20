@@ -61,7 +61,6 @@ local Device = {
     canImportFiles = no,
     canShareText = no,
     hasGSensor = no,
-    canToggleGSensor = no,
     isGSensorLocked = no,
     canToggleMassStorage = no,
     canToggleChargingLED = no,
@@ -418,8 +417,17 @@ function Device:performHapticFeedback(type) end
 -- Device specific method for toggling input events
 function Device:setIgnoreInput(enable) return true end
 
--- Device specific method for toggling the GSensor
-function Device:toggleGSensor(toggle) end
+-- Device agnostic method for toggling the GSensor
+-- (can be reimplemented if need be, but you really, really should try not to. c.f., Kobo, Kindle & PocketBook)
+function Device:toggleGSensor(toggle)
+    if not self:hasGSensor() then
+        return
+    end
+
+    if self.input then
+        self.input:toggleGyroEvents(toggle)
+    end
+end
 
 -- Whether or not the GSensor should be locked to the current orientation (i.e. Portrait <-> Inverted Portrait or Landscape <-> Inverted Landscape only)
 function Device:lockGSensor(toggle)
