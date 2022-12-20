@@ -215,8 +215,13 @@ function Device:init()
         end
     end
 
-    -- Honor the gyro lock
     if self:hasGSensor() then
+        -- Setup our standard gyro event handler (EV_MSC:MSC_GYRO)
+        if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+            self.input.handleGyroEv = self.input.handleMiscGyroEv
+        end
+
+        -- Honor the gyro lock
         if G_reader_settings:isTrue("input_lock_gsensor") then
             self:lockGSensor(true)
         end

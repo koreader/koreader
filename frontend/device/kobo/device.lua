@@ -905,9 +905,6 @@ function Kobo:setTouchEventHandler()
                 return this:handleGyroEv(ev)
             end
         end
-        if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
-            self.input.handleGyroEv = self.input.handleMiscGyroEv
-        end
     end
 end
 
