@@ -217,6 +217,8 @@ function PocketBook:init()
                 -- Auto shutdown event from inkview framework,
                 -- gracefully close everything and let the framework shutdown the device.
                 return "Exit"
+            elseif ev.code == C.MSC_GYRO then
+                return this:handleGyroEv(ev)
             end
         end,
     }
