@@ -63,7 +63,6 @@ local linux_evdev_type_map = {
     [C.EV_PWR] = "EV_PWR",
     [C.EV_FF_STATUS] = "EV_FF_STATUS",
     [C.EV_MAX] = "EV_MAX",
-    [C.EV_GYRO] = "EV_GYRO",
     [C.EV_SDL] = "EV_SDL",
 }
 
