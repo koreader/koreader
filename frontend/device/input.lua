@@ -320,7 +320,7 @@ function Input:gestureAdjustHook(ges)
 end
 
 --- Catalog of predefined hooks.
--- These are *not* usable directly as hooks, they're just building blocks
+-- These are *not* usable directly as hooks, they're just building blocks (c.f., Kobo)
 function Input:adjustABS_SwitchXY(ev)
     if ev.code == C.ABS_X then
         ev.code = C.ABS_Y
