@@ -929,15 +929,16 @@ function Kobo:initEventAdjustHooks()
                 self.input.adjustABS_SwitchAxesAndMirrorX(ev, max_x)
             end
         end
-    else
+    elseif self.touch_switch_xy and not self.touch_mirrored_x then
         koboInputMangling = function(ev)
             if ev.type == C.EV_ABS then
                 self.input.adjustABS_SwitchXY(ev)
             end
         end
     end
-
-    self.input:registerEventAdjustHook(koboInputMangling)
+    if koboInputMangling then
+        self.input:registerEventAdjustHook(koboInputMangling)
+    end
 end
 
 local function getCodeName()
