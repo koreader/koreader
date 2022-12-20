@@ -910,11 +910,8 @@ function Kobo:setTouchEventHandler()
 
     -- Accelerometer
     if self.misc_ntx_gsensor_protocol then
-        if G_reader_settings:isTrue("input_ignore_gsensor") then
-            self.input.isNTXAccelHooked = false
-        else
-            self.input.handleMiscEv = self.input.handleMiscEvNTX
-            self.input.isNTXAccelHooked = true
+        if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+            self.input.handleGyroEv = self.input.handleTranslatedGyroEv
         end
     end
 end
@@ -933,17 +930,23 @@ local function gyroTranslation(ev)
     if ev.value == MSC_RAW_GSENSOR_PORTRAIT_UP then
         -- i.e., UR
         ev.type = C.EV_GYRO
-        ev.code = Input.GYRO_HANDLED
-        ev.value = Input.DEVICE_ORIENTATION_UPRIGHT
+        ev.code = C.GYRO_HANDLED
+        ev.value = C.DEVICE_ORIENTATION_UPRIGHT
     elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_RIGHT then
         -- i.e., CW
-        ev.value = Input.DEVICE_ORIENTATION_CLOCKWISE
+        ev.type = C.EV_GYRO
+        ev.code = C.GYRO_HANDLED
+        ev.value = C.DEVICE_ORIENTATION_CLOCKWISE
     elseif ev.value == MSC_RAW_GSENSOR_PORTRAIT_DOWN then
         -- i.e., UD
-        ev.value = Input.DEVICE_ORIENTATION_UPSIDE_DOWN
+        ev.type = C.EV_GYRO
+        ev.code = C.GYRO_HANDLED
+        ev.value = C.DEVICE_ORIENTATION_UPSIDE_DOWN
     elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_LEFT then
         -- i.e., CCW
-        ev.value = Input.DEVICE_ORIENTATION_COUNTER_CLOCKWISE
+        ev.type = C.EV_GYRO
+        ev.code = C.GYRO_HANDLED
+        ev.value = C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE
     end
 end
 
@@ -1311,10 +1314,11 @@ function Kobo:reboot()
     os.execute("sleep 1 && reboot &")
 end
 
+-- FIXME: Get rid of canToggleGSensor, as it'll be true for all hasGSensor devices once I'm done...
 function Kobo:toggleGSensor(toggle)
     if self:canToggleGSensor() and self.input then
         if self.misc_ntx_gsensor_protocol then
-            self.input:toggleMiscEvNTX(toggle)
+            self.input:toggleGyroEvents(toggle)
         end
     end
 end

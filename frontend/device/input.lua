@@ -46,16 +46,6 @@ local UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED   = 16
 local UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED  = 17
 local UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED = 18
 
--- For the events of the Forma & Libra accelerometers (MSC.value)
--- c.f., drivers/hwmon/mma8x5x.c
-local MSC_RAW_GSENSOR_PORTRAIT_DOWN             = 0x17
-local MSC_RAW_GSENSOR_PORTRAIT_UP               = 0x18
-local MSC_RAW_GSENSOR_LANDSCAPE_RIGHT           = 0x19
-local MSC_RAW_GSENSOR_LANDSCAPE_LEFT            = 0x1a
--- Not that we care about those, but they are reported, and accurate ;).
-local MSC_RAW_GSENSOR_BACK                      = 0x1b
-local MSC_RAW_GSENSOR_FRONT                     = 0x1c
-
 -- Based on ABS_MT_TOOL_TYPE values on Elan panels
 local TOOL_TYPE_FINGER = 0
 local TOOL_TYPE_PEN    = 1
@@ -176,14 +166,6 @@ local Input = {
             "LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
         },
     },
-
-    -- Orientation constants, usable by Device implementations for platform-specific gyro translations.
-    -- (matches framebuffer constants, which matches Linux <input/fb.h> FB_ROTATE_* constants).
-    -- (i.e., this is how the device is *physically* oriented).
-    DEVICE_ORIENTATION_UPRIGHT = framebuffer.ORIENTATION_PORTRAIT, -- UD, Portrait
-    DEVICE_ORIENTATION_CLOCKWISE = framebuffer.ORIENTATION_LANDSCAPE, -- CW, Landscape
-    DEVICE_ORIENTATION_UPSIDE_DOWN = framebuffer.ORIENTATION_PORTRAIT_ROTATED, -- UD, Inverted Portrait (i.e., the lefty grip for asymmetric devices)
-    DEVICE_ORIENTATION_COUNTER_CLOCKWISE = framebuffer.ORIENTATION_LANDSCAPE_ROTATED, -- CCW, Inverted Landscape
 
     fake_event_set = {
         IntoSS = true, OutOfSS = true,
@@ -711,7 +693,11 @@ function Input:handleGenericEv(ev)
 end
 
 function Input:handleMiscEv(ev)
-    -- should be handled by a misc event protocol plugin
+    -- overwritten by device implementation
+end
+
+function Input:handleGyroEv(ev)
+    -- overwritten by device implementation
 end
 
 function Input:handleSdlEv(ev)
@@ -975,22 +961,22 @@ end
 
 --- Accelerometer, in a platform-agnostic format
 --- (Translation should be done via registerEventAdjustHook in Device implementations)
-function Input:handleMiscEvNTX(ev)
+function Input:handleTranslatedGyroEv(ev)
     local rotation_mode, screen_mode
-    if ev.code == C.MSC_RAW then
-        if ev.value == MSC_RAW_GSENSOR_PORTRAIT_UP then
+    if ev.code == C.GYRO_HANDLED then
+        if ev.value == C.DEVICE_ORIENTATION_UPRIGHT then
             -- i.e., UR
             rotation_mode = framebuffer.ORIENTATION_PORTRAIT
             screen_mode = 'portrait'
-        elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_RIGHT then
+        elseif ev.value == C.DEVICE_ORIENTATION_CLOCKWISE then
             -- i.e., CW
             rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
             screen_mode = 'landscape'
-        elseif ev.value == MSC_RAW_GSENSOR_PORTRAIT_DOWN then
+        elseif ev.value == C.DEVICE_ORIENTATION_UPSIDE_DOWN then
             -- i.e., UD
             rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
             screen_mode = 'portrait'
-        elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_LEFT then
+        elseif ev.value == C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE then
             -- i.e., CCW
             rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
             screen_mode = 'landscape'
@@ -1020,28 +1006,24 @@ function Input:handleMiscEvNTX(ev)
 end
 
 --- Allow toggling the accelerometer at runtime.
-function Input:toggleMiscEvNTX(toggle)
+function Input:toggleGyroEvents(toggle)
     if toggle == true then
         -- Honor Gyro events
-        if not self.isNTXAccelHooked then
-            self.handleMiscEv = self.handleMiscEvNTX
-            self.isNTXAccelHooked = true
+        if self.handleGyroEv ~= self.handleTranslatedGyroEv then
+            self.handleGyroEv = self.handleTranslatedGyroEv
         end
     elseif toggle == false then
         -- Ignore Gyro events
-        if self.isNTXAccelHooked then
-            self.handleMiscEv = self.voidEv
-            self.isNTXAccelHooked = false
+        if self.handleGyroEv == self.handleTranslatedGyroEv then
+            self.handleGyroEv = self.voidEv
         end
     else
         -- Toggle it
-        if self.isNTXAccelHooked then
-            self.handleMiscEv = self.voidEv
+        if self.handleGyroEv == self.handleTranslatedGyroEv then
+            self.handleGyroEv = self.voidEv
         else
-            self.handleMiscEv = self.handleMiscEvNTX
+            self.handleGyroEv = self.handleTranslatedGyroEv
         end
-
-        self.isNTXAccelHooked = not self.isNTXAccelHooked
     end
 end
 
