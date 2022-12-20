@@ -62,8 +62,6 @@ local linux_evdev_type_map = {
     [C.EV_FF] = "EV_FF",
     [C.EV_PWR] = "EV_PWR",
     [C.EV_FF_STATUS] = "EV_FF_STATUS",
-    [C.EV_MAX] = "EV_MAX",
-    [C.EV_SDL] = "EV_SDL",
 }
 
 -- For debug logging of ev.code
