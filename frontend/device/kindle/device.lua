@@ -848,24 +848,24 @@ local function OasisGyroTranslation(this, ev)
             -- i.e., UR
             ev.type = C.EV_MSC
             ev.code = C.MSC_GYRO
-            ev.value = C.DEVICE_ORIENTATION_UPRIGHT
+            ev.value = C.DEVICE_ROTATED_UPRIGHT
         elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE then
             -- i.e., CW
             ev.type = C.EV_MSC
             ev.code = C.MSC_GYRO
-            ev.value = C.DEVICE_ORIENTATION_CLOCKWISE
+            ev.value = C.DEVICE_ROTATED_CLOCKWISE
         elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED
             or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT
             or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT then
             -- i.e., UD
             ev.type = C.EV_MSC
             ev.code = C.MSC_GYRO
-            ev.value = C.DEVICE_ORIENTATION_UPSIDE_DOWN
+            ev.value = C.DEVICE_ROTATED_UPSIDE_DOWN
         elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE_ROTATED then
             -- i.e., CCW
             ev.type = C.EV_MSC
             ev.code = C.MSC_GYRO
-            ev.value = C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE
+            ev.value = C.DEVICE_ROTATED_COUNTER_CLOCKWISE
         end
     end
 end
@@ -955,22 +955,22 @@ local function ZeldaGyroTranslation(this, ev)
             -- i.e., UR
             ev.type = C.EV_MSC
             ev.code = C.MSC_GYRO
-            ev.value = C.DEVICE_ORIENTATION_UPRIGHT
+            ev.value = C.DEVICE_ROTATED_UPRIGHT
         elseif ev.value == UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED then
             -- i.e., CW
             ev.type = C.EV_MSC
             ev.code = C.MSC_GYRO
-            ev.value = C.DEVICE_ORIENTATION_CLOCKWISE
+            ev.value = C.DEVICE_ROTATED_CLOCKWISE
         elseif ev.value == UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED then
             -- i.e., UD
             ev.type = C.EV_MSC
             ev.code = C.MSC_GYRO
-            ev.value = C.DEVICE_ORIENTATION_UPSIDE_DOWN
+            ev.value = C.DEVICE_ROTATED_UPSIDE_DOWN
         elseif ev.value == UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED then
             -- i.e., CCW
             ev.type = C.EV_MSC
             ev.code = C.MSC_GYRO
-            ev.value = C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE
+            ev.value = C.DEVICE_ROTATED_COUNTER_CLOCKWISE
         end
     end
 end

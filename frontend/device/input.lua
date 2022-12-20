@@ -910,19 +910,19 @@ end
 --- This needs to be called *via handleGyroEv* in a handleMiscEv implementation (c.f., Kobo, Kindle or PocketBook).
 function Input:handleMiscGyroEv(ev)
     local rotation_mode, screen_mode
-    if ev.value == C.DEVICE_ORIENTATION_UPRIGHT then
+    if ev.value == C.DEVICE_ROTATED_UPRIGHT then
         -- i.e., UR
         rotation_mode = framebuffer.ORIENTATION_PORTRAIT
         screen_mode = 'portrait'
-    elseif ev.value == C.DEVICE_ORIENTATION_CLOCKWISE then
+    elseif ev.value == C.DEVICE_ROTATED_CLOCKWISE then
         -- i.e., CW
         rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
         screen_mode = 'landscape'
-    elseif ev.value == C.DEVICE_ORIENTATION_UPSIDE_DOWN then
+    elseif ev.value == C.DEVICE_ROTATED_UPSIDE_DOWN then
         -- i.e., UD
         rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
         screen_mode = 'portrait'
-    elseif ev.value == C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE then
+    elseif ev.value == C.DEVICE_ROTATED_COUNTER_CLOCKWISE then
         -- i.e., CCW
         rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
         screen_mode = 'landscape'
