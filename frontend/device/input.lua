@@ -102,9 +102,9 @@ local Input = {
     -- must point to the device implementation when instantiating
     device = nil,
     -- this depends on keyboard layout and should be overridden:
-    event_map = {},
+    event_map = nil, -- hash
     -- adapters are post processing functions that transform a given event to another event
-    event_map_adapter = {},
+    event_map_adapter = nil, -- hash
     -- EV_ABS event to honor for pressure event (if any)
     pressure_event = nil,
 
@@ -225,6 +225,13 @@ function Input:init()
         screen = self.device.screen,
         input = self,
     }
+
+    if not self.event_map then
+        self.event_map = {}
+    end
+    if not self.event_map_adapter then
+        self.event_map_adapter = {}
+    end
 
     -- NOTE: When looking at the device in Portrait mode, that's assuming PgBack is on TOP, and PgFwd on the BOTTOM
     if not self.rotation_map then
