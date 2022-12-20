@@ -313,22 +313,35 @@ function Input.open(device, is_emu_events)
 end
 
 --[[--
-Different device models can implement their own hooks
-and register them.
+Different device models can implement their own hooks and register them.
 --]]
 function Input:registerEventAdjustHook(hook, hook_params)
-    local old = self.eventAdjustHook
-    self.eventAdjustHook = function(this, ev)
-        old(this, ev)
-        hook(this, ev, hook_params)
+    if self.eventAdjustHook == Input.eventAdjustHook then
+        -- First custom hook, skip the default NOP
+        self.eventAdjustHook = function(this, ev)
+            hook(this, ev, hook_params)
+        end
+    else
+        -- We've already got a custom hook, chain 'em
+        local old = self.eventAdjustHook
+        self.eventAdjustHook = function(this, ev)
+            old(this, ev)
+            hook(this, ev, hook_params)
+        end
     end
 end
 
 function Input:registerGestureAdjustHook(hook, hook_params)
-    local old = self.gestureAdjustHook
-    self.gestureAdjustHook = function(this, ges)
-        old(this, ges)
-        hook(this, ges, hook_params)
+    if self.gestureAdjustHook == Input.gestureAdjustHook then
+        self.gestureAdjustHook = function(this, ges)
+            hook(this, ges, hook_params)
+        end
+    else
+        local old = self.gestureAdjustHook
+        self.gestureAdjustHook = function(this, ges)
+            old(this, ges)
+            hook(this, ges, hook_params)
+        end
     end
 end
 
@@ -341,56 +354,61 @@ function Input:gestureAdjustHook(ges)
 end
 
 --- Catalog of predefined hooks.
-function Input:adjustTouchSwitchXY(ev)
-    if ev.type == C.EV_ABS then
-        if ev.code == C.ABS_X then
-            ev.code = C.ABS_Y
-        elseif ev.code == C.ABS_Y then
-            ev.code = C.ABS_X
-        elseif ev.code == C.ABS_MT_POSITION_X then
-            ev.code = C.ABS_MT_POSITION_Y
-        elseif ev.code == C.ABS_MT_POSITION_Y then
-            ev.code = C.ABS_MT_POSITION_X
-        end
+function Input:adjustABS_SwitchXY(ev)
+    if ev.code == C.ABS_X then
+        ev.code = C.ABS_Y
+    elseif ev.code == C.ABS_Y then
+        ev.code = C.ABS_X
+    elseif ev.code == C.ABS_MT_POSITION_X then
+        ev.code = C.ABS_MT_POSITION_Y
+    elseif ev.code == C.ABS_MT_POSITION_Y then
+        ev.code = C.ABS_MT_POSITION_X
     end
 end
 
-function Input:adjustTouchScale(ev, by)
-    if ev.type == C.EV_ABS then
-        if ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X then
-            ev.value = by.x * ev.value
-        end
-        if ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y then
-            ev.value = by.y * ev.value
-        end
+function Input:adjustABS_Scale(ev, by)
+    if ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X then
+        ev.value = by.x * ev.value
+    elseif ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y then
+        ev.value = by.y * ev.value
     end
 end
 
-function Input:adjustTouchMirrorX(ev, max_x)
-    if ev.type == C.EV_ABS
-    and (ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X) then
+function Input:adjustABS_MirrorX(ev, max_x)
+    if ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X then
         ev.value = max_x - ev.value
     end
 end
 
-function Input:adjustTouchMirrorY(ev, max_y)
-    if ev.type == C.EV_ABS
-    and (ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y) then
+function Input:adjustABS_MirrorY(ev, max_y)
+    if ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y then
         ev.value = max_y - ev.value
     end
 end
 
-function Input:adjustTouchTranslate(ev, by)
-    if ev.type == C.EV_ABS then
-        if ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X then
-            ev.value = by.x + ev.value
-        end
-        if ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y then
-            ev.value = by.y + ev.value
-        end
+function Input:adjustABS_SwitchAxesAndMirrorX(ev, max_x)
+    if ev.code == C.ABS_X then
+        ev.code = C.ABS_Y
+        ev.value = max_x - ev.value
+    elseif ev.code == C.ABS_Y then
+        ev.code = C.ABS_X
+    elseif ev.code == C.ABS_MT_POSITION_X then
+        ev.code = C.ABS_MT_POSITION_Y
+        ev.value = max_x - ev.value
+    elseif ev.code == C.ABS_MT_POSITION_Y then
+        ev.code = C.ABS_MT_POSITION_X
     end
 end
 
+function Input:adjustABS_Translate(ev, by)
+    if ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X then
+        ev.value = by.x + ev.value
+    elseif ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y then
+        ev.value = by.y + ev.value
+    end
+end
+
+-- FIXME: Move to Kindle Device
 function Input:adjustKindleOasisOrientation(ev)
     if ev.type == C.EV_ABS and ev.code == C.ABS_PRESSURE then
         ev.code = ABS_OASIS_ORIENTATION
