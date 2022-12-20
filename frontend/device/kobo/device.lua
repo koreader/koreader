@@ -919,8 +919,10 @@ local function gyroTranslation(ev)
     local MSC_RAW_GSENSOR_LANDSCAPE_RIGHT = 0x19
     local MSC_RAW_GSENSOR_LANDSCAPE_LEFT  = 0x1a
     -- Not that we care about those, but they are reported, and accurate ;).
+    --[[
     local MSC_RAW_GSENSOR_BACK            = 0x1b
     local MSC_RAW_GSENSOR_FRONT           = 0x1c
+    --]]
 
     if ev.value == MSC_RAW_GSENSOR_PORTRAIT_UP then
         -- i.e., UR
