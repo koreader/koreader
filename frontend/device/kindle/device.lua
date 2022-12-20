@@ -897,7 +897,7 @@ function KindleOasis:init()
                 "com.lab126.winmgr", "accelerometer")
             local rotation_mode = 0
             if orientation_code then
-                if orientation_code == "V" then
+                if orientation_code == "U" then
                     rotation_mode = self.screen.DEVICE_ROTATED_UPRIGHT
                 elseif orientation_code == "R" then
                     rotation_mode = self.screen.DEVICE_ROTATED_CLOCKWISE
