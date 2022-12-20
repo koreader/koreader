@@ -75,6 +75,7 @@ local linux_evdev_type_map = {
     [C.EV_PWR] = "EV_PWR",
     [C.EV_FF_STATUS] = "EV_FF_STATUS",
     [C.EV_MAX] = "EV_MAX",
+    [C.EV_GYRO] = "EV_GYRO",
     [C.EV_SDL] = "EV_SDL",
 }
 
@@ -175,6 +176,14 @@ local Input = {
             "LPgBack", "RPgBack", "LPgFwd", "RPgFwd"
         },
     },
+
+    -- Orientation constants, usable by Device implementations for platform-specific gyro translations.
+    -- (matches framebuffer constants, which matches Linux <input/fb.h> FB_ROTATE_* constants).
+    -- (i.e., this is how the device is *physically* oriented).
+    DEVICE_ORIENTATION_UPRIGHT = framebuffer.ORIENTATION_PORTRAIT, -- UD, Portrait
+    DEVICE_ORIENTATION_CLOCKWISE = framebuffer.ORIENTATION_LANDSCAPE, -- CW, Landscape
+    DEVICE_ORIENTATION_UPSIDE_DOWN = framebuffer.ORIENTATION_PORTRAIT_ROTATED, -- UD, Inverted Portrait (i.e., the lefty grip for asymmetric devices)
+    DEVICE_ORIENTATION_COUNTER_CLOCKWISE = framebuffer.ORIENTATION_LANDSCAPE_ROTATED, -- CCW, Inverted Landscape
 
     fake_event_set = {
         IntoSS = true, OutOfSS = true,
@@ -964,7 +973,8 @@ function Input:handleOasisOrientationEv(ev)
     end
 end
 
---- Accelerometer on the Forma/Libra
+--- Accelerometer, in a platform-agnostic format
+--- (Translation should be done via registerEventAdjustHook in Device implementations)
 function Input:handleMiscEvNTX(ev)
     local rotation_mode, screen_mode
     if ev.code == C.MSC_RAW then
