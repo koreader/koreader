@@ -225,7 +225,7 @@ function PocketBook:init()
 
     -- If InkView translates buttons for us, disable our own translation map
     if self.inkview_translates_buttons then
-        self.input.rotation_map = nil
+        self.input:disableRotationMap()
     end
 
     -- In contrast to kobo/kindle, pocketbook-devices do not use linux/input events directly.
