@@ -924,19 +924,19 @@ local function gyroTranslation(ev)
     if ev.value == MSC_RAW_GSENSOR_PORTRAIT_UP then
         -- i.e., UR
         ev.code = C.MSC_GYRO
-        ev.value = C.DEVICE_ORIENTATION_UPRIGHT
+        ev.value = C.DEVICE_ROTATED_UPRIGHT
     elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_RIGHT then
         -- i.e., CW
         ev.code = C.MSC_GYRO
-        ev.value = C.DEVICE_ORIENTATION_CLOCKWISE
+        ev.value = C.DEVICE_ROTATED_CLOCKWISE
     elseif ev.value == MSC_RAW_GSENSOR_PORTRAIT_DOWN then
         -- i.e., UD
         ev.code = C.MSC_GYRO
-        ev.value = C.DEVICE_ORIENTATION_UPSIDE_DOWN
+        ev.value = C.DEVICE_ROTATED_UPSIDE_DOWN
     elseif ev.value == MSC_RAW_GSENSOR_LANDSCAPE_LEFT then
         -- i.e., CCW
         ev.code = C.MSC_GYRO
-        ev.value = C.DEVICE_ORIENTATION_COUNTER_CLOCKWISE
+        ev.value = C.DEVICE_ROTATED_COUNTER_CLOCKWISE
     end
 end
 
