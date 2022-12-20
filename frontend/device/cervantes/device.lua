@@ -107,13 +107,9 @@ local Cervantes4 = Cervantes:extend{
 
 -- input events
 function Cervantes:initEventAdjustHooks()
-    if self.touch_switch_xy then
-        self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
-    end
-
-    if self.touch_mirrored_x then
+    if self.touch_switch_xy and self.touch_mirrored_x then
         self.input:registerEventAdjustHook(
-            self.input.adjustTouchMirrorX,
+            self.input.adjustTouchSwitchAxesAndMirrorX,
             (self.screen:getWidth() - 1)
         )
     end
