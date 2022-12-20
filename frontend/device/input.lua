@@ -685,7 +685,7 @@ function Input:handleMiscEv(ev)
 end
 
 function Input:handleGyroEv(ev)
-    -- overwritten by device implementation
+    -- setup by the Generic device implementation (for proper toggle handling)
 end
 
 function Input:handleSdlEv(ev)
