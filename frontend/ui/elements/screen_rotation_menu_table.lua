@@ -11,7 +11,7 @@ return {
     sub_item_table_func = function()
         local rotation_table = {}
 
-        if Device:hasGSensor() and Device:canToggleGSensor() then
+        if Device:hasGSensor() then
             table.insert(rotation_table, {
                 text = _("Ignore accelerometer rotation events"),
                 help_text = _("This will inhibit automatic rotations triggered by your device's gyro."),
@@ -64,84 +64,84 @@ When unchecked, the default rotation of the file browser and the default/saved r
             table.insert(rotation_table, {
                 text_func = function()
                     local text = C_("Rotation", "⤹ 90°")
-                    if G_reader_settings:readSetting("fm_rotation_mode") == Screen.ORIENTATION_LANDSCAPE_ROTATED then
+                    if G_reader_settings:readSetting("fm_rotation_mode") == Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE then
                         text = text .. "   ★"
                     end
                     return text
                 end,
                 checked_func = function()
-                    return Screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE_ROTATED
+                    return Screen:getRotationMode() == Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
                 end,
                 radio = true,
                 callback = function(touchmenu_instance)
-                    UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.ORIENTATION_LANDSCAPE_ROTATED))
+                    UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE))
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE_ROTATED)
+                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
             table.insert(rotation_table, {
                 text_func = function()
                     local text = C_("Rotation", "↑ 0°")
-                    if G_reader_settings:readSetting("fm_rotation_mode") == Screen.ORIENTATION_PORTRAIT then
+                    if G_reader_settings:readSetting("fm_rotation_mode") == Screen.DEVICE_ROTATED_UPRIGHT then
                         text = text .. "   ★"
                     end
                     return text
                 end,
                 checked_func = function()
-                    return Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT
+                    return Screen:getRotationMode() == Screen.DEVICE_ROTATED_UPRIGHT
                 end,
                 radio = true,
                 callback = function(touchmenu_instance)
-                    UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.ORIENTATION_PORTRAIT))
+                    UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_UPRIGHT))
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT)
+                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.DEVICE_ROTATED_UPRIGHT)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
             table.insert(rotation_table, {
                 text_func = function()
                     local text = C_("Rotation", "⤸ 90°")
-                    if G_reader_settings:readSetting("fm_rotation_mode") == Screen.ORIENTATION_LANDSCAPE then
+                    if G_reader_settings:readSetting("fm_rotation_mode") == Screen.DEVICE_ROTATED_CLOCKWISE then
                         text = text .. "   ★"
                     end
                     return text
                 end,
                 checked_func = function()
-                    return Screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE
+                    return Screen:getRotationMode() == Screen.DEVICE_ROTATED_CLOCKWISE
                 end,
                 radio = true,
                 callback = function(touchmenu_instance)
-                    UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.ORIENTATION_LANDSCAPE))
+                    UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_CLOCKWISE))
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_LANDSCAPE)
+                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.DEVICE_ROTATED_CLOCKWISE)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
             table.insert(rotation_table, {
                 text_func = function()
                     local text = C_("Rotation", "↓ 180°")
-                    if G_reader_settings:readSetting("fm_rotation_mode") == Screen.ORIENTATION_PORTRAIT_ROTATED then
+                    if G_reader_settings:readSetting("fm_rotation_mode") == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
                         text = text .. "   ★"
                     end
                     return text
                 end,
                 checked_func = function()
-                    return Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT_ROTATED
+                    return Screen:getRotationMode() == Screen.DEVICE_ROTATED_UPSIDE_DOWN
                 end,
                 radio = true,
                 callback = function(touchmenu_instance)
-                    UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.ORIENTATION_PORTRAIT_ROTATED))
+                    UIManager:broadcastEvent(Event:new("SetRotationMode", Screen.DEVICE_ROTATED_UPSIDE_DOWN))
                     if touchmenu_instance then touchmenu_instance:closeMenu() end
                 end,
                 hold_callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.ORIENTATION_PORTRAIT_ROTATED)
+                    G_reader_settings:saveSetting("fm_rotation_mode", Screen.DEVICE_ROTATED_UPSIDE_DOWN)
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })

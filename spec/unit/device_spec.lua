@@ -252,7 +252,7 @@ describe("device module", function()
                         usec = 450565,
                         sec = 1471081881
                     },
-                    code = 24, -- C.ABS_PRESSURE -> ABS_OASIS_ORIENTATION
+                    code = 24, -- C.ABS_PRESSURE
                     value = 16
                 }
             })

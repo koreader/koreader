@@ -301,9 +301,8 @@ function Device:init()
     end
 
     if portrait then
-        self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
         self.input:registerEventAdjustHook(
-            self.input.adjustTouchMirrorX,
+            self.input.adjustTouchSwitchAxesAndMirrorX,
             (self.screen:getScreenWidth() - 1)
         )
     end

@@ -61,7 +61,6 @@ local Device = {
     canImportFiles = no,
     canShareText = no,
     hasGSensor = no,
-    canToggleGSensor = no,
     isGSensorLocked = no,
     canToggleMassStorage = no,
     canToggleChargingLED = no,
@@ -206,7 +205,8 @@ function Device:init()
         self.screen:setViewport(self.viewport)
         self.input:registerEventAdjustHook(
             self.input.adjustTouchTranslate,
-            {x = 0 - self.viewport.x, y = 0 - self.viewport.y})
+            {x = 0 - self.viewport.x, y = 0 - self.viewport.y}
+        )
     end
 
     -- Handle button mappings shenanigans
@@ -216,8 +216,13 @@ function Device:init()
         end
     end
 
-    -- Honor the gyro lock
     if self:hasGSensor() then
+        -- Setup our standard gyro event handler (EV_MSC:MSC_GYRO)
+        if G_reader_settings:nilOrFalse("input_ignore_gsensor") then
+            self.input.handleGyroEv = self.input.handleMiscGyroEv
+        end
+
+        -- Honor the gyro lock
         if G_reader_settings:isTrue("input_lock_gsensor") then
             self:lockGSensor(true)
         end
@@ -418,8 +423,17 @@ function Device:performHapticFeedback(type) end
 -- Device specific method for toggling input events
 function Device:setIgnoreInput(enable) return true end
 
--- Device specific method for toggling the GSensor
-function Device:toggleGSensor(toggle) end
+-- Device agnostic method for toggling the GSensor
+-- (can be reimplemented if need be, but you really, really should try not to. c.f., Kobo, Kindle & PocketBook)
+function Device:toggleGSensor(toggle)
+    if not self:hasGSensor() then
+        return
+    end
+
+    if self.input then
+        self.input:toggleGyroEvents(toggle)
+    end
+end
 
 -- Whether or not the GSensor should be locked to the current orientation (i.e. Portrait <-> Inverted Portrait or Landscape <-> Inverted Landscape only)
 function Device:lockGSensor(toggle)

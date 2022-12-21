@@ -859,9 +859,9 @@ function ReaderView:onReadSettings(config)
         else
             -- No doc specific rotation, pickup global defaults for the doc type
             if self.ui.paging then
-                rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or Screen.ORIENTATION_PORTRAIT
+                rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or Screen.DEVICE_ROTATED_UPRIGHT
             else
-                rotation_mode = G_reader_settings:readSetting("copt_rotation_mode") or Screen.ORIENTATION_PORTRAIT
+                rotation_mode = G_reader_settings:readSetting("copt_rotation_mode") or Screen.DEVICE_ROTATED_UPRIGHT
             end
         end
     end

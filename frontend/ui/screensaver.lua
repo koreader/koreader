@@ -628,7 +628,7 @@ function Screensaver:show()
         -- Leave Portrait & Inverted Portrait alone, that works just fine.
         if bit.band(Device.orig_rotation_mode, 1) == 1 then
             -- i.e., only switch to Portrait if we're currently in *any* Landscape orientation (odd number)
-            Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
+            Screen:setRotationMode(Screen.DEVICE_ROTATED_UPRIGHT)
         else
             Device.orig_rotation_mode = nil
         end

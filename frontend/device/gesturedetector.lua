@@ -984,7 +984,7 @@ function Contact:handlePan()
         if msd_distance > gesture_detector.MULTISWIPE_THRESHOLD then
             local pan_ev_multiswipe = pan_ev
             -- store a copy of pan_ev without rotation adjustment for multiswipe calculations when rotated
-            if gesture_detector.screen:getTouchRotation() > gesture_detector.screen.ORIENTATION_PORTRAIT then
+            if gesture_detector.screen:getTouchRotation() > gesture_detector.screen.DEVICE_ROTATED_UPRIGHT then
                 pan_ev_multiswipe = util.tableDeepCopy(pan_ev)
             end
             if msd_direction ~= msd_direction_prev then
@@ -1335,7 +1335,7 @@ end
 --]]
 function GestureDetector:adjustGesCoordinate(ges)
     local mode = self.screen:getTouchRotation()
-    if mode == self.screen.ORIENTATION_LANDSCAPE then
+    if mode == self.screen.DEVICE_ROTATED_CLOCKWISE then
         -- in landscape mode rotated 90
         if ges.pos then
             ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.y), (ges.pos.x)
@@ -1367,7 +1367,7 @@ function GestureDetector:adjustGesCoordinate(ges)
             end
             logger.dbg("GestureDetector: Landscape translation for ges:", ges.ges, ges.direction)
         end
-    elseif mode == self.screen.ORIENTATION_LANDSCAPE_ROTATED then
+    elseif mode == self.screen.DEVICE_ROTATED_COUNTER_CLOCKWISE then
         -- in landscape mode rotated 270
         if ges.pos then
             ges.pos.x, ges.pos.y = (ges.pos.y), (self.screen:getHeight() - ges.pos.x)
@@ -1399,7 +1399,7 @@ function GestureDetector:adjustGesCoordinate(ges)
             end
             logger.dbg("GestureDetector: Inverted landscape translation for ges:", ges.ges, ges.direction)
         end
-    elseif mode == self.screen.ORIENTATION_PORTRAIT_ROTATED then
+    elseif mode == self.screen.DEVICE_ROTATED_UPSIDE_DOWN then
         -- in portrait mode rotated 180
         if ges.pos then
             ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.x), (self.screen:getHeight() - ges.pos.y)
