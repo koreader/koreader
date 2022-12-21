@@ -44,6 +44,9 @@ local BookInfoManager = require("bookinfomanager")
 -- recreated if height changes)
 local corner_mark_size = -1
 local corner_mark
+local reading_mark
+local onhold_mark
+local read_mark
 local progress_widget
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
@@ -383,6 +386,7 @@ function MosaicMenuItem:init()
 
     self.detail = self.text
     self.percent_finished = nil
+    self.status = nil
 
     -- we need this table per-instance, so we declare it here
     self.ges_events = {
@@ -680,10 +684,8 @@ function MosaicMenuItem:update()
                     self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
                 end
             end
-            if status == "completed" then
-                percent_finished = 100
-            end
             self.percent_finished = percent_finished
+            self.status = status
         else -- bookinfo not found
             if self.init_done then
                 -- Non-initial update(), but our widget is still not found:
@@ -754,7 +756,7 @@ function MosaicMenuItem:paintTo(bb, x, y)
 
     local show_progress_in_mosaic = BookInfoManager:getSetting("show_progress_in_mosaic")
     -- to which we paint over a dogear if needed
-    if not show_progress_in_mosaic and corner_mark and self.do_hint_opened and self.been_opened then
+    if not show_progress_in_mosaic and self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of sub-widget
         local target =  self[1][1][1]
         local ix
@@ -765,6 +767,13 @@ function MosaicMenuItem:paintTo(bb, x, y)
         end
         local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
         -- math.ceil() makes it looks better than math.floor()
+        if self.status == "abandoned" then
+            corner_mark = onhold_mark
+        elseif self.status == "complete" then
+            corner_mark = read_mark
+        else
+            corner_mark = reading_mark
+        end
         corner_mark:paintTo(bb, x+ix, y+iy)
     end
 
@@ -886,18 +895,32 @@ function MosaicMenu:_recalculateDimen()
 
     -- Create or replace corner_mark if needed
     -- 1/12 (larger) or 1/16 (smaller) of cover looks allright
-    local mark_size = math.floor(math.min(self.item_width, self.item_height) / 16)
+    local mark_size = math.floor(math.min(self.item_width, self.item_height) / 8)
     if mark_size ~= corner_mark_size then
         corner_mark_size = mark_size
         if corner_mark then
-            corner_mark:free()
+            reading_mark:free()
+            onhold_mark:free()
+            read_mark:free()
         end
-        corner_mark = IconWidget:new{
+        reading_mark = IconWidget:new{
             icon = "dogear.opaque",
             rotation_angle = BD.mirroredUILayout() and 180 or 270,
             width = corner_mark_size,
             height = corner_mark_size,
         }
+        onhold_mark = IconWidget:new{
+            icon = BD.mirroredUILayout() and "dogear.onhold.rtl" or "dogear.onhold",
+            width = corner_mark_size,
+            height = corner_mark_size,
+        }
+        read_mark = IconWidget:new{
+            icon = BD.mirroredUILayout() and "dogear.read.rtl" or "dogear.read",
+            alpha = true,
+            width = corner_mark_size,
+            height = corner_mark_size,
+        }
+        corner_mark = reading_mark
     end
 
     -- Create or replace progress_widget if needed
