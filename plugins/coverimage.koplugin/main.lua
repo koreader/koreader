@@ -19,15 +19,16 @@ local InputDialog = require("ui/widget/inputdialog")
 local PathChooser = require("ui/widget/pathchooser")
 local UIManager = require("ui/uimanager")
 local RenderImage = require("ui/renderimage")
-local Screen = require("device").screen
-local T = require("ffi/util").template
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local md5 = require("ffi/sha2").md5
 local util = require("util")
 local _ = require("gettext")
+local C_ = _.pgettext
+local Screen = require("device").screen
+local T = require("ffi/util").template
+local md5 = require("ffi/sha2").md5
 
 -- todo: please check the default paths directly on the depending Device:getDefaultCoverPath()
 
@@ -399,12 +400,13 @@ Update a specific G_reader_setting's value via a Spinner
 @int default default value of the spinner
 @function callback to call, when spinner changed the value
 ]]
-function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, default, callback)
+function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, default, callback, unit)
     local SpinWidget = require("ui/widget/spinwidget")
     UIManager:show(SpinWidget:new{
         value = self[setting],
         value_min = min,
         value_max = max,
+        unit = unit,
         default_value = default,
         title_text = title,
         ok_text = _("Set"),
@@ -491,7 +493,7 @@ function CoverImage:menuEntryCache()
                     return self.cover_image_cache_maxsize >= 0
                 end,
                 callback = function(touchmenu_instance)
-                    self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100, 5, self.cleanCache)
+                    self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100, 5, self.cleanCache, C_("Data storage size", "MB"))
                 end,
             },
             self:menuEntrySetPath("cover_image_cache_path", _("Cover cache folder"), _("Current cache path:\n%1"),
@@ -617,17 +619,17 @@ function CoverImage:menuEntrySBF()
             {
                 text_func = function()
                     return T(_("Aspect ratio stretch threshold: %1"),
-                        self.cover_image_stretch_limit ~= 0 and self.cover_image_stretch_limit .. "%" or _("off"))
+                        self.cover_image_stretch_limit ~= 0 and self.cover_image_stretch_limit .. " %" or _("off"))
                 end,
                 keep_menu_open = true,
                 help_text_func = function()
-                    return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit)
+                    return T(_("If the image and the screen have a similar aspect ratio (±%1 %), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit)
                 end,
                 callback = function(touchmenu_instance)
                     local function createCover()
                         self:createCoverImage(self.ui.doc_settings)
                     end
-                    self:sizeSpinner(touchmenu_instance, "cover_image_stretch_limit", _("Set stretch threshold"), 0, 20, 8, createCover)
+                    self:sizeSpinner(touchmenu_instance, "cover_image_stretch_limit", _("Set stretch threshold"), 0, 20, 8, createCover, "%")
                 end,
             },
             self:menuEntryBackground("black", _("black")),
