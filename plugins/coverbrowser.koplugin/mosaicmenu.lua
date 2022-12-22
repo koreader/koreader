@@ -938,7 +938,7 @@ function MosaicMenu:_recalculateDimen()
             bgcolor = Blitbuffer.COLOR_WHITE,
             fillcolor = Blitbuffer.COLOR_BLACK,
             bordercolor = Blitbuffer.COLOR_GRAY_6,
-            height = Screen:scaleBySize(6),
+            height = Screen:scaleBySize(7),
             margin_h = Screen:scaleBySize(1),
             width = progress_bar_width,
             radius = Size.border.thin,
