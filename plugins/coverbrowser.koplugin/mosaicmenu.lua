@@ -743,7 +743,7 @@ function MosaicMenuItem:paintTo(bb, x, y)
 
     -- to which we paint over the shortcut icon
     if self.shortcut_icon then
-        -- align it on bottom left corner of widget
+        -- align it on top left corner of widget
         local target = self
         local ix
         if BD.mirroredUILayout() then
@@ -751,7 +751,7 @@ function MosaicMenuItem:paintTo(bb, x, y)
         else
             ix = 0
         end
-        local iy = target.dimen.h - self.shortcut_icon.dimen.h
+        local iy = 0
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
 
