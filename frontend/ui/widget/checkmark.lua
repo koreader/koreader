@@ -84,4 +84,12 @@ function CheckMark:init()
     self.dimen = unchecked_widget:getSize()
 end
 
+function CheckMark:paintTo(bb, x, y)
+    WidgetContainer.paintTo(self, bb, x, y)
+    -- We need to update self.dimen's x and y for any
+    -- ges.pos:intersectWith(check_mark) to work.
+    self.dimen.x = x
+    self.dimen.y = y
+end
+
 return CheckMark
