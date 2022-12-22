@@ -1,28 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component>
-  <id>org.koreader.KOReader</id>
-  <launchable type="desktop-id">org.koreader.KOReader.desktop</launchable>
+  <id>rocks.koreader.KOReader</id>
+  <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>AGPL-3.0-only</project_license>
   <name>KOReader</name>
   <summary>A document viewer for DjVu, PDF, EPUB and more</summary>
   <description>
     <p>
-      KOReader is a document viewer for E Ink devices. It supports PDF, DjVu, XPS, CBT, CBZ, FB2, PDB, TXT, HTML, RTF, CHM, EPUB, DOC, MOBI, and ZIP files. It currently runs on Kindle, Kobo, PocketBook, Ubuntu Touch and Android devices.
+      KOReader is a document viewer for E Ink devices. It supports PDF, DjVu, XPS, CBT, CBZ, FB2,
+      PDB, TXT, HTML, RTF, CHM, EPUB, DOC, MOBI, and ZIP files.
     </p>
   </description>
   <screenshots>
     <screenshot type="default">
-      <image>https://cloud.githubusercontent.com/assets/24273478/26781004/9fdb0e8e-49ec-11e7-8de4-92cd08bf80ea.png</image>
+      <image>
+        https://github.com/koreader/koreader-artwork/raw/master/koreader-menu.png</image>
+    </screenshot>
+    <screenshot>
+      <image>
+        https://github.com/koreader/koreader-artwork/raw/master/koreader-footnotes.png</image>
+    </screenshot>
+    <screenshot>
+      <image>
+        https://github.com/koreader/koreader-artwork/raw/master/koreader-dictionary.png</image>
     </screenshot>
   </screenshots>
   <url type="homepage">https://koreader.rocks/</url>
   <url type="bugtracker">https://github.com/koreader/koreader/issues</url>
   <url type="faq">https://github.com/koreader/koreader/wiki</url>
   <url type="translate">https://github.com/koreader/koreader#translation</url>
+  <url type="vcs-browser">https://github.com/koreader/koreader</url>
+  <url type="contribute">https://koreader.rocks/doc/</url>
   <categories>
-    <category>Document viewers</category>
+    <category>Viewer</category>
+    <category>Literature</category>
   </categories>
-  <update_contact></update_contact>
   <content_rating type="oars-1.1" />
 </component>
