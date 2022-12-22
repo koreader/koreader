@@ -105,6 +105,7 @@ local FakeCover = FrameContainer:extend{
     padding = 0,
     bordersize = Size.border.thin,
     dim = nil,
+    color = Blitbuffer.COLOR_GRAY_6,
     -- Provided filename, title and authors should not be BD wrapped
     filename = nil,
     file_deleted = nil,
@@ -590,7 +591,7 @@ function MosaicMenuItem:update()
                         padding = 0,
                         bordersize = border_size,
                         dim = self.file_deleted,
-                        color = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
+                        color = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_GRAY_6,
                         image,
                     }
                 }
@@ -780,11 +781,16 @@ function MosaicMenuItem:paintTo(bb, x, y)
         progress_widget.width = cover_item.width - corner_mark_size + 2
         local pos_x
         if BD.mirroredUILayout() then
-            pos_x = x + math.floor((self.width - cover_item.width)/2) + corner_mark_size - 2
+            pos_x = x + math.floor((self.width - cover_item.width) / 2) + corner_mark_size - 2
         else
             pos_x = x + math.floor((self.width - cover_item.width) / 2)
         end
         local pos_y = y + self.height - progress_widget.height - math.ceil((self.height - cover_item.height) / 2)
+        if self.status == "abandoned" then
+            progress_widget.fillcolor = Blitbuffer.COLOR_GRAY_6
+        else
+            progress_widget.fillcolor = Blitbuffer.COLOR_BLACK
+        end
         progress_widget:setPercentage(self.percent_finished)
         progress_widget:paintTo(bb, pos_x, pos_y)
     end
@@ -931,7 +937,7 @@ function MosaicMenu:_recalculateDimen()
         progress_widget = ProgressWidget:new{
             bgcolor = Blitbuffer.COLOR_WHITE,
             fillcolor = Blitbuffer.COLOR_BLACK,
-            bordercolor = Blitbuffer.COLOR_BLACK,
+            bordercolor = Blitbuffer.COLOR_GRAY_6,
             height = Screen:scaleBySize(6),
             margin_h = Screen:scaleBySize(1),
             width = progress_bar_width,
