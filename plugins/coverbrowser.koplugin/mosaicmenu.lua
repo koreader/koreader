@@ -754,9 +754,7 @@ function MosaicMenuItem:paintTo(bb, x, y)
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
 
-    local show_progress_in_mosaic = BookInfoManager:getSetting("show_progress_in_mosaic")
-    -- to which we paint over a dogear if needed
-    if not show_progress_in_mosaic and self.do_hint_opened and self.been_opened then
+    if self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of sub-widget
         local target =  self[1][1][1]
         local ix
@@ -777,11 +775,10 @@ function MosaicMenuItem:paintTo(bb, x, y)
         corner_mark:paintTo(bb, x+ix, y+iy)
     end
 
-    if show_progress_in_mosaic and self.percent_finished then
+    if self.status ~= "complete" and BookInfoManager:getSetting("show_progress_in_mosaic") and self.percent_finished then
         local cover_item = self[1][1][1]
-        local width = math.min(self.width * 0.60, cover_item.width)
-        progress_widget.width = width
-        local pos_x = x + self.width - progress_widget.width - math.ceil((self.width - cover_item.width) / 2) - progress_widget.bordersize
+        progress_widget.width = cover_item.width - corner_mark_size
+        local pos_x = x + math.floor((self.width - cover_item.width) / 2)
         local pos_y = y + self.height - progress_widget.height - math.ceil((self.height - cover_item.height) / 2)
         progress_widget:setPercentage(self.percent_finished)
         progress_widget:paintTo(bb, pos_x, pos_y)
