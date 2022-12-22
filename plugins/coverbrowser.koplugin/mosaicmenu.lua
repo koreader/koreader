@@ -777,8 +777,13 @@ function MosaicMenuItem:paintTo(bb, x, y)
 
     if self.status ~= "complete" and BookInfoManager:getSetting("show_progress_in_mosaic") and self.percent_finished then
         local cover_item = self[1][1][1]
-        progress_widget.width = cover_item.width - corner_mark_size
-        local pos_x = x + math.floor((self.width - cover_item.width) / 2)
+        progress_widget.width = cover_item.width - corner_mark_size + 2
+        local pos_x
+        if BD.mirroredUILayout() then
+            pos_x = x + math.floor((self.width - cover_item.width)/2) + corner_mark_size - 2
+        else
+            pos_x = x + math.floor((self.width - cover_item.width) / 2)
+        end
         local pos_y = y + self.height - progress_widget.height - math.ceil((self.height - cover_item.height) / 2)
         progress_widget:setPercentage(self.percent_finished)
         progress_widget:paintTo(bb, pos_x, pos_y)
@@ -901,8 +906,8 @@ function MosaicMenu:_recalculateDimen()
             read_mark:free()
         end
         reading_mark = IconWidget:new{
-            icon = "dogear.opaque",
-            rotation_angle = BD.mirroredUILayout() and 180 or 270,
+            icon = "dogear.reading",
+            rotation_angle = BD.mirroredUILayout() and 270 or 0,
             width = corner_mark_size,
             height = corner_mark_size,
         }
