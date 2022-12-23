@@ -1,0 +1,261 @@
+--[[--
+    Download URLs as EPUBs
+
+    @module koplugin.DownloadToEPUB
+--]]--
+local BD = require("ui/bidi")
+local Blitbuffer = require("ffi/blitbuffer")
+local DataStorage = require("datastorage")
+local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
+local FFIUtil = require("ffi/util")
+local FileManager = require("apps/filemanager/filemanager")
+local InfoMessage = require("ui/widget/infomessage")
+local LuaSettings = require("frontend/luasettings")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local Device = require("device")
+local Screen = Device.screen
+local Size = require("ui/size")
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
+local logger = require("logger")
+local util = require("frontend/util")
+local T = FFIUtil.template
+local _ = require("gettext")
+-- Gazette Modules
+local EpubBuildDirector = require("libs/gazette/epubbuilddirector")
+local WebPage = require("libs/gazette/resources/webpage")
+local ResourceAdapter = require("libs/gazette/resources/webpageadapter")
+local Epub = require("libs/gazette/epub/epub")
+
+local DownloadToEpub = WidgetContainer:new{
+    name = "Download to EPUB",
+    download_directory = ("%s/%s/"):format(DataStorage:getFullDataDir(), "EPUB Downloads") -- This is the default download directory. It will be created in the init method if it doesn't exist.
+}
+
+local EpubBuilder = {
+    output_directory = nil,
+}
+
+function DownloadToEpub:init()
+    self.settings = self.readSettings()
+    if self.settings.data.download_directory then
+        self.download_directory = self.settings.data.download_directory
+    end
+    self:createDownloadDirectoryIfNotExists()
+    self.ui.menu:registerToMainMenu(self)
+    if self.ui and self.ui.link then
+        self.ui.link:addToExternalLinkDialog("30_downloadtoepub", function(this, link_url)
+            return {
+                text = _("Download to EPUB"),
+                callback = function()
+                    UIManager:close(this.external_link_dialog)
+                    this.ui:handleEvent(Event:new("DownloadEpubFromUrl", link_url))
+                end,
+                show_in_dialog_func = function()
+                    return true
+                end
+            }
+        end)
+    end
+end
+
+function DownloadToEpub:addToMainMenu(menu_items)
+    menu_items.downloadtoepub = {
+        text = _("Download to EPUB"),
+        sorting_hint = "tools",
+        sub_item_table = {
+            {
+                text = _("Go to EPUB downloads"),
+                callback = function()
+                    self:goToDownloadDirectory()
+                end,
+            },
+            {
+                text = _("Settings"),
+                sub_item_table = {
+                    {
+                        text_func = function()
+                            local path = filemanagerutil.abbreviate(self.download_directory)
+                            return T(_("Set download directory (%1)"), BD.dirpath(path))
+                        end,
+                        keep_menu_open = true,
+                        callback = function() self:setDownloadDirectory() end,
+                    },
+                }
+            },
+        }
+    }
+end
+
+function DownloadToEpub:readSettings()
+    local settings = LuaSettings:open(DataStorage:getSettingsDir() .. "downloadtoepub.lua")
+    if not settings.data.downloadtoepub then
+        settings.data.downloadtoepub = {}
+    end
+    return settings
+end
+
+function DownloadToEpub:saveSettings()
+    local temp_settings = {
+        download_directory = self.download_directory
+    }
+    self.settings:saveSetting("downloadtoepub", temp_settings)
+    self.settings:flush()
+end
+
+function DownloadToEpub:setDownloadDirectory()
+    local downloadmgr = require("ui/downloadmgr")
+    downloadmgr:new{
+        onConfirm = function(path)
+            self.download_directory = path
+            self:saveSettings()
+        end
+    }:chooseDir()
+end
+
+function DownloadToEpub:goToDownloadDirectory()
+    local FileManager = require("apps/filemanager/filemanager")
+    if self.ui.document then
+        self.ui:onClose()
+    end
+    if FileManager.instance then
+        FileManager.instance:reinit(self.download_directory)
+    else
+        FileManager:showFiles(self.download_directory)
+    end
+end
+
+function DownloadToEpub:createDownloadDirectoryIfNotExists()
+    logger.dbg("DownloadToEpub: Creating path (" .. self.download_directory .. ")")
+    if not util.pathExists(self.download_directory) then
+        lfs.mkdir(self.download_directory)
+    end
+end
+
+function DownloadToEpub:onDownloadEpubFromUrl(link_url)
+    local Trapper = require("ui/trapper")
+    local completed, success = Trapper:dismissableRunInSubprocess(function()
+            return self:downloadEpubWithUi(link_url)
+    end, self.trap_widget)
+
+    if not success then
+        self:showErrorMessage(T(_("Error downloading EPUB: %1", err)))
+    else
+        self:showReadPrompt(_("EPUB downloaded. Would you like to read it now?"), success)
+    end
+end
+
+function DownloadToEpub:downloadEpubWithUi(link_url)
+    local Trapper = require("ui/trapper")
+    Trapper:wrap(function()
+            Trapper:setPausedText(_("Download paused"))
+            Trapper:info("Downloading... " .. link_url)
+            local epub_builder = EpubBuilder:new{
+                output_directory = self.download_directory,
+            }
+            local success, err = epub_builder:buildFromUrl(link_url)
+            Trapper:reset()
+            return success, err
+    end)
+end
+
+function DownloadToEpub:showReadPrompt(message, file_path)
+    local prompt = MultiConfirmBox:new{
+        text = message,
+        choice1_text = _("Open EPUB"),
+        choice1_callback = function()
+            logger.dbg("DownloadToEpub: Opening " .. file_path)
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("SetupShowReader"))
+            UIManager:close(prompt)
+            local ReaderUI = require("apps/reader/readerui")
+            ReaderUI:showReader(file_path)
+        end,
+        choice2_enabled = false
+    }
+    UIManager:show(prompt)
+end
+
+function DownloadToEpub:showErrorMessage(err)
+    local Trapper = require("ui/trapper")
+    Trapper:info(err)
+end
+
+function EpubBuilder:new(o)
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+
+    return o
+end
+
+function EpubBuilder:buildFromUrl(url)
+    logger.dbg("DownloadToEpub: Begin download of " .. url .. " outputting to " .. self.output_directory)
+    Trapper:info("Getting webpage...")
+    local webpage, err = self:createWebpage(url)
+    if not webpage then
+        logger.dbg("DownloadToEpub: " .. err)
+        return false, err
+    end
+
+    Trapper:info("Building EPUB...")
+    local epub = Epub:new{}
+    epub:addFromList(ResourceAdapter:new(webpage))
+    epub:setTitle(webpage.title)
+    epub:setAuthor("DownloadToEpub")
+
+    local epub_path = ("%s%s.epub"):format(self.output_directory, util.getSafeFilename(epub.title))
+    local build_director, err = self:createBuildDirector(epub_path)
+    if not build_director then
+        logger.dbg("DownloadToEpub: " .. err)
+        return false, err
+    end
+
+    Trapper:info("Writing to device...")
+    local path_to_epub, err = build_director:construct(epub)
+    if not path_to_epub then
+        logger.dbg("DownloadToEpub: " .. err)
+        return false, err
+    end
+
+    return path_to_epub
+end
+
+function EpubBuilder:createWebpage(url)
+    local webpage, err = WebPage:new({
+        url = url,
+    })
+
+    if err then
+        return false, err
+    end
+
+    local success, err = webpage:build()
+
+    if err then
+        return false, err
+    end
+
+    return webpage
+end
+
+function EpubBuilder:createBuildDirector(epub_path)
+    local build_director, err = EpubBuildDirector:new()
+
+    if not build_director then
+        return false, err
+    end
+
+    local success, err = build_director:setDestination(epub_path)
+
+    if not success then
+        return false, err
+    end
+
+    return build_director
+end
+
+return DownloadToEpub

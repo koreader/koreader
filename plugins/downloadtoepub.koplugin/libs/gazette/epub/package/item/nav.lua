@@ -1,6 +1,6 @@
-local GazetteMessages = require("gazettemessages")
 local Item = require("libs/gazette/epub/package/item")
 local xml2lua = require("libs/xml2lua/xml2lua")
+local _ = require("gettext")
 
 local Nav = Item:extend{
     title = nil,
@@ -12,7 +12,7 @@ function Nav:new(o)
     self.__index = self
     setmetatable(o, self)
 
-    o.title = GazetteMessages.DEFAULT_NAV_TITLE
+    o.title = _("Table of Contents")
     o.path = "nav.xhtml"
     o.properties = Item.PROPERTY.NAV
     o.media_type = "application/xhtml+xml"
