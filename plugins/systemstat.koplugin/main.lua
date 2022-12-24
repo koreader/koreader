@@ -60,7 +60,7 @@ function SystemStat:appendCounters()
     })
     if self.suspend_time then
        self:put({
-           _("  Last suspend time"),
+           "  " .. _("Last suspend time"),
            datetime.secondsToDateTime(time.to_s(self.suspend_time), use_twelve_hour_clock, true)
         })
     end
