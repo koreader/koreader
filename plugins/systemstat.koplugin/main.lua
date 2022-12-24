@@ -66,7 +66,7 @@ function SystemStat:appendCounters()
     end
     if self.resume_time then
         self:put({
-            _("  Last resume time"),
+            "  " .. _("Last resume time"),
            datetime.secondsToDateTime(time.to_s(self.resume_time), use_twelve_hour_clock, true)
         })
     end
