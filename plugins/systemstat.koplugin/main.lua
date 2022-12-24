@@ -53,12 +53,22 @@ function SystemStat:putSeparator()
 end
 
 function SystemStat:appendCounters()
-    self:put({_("KOReader started at"), os.date("%c", time.to_s(self.start_time))})
+    local use_twelve_hour_clock = G_reader_settings:isTrue("twelve_hour_clock")
+    self:put({
+        _("KOReader started at"),
+        datetime.secondsToDateTime(time.to_s(self.start_time), use_twelve_hour_clock, true)
+    })
     if self.suspend_time then
-       self:put({_("  Last suspend time"), os.date("%c", time.to_s(self.suspend_time))})
+       self:put({
+           _("  Last suspend time"),
+           datetime.secondsToDateTime(time.to_s(self.suspend_time), use_twelve_hour_clock, true)
+        })
     end
     if self.resume_time then
-        self:put({_("  Last resume time"), os.date("%c", time.to_s(self.resume_time))})
+        self:put({
+            _("  Last resume time"),
+           datetime.secondsToDateTime(time.to_s(self.resume_time), use_twelve_hour_clock, true)
+        })
     end
     local uptime = time.boottime_or_realtime_coarse() - self.start_monotonic_time
     local suspend = 0
