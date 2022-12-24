@@ -335,13 +335,52 @@ function FileManager:setupLayout()
                     end,
                 }
             )
+            table.insert(buttons, {}) -- separator
         end
 
         if is_file then
+            local status = nil
+            if DocSettings:hasSidecarFile(file) then
+                local docinfo = DocSettings:open(file) -- no io handles created, do not close
+                if docinfo.data.summary and docinfo.data.summary.status and docinfo.data.summary.status ~= "" then
+                    status = docinfo.data.summary.status
+                else
+                    status = "reading"
+                end
+            end
+            table.insert(buttons, {
+                {
+                    text = _("Mark as reading"),
+                    enabled = status ~= "reading",
+                    callback = function()
+                        filemanagerutil.setStatus(file, "reading")
+                        self:refreshPath()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+                {
+                    text = _("Mark as read"),
+                    enabled = status ~= "complete",
+                    callback = function()
+                        filemanagerutil.setStatus(file, "complete")
+                        self:refreshPath()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+                {
+                    text = _("Put on hold"),
+                    enabled = status ~= "abandoned",
+                    callback = function()
+                        filemanagerutil.setStatus(file, "abandoned")
+                        self:refreshPath()
+                        UIManager:close(self.file_dialog)
+                    end,
+                },
+            })
+            table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 {
                     text = _("Reset settings"),
-                    id = "reset_settings", -- used by covermenu
                     enabled = is_file and DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
