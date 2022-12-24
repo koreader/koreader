@@ -63,4 +63,35 @@ function filemanagerutil.resetDocumentSettings(file)
     end
 end
 
+-- Set a document's status
+function filemanagerutil.setStatus(file, status)
+    -- In case the book doesn't have a sidecar file, this'll create it
+    local docinfo = DocSettings:open(file)
+    local summary = nil
+    if docinfo.data.summary and docinfo.data.summary.status then
+        -- Book already had the full BookStatus table in its sidecar, easy peasy!
+        docinfo.data.summary.status = status
+        docinfo.data.summary.modified = os.date("%Y-%m-%d", os.time())
+        summary = docinfo.data.summary
+    else
+        -- No BookStatus table, create a minimal one...
+        if docinfo.data.summary then
+            -- Err, a summary table with no status entry? Should never happen...
+            summary = { status = status }
+            -- Append the status entry to the existing summary...
+            require("util").tableMerge(docinfo.data.summary, summary)
+            docinfo.data.summary.modified = os.date("%Y-%m-%d", os.time())
+            summary = docinfo.data.summary
+        else
+            -- No summary table at all, create a minimal one
+            summary = {
+                status = status,
+                modified = os.date("%Y-%m-%d", os.time())
+            }
+        end
+    end
+    docinfo:saveSetting("summary", summary)
+    docinfo:flush()
+end
+
 return filemanagerutil
