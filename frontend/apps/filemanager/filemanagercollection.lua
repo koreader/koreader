@@ -85,6 +85,7 @@ function FileManagerCollection:onMenuHold(item)
         {
             {
                 text = _("Book information"),
+                id = "book_information", -- used by covermenu
                 enabled = FileManagerBookInfo:isSupported(item.file),
                 callback = function()
                     FileManagerBookInfo:show(item.file)

@@ -339,15 +339,7 @@ function FileManager:setupLayout()
         end
 
         if is_file then
-            local status = nil
-            if DocSettings:hasSidecarFile(file) then
-                local docinfo = DocSettings:open(file) -- no io handles created, do not close
-                if docinfo.data.summary and docinfo.data.summary.status and docinfo.data.summary.status ~= "" then
-                    status = docinfo.data.summary.status
-                else
-                    status = "reading"
-                end
-            end
+            local status = filemanagerutil.getStatus(file)
             table.insert(buttons, {
                 {
                     text = _("Mark as reading"),

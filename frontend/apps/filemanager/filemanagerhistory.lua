@@ -47,17 +47,7 @@ function FileManagerHistory:fetchStatuses(count)
         if v.dim then
             status = "deleted"
         else
-            if DocSettings:hasSidecarFile(v.file) then
-                local docinfo = DocSettings:open(v.file) -- no io handles created, do not close
-                if docinfo.data.summary and docinfo.data.summary.status
-                        and docinfo.data.summary.status ~= "" then
-                    status = docinfo.data.summary.status
-                else
-                    status = "reading"
-                end
-            else
-                status = "new"
-            end
+            status = filemanagerutil.getStatus(v.file)
         end
         v.status = status
         if count then
@@ -99,7 +89,53 @@ function FileManagerHistory:onMenuHold(item)
     local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
     local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.histfile_dialog = nil
+    local status = filemanagerutil.getStatus(item.file)
     local buttons = {
+        {
+            {
+                text = _("Mark as reading"),
+                enabled = status ~= "reading",
+                callback = function()
+                    filemanagerutil.setStatus(item.file, "reading")
+                    if self._manager.filter ~= "all" then
+                        self._manager:fetchStatuses(false)
+                    else
+                        self._manager.statuses_fetched = false
+                    end
+                    self._manager:updateItemTable()
+                    UIManager:close(self.histfile_dialog)
+                end,
+            },
+            {
+                text = _("Mark as read"),
+                enabled = status ~= "complete",
+                callback = function()
+                    filemanagerutil.setStatus(item.file, "complete")
+                    if self._manager.filter ~= "all" then
+                        self._manager:fetchStatuses(false)
+                    else
+                        self._manager.statuses_fetched = false
+                    end
+                    self._manager:updateItemTable()
+                    UIManager:close(self.histfile_dialog)
+                end,
+            },
+            {
+                text = _("Put on hold"),
+                enabled = status ~= "abandoned",
+                callback = function()
+                    filemanagerutil.setStatus(item.file, "abandoned")
+                    if self._manager.filter ~= "all" then
+                        self._manager:fetchStatuses(false)
+                    else
+                        self._manager.statuses_fetched = false
+                    end
+                    self._manager:updateItemTable()
+                    UIManager:close(self.histfile_dialog)
+                end,
+            },
+        },
+        {},
         {
             {
                 text = _("Reset settings"),
@@ -153,6 +189,7 @@ function FileManagerHistory:onMenuHold(item)
             },
             {
                 text = _("Book information"),
+                id = "book_information", -- used by covermenu
                 enabled = FileManagerBookInfo:isSupported(item.file),
                 callback = function()
                     FileManagerBookInfo:show(item.file)
