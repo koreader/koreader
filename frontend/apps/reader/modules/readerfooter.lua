@@ -626,7 +626,7 @@ end
 function ReaderFooter:set_custom_text(touchmenu_instance)
     local text_dialog
     text_dialog = MultiInputDialog:new{
-        title = "Enter a custom text",
+        title = _("Enter a custom text"),
         fields = {
             {
                 text = self.custom_text or "",
