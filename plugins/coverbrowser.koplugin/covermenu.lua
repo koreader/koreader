@@ -392,7 +392,7 @@ function CoverMenu:onHistoryMenuHold(item)
     UIManager:clearRenderStack()
 
     -- Replace Book information callback to use directly our bookinfo
-    orig_buttons[2][2].callback = function()
+    self.histfile_dialog.button_table:getButtonById("book_information").callback = function()
         FileManagerBookInfo:show(file, bookinfo)
         UIManager:close(self.histfile_dialog)
     end
@@ -480,6 +480,28 @@ function CoverMenu:onHistoryMenuHold(item)
         },
     })
 
+    -- Fudge the setting resets (e.g. "Reset settings" button) to also trash the cover_info_cache
+    local orig_purgeSettings = filemanagerutil.purgeSettings
+    filemanagerutil.purgeSettings = function(f)
+        -- Wipe the cache
+        if self.cover_info_cache and self.cover_info_cache[f] then
+            self.cover_info_cache[f] = nil
+        end
+        -- And then purge the sidecar folder as expected
+        orig_purgeSettings(f)
+    end
+
+    -- Fudge status changes (e.g. "Mark as read" button) to also update the cover_info_cache
+    local orig_setStatus = filemanagerutil.setStatus
+    filemanagerutil.setStatus = function(f, status)
+        -- Update the cache
+        if self.cover_info_cache and self.cover_info_cache[f] then
+            self.cover_info_cache[f][3] = status
+        end
+        -- And then set the status on file as expected
+        orig_setStatus(f, status)
+    end
+
     -- Create the new ButtonDialog, and let UIManager show it
     local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
     self.histfile_dialog = ButtonDialogTitle:new{
@@ -515,7 +537,7 @@ function CoverMenu:onCollectionsMenuHold(item)
     UIManager:clearRenderStack()
 
     -- Replace Book information callback to use directly our bookinfo
-    orig_buttons[2][1].callback = function()
+    self.collfile_dialog.button_table:getButtonById("book_information").callback = function()
         FileManagerBookInfo:show(file, bookinfo)
         UIManager:close(self.collfile_dialog)
     end

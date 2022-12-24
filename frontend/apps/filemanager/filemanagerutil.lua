@@ -63,6 +63,20 @@ function filemanagerutil.resetDocumentSettings(file)
     end
 end
 
+-- Get a document's status ("new", "reading", "complete", or "abandoned")
+function filemanagerutil.getStatus(file)
+    local status = "new"
+    if DocSettings:hasSidecarFile(file) then
+        local docinfo = DocSettings:open(file) -- no io handles created, do not close
+        if docinfo.data.summary and docinfo.data.summary.status and docinfo.data.summary.status ~= "" then
+            status = docinfo.data.summary.status
+        else
+            status = "reading"
+        end
+    end
+    return status
+end
+
 -- Set a document's status
 function filemanagerutil.setStatus(file, status)
     -- In case the book doesn't have a sidecar file, this'll create it
