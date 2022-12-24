@@ -480,26 +480,6 @@ if warn_about_auto_save then
     auto_save_help_text = auto_save_help_text .. "\n\n" .. auto_save_help_warning
 end
 
-local function genAutoSaveMenuItem(value)
-    local setting_name = "auto_save_settings_interval_minutes"
-    local text
-    if not value then
-        text = _("Only on close, suspend and exit")
-    else
-        text = T(N_("Every minute", "Every %1 minutes", value), value)
-    end
-    return {
-        text = text,
-        help_text = auto_save_help_text,
-        checked_func = function()
-            return G_reader_settings:readSetting(setting_name) == value
-        end,
-        callback = function()
-            G_reader_settings:saveSetting(setting_name, value)
-        end,
-    }
-end
-
 common_settings.document = {
     text = _("Document"),
     -- submenus are filled by menu_order
@@ -507,30 +487,46 @@ common_settings.document = {
 
 common_settings.document_auto_save = {
     text_func = function()
-        local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-        local s_interval
-        if interval == false then
-            s_interval = _("only on close")
+        local interval_m = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
+        local interval_text
+        if interval_m == false or interval_m == 0 then
+            interval_text = _("on close, suspend and exit")
         else
-            s_interval = T(N_("every 1 m", "every %1 m", interval), interval)
+            -- @translators min stands for minute
+            interval_text = T(N_("every 1 min", "every %1 min", interval_m), interval_m)
         end
-        return T(_("Auto-save book metadata: %1"), s_interval)
+        return T(_("Auto-save book metadata: %1"), interval_text)
     end,
     help_text = auto_save_help_text,
-    sub_item_table = {
-        genAutoSaveMenuItem(false),
-        genAutoSaveMenuItem(5),
-        genAutoSaveMenuItem(15),
-        genAutoSaveMenuItem(30),
-        genAutoSaveMenuItem(60),
-        warn_about_auto_save and {
-            text = _("Important info about this auto-save option"),
-            keep_menu_open = true,
-            callback = function()
-                UIManager:show(InfoMessage:new{ text = auto_save_help_text, })
+    keep_menu_open = true,
+    callback = function(touchmenu_instance)
+        local SpinWidget = require("ui/widget/spinwidget")
+        local interval_m = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
+        interval_m = interval_m and interval_m or 0
+        UIManager:show(SpinWidget:new{
+            title_text = _("Auto-save book metadata interval"),
+            info_text = _("Disabling or setting the interval to zero will save the book metatadata only on close, suspend and exit."),
+            -- read the saved setting, as this get's not overwritten by toggling easy_mode
+            value = interval_m,
+            value_min = 0,
+            value_max = 60,
+            wrap = false,
+            value_step = 5,
+            value_hold_step = 15,
+            unit = "min",
+            ok_text = _("Set"),
+            callback = function(spin)
+                local value = spin.value ~= 0 and spin.value or false
+                G_reader_settings:saveSetting("auto_save_settings_interval_minutes", value)
+                if touchmenu_instance then touchmenu_instance:updateItems(touchmenu_instance) end
             end,
-        } or nil,
-    },
+            extra_text = _("Disable"),
+            extra_callback = function()
+                G_reader_settings:saveSetting("auto_save_settings_interval_minutes", false)
+                if touchmenu_instance then touchmenu_instance:updateItems(touchmenu_instance) end
+            end,
+        })
+    end -- function SpinWidget:callback()
 }
 
 common_settings.document_save = {
