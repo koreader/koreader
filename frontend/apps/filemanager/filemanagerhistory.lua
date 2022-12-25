@@ -89,12 +89,13 @@ function FileManagerHistory:onMenuHold(item)
     local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
     local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.histfile_dialog = nil
+    local is_file = lfs.attributes(item.file, "mode") == "file"
     local status = filemanagerutil.getStatus(item.file)
     local buttons = {
         {
             {
                 text = _("Mark as reading"),
-                enabled = status ~= "reading",
+                enabled = is_file and status ~= "reading",
                 callback = function()
                     filemanagerutil.setStatus(item.file, "reading")
                     if self._manager.filter ~= "all" then
@@ -108,7 +109,7 @@ function FileManagerHistory:onMenuHold(item)
             },
             {
                 text = _("Put on hold"),
-                enabled = status ~= "abandoned",
+                enabled = is_file and status ~= "abandoned",
                 callback = function()
                     filemanagerutil.setStatus(item.file, "abandoned")
                     if self._manager.filter ~= "all" then
@@ -122,7 +123,7 @@ function FileManagerHistory:onMenuHold(item)
             },
             {
                 text = _("Mark as read"),
-                enabled = status ~= "complete",
+                enabled = is_file and status ~= "complete",
                 callback = function()
                     filemanagerutil.setStatus(item.file, "complete")
                     if self._manager.filter ~= "all" then
