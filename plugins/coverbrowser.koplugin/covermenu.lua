@@ -320,29 +320,8 @@ function CoverMenu:updateItems(select_number)
                     },
                 })
 
-                -- Fudge the setting resets (e.g. "Reset settings" button) to also trash the cover_info_cache
-                local orig_purgeSettings = filemanagerutil.purgeSettings
-                filemanagerutil.purgeSettings = function(f)
-                    -- Wipe the cache
-                    if self.cover_info_cache and self.cover_info_cache[f] then
-                        self.cover_info_cache[f] = nil
-                    end
-                    -- And then purge the sidecar folder as expected
-                    orig_purgeSettings(f)
-                end
-
-                -- Fudge status changes (e.g. "Mark as read" button) to also update the cover_info_cache
-                local orig_setStatus = filemanagerutil.setStatus
-                filemanagerutil.setStatus = function(f, status)
-                    -- Update the cache
-                    if self.cover_info_cache and self.cover_info_cache[f] then
-                        self.cover_info_cache[f][3] = status
-                    end
-                    -- And then set the status on file as expected
-                    orig_setStatus(f, status)
-                end
-
                 -- Create the new ButtonDialogTitle, and let UIManager show it
+                -- (all button callback fudging must be done after this block to stick)
                 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
                 self.file_dialog = ButtonDialogTitle:new{
                     title = orig_title,
@@ -350,8 +329,52 @@ function CoverMenu:updateItems(select_number)
                     buttons = orig_buttons,
                 }
 
+                -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
+                local button = self.file_dialog.button_table:getButtonById("reset_settings")
+                local orig_purge_callback = button.callback
+                button.callback = function()
+                    -- Wipe the cache
+                    if self.cover_info_cache and self.cover_info_cache[file] then
+                        self.cover_info_cache[file] = nil
+                    end
+                    -- And then purge the sidecar folder as expected
+                    orig_purge_callback()
+                end
+
+                -- Fudge the status change button callbacks to also update the cover_info_cache
+                button = self.file_dialog.button_table:getButtonById("mark_as_reading")
+                local orig_mark_as_reading_callback = button.callback
+                button.callback = function()
+                    -- Update the cache
+                    if self.cover_info_cache and self.cover_info_cache[file] then
+                        self.cover_info_cache[file][3] = "reading"
+                    end
+                    -- And then set the status on file as expected
+                    orig_mark_as_reading_callback()
+                end
+                button = self.file_dialog.button_table:getButtonById("put_on_hold")
+                local orig_put_on_hold_callback = button.callback
+                button.callback = function()
+                    -- Update the cache
+                    if self.cover_info_cache and self.cover_info_cache[file] then
+                        self.cover_info_cache[file][3] = "abandoned"
+                    end
+                    -- And then set the status on file as expected
+                    orig_put_on_hold_callback()
+                end
+                button = self.file_dialog.button_table:getButtonById("mark_as_read")
+                local orig_mark_as_read_callback = button.callback
+                button.callback = function()
+                    -- Update the cache
+                    if self.cover_info_cache and self.cover_info_cache[file] then
+                        self.cover_info_cache[file][3] = "complete"
+                    end
+                    -- And then set the status on file as expected
+                    orig_mark_as_read_callback()
+                end
+
                 -- Replace the "Book information" button callback to use directly our bookinfo
-                local button = self.file_dialog.button_table:getButtonById("book_information")
+                button = self.file_dialog.button_table:getButtonById("book_information")
                 button.callback = function()
                     FileManagerBookInfo:show(file, bookinfo)
                     UIManager:close(self.file_dialog)
@@ -390,12 +413,6 @@ function CoverMenu:onHistoryMenuHold(item)
     -- on screen, so we won't see it)
     UIManager:close(self.histfile_dialog)
     UIManager:clearRenderStack()
-
-    -- Replace Book information callback to use directly our bookinfo
-    self.histfile_dialog.button_table:getButtonById("book_information").callback = function()
-        FileManagerBookInfo:show(file, bookinfo)
-        UIManager:close(self.histfile_dialog)
-    end
 
     -- Add some new buttons to original buttons set
     table.insert(orig_buttons, {
@@ -480,35 +497,65 @@ function CoverMenu:onHistoryMenuHold(item)
         },
     })
 
-    -- Fudge the setting resets (e.g. "Reset settings" button) to also trash the cover_info_cache
-    local orig_purgeSettings = filemanagerutil.purgeSettings
-    filemanagerutil.purgeSettings = function(f)
-        -- Wipe the cache
-        if self.cover_info_cache and self.cover_info_cache[f] then
-            self.cover_info_cache[f] = nil
-        end
-        -- And then purge the sidecar folder as expected
-        orig_purgeSettings(f)
-    end
-
-    -- Fudge status changes (e.g. "Mark as read" button) to also update the cover_info_cache
-    local orig_setStatus = filemanagerutil.setStatus
-    filemanagerutil.setStatus = function(f, status)
-        -- Update the cache
-        if self.cover_info_cache and self.cover_info_cache[f] then
-            self.cover_info_cache[f][3] = status
-        end
-        -- And then set the status on file as expected
-        orig_setStatus(f, status)
-    end
-
     -- Create the new ButtonDialog, and let UIManager show it
+    -- (all button callback replacement must be done after this block to stick)
     local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
     self.histfile_dialog = ButtonDialogTitle:new{
         title = orig_title,
         title_align = orig_title_align,
         buttons = orig_buttons,
     }
+
+    -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
+    local button = self.histfile_dialog.button_table:getButtonById("reset_settings")
+    local orig_purge_callback = button.callback
+    button.callback = function()
+        -- Wipe the cache
+        if self.cover_info_cache and self.cover_info_cache[file] then
+            self.cover_info_cache[file] = nil
+        end
+        -- And then purge the sidecar folder as expected
+        orig_purge_callback()
+    end
+
+    -- Fudge the status change button callbacks to also update the cover_info_cache
+    button = self.histfile_dialog.button_table:getButtonById("mark_as_reading")
+    local orig_mark_as_reading_callback = button.callback
+    button.callback = function()
+        -- Update the cache
+        if self.cover_info_cache and self.cover_info_cache[file] then
+            self.cover_info_cache[file][3] = "reading"
+        end
+        -- And then set the status on file as expected
+        orig_mark_as_reading_callback()
+    end
+    button = self.histfile_dialog.button_table:getButtonById("put_on_hold")
+    local orig_put_on_hold_callback = button.callback
+    button.callback = function()
+        -- Update the cache
+        if self.cover_info_cache and self.cover_info_cache[file] then
+            self.cover_info_cache[file][3] = "abandoned"
+        end
+        -- And then set the status on file as expected
+        orig_put_on_hold_callback()
+    end
+    button = self.histfile_dialog.button_table:getButtonById("mark_as_read")
+    local orig_mark_as_read_callback = button.callback
+    button.callback = function()
+        -- Update the cache
+        if self.cover_info_cache and self.cover_info_cache[file] then
+            self.cover_info_cache[file][3] = "complete"
+        end
+        -- And then set the status on file as expected
+        orig_mark_as_read_callback()
+    end
+
+    -- Replace Book information callback to use directly our bookinfo
+    self.histfile_dialog.button_table:getButtonById("book_information").callback = function()
+        FileManagerBookInfo:show(file, bookinfo)
+        UIManager:close(self.histfile_dialog)
+    end
+
     UIManager:show(self.histfile_dialog)
     return true
 end
@@ -535,12 +582,6 @@ function CoverMenu:onCollectionsMenuHold(item)
     -- on screen, so we won't see it)
     UIManager:close(self.collfile_dialog)
     UIManager:clearRenderStack()
-
-    -- Replace Book information callback to use directly our bookinfo
-    self.collfile_dialog.button_table:getButtonById("book_information").callback = function()
-        FileManagerBookInfo:show(file, bookinfo)
-        UIManager:close(self.collfile_dialog)
-    end
 
     -- Add some new buttons to original buttons set
     table.insert(orig_buttons, {
@@ -625,35 +666,65 @@ function CoverMenu:onCollectionsMenuHold(item)
         },
     })
 
-    -- Fudge the setting resets (e.g. "Reset settings" button) to also trash the cover_info_cache
-    local orig_purgeSettings = filemanagerutil.purgeSettings
-    filemanagerutil.purgeSettings = function(f)
-        -- Wipe the cache
-        if self.cover_info_cache and self.cover_info_cache[f] then
-            self.cover_info_cache[f] = nil
-        end
-        -- And then purge the sidecar folder as expected
-        orig_purgeSettings(f)
-    end
-
-    -- Fudge status changes (e.g. "Mark as read" button) to also update the cover_info_cache
-    local orig_setStatus = filemanagerutil.setStatus
-    filemanagerutil.setStatus = function(f, status)
-        -- Update the cache
-        if self.cover_info_cache and self.cover_info_cache[f] then
-            self.cover_info_cache[f][3] = status
-        end
-        -- And then set the status on file as expected
-        orig_setStatus(f, status)
-    end
-
     -- Create the new ButtonDialog, and let UIManager show it
+    -- (all button callback replacement must be done after this block to stick)
     local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
     self.collfile_dialog = ButtonDialogTitle:new{
         title = orig_title,
         title_align = orig_title_align,
         buttons = orig_buttons,
     }
+
+    -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
+    local button = self.collfile_dialog.button_table:getButtonById("reset_settings")
+    local orig_purge_callback = button.callback
+    button.callback = function()
+        -- Wipe the cache
+        if self.cover_info_cache and self.cover_info_cache[file] then
+            self.cover_info_cache[file] = nil
+        end
+        -- And then purge the sidecar folder as expected
+        orig_purge_callback()
+    end
+
+    -- Fudge the status change button callbacks to also update the cover_info_cache
+    button = self.collfile_dialog.button_table:getButtonById("mark_as_reading")
+    local orig_mark_as_reading_callback = button.callback
+    button.callback = function()
+        -- Update the cache
+        if self.cover_info_cache and self.cover_info_cache[file] then
+            self.cover_info_cache[file][3] = "reading"
+        end
+        -- And then set the status on file as expected
+        orig_mark_as_reading_callback()
+    end
+    button = self.collfile_dialog.button_table:getButtonById("put_on_hold")
+    local orig_put_on_hold_callback = button.callback
+    button.callback = function()
+        -- Update the cache
+        if self.cover_info_cache and self.cover_info_cache[file] then
+            self.cover_info_cache[file][3] = "abandoned"
+        end
+        -- And then set the status on file as expected
+        orig_put_on_hold_callback()
+    end
+    button = self.collfile_dialog.button_table:getButtonById("mark_as_read")
+    local orig_mark_as_read_callback = button.callback
+    button.callback = function()
+        -- Update the cache
+        if self.cover_info_cache and self.cover_info_cache[file] then
+            self.cover_info_cache[file][3] = "complete"
+        end
+        -- And then set the status on file as expected
+        orig_mark_as_read_callback()
+    end
+
+    -- Replace Book information callback to use directly our bookinfo
+    self.collfile_dialog.button_table:getButtonById("book_information").callback = function()
+        FileManagerBookInfo:show(file, bookinfo)
+        UIManager:close(self.collfile_dialog)
+    end
+
     UIManager:show(self.collfile_dialog)
     return true
 end
