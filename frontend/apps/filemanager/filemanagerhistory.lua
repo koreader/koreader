@@ -107,10 +107,10 @@ function FileManagerHistory:onMenuHold(item)
                 end,
             },
             {
-                text = _("Mark as read"),
-                enabled = status ~= "complete",
+                text = _("Put on hold"),
+                enabled = status ~= "abandoned",
                 callback = function()
-                    filemanagerutil.setStatus(item.file, "complete")
+                    filemanagerutil.setStatus(item.file, "abandoned")
                     if self._manager.filter ~= "all" then
                         self._manager:fetchStatuses(false)
                     else
@@ -121,10 +121,10 @@ function FileManagerHistory:onMenuHold(item)
                 end,
             },
             {
-                text = _("Put on hold"),
-                enabled = status ~= "abandoned",
+                text = _("Mark as read"),
+                enabled = status ~= "complete",
                 callback = function()
-                    filemanagerutil.setStatus(item.file, "abandoned")
+                    filemanagerutil.setStatus(item.file, "complete")
                     if self._manager.filter ~= "all" then
                         self._manager:fetchStatuses(false)
                     else
