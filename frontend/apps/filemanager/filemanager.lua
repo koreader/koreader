@@ -373,7 +373,7 @@ function FileManager:setupLayout()
             table.insert(buttons, {
                 {
                     text = _("Reset settings"),
-                    enabled = is_file and DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
+                    enabled = DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
                             text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(file)),
