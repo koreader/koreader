@@ -1,6 +1,8 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
@@ -77,7 +79,33 @@ function FileManagerCollection:onMenuHold(item)
         {},
         {
             {
-                text = _("Sort"),
+                text = _("Reset settings"),
+                enabled = DocSettings:hasSidecarFile(BaseUtil.realpath(item.file)),
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(item.file)),
+                        ok_text = _("Reset"),
+                        ok_callback = function()
+                            filemanagerutil.purgeSettings(item.file)
+                            require("readhistory"):fileSettingsPurged(item.file)
+                            self._manager:updateItemTable()
+                            UIManager:close(self.collfile_dialog)
+                        end,
+                    })
+                end,
+            },
+            {
+                text = _("Remove from collection"),
+                callback = function()
+                    ReadCollection:removeItem(item.file, self._manager.coll_menu.collection)
+                    self._manager:updateItemTable()
+                    UIManager:close(self.collfile_dialog)
+                end,
+            },
+        },
+        {
+            {
+                text = _("Sort collection"),
                 callback = function()
                     UIManager:close(self.collfile_dialog)
                     local item_table = {}
@@ -102,19 +130,8 @@ function FileManagerCollection:onMenuHold(item)
                         end
                     }
                     UIManager:show(sort_item)
-
                 end,
             },
-            {
-                text = _("Remove from collection"),
-                callback = function()
-                    ReadCollection:removeItem(item.file, self._manager.coll_menu.collection)
-                    self._manager:updateItemTable()
-                    UIManager:close(self.collfile_dialog)
-                end,
-            },
-        },
-        {
             {
                 text = _("Book information"),
                 id = "book_information", -- used by covermenu
