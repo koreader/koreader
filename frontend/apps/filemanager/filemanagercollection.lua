@@ -56,19 +56,19 @@ function FileManagerCollection:onMenuHold(item)
                 end,
             },
             {
-                text = _("Mark as read"),
-                enabled = status ~= "complete",
+                text = _("Put on hold"),
+                enabled = status ~= "abandoned",
                 callback = function()
-                    filemanagerutil.setStatus(item.file, "complete")
+                    filemanagerutil.setStatus(item.file, "abandoned")
                     self._manager:updateItemTable()
                     UIManager:close(self.collfile_dialog)
                 end,
             },
             {
-                text = _("Put on hold"),
-                enabled = status ~= "abandoned",
+                text = _("Mark as read"),
+                enabled = status ~= "complete",
                 callback = function()
-                    filemanagerutil.setStatus(item.file, "abandoned")
+                    filemanagerutil.setStatus(item.file, "complete")
                     self._manager:updateItemTable()
                     UIManager:close(self.collfile_dialog)
                 end,

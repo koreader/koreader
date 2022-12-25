@@ -351,19 +351,19 @@ function FileManager:setupLayout()
                     end,
                 },
                 {
-                    text = _("Mark as read"),
-                    enabled = status ~= "complete",
+                    text = _("Put on hold"),
+                    enabled = status ~= "abandoned",
                     callback = function()
-                        filemanagerutil.setStatus(file, "complete")
+                        filemanagerutil.setStatus(file, "abandoned")
                         self:refreshPath()
                         UIManager:close(self.file_dialog)
                     end,
                 },
                 {
-                    text = _("Put on hold"),
-                    enabled = status ~= "abandoned",
+                    text = _("Mark as read"),
+                    enabled = status ~= "complete",
                     callback = function()
-                        filemanagerutil.setStatus(file, "abandoned")
+                        filemanagerutil.setStatus(file, "complete")
                         self:refreshPath()
                         UIManager:close(self.file_dialog)
                     end,
