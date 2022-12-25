@@ -8,6 +8,7 @@ local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = require("device").screen
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local BaseUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
@@ -42,7 +43,38 @@ end
 
 function FileManagerCollection:onMenuHold(item)
     self.collfile_dialog = nil
+    local status = filemanagerutil.getStatus(item.file)
     local buttons = {
+        {
+            {
+                text = _("Mark as reading"),
+                enabled = status ~= "reading",
+                callback = function()
+                    filemanagerutil.setStatus(item.file, "reading")
+                    self._manager:updateItemTable()
+                    UIManager:close(self.collfile_dialog)
+                end,
+            },
+            {
+                text = _("Mark as read"),
+                enabled = status ~= "complete",
+                callback = function()
+                    filemanagerutil.setStatus(item.file, "complete")
+                    self._manager:updateItemTable()
+                    UIManager:close(self.collfile_dialog)
+                end,
+            },
+            {
+                text = _("Put on hold"),
+                enabled = status ~= "abandoned",
+                callback = function()
+                    filemanagerutil.setStatus(item.file, "abandoned")
+                    self._manager:updateItemTable()
+                    UIManager:close(self.collfile_dialog)
+                end,
+            },
+        },
+        {},
         {
             {
                 text = _("Sort"),
