@@ -50,6 +50,7 @@ function FileManagerCollection:onMenuHold(item)
         {
             {
                 text = _("Mark as reading"),
+                id = "mark_as_reading", -- used by covermenu
                 enabled = status ~= "reading",
                 callback = function()
                     filemanagerutil.setStatus(item.file, "reading")
@@ -59,6 +60,7 @@ function FileManagerCollection:onMenuHold(item)
             },
             {
                 text = _("Put on hold"),
+                id = "put_on_hold", -- used by covermenu
                 enabled = status ~= "abandoned",
                 callback = function()
                     filemanagerutil.setStatus(item.file, "abandoned")
@@ -68,6 +70,7 @@ function FileManagerCollection:onMenuHold(item)
             },
             {
                 text = _("Mark as read"),
+                id = "mark_as_read", -- used by covermenu
                 enabled = status ~= "complete",
                 callback = function()
                     filemanagerutil.setStatus(item.file, "complete")
@@ -80,6 +83,7 @@ function FileManagerCollection:onMenuHold(item)
         {
             {
                 text = _("Reset settings"),
+                id = "reset_settings", -- used by covermenu
                 enabled = DocSettings:hasSidecarFile(BaseUtil.realpath(item.file)),
                 callback = function()
                     UIManager:show(ConfirmBox:new{

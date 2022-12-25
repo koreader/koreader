@@ -343,6 +343,7 @@ function FileManager:setupLayout()
             table.insert(buttons, {
                 {
                     text = _("Mark as reading"),
+                    id = "mark_as_reading", -- used by covermenu
                     enabled = status ~= "reading",
                     callback = function()
                         filemanagerutil.setStatus(file, "reading")
@@ -352,6 +353,7 @@ function FileManager:setupLayout()
                 },
                 {
                     text = _("Put on hold"),
+                    id = "put_on_hold", -- used by covermenu
                     enabled = status ~= "abandoned",
                     callback = function()
                         filemanagerutil.setStatus(file, "abandoned")
@@ -361,6 +363,7 @@ function FileManager:setupLayout()
                 },
                 {
                     text = _("Mark as read"),
+                    id = "mark_as_read", -- used by covermenu
                     enabled = status ~= "complete",
                     callback = function()
                         filemanagerutil.setStatus(file, "complete")
@@ -373,6 +376,7 @@ function FileManager:setupLayout()
             table.insert(buttons, {
                 {
                     text = _("Reset settings"),
+                    id = "reset_settings", -- used by covermenu
                     enabled = DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
