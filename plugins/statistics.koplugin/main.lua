@@ -127,7 +127,11 @@ function ReaderStatistics:init()
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
     self:checkInitDatabase()
-    BookStatusWidget.getStats = function()
+    BookStatusWidget.getStats = function(_, stats)
+        if stats then -- called from file browser popup menu "Book status"
+            self.data = stats
+            self.id_curr_book = self:getIdBookDB()
+        end
         return self:getStatsBookStatus(self.id_curr_book, self.settings.is_enabled)
     end
     ReaderFooter.getAvgTimePerPage = function()
