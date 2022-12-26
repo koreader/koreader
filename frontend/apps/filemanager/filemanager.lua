@@ -200,23 +200,26 @@ function FileManager:setupLayout()
     function file_chooser:showFileDialog(file)  -- luacheck: ignore
         local is_file = lfs.attributes(file, "mode") == "file"
         local is_folder = lfs.attributes(file, "mode") == "directory"
-        local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
+        local is_not_parent_folder = is_file or BaseUtil.basename(file) ~= ".."
+        local file_realpath = BaseUtil.realpath(file)
+        local has_sidecar_file = DocSettings:hasSidecarFile(file_realpath)
+
         local buttons = {
             {
                 {
                     text = C_("File", "Copy"),
                     enabled = is_not_parent_folder,
                     callback = function()
-                        copyFile(file)
                         UIManager:close(self.file_dialog)
+                        copyFile(file)
                     end,
                 },
                 {
                     text = C_("File", "Paste"),
                     enabled = file_manager.clipboard and true or false,
                     callback = function()
-                        pasteHere(file)
                         UIManager:close(self.file_dialog)
+                        pasteHere(file)
                     end,
                 },
                 {
@@ -236,8 +239,8 @@ function FileManager:setupLayout()
                     text = _("Cut"),
                     enabled = is_not_parent_folder,
                     callback = function()
-                        cutFile(file)
                         UIManager:close(self.file_dialog)
+                        cutFile(file)
                     end,
                 },
                 {
@@ -251,7 +254,6 @@ function FileManager:setupLayout()
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 deleteFile(file)
-                                require("readhistory"):fileDeleted(file)
                                 self:refreshPath()
                             end,
                         })
@@ -279,8 +281,8 @@ function FileManager:setupLayout()
                                     enabled = true,
                                     callback = function()
                                         if file_manager.rename_dialog:getInputText() ~= "" then
-                                            renameFile(file)
                                             UIManager:close(file_manager.rename_dialog)
+                                            renameFile(file)
                                         end
                                     end,
                                 },
@@ -291,94 +293,62 @@ function FileManager:setupLayout()
                     end,
                 }
             },
-            -- a little hack to get visual functionality grouping
-            {
-            },
+            {}, -- separator
         }
 
-        if is_file and Device:canExecuteScript(file) then
-            -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
-            table.insert(buttons[3],
-                {
-                    -- @translators This is the script's programming language (e.g., shell or python)
-                    text = T(_("Execute %1 script"), util.getScriptType(file)),
-                    enabled = true,
-                    callback = function()
-                        UIManager:close(self.file_dialog)
-                        local script_is_running_msg = InfoMessage:new{
-                                -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
-                                text = T(_("Running %1 script %2…"), util.getScriptType(file), BD.filename(BaseUtil.basename(file))),
-                        }
-                        UIManager:show(script_is_running_msg)
-                        UIManager:scheduleIn(0.5, function()
-                            local rv
-                            if Device:isAndroid() then
-                                Device:setIgnoreInput(true)
-                                rv = os.execute("sh " .. BaseUtil.realpath(file)) -- run by sh, because sdcard has no execute permissions
-                                Device:setIgnoreInput(false)
-                            else
-                                rv = os.execute(BaseUtil.realpath(file))
-                            end
-                            UIManager:close(script_is_running_msg)
-                            if rv == 0 then
-                                UIManager:show(InfoMessage:new{
-                                    text = _("The script exited successfully."),
-                                })
-                            else
-                                --- @note: Lua 5.1 returns the raw return value from the os's system call. Counteract this madness.
-                                UIManager:show(InfoMessage:new{
-                                    text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
-                                    icon = "notice-warning",
-                                })
-                            end
-                        end)
-                    end,
-                }
-            )
-        end
-
         if is_file then
-            table.insert(buttons, {
-                {
-                    text = _("Reset settings"),
-                    id = "reset_settings", -- used by covermenu
-                    enabled = is_file and DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
-                    callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(file)),
-                            ok_text = _("Reset"),
-                            ok_callback = function()
-                                filemanagerutil.purgeSettings(file)
-                                require("readhistory"):fileSettingsPurged(file)
-                                self:refreshPath()
-                                UIManager:close(self.file_dialog)
-                            end,
-                        })
-                    end,
-                },
-                {
-                    text_func = function()
-                        if ReadCollection:checkItemExist(file) then
-                            return _("Remove from favorites")
-                        else
-                            return _("Add to favorites")
-                        end
-                    end,
-                    enabled = DocumentRegistry:getProviders(file) ~= nil,
-                    callback = function()
-                        if ReadCollection:checkItemExist(file) then
-                            ReadCollection:removeItem(file)
-                        else
-                            ReadCollection:addItem(file)
-                        end
-                        UIManager:close(self.file_dialog)
-                    end,
-                },
-            })
+            if Device:canExecuteScript(file) then
+                table.insert(buttons, {
+                    {
+                        -- @translators This is the script's programming language (e.g., shell or python)
+                        text = T(_("Execute %1 script"), util.getScriptType(file)),
+                        callback = function()
+                            UIManager:close(self.file_dialog)
+                            local script_is_running_msg = InfoMessage:new{
+                                    -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
+                                    text = T(_("Running %1 script %2…"), util.getScriptType(file), BD.filename(BaseUtil.basename(file))),
+                            }
+                            UIManager:show(script_is_running_msg)
+                            UIManager:scheduleIn(0.5, function()
+                                local rv
+                                if Device:isAndroid() then
+                                    Device:setIgnoreInput(true)
+                                    rv = os.execute("sh " .. file_realpath) -- run by sh, because sdcard has no execute permissions
+                                    Device:setIgnoreInput(false)
+                                else
+                                    rv = os.execute(file_realpath)
+                                end
+                                UIManager:close(script_is_running_msg)
+                                if rv == 0 then
+                                    UIManager:show(InfoMessage:new{
+                                        text = _("The script exited successfully."),
+                                    })
+                                else
+                                    --- @note: Lua 5.1 returns the raw return value from the os's system call. Counteract this madness.
+                                    UIManager:show(InfoMessage:new{
+                                        text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
+                                        icon = "notice-warning",
+                                    })
+                                end
+                            end)
+                        end,
+                    },
+                })
+            end
+            if FileManagerConverter:isSupported(file) then
+                table.insert(buttons, {
+                    {
+                        text = _("Convert"),
+                        callback = function()
+                            UIManager:close(self.file_dialog)
+                            FileManagerConverter:showConvertButtons(file, self)
+                        end,
+                    },
+                })
+            end
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
-                    enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1 or file_manager.texteditor,
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local one_time_providers = {}
@@ -400,43 +370,108 @@ function FileManager:setupLayout()
                     end,
                 },
                 {
-                    text = _("Book information"),
-                    id = "book_information", -- used by covermenu
-                    enabled = FileManagerBookInfo:isSupported(file),
-                    callback = function()
-                        FileManagerBookInfo:show(file)
-                        UIManager:close(self.file_dialog)
+                    text_func = function()
+                        if ReadCollection:checkItemExist(file) then
+                            return _("Remove from favorites")
+                        else
+                            return _("Add to favorites")
+                        end
                     end,
-                }
+                    enabled = DocumentRegistry:getProviders(file) ~= nil,
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        if ReadCollection:checkItemExist(file) then
+                            ReadCollection:removeItem(file)
+                        else
+                            ReadCollection:addItem(file)
+                        end
+                    end,
+                },
             })
-            if FileManagerConverter:isSupported(file) then
-                table.insert(buttons, {
-                    {
-                        text = _("Convert"),
-                        enabled = true,
-                        callback = function()
-                            UIManager:close(self.file_dialog)
-                            FileManagerConverter:showConvertButtons(file, self)
-                        end,
-                    }
-                })
-            end
-        end
-        if is_folder then
-            local realpath = BaseUtil.realpath(file)
             table.insert(buttons, {
                 {
-                    text = _("Set as HOME folder"),
+                    text = _("Reset settings"),
+                    id = "reset_settings", -- used by covermenu
+                    enabled = has_sidecar_file,
                     callback = function()
-                        setHome(realpath)
+                        UIManager:show(ConfirmBox:new{
+                            text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(file)),
+                            ok_text = _("Reset"),
+                            ok_callback = function()
+                                UIManager:close(self.file_dialog)
+                                filemanagerutil.purgeSettings(file)
+                                require("readhistory"):fileSettingsPurged(file)
+                                self:refreshPath()
+                            end,
+                        })
+                    end,
+                },
+                {
+                    text = _("Book information"),
+                    id = "book_information", -- used by covermenu
+                    callback = function()
                         UIManager:close(self.file_dialog)
-                    end
-                }
+                        FileManagerBookInfo:show(file)
+                    end,
+                },
+            })
+            table.insert(buttons, {
+                {
+                    text_func = function()
+                        local status
+                        if has_sidecar_file then
+                            local docinfo = DocSettings:open(file)
+                            status = docinfo.data.summary and docinfo.data.summary.status
+                        end
+                        return status == "complete" and _("Mark as reading") or _("Mark as read")
+                    end,
+                    id = "mark_read", -- used by covermenu
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        FileManagerBookInfo:markBookReadOrReading(file)
+                    end,
+                },
+                {
+                    text = _("Book description"),
+                    id = "book_description", -- used by covermenu
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        FileManagerBookInfo:onShowBookDescription(nil, file)
+                    end,
+                },
+            })
+            table.insert(buttons, {
+                {
+                    text = _("Book status"),
+                    id = "book_status", -- used by covermenu
+                    enabled = has_sidecar_file,
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        FileManagerBookInfo:showBookStatus(file_realpath)
+                    end,
+                },
+                {
+                    text = _("Book cover"),
+                    id = "book_cover", -- used by covermenu
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        FileManagerBookInfo:onShowBookCover(file)
+                    end,
+                },
             })
         end
 
         local title
         if is_folder then
+            table.insert(buttons, {
+                {
+                    text = _("Set as HOME folder"),
+                    callback = function()
+                        UIManager:close(self.file_dialog)
+                        setHome(file_realpath)
+                    end
+                },
+            })
             title = BD.directory(file:match("([^/]+)$"))
         else
             title = BD.filename(file:match("([^/]+)$"))
@@ -616,9 +651,9 @@ function FileManager:tapPlus()
                 {
                     text = _("Select all files in folder"),
                     callback = function()
+                        UIManager:close(self.file_dialog)
                         self.file_chooser:selectAllFilesInFolder()
                         self:onRefresh()
-                        UIManager:close(self.file_dialog)
                     end,
                 },
                 {
@@ -629,13 +664,13 @@ function FileManager:tapPlus()
                             text = _("Copy selected files to the current folder?"),
                             ok_text = _("Copy"),
                             ok_callback = function()
+                                UIManager:close(self.file_dialog)
                                 self.cutfile = false
                                 for file in pairs(self.selected_files) do
                                     self.clipboard = file
                                     self:pasteHere(self.file_chooser.path)
                                 end
                                 self:onToggleSelectMode()
-                                UIManager:close(self.file_dialog)
                             end,
                         })
                     end
@@ -646,9 +681,9 @@ function FileManager:tapPlus()
                     text = _("Deselect all"),
                     enabled = actions_enabled,
                     callback = function()
+                        UIManager:close(self.file_dialog)
                         self.selected_files = {}
                         self:onRefresh()
-                        UIManager:close(self.file_dialog)
                     end,
                 },
                 {
@@ -659,13 +694,13 @@ function FileManager:tapPlus()
                             text = _("Move selected files to the current folder?"),
                             ok_text = _("Move"),
                             ok_callback = function()
+                                UIManager:close(self.file_dialog)
                                 self.cutfile = true
                                 for file in pairs(self.selected_files) do
                                     self.clipboard = file
                                     self:pasteHere(self.file_chooser.path)
                                 end
                                 self:onToggleSelectMode()
-                                UIManager:close(self.file_dialog)
                             end,
                         })
                     end
@@ -675,8 +710,8 @@ function FileManager:tapPlus()
                 {
                     text = _("Exit select mode"),
                     callback = function()
-                        self:onToggleSelectMode()
                         UIManager:close(self.file_dialog)
+                        self:onToggleSelectMode()
                     end,
                 },
                 {
@@ -687,13 +722,11 @@ function FileManager:tapPlus()
                             text = _("Delete selected files?\nIf you delete a file, it is permanently lost."),
                             ok_text = _("Delete"),
                             ok_callback = function()
-                                local readhistory = require("readhistory")
+                                UIManager:close(self.file_dialog)
                                 for file in pairs(self.selected_files) do
                                     self:deleteFile(file)
-                                    readhistory:fileDeleted(file)
                                 end
                                 self:onToggleSelectMode()
-                                UIManager:close(self.file_dialog)
                             end,
                         })
                     end
@@ -724,8 +757,8 @@ function FileManager:tapPlus()
                 {
                     text = _("Select files"),
                     callback = function()
-                        self:onToggleSelectMode(true) -- no full screen refresh
                         UIManager:close(self.file_dialog)
+                        self:onToggleSelectMode(true) -- no full screen refresh
                     end,
                 },
             },
@@ -743,9 +776,9 @@ function FileManager:tapPlus()
                     text = _("Paste"),
                     enabled = self.clipboard and true or false,
                     callback = function()
+                        UIManager:close(self.file_dialog)
                         self:pasteHere(self.file_chooser.path)
                         self:onRefresh()
-                        UIManager:close(self.file_dialog)
                     end,
                 },
             },
@@ -753,8 +786,8 @@ function FileManager:tapPlus()
                 {
                     text = _("Set as HOME folder"),
                     callback = function()
-                        self:setHome(self.file_chooser.path)
                         UIManager:close(self.file_dialog)
+                        self:setHome(self.file_chooser.path)
                     end
                 }
             },
@@ -762,8 +795,8 @@ function FileManager:tapPlus()
                 {
                     text = _("Go to HOME folder"),
                     callback = function()
-                        self:goHome()
                         UIManager:close(self.file_dialog)
+                        self:goHome()
                     end
                 }
             },
@@ -771,8 +804,8 @@ function FileManager:tapPlus()
                 {
                     text = _("Open random document"),
                     callback = function()
-                        self:openRandomFile(self.file_chooser.path)
                         UIManager:close(self.file_dialog)
+                        self:openRandomFile(self.file_chooser.path)
                     end
                 }
             },
@@ -780,8 +813,8 @@ function FileManager:tapPlus()
                 {
                     text = _("Folder shortcuts"),
                     callback = function()
-                        self:handleEvent(Event:new("ShowFolderShortcutsDialog"))
                         UIManager:close(self.file_dialog)
+                        self:handleEvent(Event:new("ShowFolderShortcutsDialog"))
                     end
                 }
             }
@@ -793,9 +826,8 @@ function FileManager:tapPlus()
                     text = _("Import files here"),
                     enabled = Device:isValidPath(self.file_chooser.path),
                     callback = function()
-                        local current_dir = self.file_chooser.path
                         UIManager:close(self.file_dialog)
-                        Device.importFile(current_dir)
+                        Device.importFile(self.file_chooser.path)
                     end,
                 },
             })
@@ -812,14 +844,13 @@ function FileManager:tapPlus()
                         end
                     end,
                     callback = function()
+                        UIManager:close(self.file_dialog)
                         if Device:isValidPath(self.file_chooser.path) then
                             local ok, sd_path = Device:hasExternalSD()
-                            UIManager:close(self.file_dialog)
                             if ok then
                                 self.file_chooser:changeToPath(sd_path)
                             end
                         else
-                            UIManager:close(self.file_dialog)
                             self.file_chooser:changeToPath(Device.home_dir)
                         end
                     end,
@@ -1126,6 +1157,7 @@ function FileManager:deleteFile(file)
             end
             doc_settings:purge()
         end
+        require("readhistory"):fileDeleted(file)
         ReadCollection:removeItemByPath(file, is_dir)
     else
         UIManager:show(InfoMessage:new{
