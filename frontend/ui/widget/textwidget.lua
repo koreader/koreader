@@ -292,6 +292,8 @@ end
 function TextWidget:getSize()
     self:updateSize()
     return Geom:new{
+        x = 0,
+        y = 0,
         w = self._length,
         h = self.forced_height or self._height,
     }
