@@ -14,8 +14,7 @@ function CenterContainer:paintTo(bb, x, y)
         if self.dimen.h < content_size.h then
             self.ignore = "height"
         end
-    end
-    if self.ignore_if_over == "width" then -- align left borders
+    elseif self.ignore_if_over == "width" then -- align left borders
         if self.dimen.w < content_size.w then
             self.ignore = "width"
         end
