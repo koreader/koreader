@@ -47,9 +47,12 @@ local BookStatusWidget = FocusManager:extend{
     props = nil,
     star = nil, -- Button
     summary = nil, -- hash
+    total_pages = nil,
+    current_page = nil,
 }
 
 function BookStatusWidget:init()
+    self.updated = false
     self.layout = {}
     -- What a blank, full summary table should look like
     local new_summary = {
@@ -76,8 +79,13 @@ function BookStatusWidget:init()
     else
         self.summary = new_summary
     end
-    self.total_pages = self.ui.document:getPageCount()
-    stats_book = self:getStats()
+    if self.ui then
+        self.total_pages = self.ui.document:getPageCount()
+        self.current_page = self.ui:getCurrentPage()
+        stats_book = self:getStats()
+    else -- called from file browser popup menu "Book status"
+        stats_book = self:getStats(self.settings:readSetting("stats"))
+    end
 
     self.small_font_face = Font:getFace("smallffont")
     self.medium_font_face = Font:getFace("ffont")
@@ -152,8 +160,8 @@ function BookStatusWidget:getStatHours()
 end
 
 function BookStatusWidget:getStatReadPages()
-    if stats_book.pages then
-        return string.format("%s/%s",stats_book.pages, self.total_pages)
+    if stats_book.pages and self.total_pages then
+        return string.format("%s/%s", stats_book.pages, self.total_pages)
     else
         return _("N/A")
     end
@@ -229,7 +237,7 @@ end
 function BookStatusWidget:onChangeBookStatus(option_name, option_value)
     self.summary.status = option_name[option_value]
     self.summary.modified = os.date("%Y-%m-%d", os.time())
-    self:saveSummary()
+    self.updated = true
     return true
 end
 
@@ -250,7 +258,7 @@ function BookStatusWidget:setStar(num)
     local row = {}
     if num then
         self.summary.rating = num
-        self:saveSummary()
+        self.updated = true
 
         for i = 1, num do
             local star = self.star:new{
@@ -330,7 +338,7 @@ function BookStatusWidget:genBookInfoGroup()
         }
     )
     -- progress bar
-    local read_percentage = self.ui:getCurrentPage() / self.total_pages
+    local read_percentage = (self.current_page and self.total_pages) and self.current_page / self.total_pages or 0
     local progress_bar = ProgressWidget:new{
         width = math.floor(width * 0.7),
         height = Screen:scaleBySize(10),
@@ -500,19 +508,6 @@ function BookStatusWidget:genSummaryGroup(width)
     }
 end
 
-function BookStatusWidget:onUpdateNote()
-    self.summary.note = self.input_note:getText()
-    self:saveSummary()
-    return true
-end
-
-function BookStatusWidget:saveSummary()
-    if self.summary then
-        self.settings:saveSetting("summary", self.summary)
-        self.settings:flush()
-    end
-end
-
 function BookStatusWidget:generateSwitchGroup(width)
     local height
     if Screen:getScreenMode() == "landscape" then
@@ -611,7 +606,13 @@ function BookStatusWidget:onMultiSwipe(arg, ges_ev)
 end
 
 function BookStatusWidget:onClose()
-    self:saveSummary()
+    if self.updated and self.summary then
+        self.settings:saveSetting("summary", self.summary)
+        self.settings:flush()
+    end
+    if self.close_callback then
+        self.close_callback()
+    end
     -- NOTE: Flash on close to avoid ghosting, since we show an image.
     UIManager:close(self, "flashpartial")
     return true
@@ -621,9 +622,6 @@ function BookStatusWidget:onSwitchFocus(inputbox)
     self.note_dialog = InputDialog:new{
         title = _("Review"),
         input = self.input_note:getText(),
-        input_hint = "",
-        input_type = "text",
-        scroll = true,
         allow_newline = true,
         text_height = Screen:scaleBySize(150),
         buttons = {
@@ -639,9 +637,11 @@ function BookStatusWidget:onSwitchFocus(inputbox)
                     text = _("Save review"),
                     is_enter_default = true,
                     callback = function()
-                        self.input_note:setText(self.note_dialog:getInputText())
+                        local note = self.note_dialog:getInputText()
+                        self.input_note:setText(note)
+                        self.summary.note = note
+                        self.updated = true
                         self:closeInputDialog()
-                        self:onUpdateNote()
                     end,
                 },
             },
