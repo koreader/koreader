@@ -490,7 +490,7 @@ common_settings.document_auto_save = {
         local interval_m = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
         local interval_text
         if interval_m == false or interval_m == 0 then
-            interval_text = _("on close, suspend and exit")
+            interval_text = _("on close, suspend or exit")
         else
             -- @translators min stands for minute
             interval_text = T(N_("every 1 min", "every %1 min", interval_m), interval_m)
@@ -502,19 +502,20 @@ common_settings.document_auto_save = {
     callback = function(touchmenu_instance)
         local SpinWidget = require("ui/widget/spinwidget")
         local interval_m = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-        interval_m = interval_m and interval_m or 0
+        interval_m = interval_m and interval_m or 5
         UIManager:show(SpinWidget:new{
             title_text = _("Auto-save book metadata interval"),
-            info_text = _("Disabling or setting the interval to zero will save the book metatadata only on close, suspend and exit."),
+            info_text = _("If disabled, the book metatadata will only be saved on close, suspend or exit."),
             -- read the saved setting, as this get's not overwritten by toggling easy_mode
             value = interval_m,
-            value_min = 0,
+            value_min = 5,
             value_max = 60,
             wrap = false,
             value_step = 5,
             value_hold_step = 15,
             unit = "min",
             ok_text = _("Set"),
+            ok_always_enabled = true,
             callback = function(spin)
                 local value = spin.value ~= 0 and spin.value or false
                 G_reader_settings:saveSetting("auto_save_settings_interval_minutes", value)
