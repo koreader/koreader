@@ -1,15 +1,12 @@
 local BD = require("ui/bidi")
-local DocumentRegistry = require("document/documentregistry")
 local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
-local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
 local _ = require("gettext")
-local util = require("util")
 
 local BookInfoManager = require("bookinfomanager")
 
