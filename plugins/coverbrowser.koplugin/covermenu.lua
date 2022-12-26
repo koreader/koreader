@@ -5,7 +5,6 @@ local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
-local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local logger = require("logger")
@@ -240,59 +239,6 @@ function CoverMenu:updateItems(select_number)
 
                 -- Add some new buttons to original buttons set
                 table.insert(orig_buttons, {
-                    { -- Allow user to view real size cover in ImageViewer
-                        text = _("View full size cover"),
-                        enabled = bookinfo.has_cover and true or false,
-                        callback = function()
-                            local document = DocumentRegistry:openDocument(file)
-                            if document then
-                                if document.loadDocument then -- needed for crengine
-                                    document:loadDocument(false) -- load only metadata
-                                end
-                                local cover_bb = document:getCoverPageImage()
-                                if cover_bb then
-                                    local imgviewer = ImageViewer:new{
-                                        image = cover_bb,
-                                        with_title_bar = false,
-                                        fullscreen = true,
-                                    }
-                                    UIManager:show(imgviewer)
-                                else
-                                    UIManager:show(InfoMessage:new{
-                                        text = _("No cover image available."),
-                                    })
-                                end
-                                UIManager:close(self.file_dialog)
-                                document:close()
-                            end
-                        end,
-                    },
-                    { -- Allow user to directly view description in TextViewer
-                        text = _("Book description"),
-                        enabled = bookinfo.description and true or false,
-                        callback = function()
-                            local description = util.htmlToPlainTextIfHtml(bookinfo.description)
-                            local textviewer = TextViewer:new{
-                                title = _("Description:"),
-                                text = description,
-                            }
-                            UIManager:close(self.file_dialog)
-                            UIManager:show(textviewer)
-                        end,
-                    },
-                })
-                table.insert(orig_buttons, {
-                    { -- Allow user to ignore some offending cover image
-                        text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
-                        enabled = bookinfo.has_cover and true or false,
-                        callback = function()
-                            BookInfoManager:setBookInfoProperties(file, {
-                                ["ignore_cover"] = not bookinfo.ignore_cover and 'Y' or false,
-                            })
-                            UIManager:close(self.file_dialog)
-                            self:updateItems()
-                        end,
-                    },
                     { -- Allow user to ignore some bad metadata (filename will be used instead)
                         text = bookinfo.ignore_meta and _("Unignore metadata") or _("Ignore metadata"),
                         enabled = bookinfo.has_meta and true or false,
@@ -304,61 +250,21 @@ function CoverMenu:updateItems(select_number)
                             self:updateItems()
                         end,
                     },
-                })
-                table.insert(orig_buttons, {
-                    { -- Mark the book as read/unread
-                        text_func = function()
-                            -- If the book has a cache entry, it means it has a sidecar file, and it *may* have the info we need.
-                            local status
-                            if self.cover_info_cache and self.cover_info_cache[file] then
-                                local _, _, c_status = unpack(self.cover_info_cache[file])
-                                status = c_status
-                            end
-                            -- NOTE: status may still be nil if the BookStatus widget was never opened in this book.
-                            --       For our purposes, we assume this means reading or on hold, which is just fine.
-                            -- NOTE: This also means we assume "on hold" means reading, meaning it'll be flipped to "finished",
-                            --       which I'm personally okay with, too.
-                            --       c.f., BookStatusWidget:generateSwitchGroup for the three possible constant values.
-                            return status == "complete" and _("Mark as reading") or _("Mark as read")
-                        end,
+                    { -- Allow user to ignore some offending cover image
+                        text = bookinfo.ignore_cover and _("Unignore cover") or _("Ignore cover"),
+                        enabled = bookinfo.has_cover and true or false,
                         callback = function()
-                            local status
-                            if self.cover_info_cache and self.cover_info_cache[file] then
-                                local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
-                                status = c_status == "complete" and "reading" or "complete"
-                                -- Update the cache, even if it had a nil status before
-                                self.cover_info_cache[file] = {c_pages, c_percent_finished, status}
-                            else
-                                -- We assumed earlier an empty status meant "reading", so, flip that to "complete"
-                                status = "complete"
-                            end
-
-                            -- In case the book doesn't have a sidecar file, this'll create it
-                            local docinfo = DocSettings:open(file)
-                            if docinfo.data.summary and docinfo.data.summary.status then
-                                -- Book already had the full BookStatus table in its sidecar, easy peasy!
-                                docinfo.data.summary.status = status
-                            else
-                                -- No BookStatus table, create a minimal one...
-                                if docinfo.data.summary then
-                                    -- Err, a summary table with no status entry? Should never happen...
-                                    local summary = { status = status }
-                                    -- Append the status entry to the existing summary...
-                                    util.tableMerge(docinfo.data.summary, summary)
-                                else
-                                    -- No summary table at all, create a minimal one
-                                    local summary = { status = status }
-                                    docinfo:saveSetting("summary", summary)
-                                end
-                            end
-                            docinfo:flush()
-
+                            BookInfoManager:setBookInfoProperties(file, {
+                                ["ignore_cover"] = not bookinfo.ignore_cover and 'Y' or false,
+                            })
                             UIManager:close(self.file_dialog)
                             self:updateItems()
                         end,
                     },
+                })
+                table.insert(orig_buttons, {
                     { -- Allow a new extraction (multiple interruptions, book replaced)...
-                        text = _("Refresh book info"),
+                        text = _("Refresh cached book information"),
                         enabled = bookinfo and true or false,
                         callback = function()
                             -- Wipe the cache
@@ -392,11 +298,54 @@ function CoverMenu:updateItems(select_number)
                     orig_purge_callback()
                 end
 
+                -- Replace the "Mark as read" button callback to update cache and view
+                button = self.file_dialog.button_table:getButtonById("mark_read")
+                button.callback = function()
+                    UIManager:close(self.file_dialog)
+                    local status = FileManagerBookInfo:markBookReadOrReading(file)
+                    if self.cover_info_cache and self.cover_info_cache[file] then
+                        self.cover_info_cache[file][3] = status
+                    end
+                    self:updateItems()
+                end
+
+                -- Replace the "Book status" button callback to apply close_callback (update cache and view)
+                button = self.file_dialog.button_table:getButtonById("book_status")
+                button.callback = function()
+                    UIManager:close(self.file_dialog)
+                    local function close_callback()
+                        if self.cover_info_cache and self.cover_info_cache[file] then
+                            local docinfo = DocSettings:open(file)
+                            local status = docinfo.data.summary and docinfo.data.summary.status or "reading"
+                            self.cover_info_cache[file][3] = status
+                        end
+                        self:updateItems()
+                    end
+                    FileManagerBookInfo:showBookStatus(file, close_callback)
+                end
+
                 -- Replace the "Book information" button callback to use directly our bookinfo
                 button = self.file_dialog.button_table:getButtonById("book_information")
                 button.callback = function()
-                    FileManagerBookInfo:show(file, bookinfo)
                     UIManager:close(self.file_dialog)
+                    FileManagerBookInfo:show(file, bookinfo)
+                end
+
+                -- Replace the "Book description" button callback to use directly our bookinfo
+                button = self.file_dialog.button_table:getButtonById("book_description")
+                if bookinfo.description then
+                    button.callback = function()
+                        UIManager:close(self.file_dialog)
+                        FileManagerBookInfo:onShowBookDescription(bookinfo.description)
+                    end
+                else
+                    button:disable()
+                end
+
+                -- Disable the "Book cover" button if there is no cover
+                button = self.file_dialog.button_table:getButtonById("book_cover")
+                if not bookinfo.has_cover then
+                    button:disable()
                 end
 
                 UIManager:show(self.file_dialog)
@@ -445,40 +394,16 @@ function CoverMenu:onHistoryMenuHold(item)
             text = _("View full size cover"),
             enabled = bookinfo.has_cover and true or false,
             callback = function()
-                local document = DocumentRegistry:openDocument(file)
-                if document then
-                    if document.loadDocument then -- needed for crengine
-                        document:loadDocument(false) -- load only metadata
-                    end
-                    local cover_bb = document:getCoverPageImage()
-                    if cover_bb then
-                        local imgviewer = ImageViewer:new{
-                            image = cover_bb,
-                            with_title_bar = false,
-                            fullscreen = true,
-                        }
-                        UIManager:show(imgviewer)
-                    else
-                        UIManager:show(InfoMessage:new{
-                            text = _("No cover image available."),
-                        })
-                    end
-                    UIManager:close(self.histfile_dialog)
-                    document:close()
-                end
+                UIManager:close(self.histfile_dialog)
+                FileManagerBookInfo:onShowBookCover(file)
             end,
         },
         { -- Allow user to directly view description in TextViewer
             text = _("Book description"),
             enabled = bookinfo.description and true or false,
             callback = function()
-                local description = util.htmlToPlainTextIfHtml(bookinfo.description)
-                local textviewer = TextViewer:new{
-                    title = _("Description:"),
-                    text = description,
-                }
                 UIManager:close(self.histfile_dialog)
-                UIManager:show(textviewer)
+                FileManagerBookInfo:onShowBookDescription(bookinfo.description)
             end,
         },
     })
@@ -564,40 +489,16 @@ function CoverMenu:onCollectionsMenuHold(item)
             text = _("View full size cover"),
             enabled = bookinfo.has_cover and true or false,
             callback = function()
-                local document = DocumentRegistry:openDocument(file)
-                if document then
-                    if document.loadDocument then -- needed for crengine
-                        document:loadDocument(false) -- load only metadata
-                    end
-                    local cover_bb = document:getCoverPageImage()
-                    if cover_bb then
-                        local imgviewer = ImageViewer:new{
-                            image = cover_bb,
-                            with_title_bar = false,
-                            fullscreen = true,
-                        }
-                        UIManager:show(imgviewer)
-                    else
-                        UIManager:show(InfoMessage:new{
-                            text = _("No cover image available."),
-                        })
-                    end
-                    UIManager:close(self.collfile_dialog)
-                    document:close()
-                end
+                UIManager:close(self.collfile_dialog)
+                FileManagerBookInfo:onShowBookCover(file)
             end,
         },
         { -- Allow user to directly view description in TextViewer
             text = _("Book description"),
             enabled = bookinfo.description and true or false,
             callback = function()
-                local description = util.htmlToPlainTextIfHtml(bookinfo.description)
-                local textviewer = TextViewer:new{
-                    title = _("Description:"),
-                    text = description,
-                }
                 UIManager:close(self.collfile_dialog)
-                UIManager:show(textviewer)
+                FileManagerBookInfo:onShowBookDescription(bookinfo.description)
             end,
         },
     })
