@@ -2,6 +2,7 @@
 Button with a big icon image! Designed for touch devices.
 --]]
 
+local BD = require("ui/bidi")
 local Device = require("device")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
@@ -102,6 +103,13 @@ function IconButton:onTapIconButton()
     if G_reader_settings:isFalse("flash_ui") or not self.allow_flash then
         self.callback()
     else
+        -- Mimic BiDi left/right switcheroos...
+        local h_padding
+        if BD.mirroredUILayout() then
+            h_padding = self.padding_right
+        else
+            h_padding = self.padding_left
+        end
         -- c.f., ui/widget/button for more gnarly details about the implementation, but the flow of the flash_ui codepath essentially goes like this:
         -- 1. Paint the highlight
         -- 2. Refresh the highlighted item (so we can see the highlight)
@@ -113,7 +121,7 @@ function IconButton:onTapIconButton()
         -- Highlight
         --
         self.image.invert = true
-        UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+        UIManager:widgetInvert(self.image, self.dimen.x + h_padding, self.dimen.y + self.padding_top)
         UIManager:setDirty(nil, "fast", self.dimen)
 
         UIManager:forceRePaint()
@@ -122,7 +130,7 @@ function IconButton:onTapIconButton()
         -- Unhighlight
         --
         self.image.invert = false
-        UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+        UIManager:widgetInvert(self.image, self.dimen.x + h_padding, self.dimen.y + self.padding_top)
 
         -- Callback
         --
