@@ -81,7 +81,7 @@ end
 function filemanagerutil.setStatus(file, status)
     -- In case the book doesn't have a sidecar file, this'll create it
     local docinfo = DocSettings:open(file)
-    local summary = nil
+    local summary
     if docinfo.data.summary and docinfo.data.summary.status then
         -- Book already had the full BookStatus table in its sidecar, easy peasy!
         docinfo.data.summary.status = status
