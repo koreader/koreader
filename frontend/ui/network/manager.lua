@@ -387,7 +387,6 @@ function NetworkMgr:getWifiMenuTable()
     if Device:isAndroid() then
         return {
             text = _("Wi-Fi settings"),
-            enabled_func = function() return true end,
             callback = function() self:openSettings() end,
         }
     else

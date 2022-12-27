@@ -1074,7 +1074,7 @@ function AutoWarmth:getWarmthMenu()
         },
         {
             text = Device:hasNaturalLight() and _("Set warmth and night mode for:") or _("Set night mode for:"),
-            enabled_func = function() return false end,
+            enabled = false,
         },
         getWarmthMenuEntry(_("Solar noon"), 6, false),
         getWarmthMenuEntry(_("Sunset and sunrise"), 5),
