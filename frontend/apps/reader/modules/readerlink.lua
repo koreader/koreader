@@ -31,7 +31,7 @@ local function is_wiki_page(link_url)
         -- wikipedia page saved as epub, full of wikipedia links, it's
         -- too easy to click on links when wanting to change page...)
         -- But first check if this wikipedia article has been saved as EPUB
-        local epub_filename = wiki_page .. "."..string.upper(wiki_lang)..".epub"
+        local epub_filename = wiki_page .. "." .. string.upper(wiki_lang) .. ".epub"
         local epub_fullpath
         -- either in current book directory
         local last_file = G_reader_settings:readSetting("lastfile")
@@ -987,7 +987,7 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
                     local segments_max_y = -1
                     local link_is_shortest = false
                     local segments = link.segments
-                    for i=1, #segments do
+                    for i = 1, #segments do
                         local segment = segments[i]
                         local segment_dist
                         -- Distance here is kept squared (d^2 = diff_x^2 + diff_y^2),
@@ -1443,7 +1443,7 @@ function ReaderLink:getButtonsForExternalLinkDialog(link_url)
                 table.insert(buttons, {})
             end
             table.insert(buttons[#buttons], button)
-            logger.dbg("ReaderLink", idx..": line "..#buttons..", col "..#buttons[#buttons])
+            logger.dbg("ReaderLink", idx .. ": line " .. #buttons .. ", col " .. #buttons[#buttons])
         end
         if button_title then
             -- Create the title for the button

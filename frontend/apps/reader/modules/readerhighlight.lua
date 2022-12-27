@@ -976,7 +976,7 @@ function ReaderHighlight:onShowHighlightMenu(page, index)
                 table.insert(highlight_buttons, {})
             end
             table.insert(highlight_buttons[#highlight_buttons], button)
-            logger.dbg("ReaderHighlight", idx..": line "..#highlight_buttons..", col "..#highlight_buttons[#highlight_buttons])
+            logger.dbg("ReaderHighlight", idx .. ": line " .. #highlight_buttons .. ", col " .. #highlight_buttons[#highlight_buttons])
         end
     end
 
@@ -1382,7 +1382,7 @@ function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
             end
             local buttons_table = {}
             if css_files and not no_css_files_buttons then
-                for i=1, #css_files do
+                for i = 1, #css_files do
                     local button = {
                         text = T(_("View %1"), BD.filepath(css_files[i])),
                         callback = function()

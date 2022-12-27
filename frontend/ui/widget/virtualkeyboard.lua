@@ -118,7 +118,7 @@ function VirtualKey:init()
         self.hold_cb_is_popup = true
         self.swipe_callback = function(ges)
             self.keyboard:onSwitchingKeyboardLayout()
-            local key_function = self.key_chars[ges.direction.."_func"]
+            local key_function = self.key_chars[ges.direction .. "_func"]
             if key_function then
                 key_function()
             end
@@ -178,7 +178,7 @@ function VirtualKey:init()
         self.hold_cb_is_popup = true
         self.swipe_callback = function(ges)
             local key_string = self.key_chars[ges.direction] or self.key
-            local key_function = self.key_chars[ges.direction.."_func"]
+            local key_function = self.key_chars[ges.direction .. "_func"]
 
             if not key_function and key_string then
                 if type(key_string) == "table" and key_string.key then
@@ -580,7 +580,7 @@ function VirtualKeyPopup:init()
     local function horizontalRow(chars, group)
         local layout_horizontal = {}
 
-        for i = 1,3 do
+        for i = 1, 3 do
             local v = chars[i]
             local v_func = chars[i+3]
 

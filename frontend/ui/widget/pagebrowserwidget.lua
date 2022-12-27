@@ -302,7 +302,7 @@ function PageBrowserWidget:update()
     if self.requests_batch_id then
         self.ui.thumbnail:cancelPageThumbnailRequests(self.requests_batch_id)
     end
-    self.requests_batch_id = "PageBrowserWidget"..tostring(os.time())
+    self.requests_batch_id = "PageBrowserWidget" .. tostring(os.time())
 
     if not self.focus_page then
         self.focus_page = self.cur_page or 1
@@ -331,14 +331,14 @@ function PageBrowserWidget:update()
     local next_p = p_start
     local cur_page_label_idx = 1
     local page_texts = {}
-    for p=p_start, p_end do
+    for p = p_start, p_end do
         if p >= next_p then
             -- Only show a page text if there is no indicator on that slot
             if p ~= self.cur_page and not self.bookmarked_pages[p] and not self.previous_locations[p] then
                 local page_text
                 if self.page_labels then
                     local page_label
-                    for idx=cur_page_label_idx, #self.page_labels do
+                    for idx = cur_page_label_idx, #self.page_labels do
                         local item = self.page_labels[idx]
                         if item.page >= p then
                             if item.page == p then
@@ -496,7 +496,7 @@ function PageBrowserWidget:update()
     self.view_finder_x = self.view_finder_x + 1
     self.view_finder_w = self.view_finder_w - 1
 
-    for idx=1, self.nb_grid_items do
+    for idx = 1, self.nb_grid_items do
         local p = grid_page_start + idx - 1
         if p < 1 or p > self.nb_pages then
             self.grid[idx].page_idx = nil -- no action on Tap
@@ -917,7 +917,7 @@ function PageBrowserWidget:onTap(arg, ges)
         return true
     end
     -- If tap on a thumbnail, close widget and go to that page
-    for idx=1, self.nb_grid_items do
+    for idx = 1, self.nb_grid_items do
         if ges.pos:intersectWith(self.grid[idx].dimen) then
             local page = self.grid[idx].page_idx
             if page and self.grid[idx][1][1].is_page_thumbnail then

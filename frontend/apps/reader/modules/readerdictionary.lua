@@ -42,7 +42,7 @@ local function getIfosInDir(path)
     if ok then
         for name in iter, dir_obj do
             if name ~= "." and name ~= ".." and name ~= "res" then
-                local fullpath = path.."/"..name
+                local fullpath = path .. "/" .. name
                 local attributes = lfs.attributes(fullpath)
                 if attributes ~= nil then
                     if attributes.mode == "directory" then
@@ -122,7 +122,7 @@ function ReaderDictionary:init()
         available_ifos = {}
         logger.dbg("Getting list of dictionaries")
         local ifo_files = getIfosInDir(self.data_dir)
-        local dict_ext = self.data_dir.."_ext"
+        local dict_ext = self.data_dir .. "_ext"
         if lfs.attributes(dict_ext, "mode") == "directory" then
             local extifos = getIfosInDir(dict_ext)
             for _, ifo in pairs(extifos) do
@@ -222,7 +222,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             for i = #lookup_history_table, 1, -1 do
                 local value = lookup_history_table[i]
                 if value.book_title ~= previous_title then
-                    table.insert(kv_pairs, { value.book_title..":", "" })
+                    table.insert(kv_pairs, { value.book_title .. ":", "" })
                 end
                 previous_title = value.book_title
                 table.insert(kv_pairs, {
@@ -428,7 +428,7 @@ function ReaderDictionary:onHtmlDictionaryLinkTapped(dictionary, link)
     -- https://github.com/koreader/koreader/issues/3588#issuecomment-357088125
     local url_prefix = "bword://"
     local word
-    if link.uri:sub(1,url_prefix:len()) == url_prefix then
+    if link.uri:sub(1, url_prefix:len()) == url_prefix then
         word = link.uri:sub(url_prefix:len() + 1)
     elseif link.uri:find("://") then
         return
@@ -494,10 +494,10 @@ function ReaderDictionary:_genDownloadDictionariesMenu()
     end
 
     -- remove duplicates
-    for lang_key,lang in pairs(languages) do
+    for lang_key, lang in pairs(languages) do
         local hash = {}
         local res = {}
-        for k,v in ipairs(lang) do
+        for k, v in ipairs(lang) do
            if not hash[v.name] then
                res[#res+1] = v
                hash[v.name] = true
@@ -724,7 +724,7 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
     -- they would prevent fuzzy searches in other dictories with better
     -- definitions, and masks such results. This way, we can get both.
     local dict_dirs = {self.data_dir}
-    local dict_ext = self.data_dir.."_ext"
+    local dict_ext = self.data_dir .. "_ext"
     if lfs.attributes(dict_ext, "mode") == "directory" then
         table.insert(dict_dirs, dict_ext)
     end
@@ -1035,8 +1035,8 @@ function ReaderDictionary:showDownload(downloadable_dicts)
             lang = string.format("    %s–%s", dict.lang_in, dict.lang_out)
         end
         table.insert(kv_pairs, {lang, ""})
-        table.insert(kv_pairs, {"    ".._("License"), dict.license})
-        table.insert(kv_pairs, {"    ".._("Entries"), dict.entries, separator = true})
+        table.insert(kv_pairs, {"    " .. _("License"), dict.license})
+        table.insert(kv_pairs, {"    " .. _("Entries"), dict.entries, separator = true})
     end
     self.download_window = KeyValuePage:new{
         title = _("Tap dictionary name to download"),

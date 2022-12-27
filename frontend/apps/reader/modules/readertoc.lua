@@ -296,7 +296,7 @@ function ReaderToc:getTocIndexByPage(pn_or_xp, skip_ignored_ticks)
         return self:getAccurateTocIndexByXPointer(pn_or_xp, skip_ignored_ticks)
     end
     local prev_index = 1
-    for _k,_v in ipairs(self.toc) do
+    for _k, _v in ipairs(self.toc) do
         if not skip_ignored_ticks or not self.toc_ticks_ignored_levels[_v.depth] then
             if _v.page == pageno then
                 -- Return the first chapter seen on the current page
@@ -1031,7 +1031,7 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
         text_func = function()
             local nb_ticks = 0
             local ticks = self:getTocTicks()
-            for level=1, #ticks do
+            for level = 1, #ticks do
                 if not self.toc_ticks_ignored_levels[level] then
                     nb_ticks = nb_ticks + #ticks[level]
                 end

@@ -49,7 +49,7 @@ function ReadCollection:prepareList(collection_name)
             end
         })
     end
-    table.sort(list, function(v1,v2)
+    table.sort(list, function(v1, v2)
         return v1.order < v2.order
     end)
     return list

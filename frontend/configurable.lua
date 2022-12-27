@@ -30,12 +30,12 @@ end
 function Configurable:loadDefaults(config_options)
     -- reset configurable before loading new options
     self:reset()
-    local prefix = config_options.prefix.."_"
-    for i=1, #config_options do
+    local prefix = config_options.prefix .. "_"
+    for i = 1, #config_options do
         local options = config_options[i].options
-        for j=1,#options do
+        for j = 1, #options do
             local key = options[j].name
-            local settings_key = prefix..key
+            local settings_key = prefix .. key
             local default = G_reader_settings:readSetting(settings_key)
             self[key] = default or options[j].default_value
             if not self[key] then
@@ -50,7 +50,7 @@ function Configurable:loadSettings(settings, prefix)
         local value_type = type(value)
         if value_type == "number" or value_type == "string"
             or value_type == "table" then
-            local saved_value = settings:readSetting(prefix..key)
+            local saved_value = settings:readSetting(prefix .. key)
             if saved_value ~= nil then
                 self[key] = saved_value
             end
@@ -63,7 +63,7 @@ function Configurable:saveSettings(settings, prefix)
         local value_type = type(value)
         if value_type == "number" or value_type == "string"
             or value_type == "table" then
-            settings:saveSetting(prefix..key, value)
+            settings:saveSetting(prefix .. key, value)
         end
     end
 end

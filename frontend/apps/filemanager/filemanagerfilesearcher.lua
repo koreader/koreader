@@ -67,7 +67,7 @@ function FileSearcher:readDir()
                         table.insert(self.files, {
                             dir = d,
                             name = f,
-                            text = f.."/",
+                            text = f .. "/",
                             attr = attributes,
                             callback = function()
                                 self:showFolder(fullpath .. "/")
@@ -111,7 +111,7 @@ function FileSearcher:setSearchResults()
         keywords = keywords:gsub("%*","%.%*")
         -- replace '?' with '.'
         keywords = keywords:gsub("%?","%.")
-        for __,f in pairs(self.files) do
+        for __, f in pairs(self.files) do
             if self.case_sensitive then
                 if string.find(f.name, keywords) then
                     table.insert(self.results, f)

@@ -158,7 +158,7 @@ function ReaderCropping:setCropZoomMode(confirmed)
         -- if original zoom mode is "page???", set zoom mode to "content???"
         local zoom_mode_type = self.orig_zoom_mode:match("page(.*)")
         self:setZoomMode(zoom_mode_type
-                    and "content"..zoom_mode_type
+                    and "content" .. zoom_mode_type
                     or self.orig_zoom_mode)
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     else

@@ -227,7 +227,7 @@ function ReaderUserHyph:scrubDictionary()
         return
     end
 
-    table.sort(dict_entries, function(a,b) return Utf8Proc.lowercase(a, NORM) < Utf8Proc.lowercase(b, NORM) end)
+    table.sort(dict_entries, function(a, b) return Utf8Proc.lowercase(a, NORM) < Utf8Proc.lowercase(b, NORM) end)
 
     -- remove double entries
     local later_key = Utf8Proc.lowercase(dict_entries[#dict_entries]:gsub(";.*$",""), NORM)

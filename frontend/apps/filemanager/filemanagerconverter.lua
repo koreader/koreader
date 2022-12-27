@@ -90,7 +90,7 @@ function FileConverter:showConvertButtons(file, ui)
                     callback = function()
                         local html = FileConverter:_mdFileToHtml(file, filename_pure)
                         if not html then return end
-                        local filename_html = file..".html"
+                        local filename_html = file .. ".html"
                         if lfs.attributes(filename_html, "mode") == "file" then
                             UIManager:show(ConfirmBox:new{
                                 text = _("Overwrite existing HTML file?"),

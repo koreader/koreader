@@ -340,7 +340,7 @@ function DictQuickLookup:init()
                         end
                         -- Just to be safe (none of the invalid chars, except ':' for uninteresting
                         -- Portal: or File: wikipedia pages, should be in lookupword)
-                        local filename = self.lookupword .. "."..string.upper(lang)..".epub"
+                        local filename = self.lookupword .. "." .. string.upper(lang) .. ".epub"
                         filename = util.getSafeFilename(filename, dir):gsub("_", " ")
                         local epub_path = dir .. "/" .. filename
                         UIManager:show(ConfirmBox:new{
@@ -471,7 +471,7 @@ function DictQuickLookup:init()
                     -- if more than one language, enable it and display "current lang > next lang"
                     -- otherwise, just display current lang
                     text = self.is_wiki
-                        and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
+                        and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]) .. " > " .. BD.wrap(self.wiki_languages[2])
                                                         or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
                         or _("Search"),
                     enabled = self:canSearch(),
@@ -1018,11 +1018,11 @@ function DictQuickLookup:changeDictionary(index, skip_update)
         -- what was the selected text and if we selected wrong
         if index == 1 then
             if self.is_html then
-                self.definition = self.definition.."<br/>_______<br/>"
+                self.definition = self.definition .. "<br/>_______<br/>"
             else
-                self.definition = self.definition.."\n_______\n"
+                self.definition = self.definition .. "\n_______\n"
             end
-            self.definition = self.definition..T(_("(query : %1)"), self.word)
+            self.definition = self.definition .. T(_("(query : %1)"), self.word)
         end
     end
     self.displaydictname = self.dictionary

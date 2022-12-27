@@ -398,7 +398,7 @@ local dispatcher_menu_order = {
 function Dispatcher:init()
     if Dispatcher.initialized then return end
     local parseoptions = function(base, i, prefix)
-        for y=1, #base[i].options do
+        for y = 1, #base[i].options do
             local option = base[i].options[y]
             local name = prefix and prefix .. option.name or option.name
             if settingsList[name] ~= nil then
@@ -416,7 +416,7 @@ function Dispatcher:init()
                         settingsList[name].toggle = option.toggle or option.labels
                         if settingsList[name].toggle == nil then
                             settingsList[name].toggle = {}
-                            for z=1,#option.values do
+                            for z = 1, #option.values do
                                 if type(option.values[z]) == "table" then
                                     settingsList[name].toggle[z] = option.values[z][1]
                                 else
@@ -443,10 +443,10 @@ function Dispatcher:init()
             end
         end
     end
-    for i=1,#CreOptions do
+    for i = 1, #CreOptions do
         parseoptions(CreOptions, i)
     end
-    for i=1,#KoptOptions do
+    for i = 1, #KoptOptions do
         parseoptions(KoptOptions, i, "kopt_")
     end
     UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
@@ -769,7 +769,7 @@ function Dispatcher:_addItem(caller, menu, location, settings, section)
                 if settingsList[k].args_func then
                     settingsList[k].args, settingsList[k].toggle = settingsList[k].args_func()
                 end
-                for i=1,#settingsList[k].args do
+                for i = 1, #settingsList[k].args do
                     table.insert(sub_item_table, {
                         text = tostring(settingsList[k].toggle[i]),
                         checked_func = function()

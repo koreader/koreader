@@ -72,9 +72,9 @@ function DocSettings:getSidecarDir(doc_path)
     if doc_path == nil or doc_path == '' then return '' end
     local file_without_suffix = doc_path:match("(.*)%.")
     if file_without_suffix then
-        return file_without_suffix..".sdr"
+        return file_without_suffix .. ".sdr"
     end
-    return doc_path..".sdr"
+    return doc_path .. ".sdr"
 end
 
 --- Returns path to `metadata.lua` file.
@@ -155,8 +155,8 @@ function DocSettings:open(docfile)
         -- New sidecar file name is metadata.{file last suffix}.lua.
         -- So we can handle two files with only different suffixes.
         new.sidecar_file = new:getSidecarFile(docfile)
-        new.legacy_sidecar_file = sidecar.."/"..
-                                  ffiutil.basename(docfile)..".lua"
+        new.legacy_sidecar_file = sidecar .. "/" ..
+                                  ffiutil.basename(docfile) .. ".lua"
     end
 
     -- Candidates list, in order of priority:
@@ -172,7 +172,7 @@ function DocSettings:open(docfile)
         -- Backup file in legacy history folder
         new.history_file .. ".old",
         -- Legacy kpdfview setting
-        docfile..".kpdfview.lua",
+        docfile .. ".kpdfview.lua",
     }
     -- We get back an array of tables for *existing* candidates, sorted MRU first (insertion order breaks ties).
     local candidates = buildCandidates(candidates_list)
@@ -289,7 +289,7 @@ function DocSettings:purge(full)
         else
             -- Only remove the files we know we may have created with our usual names.
             for f in lfs.dir(self.sidecar) do
-                local fullpath = self.sidecar.."/"..f
+                local fullpath = self.sidecar .. "/" .. f
                 local to_remove = false
                 if lfs.attributes(fullpath, "mode") == "file" then
                     -- Currently, we only create a single file in there,

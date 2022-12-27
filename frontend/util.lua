@@ -709,7 +709,7 @@ function util.findFiles(dir, cb)
         local ok, iter, dir_obj = pcall(lfs.dir, current)
         if not ok then return end
         for f in iter, dir_obj do
-            local path = current.."/"..f
+            local path = current .. "/" .. f
             -- lfs can return nil here, as it will follow symlinks!
             local attr = lfs.attributes(path) or {}
             if attr.mode == "directory" then
@@ -768,7 +768,7 @@ function util.makePath(path)
 
     local success, err = util.makePath((util.splitFilePathName(path)))
     if not success then
-        return nil, err.." (creating "..path..")"
+        return nil, err .. " (creating " .. path .. ")"
     end
 
     return lfs.mkdir(path)

@@ -153,7 +153,7 @@ function ReaderGoto:gotoPage()
                 -- in flow 0 (linear), we count pages skipping non-linear flows,
                 -- in a non-linear flow the target page is immediate
                 if flow == 0 then
-                    for i=1, number do
+                    for i = 1, number do
                         page = self.ui.document:getNextPage(page)
                     end
                 else

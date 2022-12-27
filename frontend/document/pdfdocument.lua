@@ -150,7 +150,7 @@ function PdfDocument:getPageBlock(pageno, x, y)
 end
 
 function PdfDocument:getUsedBBox(pageno)
-    local hash = "pgubbox|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
+    local hash = "pgubbox|" .. self.file .. "|" .. self.reflowable_font_size .. "|" .. pageno
     local cached = DocCache:check(hash)
     if cached then
         return cached.ubbox
@@ -173,7 +173,7 @@ function PdfDocument:getUsedBBox(pageno)
 end
 
 function PdfDocument:getPageLinks(pageno)
-    local hash = "pglinks|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
+    local hash = "pglinks|" .. self.file .. "|" .. self.reflowable_font_size .. "|" .. pageno
     local cached = DocCache:check(hash)
     if cached then
         return cached.links
@@ -205,7 +205,7 @@ local function _quadpointsFromPboxes(pboxes)
     -- but this is guaranteed at this point
     local n = #pboxes
     local quadpoints = ffi.new("float[?]", 8*n)
-    for i=1, n do
+    for i = 1, n do
         -- The order must be left bottom, right bottom, left top, right top.
         -- https://bugs.ghostscript.com/show_bug.cgi?id=695130
         quadpoints[8*i-8] = pboxes[i].x
@@ -223,7 +223,7 @@ end
 local function _quadpointsToPboxes(quadpoints, n)
     -- reverse of previous function
     local pboxes = {}
-    for i=1, n do
+    for i = 1, n do
         table.insert(pboxes, {
             x = quadpoints[8*i-4],
             y = quadpoints[8*i-3],

@@ -358,7 +358,7 @@ function Translator:loadPage(text, target_lang, source_lang)
     local query = ""
     self.trans_params.tl = target_lang
     self.trans_params.sl = source_lang
-    for k,v in pairs(self.trans_params) do
+    for k, v in pairs(self.trans_params) do
         if type(v) == "table" then
             for _, v2 in ipairs(v) do
                 query = query .. k .. '=' .. v2 .. '&'

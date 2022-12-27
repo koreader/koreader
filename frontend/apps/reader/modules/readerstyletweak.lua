@@ -208,7 +208,7 @@ function TweakInfoWidget:onTap(arg, ges)
         -- Tap inside CSS text copies it into clipboard (so it
         -- can be pasted into the book-specific tweak editor)
         -- (Add \n on both sides for easier pasting)
-        Device.input.setClipboardText("\n"..self.css_text.."\n")
+        Device.input.setClipboardText("\n" .. self.css_text .. "\n")
         UIManager:show(Notification:new{
             text = _("CSS text copied to clipboard"),
         })
@@ -409,7 +409,7 @@ function ReaderStyleTweak:updateCssText(apply)
             table.insert(css_snippets, self.book_style_tweak)
         end
         self.css_text = table.concat(css_snippets, "\n")
-        logger.dbg("made tweak css:\n".. self.css_text .. "[END]")
+        logger.dbg("made tweak css:\n" .. self.css_text .. "[END]")
     else
         self.css_text = nil
         logger.dbg("made no tweak css (Style tweaks disabled)")
@@ -446,12 +446,12 @@ function ReaderStyleTweak:onSaveSettings()
 end
 
 local function dispatcherRegisterStyleTweak(tweak_id, tweak_title)
-    Dispatcher:registerAction("style_tweak_"..tweak_id,
+    Dispatcher:registerAction("style_tweak_" .. tweak_id,
         {category="none", event="ToggleStyleTweak", arg=tweak_id, title=T(_("Toggle style tweak: %1"), tweak_title), rolling=true})
 end
 
 local function dispatcherUnregisterStyleTweak(tweak_id)
-    Dispatcher:removeAction("style_tweak_"..tweak_id)
+    Dispatcher:removeAction("style_tweak_" .. tweak_id)
 end
 
 function ReaderStyleTweak:init()
@@ -625,7 +625,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
         if lfs.attributes(dir, "mode") == "directory" then
             for f in lfs.dir(dir) do
                 if f ~= "." and f ~= ".."  then
-                    local mode = lfs.attributes(dir.."/"..f, "mode")
+                    local mode = lfs.attributes(dir .. "/" .. f, "mode")
                     if mode == "directory" then
                         table.insert(dir_list, f)
                     elseif mode == "file" and string.match(f, "%.css$") then
@@ -638,12 +638,12 @@ You can enable individual tweaks on this book with a tap, or view more details a
         table.sort(file_list)
         for __, subdir in ipairs(dir_list) do
             local sub_item_table = { title = subdir:gsub("_", " ") }
-            process_tweaks_dir(dir.."/"..subdir, sub_item_table)
+            process_tweaks_dir(dir .. "/" .. subdir, sub_item_table)
             table.insert(item_table, sub_item_table)
         end
         for __, file in ipairs(file_list) do
             local title = file:gsub("%.css$", ""):gsub("_", " ")
-            local filepath = dir.."/"..file
+            local filepath = dir .. "/" .. file
             table.insert(item_table, {
                 title = title,
                 id = file, -- keep ".css" in id, to distinguish between koreader/user tweaks

@@ -157,7 +157,7 @@ function SkimToWidget:init()
         vsync = true,
         callback = function()
             local page = self.ui.toc:getNextChapter(self.curr_page)
-            if page and page >=1 and page <= self.page_count then
+            if page and page >= 1 and page <= self.page_count then
                 self:goToPage(page)
             end
         end,
@@ -174,7 +174,7 @@ function SkimToWidget:init()
         vsync = true,
         callback = function()
             local page = self.ui.toc:getPreviousChapter(self.curr_page)
-            if page and page >=1 and page <= self.page_count then
+            if page and page >= 1 and page <= self.page_count then
                 self:goToPage(page)
             end
         end,
@@ -279,7 +279,7 @@ function SkimToWidget:init()
     }
     self[1] = WidgetContainer:new{
         align = "center",
-        dimen =Geom:new{
+        dimen = Geom:new{
             x = 0, y = 0,
             w = screen_width,
             h = screen_height,

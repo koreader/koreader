@@ -7,7 +7,7 @@ local Utf8Proc = require("ffi/utf8proc")
 
 local function binarysearch( tbl, value, fcompval, reversed )
     if not fcompval then return end
-    local iStart,iEnd = 1,#tbl
+    local iStart, iEnd = 1, #tbl
     local iMid
     while iStart <= iEnd do
         iMid = math.floor( (iStart+iEnd)/2 )
@@ -77,14 +77,14 @@ function IME:init()
     self:clear_stack()
 
     self.sorted_codes = {}
-    for k,_ in pairs(self.code_map) do
+    for k, _ in pairs(self.code_map) do
         table.insert(self.sorted_codes, k)
     end
     table.sort(self.sorted_codes)
 
     if not self.key_map and self.keys_string then
         self.key_map = {}
-        for i=0, #self.keys_string do
+        for i = 0, #self.keys_string do
             self.key_map[self.keys_string:sub(i, i)] = self.keys_string:sub(i, i)
         end
     end
@@ -92,7 +92,7 @@ function IME:init()
     if not self.iter_map and self.W then
         self.iter_map = {}
         local keys = util.splitToChars(self.keys_string)
-        for i=1, #keys-1 do
+        for i = 1, #keys-1 do
             self.iter_map[keys[i]] = keys[i+1]
         end
         if #keys > 1 then
@@ -171,7 +171,7 @@ end
 
 function IME:getCandiWithWildcard(code, from_reset)
     logger.dbg("zh_kdb: getCandiWithWildcard:", code, "lastKey:", self.last_key)
-    for i=#code, 1, -1 do
+    for i = #code, 1, -1 do
         if code:sub(i, i) == self.W then
             if self.last_key:sub(i, i) == self.iter_map_last_key then
                 local next = self.iter_map[self.iter_map_last_key]
@@ -223,14 +223,14 @@ end
 --- inputbox operation
 function IME:delHintChars(inputbox)
     logger.dbg("zh_kbd: delete hint chars of count", self.hint_char_count)
-    for i=1, self.hint_char_count do
+    for i = 1, self.hint_char_count do
         inputbox.delChar:raw_method_call()
     end
 end
 
 function IME:delOnStageAndHintChars(inputbox)
     self:delHintChars(inputbox)
-    for i=1, self.on_stage_char_count do
+    for i = 1, self.on_stage_char_count do
         inputbox.delChar:raw_method_call()
     end
 end
@@ -239,7 +239,7 @@ function IME:getHintChars()
     self.hint_char_count = 0
     self.on_stage_char_count = 0
     local hint_chars = ""
-    for i=1, #_stack do
+    for i = 1, #_stack do
         hint_chars = hint_chars .. _stack[i].char
         if _stack[i].char ~= "" then
             self.on_stage_char_count = self.on_stage_char_count + #util.splitToChars(_stack[i].char)
@@ -261,7 +261,7 @@ function IME:getHintChars()
             end
             local pos = remainder == 0 and #imex.candi or remainder
             if not (has_wildcard and pos == 1) then
-                for i=1, math.min(#imex.candi-1, 5) do
+                for i = 1, math.min(#imex.candi-1, 5) do
                     hint_chars = hint_chars .. imex.candi[pos]
                     self.hint_char_count = self.hint_char_count + #util.splitToChars(imex.candi[pos])
                     pos = pos == #imex.candi and 1 or pos+1
@@ -298,7 +298,7 @@ function IME:tweak_case(new_candi, old_imex, new_stroke_upper)
     if self.has_case then
         local old_chars = util.splitToChars(old_imex.char)
         logger.dbg("zh_ime: tweak_case old chars", old_chars, "new_candi", new_candi)
-        for i=1, #new_candi do
+        for i = 1, #new_candi do
             local new_chars = util.splitToChars(new_candi[i])
             for j=1, math.max(#new_chars, #old_chars) do
                 local old_char = old_chars[j]
@@ -356,14 +356,14 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
                 return
             elseif imex.index - self.last_index > #imex.candi then
                 self.last_index = self.last_index + #imex.candi
-                imex.candi,imex.last_candi = self:getCandidates(imex.code)
+                imex.candi, imex.last_candi = self:getCandidates(imex.code)
                 imex.char = imex.candi[1]
             else
                 imex.char = imex.candi[imex.index - self.last_index]
             end
         elseif #imex.candi > 1 then
             local remainder = imex.index % #imex.candi
-            imex.char = imex.candi[remainder==0 and #imex.candi or remainder]
+            imex.char = imex.candi[remainder == 0 and #imex.candi or remainder]
         else
             return
         end
@@ -381,7 +381,7 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
         elseif #imex.candi > 1 then
             imex.index = math.max(imex.index-1, 1)
             local remainder = imex.index % #imex.candi
-            imex.char = imex.candi[remainder==0 and #imex.candi or remainder]
+            imex.char = imex.candi[remainder == 0 and #imex.candi or remainder]
         else
             return
         end
@@ -410,7 +410,7 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
             imex.index = 1
             self:reset_status()
             local new_candi
-            new_candi,imex.last_candi = self:getCandidates(imex.code..key)
+            new_candi, imex.last_candi = self:getCandidates(imex.code .. key)
             if new_candi and #new_candi > 0 then
                 imex.code = imex.code .. key
 
@@ -426,14 +426,14 @@ function IME:wrappedAddChars(inputbox, char, orig_char)
                 if self.auto_separate_callback() then -- flush current stack
                     self:separate(inputbox)
                 end
-                new_candi,imex.last_candi = self:getCandidates(key) or {orig_char or char},nil -- single stroke
+                new_candi, imex.last_candi = self:getCandidates(key) or {orig_char or char}, nil -- single stroke
 
                 self:tweak_case(new_candi, {}, orig_char and orig_char ~= char)
 
                 if self.auto_separate_callback() then
-                    _stack[1] = { code=key, index=1, char=new_candi[1] or "", candi=new_candi }
+                    _stack[1] = {code=key, index=1, char=new_candi[1] or "", candi=new_candi}
                 else
-                    table.insert(_stack, {code=key, index=1, char=new_candi[1] or "", candi=new_candi} )
+                    table.insert(_stack, {code=key, index=1, char=new_candi[1] or "", candi=new_candi})
                 end
                 self:refreshHintChars(inputbox)
             end

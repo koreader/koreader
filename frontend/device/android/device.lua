@@ -301,7 +301,7 @@ function Device:initNetworkManager(NetworkMgr)
 end
 
 function Device:performHapticFeedback(type)
-    android.hapticFeedback(C["AHAPTIC_"..type])
+    android.hapticFeedback(C["AHAPTIC_" .. type])
 end
 
 function Device:setIgnoreInput(enable)
@@ -330,8 +330,8 @@ function Device:retrieveNetworkInfo()
     end
 end
 
-function Device:setViewport(x,y,w,h)
-    logger.info(string.format("Switching viewport to new geometry [x=%d,y=%d,w=%d,h=%d]",x, y, w, h))
+function Device:setViewport(x, y, w, h)
+    logger.info(string.format("Switching viewport to new geometry [x=%d,y=%d,w=%d,h=%d]", x, y, w, h))
     local viewport = Geom:new{x=x, y=y, w=w, h=h}
     self.screen:setViewport(viewport)
 end
@@ -442,7 +442,7 @@ function Device:info()
         wakelocks_text = "\n" .. _("This device needs CPU, screen and touchscreen always on.\nScreen timeout will be ignored while the app is in the foreground!") .. "\n"
     end
 
-    return common_text..platform_text..eink_text..wakelocks_text
+    return common_text .. platform_text .. eink_text .. wakelocks_text
 end
 
 function Device:test()

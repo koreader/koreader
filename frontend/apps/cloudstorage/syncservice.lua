@@ -37,7 +37,7 @@ end
 function SyncService:generateItemTable()
     local item_table = {}
     -- select and/or add server
-    local added_servers = LuaSettings:open(DataStorage:getSettingsDir().."/cloudstorage.lua"):readSetting("cs_servers") or {}
+    local added_servers = LuaSettings:open(DataStorage:getSettingsDir() .. "/cloudstorage.lua"):readSetting("cs_servers") or {}
     for _, server in ipairs(added_servers) do
         if server.type == "dropbox" or server.type == "webdav" then
             local item = {
@@ -147,8 +147,8 @@ function SyncService.sync(server, file_path, sync_cb, is_silent)
     while code_response == 412 do
         os.remove(income_file_path)
         if server.type == "dropbox" then
-            local url_base = server.url:sub(-1) == "/" and server.url or server.url.."/"
-            code_response, etag = api:downloadFile(url_base..file_name, token, income_file_path)
+            local url_base = server.url:sub(-1) == "/" and server.url or server.url .. "/"
+            code_response, etag = api:downloadFile(url_base .. file_name, token, income_file_path)
         elseif server.type == "webdav" then
             local path = api:getJoinedPath(server.address, server.url)
             path = api:getJoinedPath(path, file_name)

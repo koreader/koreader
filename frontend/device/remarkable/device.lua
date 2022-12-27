@@ -205,7 +205,7 @@ function Remarkable:setDateTime(year, month, day, hour, min, sec)
     if year and month and day then
         command = string.format("timedatectl set-time '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
     else
-        command = string.format("timedatectl set-time '%d:%d'",hour, min)
+        command = string.format("timedatectl set-time '%d:%d'", hour, min)
     end
     return os.execute(command) == 0
 end

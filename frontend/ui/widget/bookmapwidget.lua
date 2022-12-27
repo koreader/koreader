@@ -749,7 +749,7 @@ function BookMapWidget:update()
         self.flat_toc_depth_faces = {}
         -- Use ReaderToc setting font size for items at the lowest depth
         self.flat_toc_depth_faces[self.toc_depth] = Font:getFace(self.toc_span_font_name, self.reader_toc_font_size)
-        for lvl=self.toc_depth-1, 1, -1 do
+        for lvl = self.toc_depth-1, 1, -1 do
             -- But increase font size for each upper level
             local inc = 2 * (self.toc_depth - lvl)
             self.flat_toc_depth_faces[lvl] = Font:getFace(self.toc_span_font_name, self.reader_toc_font_size + inc)
@@ -897,7 +897,7 @@ function BookMapWidget:update()
             local active_toc_item = cur_toc_items[lvl]
             if active_toc_item then
                 local copied_toc_item = {}
-                for k,v in next, active_toc_item, nil do copied_toc_item[k] = v end
+                for k, v in next, active_toc_item, nil do copied_toc_item[k] = v end
                 if copied_toc_item.p_start < p_start then
                     copied_toc_item.p_start = p_start
                     copied_toc_item.started_before = true -- no left margin
@@ -920,7 +920,7 @@ function BookMapWidget:update()
         local start_page_text
         if self.page_labels then
             local label
-            for idx=cur_page_label_idx, #self.page_labels do
+            for idx = cur_page_label_idx, #self.page_labels do
                 local item = self.page_labels[idx]
                 if item.page > p_start then
                     break
@@ -1081,7 +1081,7 @@ function BookMapWidget:getMatchingVGroupRow(check_func)
     -- Generic Vertical subwidget search function.
     -- We use some of VerticalGroup's internal data, no need
     -- to keep public copies of these data in here
-    for i=1, #self.vgroup do
+    for i = 1, #self.vgroup do
         local row = self.vgroup[i]
         local y = self.vgroup._offsets[i].y
         local h = (i < #self.vgroup and self.vgroup._offsets[i+1].y or self.vgroup._size.h) - y

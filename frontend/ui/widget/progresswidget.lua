@@ -97,7 +97,7 @@ function ProgressWidget:paintTo(bb, x, y)
     -- First the fill bar(s)...
     -- Fill bar for alternate pages (e.g. non-linear flows).
     if self.alt and self.alt[1] ~= nil then
-        for i=1, #self.alt do
+        for i = 1, #self.alt do
             local tick_x = fill_width * ((self.alt[i][1] - 1) / self.last)
             local width = fill_width * (self.alt[i][2] / self.last)
             if _mirroredUI then

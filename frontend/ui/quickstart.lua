@@ -237,7 +237,7 @@ function QuickStart:getQuickStart()
             local idx = 0
             while true do
                 local tst = src:find("/", idx + 1, true)
-                if tst and src:sub(1,tst) == dst:sub(1,tst) then
+                if tst and src:sub(1, tst) == dst:sub(1, tst) then
                     idx = tst
                 else
                     break

@@ -112,7 +112,7 @@ function DateTimeWidget:init()
         width_scale_factor = 0.8
     elseif self.nb_pickers == 4 then
         width_scale_factor = 0.85
-    elseif self.nb_pickers >=5 then
+    elseif self.nb_pickers >= 5 then
         width_scale_factor = 0.95
     end
     self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * width_scale_factor)

@@ -54,7 +54,7 @@ function FtpApi:listFolder(address_path, folder_path)
                 type = "folder"
                 table.insert(ftp_list, {
                     text = file_name .. "/",
-                    url = string.format("%s/%s",folder_path, file_name),
+                    url = string.format("%s/%s", folder_path, file_name),
                     type = type,
                 })
             --show only file with supported formats
@@ -63,17 +63,17 @@ function FtpApi:listFolder(address_path, folder_path)
                 type = "file"
                 table.insert(ftp_file, {
                     text = file_name,
-                    url = string.format("%s/%s",folder_path, file_name),
+                    url = string.format("%s/%s", folder_path, file_name),
                     type = type,
                 })
             end
         end
     end
     --sort
-    table.sort(ftp_list, function(v1,v2)
+    table.sort(ftp_list, function(v1, v2)
         return v1.text < v2.text
     end)
-    table.sort(ftp_file, function(v1,v2)
+    table.sort(ftp_file, function(v1, v2)
         return v1.text < v2.text
     end)
     for _, files in ipairs(ftp_file) do

@@ -10,7 +10,7 @@ A detailed guide to events can be found in @{Events.md|the event programmer's gu
 ]]
 
 --[[--
-@field handler name for the handler method: `"on"..Event.name`
+@field handler name for the handler method: `"on" .. Event.name`
 @field args array of arguments for the event
 @table Event
 ]]
@@ -29,7 +29,7 @@ Event:new("GotoPage", 1)
 ]]
 function Event:new(name, ...)
     local o = {
-        handler = "on"..name,
+        handler = "on" .. name,
         args = table.pack(...),
     }
     setmetatable(o, self)

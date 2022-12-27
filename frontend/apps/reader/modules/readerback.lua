@@ -52,7 +52,7 @@ function ReaderBack:_areLocationsSimilar(location1, location2)
         if #location1 ~= #location2 then
             return false
         end
-        for i=1, #location1 do
+        for i = 1, #location1 do
             if not util.tableEquals(location1[i], location2[i]) then
                 return false
             end

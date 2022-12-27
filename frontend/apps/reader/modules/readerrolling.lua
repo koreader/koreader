@@ -849,7 +849,7 @@ function ReaderRolling:onGotoViewRel(diff)
         local new_page = self.current_page
         if self.ui.document:hasHiddenFlows() then
             local test_page
-            for i=1, math.abs(diff*page_count) do
+            for i = 1, math.abs(diff * page_count) do
                 if diff > 0 then
                     test_page = self.ui.document:getNextPage(new_page)
                 else
@@ -860,7 +860,7 @@ function ReaderRolling:onGotoViewRel(diff)
                 end
             end
         else
-            new_page = new_page + diff*page_count
+            new_page = new_page + diff * page_count
         end
         self:_gotoPage(new_page)
         if diff > 0 and old_page == self.current_page then
@@ -1284,7 +1284,7 @@ function ReaderRolling:showEngineProgress(percent)
                 radius = 0,
                 -- Show a tick at 50% (below is loading, after is rendering)
                 tick_width = Screen:scaleBySize(1),
-                ticks = {1,2},
+                ticks = {1, 2},
                 last = 2,
             }
         end

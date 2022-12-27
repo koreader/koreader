@@ -214,7 +214,7 @@ function ReaderThumbnail:resetCachedPagesForBookmarks(...)
     end
     if start_page and end_page then
         local hash_subs_to_remove = {}
-        for p=start_page, end_page do
+        for p = start_page, end_page do
             table.insert(hash_subs_to_remove, string.format("p%d-", p))
         end
         self:removeFromCache(hash_subs_to_remove)
@@ -224,7 +224,7 @@ end
 function ReaderThumbnail:tidyCache()
     if self.current_target_size_tag then
         -- Remove all thumbnails generated for an older target size
-        self:removeFromCache("-"..self.current_target_size_tag, true)
+        self:removeFromCache("-" .. self.current_target_size_tag, true)
     end
 end
 

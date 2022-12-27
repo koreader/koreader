@@ -108,7 +108,7 @@ function LanguageSupport:hasActiveLanguagePlugins()
 end
 
 local function callPlugin(plugin, handler_name, ...)
-    local handler = plugin["on"..handler_name]
+    local handler = plugin["on" .. handler_name]
     if handler == nil then
         logger.dbg("language plugin", plugin, "missing handler", handler)
         return

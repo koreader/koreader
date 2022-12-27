@@ -156,10 +156,10 @@ function WebDavApi:listFolder(address, user, pass, folder_path, folder_mode)
     end
 
     --sort
-    table.sort(webdav_list, function(v1,v2)
+    table.sort(webdav_list, function(v1, v2)
         return v1.text < v2.text
     end)
-    table.sort(webdav_file, function(v1,v2)
+    table.sort(webdav_file, function(v1, v2)
         return v1.text < v2.text
     end)
     for _, files in ipairs(webdav_file) do

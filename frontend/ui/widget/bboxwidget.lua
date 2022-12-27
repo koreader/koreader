@@ -159,7 +159,7 @@ function BBoxWidget:adjustScreenBBox(ges, relative)
         left_center,                 right_center,
         bottom_left, bottom_center, bottom_right,
     }
-    local _, nearest = Math.tmin(anchors, function(a,b)
+    local _, nearest = Math.tmin(anchors, function(a, b)
         return a:distance(ges.pos) > b:distance(ges.pos)
     end)
     if nearest == upper_left then

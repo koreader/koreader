@@ -104,18 +104,18 @@ local function getPluralFunc(pl_tests, nplurals, plural_default)
             pl_test = logicalCtoLua(pl_test)
 
             if i > 1 and tonumber(pl_test) == nil then
-                pl_test = " elseif "..pl_test
+                pl_test = " elseif " .. pl_test
             end
             if tonumber(pl_test) ~= nil then
                 -- no condition, just a number
-                pl_test = " else return "..pl_test
+                pl_test = " else return " .. pl_test
             end
             pl_test = pl_test:gsub("?", " then return")
 
             -- append to plural function
-            plural_func_str = plural_func_str..pl_test
+            plural_func_str = plural_func_str .. pl_test
         end
-        plural_func_str = plural_func_str.." end end"
+        plural_func_str = plural_func_str .. " end end"
     else
         local pl_test = pl_tests[1]
         -- Ensure JIT compiled function if we're dealing with one of the many simpler languages.
@@ -126,10 +126,10 @@ local function getPluralFunc(pl_tests, nplurals, plural_default)
         end
         -- language with no plural forms
         if tonumber(pl_test) ~= nil then
-            plural_func_str = "return function(n) return "..pl_test.." end"
+            plural_func_str = "return function(n) return " .. pl_test .. " end"
         else
             pl_test = logicalCtoLua(pl_test)
-            plural_func_str = "return function(n) if "..pl_test.." then return 1 else return 0 end end"
+            plural_func_str = "return function(n) if " .. pl_test .. " then return 1 else return 0 end end"
         end
     end
     logger.dbg("gettext: plural function", plural_func_str)
@@ -412,7 +412,7 @@ if isAndroid then
     android.lib.AConfiguration_getCountry(android.app.config, buf)
     local country = ffi.string(buf)
     if lang and country then
-        GetText.changeLang(lang.."_"..country)
+        GetText.changeLang(lang .. "_" .. country)
     end
 end
 

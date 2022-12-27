@@ -278,7 +278,7 @@ function PocketBook:setDateTime(year, month, day, hour, min, sec)
     if year and month and day then
         command = string.format(su .. "/bin/date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
     else
-        command = string.format(su .. "/bin/date -s '%d:%d'",hour, min)
+        command = string.format(su .. "/bin/date -s '%d:%d'", hour, min)
     end
     if os.execute(command) == 0 then
         os.execute(su .. '/sbin/hwclock -u -w')
@@ -298,7 +298,7 @@ function PocketBook:associateFileExtensions(assoc)
         end
     end
     local res = {"#koreader"}
-    for k,v in pairs(assoc) do
+    for k, v in pairs(assoc) do
         local t = info[k]
         if t then
             -- A system entry exists, so just change app, and reuse the rest

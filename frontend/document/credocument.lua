@@ -72,7 +72,7 @@ local CreDocument = Document:extend{
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
 function CreDocument:zipContentExt(fname)
-    local std_out = io.popen("unzip ".."-qql \""..fname.."\"")
+    local std_out = io.popen("unzip " .. "-qql \"" .. fname .. "\"")
     if std_out then
         local size, ext
         for line in std_out:lines() do
@@ -485,7 +485,7 @@ function CreDocument:cacheFlows()
     self.flows = {}
     self.page_in_flow = {}
     if self:hasNonLinearFlows() and self.hide_nonlinear_flows then
-        for i=1,self:getPageCount() do
+        for i = 1, self:getPageCount() do
             local flow = self:getPageFlow(i)
             if self.flows[flow] ~= nil then
                 self.flows[flow][2] = self.flows[flow][2]+1
@@ -607,7 +607,7 @@ function CreDocument:getWordFromPosition(pos)
             -- get segments from these pos, to build the overall box
             local word_boxes = self._document:getWordBoxesFromPositions(text_range.pos0, text_range.pos1, true)
             -- convert to Geom so we can use Geom.boundingBox
-            for i=1, #word_boxes do
+            for i = 1, #word_boxes do
                 local v = word_boxes[i]
                 word_boxes[i] = { x = v.x0,        y = v.y0,
                                   w = v.x1 - v.x0, h = v.y1 - v.y0 }
@@ -720,13 +720,13 @@ function CreDocument:getSelectedWordContext(word, nb_words, pos0, pos1)
     local pos_start = pos0
     local pos_end = pos1
 
-    for i=0, nb_words do
+    for i = 0, nb_words do
         local start = self:getPrevVisibleWordStart(pos_start)
         if start then pos_start = start
         else break end
     end
 
-    for i=0, nb_words do
+    for i = 0, nb_words do
         local ending = self:getNextVisibleWordEnd(pos_end)
         if ending then pos_end = ending
         else break end
@@ -1035,7 +1035,7 @@ function CreDocument:setupFallbackFontFaces()
     if G_reader_settings:isFalse("additional_fallback_fonts") then
         -- Keep the first fallback font (user set or first from self.fallback_fonts),
         -- as crengine won't reset its current set when provided with an empty string
-        for i=#fallbacks, 2, -1 do
+        for i = #fallbacks, 2, -1 do
             table.remove(fallbacks, i)
         end
     end
@@ -1250,7 +1250,7 @@ end
 function CreDocument:setStyleSheet(new_css_file, appended_css_content )
     logger.dbg("CreDocument: set style sheet:",
         new_css_file and new_css_file or "no file",
-        appended_css_content and "and appended content ("..#appended_css_content.." bytes)" or "(no appended content)")
+        appended_css_content and "and appended content (" .. #appended_css_content .. " bytes)" or "(no appended content)")
     self._document:setStyleSheet(new_css_file, appended_css_content)
 end
 
@@ -1719,10 +1719,10 @@ function CreDocument:setupCallCache()
 
             -- Assume all set* may change rendering
             if name == "setBatteryState" then no_wrap = true -- except this one
-            elseif name:sub(1,3) == "set" then add_reset = true
-            elseif name:sub(1,6) == "toggle" then add_reset = true
-            elseif name:sub(1,6) == "update" then add_reset = true
-            elseif name:sub(1,6) == "enable" then add_reset = true
+            elseif name:sub(1, 3) == "set" then add_reset = true
+            elseif name:sub(1, 6) == "toggle" then add_reset = true
+            elseif name:sub(1, 6) == "update" then add_reset = true
+            elseif name:sub(1, 6) == "enable" then add_reset = true
             elseif name == "zoomFont" then add_reset = true -- not used by koreader
             elseif name == "resetCallCache" then add_reset = true
             elseif name == "cacheFlows" then add_reset = true
@@ -1791,7 +1791,7 @@ function CreDocument:setupCallCache()
 
             -- Assume all remaining get* can have their results
             -- cached globally by function arguments
-            elseif name:sub(1,3) == "get" then cache_global = true
+            elseif name:sub(1, 3) == "get" then cache_global = true
 
             -- All others don't need to be wrapped
             end

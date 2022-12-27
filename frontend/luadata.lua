@@ -38,7 +38,7 @@ function LuaData:open(file_path, name)
     local data_env = {}
     data_env.__index = data_env
     setmetatable(data_env, data_env)
-    data_env[new.name.."Entry"] = function(table)
+    data_env[new.name .. "Entry"] = function(table)
         if table.index then
             -- We've got a deleted setting, overwrite with nil and be done with it.
             if not table.data then
@@ -79,8 +79,8 @@ function LuaData:open(file_path, name)
         end
     end
     if not ok then
-        for i=1, new.max_backups, 1 do
-            local backup_file = new.file..".old."..i
+        for i = 1, new.max_backups, 1 do
+            local backup_file = new.file .. ".old." .. i
             if lfs.attributes(backup_file, "mode") == "file" then
                 ok, err = loadfile(backup_file, "t", data_env)
                 if ok then
@@ -141,7 +141,7 @@ function LuaData:append(data)
     local f_out = io.open(self.file, "a")
     if f_out ~= nil then
         -- NOTE: This is a function call, with a table as its single argument. Parentheses are elided.
-        f_out:write(self.name.."Entry")
+        f_out:write(self.name .. "Entry")
         f_out:write(dump(data))
         f_out:write("\n")
         f_out:close()
@@ -161,8 +161,8 @@ function LuaData:flush()
     if not self.file then return end
 
     if lfs.attributes(self.file, "mode") == "file" then
-        for i=1, self.max_backups, 1 do
-            if lfs.attributes(self.file..".old."..i, "mode") == "file" then
+        for i = 1, self.max_backups, 1 do
+            if lfs.attributes(self.file .. ".old." .. i, "mode") == "file" then
                 logger.dbg("LuaData: Rename", self.file .. ".old." .. i, "to", self.file .. ".old." .. i+1)
                 os.rename(self.file, self.file .. ".old." .. i+1)
             else
@@ -177,7 +177,7 @@ function LuaData:flush()
     local f_out = io.open(self.file, "w")
     if f_out ~= nil then
         f_out:write("-- we can read Lua syntax here!\n")
-        f_out:write(self.name.."Entry")
+        f_out:write(self.name .. "Entry")
         f_out:write(dump(self.data))
         f_out:write("\n")
         f_out:close()

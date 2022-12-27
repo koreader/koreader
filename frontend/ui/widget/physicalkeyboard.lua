@@ -80,7 +80,7 @@ local PhysicalKeyboard = InputContainer:extend{
 
 function PhysicalKeyboard:init()
     local all_keys = {}
-    for _,row in ipairs(Device.keyboard_layout) do
+    for _, row in ipairs(Device.keyboard_layout) do
         util.arrayAppend(all_keys, row)
     end
     self.key_events.KeyPress = { { all_keys } }
@@ -96,8 +96,8 @@ function PhysicalKeyboard:setType(t)
             {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
         }
         self.key_transformer = {}
-        for i,row in ipairs(self.mapping) do
-            for j,key in ipairs(row) do
+        for i, row in ipairs(self.mapping) do
+            for j, key in ipairs(row) do
                 local pkey = Device.keyboard_layout[i][j]
                 self.key_transformer[pkey] = self.mapping[i][j]
             end

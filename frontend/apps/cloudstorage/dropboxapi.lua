@@ -207,10 +207,10 @@ function DropBoxApi:listFolder(path, token, folder_mode)
         end
     end
     --sort
-    table.sort(dropbox_list, function(v1,v2)
+    table.sort(dropbox_list, function(v1, v2)
         return v1.text < v2.text
     end)
-    table.sort(dropbox_file, function(v1,v2)
+    table.sort(dropbox_file, function(v1, v2)
         return v1.text < v2.text
     end)
     -- Add special folder.

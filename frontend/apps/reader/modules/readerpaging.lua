@@ -613,7 +613,7 @@ function ReaderPaging:getBookLocation()
         -- We need a copy, as we're getting references to
         -- objects ReaderPaging/ReaderView may still modify
         local current_location = {}
-        for i=1, #ctx do
+        for i = 1, #ctx do
             current_location[i] = util.tableDeepCopy(ctx[i])
         end
         return current_location
@@ -1077,10 +1077,10 @@ function ReaderPaging:_gotoPage(number, orig_mode)
         return true
     end
     if number > self.number_of_pages then
-        logger.warn("page number too high: "..number.."!")
+        logger.warn("page number too high: " .. number .. "!")
         number = self.number_of_pages
     elseif number < 1 then
-        logger.warn("page number too low: "..number.."!")
+        logger.warn("page number too low: " .. number .. "!")
         number = 1
     end
     -- this is an event to allow other controllers to be aware of this change

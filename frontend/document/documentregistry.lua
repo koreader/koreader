@@ -130,7 +130,7 @@ function DocumentRegistry:getProviders(file)
     for _, provider in ipairs(self.providers) do
         local added = false
         local suffix = string.sub(file, -string.len(provider.extension) - 1)
-        if string.lower(suffix) == "."..provider.extension then
+        if string.lower(suffix) == "." .. provider.extension then
             for i = #providers, 1, -1 do
                 local prov_prev = providers[i]
                 if prov_prev.provider == provider.provider then

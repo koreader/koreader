@@ -63,7 +63,7 @@ function PluginLoader:loadPlugins()
             extra_paths = { extra_paths }
         end
         if type(extra_paths) == "table" then
-            for _,extra_path in ipairs(extra_paths) do
+            for _, extra_path in ipairs(extra_paths) do
                 local extra_path_mode = lfs.attributes(extra_path, "mode")
                 if extra_path_mode == "directory" and extra_path ~= DEFAULT_PLUGIN_PATH then
                     table.insert(lookup_path_list, extra_path)
@@ -96,12 +96,12 @@ function PluginLoader:loadPlugins()
     for _, lookup_path in ipairs(lookup_path_list) do
         logger.info("Loading plugins from directory:", lookup_path)
         for entry in lfs.dir(lookup_path) do
-            local plugin_root = lookup_path.."/"..entry
+            local plugin_root = lookup_path .. "/" .. entry
             local mode = lfs.attributes(plugin_root, "mode")
             -- valid koreader plugin directory
             if mode == "directory" and entry:find(".+%.koplugin$") then
-                local mainfile = plugin_root.."/main.lua"
-                local metafile = plugin_root.."/_meta.lua"
+                local mainfile = plugin_root .. "/main.lua"
+                local metafile = plugin_root .. "/_meta.lua"
                 if plugins_disabled and plugins_disabled[entry:sub(1, -10)] then
                     mainfile = metafile
                 end
@@ -118,7 +118,7 @@ function PluginLoader:loadPlugins()
                     else
                         local ok_meta, plugin_metamodule = pcall(dofile, metafile)
                         if ok_meta and plugin_metamodule then
-                            for k,v in pairs(plugin_metamodule) do plugin_module[k] = v end
+                            for k, v in pairs(plugin_metamodule) do plugin_module[k] = v end
                         end
                         sandboxPluginEventHandlers(plugin_module)
                         table.insert(self.enabled_plugins, plugin_module)
@@ -138,7 +138,7 @@ function PluginLoader:loadPlugins()
         package.cpath = string.format("%s;%s/lib/?.so", package.cpath, plugin.path)
     end
 
-    table.sort(self.enabled_plugins, function(v1,v2) return v1.path < v2.path end)
+    table.sort(self.enabled_plugins, function(v1, v2) return v1.path < v2.path end)
 
     return self.enabled_plugins, self.disabled_plugins
 end

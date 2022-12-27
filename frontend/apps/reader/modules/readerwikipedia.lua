@@ -85,7 +85,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             for i = #wikipedia_history_table, 1, -1 do
                 local value = wikipedia_history_table[i]
                 if value.book_title ~= previous_title then
-                    table.insert(kv_pairs, { value.book_title..":", "" })
+                    table.insert(kv_pairs, { value.book_title .. ":", "" })
                 end
                 previous_title = value.book_title
                 local type_s = "▱ " -- lookup: small white parallelogram
@@ -95,7 +95,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                 local lang_s = ""
                 if value.lang ~= self.wiki_languages[1]:lower() then
                     -- We show item's lang only when different from current lang
-                    lang_s = " ["..value.lang:upper().."]"
+                    lang_s = " [" .. value.lang:upper() .. "]"
                 end
                 local text = type_s .. value.word .. lang_s
                 table.insert(kv_pairs, {
@@ -209,7 +209,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                         -- a single "..", so use parent directory in that case.
                                         local has_subdirectory = false
                                         for f in lfs.dir(dir) do
-                                            local attributes = lfs.attributes(dir.."/"..f)
+                                            local attributes = lfs.attributes(dir .. "/" .. f)
                                             if attributes and attributes.mode == "directory" then
                                                 if f ~= "." and f ~= ".." and f:sub(-4) ~= ".sdr"then
                                                     has_subdirectory = true
@@ -249,7 +249,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         end
                         home_dir = home_dir:gsub("^(.-)/*$", "%1") -- remove trailing slash
                         if home_dir and lfs.attributes(home_dir, "mode") == "directory" then
-                            local wikipedia_dir = home_dir.."/Wikipedia"
+                            local wikipedia_dir = home_dir .. "/Wikipedia"
                             local text = _([[
 Wikipedia articles can be saved as an EPUB for more comfortable reading.
 

@@ -160,7 +160,7 @@ function MultiInputDialog:init()
     end
 
     -- Add same vertical space after than before InputText
-    table.insert(VerticalGroupData,CenterContainer:new{
+    table.insert(VerticalGroupData, CenterContainer:new{
         dimen = Geom:new{
             w = self.title_bar:getSize().w,
             h = self.description_padding + self.description_margin,
@@ -168,7 +168,7 @@ function MultiInputDialog:init()
         VerticalSpan:new{ width = self.description_padding + self.description_margin },
     })
     -- buttons
-    table.insert(VerticalGroupData,CenterContainer:new{
+    table.insert(VerticalGroupData, CenterContainer:new{
         dimen = Geom:new{
             w = self.title_bar:getSize().w,
             h = self.button_table:getSize().h,

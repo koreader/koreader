@@ -24,7 +24,7 @@ function MenuSorter:readMSSettings(config_prefix)
         local menu_order = string.format(
             "%s/%s_menu_order", DataStorage:getSettingsDir(), config_prefix)
 
-        if lfs.attributes(menu_order..".lua") then
+        if lfs.attributes(menu_order .. ".lua") then
             return require(menu_order) or {}
         end
     end
@@ -171,7 +171,7 @@ function MenuSorter:sort(item_table, order)
             -- deal with orphaned submenus
             if #v > 0 then
                 v.sub_item_table = {}
-                for i=1, #v do
+                for i = 1, #v do
                     v.sub_item_table[i] = v[i]
                 end
             end

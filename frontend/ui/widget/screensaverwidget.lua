@@ -74,7 +74,7 @@ function ScreenSaverWidget:setupGestureEvents()
                     -- onExitScreensaver() will handle.
                     local event_name = "TriggerExitScreensaver_" .. gesture
                     self.ges_events[gesture].event = event_name
-                    self["on"..event_name] = function(this, args, ev)
+                    self["on" .. event_name] = function(this, args, ev)
                         ui_gesture.handler(ev)
                         return true
                     end

@@ -144,7 +144,7 @@ function BookInfo:show(file, book_props)
         authors = _("N/A")
     elseif authors:find("\n") then -- BD auto isolate each author
         authors = util.splitToArray(authors, "\n")
-        for i=1, #authors do
+        for i = 1, #authors do
             authors[i] = BD.auto(authors[i])
         end
         authors = table.concat(authors, "\n")
@@ -181,7 +181,7 @@ function BookInfo:show(file, book_props)
         keywords = _("N/A")
     elseif keywords:find("\n") then -- BD auto isolate each keywords
         keywords = util.splitToArray(keywords, "\n")
-        for i=1, #keywords do
+        for i = 1, #keywords do
             keywords[i] = BD.auto(keywords[i])
         end
         keywords = table.concat(keywords, "\n")

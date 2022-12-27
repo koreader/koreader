@@ -194,7 +194,7 @@ end
 
 -- this might be overridden by a document implementation
 function Document:getNativePageDimensions(pageno)
-    local hash = "pgdim|"..self.file.."|"..pageno
+    local hash = "pgdim|" .. self.file .. "|" .. pageno
     local cached = DocCache:check(hash)
     if cached then
         return cached[1]
@@ -286,7 +286,7 @@ function Document:getPageBBox(pageno)
     if bbox ~= nil then -- last used up to this page
         return bbox
     else
-        for i = 0,pageno do
+        for i = 0, pageno do
             bbox = self.bbox[ pageno - i ]
             if bbox ~= nil then
                 return bbox
@@ -401,9 +401,9 @@ function Document:resetTileCacheValidity()
 end
 
 function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, color)
-    return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
-                    ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode..(color and "|color" or "")
-                    ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
+    return "renderpg|" .. self.file .. "|" .. self.mod_time .. "|" .. pageno .. "|"
+            .. zoom .. "|" .. rotation .. "|" .. gamma .. "|" .. render_mode .. (color and "|color" or "")
+            ..(self.reflowable_font_size and "|" .. self.reflowable_font_size or "")
 end
 
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, hinting)
@@ -411,7 +411,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
     local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, self.render_color)
     local tile = DocCache:check(hash, TileCacheItem)
     if not tile then
-        hash_excerpt = hash.."|"..tostring(rect)
+        hash_excerpt = hash .. "|" ..tostring(rect)
         tile = DocCache:check(hash_excerpt)
     end
     if tile then

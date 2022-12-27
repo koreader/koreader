@@ -656,7 +656,7 @@ Get text boxes in native page via optical method.
 Done by OCR pre-processing in Tesseract and Leptonica.
 --]]
 function KoptInterface:getNativeTextBoxesFromScratch(doc, pageno)
-    local hash = "scratchnativepgboxes|"..doc.file.."|"..pageno
+    local hash = "scratchnativepgboxes|" .. doc.file .. "|" .. pageno
     local cached = DocCache:check(hash)
     if not cached then
         local page_size = Document.getNativePageDimensions(doc, pageno)
@@ -766,7 +766,7 @@ Get word from OCR in native page.
 --]]
 function KoptInterface:getNativeOCRWord(doc, pageno, rect)
     self.ocr_lang = doc.configurable.doc_language
-    local hash = "ocrword|"..doc.file.."|"..pageno..rect.x..rect.y..rect.w..rect.h
+    local hash = "ocrword|" .. doc.file .. "|" .. pageno .. rect.x .. rect.y .. rect.w .. rect.h
     logger.dbg("hash", hash)
     local cached = DocCache:check(hash)
     if not cached then
@@ -972,7 +972,7 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                         -- should be stuck
                         add_space = false
                     elseif dist_from_prev_word < box_height * 0.8 then
-                        local prev_word_end = prev_word:match(util.UTF8_CHAR_PATTERN.."$")
+                        local prev_word_end = prev_word:match(util.UTF8_CHAR_PATTERN .. "$")
                         local word_start = word:match(util.UTF8_CHAR_PATTERN)
                         if util.isCJKChar(prev_word_end) and util.isCJKChar(word_start) then
                             -- Two CJK chars whose spacing is not large enough,

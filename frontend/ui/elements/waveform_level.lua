@@ -5,7 +5,7 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 
 local items = {}
-for i=0, Screen.wf_level_max do
+for i = 0, Screen.wf_level_max do
     local info
     if i == 0 then
         info = _("Level 0: high quality, slowest")

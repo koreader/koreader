@@ -108,7 +108,7 @@ local function collectFaceInfo(path)
     if not n then
         return
     end
-    for i=0, n-1 do
+    for i = 0, n-1 do
         local ok, face = pcall(FT.newFace, path, nil, i)
         if not ok then
             return nil

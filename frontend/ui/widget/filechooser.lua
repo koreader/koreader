@@ -107,7 +107,7 @@ function FileChooser:init()
             unreadable_dir_content[path] = nil
             for f in iter, dir_obj do
                 if self.show_hidden or not util.stringStartsWith(f, ".") then
-                    local filename = path.."/"..f
+                    local filename = path .. "/" .. f
                     local attributes = lfs.attributes(filename)
                     if attributes ~= nil then
                         local item = true
@@ -239,7 +239,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
         end
         sorting = function(a, b)
             return tostring(a.name):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b.name)
-                    < tostring(b.name):gsub("%.?%d+",addLeadingZeroes)..("%3d"):format(#a.name)
+                    < tostring(b.name):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#a.name)
         end
     else
         sorting = function(a, b)
@@ -276,7 +276,7 @@ function FileChooser:genItemTableFromPath(path)
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
-        local subdir_path = self.path.."/"..dir.name
+        local subdir_path = self.path .. "/" .. dir.name
         local text, bidi_wrap_func, istr
         if dir.name == ".." then
             text = up_folder_arrow
@@ -285,7 +285,7 @@ function FileChooser:genItemTableFromPath(path)
         elseif dir.name == "./." then -- added as content of an unreadable directory
             text = _("Current folder not readable. Some content may not be shown.")
         else
-            text = dir.name.."/"
+            text = dir.name .. "/"
             bidi_wrap_func = BD.directory
             -- count number of folders and files inside dir
             local sub_dirs = {}
@@ -312,7 +312,7 @@ function FileChooser:genItemTableFromPath(path)
 
     for i = 1, #files do
         local file = files[i]
-        local full_path = self.path.."/"..file.name
+        local full_path = self.path .. "/" .. file.name
         local file_size = lfs.attributes(full_path, "size") or 0
         local sstr = getFriendlySize(file_size)
         local file_item = {

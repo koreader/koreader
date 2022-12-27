@@ -729,7 +729,7 @@ function NetworkMgr:getAllSavedNetworks()
 end
 
 function NetworkMgr:setWirelessBackend(name, options)
-    require("ui/network/"..name).init(self, options)
+    require("ui/network/" .. name).init(self, options)
 end
 
 -- set network proxy if global variable G_defaults:readSetting("NETWORK_PROXY") is defined

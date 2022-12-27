@@ -55,7 +55,7 @@ function Geom:copy()
 end
 
 function Geom:__tostring()
-    return self.w.."x"..self.h.."+"..self.x.."+"..self.y
+    return self.w .. "x" .. self.h .. "+" .. self.x .. "+" .. self.y
 end
 
 --[[--

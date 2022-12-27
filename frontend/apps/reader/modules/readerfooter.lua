@@ -521,7 +521,7 @@ function ReaderFooter:init()
     local handled_modes = {}
     if self.settings.order then
         -- Start filling self.mode_index from what's been ordered by the user and saved
-        for i=0, #self.settings.order do
+        for i = 0, #self.settings.order do
             local name = self.settings.order[i]
             -- (if name has been removed from our supported MODEs: ignore it)
             if MODE[name] then -- this mode still exists
@@ -982,7 +982,7 @@ function ReaderFooter:textOptionTitles(option)
         percentage = symbol_prefix[symbol].percentage
             and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or _("Progress percentage"),
         book_time_to_read = symbol_prefix[symbol].book_time_to_read
-            and T(_("Book time to read (%1)"),symbol_prefix[symbol].book_time_to_read) or _("Book time to read"),
+            and T(_("Book time to read (%1)"), symbol_prefix[symbol].book_time_to_read) or _("Book time to read"),
         chapter_time_to_read = T(_("Chapter time to read (%1)"), symbol_prefix[symbol].chapter_time_to_read),
         frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
         frontlight_warmth = T(_("Frontlight warmth (%1)"), symbol_prefix[symbol].frontlight_warmth),
@@ -1108,7 +1108,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 separator = true,
                 callback = function()
                     local item_table = {}
-                    for i=1, #self.mode_index do
+                    for i = 1, #self.mode_index do
                         table.insert(item_table, {text = self:textOptionTitles(self.mode_index[i]), label = self.mode_index[i]})
                     end
                     local SortWidget = require("ui/widget/sortwidget")
@@ -1117,7 +1117,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         title = _("Sort footer items"),
                         item_table = item_table,
                         callback = function()
-                            for i=1, #sort_item.item_table do
+                            for i = 1, #sort_item.item_table do
                                 self.mode_index[i] = sort_item.item_table[i].label
                             end
                             self.settings.order = self.mode_index

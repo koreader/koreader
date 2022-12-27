@@ -145,7 +145,7 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
         -- As we don't cache the bb we build on the fly, let caller know it
         -- will have to free them
         frames.image_disposable = true
-        for i=1, nb_frames do
+        for i = 1, nb_frames do
             table.insert(frames, function()
                 local page = gif:openPage(i)
                 -- we do not page.close(), so image_bb is not freed
@@ -220,7 +220,7 @@ function RenderImage:renderWebpImageDataWithLibwebp(data, size, want_frames, wid
         -- As we don't cache the bb we build on the fly, let caller know it
         -- will have to free them
         frames.image_disposable = true
-        for i=1, webp.nb_frames do
+        for i = 1, webp.nb_frames do
             table.insert(frames, function()
                 -- As we may be rescaling the bb we'll get, we can provide no_copy=true
                 -- to avoid the copy done by default, and do it ourselves if needed.

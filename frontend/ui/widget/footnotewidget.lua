@@ -222,9 +222,9 @@ function FootnoteWidget:init()
         -- will use the bold font for anything with a weight > 400. We can only use the
         -- font as-is, without its natural weight tweaked.
         local seen_font_path = {}
-        for i=1, 4 do
+        for i = 1, 4 do
             local bold = i >= 3
-            local italic = i == 2 or i ==4
+            local italic = i == 2 or i == 4
             -- We assume the font is not from a collection, and ignore the index.
             local font_path = cre.getFontFaceFilenameAndFaceIndex(self.doc_font_name, bold, italic)
             -- crengine returns the regular filename when requesting a bold that

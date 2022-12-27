@@ -897,7 +897,7 @@ function TextBoxWidget:_renderImage(start_row_idx)
     local status_text = nil
     local alt_text = image.title or ""
     if image.caption then
-        alt_text = alt_text.."\n"..image.caption
+        alt_text = alt_text .. "\n" .. image.caption
     end
     -- Decide what to do/display
     if image.bb then -- we have a bb
@@ -1512,7 +1512,7 @@ function TextBoxWidget:getCharPosAtXY(x, y)
                             -- cluster by splitting its width into equal parts
                             -- for each original char.
                             local dw = xglyph.w / xglyph.cluster_len
-                            for n=1, xglyph.cluster_len do
+                            for n = 1, xglyph.cluster_len do
                                 if x < xglyph.x0 + n*dw then
                                     if xglyph.is_rtl then
                                         return xglyph.text_index + xglyph.cluster_len - n

@@ -392,7 +392,7 @@ function ConfigOption:init()
                         end
                     end
                 end
-                local default_option_name = self.config.config_options.prefix.."_"..self.options[c].name
+                local default_option_name = self.config.config_options.prefix .. "_" .. self.options[c].name
                 local default_value = G_reader_settings:readSetting(default_option_name)
                 if default_value and self.options[c].values then
                     local val = default_value
@@ -1052,7 +1052,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, directio
                     -- Don't update directly this table: it might be a reference
                     -- to one of the original preset values tables
                     local updated = {}
-                    for i=1, #value do
+                    for i = 1, #value do
                         local v = value[i] - step
                         if v < 0 then
                             v = 0
@@ -1070,7 +1070,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, directio
                 value = self.configurable[name] or values[#values]
                 if type(value) == "table" then
                     local updated = {}
-                    for i=1, #value do
+                    for i = 1, #value do
                         table.insert(updated, value[i] + step)
                     end
                     value = updated
@@ -1166,13 +1166,14 @@ function ConfigDialog:onConfigMoreChoose(values, default_value_orig, name, event
                 if more_options_param.names then -- allows managing 2 different settings
                     curr_values = { self.configurable[more_options_param.names[1]],
                                     self.configurable[more_options_param.names[2]] }
-                    left_default = G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[1])
+                    left_default = G_reader_settings:readSetting(self.config_options.prefix .. "_" ..
+                        more_options_param.names[1])
                         or default_value_orig[1]
-                    right_default = G_reader_settings:readSetting(self.config_options.prefix.."_"..more_options_param.names[2])
+                    right_default = G_reader_settings:readSetting(self.config_options.prefix .. "_" .. more_options_param.names[2])
                         or default_value_orig[2]
                 else
                     curr_values = self.configurable[name]
-                    local default_values = G_reader_settings:readSetting(self.config_options.prefix.."_"..name)
+                    local default_values = G_reader_settings:readSetting(self.config_options.prefix .. "_" .. name)
                         or default_value_orig
                     left_default = default_values[1]
                     right_default = default_values[2]
@@ -1242,12 +1243,12 @@ function ConfigDialog:onConfigMoreChoose(values, default_value_orig, name, event
                             ok_callback = function()
                                 local setting_name
                                 if more_options_param.names then
-                                    setting_name = self.config_options.prefix.."_"..more_options_param.names[1]
+                                    setting_name = self.config_options.prefix .. "_" .. more_options_param.names[1]
                                     G_reader_settings:saveSetting(setting_name, left_value)
-                                    setting_name = self.config_options.prefix.."_"..more_options_param.names[2]
+                                    setting_name = self.config_options.prefix .. "_" .. more_options_param.names[2]
                                     G_reader_settings:saveSetting(setting_name, right_value)
                                 else
-                                    setting_name = self.config_options.prefix.."_"..name
+                                    setting_name = self.config_options.prefix .. "_" .. name
                                     G_reader_settings:saveSetting(setting_name, value_tables)
                                 end
                                 widget.left_default = left_value
@@ -1271,7 +1272,7 @@ function ConfigDialog:onConfigMoreChoose(values, default_value_orig, name, event
                 end
                 local curr_items = self.configurable[name]
                 local value_index
-                local default_value = G_reader_settings:readSetting(self.config_options.prefix.."_"..name)
+                local default_value = G_reader_settings:readSetting(self.config_options.prefix .. "_" .. name)
                     or default_value_orig
                 if more_options_param.value_table then
                     local table_shift = more_options_param.value_table_shift or 0
@@ -1344,7 +1345,7 @@ function ConfigDialog:onConfigMoreChoose(values, default_value_orig, name, event
                                     spin_value = spin.value
                                     widget.default_value = spin.value
                                 end
-                                G_reader_settings:saveSetting(self.config_options.prefix.."_"..name, spin_value)
+                                G_reader_settings:saveSetting(self.config_options.prefix .. "_" .. name, spin_value)
                                 widget:update()
                                 self:update()
                                 UIManager:setDirty(self, function()
@@ -1405,7 +1406,7 @@ function ConfigDialog:onMakeDefault(name, name_text, values, labels, position)
         ),
         ok_text = T(_("Set as default")),
         ok_callback = function()
-            name = self.config_options.prefix.."_"..name
+            name = self.config_options.prefix .. "_" .. name
             G_reader_settings:saveSetting(name, values[position])
             self:update()
             UIManager:setDirty(self, function()
@@ -1443,7 +1444,7 @@ function ConfigDialog:onMakeFineTuneDefault(name, name_text, values, labels, dir
         ),
         ok_text = T(_("Set as default")),
         ok_callback = function()
-            name = self.config_options.prefix.."_"..name
+            name = self.config_options.prefix .. "_" .. name
             G_reader_settings:saveSetting(name, current_value)
             self:update()
             UIManager:setDirty(self, function()
@@ -1455,9 +1456,9 @@ end
 
 function ConfigDialog:findOptionByName(name)
     local option
-    for i=1, #self.config_options do
+    for i = 1, #self.config_options do
         local options = self.config_options[i].options
-        for j=1, #options do
+        for j = 1, #options do
             if options[j].name == name then
                 option = options[j]
                 break

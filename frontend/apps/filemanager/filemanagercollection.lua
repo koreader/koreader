@@ -49,7 +49,7 @@ function FileManagerCollection:onMenuHold(item)
                 callback = function()
                     UIManager:close(self.collfile_dialog)
                     local item_table = {}
-                    for i=1, #self._manager.coll_menu.item_table do
+                    for i = 1, #self._manager.coll_menu.item_table do
                         table.insert(item_table, {text = self._manager.coll_menu.item_table[i].text, label = self._manager.coll_menu.item_table[i].file})
                     end
                     local SortWidget = require("ui/widget/sortwidget")
@@ -59,7 +59,7 @@ function FileManagerCollection:onMenuHold(item)
                         item_table = item_table,
                         callback = function()
                             local new_order_table = {}
-                            for i=1, #sort_item.item_table do
+                            for i = 1, #sort_item.item_table do
                                 table.insert(new_order_table, {
                                     file = sort_item.item_table[i].label,
                                     order = i

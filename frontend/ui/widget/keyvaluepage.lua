@@ -585,7 +585,7 @@ function KeyValuePage:_populateItems()
     local key_widths = {}
     local value_widths = {}
     local tvalue
-    for idx=1, self.items_per_page do
+    for idx = 1, self.items_per_page do
         local kv_pairs_idx = idx_offset + idx
         local entry = self.kv_pairs[kv_pairs_idx]
         if entry == nil then break end

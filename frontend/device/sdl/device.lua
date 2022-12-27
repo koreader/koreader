@@ -21,12 +21,12 @@ local function isUrl(s)
 end
 
 local function isCommand(s)
-    return os.execute("which "..s.." >/dev/null 2>&1") == 0
+    return os.execute("which " .. s .. " >/dev/null 2>&1") == 0
 end
 
 local function runCommand(command)
     local env = jit.os ~= "OSX" and 'env -u LD_LIBRARY_PATH ' or ""
-    return os.execute(env..command) == 0
+    return os.execute(env .. command) == 0
 end
 
 local function getDesktopDicts()
@@ -92,7 +92,7 @@ local Device = Generic:extend{
         local ok, app = external:checkMethod("dict", method)
         if app then
             if isUrl(app) and getLinkOpener() then
-                ok = self:openLink(app..text)
+                ok = self:openLink(app .. text)
             elseif isCommand(app) then
                 ok = runCommand(app .. " " .. text .. " &")
             end
@@ -145,7 +145,7 @@ local UbuntuTouch = Device:extend{
 
 function Device:init()
     -- allows to set a viewport via environment variable
-    -- syntax is Lua table syntax, e.g. EMULATE_READER_VIEWPORT="{x=10,w=550,y=5,h=790}"
+    -- syntax is Lua table syntax, e.g. EMULATE_READER_VIEWPORT="{x=10, w=550, y=5, h=790}"
     local viewport = os.getenv("EMULATE_READER_VIEWPORT")
     if viewport then
         self.viewport = require("ui/geometry"):new(loadstring("return " .. viewport)())
@@ -316,7 +316,7 @@ function Device:setDateTime(year, month, day, hour, min, sec)
     if year and month and day then
         command = string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
     else
-        command = string.format("date -s '%d:%d'",hour, min)
+        command = string.format("date -s '%d:%d'", hour, min)
     end
     if os.execute(command) == 0 then
         os.execute('hwclock -u -w')

@@ -176,23 +176,23 @@ function Wikipedia:loadPage(text, lang, page_type, plain)
     parsed.path = self.wiki_path
     if page_type == WIKIPEDIA_INTRO then -- search query
         self.wiki_search_params.explaintext = plain and "" or nil
-        for k,v in pairs(self.wiki_search_params) do
+        for k, v in pairs(self.wiki_search_params) do
             query = string.format("%s%s=%s&", query, k, v)
         end
         parsed.query = query .. "gsrsearch=" .. url.escape(text)
     elseif page_type == WIKIPEDIA_FULL then -- full page content
         self.wiki_full_params.explaintext = plain and "" or nil
-        for k,v in pairs(self.wiki_full_params) do
+        for k, v in pairs(self.wiki_full_params) do
             query = string.format("%s%s=%s&", query, k, v)
         end
         parsed.query = query .. "titles=" .. url.escape(text)
     elseif page_type == WIKIPEDIA_PHTML then -- parsed html page content
-        for k,v in pairs(self.wiki_phtml_params) do
+        for k, v in pairs(self.wiki_phtml_params) do
             query = string.format("%s%s=%s&", query, k, v)
         end
         parsed.query = query .. "page=" .. url.escape(text)
     elseif page_type == WIKIPEDIA_IMAGES then -- images found in page html
-        for k,v in pairs(self.wiki_images_params) do
+        for k, v in pairs(self.wiki_images_params) do
             query = string.format("%s%s=%s&", query, k, v)
         end
         parsed.query = query .. "page=" .. url.escape(text)
@@ -337,9 +337,9 @@ function Wikipedia:getFullPageImages(wiki_title, lang)
                 -- logger.dbg(timg)
                 local src = timg:match([[src="([^"]*)"]])
                 if src and src ~= "" then
-                    if src:sub(1,2) == "//" then
+                    if src:sub(1, 2) == "//" then
                         src = "https:" .. src
-                    elseif src:sub(1,1) == "/" then -- non absolute url
+                    elseif src:sub(1, 1) == "/" then -- non absolute url
                         src = wiki_base_url .. src
                     end
                     local width = tonumber(timg:match([[width="([^"]*)"]]))
@@ -507,12 +507,12 @@ function Wikipedia:addImages(page, lang, more_images, image_size_factor, hi_imag
         -- .jpg or .gif to it)
         -- The resize is so done on Wikipedia servers from the source image for
         -- the best quality.
-        local source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..width.."%2")
+        local source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1" .. width .. "%2")
         -- We build values for a high resolution version of the image, to be displayed
         -- with ImageViewer (x 4 by default)
         local hi_width = width * (hi_image_size_factor or 4)
         local hi_height = height * (hi_image_size_factor or 4)
-        local hi_source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1"..hi_width.."%2")
+        local hi_source = wimage.source:gsub("(.*/)%d+(px-[^/]*)", "%1" .. hi_width .. "%2")
         local title = wimage.filename
         if title then
             title = title:gsub("_", " ")
@@ -559,12 +559,12 @@ local th6_sym = "\xE2\x9D\x96"         -- black diamond minus white x
 -- For optional prettification of the plain text full page
 function Wikipedia:prettifyText(text)
     -- We use \a for an additional leading \n that we don't want shortened later
-    text = text:gsub("\n= ",    "\n\a"..th1_sym.." ")  -- 2 empty lines before
-    text = text:gsub("\n== ",   "\n\a"..th2_sym.." ")  -- 2 empty lines before
-    text = text:gsub("\n=== ",    "\n"..th3_sym.." ")
-    text = text:gsub("\n==== ",   "\n"..th4_sym.." ")
-    text = text:gsub("\n===== ",  "\n"..th5_sym.." ")
-    text = text:gsub("\n====== ", "\n"..th6_sym.." ")
+    text = text:gsub("\n= ",    "\n\a" .. th1_sym .. " ")  -- 2 empty lines before
+    text = text:gsub("\n== ",   "\n\a" .. th2_sym .. " ")  -- 2 empty lines before
+    text = text:gsub("\n=== ",    "\n" .. th3_sym .. " ")
+    text = text:gsub("\n==== ",   "\n" .. th4_sym .. " ")
+    text = text:gsub("\n===== ",  "\n" .. th5_sym .. " ")
+    text = text:gsub("\n====== ", "\n" .. th6_sym .. " ")
     text = text:gsub("Modifier ==", " ==") -- fr wikipedia fix for some articles modified by clumsy editors
     text = text:gsub("==$", "==\n")        -- for a </hN> at end of text to be matched by next gsub
     text = text:gsub(" ===?\n+", "\n\n")   -- </h2> to </h3> : empty line after
@@ -696,9 +696,9 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
             logger.info("no src found in ", img_tag)
             return nil
         end
-        if src:sub(1,2) == "//" then
+        if src:sub(1, 2) == "//" then
             src = "https:" .. src -- Wikipedia redirects from http to https, so use https
-        elseif src:sub(1,1) == "/" then -- non absolute url
+        elseif src:sub(1, 1) == "/" then -- non absolute url
             src = wiki_base_url .. src
         end
         -- Some SVG urls don't have any extension, like:
@@ -749,12 +749,12 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
             local src2x = nil
             local srcset = img_tag:match([[srcset="([^"]*)"]])
             if srcset then
-                srcset = " "..srcset.. ", " -- for next pattern to possibly match 1st or last item
+                srcset = " " .. srcset .. ", " -- for next pattern to possibly match 1st or last item
                 src2x = srcset:match([[ (%S+) 2x, ]])
                 if src2x then
-                    if src2x:sub(1,2) == "//" then
+                    if src2x:sub(1, 2) == "//" then
                         src2x = "https:" .. src2x
-                    elseif src2x:sub(1,1) == "/" then -- non absolute url
+                    elseif src2x:sub(1, 1) == "/" then -- non absolute url
                         src2x = wiki_base_url .. src2x
                     end
                 end
@@ -1174,7 +1174,7 @@ table {
             -- per epub spec, but we don't know about wikipedia...
             -- so we create missing intermediate navPoints with same anchor as current section
             while s_level > cur_level + 1 do
-                table.insert(toc_ncx_parts, "\n"..(" "):rep(cur_level))
+                table.insert(toc_ncx_parts, "\n" .. (" "):rep(cur_level))
                 table.insert(toc_ncx_parts, string.format([[<navPoint id="navpoint-%s" playOrder="%s"><navLabel><text>-</text></navLabel><content src="content.html#%s"/>]], num, num, s_anchor))
                 cur_level = cur_level + 1
                 num = num + 1
@@ -1183,7 +1183,7 @@ table {
         --     sublevel, nothing to close, nothing to add
         end
         cur_level = s_level
-        table.insert(toc_ncx_parts, "\n"..(" "):rep(cur_level)) -- indentation, in case a person looks at it
+        table.insert(toc_ncx_parts, "\n" .. (" "):rep(cur_level)) -- indentation, in case a person looks at it
         table.insert(toc_ncx_parts, string.format([[<navPoint id="navpoint-%s" playOrder="%s"><navLabel><text>%s</text></navLabel><content src="content.html#%s"/>]], num, num, s_title, s_anchor))
     end
     -- close nested <navPoint>
@@ -1261,12 +1261,12 @@ table {
 
     if self.wiki_prettify then
         -- Prepend some symbols to section titles for a better visual feeling of hierarchy
-        html = html:gsub("<h1>", "<h1> "..h1_sym.." ")
-        html = html:gsub("<h2>", "<h2> "..h2_sym.." ")
-        html = html:gsub("<h3>", "<h3> "..h3_sym.." ")
-        html = html:gsub("<h4>", "<h4> "..h4_sym.." ")
-        html = html:gsub("<h5>", "<h5> "..h5_sym.." ")
-        html = html:gsub("<h6>", "<h6> "..h6_sym.." ")
+        html = html:gsub("<h1>", "<h1> " .. h1_sym .. " ")
+        html = html:gsub("<h2>", "<h2> " .. h2_sym .. " ")
+        html = html:gsub("<h3>", "<h3> " .. h3_sym .. " ")
+        html = html:gsub("<h4>", "<h4> " .. h4_sym .. " ")
+        html = html:gsub("<h5>", "<h5> " .. h5_sym .. " ")
+        html = html:gsub("<h6>", "<h6> " .. h6_sym .. " ")
     end
 
     -- Note: in all the gsub patterns above, we used lowercase for tags and attributes
@@ -1334,7 +1334,7 @@ table {
                 if img.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
                     no_compression = false
                 end
-                epub:add("OEBPS/"..img.imgpath, content, no_compression)
+                epub:add("OEBPS/" .. img.imgpath, content, no_compression)
             else
                 go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), inum), _("Stop"), _("Continue"))
                 if not go_on then

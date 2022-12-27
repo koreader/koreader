@@ -55,14 +55,14 @@ local function real_size_string(ko_size, unit)
 end
 
 function optionsutil.showValues(configurable, option, prefix, document, unit)
-    local default = G_reader_settings:readSetting(prefix.."_"..option.name)
+    local default = G_reader_settings:readSetting(prefix .. "_" .. option.name)
     local current = configurable[option.name]
     local value_default, value_current
     if option.toggle and option.values then
         -- build a table so we can see if current/default settings map
         -- to a known setting with a name (in option.toggle)
         local arg_table = {}
-        for i=1,#option.values do
+        for i = 1, #option.values do
             local val = option.values[i]
             -- flatten table to a string for easy lookup via arg_table
             if type(val) == "table" then val = table.concat(val, ",") end
@@ -97,14 +97,14 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
             end
         else
             if default then
-                for i=1,#option.labels do
+                for i = 1, #option.labels do
                     if default == option.values[i] then
                         default = option.labels[i]
                         break
                     end
                 end
             end
-            for i=1,#option.labels do
+            for i = 1, #option.labels do
                 if current == option.values[i] then
                     current = option.labels[i]
                     break
@@ -155,11 +155,11 @@ function optionsutil.showValues(configurable, option, prefix, document, unit)
                                             current, real_size_string(current, unit),
                                             default, real_size_string(default, unit))
     end
-    UIManager:show(InfoMessage:new{ text=text })
+    UIManager:show(InfoMessage:new{ text = text })
 end
 
 function optionsutil.showValuesHMargins(configurable, option)
-    local default = G_reader_settings:readSetting("copt_"..option.name)
+    local default = G_reader_settings:readSetting("copt_" .. option.name)
     local current = configurable[option.name]
     local unit = G_reader_settings:nilOrTrue("metric_length") and "mm" or "in"
     if not default then

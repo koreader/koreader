@@ -445,7 +445,7 @@ function ReaderUI:init()
     -- we only read settings after all the widgets are initialized
     self:handleEvent(Event:new("ReadSettings", self.doc_settings))
 
-    for _,v in ipairs(self.postInitCallback) do
+    for _, v in ipairs(self.postInitCallback) do
         v()
     end
     self.postInitCallback = nil
@@ -460,7 +460,7 @@ function ReaderUI:init()
     -- Need the same event for PDF document
     self:handleEvent(Event:new("ReaderReady", self.doc_settings))
 
-    for _,v in ipairs(self.postReaderCallback) do
+    for _, v in ipairs(self.postReaderCallback) do
         v()
     end
     self.postReaderCallback = nil

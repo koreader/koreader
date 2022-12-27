@@ -285,7 +285,7 @@ function Font:getFace(font, size, faceindex)
 
     -- Make a hash from the realname (many fonts in our fontmap use
     -- the same font file: have them share their glyphs cache)
-    local hash = realname..size
+    local hash = realname .. size
     if faceindex then
         hash = hash .. "/" .. faceindex
     end
@@ -303,7 +303,7 @@ function Font:getFace(font, size, faceindex)
         end
     else
         -- Build face if not found
-        local builtin_font_location = FontList.fontdir.."/"..realname
+        local builtin_font_location = FontList.fontdir .. "/" .. realname
         local ok, face = pcall(Freetype.newFace, builtin_font_location, size, faceindex)
 
         -- Not all fonts are bundled on all platforms because they come with the system.
@@ -420,7 +420,7 @@ function Font:getAdjustedFace(face, bold)
     -- so let's make a shallow clone of this face_obj, and have it cached.
     -- (Different hash if real bold accepted or not, as the fallback
     -- fonts list may then be different.)
-    local hash = face.hash..(bold == Font.FORCE_SYNTHETIZED_BOLD and "synthbold" or "realbold")
+    local hash = face.hash .. (bold == Font.FORCE_SYNTHETIZED_BOLD and "synthbold" or "realbold")
     local face_obj = self.faces[hash]
     if face_obj then
         return face_obj, bold

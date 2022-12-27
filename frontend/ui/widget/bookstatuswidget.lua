@@ -153,7 +153,7 @@ end
 
 function BookStatusWidget:getStatReadPages()
     if stats_book.pages then
-        return string.format("%s/%s",stats_book.pages, self.total_pages)
+        return string.format("%s/%s", stats_book.pages, self.total_pages)
     else
         return _("N/A")
     end

@@ -191,7 +191,7 @@ function MenuItem:init()
         -- Smaller padding when ellipsis for better visual feeling
         text_ellipsis_mandatory_padding = Size.span.horizontal_small
     end
-    mandatory = mandatory and ""..mandatory or ""
+    mandatory = mandatory and "" .. mandatory or ""
     local mandatory_widget = TextWidget:new{
         text = mandatory,
         face = self.info_face,
@@ -1174,7 +1174,7 @@ function Menu:onScreenResize(dimen)
 end
 
 function Menu:onSelectByShortCut(_, keyevent)
-    for k,v in ipairs(self.item_shortcuts) do
+    for k, v in ipairs(self.item_shortcuts) do
         if k > self.perpage then
             break
         elseif v == keyevent.key then

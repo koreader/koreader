@@ -935,7 +935,7 @@ function KindleOasis:init()
         local rotation_dev = std_out:read("*line")
         std_out:close()
         if rotation_dev then
-            self.input.open("/dev/input/"..rotation_dev)
+            self.input.open("/dev/input/" .. rotation_dev)
         end
     end
 
@@ -1048,7 +1048,7 @@ function KindleOasis2:init()
         local rotation_dev = std_out:read("*line")
         std_out:close()
         if rotation_dev then
-            self.input.open("/dev/input/"..rotation_dev)
+            self.input.open("/dev/input/" .. rotation_dev)
         end
     end
 
@@ -1124,7 +1124,7 @@ function KindleOasis3:init()
         local rotation_dev = std_out:read("*line")
         std_out:close()
         if rotation_dev then
-            self.input.open("/dev/input/"..rotation_dev)
+            self.input.open("/dev/input/" .. rotation_dev)
         end
     end
 
