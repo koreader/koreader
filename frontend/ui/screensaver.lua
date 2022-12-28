@@ -805,35 +805,12 @@ function Screensaver:show()
         self.screensaver_widget.modal = true
         self.screensaver_widget.dithered = true
 
-        -- NOTE: ScreenSaver itself is not a widget, so make sure we cleanup behind us...
-        self.screensaver_widget.onCloseWidget = function(this)
-            -- this is self.screensaver_widget (i.e., an object instantiated from ScreenSaverWidget)
-            local super = getmetatable(this)
-            -- super is the class object of self.screensaver_widget (i.e., ScreenSaverWidget)
-            if super.onCloseWidget then
-                super.onCloseWidget(this)
-            end
-            -- self is ScreenSaver (upvalue)
-            self:cleanup()
-        end
-
         UIManager:show(self.screensaver_widget, "full")
     end
 
     -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
     if with_gesture_lock then
         self.screensaver_lock_widget = ScreenSaverLockWidget:new{}
-
-        -- If we don't have a ScreenSaverWidget handling cleanup for us, it'll fall to us...
-        if not self.screensaver_widget then
-            self.screensaver_lock_widget.onCloseWidget = function(this)
-                local super = getmetatable(this)
-                if super.onCloseWidget then
-                    super.onCloseWidget(this)
-                end
-                self:cleanup()
-            end
-        end
 
         -- It's flagged as modal, so it'll stay on top
         UIManager:show(self.screensaver_lock_widget)
