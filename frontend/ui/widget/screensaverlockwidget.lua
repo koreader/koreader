@@ -129,6 +129,9 @@ function ScreenSaverLockWidget:onCloseWidget()
     local Screensaver = require("ui/screensaver")
     if not Screensaver.screensaver_widget then
         UIManager:setDirty("all", "full")
+
+        -- And take care of cleanup in its place, too
+        Screensaver:cleanup()
     end
 end
 
