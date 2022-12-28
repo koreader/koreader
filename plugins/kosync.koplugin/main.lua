@@ -381,7 +381,7 @@ function KOSync:login()
                     id = "close",
                     callback = function()
                         UIManager:close(dialog)
-                    end
+                    end,
                 },
                 {
                     text = _("Login"),
