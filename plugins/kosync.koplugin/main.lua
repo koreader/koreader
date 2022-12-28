@@ -3,8 +3,8 @@ local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
-local LoginDialog = require("ui/widget/logindialog")
 local Math = require("optmath")
+local MultiInputDialog = require("ui/widget/multiinputdialog")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -364,23 +364,29 @@ function KOSync:login()
         return
     end
 
-    self.login_dialog = LoginDialog:new{
+    local fields = {{}, {}}
+    fields[1].text = self.kosync_username
+    fields[1].hint = "username"
+    fields[2].hint = "password"
+    fields[2].text_type = "password"
+
+    local dialog
+    dialog = MultiInputDialog:new{
         title = self.title,
-        username = self.kosync_username or "",
+        fields = fields,
         buttons = {
             {
                 {
                     text = _("Cancel"),
-                    enabled = true,
+                    id = "close",
                     callback = function()
-                        self:closeDialog()
-                    end,
+                        UIManager:close(dialog)
+                    end
                 },
                 {
                     text = _("Login"),
-                    enabled = true,
                     callback = function()
-                        local username, password = self:getCredential()
+                        local username, password = unpack(dialog:getFields())
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{
@@ -388,11 +394,10 @@ function KOSync:login()
                                 timeout = 2,
                             })
                         else
-                            self:closeDialog()
+                            UIManager:close(dialog)
                             UIManager:scheduleIn(0.5, function()
                                 self:doLogin(username, password)
                             end)
-
                             UIManager:show(InfoMessage:new{
                                 text = _("Logging in. Please wait…"),
                                 timeout = 1,
@@ -402,9 +407,8 @@ function KOSync:login()
                 },
                 {
                     text = _("Register"),
-                    enabled = true,
                     callback = function()
-                        local username, password = self:getCredential()
+                        local username, password = unpack(dialog:getFields())
                         local ok, err = validateUser(username, password)
                         if not ok then
                             UIManager:show(InfoMessage:new{
@@ -412,11 +416,10 @@ function KOSync:login()
                                 timeout = 2,
                             })
                         else
-                            self:closeDialog()
+                            UIManager:close(dialog)
                             UIManager:scheduleIn(0.5, function()
                                 self:doRegister(username, password)
                             end)
-
                             UIManager:show(InfoMessage:new{
                                 text = _("Registering. Please wait…"),
                                 timeout = 1,
@@ -426,21 +429,9 @@ function KOSync:login()
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.8),
-        height = math.floor(Screen:getHeight() * 0.4),
     }
-
-    UIManager:show(self.login_dialog)
-    self.login_dialog:onShowKeyboard()
-end
-
-function KOSync:closeDialog()
-    self.login_dialog:onClose()
-    UIManager:close(self.login_dialog)
-end
-
-function KOSync:getCredential()
-    return self.login_dialog:getCredential()
+    UIManager:show(dialog)
+    dialog:onShowKeyboard()
 end
 
 function KOSync:doRegister(username, password)
