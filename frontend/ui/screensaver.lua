@@ -13,6 +13,7 @@ local ImageWidget = require("ui/widget/imagewidget")
 local Math = require("optmath")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScreenSaverWidget = require("ui/widget/screensaverwidget")
+local ScreenSaverLockWidget = require("ui/widget/screensaverlockwidget")
 local SpinWidget = require("ui/widget/spinwidget")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TopContainer = require("ui/widget/container/topcontainer")
@@ -605,16 +606,14 @@ function Screensaver:setup(event, event_message)
 end
 
 function Screensaver:show()
-    -- This should never happen...
-    if self.screensaver_widget then
-        UIManager:close(self.screensaver_widget)
-        self.screensaver_widget = nil
-    end
     -- Notify Device methods that we're in screen saver mode, so they know whether to suspend or resume on Power events.
     Device.screen_saver_mode = true
 
-    -- In as-is mode with no message and no overlay, we've got nothing to show :)
-    if self.screensaver_type == "disable" and not self.show_message and not self.overlay_message then
+    -- Check if we requested a lock gesture
+    local with_gesture_lock = Device:isTouchDevice() and G_reader_settings:readSetting("screensaver_delay") == "gesture"
+
+    -- In as-is mode with no message, no overlay and no lock, we've got nothing to show :)
+    if self.screensaver_type == "disable" and not self.show_message and not self.overlay_message and not with_gesture_lock then
         return
     end
 
@@ -820,6 +819,25 @@ function Screensaver:show()
 
         UIManager:show(self.screensaver_widget, "full")
     end
+
+    -- Setup the gesture lock through an additional invisible widget, so that it works regardless of the configuration.
+    if with_gesture_lock then
+        self.screensaver_lock_widget = ScreenSaverLockWidget:new{}
+
+        -- If we don't have a ScreenSaverWidget handling cleanup for us, it'll fall to us...
+        if not self.screensaver_widget then
+            self.screensaver_lock_widget.onCloseWidget = function(this)
+                local super = getmetatable(this)
+                if super.onCloseWidget then
+                    super.onCloseWidget(this)
+                end
+                self:cleanup()
+            end
+        end
+
+        -- It's flagged as modal, so it'll stay on top
+        UIManager:show(self.screensaver_lock_widget)
+    end
 end
 
 function Screensaver:close_widget()
@@ -829,9 +847,9 @@ function Screensaver:close_widget()
 end
 
 function Screensaver:close()
-    if self.screensaver_widget == nil then
-        -- When we *do* have a widget, this is handled by ScreenSaverWidget:onCloseWidget ;).
-        Device.screen_saver_mode = false
+    if self.screensaver_widget == nil and self.screensaver_lock_widget == nil then
+        -- When we *do* have a widget, this is handled by ScreenSaver(Lock)Widget:onCloseWidget ;).
+        self:cleanup()
         return
     end
 
@@ -846,8 +864,8 @@ function Screensaver:close()
         --       that we've actually closed the widget *right now*.
         return true
     elseif screensaver_delay == "gesture" then
-        if self.screensaver_widget then
-            self.screensaver_widget:showWaitForGestureMessage()
+        if self.screensaver_lock_widget then
+            self.screensaver_lock_widget:showWaitForGestureMessage()
         end
     else
         logger.dbg("tap to exit from screensaver")
@@ -867,6 +885,12 @@ function Screensaver:cleanup()
 
     self.delayed_close = nil
     self.screensaver_widget = nil
+
+    self.screensaver_lock_widget = nil
+
+    -- We run *after* the screensaver has been dismissed, so reset the Device flags
+    Device.screen_saver_mode = false
+    Device.screen_saver_lock = false
 end
 
 return Screensaver
