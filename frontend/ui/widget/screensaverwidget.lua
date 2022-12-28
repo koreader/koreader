@@ -97,6 +97,10 @@ function ScreenSaverWidget:onCloseWidget()
     -- Will come after the Resume event, iff screensaver_delay is set.
     -- Comes *before* it otherwise.
     UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
+
+    -- NOTE: ScreenSaver itself is neither a Widget nor an instantiated object, so make sure we cleanup behind us...
+    local Screensaver = require("ui/screensaver")
+    Screensaver:cleanup()
 end
 
 function ScreenSaverWidget:onResume()
