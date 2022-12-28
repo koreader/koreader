@@ -12,7 +12,6 @@ local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local random = require("random")
 local util = require("util")
-local Screen = Device.screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
