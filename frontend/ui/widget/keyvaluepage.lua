@@ -608,6 +608,7 @@ function KeyValuePage:_populateItems()
     -- first we check if no unfit item at all
     local width_ratio
     if (#self.kv_pairs == 0) or
+        (#key_widths == 0) or
         (key_widths[#key_widths] <= key_w and value_widths[#value_widths] <= value_w) then
         width_ratio = 1/2
     end
