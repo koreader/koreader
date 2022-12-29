@@ -363,16 +363,19 @@ function KOSync:login()
         return
     end
 
-    local fields = {{}, {}}
-    fields[1].text = self.kosync_username
-    fields[1].hint = "username"
-    fields[2].hint = "password"
-    fields[2].text_type = "password"
-
     local dialog
     dialog = MultiInputDialog:new{
         title = self.title,
-        fields = fields,
+        fields = {
+            {
+                text = self.kosync_username,
+                hint = "username",
+            },
+            {
+                hint = "password",
+                text_type = "password",
+            },
+        },
         buttons = {
             {
                 {
