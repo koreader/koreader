@@ -188,13 +188,6 @@ CanvasContext:init(Device)
 -- Handle one time migration stuff (settings, deprecation, ...) in case of an upgrade...
 require("ui/data/onetime_migration")
 
--- Touch screen (this may display some widget, on first install on Kobo Touch,
--- so have it done after CanvasContext:init() but before Bidi.setup() to not
--- have mirroring mess x/y probing).
-if Device:needsTouchScreenProbe() then
-    Device:touchScreenProbe()
-end
-
 -- UI mirroring for RTL languages, and text shaping configuration
 local Bidi = require("ui/bidi")
 Bidi.setup(lang_locale)
