@@ -129,8 +129,8 @@ function DownloadToEpub:goToDownloadDirectory()
 end
 
 function DownloadToEpub:createDownloadDirectoryIfNotExists()
-    logger.dbg("DownloadToEpub: Creating path (" .. self.download_directory .. ")")
     if not util.pathExists(self.download_directory) then
+        logger.dbg("DownloadToEpub: Creating path (" .. self.download_directory .. ")")
         lfs.mkdir(self.download_directory)
     end
 end
