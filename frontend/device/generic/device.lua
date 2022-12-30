@@ -17,13 +17,11 @@ local function no() return false end
 
 local Device = {
     screen_saver_mode = false,
-    charging_mode = false,
-    survive_screen_saver = false,
+    screen_saver_lock = false,
     is_cover_closed = false,
     model = nil,
     powerd = nil,
     screen = nil,
-    screen_dpi_override = nil,
     input = nil,
     home_dir = nil,
     -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
@@ -47,7 +45,6 @@ local Device = {
     hasNaturalLight = no, -- FL warmth implementation specific to NTX boards (Kobo, Cervantes)
     hasNaturalLightMixer = no, -- Same, but only found on newer boards
     hasNaturalLightApi = no,
-    needsTouchScreenProbe = no,
     hasClipboard = yes, -- generic internal clipboard on all devices
     hasEinkScreen = yes,
     hasExternalSD = no, -- or other storage volume that cannot be accessed using the File Manager
