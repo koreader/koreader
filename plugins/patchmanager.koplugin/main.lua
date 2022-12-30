@@ -84,22 +84,26 @@ function PatchManager:getSubMenu(priority)
                 UIManager:askForRestart(_("Patches changed. Current patch set will be applied on next restart."))
             end,
             hold_callback = function()
-                local message = ""
-                for line in io.lines(self.patch_dir .. "/" .. self.patches[priority][i]) do
-                    print("xxx", line)
-                    local line_start = line:sub(1, 1)
-                    if line_start == " " or line_start == "-" then
-                        message = message .. line .. "\n"
-                    else
-                        break
+                if self.ui.texteditor then
+                    self.ui.texteditor:checkEditFile(self.patch_dir .. "/" .. self.patches[priority][i], true)
+                else
+                    -- fallback to show only the first lines
+                    local message = ""
+                    for line in io.lines(self.patch_dir .. "/" .. self.patches[priority][i]) do
+                        local line_start = line:sub(1, 1)
+                        if line_start == " " or line_start == "-" then
+                            message = message .. line .. "\n"
+                        else
+                            break
+                        end
                     end
-                end
 
-                UIManager:show(InfoMessage:new{
-                        text = message,
-                        show_icon = false,
-                        width = math.floor(Screen:getWidth() * 0.9),
-                    })
+                    UIManager:show(InfoMessage:new{
+                            text = message,
+                            show_icon = false,
+                            width = math.floor(Screen:getWidth() * 0.9),
+                        })
+                end
             end,
         })
     end
