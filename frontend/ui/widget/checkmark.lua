@@ -85,9 +85,10 @@ function CheckMark:init()
 end
 
 function CheckMark:paintTo(bb, x, y)
-    WidgetContainer.paintTo(self, bb, x, y)
-    -- We need to update self.dimen's x and y for any
-    -- ges.pos:intersectWith(check_mark) to work.
+    -- NOTE: Account for alignment/offsets computation being tacked on to self.dimen...
+    --       This is dumb and probably means we're doing something wonky... somewhere, but it works,
+    --       and allows us to keep sensible coordinates in dimen, so that they can be used for hitbox checks.
+    WidgetContainer.paintTo(self, bb, x - self.dimen.x, y - self.dimen.y)
     self.dimen.x = x
     self.dimen.y = y
 end
