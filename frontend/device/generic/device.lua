@@ -284,6 +284,15 @@ function Device:onPowerEvent(ev)
             -- suspending the hardware. This usually happens when sleep cover
             -- is closed after the device was sent to suspend state.
             logger.dbg("Already in screen saver mode, going back to suspend...")
+            -- Much like the real suspend codepath below, in case we got here via screen_saver_lock,
+            -- make sure we murder WiFi again (because restore WiFi on resume could have kicked in).
+            if self:hasWifiToggle() then
+                local network_manager = require("ui/network/manager")
+                if network_manager:isWifiOn() then
+                    network_manager:releaseIP()
+                    network_manager:turnOffWifi()
+                end
+            end
             self:rescheduleSuspend()
         end
     -- else we were not in screensaver mode
@@ -305,6 +314,8 @@ function Device:onPowerEvent(ev)
         if self:needsScreenRefreshAfterResume() then
             self.screen:refreshFull()
         end
+        -- NOTE: In the same vein as above, this is delayed to make sure we update the screen first.
+        --       (This, unfortunately, means we can't just move this to Device:_beforeSuspend :/).
         UIManager:scheduleIn(0.1, function()
             -- NOTE: This side of the check needs to be laxer, some platforms can handle Wi-Fi without WifiManager ;).
             if self:hasWifiToggle() then
