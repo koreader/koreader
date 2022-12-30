@@ -15,6 +15,9 @@ local userpatch = {
     before_exit = "8", -- to be started a bit before exit before settings are saved (always)
     on_exit = "9",     -- to be started right before exit (always)
 
+    -- patch execution status
+    execution_status = {},
+
     -- the patch function itself
     applyPatches = function(priority) end, -- to be overwritten, if the device allows it.
 }
@@ -55,16 +58,7 @@ local function runUserPatchTasks(dir, priority)
         return -- nothing to do
     end
 
-    local function addLeadingZeroes(d)
-        local dec, n = string.match(d, "(%.?)0*(.+)")
-        return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
-    end
-    local function sorting(a, b)
-        return tostring(a):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b)
-            < tostring(b):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#a)
-    end
-
-    table.sort(patches, sorting)
+    table.sort(patches, userpatch.sorting)
 
     for i, entry in ipairs(patches) do
         local fullpath = dir .. "/" .. entry
@@ -72,6 +66,7 @@ local function runUserPatchTasks(dir, priority)
             if fullpath:match("%.lua$") then -- execute patch-files first
                 logger.info("Applying patch:", fullpath)
                 local ok, err = pcall(dofile, fullpath)
+                userpatch.execution_status[entry] = ok
                 if not ok then
                     logger.warn("Patching failed:", err)
                     -- Only show InfoMessage, when UIManager is working
@@ -103,6 +98,17 @@ function userpatch.applyPatches(priority)
             os.remove(update_once_marker) -- Prevent another execution on a further starts.
         end
     end
+end
+
+
+--- Sorting function for natural sorting
+local function addLeadingZeroes(d)
+    local dec, n = string.match(d, "(%.?)0*(.+)")
+    return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
+end
+function userpatch.sorting(a, b)
+    return tostring(a):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#b)
+        < tostring(b):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#a)
 end
 
 return userpatch

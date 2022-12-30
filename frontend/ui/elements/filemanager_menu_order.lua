@@ -137,6 +137,7 @@ local order = {
         "plugin_management",
         "advanced_settings",
         "developer_options",
+        "patchmanager",
     },
     search = {
         "dictionary_lookup",
