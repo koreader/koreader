@@ -60,8 +60,8 @@ local function runUserPatchTasks(dir, priority)
         return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
     end
     local function sorting(a, b)
-        return tostring(a):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b)
-            < tostring(b):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#a)
+        return tostring(a):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#b)
+            < tostring(b):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#a)
     end
 
     table.sort(patches, sorting)
