@@ -137,14 +137,14 @@ end
 
 function DownloadToEpub:onDownloadEpubFromUrl(link_url)
     local Trapper = require("ui/trapper")
-    local completed, success = Trapper:dismissableRunInSubprocess(function()
+    local file_path, err = Trapper:dismissableRunInSubprocess(function()
             return self:downloadEpubWithUi(link_url)
     end, self.trap_widget)
 
-    if not success then
+    if not file_path then
         self:showErrorMessage(T(_("Error downloading EPUB: %1", err)))
     else
-        self:showReadPrompt(_("EPUB downloaded. Would you like to read it now?"), success)
+        self:showReadPrompt(_("EPUB downloaded. Would you like to read it now?"), file_path)
     end
 end
 
