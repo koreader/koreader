@@ -1,5 +1,5 @@
 local md5 = require("ffi/sha2").md5
-local util = require("frontend/util")
+local datetime = require("frontend/datetime")
 
 local State = require("subscription/state")
 
@@ -81,7 +81,7 @@ end
 
 function SubscriptionResult:getOverviewMessage()
     return ("%s • %s/%s"):format(
-        util.secondsToDate(tonumber(self.timestamp)),
+        datetime.secondsToDate(tonumber(self.timestamp)),
         self:getResultCount(),
         self:totalSuccesses())
 end
