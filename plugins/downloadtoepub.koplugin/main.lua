@@ -29,6 +29,8 @@ local EpubBuildDirector = require("libs/gazette/epubbuilddirector")
 local WebPage = require("libs/gazette/resources/webpage")
 local ResourceAdapter = require("libs/gazette/resources/webpageadapter")
 local Epub = require("libs/gazette/epub/epub")
+local History = require("epubhistory")
+local HistoryView = require("epubhistoryview")
 
 local DownloadToEpub = WidgetContainer:new{
     name = "Download to EPUB",
@@ -88,6 +90,32 @@ function DownloadToEpub:addToMainMenu(menu_items)
             },
         }
     }
+    local history_view = HistoryView:new{}
+    local last_download_item = history_view:getLastDownloadButton(function(history_item)
+            self:maybeOpenEpub(history_item['download_path'])
+    end)
+    local history_menu_items = history_view:getMenuItems(function(history_item)
+            self:maybeOpenEpub(history_item['download_path'])
+    end)
+    if last_download_item then table.insert(menu_items.downloadtoepub.sub_item_table, 1, last_download_item) end
+    if history_menu_items then table.insert(menu_items.downloadtoepub.sub_item_table, 2, history_menu_items[1]) end
+end
+
+function DownloadToEpub:maybeOpenEpub(file_path)
+    if util.pathExists(file_path) then
+        logger.dbg("DownloadToEpub: Opening " .. file_path)
+        local Event = require("ui/event")
+        UIManager:broadcastEvent(Event:new("SetupShowReader"))
+        local ReaderUI = require("apps/reader/readerui")
+        ReaderUI:showReader(file_path)
+    else
+        logger.dbg("DownloadToEpub: Couldn't open EPUB! File has been moved since downloaded to " .. file_path)
+        UIManager:show(InfoMessage:new{
+            text = _("Couldn't open! EPUB has been deleted or moved since being downloaded."),
+            show_icon = false,
+            timeout = 10,
+        })
+    end
 end
 
 function DownloadToEpub:readSettings()
@@ -136,29 +164,30 @@ function DownloadToEpub:createDownloadDirectoryIfNotExists()
 end
 
 function DownloadToEpub:onDownloadEpubFromUrl(link_url)
-    local Trapper = require("ui/trapper")
-    local file_path, err = Trapper:dismissableRunInSubprocess(function()
-            return self:downloadEpubWithUi(link_url)
-    end, self.trap_widget)
-
-    if not file_path then
-        self:showErrorMessage(T(_("Error downloading EPUB: %1", err)))
-    else
-        self:showReadPrompt(_("EPUB downloaded. Would you like to read it now?"), file_path)
-    end
+    self:downloadEpubWithUi(link_url, function(file_path, err)
+        if err then
+            self:showErrorMessage(T(_("Error downloading EPUB: %1", err)))
+        else
+            local history = History:new{}
+            history:init()
+            history:add(link_url, file_path)
+            logger.dbg("DownloadToEpub: Finished downloading epub to " .. file_path)
+            self:showReadPrompt(_("EPUB downloaded. Would you like to read it now?"), file_path)
+        end
+    end)
 end
 
-function DownloadToEpub:downloadEpubWithUi(link_url)
+function DownloadToEpub:downloadEpubWithUi(link_url, callback)
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-            Trapper:setPausedText(_("Download paused"))
-            Trapper:info("Downloading... " .. link_url)
-            local epub_builder = EpubBuilder:new{
-                output_directory = self.download_directory,
-            }
-            local success, err = epub_builder:buildFromUrl(link_url)
-            Trapper:reset()
-            return success, err
+        Trapper:info("Downloading... " .. link_url)
+        local epub_builder = EpubBuilder:new{
+            output_directory = self.download_directory,
+            Trapper = Trapper
+        }
+        local file_path, err = epub_builder:buildFromUrl(link_url)
+        Trapper:reset()
+        callback(file_path, err)
     end)
 end
 
@@ -194,14 +223,15 @@ end
 
 function EpubBuilder:buildFromUrl(url)
     logger.dbg("DownloadToEpub: Begin download of " .. url .. " outputting to " .. self.output_directory)
-    Trapper:info("Getting webpage...")
+    self.Trapper:info("Getting webpage...")
     local webpage, err = self:createWebpage(url)
+
     if not webpage then
         logger.dbg("DownloadToEpub: " .. err)
         return false, err
     end
 
-    Trapper:info("Building EPUB...")
+    self.Trapper:info("Building EPUB...")
     local epub = Epub:new{}
     epub:addFromList(ResourceAdapter:new(webpage))
     epub:setTitle(webpage.title)
@@ -214,7 +244,7 @@ function EpubBuilder:buildFromUrl(url)
         return false, err
     end
 
-    Trapper:info("Writing to device...")
+    self.Trapper:info("Writing to device...")
     local path_to_epub, err = build_director:construct(epub)
     if not path_to_epub then
         logger.dbg("DownloadToEpub: " .. err)
@@ -226,18 +256,14 @@ end
 
 function EpubBuilder:createWebpage(url)
     local webpage, err = WebPage:new({
-        url = url,
+            url = url,
     })
 
     if err then
         return false, err
     end
 
-    local success, err = webpage:build()
-
-    if err then
-        return false, err
-    end
+    webpage:build()
 
     return webpage
 end
