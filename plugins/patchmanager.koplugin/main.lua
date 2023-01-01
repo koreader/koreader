@@ -5,12 +5,17 @@ Plugin for automatic dimming of the frontlight after an idle period.
 --]]--
 
 local DataStorage = require("datastorage")
+local lfs = require("libs/libkoreader-lfs")
+
+if lfs.attributes(DataStorage:getDataDir() .. "/patches", "mode") ~= "directory" then
+    return { disabled = true }
+end
+
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local UserPatch = require("userpatch")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -19,22 +24,17 @@ local Screen = Device.screen
 local PatchManager = WidgetContainer:extend{
     name = "patchmanager",
     is_doc_only = false,
-    patches = {}
 }
 
 function PatchManager:init()
     self.patch_dir = DataStorage:getDataDir() .. "/patches"
     self.disable_ext = ".disabled"
+    self.patches = {}
     self:getAvailablePatches()
     self.ui.menu:registerToMainMenu(self)
 end
 
 function PatchManager:getAvailablePatches()
-    if lfs.attributes(self.patch_dir, "mode") ~= "directory" then
-        self.patches = {}
-        return
-    end
-
     for priority = tonumber(UserPatch.early_once), tonumber(UserPatch.on_exit) do
         self.patches[priority] = {}
         for entry in lfs.dir(self.patch_dir) do
