@@ -868,7 +868,10 @@ function ReaderRolling:onGotoViewRel(diff)
         end
     end
     if self.ui.document ~= nil then
+        local start_time = time.now()
         self.xpointer = self.ui.document:getXPointer()
+        local end_time = time.now()
+        print(string.format("ReaderRolling:onGotoViewRel: getXPointer took %9.3f µs", time.to_us(end_time - start_time)))
     end
     return true
 end
