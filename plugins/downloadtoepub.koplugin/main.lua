@@ -5,7 +5,9 @@
 --]]--
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
@@ -13,10 +15,10 @@ local FileManager = require("apps/filemanager/filemanager")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("frontend/luasettings")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
-local Device = require("device")
 local Screen = Device.screen
 local Size = require("ui/size")
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
@@ -34,7 +36,7 @@ local HistoryView = require("epubhistoryview")
 
 local DownloadToEpub = WidgetContainer:new{
     name = "Download to EPUB",
-    download_directory = ("%s/%s/"):format(DataStorage:getFullDataDir(), "EPUB Downloads") -- This is the default download directory. It will be created in the init method if it doesn't exist.
+    download_directory = ("%s/%s/"):format(DataStorage:getFullDataDir(), "EPUB Downloads")
 }
 
 local EpubBuilder = {
@@ -88,6 +90,15 @@ function DownloadToEpub:addToMainMenu(menu_items)
                     },
                 }
             },
+            {
+                text = _("About"),
+                keep_menu_open = true,
+                callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = "DownloadToEpub lets you download external links as EPUBs to your device."
+                    })
+                end,
+            },
         }
     }
     local history_view = HistoryView:new{}
@@ -97,8 +108,8 @@ function DownloadToEpub:addToMainMenu(menu_items)
     local history_menu_items = history_view:getMenuItems(function(history_item)
             self:maybeOpenEpub(history_item['download_path'])
     end)
-    if last_download_item then table.insert(menu_items.downloadtoepub.sub_item_table, 1, last_download_item) end
-    if history_menu_items then table.insert(menu_items.downloadtoepub.sub_item_table, 2, history_menu_items[1]) end
+    if last_download_item then table.insert(menu_items.downloadtoepub.sub_item_table, 2, last_download_item) end
+    if history_menu_items then table.insert(menu_items.downloadtoepub.sub_item_table, 3, history_menu_items[1]) end
 end
 
 function DownloadToEpub:maybeOpenEpub(file_path)
@@ -160,32 +171,42 @@ function DownloadToEpub:createDownloadDirectoryIfNotExists()
 end
 
 function DownloadToEpub:onDownloadEpubFromUrl(link_url)
-    self:downloadEpubWithUi(link_url, function(file_path, err)
-        if err then
-            self:showErrorMessage(T(_("Error downloading EPUB: %1", err)))
-        else
-            local history = History:new{}
-            history:init()
-            logger.dbg("DownloadToEpub: Maybe deleting from history " .. link_url)
-            history:remove(link_url) -- link might have already been downloaded. If so, remove the history item.
-            logger.dbg("DownloadToEpub: Adding to history " .. link_url)
-            history:add(link_url, file_path)
-            logger.dbg("DownloadToEpub: Finished downloading epub to " .. file_path)
-            self:showReadPrompt(_("EPUB downloaded. Would you like to read it now?"), file_path)
-        end
-    end)
+    local prompt
+    prompt = ConfirmBox:new{
+        text = T(_("Download to EPUB? \n\nLink: %1"), link_url),
+        ok_text = _("Yes"),
+        ok_callback = function()
+            UIManager:close(prompt)
+            self:downloadEpubWithUi(link_url, function(file_path, err)
+                if err then
+                    UIManager:show(InfoMessage:new{ text = T(_("Error downloading EPUB: %1", err)) })
+                else
+                    local history = History:new{}
+                    history:init()
+                    logger.dbg("DownloadToEpub: Maybe deleting from history " .. link_url)
+                    history:remove(link_url) -- link might have already been downloaded. If so, remove the history item.
+                    logger.dbg("DownloadToEpub: Adding to history " .. link_url .. " " .. file_path)
+                    history:add(link_url, file_path)
+                    logger.dbg("DownloadToEpub: Finished downloading epub to " .. file_path)
+                    self:showReadPrompt(file_path)
+                end
+            end)
+        end,
+    }
+    UIManager:show(prompt)
 end
 
 function DownloadToEpub:downloadEpubWithUi(link_url, callback)
-    local Trapper = require("ui/trapper")
-    Trapper:wrap(function()
-        Trapper:info("Downloading... " .. link_url)
+    local info = InfoMessage:new{ text = ("Downloading... " .. link_url) }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    UIManager:close(info)
+
+    NetworkMgr:runWhenOnline(function()
         local epub_builder = EpubBuilder:new{
             output_directory = self.download_directory,
-            Trapper = Trapper
         }
         local file_path, err = epub_builder:buildFromUrl(link_url)
-        Trapper:reset()
         callback(file_path, err)
     end)
 end
@@ -205,8 +226,8 @@ function DownloadToEpub:showRedownloadPrompt(file_path) -- supply this with a di
             choice1_text = _("Redownload EPUB"),
             choice1_callback = function()
                 logger.dbg("DownloadToEpub: Redownloading " .. history_item.url)
-                self:onDownloadEpubFromUrl(history_item.url)
                 UIManager:close(prompt)
+                self:onDownloadEpubFromUrl(history_item.url)
             end,
             choice2_text = _("Delete from history"),
             choice2_callback = function()
@@ -225,11 +246,11 @@ function DownloadToEpub:showRedownloadPrompt(file_path) -- supply this with a di
     UIManager:show(prompt)
 end
 
-function DownloadToEpub:showReadPrompt(message, file_path)
-    local prompt = MultiConfirmBox:new{
-        text = message,
-        choice1_text = _("Open EPUB"),
-        choice1_callback = function()
+function DownloadToEpub:showReadPrompt(file_path)
+    local prompt = ConfirmBox:new{
+        text = _("EPUB downloaded. Would you like to read it now?"),
+        ok_text = _("Open EPUB"),
+        ok_callback = function()
             logger.dbg("DownloadToEpub: Opening " .. file_path)
             local Event = require("ui/event")
             UIManager:broadcastEvent(Event:new("SetupShowReader"))
@@ -237,14 +258,8 @@ function DownloadToEpub:showReadPrompt(message, file_path)
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(file_path)
         end,
-        choice2_enabled = false
     }
     UIManager:show(prompt)
-end
-
-function DownloadToEpub:showErrorMessage(err)
-    local Trapper = require("ui/trapper")
-    Trapper:info(err)
 end
 
 function EpubBuilder:new(o)
@@ -257,7 +272,12 @@ end
 
 function EpubBuilder:buildFromUrl(url)
     logger.dbg("DownloadToEpub: Begin download of " .. url .. " outputting to " .. self.output_directory)
-    self.Trapper:info("Getting webpage...")
+
+    local info = InfoMessage:new{ text = _("Getting webpage…") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    UIManager:close(info)
+
     local webpage, err = self:createWebpage(url)
 
     if not webpage then
@@ -265,7 +285,11 @@ function EpubBuilder:buildFromUrl(url)
         return false, err
     end
 
-    self.Trapper:info("Building EPUB...")
+    info = InfoMessage:new{ text = _("Building EPUB…") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    UIManager:close(info)
+
     local epub = Epub:new{}
     epub:addFromList(ResourceAdapter:new(webpage))
     epub:setTitle(webpage.title)
@@ -278,7 +302,11 @@ function EpubBuilder:buildFromUrl(url)
         return false, err
     end
 
-    self.Trapper:info("Writing to device...")
+    info = InfoMessage:new{ text = _("Writing to device…") }
+    UIManager:show(info)
+    UIManager:forceRePaint()
+    UIManager:close(info)
+
     logger.dbg("DownloadToEpub: Writing EPUB to " .. epub_path)
     local path_to_epub, err = build_director:construct(epub)
     if not path_to_epub then
