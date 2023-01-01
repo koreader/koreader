@@ -14,9 +14,9 @@ end
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
-local UserPatch = require("userpatch")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local userPatch = require("userpatch")
 local _ = require("gettext")
 
 local Screen = Device.screen
@@ -35,7 +35,7 @@ function PatchManager:init()
 end
 
 function PatchManager:getAvailablePatches()
-    for priority = tonumber(UserPatch.early_once), tonumber(UserPatch.on_exit) do
+    for priority = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
         self.patches[priority] = {}
         for entry in lfs.dir(self.patch_dir) do
             local mode = lfs.attributes(self.patch_dir .. "/" .. entry, "mode")
@@ -50,17 +50,25 @@ function PatchManager:getAvailablePatches()
 end
 
 function PatchManager:getSubMenu(priority)
-    if priority < tonumber(UserPatch.early_once) or priority > tonumber(UserPatch.on_exit) then
+    if priority < tonumber(userPatch.early_once) or priority > tonumber(userPatch.on_exit) then
         logger.err("PatchManager: BUG, wrong patch_level:", priority)
     end
     local sub_menu = {}
     if #self.patches == 0 then
         return {}
     end
+    local function getExecutionStatus(patch_name)
+        print("xxx", patch_name)
+        if userPatch.execution_status[patch_name] then
+            return " (success)"
+        else
+            return " (error)"
+        end
+    end
     for i = 1, #self.patches[priority] do
         local patch_name = self.patches[priority][i]:sub(1, self.patches[priority][i]:find(".lua", 1, true) + 3)
         table.insert(sub_menu, {
-            text = patch_name,
+            text = patch_name .. getExecutionStatus(patch_name),
             checked_func = function()
                 return self.patches[priority][i]:find("%.lua$") ~= nil
             end,
@@ -81,7 +89,7 @@ function PatchManager:getSubMenu(priority)
                         self.patches[priority][i] = enabled_name
                     end
                 end
-                UIManager:askForRestart(_("Patches changed. Current patch set will be applied on next restart."))
+                UIManager:askForRestart(_("Patches changed. Current set of patches will be applied on next restart."))
             end,
             hold_callback = function()
                 if self.ui.texteditor then
@@ -119,11 +127,11 @@ Patches are an experimental feature, so be careful what you do :-)
 
 function PatchManager:addToMainMenu(menu_items)
     local sub_menu_text = {}
-    sub_menu_text[tonumber(UserPatch.early_once)] = _("On startup, only after update")
-    sub_menu_text[tonumber(UserPatch.early)] = _("On startup")
-    sub_menu_text[tonumber(UserPatch.late)] = _("After setup")
-    sub_menu_text[tonumber(UserPatch.before_exit)] = _("Before exit")
-    sub_menu_text[tonumber(UserPatch.on_exit)] = _("On exit")
+    sub_menu_text[tonumber(userPatch.early_once)] = _("On startup, only after update")
+    sub_menu_text[tonumber(userPatch.early)] = _("On startup")
+    sub_menu_text[tonumber(userPatch.late)] = _("After setup")
+    sub_menu_text[tonumber(userPatch.before_exit)] = _("Before exit")
+    sub_menu_text[tonumber(userPatch.on_exit)] = _("On exit")
 
     menu_items.patchmanager  = {
         sorting_hint = "more_tools",
@@ -132,7 +140,7 @@ function PatchManager:addToMainMenu(menu_items)
             if #self.patches == 0 then
                 return false
             end
-            for i = tonumber(UserPatch.early_once), tonumber(UserPatch.on_exit) do
+            for i = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
                 if #self.patches[i] > 1 then
                     return true
                 end
@@ -157,7 +165,7 @@ function PatchManager:addToMainMenu(menu_items)
         }
     }
 
-    for i = tonumber(UserPatch.early_once), tonumber(UserPatch.on_exit) do
+    for i = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
         if sub_menu_text[i] then
             table.insert(menu_items.patchmanager.sub_item_table,
                 {
