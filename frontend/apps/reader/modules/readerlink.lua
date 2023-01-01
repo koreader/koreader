@@ -1051,32 +1051,32 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         if shortest_dist then
             selected_distance2 = shortest_dist
         end
+    end
 
-        if selected_link then
-            logger.dbg("nearest selected_link", selected_link)
-            if max_distance and selected_distance2 and selected_distance2 > max_distance^2 then
-                logger.dbg("nearest link is further than max distance, ignoring it")
-            else
-                -- Check a_xpointer is coherent, use it as from_xpointer only if it is
-                local from_xpointer = nil
-                if selected_link.a_xpointer and self:isXpointerCoherent(selected_link.a_xpointer) then
-                    from_xpointer = selected_link.a_xpointer
-                end
-                -- Make it a link as expected by onGotoLink
-                selected_link = {
-                    xpointer = selected_link.section or selected_link.uri,
-                    marker_xpointer = selected_link.section,
-                    from_xpointer = from_xpointer,
-                    -- (keep a_xpointer even if incoherent, might be needed for
-                    -- footnote detection (better than nothing if incoherent)
-                    a_xpointer = selected_link.a_xpointer,
-                    -- keep the link y position, so we can keep its highlight shown
-                    -- a bit more time if it was hidden by the footnote popup
-                    link_y = selected_link.link_y,
-                }
-
-                return self:onGotoLink(selected_link, false, isFootnoteLinkInPopupEnabled())
+    if selected_link then
+        logger.dbg("nearest selected_link", selected_link)
+        if max_distance and selected_distance2 and selected_distance2 > max_distance^2 then
+            logger.dbg("nearest link is further than max distance, ignoring it")
+        else
+            -- Check a_xpointer is coherent, use it as from_xpointer only if it is
+            local from_xpointer = nil
+            if selected_link.a_xpointer and self:isXpointerCoherent(selected_link.a_xpointer) then
+                from_xpointer = selected_link.a_xpointer
             end
+            -- Make it a link as expected by onGotoLink
+            selected_link = {
+                xpointer = selected_link.section or selected_link.uri,
+                marker_xpointer = selected_link.section,
+                from_xpointer = from_xpointer,
+                -- (keep a_xpointer even if incoherent, might be needed for
+                -- footnote detection (better than nothing if incoherent)
+                a_xpointer = selected_link.a_xpointer,
+                -- keep the link y position, so we can keep its highlight shown
+                -- a bit more time if it was hidden by the footnote popup
+                link_y = selected_link.link_y,
+            }
+
+            return self:onGotoLink(selected_link, false, isFootnoteLinkInPopupEnabled())
         end
     end
 end
