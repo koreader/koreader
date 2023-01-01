@@ -15,6 +15,9 @@ local userpatch = {
     before_exit = "8", -- to be started a bit before exit before settings are saved (always)
     on_exit = "9",     -- to be started right before exit (always)
 
+    -- patch execution status
+    execution_status = {},
+
     -- the patch function itself
     applyPatches = function(priority) end, -- to be overwritten, if the device allows it.
 }
@@ -72,6 +75,7 @@ local function runUserPatchTasks(dir, priority)
             if fullpath:match("%.lua$") then -- execute patch-files first
                 logger.info("Applying patch:", fullpath)
                 local ok, err = pcall(dofile, fullpath)
+                userpatch.execution_status[entry] = ok
                 if not ok then
                     logger.warn("Patching failed:", err)
                     -- Only show InfoMessage, when UIManager is working
