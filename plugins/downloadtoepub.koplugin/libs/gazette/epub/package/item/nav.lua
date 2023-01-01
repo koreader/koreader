@@ -33,7 +33,7 @@ end
 
 function Nav:getContent()
     -- TODO: Add error catching/display
-    local template, err = xml2lua.loadFile("plugins/gazette.koplugin/libs/gazette/epub/templates/nav.xhtml")
+    local template, err = xml2lua.loadFile("plugins/downloadtoepub.koplugin/libs/gazette/epub/templates/nav.xhtml")
     local items_list = "\n"
 
     for _, item in ipairs(self.items) do

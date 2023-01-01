@@ -41,7 +41,7 @@ function Epub32Writer:setPath(path)
     else
         self.path = path
         return true
-    end    
+    end
 end
 
 function Epub32Writer:addMimetype()
@@ -92,7 +92,7 @@ function Epub32Writer:isOutputAvailable(path)
 end
 
 function Epub32Writer:getPart(filename)
-    local file, err = xml2lua.loadFile("plugins/gazette.koplugin/libs/gazette/epub/templates/" .. filename)
+    local file, err = xml2lua.loadFile("plugins/downloadtoepub.koplugin/libs/gazette/epub/templates/" .. filename)
     if file
     then
         return file

@@ -85,7 +85,7 @@ end
 
 function Package:getPackageXml()
     -- TODO: Add error catching/display
-    local template, err = xml2lua.loadFile("plugins/gazette.koplugin/libs/gazette/epub/templates/package.xml")
+    local template, err = xml2lua.loadFile("plugins/downloadtoepub.koplugin/libs/gazette/epub/templates/package.xml")
     local manifest, err = self.manifest:build()
     local spine, err = self.spine:build()
     return string.format(
