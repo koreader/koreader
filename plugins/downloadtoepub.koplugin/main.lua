@@ -109,12 +109,8 @@ function DownloadToEpub:maybeOpenEpub(file_path)
         local ReaderUI = require("apps/reader/readerui")
         ReaderUI:showReader(file_path)
     else
-        logger.dbg("DownloadToEpub: Couldn't open EPUB! File has been moved since downloaded to " .. file_path)
-        UIManager:show(InfoMessage:new{
-            text = _("Couldn't open! EPUB has been deleted or moved since being downloaded."),
-            show_icon = false,
-            timeout = 10,
-        })
+        logger.dbg("DownloadToEpub: Couldn't open " .. file_path .. ". It's been moved or deleted.")
+        self:showRedownloadPrompt(file_path)
     end
 end
 
@@ -170,6 +166,9 @@ function DownloadToEpub:onDownloadEpubFromUrl(link_url)
         else
             local history = History:new{}
             history:init()
+            logger.dbg("DownloadToEpub: Maybe deleting from history " .. link_url)
+            history:remove(link_url) -- link might have already been downloaded. If so, remove the history item.
+            logger.dbg("DownloadToEpub: Adding to history " .. link_url)
             history:add(link_url, file_path)
             logger.dbg("DownloadToEpub: Finished downloading epub to " .. file_path)
             self:showReadPrompt(_("EPUB downloaded. Would you like to read it now?"), file_path)
@@ -189,6 +188,41 @@ function DownloadToEpub:downloadEpubWithUi(link_url, callback)
         Trapper:reset()
         callback(file_path, err)
     end)
+end
+
+function DownloadToEpub:showRedownloadPrompt(file_path) -- supply this with a directory?
+    local prompt
+
+    local history = History:new{}
+    history:init()
+    local history_item = history:find(file_path)
+
+    if history_item then
+        prompt = MultiConfirmBox:new{
+            text = T(_("Couldn't open EPUB! \n\nFile has been moved since download (%1)\n\nInitially downloaded from (%2)\n\nWhat would you like to do?"),
+                    file_path,
+                    history_item.url),
+            choice1_text = _("Redownload EPUB"),
+            choice1_callback = function()
+                logger.dbg("DownloadToEpub: Redownloading " .. history_item.url)
+                self:onDownloadEpubFromUrl(history_item.url)
+                UIManager:close(prompt)
+            end,
+            choice2_text = _("Delete from history"),
+            choice2_callback = function()
+                logger.dbg("DownloadToEpub: Deleting from history " .. history_item.url)
+                history:remove(history_item.url)
+                UIManager:close(prompt)
+            end,
+        }
+    else
+        prompt = InfoMessage:new{
+            text = _("Couldn't open EPUB! EPUB has been deleted or moved since being downloaded."),
+            show_icon = false,
+            timeout = 10,
+        }
+    end
+    UIManager:show(prompt)
 end
 
 function DownloadToEpub:showReadPrompt(message, file_path)
@@ -245,6 +279,7 @@ function EpubBuilder:buildFromUrl(url)
     end
 
     self.Trapper:info("Writing to device...")
+    logger.dbg("DownloadToEpub: Writing EPUB to " .. epub_path)
     local path_to_epub, err = build_director:construct(epub)
     if not path_to_epub then
         logger.dbg("DownloadToEpub: " .. err)

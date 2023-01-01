@@ -25,7 +25,7 @@ end
 function History:add(url, download_path)
     -- Add to the history by pushing to the first element of the list.
     -- The history stack should only contain one entry of a given ID.
-    local stack = self.lua_settings:readSetting(History.STACK) or {}
+    local stack = self:get()
     -- Add the new entry to the stack table.
     table.insert(stack, {
             url = url,
@@ -55,9 +55,40 @@ function History:add(url, download_path)
     self.lua_settings:flush()
 end
 
+-- Remove all instances of the given URL from history.
+function History:remove(url)
+    local stack = self:get()
+    local new_stack = {}
+    for i, value in ipairs(stack) do
+        logger.dbg(value)
+        if value.url ~= url then
+            logger.dbg("lol")
+            table.insert(new_stack, value)
+        end
+    end
+
+    self.lua_settings:saveSetting(History.STACK, new_stack)
+    self.lua_settings:flush()
+end
+
 function History:get()
     local stack = self.lua_settings:readSetting(History.STACK) or {}
     return stack
+end
+
+function History:find(v)
+    local stack = self:get()
+
+    local maybe_found = nil
+    for i, value in ipairs(stack) do
+        if value.url == v or
+            value.download_path == v then
+            maybe_found = value
+            break;
+        end
+    end
+
+    return maybe_found
 end
 
 function History:save()
