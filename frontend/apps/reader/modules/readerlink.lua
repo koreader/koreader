@@ -16,6 +16,7 @@ local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -637,7 +638,10 @@ function ReaderLink:onTap(_, ges)
     -- ignore a tap on an external link, and allow using onGoToPageLink()
     -- to find the nearest internal link
     if not isTapIgnoreExternalLinksEnabled() then
+        local start_time = time.now()
         local link = self:getLinkFromGes(ges)
+        local end_time = time.now()
+        print(string.format("ReaderLink:onTap: getLinkFromGes took %9.3f ms", time.to_ms(end_time - start_time)))
         if link then
             return self:showLinkBox(link, allow_footnote_popup)
         end
@@ -659,7 +663,11 @@ function ReaderLink:onTap(_, ges)
             -- screen DPI if the user has set another one).
             max_distance = Screen:scaleByDPI(30)
         end
-        return self:onGoToPageLink(ges, isTapIgnoreExternalLinksEnabled(), max_distance)
+        local start_time = time.now()
+        local ret = self:onGoToPageLink(ges, isTapIgnoreExternalLinksEnabled(), max_distance)
+        local end_time = time.now()
+        print(string.format("ReaderLink:onTap: onGoToPageLink took %9.3f ms", time.to_ms(end_time - start_time)))
+        return ret
     end
 end
 
@@ -919,14 +927,16 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
             selected_distance2 = shortest_dist
         end
     else
-        -- Getting segments on a page with many internal links is
-        -- a bit expensive. With larger_tap_area_to_follow_links=true,
-        -- this is done for each tap on screen (changing pages, showing
-        -- menu...). We might want to cache these links per page (and
-        -- clear that cache when page layout change).
-        -- If we care only about internal links, request them only
-        -- (and avoid that expensive segments work on external links)
+        -- Getting segments on a page with many internal links is a bit expensive.
+        -- With larger_tap_area_to_follow_links=true,
+        -- this is done for each tap on screen (changing pages, showing menu...).
+        -- getPageLinks goes through the CRe call cache, so at least repeat calls are cheaper.
+        -- If we care only about internal links, we only request those.
+        -- That expensive segments work is always skipped on external links.
+        local start_time = time.now()
         local links = self.ui.document:getPageLinks(internal_links_only)
+        local end_time = time.now()
+        print(string.format("ReaderLink:onGoToPageLink: getPageLinks took %9.3f ms", time.to_ms(end_time - start_time)))
         if not links or #links == 0 then
             return
         end
@@ -1044,30 +1054,29 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
 
         if selected_link then
             logger.dbg("nearest selected_link", selected_link)
-            -- Check a_xpointer is coherent, use it as from_xpointer only if it is
-            local from_xpointer = nil
-            if selected_link.a_xpointer and self:isXpointerCoherent(selected_link.a_xpointer) then
-                from_xpointer = selected_link.a_xpointer
+            if max_distance and selected_distance2 and selected_distance2 > max_distance^2 then
+                logger.dbg("nearest link is further than max distance, ignoring it")
+            else
+                -- Check a_xpointer is coherent, use it as from_xpointer only if it is
+                local from_xpointer = nil
+                if selected_link.a_xpointer and self:isXpointerCoherent(selected_link.a_xpointer) then
+                    from_xpointer = selected_link.a_xpointer
+                end
+                -- Make it a link as expected by onGotoLink
+                selected_link = {
+                    xpointer = selected_link.section or selected_link.uri,
+                    marker_xpointer = selected_link.section,
+                    from_xpointer = from_xpointer,
+                    -- (keep a_xpointer even if incoherent, might be needed for
+                    -- footnote detection (better than nothing if incoherent)
+                    a_xpointer = selected_link.a_xpointer,
+                    -- keep the link y position, so we can keep its highlight shown
+                    -- a bit more time if it was hidden by the footnote popup
+                    link_y = selected_link.link_y,
+                }
+
+                return self:onGotoLink(selected_link, false, isFootnoteLinkInPopupEnabled())
             end
-            -- Make it a link as expected by onGotoLink
-            selected_link = {
-                xpointer = selected_link.section or selected_link.uri,
-                marker_xpointer = selected_link.section,
-                from_xpointer = from_xpointer,
-                -- (keep a_xpointer even if incoherent, might be needed for
-                -- footnote detection (better than nothing if incoherent)
-                a_xpointer = selected_link.a_xpointer,
-                -- keep the link y position, so we can keep its highlight shown
-                -- a bit more time if it was hidden by the footnote popup
-                link_y = selected_link.link_y,
-            }
-        end
-    end
-    if selected_link then
-        if max_distance and selected_distance2 and selected_distance2 > max_distance^2 then
-            logger.dbg("nearest link is further than max distance, ignoring it")
-        else
-            return self:onGotoLink(selected_link, false, isFootnoteLinkInPopupEnabled())
         end
     end
 end
