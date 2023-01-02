@@ -158,11 +158,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     -- tell the widget that it is shown now
     widget:handleEvent(Event:new("Show"))
     -- check if this widget disables double tap gesture
-    if widget.disable_double_tap == false then
-        Input.disable_double_tap = false
-    else
-        Input.disable_double_tap = true
-    end
+    Input.disable_double_tap = widget.disable_double_tap ~= false
     -- a widget may override tap interval (when it doesn't, nil restores the default)
     Input.tap_interval_override = widget.tap_interval_override
 end
