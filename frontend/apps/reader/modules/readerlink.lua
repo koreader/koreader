@@ -538,7 +538,7 @@ function ReaderLink:isXpointerCoherent(a_xpointer)
         -- but easier to workaround here that way)
         re_link_xpointer, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x+1, y = screen_y}) -- luacheck: no unused
         if re_a_xpointer ~= a_xpointer then
-            logger.info("not coherent a_xpointer:", a_xpointer)
+            logger.info("incoherent a_xpointer:", a_xpointer)
             return false
         end
     end
@@ -711,12 +711,11 @@ end
 -- (This is called by other modules (highlight, search) to jump to a xpointer,
 -- they should not provide allow_footnote_popup=true)
 function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_popup)
-    logger.dbg("onGotoLink:", link)
     local link_url
     if self.ui.document.info.has_pages then
         -- internal pdf links have a "page" attribute, while external ones have an "uri" attribute
         if link.page then -- Internal link
-            logger.dbg("Internal link:", link)
+            logger.dbg("ReaderLink:onGotoLink: Internal link:", link)
             if not neglect_current_location then
                 self:addCurrentLocationToStack()
             end
@@ -732,7 +731,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
         -- Best to check that this link exists in document with the following,
         -- which accepts both of the above legitimate xpointer as input.
         if self.ui.document:isXPointerInDocument(link.xpointer) then
-            logger.dbg("Internal link:", link)
+            logger.dbg("ReaderLink:onGotoLink: Internal link:", link)
             if allow_footnote_popup then
                 if self:showAsFootnotePopup(link, neglect_current_location) then
                     return true
@@ -771,7 +770,7 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
         end
         link_url = link.xpointer -- external link
     end
-    logger.dbg("External link:", link_url)
+    logger.dbg("ReaderLink:onGotoLink: External link:", link_url)
 
     local is_http_link = link_url:find("^https?://") ~= nil
     if is_http_link and self:onGoToExternalLink(link_url) then
