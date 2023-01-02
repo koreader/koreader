@@ -885,8 +885,8 @@ end
 --- Goes to link nearest to the gesture (or first link in page)
 function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
     local selected_link, selected_distance2
-    -- We use squares of distances all along the calculations, no need
-    -- to math.sqrt() them when comparing
+    -- We use squared distances throughout the computations,
+    -- no need to math.sqrt() anything for comparisons.
     if self.ui.document.info.has_pages then
         local pos = self.view:screenToPageTransform(ges.pos)
         if not pos then
