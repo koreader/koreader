@@ -58,7 +58,6 @@ function PatchManager:getSubMenu(priority)
         return {}
     end
     local function getExecutionStatus(patch_name)
-        print("xxx", patch_name)
         if userPatch.execution_status[patch_name] then
             return " ✅"
         elseif userPatch.execution_status[patch_name] == nil then
@@ -95,6 +94,10 @@ function PatchManager:getSubMenu(priority)
             end,
             hold_callback = function()
                 if self.ui.texteditor then
+                    self.ui.texteditor.whenDoneFunc = function()
+                        UIManager:askForRestart(
+                            _("Patches might have changed. Current set of patches will be applied on next restart."))
+                    end
                     self.ui.texteditor:checkEditFile(self.patch_dir .. "/" .. self.patches[priority][i], true)
                 else
                     -- fallback to show only the first lines
