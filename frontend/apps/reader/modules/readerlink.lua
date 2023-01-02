@@ -16,7 +16,6 @@ local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -637,10 +636,7 @@ function ReaderLink:onTap(_, ges)
     -- ignore a tap on an external link, and allow using onGoToPageLink()
     -- to find the nearest internal link
     if not isTapIgnoreExternalLinksEnabled() then
-        local start_time = time.now()
         local link = self:getLinkFromGes(ges)
-        local end_time = time.now()
-        print(string.format("ReaderLink:onTap: getLinkFromGes took %9.3f ms", time.to_ms(end_time - start_time)))
         if link then
             return self:showLinkBox(link, allow_footnote_popup)
         end
@@ -662,11 +658,7 @@ function ReaderLink:onTap(_, ges)
             -- screen DPI if the user has set another one).
             max_distance = Screen:scaleByDPI(30)
         end
-        local start_time = time.now()
-        local ret = self:onGoToPageLink(ges, isTapIgnoreExternalLinksEnabled(), max_distance)
-        local end_time = time.now()
-        print(string.format("ReaderLink:onTap: onGoToPageLink took %9.3f ms", time.to_ms(end_time - start_time)))
-        return ret
+        return self:onGoToPageLink(ges, isTapIgnoreExternalLinksEnabled(), max_distance)
     end
 end
 
@@ -933,10 +925,7 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         -- getPageLinks goes through the CRe call cache, so at least repeat calls are cheaper.
         -- If we care only about internal links, we only request those.
         -- That expensive segments work is always skipped on external links.
-        local start_time = time.now()
         local links = self.ui.document:getPageLinks(internal_links_only)
-        local end_time = time.now()
-        print(string.format("ReaderLink:onGoToPageLink: getPageLinks took %9.3f ms", time.to_ms(end_time - start_time)))
         if not links or #links == 0 then
             return
         end
