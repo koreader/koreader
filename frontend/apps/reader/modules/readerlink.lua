@@ -564,8 +564,7 @@ function ReaderLink:getLinkFromGes(ges)
         end
     else
         local link_xpointer, a_xpointer = self.ui.document:getLinkFromPosition(ges.pos)
-        logger.dbg("getLinkFromPosition link_xpointer:", link_xpointer)
-        logger.dbg("getLinkFromPosition a_xpointer:",  a_xpointer)
+        logger.dbg("ReaderLink:getLinkFromPosition @", ges.pos.x, ges.pos.y, "from a_xpointer:", a_xpointer, "to link_xpointer:", link_xpointer)
 
         -- On some documents, crengine may sometimes give a wrong a_xpointer
         -- (in some Wikipedia saved as EPUB, it would point to some other <A>
