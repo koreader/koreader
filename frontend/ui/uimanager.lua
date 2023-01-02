@@ -221,7 +221,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
                 end
             end
 
-            -- Set double tap to how the topmost specifying widget wants it
+            -- Set double tap to how the topmost widget with that flag wants it
             if requested_disable_double_tap == nil and w.disable_double_tap ~= nil then
                 requested_disable_double_tap = w.disable_double_tap
             end
