@@ -58,16 +58,7 @@ local function runUserPatchTasks(dir, priority)
         return -- nothing to do
     end
 
-    local function addLeadingZeroes(d)
-        local dec, n = string.match(d, "(%.?)0*(.+)")
-        return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
-    end
-    local function sorting(a, b)
-        return tostring(a):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#b)
-            < tostring(b):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#a)
-    end
-
-    table.sort(patches, sorting)
+    table.sort(patches, userpatch.sorting)
 
     for i, entry in ipairs(patches) do
         local fullpath = dir .. "/" .. entry
@@ -107,6 +98,17 @@ function userpatch.applyPatches(priority)
             os.remove(update_once_marker) -- Prevent another execution on a further starts.
         end
     end
+end
+
+
+--- Sorting function for natural sorting
+local function addLeadingZeroes(d)
+    local dec, n = string.match(d, "(%.?)0*(.+)")
+    return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
+end
+function userpatch.sorting(a, b)
+    return tostring(a):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#b)
+        < tostring(b):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#a)
 end
 
 return userpatch

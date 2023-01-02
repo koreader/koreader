@@ -35,15 +35,6 @@ function PatchManager:init()
 end
 
 function PatchManager:getAvailablePatches()
-    local function addLeadingZeroes(d)
-        local dec, n = string.match(d, "(%.?)0*(.+)")
-        return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
-    end
-    local function sorting(a, b)
-        return tostring(a):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#b)
-            < tostring(b):gsub("%.?%d+", addLeadingZeroes) .. ("%3d"):format(#a)
-    end
-
     for priority = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
         self.patches[priority] = {}
         for entry in lfs.dir(self.patch_dir) do
@@ -55,7 +46,7 @@ function PatchManager:getAvailablePatches()
                 end
             end
         end
-        table.sort(self.patches[priority], sorting)
+        table.sort(self.patches[priority], userPatch.sorting)
     end
 end
 
