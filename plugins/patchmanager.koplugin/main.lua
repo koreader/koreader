@@ -151,7 +151,7 @@ function PatchManager:addToMainMenu(menu_items)
                 return false
             end
             for i = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
-                if #self.patches[i] > 1 then
+                if #self.patches[i] > 0 then
                     return true
                 end
             end
