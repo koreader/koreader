@@ -1043,7 +1043,7 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
                 selected_link = nil
             else
                 logger.dbg("nearest selected_link", selected_link)
-                -- Check a_xpointer is coherent, use it as from_xpointer only if it is
+                -- Check if a_xpointer is coherent, use it as from_xpointer only if it is
                 local from_xpointer = nil
                 if selected_link.a_xpointer and self:isXpointerCoherent(selected_link.a_xpointer) then
                     from_xpointer = selected_link.a_xpointer
