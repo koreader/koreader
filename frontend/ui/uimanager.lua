@@ -1341,7 +1341,7 @@ This is an explicit repaint *now*: it bypasses and ignores the paint queue (unli
 function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
 
-    logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@", x, y)
     if widget.show_parent and widget.show_parent.cropping_widget then
         -- The main widget parent of this subwidget has a cropping container: see if
         -- this widget is a child of this cropping container
@@ -1368,7 +1368,7 @@ Same idea as `widgetRepaint`, but does a simple `bb:invertRect` on the Screen bu
 function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end
 
-    logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@", x, y)
     if widget.show_parent and widget.show_parent.cropping_widget then
         -- The main widget parent of this subwidget has a cropping container: see if
         -- this widget is a child of this cropping container
