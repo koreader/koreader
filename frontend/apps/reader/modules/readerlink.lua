@@ -898,7 +898,7 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         --         ["page"] = 347
         --     },
         local pos_x, pos_y = pos.x, pos.y
-        local shortest_dist = nil
+        local shortest_dist
         for _, link in ipairs(links) do
             if not internal_links_only or link.page then
                 local start_dist = (link.x0 - pos_x)^2 + (link.y0 - pos_y)^2
@@ -975,7 +975,7 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         -- coordinates, and our code below may miss or give the wrong first
         -- or nearest link...
         local pos_x, pos_y = ges.pos.x, ges.pos.y
-        local shortest_dist = nil
+        local shortest_dist
         for _, link in ipairs(links) do
             -- link.uri may be an empty string with some invalid links: ignore them
             if link.section or (link.uri and link.uri ~= "") then
