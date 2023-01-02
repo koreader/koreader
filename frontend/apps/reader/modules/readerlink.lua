@@ -537,7 +537,7 @@ function ReaderLink:isXpointerCoherent(a_xpointer)
         -- but easier to workaround here that way)
         re_link_xpointer, re_a_xpointer = self.ui.document:getLinkFromPosition({x = screen_x+1, y = screen_y}) -- luacheck: no unused
         if re_a_xpointer ~= a_xpointer then
-            logger.info("incoherent a_xpointer:", a_xpointer)
+            logger.info("noncoherent a_xpointer:", a_xpointer)
             return false
         end
     end
@@ -579,8 +579,8 @@ function ReaderLink:getLinkFromGes(ges)
             -- This link's source xpointer is more precise than a classic
             -- xpointer to top of a page: we can show a marker at its
             -- y-position in target page
-            -- (keep a_xpointer even if incoherent, might be needed for
-            -- footnote detection (better than nothing if incoherent)
+            -- (keep a_xpointer even if noncoherent, might be needed for
+            -- footnote detection (better than nothing if noncoherent)
             return {
                 xpointer = link_xpointer,
                 marker_xpointer = link_xpointer,
@@ -1054,8 +1054,8 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
                     xpointer = selected_link.section or selected_link.uri,
                     marker_xpointer = selected_link.section,
                     from_xpointer = from_xpointer,
-                    -- (keep a_xpointer even if incoherent, might be needed for
-                    -- footnote detection (better than nothing if incoherent)
+                    -- (keep a_xpointer even if noncoherent, might be needed for
+                    -- footnote detection (better than nothing if noncoherent)
                     a_xpointer = selected_link.a_xpointer,
                     -- keep the link y position, so we can keep its highlight shown
                     -- a bit more time if it was hidden by the footnote popup
@@ -1134,8 +1134,8 @@ function ReaderLink:selectRelPageLink(rel)
         xpointer = selected_link.section or selected_link.uri,
         marker_xpointer = selected_link.section,
         from_xpointer = from_xpointer,
-        -- (keep a_xpointer even if incoherent, might be needed for
-        -- footnote detection (better than nothing if incoherent)
+        -- (keep a_xpointer even if noncoherent, might be needed for
+        -- footnote detection (better than nothing if noncoherent)
         a_xpointer = selected_link.a_xpointer,
         -- keep the link y position, so we can keep its highlight shown
         -- a bit more time if it was hidden by the footnote popup
