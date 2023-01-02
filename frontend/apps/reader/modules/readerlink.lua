@@ -922,7 +922,7 @@ function ReaderLink:onGoToPageLink(ges, internal_links_only, max_distance)
         -- Getting segments on a page with many internal links is a bit expensive.
         -- With larger_tap_area_to_follow_links, this is done on every tap, page turn or not.
         -- getPageLinks goes through the CRe call cache, so at least repeat calls are cheaper.
-        -- If we care only about internal links, we only request those.
+        -- If we only care about internal links, we only request those.
         -- That expensive segments work is always skipped on external links.
         local links = self.ui.document:getPageLinks(internal_links_only)
         if not links or #links == 0 then
