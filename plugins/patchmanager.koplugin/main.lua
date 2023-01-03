@@ -59,12 +59,10 @@ function PatchManager:getSubMenu(priority)
         return {}
     end
     local function getExecutionStatus(patch_name)
-        if userPatch.execution_status[patch_name] then
-            return " ✅"
-        elseif userPatch.execution_status[patch_name] == nil then
-            return " ∀" -- this might happen for `early_once`, `before_exit` and `on_exit` patches
-        else
+        if userPatch.execution_status[patch_name] == false then
             return " ⚠"
+        else
+            return ""
         end
     end
     for i = 1, #self.patches[priority] do
@@ -124,17 +122,11 @@ function PatchManager:getSubMenu(priority)
     return sub_menu
 end
 
-local about_text = _([[Patch manager allows to enable or disable certain found user provided patches.
+local about_text = _([[Patch manager allows to enable, disable or edit certain found user provided patches.
 
 There are several hooks during KOReader execution, when those patches might be executed. The execution time of a patch can not be changed by patch manager, this has to be done by the patch author.
 
-Patches are an experimental feature, so be careful what you do :-)
-
-The following symbols are displayed behind the respective patch names
-    ✅: successfully executed
-    ⚠: unsuccessfully executed
-    ∀: not yet executed
-]])
+Patches are an experimental feature, so be careful what you do :-)]])
 
 function PatchManager:addToMainMenu(menu_items)
     local sub_menu_text = {}
