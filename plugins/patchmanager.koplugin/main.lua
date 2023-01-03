@@ -15,7 +15,6 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local logger = require("logger")
 local userPatch = require("userpatch")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -53,34 +52,34 @@ function PatchManager:getSubMenu(priority)
     if #self.patches == 0 then
         return {}
     end
-    local sub_menu = {}
     local function getExecutionStatus(patch_name)
         return userPatch.execution_status[patch_name] == false and " ⚠" or ""
     end
-    for i = 1, #self.patches[priority] do
+    local sub_menu = {}
+    for i, patch in ipairs(self.patches[priority]) do
         local ext = ".lua"
         -- strip anything after ".lua" in patch_name
-        local patch_name = self.patches[priority][i]
+        local patch_name = patch
         patch_name = patch_name:sub(1, patch_name:find(ext, 1, true) + ext:len() - 1)
         table.insert(sub_menu, {
             text = patch_name .. getExecutionStatus(patch_name),
             checked_func = function()
-                return self.patches[priority][i]:find("%.lua$") ~= nil
+                return patch:find("%.lua$") ~= nil
             end,
             callback = function()
-                local extension_pos = self.patches[priority][i]:find(ext, 1, true)
+                local extension_pos = patch:find(ext, 1, true)
                 if extension_pos then
-                    local is_patch_enabled = extension_pos == self.patches[priority][i]:len() - (ext:len() - 1)
+                    local is_patch_enabled = extension_pos == patch:len() - (ext:len() - 1)
                     if is_patch_enabled then -- patch name ends with ".lua"
-                        local disabled_name = self.patches[priority][i] .. self.disable_ext
-                        os.rename(self.patch_dir .. "/" .. self.patches[priority][i],
+                        local disabled_name = patch .. self.disable_ext
+                        os.rename(self.patch_dir .. "/" .. patch,
                                   self.patch_dir .. "/" .. disabled_name)
-                        self.patches[priority][i] = disabled_name
+                        patch = disabled_name
                     else -- patch name name contains ".lua"
-                        local enabled_name = self.patches[priority][i]:sub(1, extension_pos + ext:len() - 1)
-                        os.rename(self.patch_dir .. "/" .. self.patches[priority][i],
+                        local enabled_name = patch:sub(1, extension_pos + ext:len() - 1)
+                        os.rename(self.patch_dir .. "/" .. patch,
                                   self.patch_dir .. "/" .. enabled_name)
-                        self.patches[priority][i] = enabled_name
+                        patch = enabled_name
                     end
                 end
                 UIManager:askForRestart(T(
@@ -88,17 +87,17 @@ function PatchManager:getSubMenu(priority)
                     _("Current set of patches will be applied on next restart.")))
             end,
             hold_callback = function()
-                local patch = self.patch_dir .. "/" .. self.patches[priority][i]
+                local patch_fullpath = self.patch_dir .. "/" .. patch
                 if self.ui.texteditor then
                     self.ui.texteditor.whenDoneFunc = function()
                         UIManager:askForRestart(T(
                             _("Patches might have changed. %1\n"),
                             _("Current set of patches will be applied on next restart.")))
                     end
-                    self.ui.texteditor:checkEditFile(patch, true)
+                    self.ui.texteditor:checkEditFile(patch_fullpath, true)
                 else -- fallback to show only the first lines
                     local message = ""
-                    for line in io.lines(patch) do
+                    for line in io.lines(patch_fullpath) do
                         local line_start = line:sub(1, 1)
                         if line_start == " " or line_start == "-" then
                             message = message .. line .. "\n"
