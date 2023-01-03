@@ -35,18 +35,26 @@ end
 function PatchManager:getAvailablePatches()
     for priority = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
         self.patches[priority] = {}
-        for entry in lfs.dir(self.patch_dir) do
-            local mode = lfs.attributes(self.patch_dir .. "/" .. entry, "mode")
-            if entry and mode == "file" and entry:match("^" .. priority .. "%d*%-") then
-                if entry:find(".lua", 1, true) then
-                    -- exclude any non lua files
+    end
+
+    for entry in lfs.dir(self.patch_dir) do
+        local mode = lfs.attributes(self.patch_dir .. "/" .. entry, "mode")
+        if mode == "file" then
+            for priority = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
+                if entry:match("^" .. priority .. "%d*%-") and entry:find(".lua", 1, true) then
+                    -- only lua files, starting with "%d+%-"
                     table.insert(self.patches[priority], entry)
+                    break
                 end
             end
         end
+    end
+
+    for priority = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
         table.sort(self.patches[priority], userPatch.sorting)
     end
 end
+
 
 function PatchManager:getSubMenu(priority)
     if #self.patches == 0 then
