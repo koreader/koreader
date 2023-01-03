@@ -1,7 +1,7 @@
 --[[--
-Plugin for automatic dimming of the frontlight after an idle period.
+Plugin for managing user patches
 
-@module koplugin.PatchManager
+@module koplugin.patchmanager
 --]]--
 
 local DataStorage = require("datastorage")
@@ -18,12 +18,11 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local userPatch = require("userpatch")
 local _ = require("gettext")
-
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 local PatchManager = WidgetContainer:extend{
     name = "patchmanager",
-    is_doc_only = false,
 }
 
 function PatchManager:init()
@@ -51,57 +50,55 @@ function PatchManager:getAvailablePatches()
 end
 
 function PatchManager:getSubMenu(priority)
-    if priority < tonumber(userPatch.early_once) or priority > tonumber(userPatch.on_exit) then
-        logger.err("PatchManager: BUG, wrong patch_level:", priority)
-    end
-    local sub_menu = {}
     if #self.patches == 0 then
         return {}
     end
+    local sub_menu = {}
     local function getExecutionStatus(patch_name)
-        if userPatch.execution_status[patch_name] == false then
-            return " ⚠"
-        else
-            return ""
-        end
+        return userPatch.execution_status[patch_name] == false and " ⚠" or ""
     end
     for i = 1, #self.patches[priority] do
-        local patch_name = self.patches[priority][i]:sub(1, self.patches[priority][i]:find(".lua", 1, true) + 3)
+        local ext = ".lua"
+        -- strip anything after ".lua" in patch_name
+        local patch_name = self.patches[priority][i]
+        patch_name = patch_name:sub(1, patch_name:find(ext, 1, true) + ext:len() - 1)
         table.insert(sub_menu, {
             text = patch_name .. getExecutionStatus(patch_name),
             checked_func = function()
                 return self.patches[priority][i]:find("%.lua$") ~= nil
             end,
             callback = function()
-                local is_patch_enabled = self.patches[priority][i]:find("%.lua$") ~= nil
-                if is_patch_enabled then
-                    local disabled_name = self.patches[priority][i] .. self.disable_ext
-                    os.remove(self.patch_dir .. "/" .. disabled_name) -- remove a possible leftover (caused by user)
-                    os.rename(self.patch_dir .. "/" .. self.patches[priority][i],
-                              self.patch_dir .. "/" .. disabled_name)
-                    self.patches[priority][i] = disabled_name
-                else
-                    local pos = self.patches[priority][i]:find(".lua", 1, true)
-                    if pos then
-                        local enabled_name = self.patches[priority][i]:sub(1, pos + (".lua"):len() - 1)
+                local extension_pos = self.patches[priority][i]:find(ext, 1, true)
+                if extension_pos then
+                    local is_patch_enabled = extension_pos == self.patches[priority][i]:len() - (ext:len() - 1)
+                    if is_patch_enabled then -- patch name ends with ".lua"
+                        local disabled_name = self.patches[priority][i] .. self.disable_ext
+                        os.rename(self.patch_dir .. "/" .. self.patches[priority][i],
+                                  self.patch_dir .. "/" .. disabled_name)
+                        self.patches[priority][i] = disabled_name
+                    else -- patch name name contains ".lua"
+                        local enabled_name = self.patches[priority][i]:sub(1, extension_pos + ext:len() - 1)
                         os.rename(self.patch_dir .. "/" .. self.patches[priority][i],
                                   self.patch_dir .. "/" .. enabled_name)
                         self.patches[priority][i] = enabled_name
                     end
                 end
-                UIManager:askForRestart(_("Patches changed. Current set of patches will be applied on next restart."))
+                UIManager:askForRestart(T(
+                    _("Patches changed. %1\n"),
+                    _("Current set of patches will be applied on next restart.")))
             end,
             hold_callback = function()
+                local patch = self.patch_dir .. "/" .. self.patches[priority][i]
                 if self.ui.texteditor then
                     self.ui.texteditor.whenDoneFunc = function()
-                        UIManager:askForRestart(
-                            _("Patches might have changed. Current set of patches will be applied on next restart."))
+                        UIManager:askForRestart(T(
+                            _("Patches might have changed. %1\n"),
+                            _("Current set of patches will be applied on next restart.")))
                     end
-                    self.ui.texteditor:checkEditFile(self.patch_dir .. "/" .. self.patches[priority][i], true)
-                else
-                    -- fallback to show only the first lines
+                    self.ui.texteditor:checkEditFile(patch, true)
+                else -- fallback to show only the first lines
                     local message = ""
-                    for line in io.lines(self.patch_dir .. "/" .. self.patches[priority][i]) do
+                    for line in io.lines(patch) do
                         local line_start = line:sub(1, 1)
                         if line_start == " " or line_start == "-" then
                             message = message .. line .. "\n"
@@ -137,7 +134,6 @@ function PatchManager:addToMainMenu(menu_items)
     sub_menu_text[tonumber(userPatch.on_exit)] = _("On exit")
 
     menu_items.patchmanager  = {
-        sorting_hint = "more_tools",
         text = _("Patch manager"),
         enabled_func = function()
             if #self.patches == 0 then
@@ -145,7 +141,7 @@ function PatchManager:addToMainMenu(menu_items)
             end
             for i = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
                 if #self.patches[i] > 0 then
-                    return true
+                    return true -- we have at least one patch in the patches folder
                 end
             end
             return false
@@ -163,8 +159,8 @@ function PatchManager:addToMainMenu(menu_items)
                 keep_menu_open = true,
             },
             {
-                text = _("Patches executed"),
-                enabled_func = function() return false end,
+                text = _("Patches executed:"),
+                enabled = false,
             },
         }
     }
