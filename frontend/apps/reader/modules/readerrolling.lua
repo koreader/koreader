@@ -816,7 +816,7 @@ function ReaderRolling:onRestoreBookLocation(saved_location)
 end
 
 function ReaderRolling:onGotoViewRel(diff)
-    logger.dbg("goto relative screen:", diff, ", in mode:", self.view.view_mode)
+    logger.dbg("goto relative screen:", diff, "in mode:", self.view.view_mode)
     if self.view.view_mode == "scroll" then
         local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height

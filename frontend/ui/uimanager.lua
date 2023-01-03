@@ -158,11 +158,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     -- tell the widget that it is shown now
     widget:handleEvent(Event:new("Show"))
     -- check if this widget disables double tap gesture
-    if widget.disable_double_tap == false then
-        Input.disable_double_tap = false
-    else
-        Input.disable_double_tap = true
-    end
+    Input.disable_double_tap = widget.disable_double_tap ~= false
     -- a widget may override tap interval (when it doesn't, nil restores the default)
     Input.tap_interval_override = widget.tap_interval_override
 end
@@ -225,7 +221,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
                 end
             end
 
-            -- Set double tap to how the topmost specifying widget wants it
+            -- Set double tap to how the topmost widget with that flag wants it
             if requested_disable_double_tap == nil and w.disable_double_tap ~= nil then
                 requested_disable_double_tap = w.disable_double_tap
             end
@@ -1341,7 +1337,7 @@ This is an explicit repaint *now*: it bypasses and ignores the paint queue (unli
 function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
 
-    logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@", x, y)
     if widget.show_parent and widget.show_parent.cropping_widget then
         -- The main widget parent of this subwidget has a cropping container: see if
         -- this widget is a child of this cropping container
@@ -1368,7 +1364,7 @@ Same idea as `widgetRepaint`, but does a simple `bb:invertRect` on the Screen bu
 function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end
 
-    logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@", x, y)
     if widget.show_parent and widget.show_parent.cropping_widget then
         -- The main widget parent of this subwidget has a cropping container: see if
         -- this widget is a child of this cropping container
