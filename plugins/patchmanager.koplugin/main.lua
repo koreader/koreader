@@ -56,7 +56,7 @@ function PatchManager:getAvailablePatches()
 end
 
 function PatchManager:getSubMenu(priority)
-    if #self.patches == 0 then
+    if not next(self.patches) then
         return {}
     end
     local function getExecutionStatus(patch_name)
@@ -136,7 +136,7 @@ function PatchManager:addToMainMenu(menu_items)
     menu_items.patchmanager  = {
         text = _("Patch manager"),
         enabled_func = function()
-            if #self.patches == 0 then
+            if not next(self.patches) then
                 return false
             end
             for i = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
