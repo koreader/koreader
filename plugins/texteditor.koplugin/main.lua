@@ -661,4 +661,13 @@ function TextEditor:onOpenLastEditedFile()
     end
 end
 
+-- quickly open and edit a file
+-- calls the done_callback function on close
+function TextEditor:quickEditFile(file_name, done_callback, possible_new_file)
+    if done_callback then
+        self.whenDoneFunc = done_callback
+    end
+    self:checkEditFile(file_name, possible_new_file or false)
+end
+
 return TextEditor
