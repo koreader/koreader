@@ -55,7 +55,6 @@ function PatchManager:getAvailablePatches()
     end
 end
 
-
 function PatchManager:getSubMenu(priority)
     if #self.patches == 0 then
         return {}
