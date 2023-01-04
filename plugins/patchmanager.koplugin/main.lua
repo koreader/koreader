@@ -19,7 +19,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local userPatch = require("userpatch")
 local _ = require("gettext")
 local Screen = Device.screen
-local T = require("ffi/util").template
 
 local PatchManager = WidgetContainer:extend{
     name = "patchmanager",
@@ -90,25 +89,24 @@ function PatchManager:getSubMenu(priority)
                         patch = enabled_name
                     end
                 end
-                UIManager:askForRestart(T(
-                    _("Patches changed. %1\n"),
-                    _("Current set of patches will be applied on next restart.")))
+                UIManager:askForRestart(
+                    _("Patches changed. Current set of patches will be applied on next restart."))
             end,
             hold_callback = function()
                 local patch_fullpath = self.patch_dir .. "/" .. patch
                 if self.ui.texteditor then
                     local function done_callback()
-                        UIManager:askForRestart(T(
-                            _("Patches might have changed. %1\n"),
-                            _("Current set of patches will be applied on next restart.")))
+                        UIManager:askForRestart(
+                            _("Patches might have changed. Current set of patches will be applied on next restart."))
                     end
                     self.ui.texteditor:quickEditFile(patch_fullpath, done_callback, false)
                 else -- fallback to show only the first lines
-                    local patch_lines = {}
-                    for line in io.lines(patch_fullpath) do
-                        table.insert(patch_lines, line)
+                    local file = io.open(patch_fullpath, "rb")
+                    if not file then
+                        return ""
                     end
-                    local patch_content = table.concat(patch_lines, "\n")
+                    local patch_content = file:read("*all")
+                    file:close()
 
                     local textviewer
                     textviewer = TextViewer:new{
