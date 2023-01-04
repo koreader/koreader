@@ -454,7 +454,7 @@ function ReaderUI:init()
     -- (so that filemanager can use it from sideCar file to display
     -- Book information).
     self.doc_settings:saveSetting("doc_props", self.document:getProps())
-    
+
     -- Set "reading" status if there is no status.
     local summary = self.doc_settings:readSetting("summary")
     if not (summary and summary.status) then
