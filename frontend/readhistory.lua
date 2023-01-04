@@ -118,6 +118,7 @@ function ReadHistory:_flush()
         ffiutil.fsyncOpenedFile(f) -- force flush to the storage device
         f:close()
     end
+    self:ensureLastFile()
 end
 
 --- Reads history table from file.
@@ -163,7 +164,6 @@ function ReadHistory:_readLegacyHistory()
     if history_updated then
         self:_reduce()
         self:_flush()
-        self:ensureLastFile()
     end
 end
 
@@ -180,11 +180,6 @@ function ReadHistory:ensureLastFile()
         end
     end
     G_reader_settings:saveSetting("lastfile", last_existing_file)
-end
-
-function ReadHistory:getLastFile()
-    self:ensureLastFile()
-    return G_reader_settings:readSetting("lastfile")
 end
 
 --- Get last or previous file in history that is not current_file
@@ -224,10 +219,6 @@ function ReadHistory:updateItemByPath(old_path, new_path)
         self:_flush()
         self:reload(true)
     end
-    if G_reader_settings:readSetting("lastfile") == old_path then
-        G_reader_settings:saveSetting("lastfile", new_path)
-    end
-    self:ensureLastFile()
 end
 
 --- Updates the history list after deleting a file.
@@ -246,7 +237,6 @@ end
 --- Removes the history item if the document settings has been reset.
 function ReadHistory:fileSettingsPurged(path)
     if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
-        -- Also remove it from history on purge when that setting is enabled
         self:removeItemByPath(path)
     end
 end
@@ -262,7 +252,6 @@ function ReadHistory:clearMissing()
     end
     if history_updated then
         self:_flush()
-        self:ensureLastFile()
     end
 end
 
@@ -279,7 +268,6 @@ function ReadHistory:removeItem(item, idx, no_flush)
     os.remove(DocSettings:getHistoryPath(item.file))
     if not no_flush then
         self:_flush()
-        self:ensureLastFile()
     end
 end
 
@@ -306,7 +294,6 @@ function ReadHistory:addItem(file, ts, no_flash)
         if not no_flash then
             self:_reduce()
             self:_flush()
-            self:ensureLastFile()
         end
         return true -- used while adding legacy items
     end
