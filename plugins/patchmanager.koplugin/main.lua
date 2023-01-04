@@ -13,6 +13,7 @@ end
 
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
+local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local userPatch = require("userpatch")
@@ -96,28 +97,27 @@ function PatchManager:getSubMenu(priority)
             hold_callback = function()
                 local patch_fullpath = self.patch_dir .. "/" .. patch
                 if self.ui.texteditor then
-                    self.ui.texteditor.whenDoneFunc = function()
+                    local function done_callback()
                         UIManager:askForRestart(T(
                             _("Patches might have changed. %1\n"),
                             _("Current set of patches will be applied on next restart.")))
                     end
-                    self.ui.texteditor:checkEditFile(patch_fullpath, true)
+                    self.ui.texteditor:quickEditFile(patch_fullpath, done_callback, false)
                 else -- fallback to show only the first lines
-                    local message = ""
+                    local patch_lines = {}
                     for line in io.lines(patch_fullpath) do
-                        local line_start = line:sub(1, 1)
-                        if line_start == " " or line_start == "-" then
-                            message = message .. line .. "\n"
-                        else
-                            break
-                        end
+                        table.insert(patch_lines, line)
                     end
+                    local patch_content = table.concat(patch_lines, "\n")
 
-                    UIManager:show(InfoMessage:new{
-                            text = message,
-                            show_icon = false,
-                            width = math.floor(Screen:getWidth() * 0.9),
-                        })
+                    local textviewer
+                    textviewer = TextViewer:new{
+                        title = patch,
+                        text = patch_content,
+--                        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
+--                        height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
+                    }
+                    UIManager:show(textviewer)
                 end
             end,
         })
@@ -125,20 +125,16 @@ function PatchManager:getSubMenu(priority)
     return sub_menu
 end
 
-local about_text = _([[Patch manager allows to enable, disable or edit certain found user provided patches.
+local about_text = _([[Patch manager allows to enable, disable or edit user provided patches.
 
-There are several hooks during KOReader execution, when those patches might be executed. The execution time of a patch can not be changed by patch manager, this has to be done by the patch author.
+The runlevel and priority of a patch can not be modified by patch manager. This has to be done manually by renaming the patch prefix.
 
-Patches are an experimental feature, so be careful what you do :-)]])
+For more infomation about user patches, see
+https://github.com/koreader/koreader/wiki/User-patches
+
+Patches are an advanced feature, so be careful what you do!]])
 
 function PatchManager:addToMainMenu(menu_items)
-    local sub_menu_text = {}
-    sub_menu_text[tonumber(userPatch.early_once)] = _("On startup, only after update")
-    sub_menu_text[tonumber(userPatch.early)] = _("On startup")
-    sub_menu_text[tonumber(userPatch.late)] = _("After setup")
-    sub_menu_text[tonumber(userPatch.before_exit)] = _("Before exit")
-    sub_menu_text[tonumber(userPatch.on_exit)] = _("On exit")
-
     menu_items.patchmanager  = {
         text = _("Patch manager"),
         enabled_func = function()
@@ -170,6 +166,13 @@ function PatchManager:addToMainMenu(menu_items)
             },
         }
     }
+
+    local sub_menu_text = {}
+    sub_menu_text[tonumber(userPatch.early_once)] = _("On startup, only after update")
+    sub_menu_text[tonumber(userPatch.early)] = _("On startup")
+    sub_menu_text[tonumber(userPatch.late)] = _("After setup")
+    sub_menu_text[tonumber(userPatch.before_exit)] = _("Before exit")
+    sub_menu_text[tonumber(userPatch.on_exit)] = _("On exit")
 
     for i = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
         if sub_menu_text[i] then
