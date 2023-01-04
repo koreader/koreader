@@ -454,6 +454,19 @@ function ReaderUI:init()
     -- (so that filemanager can use it from sideCar file to display
     -- Book information).
     self.doc_settings:saveSetting("doc_props", self.document:getProps())
+    
+    -- Set "reading" status if there is no status.
+    local summary = self.doc_settings:readSetting("summary")
+    if not (summary and summary.status) then
+        if not summary then
+            summary = {}
+        end
+        summary.status = "reading"
+        summary.modified = os.date("%Y-%m-%d", os.time())
+        self.doc_settings:saveSetting("summary", summary)
+    end
+
+    require("readhistory"):addItem(self.document.file) -- (will update "lastfile")
 
     -- After initialisation notify that document is loaded and rendered
     -- CREngine only reports correct page count after rendering is done
@@ -626,7 +639,6 @@ function ReaderUI:doShowReader(file, provider)
             end
         end
     end
-    require("readhistory"):addItem(file) -- (will update "lastfile")
     local reader = ReaderUI:new{
         dimen = Screen:getSize(),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
@@ -794,10 +806,6 @@ function ReaderUI:dealWithLoadDocumentFailure()
     -- We can't do much more than crash properly here (still better than
     -- going on and segfaulting when calling other methods on unitiliazed
     -- _document)
-    -- We must still remove it from lastfile and history (as it has
-    -- already been added there) so that koreader don't crash again
-    -- at next launch...
-    require("readhistory"):removeItemByPath(self.document.file) -- (will update "lastfile")
     -- As we are in a coroutine, we can pause and show an InfoMessage before exiting
     local _coroutine = coroutine.running()
     if coroutine then
