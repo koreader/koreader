@@ -1042,7 +1042,7 @@ function AutoWarmth:getWarmthMenu()
             text_func = function()
                 if Device:hasNaturalLight() then
                     return T(_("Control: %1%2%3"), self.control_warmth and _("warmth") or "",
-                            self.control_warmth and self.control_nightmode and T(_(" %1 "), _("and")) or "",
+                            self.control_warmth and self.control_nightmode and T(" %1 ", _("and")) or "",
                             self.control_nightmode and _("night mode") or "")
                 else
                     return _("Control: night mode")
