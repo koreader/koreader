@@ -511,6 +511,10 @@ local KoboIo = Kobo:extend{
     --       with *significant* hardware changes, so we'll handle this by making the sysfs path discovery automagic.
     --       c.f., https://github.com/koreader/koreader/issues/9218
     automagic_sysfs = true,
+    -- Forget about the `Kobo` defaults to leave those entirely to the detection code
+    battery_sysfs = nil,
+    ntx_dev = nil,
+    touch_dev = nil,
 }
 
 -- Kobo Clara 2E:
