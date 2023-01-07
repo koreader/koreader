@@ -1,0 +1,3 @@
+local RdfFeed = Feed:extend {
+
+}
