@@ -752,7 +752,13 @@ function Kobo:init()
         dodgy_rtc = dodgy_rtc,
     }
 
+    -- Input handling on Kobo is a thing of nightmares, start by setting up the actual evdev handler...
+    self:setTouchEventHandler()
+    -- And then handle the extra shenanigans if necessary.
+    self:initEventAdjustHooks()
+
     -- Let generic properly setup the standard stuff
+    -- (*after* we've set our input hooks, so that the viewport translation runs last).
     Generic.init(self)
 
     -- Various HW Buttons, Switches & Synthetic NTX events
@@ -770,11 +776,6 @@ function Kobo:init()
     -- fake_events is only used for usb plug & charge events so far (generated via uevent, c.f., input/iput-kobo.h in base).
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
     self.input.open("fake_events")
-
-    -- Input handling on Kobo is a thing of nightmares, start by setting up the actual evdev handler...
-    self:setTouchEventHandler()
-    -- And then handle the extra shenanigans if necessary.
-    self:initEventAdjustHooks()
 
     -- See if the device supports key repeat
     if not self:getKeyRepeat() then
