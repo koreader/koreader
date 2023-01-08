@@ -197,6 +197,9 @@ function Device:init()
         self.powerd = require("device/generic/powerd"):new{device = self}
     end
 
+    -- NOTE: This needs to run *after* implementation-specific event hooks,
+    --       especially if those require swapping/mirroring...
+    --       (e.g., Device implementations should setup their own hooks *before* calling this via Generic.init(self)).
     if self.viewport then
         logger.dbg("setting a viewport:", self.viewport)
         self.screen:setViewport(self.viewport)
