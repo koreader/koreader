@@ -2199,8 +2199,8 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     if force_repaint then
         -- If there was a visibility change, notify ReaderView
         if self.visibility_change then
-            self.ui:handleEvent(Event:new("ReaderFooterVisibilityChange"))
             self.visibility_change = nil
+            self.ui:handleEvent(Event:new("ReaderFooterVisibilityChange"))
         end
 
         -- NOTE: Getting the dimensions of the widget is impossible without having drawn it first,
