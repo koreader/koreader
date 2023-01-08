@@ -330,8 +330,8 @@ function Device:retrieveNetworkInfo()
     end
 end
 
-function Device:setViewport(x,y,w,h)
-    logger.info(string.format("Switching viewport to new geometry [x=%d,y=%d,w=%d,h=%d]",x, y, w, h))
+function Device:setViewport(x, y, w, h)
+    logger.info(string.format("Switching viewport to new geometry [x=%d,y=%d,w=%d,h=%d]", x, y, w, h))
     local viewport = Geom:new{x=x, y=y, w=w, h=h}
     self.screen:setViewport(viewport)
 end
@@ -379,13 +379,13 @@ function Device:_toggleStatusBarVisibility()
     local statusbar_height = android.getStatusBarHeight()
     local new_height = height - statusbar_height
 
+    local Input = require("device/input")
     if not is_fullscreen and self.viewport then
         statusbar_height = 0
         -- reset touchTranslate to normal
-        self.input:registerEventAdjustHook(
-            self.input.adjustTouchTranslate,
-            {x = 0 + self.viewport.x, y = 0 + self.viewport.y}
-        )
+        -- (since we don't setup any hooks besides the viewport one,
+        -- (we can just reset the hook to the default NOP instead of piling on +/- translations...)
+        self.input.eventAdjustHook = Input.eventAdjustHook
     end
 
     local viewport = Geom:new{x=0, y=statusbar_height, w=width, h=new_height}
