@@ -27,12 +27,13 @@ local PatchManager = WidgetContainer:extend{
 function PatchManager:init()
     self.patch_dir = DataStorage:getDataDir() .. "/patches"
     self.disable_ext = ".disabled"
-    self.patches = {}
+    self.patches = nil
     self:getAvailablePatches()
     self.ui.menu:registerToMainMenu(self)
 end
 
 function PatchManager:getAvailablePatches()
+    self.patches = {}
     for priority = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
         self.patches[priority] = {}
     end
@@ -56,7 +57,7 @@ function PatchManager:getAvailablePatches()
 end
 
 function PatchManager:getSubMenu(priority)
-    if next(self.patches) == nil then
+    if self.patches == nil then
         return {}
     end
     local function getExecutionStatus(patch_name)
@@ -136,7 +137,7 @@ function PatchManager:addToMainMenu(menu_items)
     menu_items.patchmanager  = {
         text = _("Patch manager"),
         enabled_func = function()
-            if next(self.patches) == nil then
+            if self.patches == nil then
                 return false
             end
             for i = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
