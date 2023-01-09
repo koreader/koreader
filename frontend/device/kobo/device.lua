@@ -480,6 +480,7 @@ local KoboCadmus = Kobo:extend{
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
+    -- Much like the Libra 2, there are at least two different HW revisions, with different PMICs...
     automagic_sysfs = true,
 }
 
@@ -617,69 +618,59 @@ function Kobo:init()
     -- Automagic sysfs discovery
     if self.automagic_sysfs then
         -- Battery
-        if not self.battery_sysfs then
-            if util.pathExists("/sys/class/power_supply/battery") then
-                -- Newer devices (circa sunxi)
-                self.battery_sysfs = "/sys/class/power_supply/battery"
-            else
-                self.battery_sysfs = "/sys/class/power_supply/mc13892_bat"
-            end
+        if util.pathExists("/sys/class/power_supply/battery") then
+            -- Newer devices (circa sunxi)
+            self.battery_sysfs = "/sys/class/power_supply/battery"
+        else
+            self.battery_sysfs = "/sys/class/power_supply/mc13892_bat"
         end
 
         -- Frontlight
         if self:hasNaturalLight() then
-            if not self.frontlight_settings.frontlight_mixer then
-                if util.fileExists("/sys/class/leds/aw99703-bl_FL1/color") then
-                    -- HWConfig FL_PWM is AW99703x2
-                    self.frontlight_settings.frontlight_mixer = "/sys/class/leds/aw99703-bl_FL1/color"
-                elseif util.fileExists("/sys/class/backlight/lm3630a_led/color") then
-                    -- HWConfig FL_PWM is LM3630
-                    self.frontlight_settings.frontlight_mixer = "/sys/class/backlight/lm3630a_led/color"
-                elseif util.fileExists("/sys/class/backlight/tlc5947_bl/color") then
-                    -- HWConfig FL_PWM is TLC5947
-                    self.frontlight_settings.frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color"
-                end
+            if util.fileExists("/sys/class/leds/aw99703-bl_FL1/color") then
+                -- HWConfig FL_PWM is AW99703x2
+                self.frontlight_settings.frontlight_mixer = "/sys/class/leds/aw99703-bl_FL1/color"
+            elseif util.fileExists("/sys/class/backlight/lm3630a_led/color") then
+                -- HWConfig FL_PWM is LM3630
+                self.frontlight_settings.frontlight_mixer = "/sys/class/backlight/lm3630a_led/color"
+            elseif util.fileExists("/sys/class/backlight/tlc5947_bl/color") then
+                -- HWConfig FL_PWM is TLC5947
+                self.frontlight_settings.frontlight_mixer = "/sys/class/backlight/tlc5947_bl/color"
             end
         end
 
         -- Touch panel input
-        if not self.touch_dev then
-            if util.fileExists("/dev/input/by-path/platform-1-0010-event") then
-                -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 1
-                self.touch_dev = "/dev/input/by-path/platform-1-0010-event"
-            elseif util.fileExists("/dev/input/by-path/platform-0-0010-event") then
-                -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 0
-                self.touch_dev = "/dev/input/by-path/platform-0-0010-event"
-            else
-                self.touch_dev = "/dev/input/event1"
-            end
+        if util.fileExists("/dev/input/by-path/platform-1-0010-event") then
+            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 1
+            self.touch_dev = "/dev/input/by-path/platform-1-0010-event"
+        elseif util.fileExists("/dev/input/by-path/platform-0-0010-event") then
+            -- Elan (HWConfig TouchCtrl is ekth6) on i2c bus 0
+            self.touch_dev = "/dev/input/by-path/platform-0-0010-event"
+        else
+            self.touch_dev = "/dev/input/event1"
         end
 
         -- Physical buttons & synthetic NTX events
-        if not self.ntx_dev then
-            if util.fileExists("/dev/input/by-path/platform-gpio-keys-event") then
-                -- Libra 2 w/ a BD71828 PMIC
-                self.ntx_dev = "/dev/input/by-path/platform-gpio-keys-event"
-            elseif util.fileExists("/dev/input/by-path/platform-ntx_event0-event") then
-                -- sunxi & Mk. 7
-                self.ntx_dev = "/dev/input/by-path/platform-ntx_event0-event"
-            elseif util.fileExists("/dev/input/by-path/platform-mxckpd-event") then
-                -- circa Mk. 5 i.MX
-                self.ntx_dev = "/dev/input/by-path/platform-mxckpd-event"
-            else
-                self.ntx_dev = "/dev/input/event0"
-            end
+        if util.fileExists("/dev/input/by-path/platform-gpio-keys-event") then
+            -- Libra 2 w/ a BD71828 PMIC
+            self.ntx_dev = "/dev/input/by-path/platform-gpio-keys-event"
+        elseif util.fileExists("/dev/input/by-path/platform-ntx_event0-event") then
+            -- sunxi & Mk. 7
+            self.ntx_dev = "/dev/input/by-path/platform-ntx_event0-event"
+        elseif util.fileExists("/dev/input/by-path/platform-mxckpd-event") then
+            -- circa Mk. 5 i.MX
+            self.ntx_dev = "/dev/input/by-path/platform-mxckpd-event"
+        else
+            self.ntx_dev = "/dev/input/event0"
         end
 
         -- Power button (this usually ends up in ntx_dev, except with some PMICs)
-        if not self.power_dev then
-            if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey-event") then
-                -- Libra 2 w/ a BD71828 PMIC
-                self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
-            elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
-                -- Sage w/ a BD71828 PMIC
-                self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
-            end
+        if util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey-event") then
+            -- Libra 2 w/ a BD71828 PMIC
+            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey-event"
+        elseif util.fileExists("/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event") then
+            -- Sage w/ a BD71828 PMIC
+            self.power_dev = "/dev/input/by-path/platform-bd71828-pwrkey.4.auto-event"
         end
     end
 

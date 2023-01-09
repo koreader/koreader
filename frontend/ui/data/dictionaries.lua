@@ -1060,6 +1060,14 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/001/stardict-atla02_ukr-rus_slovnyk-2.4.2.tar.gz"
     },
     {
+        name = "Великий тлумачний словник сучасної української мови",
+        lang_in = "Ukrainian",
+        lang_out = "Ukrainian",
+        entries = 202274,
+        license = "https://uk.wikipedia.org/wiki/Український_тлумачний_словник",
+        url = "https://github.com/hius07/dictionary/raw/main/explanatory-uk-uk.tar.gz"
+    },
+    {
         name = "Белорусско-русский словарь",
         lang_in = "Belarusian",
         lang_out = "Russian",

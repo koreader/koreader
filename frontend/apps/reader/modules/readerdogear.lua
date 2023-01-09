@@ -54,7 +54,7 @@ function ReaderDogear:setupDogear(new_dogear_size)
 end
 
 function ReaderDogear:onReadSettings(config)
-    if not self.ui.document.info.has_pages then
+    if self.ui.rolling then
         -- Adjust to CreDocument margins (as done in ReaderTypeset)
         local h_margins = config:readSetting("copt_h_page_margins")
                        or G_reader_settings:readSetting("copt_h_page_margins")
@@ -71,7 +71,7 @@ function ReaderDogear:onReadSettings(config)
 end
 
 function ReaderDogear:onSetPageMargins(margins)
-    if self.ui.document.info.has_pages then
+    if not self.ui.rolling then
         -- we may get called by readerfooter (when hiding the footer)
         -- on pdf documents and get margins=nil
         return
@@ -86,7 +86,7 @@ function ReaderDogear:onSetPageMargins(margins)
 end
 
 function ReaderDogear:updateDogearOffset()
-    if self.ui.document.info.has_pages then
+    if not self.ui.rolling then
         return
     end
     self.dogear_y_offset = 0
@@ -99,6 +99,10 @@ function ReaderDogear:updateDogearOffset()
         self.top_pad.width = self.dogear_y_offset
         self.vgroup:resetLayout()
     end
+end
+
+function ReaderDogear:onReaderReady()
+    self:updateDogearOffset()
 end
 
 function ReaderDogear:onDocumentRerendered()

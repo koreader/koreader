@@ -240,7 +240,7 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
         local file_path = self.history[i]
         local directory, filename = util.splitFilePathName(file_path) -- luacheck: no unused
         table.insert(sub_item_table, {
-            text = T("%1. %2", i, BD.filename(filename)),
+            text = T("\u{f016} %1", BD.filename(filename)), -- file symbol
             keep_menu_open = true,
             callback = function(touchmenu_instance)
                 self:setupWhenDoneFunc(touchmenu_instance)

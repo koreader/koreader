@@ -91,7 +91,6 @@ describe("device module", function()
             local Screen = kobo_dev.screen
 
             assert.is.same("Kobo_trilogy_C", kobo_dev.model)
-            assert.falsy(kobo_dev:needsTouchScreenProbe())
             local x, y = Screen:getWidth()-5, 10
             -- mirror x, then switch_xy
             local ev_x = {
@@ -140,7 +139,6 @@ describe("device module", function()
             local Screen = kobo_dev.screen
 
             assert.is.same("Kobo_trilogy_C", kobo_dev.model)
-            assert.falsy(kobo_dev:needsTouchScreenProbe())
             local x, y = Screen:getWidth()-5, 10
             local ev_x = {
                 type = C.EV_ABS,

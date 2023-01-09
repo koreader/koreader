@@ -17,13 +17,11 @@ local function no() return false end
 
 local Device = {
     screen_saver_mode = false,
-    charging_mode = false,
-    survive_screen_saver = false,
+    screen_saver_lock = false,
     is_cover_closed = false,
     model = nil,
     powerd = nil,
     screen = nil,
-    screen_dpi_override = nil,
     input = nil,
     home_dir = nil,
     -- For Kobo, wait at least 15 seconds before calling suspend script. Otherwise, suspend might
@@ -47,7 +45,6 @@ local Device = {
     hasNaturalLight = no, -- FL warmth implementation specific to NTX boards (Kobo, Cervantes)
     hasNaturalLightMixer = no, -- Same, but only found on newer boards
     hasNaturalLightApi = no,
-    needsTouchScreenProbe = no,
     hasClipboard = yes, -- generic internal clipboard on all devices
     hasEinkScreen = yes,
     hasExternalSD = no, -- or other storage volume that cannot be accessed using the File Manager
@@ -287,6 +284,15 @@ function Device:onPowerEvent(ev)
             -- suspending the hardware. This usually happens when sleep cover
             -- is closed after the device was sent to suspend state.
             logger.dbg("Already in screen saver mode, going back to suspend...")
+            -- Much like the real suspend codepath below, in case we got here via screen_saver_lock,
+            -- make sure we murder WiFi again (because restore WiFi on resume could have kicked in).
+            if self:hasWifiToggle() then
+                local network_manager = require("ui/network/manager")
+                if network_manager:isWifiOn() then
+                    network_manager:releaseIP()
+                    network_manager:turnOffWifi()
+                end
+            end
             self:rescheduleSuspend()
         end
     -- else we were not in screensaver mode
@@ -308,6 +314,8 @@ function Device:onPowerEvent(ev)
         if self:needsScreenRefreshAfterResume() then
             self.screen:refreshFull()
         end
+        -- NOTE: In the same vein as above, this is delayed to make sure we update the screen first.
+        --       (This, unfortunately, means we can't just move this to Device:_beforeSuspend :/).
         UIManager:scheduleIn(0.1, function()
             -- NOTE: This side of the check needs to be laxer, some platforms can handle Wi-Fi without WifiManager ;).
             if self:hasWifiToggle() then

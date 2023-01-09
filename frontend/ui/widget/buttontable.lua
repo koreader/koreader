@@ -55,7 +55,12 @@ function ButtonTable:init()
                 icon_height = btn_entry.icon_height,
                 align = btn_entry.align,
                 enabled = btn_entry.enabled,
-                callback = btn_entry.callback,
+                callback = function()
+                    if self.show_parent and self.show_parent.movable then
+                        self.show_parent.movable:resetEventState()
+                    end
+                    btn_entry.callback()
+                end,
                 hold_callback = btn_entry.hold_callback,
                 allow_hold_when_disabled = btn_entry.allow_hold_when_disabled,
                 vsync = btn_entry.vsync,

@@ -342,4 +342,11 @@ function MovableContainer:onMovablePanRelease(_, ges)
     return false
 end
 
+function MovableContainer:resetEventState()
+    -- Cancel some internal moving-or-about-to-move state.
+    -- Can be called explicitely to prevent bad widget interactions.
+    self._touch_pre_pan_was_inside = false
+    self._moving = false
+end
+
 return MovableContainer

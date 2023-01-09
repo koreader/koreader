@@ -283,7 +283,6 @@ function Kindle:usbPlugIn()
     --       shooting themselves in the foot (c.f., https://github.com/koreader/koreader/issues/3220)!
     --       On the upside, we don't have to bother waking up the WM to show us the USBMS screen :D.
     -- NOTE: If the device is put in USBNet mode before we even start, everything's peachy, though :).
-    self.charging_mode = true
 end
 
 function Kindle:intoScreenSaver()
@@ -365,7 +364,6 @@ end
 
 function Kindle:usbPlugOut()
     -- NOTE: See usbPlugIn(), we don't have anything fancy to do here either.
-    self.charging_mode = false
 end
 
 function Kindle:wakeupFromSuspend()
