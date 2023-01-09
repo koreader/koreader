@@ -137,18 +137,12 @@ function FileManagerHistory:onMenuHold(item)
                 text = _("Delete"),
                 enabled = (item.file ~= currently_opened_file and lfs.attributes(item.file, "mode")) and true or false,
                 callback = function()
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Are you sure that you want to delete this document?\n\n%1\n\nIf you delete a file, it is permanently lost."),
-                            BD.filepath(item.file)),
-                        ok_text = _("Delete"),
-                        ok_callback = function()
-                            local FileManager = require("apps/filemanager/filemanager")
-                            FileManager:deleteFile(item.file)
-                            require("readhistory"):fileDeleted(item.file) -- (will update "lastfile" if needed)
-                            self._manager:updateItemTable()
-                            UIManager:close(self.histfile_dialog)
-                        end,
-                    })
+                    local function post_delete_callback()
+                        self._manager:updateItemTable()
+                        UIManager:close(self.histfile_dialog)
+                    end
+                    local FileManager = require("apps/filemanager/filemanager")
+                    FileManager:deleteFileDialog(item.file, post_delete_callback)
                 end,
             },
             {
