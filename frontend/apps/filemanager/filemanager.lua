@@ -1092,9 +1092,8 @@ end
 function FileManager:deleteFileDialog(file, post_delete_callback, pre_delete_callback)
     local file_abs_path = BaseUtil.realpath(file)
     local is_file = lfs.attributes(file_abs_path, "mode") == "file"
-    local was_opened = is_file and DocSettings:hasSidecarFile(file_abs_path)
     local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?")) .. "\n\n" .. BD.filepath(file)
-    if was_opened then
+    if is_file and DocSettings:hasSidecarFile(file_abs_path) then
         text = text .. "\n\n" .. _("Book settings, highlights and notes will be deleted.")
     end
     UIManager:show(ConfirmBox:new{
@@ -1129,7 +1128,7 @@ function FileManager:deleteFile(file, is_file)
     end
     if ok and not err then
         if is_file then
-            if DocSettings:hasSidecarFile(file_abs_path) then
+            if DocumentRegistry:hasProvider(file_abs_path) and DocSettings:hasSidecarFile(file_abs_path) then
                 local doc_settings = DocSettings:open(file)
                 local cache_file_path = doc_settings:readSetting("cache_file_path")
                 if cache_file_path then
