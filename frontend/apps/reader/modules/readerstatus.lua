@@ -1,4 +1,3 @@
-local BD = require("ui/bidi")
 local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
@@ -8,7 +7,6 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
 
 local ReaderStatus = WidgetContainer:extend{
     document = nil,
