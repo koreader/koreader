@@ -52,14 +52,6 @@ local AutoWarmth = WidgetContainer:extend{
     fl_turned_off = nil -- true/false if someone (AutoWarmth, gesture ...) has toggled the frontlight
 }
 
--- get timezone offset in hours (including dst)
-function AutoWarmth:getTimezoneOffset()
-    local now_ts = os.time()
-    local utcdate   = os.date("!*t", now_ts)
-    local localdate = os.date("*t", now_ts)
-    return os.difftime(os.time(localdate), os.time(utcdate)) * (1/3600)
-end
-
 function AutoWarmth:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
@@ -256,6 +248,13 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
     UIManager:unschedule(self.scheduleMidnightUpdate)
     UIManager:unschedule(self.setWarmth)
     UIManager:unschedule(self.setFrontlight)
+
+    -- Calculate current timezone of device, which might change due to daylight saving.
+    local timezone = SunTime:getTimezoneOffset()
+    if timezone ~= self.timezone then
+        G_reader_settings:saveSetting("autowarmth_timezone", self.timezone)
+        self.timezone = timezone
+    end
 
     SunTime:setPosition(self.location, self.latitude, self.longitude, self.timezone, self.altitude, true)
     SunTime:setAdvanced()
@@ -800,7 +799,7 @@ function AutoWarmth:getLocationMenu()
                 callback = function(lat, long)
                     self.latitude = lat
                     self.longitude = long
-                    self.timezone = self:getTimezoneOffset() -- use timezone of device
+                    self.timezone = SunTime:getTimezoneOffset() -- use timezone of device
                     G_reader_settings:saveSetting("autowarmth_latitude", self.latitude)
                     G_reader_settings:saveSetting("autowarmth_longitude", self.longitude)
                     G_reader_settings:saveSetting("autowarmth_timezone", self.timezone)
