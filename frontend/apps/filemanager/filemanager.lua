@@ -185,7 +185,6 @@ function FileManager:setupLayout()
     local copyFile = function(file) self:copyFile(file) end
     local pasteHere = function(file) self:pasteHere(file) end
     local cutFile = function(file) self:cutFile(file) end
-    local deleteFile = function(file) self:deleteFile(file) end
     local renameFile = function(file) self:renameFile(file) end
     local setHome = function(path) self:setHome(path) end
 
@@ -245,16 +244,10 @@ function FileManager:setupLayout()
                     enabled = is_not_parent_folder,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        UIManager:show(ConfirmBox:new{
-                            text = is_file and T(_("Delete file?\n\n%1\n\nIf you delete a file, it is permanently lost."), BD.filepath(file)) or
-                                T(_("Delete folder?\n\n%1\n\nIf you delete a folder, its content is permanently lost."), BD.filepath(file)),
-                            ok_text = _("Delete"),
-                            ok_callback = function()
-                                deleteFile(file)
-                                require("readhistory"):fileDeleted(file)
-                                self:refreshPath()
-                            end,
-                        })
+                        local function post_delete_callback()
+                            self:refreshPath()
+                        end
+                        file_manager:deleteFileDialog(file, post_delete_callback)
                     end,
                 },
                 {
@@ -687,10 +680,8 @@ function FileManager:tapPlus()
                             text = _("Delete selected files?\nIf you delete a file, it is permanently lost."),
                             ok_text = _("Delete"),
                             ok_callback = function()
-                                local readhistory = require("readhistory")
                                 for file in pairs(self.selected_files) do
-                                    self:deleteFile(file)
-                                    readhistory:fileDeleted(file)
+                                    self:deleteFile(file, true) -- only files can be selected
                                 end
                                 self:onToggleSelectMode()
                                 UIManager:close(self.file_dialog)
@@ -1098,8 +1089,34 @@ function FileManager:createFolder()
     input_dialog:onShowKeyboard()
 end
 
-function FileManager:deleteFile(file)
-    local ok, err, is_dir
+function FileManager:deleteFileDialog(file, post_delete_callback, pre_delete_callback)
+    local file_abs_path = BaseUtil.realpath(file)
+    local is_file = lfs.attributes(file_abs_path, "mode") == "file"
+    local was_opened = is_file and DocSettings:hasSidecarFile(file_abs_path)
+    local text
+    if is_file then
+        text = _("Delete file permanently?")
+        if was_opened then
+            text = text .. _("\nBook settings, highlights and notes will be deleted.")
+        end
+    else
+        text = _("Delete folder permanently?")
+    end
+    UIManager:show(ConfirmBox:new{
+        text = text .. "\n\n" .. BD.filepath(file),
+        ok_text = _("Delete"),
+        ok_callback = function()
+            if pre_delete_callback then
+                pre_delete_callback()
+            end
+            if self:deleteFile(file, is_file) and post_delete_callback then
+                post_delete_callback()
+            end
+        end,
+    })
+end
+
+function FileManager:deleteFile(file, is_file)
     local file_abs_path = BaseUtil.realpath(file)
     if file_abs_path == nil then
         UIManager:show(InfoMessage:new{
@@ -1109,24 +1126,21 @@ function FileManager:deleteFile(file)
         return
     end
 
-    local is_doc = DocumentRegistry:hasProvider(file_abs_path)
-    if lfs.attributes(file_abs_path, "mode") == "file" then
-        ok, err = os.remove(file_abs_path)
-    else
-        ok, err = BaseUtil.purgeDir(file_abs_path)
-        is_dir = true
-    end
+    local ok, err = is_file and os.remove(file_abs_path) or BaseUtil.purgeDir(file_abs_path)
     if ok and not err then
-        if is_doc then
-            local doc_settings = DocSettings:open(file)
-            -- remove cache if any
-            local cache_file_path = doc_settings:readSetting("cache_file_path")
-            if cache_file_path then
-                os.remove(cache_file_path)
+        if is_file then
+            if DocSettings:hasSidecarFile(file_abs_path) then
+                local doc_settings = DocSettings:open(file)
+                local cache_file_path = doc_settings:readSetting("cache_file_path")
+                if cache_file_path then
+                    os.remove(cache_file_path)
+                end
+                doc_settings:purge()
             end
-            doc_settings:purge()
+            require("readhistory"):fileDeleted(file)
         end
-        ReadCollection:removeItemByPath(file, is_dir)
+        ReadCollection:removeItemByPath(file, not is_file)
+        return true
     else
         UIManager:show(InfoMessage:new{
             text = T(_("Failed to delete:\n%1"), BD.filepath(file)),
