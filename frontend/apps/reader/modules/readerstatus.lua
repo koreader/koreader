@@ -100,7 +100,7 @@ function ReaderStatus:onEndOfBook()
                 {
                     text = _("Delete file"),
                     callback = function()
-                        self:deleteFile(self.document.file, false)
+                        self:deleteFile()
                         UIManager:close(choose_action)
                     end,
                 },
@@ -170,7 +170,7 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "delete_file" then
         -- Ditto
         UIManager:nextTick(function()
-            self:deleteFile(self.document.file, true)
+            self:deleteFile()
         end)
     end
 end
@@ -199,28 +199,17 @@ function ReaderStatus:onOpenNextDocumentInFolder()
     end
 end
 
-function ReaderStatus:deleteFile(file, text_end_book)
-    local ConfirmBox = require("ui/widget/confirmbox")
-    local message_end_book = ""
-    if text_end_book then
-        message_end_book = "You've reached the end of the document.\n"
+function ReaderStatus:deleteFile()
+    self.settings:flush()
+    local FileManager = require("apps/filemanager/filemanager")
+    local function pre_delete_callback()
+        self.ui:onClose()
     end
-    UIManager:show(ConfirmBox:new{
-        text = T(_("%1Are you sure that you want to delete this file?\n%2\nIf you delete a file, it is permanently lost."), message_end_book, BD.filepath(file)),
-        ok_text = _("Delete"),
-        ok_callback = function()
-            local FileManager = require("apps/filemanager/filemanager")
-            self.ui:onClose()
-            FileManager:deleteFile(file)
-            require("readhistory"):fileDeleted(file) -- (will update "lastfile")
-            if FileManager.instance then
-                FileManager.instance.file_chooser:refreshPath()
-            else
-                local path = util.splitFilePathName(file)
-                FileManager:showFiles(path)
-            end
-        end,
-    })
+    local function post_delete_callback()
+        local path = util.splitFilePathName(self.document.file)
+        FileManager:showFiles(path)
+    end
+    FileManager:deleteFileDialog(self.document.file, post_delete_callback, pre_delete_callback)
 end
 
 function ReaderStatus:onShowBookStatus(before_show_callback)
