@@ -148,7 +148,7 @@ function Language:getLangMenuTable()
                 self:genLanguageSubItem("bg_BG"),
                 --self:genLanguageSubItem("bn"),
                 self:genLanguageSubItem("el"),
-                --self:genLanguageSubItem("fa"),
+                self:genLanguageSubItem("fa"),
                 self:genLanguageSubItem("he"),
                 self:genLanguageSubItem("hi"),
                 self:genLanguageSubItem("ja"),
