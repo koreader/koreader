@@ -32,7 +32,7 @@ describe("FileManager module", function()
             assert.Equals(w.text, "File not found:\n"..tmp_fn)
         end
         assert.is_nil(lfs.attributes(tmp_fn))
-        filemanager:deleteFile(tmp_fn)
+        filemanager:deleteFile(tmp_fn, true)
         UIManager.show = old_show
         filemanager:onClose()
     end)
@@ -61,7 +61,7 @@ describe("FileManager module", function()
         UIManager.show = function(self, w)
             assert.Equals(w.text, "Deleted file:\n"..tmp_fn)
         end
-        filemanager:deleteFile(tmp_fn)
+        filemanager:deleteFile(tmp_fn, true)
         UIManager.show = old_show
         filemanager:onClose()
 
@@ -97,7 +97,7 @@ describe("FileManager module", function()
         UIManager.show = function(self, w)
             assert.Equals(w.text, "Deleted file:\n"..tmp_fn)
         end
-        filemanager:deleteFile(tmp_fn)
+        filemanager:deleteFile(tmp_fn, true)
         UIManager.show = old_show
         filemanager:onClose()
 
