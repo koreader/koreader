@@ -118,6 +118,7 @@ function FileManagerHistory:onMenuHold(item)
                                 self._manager.statuses_fetched = false
                             end
                             self._manager:updateItemTable()
+                            self._manager.files_updated = true
                             UIManager:close(self.histfile_dialog)
                         end,
                     })
@@ -139,6 +140,7 @@ function FileManagerHistory:onMenuHold(item)
                 callback = function()
                     local function post_delete_callback()
                         self._manager:updateItemTable()
+                        self._manager.files_updated = true
                         UIManager:close(self.histfile_dialog)
                     end
                     local FileManager = require("apps/filemanager/filemanager")
@@ -202,6 +204,13 @@ function FileManagerHistory:onShowHist()
     end
     self:updateItemTable()
     self.hist_menu.close_callback = function()
+        if self.files_updated then
+            local FileManager = require("apps/filemanager/filemanager")
+            if FileManager.instance then
+                FileManager.instance:onRefresh()
+            end
+            self.files_updated = nil
+        end
         self.statuses_fetched = nil
         UIManager:close(self.hist_menu)
         G_reader_settings:saveSetting("history_filter", self.filter)
