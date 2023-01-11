@@ -144,6 +144,8 @@ local Kobo = Generic:extend{
     canPowerOff = yes,
     canSuspend = yes,
     supportsScreensaver = yes,
+    -- most Kobos are MT-capable
+    hasMultitouch = yes,
     -- most Kobos have X/Y switched for the touch screen
     touch_switch_xy = true,
     -- most Kobos have also mirrored X coordinates
