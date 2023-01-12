@@ -41,11 +41,19 @@ function FileManagerHistory:addToMainMenu(menu_items)
     }
 end
 
+function FileManagerHistory:isFileCurrentlyOpened(file)
+    if self.ui.document then
+        return file == self.ui.document.file
+    end
+end
+
 function FileManagerHistory:fetchStatuses(count)
     local status
     for _, v in ipairs(require("readhistory").hist) do
         if v.dim then
             status = "deleted"
+        elseif self:isFileCurrentlyOpened(v.file) then
+            status = "reading"
         else
             if DocSettings:hasSidecarFile(v.file) then
                 local docinfo = DocSettings:open(v.file) -- no io handles created, do not close
@@ -96,14 +104,13 @@ function FileManagerHistory:onSetDimensions(dimen)
 end
 
 function FileManagerHistory:onMenuHold(item)
-    local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
-    local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
-    self.histfile_dialog = nil
+    local dialog
+    local file_actions_enabled = not item.dim and not self._manager:isFileCurrentlyOpened(item.file)
     local buttons = {
         {
             {
                 text = _("Reset settings"),
-                enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(FFIUtil.realpath(item.file)),
+                enabled = file_actions_enabled and DocSettings:hasSidecarFile(FFIUtil.realpath(item.file)),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."),
@@ -119,7 +126,7 @@ function FileManagerHistory:onMenuHold(item)
                             end
                             self._manager:updateItemTable()
                             self._manager.files_updated = true
-                            UIManager:close(self.histfile_dialog)
+                            UIManager:close(dialog)
                         end,
                     })
                 end,
@@ -129,19 +136,19 @@ function FileManagerHistory:onMenuHold(item)
                 callback = function()
                     require("readhistory"):removeItem(item)
                     self._manager:updateItemTable()
-                    UIManager:close(self.histfile_dialog)
+                    UIManager:close(dialog)
                 end,
             },
         },
         {
             {
                 text = _("Delete"),
-                enabled = (item.file ~= currently_opened_file and lfs.attributes(item.file, "mode")) and true or false,
+                enabled = file_actions_enabled,
                 callback = function()
                     local function post_delete_callback()
                         self._manager:updateItemTable()
                         self._manager.files_updated = true
-                        UIManager:close(self.histfile_dialog)
+                        UIManager:close(dialog)
                     end
                     local FileManager = require("apps/filemanager/filemanager")
                     FileManager:deleteFileDialog(item.file, post_delete_callback)
@@ -152,17 +159,17 @@ function FileManagerHistory:onMenuHold(item)
                 enabled = FileManagerBookInfo:isSupported(item.file),
                 callback = function()
                     FileManagerBookInfo:show(item.file)
-                    UIManager:close(self.histfile_dialog)
+                    UIManager:close(dialog)
                 end,
              },
         },
     }
-    self.histfile_dialog = ButtonDialogTitle:new{
+    dialog = ButtonDialogTitle:new{
         title = BD.filename(item.text:match("([^/]+)$")),
         title_align = "center",
         buttons = buttons,
     }
-    UIManager:show(self.histfile_dialog)
+    UIManager:show(dialog)
     return true
 end
 
