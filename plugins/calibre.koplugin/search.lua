@@ -271,7 +271,7 @@ function CalibreSearch:bookCatalog(t, option)
         entry.info = getBookInfo(book)
         entry.path = book.rootpath .. "/" .. book.lpath
         if series and book.series_index then
-            local major, minor = string.format("%05.2f", book.series_index):match("([^.]+).([^.]+)")
+            local major, minor = string.format("%05.2f", book.series_index):match("([^.]+)%.([^.]+)")
             if minor ~= "00" then
                 subseries = true
             end
@@ -448,7 +448,7 @@ function CalibreSearch:switchResults(t, title, is_child, page)
         title = _("Search results")
     end
 
-    table.sort(t, function(v1,v2) return v1.text < v2.text end)
+    table.sort(t, function(v1, v2) return util.natsort(v1.text, v2.text) end)
 
     if is_child then
         local path_entry = {}
