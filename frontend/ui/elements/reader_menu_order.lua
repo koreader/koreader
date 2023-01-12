@@ -185,7 +185,7 @@ local order = {
         "terminal",
         "----------------------------",
         "plugin_management",
-        "patchmanager",
+        "patch_management",
     },
     search = {
         "dictionary_lookup",

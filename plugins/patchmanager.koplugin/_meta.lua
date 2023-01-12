@@ -1,6 +1,6 @@
 local _ = require("gettext")
 return {
-    name = "patchmanager",
-    fullname = _("Patch manager"),
-    description = _("This plugin allows to enable, disable or edit user patches."),
+    name = "patch_management",
+    fullname = _("Patch management"),
+    description = _("This plugin allows enabling, disabling or editing user patches."),
 }

@@ -21,7 +21,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local PatchManager = WidgetContainer:extend{
-    name = "patchmanager",
+    name = "patch_management",
 }
 
 function PatchManager:init()
@@ -70,61 +70,61 @@ function PatchManager:getSubMenu(priority)
         local patch_name = patch
         patch_name = patch_name:sub(1, patch_name:find(ext, 1, true) + ext:len() - 1)
         table.insert(sub_menu, {
-            text = patch_name .. getExecutionStatus(patch_name),
-            checked_func = function()
-                return patch:find("%.lua$") ~= nil
-            end,
-            callback = function()
-                local extension_pos = patch:find(ext, 1, true)
-                if extension_pos then
-                    local is_patch_enabled = extension_pos == patch:len() - (ext:len() - 1)
-                    if is_patch_enabled then -- patch name ends with ".lua"
-                        local disabled_name = patch .. self.disable_ext
-                        os.rename(self.patch_dir .. "/" .. patch,
-                                  self.patch_dir .. "/" .. disabled_name)
-                        patch = disabled_name
-                    else -- patch name name contains ".lua"
-                        local enabled_name = patch:sub(1, extension_pos + ext:len() - 1)
-                        os.rename(self.patch_dir .. "/" .. patch,
-                                  self.patch_dir .. "/" .. enabled_name)
-                        patch = enabled_name
+                text = patch_name .. getExecutionStatus(patch_name),
+                checked_func = function()
+                    return patch:find("%.lua$") ~= nil
+                end,
+                callback = function()
+                    local extension_pos = patch:find(ext, 1, true)
+                    if extension_pos then
+                        local is_patch_enabled = extension_pos == patch:len() - (ext:len() - 1)
+                        if is_patch_enabled then -- patch name ends with ".lua"
+                            local disabled_name = patch .. self.disable_ext
+                            os.rename(self.patch_dir .. "/" .. patch,
+                                self.patch_dir .. "/" .. disabled_name)
+                            patch = disabled_name
+                        else -- patch name name contains ".lua"
+                            local enabled_name = patch:sub(1, extension_pos + ext:len() - 1)
+                            os.rename(self.patch_dir .. "/" .. patch,
+                                self.patch_dir .. "/" .. enabled_name)
+                            patch = enabled_name
+                        end
                     end
-                end
-                UIManager:askForRestart(
-                    _("Patches changed. Current set of patches will be applied on next restart."))
-            end,
-            hold_callback = function()
-                local patch_fullpath = self.patch_dir .. "/" .. patch
-                if self.ui.texteditor then
-                    local function done_callback()
-                        UIManager:askForRestart(
-                            _("Patches might have changed. Current set of patches will be applied on next restart."))
-                    end
-                    self.ui.texteditor:quickEditFile(patch_fullpath, done_callback, false)
-                else -- fallback to show only the first lines
-                    local file = io.open(patch_fullpath, "rb")
-                    if not file then
-                        return ""
-                    end
-                    local patch_content = file:read("*all")
-                    file:close()
+                    UIManager:askForRestart(
+                        _("Patches changed. Current set of patches will be applied on next restart."))
+                end,
+                hold_callback = function()
+                    local patch_fullpath = self.patch_dir .. "/" .. patch
+                    if self.ui.texteditor then
+                        local function done_callback()
+                            UIManager:askForRestart(
+                                _("Patches might have changed. Current set of patches will be applied on next restart."))
+                        end
+                        self.ui.texteditor:quickEditFile(patch_fullpath, done_callback, false)
+                    else -- fallback to show only the first lines
+                        local file = io.open(patch_fullpath, "rb")
+                        if not file then
+                            return ""
+                        end
+                        local patch_content = file:read("*all")
+                        file:close()
 
-                    local textviewer
-                    textviewer = TextViewer:new{
-                        title = patch,
-                        text = patch_content,
+                        local textviewer
+                        textviewer = TextViewer:new{
+                            title = patch,
+                            text = patch_content,
 --                        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
 --                        height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
-                    }
-                    UIManager:show(textviewer)
-                end
-            end,
-        })
+                        }
+                        UIManager:show(textviewer)
+                    end
+                end,
+            })
     end
     return sub_menu
 end
 
-local about_text = _([[Patch manager allows to enable, disable or edit user provided patches.
+local about_text = _([[Patch management allows to enable, disable or edit user provided patches.
 
 The runlevel and priority of a patch can not be modified by patch manager. This has to be done manually by renaming the patch prefix.
 
@@ -134,8 +134,8 @@ https://github.com/koreader/koreader/wiki/User-patches
 Patches are an advanced feature, so be careful what you do!]])
 
 function PatchManager:addToMainMenu(menu_items)
-    menu_items.patchmanager  = {
-        text = _("Patch manager"),
+    menu_items.patch_management  = {
+        text = _("Patch management"),
         enabled_func = function()
             if self.patches == nil then
                 return false
@@ -149,12 +149,12 @@ function PatchManager:addToMainMenu(menu_items)
         end,
         sub_item_table = {
             {
-                text = _("About patch manager"),
+                text = _("About patch management"),
                 callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = about_text,
-                        width = math.floor(Screen:getWidth() * 0.9),
-                    })
+                            text = about_text,
+                            width = math.floor(Screen:getWidth() * 0.9),
+                        })
                 end,
                 separator = true,
                 keep_menu_open = true,
@@ -175,7 +175,7 @@ function PatchManager:addToMainMenu(menu_items)
 
     for i = tonumber(userPatch.early_once), tonumber(userPatch.on_exit) do
         if sub_menu_text[i] then
-            table.insert(menu_items.patchmanager.sub_item_table,
+            table.insert(menu_items.patch_management.sub_item_table,
                 {
                     text = sub_menu_text[i],
                     enabled_func = function()

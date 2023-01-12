@@ -135,7 +135,7 @@ local order = {
         "terminal",
         "----------------------------",
         "plugin_management",
-        "patchmanager",
+        "patch_management",
         "advanced_settings",
         "developer_options",
     },
