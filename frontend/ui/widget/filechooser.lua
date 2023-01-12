@@ -232,14 +232,8 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             return a.percent_finished < b.percent_finished
         end
     elseif collate == "natural" then
-        -- adapted from: http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua
-        local function addLeadingZeroes(d)
-            local dec, n = string.match(d, "(%.?)0*(.+)")
-            return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
-        end
         sorting = function(a, b)
-            return tostring(a.name):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b.name)
-                    < tostring(b.name):gsub("%.?%d+",addLeadingZeroes)..("%3d"):format(#a.name)
+            return util.natsort(a.name, b.name)
         end
     else
         sorting = function(a, b)
