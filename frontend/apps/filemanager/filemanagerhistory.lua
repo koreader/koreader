@@ -31,7 +31,6 @@ function FileManagerHistory:init()
 end
 
 function FileManagerHistory:addToMainMenu(menu_items)
-    -- insert table to main tab of filemanager menu
     menu_items.history = {
         text = self.hist_menu_title,
         callback = function()
@@ -51,8 +50,6 @@ function FileManagerHistory:fetchStatuses(count)
     for _, v in ipairs(require("readhistory").hist) do
         if v.dim then
             status = "deleted"
-        elseif self:isFileCurrentlyOpened(v.file) then
-            status = "reading"
         else
             if DocSettings:hasSidecarFile(v.file) then
                 local docinfo = DocSettings:open(v.file) -- no io handles created, do not close
@@ -63,7 +60,7 @@ function FileManagerHistory:fetchStatuses(count)
                     status = "reading"
                 end
             else
-                status = "new"
+                status = self:isFileCurrentlyOpened(v.file) and "reading" or "new"
             end
         end
         v.status = status
