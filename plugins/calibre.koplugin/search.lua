@@ -449,6 +449,7 @@ function CalibreSearch:switchResults(t, title, is_child, page)
         title = _("Search results")
     end
 
+    sort.natsort_set_cache("calibre")
     table.sort(t, function(v1, v2) return sort.natsort(v1.text, v2.text) end)
 
     if is_child then

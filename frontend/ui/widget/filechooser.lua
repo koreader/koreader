@@ -233,6 +233,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             return a.percent_finished < b.percent_finished
         end
     elseif collate == "natural" then
+        sort.natsort_set_cache("filechooser")
         sorting = function(a, b)
             return sort.natsort(a.name, b.name)
         end

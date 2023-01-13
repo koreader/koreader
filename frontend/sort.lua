@@ -22,6 +22,7 @@ end
 --]]
 -- Hardened (but more expensive) implementation by Egor Skriptunoff, with an UTF-8 tweak by Paul Kulchenko
 local function natsort_conv(s)
+    print("natsort_conv", s)
     local res, dot = "", ""
     for n, m, c in tostring(s):gmatch("(0*(%d*))(.?)") do
         if n == "" then
@@ -42,6 +43,8 @@ end
 -- Rely on LRU to avoid explicit cache maintenance concerns
 -- (given the type of content we massage, the memory impact is fairly insignificant).
 -- The extra persistence this affords us also happens to help with the FM use-case ;).
+
+--[[
 local lru = require("ffi/lru")
 -- We start with a small hard-coded value at require-time,
 -- so as to prevent circular dependencies issues with luadefaults and early callers (e.g., userpatch).
@@ -64,5 +67,43 @@ end
 function sort.natsort_cache_init()
     natsort_cache = lru.new(G_defaults:readSetting("DNATURAL_SORT_CACHE_SLOTS"), nil, false)
 end
+--]]
+
+local natsort_caches = {
+    default = {}
+}
+local natsort_cache = natsort_caches.default
+
+function sort.natsort(a, b)
+    local ca, cb = natsort_cache[a], natsort_cache[b]
+    if not ca then
+        ca = natsort_conv(a)
+        natsort_cache[a] = ca
+    end
+    if not cb then
+        cb = natsort_conv(b)
+        natsort_cache[b] = cb
+    end
+
+    return ca < cb or ca == cb and a < b
+end
+
+function sort.natsort_set_cache(tag)
+    if not natsort_caches[tag] then
+        natsort_caches[tag] = {}
+    end
+
+    natsort_cache = natsort_caches[tag]
+end
+
+--[[
+function sort.natsort(a, b, cache_size)
+    natsort_cache = {}
+    local cmp = function(a, b)
+        return sort.natsort(a, b)
+    end
+    table.sort()
+end
+--]]
 
 return sort
