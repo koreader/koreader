@@ -17,6 +17,8 @@ local util = require("util")
 local getFileNameSuffix = util.getFileNameSuffix
 local getFriendlySize = util.getFriendlySize
 
+local time = require("ui/time")
+
 local FileChooser = Menu:extend{
     no_title = true,
     path = lfs.currentdir(),
@@ -252,6 +254,8 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
 end
 
 function FileChooser:genItemTableFromPath(path)
+    local start_time = time.now()
+
     local dirs = {}
     local files = {}
     local up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
@@ -350,6 +354,9 @@ function FileChooser:genItemTableFromPath(path)
             end
         end
     end
+
+    local end_time = time.now()
+    print(string.format("FileChooser:genItemTableFromPath: Took %9.3f ms w/ collate: %s", time.to_ms(end_time - start_time), self.collate))
 
     return item_table
 end

@@ -22,7 +22,6 @@ end
 --]]
 -- Hardened (but more expensive) implementation by Egor Skriptunoff, with an UTF-8 tweak by Paul Kulchenko
 local function natsort_conv(s)
-    print("natsort_conv", s)
     local res, dot = "", ""
     for n, m, c in tostring(s):gmatch("(0*(%d*))(.?)") do
         if n == "" then
@@ -69,6 +68,8 @@ function sort.natsort_cache_init()
 end
 --]]
 
+-- Dumb hash-map => cold, ~200 to 250ms; hot: ~150ms (which roughly matches sorting by numerical file attributes).
+--[[
 local natsort_caches = {
     default = {}
 }
@@ -95,15 +96,35 @@ function sort.natsort_set_cache(tag)
 
     natsort_cache = natsort_caches[tag]
 end
-
---[[
-function sort.natsort(a, b, cache_size)
-    natsort_cache = {}
-    local cmp = function(a, b)
-        return sort.natsort(a, b)
-    end
-    table.sort()
-end
 --]]
+
+-- LRU => cold, ~200 to 250ms; hot ~150 to 175ms (which is barely any slower than a dumb hash-map, yay, LRU and LuaJIT magic).
+local lru = require("ffi/lru")
+local natsort_caches = {
+    default = lru.new(512, nil, false)
+}
+local natsort_cache = natsort_caches.default
+
+function sort.natsort(a, b)
+    local ca, cb = natsort_cache:get(a), natsort_cache:get(b)
+    if not ca then
+        ca = natsort_conv(a)
+        natsort_cache:set(a, ca)
+    end
+    if not cb then
+        cb = natsort_conv(b)
+        natsort_cache:set(b, cb)
+    end
+
+    return ca < cb or ca == cb and a < b
+end
+
+function sort.natsort_set_cache(tag, slots)
+    if not natsort_caches[tag] then
+        natsort_caches[tag] = lru.new(slots or G_defaults:readSetting("DNATURAL_SORT_CACHE_SLOTS"), nil, false)
+    end
+
+    natsort_cache = natsort_caches[tag]
+end
 
 return sort
