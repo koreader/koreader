@@ -235,7 +235,6 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             return a.percent_finished < b.percent_finished
         end
     elseif collate == "natural" then
-        sort.natsort_set_cache("filechooser")
         sorting = function(a, b)
             return sort.natsort(a.name, b.name)
         end
@@ -265,6 +264,9 @@ function FileChooser:genItemTableFromPath(path)
     local sorting = self:getSortingFunction(self.collate, self.reverse_collate)
 
     if self.collate ~= "strcoll_mixed" then
+        if self.collate == "natural" then
+            sort.natsort_set_cache("filechooser", #dirs + #files)
+        end
         table.sort(dirs, sorting)
         table.sort(files, sorting)
     end
