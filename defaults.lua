@@ -181,10 +181,11 @@ DMINIBAR_CONTAINER_HEIGHT = 14,  -- Larger means more padding at the bottom, at 
 DALPHA_SORT_CASE_INSENSITIVE = true,
 
 -- Amount of strings to keep in cache (LRU) for the natural sorting algorithm.
--- Algorithm used by the Calibre plugin metadata search; and by the FileManager when using the natural sort method.
+-- Algorithm used unconditionally by the Calibre plugin metadata search; and by the FileManager when using the natural sort method.
 -- As such, adapt to your library size ;).
+-- (value is an amount of strings, not bytes; actual impact on memory usage should be insignificant to minimal)
 -- (c.f., natsort.lua)
-DNATURAL_SORT_CACHE_SIZE = 1024,
+DNATURAL_SORT_CACHE_SLOTS = 1024,
 
 -- Frontlight behavior on Kobo
 KOBO_LIGHT_ON_START = -2,          -- -1, -2 or 0-100.

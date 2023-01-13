@@ -38,7 +38,7 @@ end
 -- Rely on LRU to avoid explicit cache maintenance concerns (at the cost of a bit of memory).
 -- The extra persistence this affords us also happens to help with the FM use-case ;).
 local lru = require("ffi/lru")
-local natsort_cache = lru.new(G_defaults:readSetting("DNATURAL_SORT_CACHE_SIZE"), nil, false)
+local natsort_cache = lru.new(G_defaults:readSetting("DNATURAL_SORT_CACHE_SLOTS"), nil, false)
 local function natsort(a, b)
     local ca, cb = natsort_cache:get(a), natsort_cache:get(b)
     if not ca then
