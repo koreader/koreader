@@ -16,6 +16,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local natsort = require("natsort")
 local rapidjson = require("rapidjson")
 local util = require("util")
 local time = require("ui/time")
@@ -448,7 +449,7 @@ function CalibreSearch:switchResults(t, title, is_child, page)
         title = _("Search results")
     end
 
-    table.sort(t, function(v1, v2) return util.natsort(v1.text, v2.text) end)
+    table.sort(t, function(v1, v2) return natsort(v1.text, v2.text) end)
 
     if is_child then
         local path_entry = {}

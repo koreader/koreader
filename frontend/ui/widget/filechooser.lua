@@ -8,6 +8,7 @@ local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
+local natsort = require("natsort")
 local ffiUtil = require("ffi/util")
 local T = ffiUtil.template
 local _ = require("gettext")
@@ -233,7 +234,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
         end
     elseif collate == "natural" then
         sorting = function(a, b)
-            return util.natsort(a.name, b.name)
+            return natsort(a.name, b.name)
         end
     else
         sorting = function(a, b)

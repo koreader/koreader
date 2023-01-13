@@ -25,7 +25,7 @@ end
 
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
+local natsort = require("natsort")
 local DataStorage = require("datastorage")
 
 -- the directory KOReader is installed in (and runs from)
@@ -56,7 +56,7 @@ local function runUserPatchTasks(dir, priority)
         return -- nothing to do
     end
 
-    table.sort(patches, util.natsort)
+    table.sort(patches, natsort)
 
     for i, entry in ipairs(patches) do
         local fullpath = dir .. "/" .. entry
