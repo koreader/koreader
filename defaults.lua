@@ -180,6 +180,10 @@ DMINIBAR_CONTAINER_HEIGHT = 14,  -- Larger means more padding at the bottom, at 
 -- insensitive sort
 DALPHA_SORT_CASE_INSENSITIVE = true,
 
+-- Amount of strings to keep in cache (LRU) for the natural sorting algorithm
+-- (c.f., util.natsort @ util.lua)
+DNATURAL_SORT_CACHE_SIZE = 1024,
+
 -- Frontlight behavior on Kobo
 KOBO_LIGHT_ON_START = -2,          -- -1, -2 or 0-100.
                                    -- -1 uses the brightness set by KOReader (if any, 20% otherwise)

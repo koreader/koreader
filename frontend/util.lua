@@ -1328,7 +1328,6 @@ end
 --]]
 -- Hardened (but more expensive) implementation by Egor Skriptunoff, with an UTF-8 tweak by Paul Kulchenko
 local function natsort_conv(s)
-    print("natsort_conv", s)
     local res, dot = "", ""
     for n, m, c in tostring(s):gmatch("(0*(%d*))(.?)") do
         if n == "" then
@@ -1344,12 +1343,12 @@ local function natsort_conv(s)
 end
 -- The above conversion is *fairly* expensive,
 -- and table.sort ensures that it'll be called on identical strings multiple times,
--- so keeping a cache of massaged string makes sense.
+-- so keeping a cache of massaged strings makes sense.
 -- <https://github.com/koreader/koreader/pull/10023#discussion_r1069776657>
 -- Rely on LRU to avoid explicit cache maintenance concerns (at the cost of a bit of memory).
+-- The extra persistence this affords us also happens to help with the FM use-case ;).
 local lru = require("ffi/lru")
--- NOTE: Amount of slots is fairly arbitrary... Might make sense to use a defaults here?
-local natsort_cache = lru.new(1024, nil, false)
+local natsort_cache = lru.new(G_defaults:readSetting("DNATURAL_SORT_CACHE_SIZE"), nil, false)
 function util.natsort(a, b)
     local ca, cb = natsort_cache:get(a), natsort_cache:get(b)
     if not ca then
