@@ -180,7 +180,9 @@ DMINIBAR_CONTAINER_HEIGHT = 14,  -- Larger means more padding at the bottom, at 
 -- insensitive sort
 DALPHA_SORT_CASE_INSENSITIVE = true,
 
--- Amount of strings to keep in cache (LRU) for the natural sorting algorithm
+-- Amount of strings to keep in cache (LRU) for the natural sorting algorithm.
+-- Algorithm used by the Calibre plugin metadata search; and by the FileManager when using the natural sort method.
+-- As such, adapt to your library size ;).
 -- (c.f., natsort.lua)
 DNATURAL_SORT_CACHE_SIZE = 1024,
 
