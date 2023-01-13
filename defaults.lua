@@ -181,7 +181,7 @@ DMINIBAR_CONTAINER_HEIGHT = 14,  -- Larger means more padding at the bottom, at 
 DALPHA_SORT_CASE_INSENSITIVE = true,
 
 -- Amount of strings to keep in cache (LRU) for the natural sorting algorithm
--- (c.f., util.natsort @ util.lua)
+-- (c.f., natsort.lua)
 DNATURAL_SORT_CACHE_SIZE = 1024,
 
 -- Frontlight behavior on Kobo

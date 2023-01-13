@@ -1,4 +1,4 @@
--- NOTE: This is splut off from util to avoid circular dependencies between util and luadefaults,
+-- NOTE: This is split off from util to avoid circular dependencies between util and luadefaults,
 --       as we make use of G_defaults...
 
 --[[--
