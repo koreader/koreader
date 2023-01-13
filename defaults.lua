@@ -184,7 +184,7 @@ DALPHA_SORT_CASE_INSENSITIVE = true,
 -- Algorithm used unconditionally by the Calibre plugin metadata search; and by the FileManager when using the natural sort method.
 -- As such, adapt to your library size ;).
 -- (value is an amount of strings, not bytes; actual impact on memory usage should be insignificant to minimal)
--- (c.f., natsort.lua)
+-- (c.f., sort.natsort @ natsort.lua)
 DNATURAL_SORT_CACHE_SLOTS = 1024,
 
 -- Frontlight behavior on Kobo

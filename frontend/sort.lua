@@ -39,7 +39,8 @@ end
 -- and table.sort ensures that it'll be called on identical strings multiple times,
 -- so keeping a cache of massaged strings makes sense.
 -- <https://github.com/koreader/koreader/pull/10023#discussion_r1069776657>
--- Rely on LRU to avoid explicit cache maintenance concerns (at the cost of a bit of memory).
+-- Rely on LRU to avoid explicit cache maintenance concerns
+-- (given the type of content we massage, the memory impact is fairly insignificant).
 -- The extra persistence this affords us also happens to help with the FM use-case ;).
 local lru = require("ffi/lru")
 -- We start with a small hard-coded value at require-time,
@@ -59,7 +60,7 @@ function sort.natsort(a, b)
     return ca < cb or ca == cb and a < b
 end
 
--- Set the cache to its desired size
+-- Set the cache to its (final) desired size
 function sort.natsort_cache_init()
     natsort_cache = lru.new(G_defaults:readSetting("DNATURAL_SORT_CACHE_SLOTS"), nil, false)
 end
