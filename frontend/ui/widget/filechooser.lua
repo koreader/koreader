@@ -8,11 +8,11 @@ local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
-local natsort = require("natsort")
 local ffiUtil = require("ffi/util")
 local T = ffiUtil.template
 local _ = require("gettext")
 local Screen = Device.screen
+local sort = require("sort")
 local util = require("util")
 local getFileNameSuffix = util.getFileNameSuffix
 local getFriendlySize = util.getFriendlySize
@@ -234,7 +234,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
         end
     elseif collate == "natural" then
         sorting = function(a, b)
-            return natsort(a.name, b.name)
+            return sort.natsort(a.name, b.name)
         end
     else
         sorting = function(a, b)

@@ -1,5 +1,9 @@
--- NOTE: This is split off from util to avoid circular dependencies between util and luadefaults,
---       as we make use of G_defaults...
+--[[
+This module contains a collection of comparison functions for table.sort
+@module sort
+]]
+
+local sort = {}
 
 --[[--
 Natural sorting functions, for use with table.sort
@@ -38,8 +42,10 @@ end
 -- Rely on LRU to avoid explicit cache maintenance concerns (at the cost of a bit of memory).
 -- The extra persistence this affords us also happens to help with the FM use-case ;).
 local lru = require("ffi/lru")
-local natsort_cache = lru.new(G_defaults:readSetting("DNATURAL_SORT_CACHE_SLOTS"), nil, false)
-local function natsort(a, b)
+-- We start with a small hard-coded value at require-time,
+-- so as to prevent circular dependencies issues with luadefaults and early callers (e.g., userpatch).
+local natsort_cache = lru.new(128, nil, false)
+function sort.natsort(a, b)
     local ca, cb = natsort_cache:get(a), natsort_cache:get(b)
     if not ca then
         ca = natsort_conv(a)
@@ -53,4 +59,9 @@ local function natsort(a, b)
     return ca < cb or ca == cb and a < b
 end
 
-return natsort
+-- Set the cache to its desired size
+function sort.natsort_cache_init()
+    natsort_cache = lru.new(G_defaults:readSetting("DNATURAL_SORT_CACHE_SLOTS"), nil, false)
+end
+
+return sort

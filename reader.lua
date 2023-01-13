@@ -21,15 +21,18 @@ io.write([[
 -- Set up Lua and ffi search paths
 require("setupkoenv")
 
--- Load default settings
-G_defaults = require("luadefaults"):open()
-
 -- Apply startup user patches and execute startup user scripts
 local userpatch = require("userpatch")
 userpatch.applyPatches(userpatch.early_once)
 userpatch.applyPatches(userpatch.early)
 
 io.write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
+
+-- Load default settings
+G_defaults = require("luadefaults"):open()
+-- Setup natsort cache now that we have G_defaults
+local sort = require("sort")
+sort.natsort_cache_init()
 
 -- Read settings and check for language override
 -- Has to be done before requiring other files because
