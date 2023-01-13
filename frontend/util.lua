@@ -1311,6 +1311,41 @@ function util.stringSearch(txt, str, case_sensitive, start_pos)
     return char_pos
 end
 
+--[[--
+Natural sorting functions, for use with table.sort
+<http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua>
+--]]
+-- Original implementation by Paul Kulchenko
+--[[
+local function addLeadingZeroes(d)
+    local dec, n = string.match(d, "(%.?)0*(.+)")
+    return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
+end
+function util.natsort(a, b)
+    return tostring(a):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b)
+           < tostring(b):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#a)
+end
+--]]
+-- Hardened (but more expensive) implementation by Egor Skriptunoff, with an UTF-8 tweak by Paul Kulchenko
+local function natsort_conv(s)
+    local res, dot = "", ""
+    for n, m, c in tostring(s):gmatch("(0*(%d*))(.?)") do
+        if n == "" then
+            dot, c = "", dot..c
+        else
+            res = res..(dot == "" and ("%03d%s"):format(#m, m)
+                                   or "."..n)
+            dot, c = c:match("(%.?)(.*)")
+        end
+        res = res..c:gsub("[%z\1-\127\192-\255]", "\0%0")
+    end
+    return res
+end
+function util.natsort(a, b)
+    local ca, cb = natsort_conv(a), natsort_conv(b)
+    return ca < cb or ca == cb and a < b
+end
+
 local WrappedFunction_mt = {
     __call = function(self, ...)
         if self.before_callback then
