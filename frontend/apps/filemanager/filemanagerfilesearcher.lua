@@ -219,7 +219,7 @@ function FileSearcher:showSearchResults()
 
     local collate = G_reader_settings:readSetting("collate") or "strcoll"
     local reverse_collate = G_reader_settings:isTrue("reverse_collate")
-    local sorting = FileChooser:getSortingFunction(collate, reverse_collate)
+    local sorting = FileChooser:getSortingFunction(collate, reverse_collate, #self.results)
 
     table.sort(self.results, sorting)
     self.search_menu:switchItemTable(T(_("Search results (%1)"), #self.results), self.results)

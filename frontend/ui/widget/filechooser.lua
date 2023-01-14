@@ -173,7 +173,7 @@ function FileChooser:init()
     Menu.init(self) -- call parent's init()
 end
 
-function FileChooser:getSortingFunction(collate, reverse_collate)
+function FileChooser:getSortingFunction(collate, reverse_collate, data_count)
     local sorting
     if collate == "strcoll" then
         sorting = function(a, b)
@@ -238,6 +238,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
         sorting = function(a, b)
             return sort.natsort(a.name, b.name)
         end
+        sort.natsort_set_cache("filechooser", data_count or 1024)
     else
         sorting = function(a, b)
             return a.name < b.name
@@ -261,12 +262,9 @@ function FileChooser:genItemTableFromPath(path)
 
     self.list(path, dirs, files)
 
-    local sorting = self:getSortingFunction(self.collate, self.reverse_collate)
+    local sorting = self:getSortingFunction(self.collate, self.reverse_collate, #dirs + #files)
 
     if self.collate ~= "strcoll_mixed" then
-        if self.collate == "natural" then
-            sort.natsort_set_cache("filechooser", #dirs + #files)
-        end
         table.sort(dirs, sorting)
         table.sort(files, sorting)
     end
