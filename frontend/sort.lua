@@ -21,6 +21,7 @@ function sort.natsort(a, b)
 end
 --]]
 -- Hardened (but more expensive) implementation by Egor Skriptunoff, with an UTF-8 tweak by Paul Kulchenko
+--[[
 local function natsort_conv(s)
     local res, dot = "", ""
     for n, m, c in tostring(s):gmatch("(0*(%d*))(.?)") do
@@ -35,6 +36,7 @@ local function natsort_conv(s)
     end
     return res
 end
+--]]
 -- The above conversion is *fairly* expensive,
 -- and table.sort ensures that it'll be called on identical strings multiple times,
 -- so keeping a cache of massaged strings makes sense.
@@ -106,33 +108,33 @@ function sort.natsort_cmp(operands_func, cache)
         cache = {}
     end
 
+    local function natsort_conv(s)
+        local res, dot = "", ""
+        for n, m, c in tostring(s):gmatch("(0*(%d*))(.?)") do
+            if n == "" then
+                dot, c = "", dot..c
+            else
+                res = res..(dot == "" and ("%03d%s"):format(#m, m)
+                                    or "."..n)
+                dot, c = c:match("(%.?)(.*)")
+            end
+            res = res..c:gsub("[%z\1-\127\192-\255]", "\0%0")
+        end
+        cache[s] = res
+        return res
+    end
+
     local natsort
     if operands_func then
         natsort = function(a, b)
             a, b = operands_func(a, b)
-            local ca, cb = cache[a], cache[b]
-            if not ca then
-                ca = natsort_conv(a)
-                cache[a] = ca
-            end
-            if not cb then
-                cb = natsort_conv(b)
-                cache[b] = cb
-            end
+            local ca, cb = cache[a] or natsort_conv(a), cache[b] or natsort_conv(b)
 
             return ca < cb or ca == cb and a < b
         end
     else
         natsort = function(a, b)
-            local ca, cb = cache[a], cache[b]
-            if not ca then
-                ca = natsort_conv(a)
-                cache[a] = ca
-            end
-            if not cb then
-                cb = natsort_conv(b)
-                cache[b] = cb
-            end
+            local ca, cb = cache[a] or natsort_conv(a), cache[b] or natsort_conv(b)
 
             return ca < cb or ca == cb and a < b
         end
