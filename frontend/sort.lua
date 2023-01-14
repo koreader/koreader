@@ -115,7 +115,7 @@ function sort.natsort_cmp(operands_func, cache)
                 dot, c = "", dot..c
             else
                 res = res..(dot == "" and ("%03d%s"):format(#m, m)
-                                    or "."..n)
+                                       or "."..n)
                 dot, c = c:match("(%.?)(.*)")
             end
             res = res..c:gsub("[%z\1-\127\192-\255]", "\0%0")
