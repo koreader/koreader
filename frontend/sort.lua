@@ -83,7 +83,22 @@ function sort.natsort(a, b)
 end
 --]]
 
--- TODO: LuaDoc
+--[[--
+Generates a natural sorting comparison function for table.sort
+
+@func Optional, used when sorting nested strings. Takes two objects as input (like a table.sort cmp function), and returns, in the same order, two *strings* that will actually be fed to the actual cmp function.
+@table Optional, hashmap used to cache the processed strings to speed up sorting
+
+@usage
+
+-- t is an array of strings, we don't want to keep the cache around
+table.sort(t, sort.natsort_cmp())
+
+-- t is an array of arrays, we want to sort the strings in the "text" field of the inner arrays, and we want to keep the cache around.
+local cmp, cache
+cmp, cache = sort.natsort_cmp(function(a, b) return a.text, b.text end, cache)
+table.sort(t, cmp)
+]]
 function sort.natsort_cmp(operands_func, cache)
     if not cache then
         cache = {}
