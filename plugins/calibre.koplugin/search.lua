@@ -552,6 +552,7 @@ end
 function CalibreSearch:invalidateCache()
     self.cache_books:delete()
     self.books = {}
+    self.natsort_cache = nil
 end
 
 -- get metadata from cache or calibre files
