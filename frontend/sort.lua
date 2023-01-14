@@ -1,11 +1,11 @@
---[[
-This module contains a collection of comparison functions (or factories for comparison functions) for table.sort
+--[[--
+This module contains a collection of comparison functions (or factories for comparison functions) for `table.sort`.
 @module sort
 ]]
 
 local sort = {}
 
---[[--
+--[[
 Natural sorting functions, for use with table.sort
 <http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua>
 --]]
@@ -84,10 +84,12 @@ end
 --]]
 
 --[[--
-Generates a natural sorting comparison function for table.sort
+Generates a natural sorting comparison function for table.sort.
 
-@func Optional, used when sorting nested strings. Takes two objects as input (like a table.sort cmp function), and returns, in the same order, two *strings* that will actually be fed to the actual cmp function.
-@table Optional, hashmap used to cache the processed strings to speed up sorting
+@param operands_func Optional, used when sorting nested strings. Takes two objects as input (like a `table.sort` `cmp` function), and returns, in the same order, two *strings* that will actually be fed to the actual cmp function
+@param cache Optional, hashmap used to cache the processed strings to speed up sorting
+@return The cmp function to feed to `table.sort`
+@return The cache used (same object as the passed one, if any)
 
 @usage
 
@@ -102,7 +104,6 @@ table.sort(t, cmp)
 function sort.natsort_cmp(operands_func, cache)
     if not cache then
         cache = {}
-        print("setting up cache", cache)
     end
 
     local natsort
