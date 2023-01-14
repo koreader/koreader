@@ -173,7 +173,7 @@ function FileChooser:init()
     Menu.init(self) -- call parent's init()
 end
 
-function FileChooser:getSortingFunction(collate, reverse_collate, data_count)
+function FileChooser:getSortingFunction(collate, reverse_collate, data_length)
     local sorting
     if collate == "strcoll" then
         sorting = function(a, b)
@@ -238,7 +238,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate, data_count)
         sorting = function(a, b)
             return sort.natsort(a.name, b.name)
         end
-        sort.natsort_set_cache("filechooser", data_count or 1024)
+        sort.natsort_set_cache("filechooser", data_length)
     else
         sorting = function(a, b)
             return a.name < b.name

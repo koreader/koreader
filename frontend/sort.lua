@@ -43,12 +43,13 @@ end
 -- (given the type of content we massage, the memory impact is fairly insignificant).
 -- The extra persistence this affords us also happens to help with the FM use-case ;).
 
--- Dumb hash-map => cold, ~200 to 250ms; hot: ~150ms (which roughly matches sorting by numerical file attributes).
+-- Dumb persistent hash-map => cold, ~200 to 250ms; hot: ~150ms (which roughly matches sorting by numerical file attributes).
+-- (Numbers are from the FM sorting 350 entries (mostly composed of author names) on an H2O).
 --[[
 local natsort_caches = {
-    default = {}
+    global = {}
 }
-local natsort_cache = natsort_caches.default
+local natsort_cache = natsort_caches.global
 
 function sort.natsort(a, b)
     local ca, cb = natsort_cache[a], natsort_cache[b]
