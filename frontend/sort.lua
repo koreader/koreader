@@ -76,10 +76,7 @@ end
 
 -- LRU => cold, ~200 to 250ms; hot ~150 to 175ms (which is barely any slower than a dumb hash-map, yay, LRU and LuaJIT magic).
 local lru = require("ffi/lru")
-local natsort_caches = {
-    global = lru.new(512, nil, false),
-}
-local natsort_cache = natsort_caches.global
+local natsort_cache = lru.new(512, nil, false)
 
 function sort.natsort(a, b)
     local ca, cb = natsort_cache:get(a), natsort_cache:get(b)
@@ -95,8 +92,7 @@ function sort.natsort(a, b)
     return ca < cb or ca == cb and a < b
 end
 
-function sort.natsort_set_cache(tag, slots)
-    print("sort.natsort_set_cache", tag, slots)
+function sort.table_natsort(o, field, cache, slots)
     -- Add a bit of scratch space to account for subsequent calls
     if slots then
         slots = math.ceil(slots * 1.25)
@@ -104,22 +100,37 @@ function sort.natsort_set_cache(tag, slots)
         slots = 1024
     end
 
-    if not natsort_caches[tag] then
-        print("settings up", slots, "slots for", tag)
-        natsort_caches[tag] = lru.new(slots, nil, false)
+    if not cache then
+        cache = lru.new(slots, nil, false)
+        print("setting up", slots, "slots as", cache)
     else
-        if slots > natsort_caches[tag]:total_slots() then
-            print("growing", tag, "from", natsort_caches[tag]:total_slots(), "to", slots)
-            natsort_caches[tag]:resize_slots(slots)
+        if slots > cache:total_slots() then
+            print("growing", cache, "from", cache:total_slots(), "to", slots)
+            cache:resize_slots(slots)
         end
     end
 
-    natsort_cache = natsort_caches[tag]
-end
+    local function natsort(a, b)
+        local ca, cb = cache:get(a), cache:get(b)
+        if not ca then
+            ca = natsort_conv(a)
+            cache:set(a, ca)
+        end
+        if not cb then
+            cb = natsort_conv(b)
+            cache:set(b, cb)
+        end
 
-function sort.natsort_destroy_cache(tag)
-    natsort_caches[tag] = nil
-    natsort_cache = natsort_caches.global
+        return ca < cb or ca == cb and a < b
+    end
+
+    if field then
+        table.sort(o, function(a, b) return natsort(a[field], b[field]) end)
+    else
+        table.sort(o, natsort)
+    end
+
+    return cache
 end
 
 return sort
