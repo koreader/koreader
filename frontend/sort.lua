@@ -66,7 +66,7 @@ end
 -- LRU => cold, ~200 to 250ms; hot ~150 to 175ms (which is barely any slower than a dumb hash-map, yay, LRU and LuaJIT magic).
 --[[
 local lru = require("ffi/lru")
-local natsort_cache = lru.new(512, nil, false)
+local natsort_cache = lru.new(1024, nil, false)
 
 function sort.natsort(a, b)
     local ca, cb = natsort_cache:get(a), natsort_cache:get(b)
@@ -89,7 +89,7 @@ Generates a natural sorting comparison function for table.sort.
 @param operands_func Optional, used when sorting nested strings. Takes two objects as input (like a `table.sort` `cmp` function), and returns, in the same order, two *strings* that will actually be fed to the actual cmp function
 @param cache Optional, hashmap used to cache the processed strings to speed up sorting
 @return The cmp function to feed to `table.sort`
-@return The cache used (same object as the passed one, if any)
+@return The cache used (same object as the passed one, if any; will be created if not)
 
 @usage
 
