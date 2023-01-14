@@ -101,12 +101,9 @@ end
 -- LRU => cold, ~200 to 250ms; hot ~150 to 175ms (which is barely any slower than a dumb hash-map, yay, LRU and LuaJIT magic).
 local lru = require("ffi/lru")
 local natsort_caches = {
-    default = {
-        slots = 512,
-        cache = lru.new(512, nil, false),
-    },
+    global = lru.new(512, nil, false),
 }
-local natsort_cache = natsort_caches.default.cache
+local natsort_cache = natsort_caches.global
 
 function sort.natsort(a, b)
     local ca, cb = natsort_cache:get(a), natsort_cache:get(b)
@@ -133,19 +130,15 @@ function sort.natsort_set_cache(tag, slots)
 
     if not natsort_caches[tag] then
         print("settings up", slots, "slots for", tag)
-        natsort_caches[tag] = {
-            slots = slots,
-            cache = lru.new(slots, nil, false),
-        }
+        natsort_caches[tag] = lru.new(slots, nil, false)
     else
-        if slots > natsort_caches[tag].slots then
-            print("growing", tag, "from", natsort_caches[tag].slots, "to", slots)
-            natsort_caches[tag].cache:grow(slots)
-            natsort_caches[tag].slots = slots
+        if slots > natsort_caches[tag]:length() then
+            print("growing", tag, "from", natsort_caches[tag]:length(), "to", slots)
+            natsort_caches[tag]:grow(slots)
         end
     end
 
-    natsort_cache = natsort_caches[tag].cache
+    natsort_cache = natsort_caches[tag]
 end
 
 return sort
