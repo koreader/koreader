@@ -236,8 +236,11 @@ function FileChooser:getSortingFunction(collate, reverse_collate, data_length)
             return a.percent_finished < b.percent_finished
         end
     elseif collate == "natural" then
-        sorting = function(a, b)
-            return sort.natsort(a.name, b.name)
+        -- Only keep the cache if we're an *instance* of FileChooser (e.g., NOT when called by FileSearcher)
+        if self ~= FileChooser then
+            sorting, self.natsort_cache = sort.natsort_cmp(function(a, b) return a.name, b.name end, self.natsort_cache, data_length)
+        else
+            sorting = sort.natsort_cmp(function(a, b) return a.name, b.name end, nil, data_length)
         end
     else
         sorting = function(a, b)
@@ -262,16 +265,11 @@ function FileChooser:genItemTableFromPath(path)
 
     self.list(path, dirs, files)
 
-    local sorting = self:getSortingFunction(self.collate, self.reverse_collate)
+    local sorting = self:getSortingFunction(self.collate, self.reverse_collate, #dirs + #files)
 
     if self.collate ~= "strcoll_mixed" then
-        if self.collate == "natural" then
-            self.natsort_cache = sort.table_natsort(dirs, "name", self.natsort_cache, #dirs + #files)
-            self.natsort_cache = sort.table_natsort(files, "name", self.natsort_cache, #dirs + #files)
-        else
-            table.sort(dirs, sorting)
-            table.sort(files, sorting)
-        end
+        table.sort(dirs, sorting)
+        table.sort(files, sorting)
     end
     if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
                             path == G_reader_settings:readSetting("home_dir")) then
