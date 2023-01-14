@@ -219,7 +219,7 @@ function FileSearcher:showSearchResults()
 
     local collate = G_reader_settings:readSetting("collate") or "strcoll"
     local reverse_collate = G_reader_settings:isTrue("reverse_collate")
-    -- If we have a FileChoosr instance, use it, to be able to make use of its natsort cache
+    -- If we have a FileChooser instance, use it, to be able to make use of its natsort cache
     local sorting
     if self.ui.file_chooser then
         sorting = self.ui.file_chooser:getSortingFunction(collate, reverse_collate, #self.results)

@@ -101,7 +101,6 @@ function FileChooser:show_file(filename)
 end
 
 function FileChooser:init()
-    print("FileChooser:init", self)
     self.path_items = {}
     self.width = Screen:getWidth()
     self.list = function(path, dirs, files, count_only)
@@ -236,7 +235,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate, data_length)
             return a.percent_finished < b.percent_finished
         end
     elseif collate == "natural" then
-        -- Only keep the cache if we're an *instance* of FileChooser (e.g., NOT when called by FileSearcher)
+        -- Only keep the cache if we're an *instance* of FileChooser
         if self ~= FileChooser then
             sorting, self.natsort_cache = sort.natsort_cmp(function(a, b) return a.name, b.name end, self.natsort_cache, data_length)
         else

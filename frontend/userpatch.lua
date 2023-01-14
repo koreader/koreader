@@ -56,7 +56,7 @@ local function runUserPatchTasks(dir, priority)
         return -- nothing to do
     end
 
-    sort.table_natsort(patches, nil, nil, #patches)
+    table.sort(patches, sort.natsort_cmp(nil, nil, #patches))
 
     for i, entry in ipairs(patches) do
         local fullpath = dir .. "/" .. entry

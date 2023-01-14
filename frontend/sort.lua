@@ -39,7 +39,7 @@ end
 -- and table.sort ensures that it'll be called on identical strings multiple times,
 -- so keeping a cache of massaged strings makes sense.
 -- <https://github.com/koreader/koreader/pull/10023#discussion_r1069776657>
--- Rely on LRU to avoid explicit cache maintenance concerns
+-- We can rely on LRU to avoid explicit cache maintenance concerns
 -- (given the type of content we massage, the memory impact is fairly insignificant).
 -- The extra persistence this affords us also happens to help with the FM use-case ;).
 

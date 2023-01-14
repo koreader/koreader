@@ -528,7 +528,6 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     -- our generic CoverMenu
     local CoverMenu = require("covermenu")
     FileChooser.updateItems = CoverMenu.updateItems
-    FileChooser._onCloseWidget = FileChooser.onCloseWidget
     FileChooser.onCloseWidget = CoverMenu.onCloseWidget
 
     if display_mode == "mosaic_image" or display_mode == "mosaic_text" then -- mosaic mode
