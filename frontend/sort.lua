@@ -132,9 +132,9 @@ function sort.natsort_set_cache(tag, slots)
         print("settings up", slots, "slots for", tag)
         natsort_caches[tag] = lru.new(slots, nil, false)
     else
-        if slots > natsort_caches[tag]:length() then
-            print("growing", tag, "from", natsort_caches[tag]:length(), "to", slots)
-            natsort_caches[tag]:grow(slots)
+        if slots > natsort_caches[tag]:total_slots() then
+            print("growing", tag, "from", natsort_caches[tag]:total_slots(), "to", slots)
+            natsort_caches[tag]:resize_slots(slots)
         end
     end
 
