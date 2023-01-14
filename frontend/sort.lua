@@ -1,5 +1,5 @@
 --[[
-This module contains a collection of comparison functions for table.sort
+This module contains a collection of comparison functions (or factories for comparison functions) for table.sort
 @module sort
 ]]
 
@@ -46,10 +46,7 @@ end
 -- Dumb persistent hash-map => cold, ~200 to 250ms; hot: ~150ms (which roughly matches sorting by numerical file attributes).
 -- (Numbers are from the FM sorting 350 entries (mostly composed of author names) on an H2O).
 --[[
-local natsort_caches = {
-    global = {}
-}
-local natsort_cache = natsort_caches.global
+local natsort_cache = {}
 
 function sort.natsort(a, b)
     local ca, cb = natsort_cache[a], natsort_cache[b]
@@ -64,17 +61,10 @@ function sort.natsort(a, b)
 
     return ca < cb or ca == cb and a < b
 end
-
-function sort.natsort_set_cache(tag)
-    if not natsort_caches[tag] then
-        natsort_caches[tag] = {}
-    end
-
-    natsort_cache = natsort_caches[tag]
-end
 --]]
 
 -- LRU => cold, ~200 to 250ms; hot ~150 to 175ms (which is barely any slower than a dumb hash-map, yay, LRU and LuaJIT magic).
+--[[
 local lru = require("ffi/lru")
 local natsort_cache = lru.new(512, nil, false)
 
@@ -91,49 +81,10 @@ function sort.natsort(a, b)
 
     return ca < cb or ca == cb and a < b
 end
-
-function sort.table_natsort(o, field, cache, slots)
-    -- Add a bit of scratch space to account for subsequent calls
-    if slots then
-        slots = math.ceil(slots * 1.25)
-    else
-        slots = 1024
-    end
-
-    if not cache then
-        cache = lru.new(slots, nil, false)
-        print("setting up", slots, "slots as", cache)
-    else
-        if slots > cache:total_slots() then
-            print("growing", cache, "from", cache:total_slots(), "to", slots)
-            cache:resize_slots(slots)
-        end
-    end
-
-    local function natsort(a, b)
-        local ca, cb = cache:get(a), cache:get(b)
-        if not ca then
-            ca = natsort_conv(a)
-            cache:set(a, ca)
-        end
-        if not cb then
-            cb = natsort_conv(b)
-            cache:set(b, cb)
-        end
-
-        return ca < cb or ca == cb and a < b
-    end
-
-    if field then
-        table.sort(o, function(a, b) return natsort(a[field], b[field]) end)
-    else
-        table.sort(o, natsort)
-    end
-
-    return cache
-end
+--]]
 
 -- TODO: LuaDoc
+local lru = require("ffi/lru")
 function sort.natsort_cmp(operands_func, cache, slots)
     -- Add a bit of scratch space to account for subsequent calls
     if slots then
