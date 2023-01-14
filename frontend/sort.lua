@@ -46,7 +46,7 @@ end
 -- The extra persistence this affords us also happens to help with the FM use-case ;).
 
 -- Dumb persistent hash-map => cold, ~200 to 250ms; hot: ~150ms (which roughly matches sorting by numerical file attributes).
--- (Numbers are from the FM sorting 350 entries (mostly composed of author names) on an H2O).
+-- (Numbers are from the FM sorting 350 entries (mostly composed of author names) on an H2O; an uncached run takes ~650ms).
 --[[
 local natsort_cache = {}
 
