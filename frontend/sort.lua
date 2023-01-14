@@ -15,7 +15,7 @@ local function addLeadingZeroes(d)
     local dec, n = string.match(d, "(%.?)0*(.+)")
     return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
 end
-function natsort(a, b)
+function sort.natsort(a, b)
     return tostring(a):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b)
            < tostring(b):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#a)
 end
@@ -42,31 +42,6 @@ end
 -- Rely on LRU to avoid explicit cache maintenance concerns
 -- (given the type of content we massage, the memory impact is fairly insignificant).
 -- The extra persistence this affords us also happens to help with the FM use-case ;).
-
---[[
-local lru = require("ffi/lru")
--- We start with a small hard-coded value at require-time,
--- so as to prevent circular dependencies issues with luadefaults and early callers (e.g., userpatch).
-local natsort_cache = lru.new(128, nil, false)
-function sort.natsort(a, b)
-    local ca, cb = natsort_cache:get(a), natsort_cache:get(b)
-    if not ca then
-        ca = natsort_conv(a)
-        natsort_cache:set(a, ca)
-    end
-    if not cb then
-        cb = natsort_conv(b)
-        natsort_cache:set(b, cb)
-    end
-
-    return ca < cb or ca == cb and a < b
-end
-
--- Set the cache to its (final) desired size
-function sort.natsort_cache_init()
-    natsort_cache = lru.new(G_defaults:readSetting("DNATURAL_SORT_CACHE_SLOTS"), nil, false)
-end
---]]
 
 -- Dumb hash-map => cold, ~200 to 250ms; hot: ~150ms (which roughly matches sorting by numerical file attributes).
 --[[

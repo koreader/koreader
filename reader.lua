@@ -30,9 +30,6 @@ io.write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
 
 -- Load default settings
 G_defaults = require("luadefaults"):open()
--- Setup natsort cache now that we have G_defaults
---local sort = require("sort")
---sort.natsort_cache_init()
 
 -- Read settings and check for language override
 -- Has to be done before requiring other files because
