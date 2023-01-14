@@ -101,6 +101,7 @@ function FileChooser:show_file(filename)
 end
 
 function FileChooser:init()
+    print("FileChooser:init", self)
     self.path_items = {}
     self.width = Screen:getWidth()
     self.list = function(path, dirs, files, count_only)
@@ -641,6 +642,13 @@ function FileChooser:showSetProviderButtons(file, one_time_providers)
         buttons = buttons,
     }
     UIManager:show(self.set_provider_dialog)
+end
+
+function FileChooser:onCloseWidget()
+    print("FileChooser:onCloseWidget", self)
+    -- Drop our natsort cache
+    sort.natsort_destroy_cache("filechooser")
+    Menu.onCloseWidget(self)
 end
 
 return FileChooser

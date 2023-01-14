@@ -16,6 +16,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local sort = require("sort")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
@@ -52,6 +53,12 @@ end
 
 function Calibre:onClose()
     self:closeWirelessConnection()
+end
+
+function Calibre:onCloseWidget()
+    print("Calibre:onCloseWidget", self)
+    -- Drop our natsort cache
+    sort.natsort_destroy_cache("calibre")
 end
 
 function Calibre:closeWirelessConnection()

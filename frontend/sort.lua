@@ -117,4 +117,9 @@ function sort.natsort_set_cache(tag, slots)
     natsort_cache = natsort_caches[tag]
 end
 
+function sort.natsort_destroy_cache(tag)
+    natsort_caches[tag] = nil
+    natsort_cache = natsort_caches.global
+end
+
 return sort

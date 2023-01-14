@@ -648,6 +648,7 @@ function CoverMenu:onCollectionsMenuHold(item)
 end
 
 function CoverMenu:onCloseWidget()
+    print("CoverMenu:onCloseWidget", self)
     -- Due to close callback in FileManagerHistory:onShowHist, we may be called
     -- multiple times (witnessed that with print(debug.traceback())
     -- So, avoid doing what follows twice
@@ -683,8 +684,13 @@ function CoverMenu:onCloseWidget()
     end)
     nb_drawings_since_last_collectgarbage = 0
 
-    -- Call original Menu:onCloseWidget (no subclass seems to override it)
-    Menu.onCloseWidget(self)
+    -- Call the object's original onCloseWidget (if any were backed up by CoverBrowser:setupFileManagerDisplayMode), or Menu's
+    if self._onCloseWidget then
+        -- This is mostly for FileChooser's benefit
+        self:_onCloseWidget()
+    else
+        Menu.onCloseWidget(self)
+    end
 end
 
 function CoverMenu:tapPlus()
