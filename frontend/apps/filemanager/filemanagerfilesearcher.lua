@@ -222,9 +222,9 @@ function FileSearcher:showSearchResults()
     -- If we have a FileChooser instance, use it, to be able to make use of its natsort cache
     local sorting
     if self.ui.file_chooser then
-        sorting = self.ui.file_chooser:getSortingFunction(collate, reverse_collate, #self.results)
+        sorting = self.ui.file_chooser:getSortingFunction(collate, reverse_collate)
     else
-        sorting = FileChooser:getSortingFunction(collate, reverse_collate, #self.results)
+        sorting = FileChooser:getSortingFunction(collate, reverse_collate)
     end
 
     table.sort(self.results, sorting)

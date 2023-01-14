@@ -160,6 +160,7 @@ end
 local CalibreSearch = WidgetContainer:extend{
     books = {},
     libraries = {},
+    natsort_cache = {},
     last_scan = {},
     search_options = {
         "cache_metadata",
@@ -449,9 +450,7 @@ function CalibreSearch:switchResults(t, title, is_child, page)
         title = _("Search results")
     end
 
-    local natsort
-    natsort, self.natsort_cache = sort.natsort_cmp(function(a, b) return a.text, b.text end, self.natsort_cache, #t)
-    table.sort(t, natsort)
+    table.sort(t, sort.natsort_cmp(function(a, b) return a.text, b.text end, self.natsort_cache))
 
     if is_child then
         local path_entry = {}
@@ -552,7 +551,7 @@ end
 function CalibreSearch:invalidateCache()
     self.cache_books:delete()
     self.books = {}
-    self.natsort_cache = nil
+    self.natsort_cache = {}
 end
 
 -- get metadata from cache or calibre files

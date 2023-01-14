@@ -84,51 +84,38 @@ end
 --]]
 
 -- TODO: LuaDoc
-local lru = require("ffi/lru")
-function sort.natsort_cmp(operands_func, cache, slots)
-    -- Add a bit of scratch space to account for subsequent calls
-    if slots then
-        slots = math.ceil(slots * 1.25)
-    else
-        slots = 1024
-    end
-
+function sort.natsort_cmp(operands_func, cache)
     if not cache then
-        cache = lru.new(slots, nil, false)
-        print("setting up", slots, "slots as", cache)
-    else
-        if slots > cache:total_slots() then
-            print("growing", cache, "from", cache:total_slots(), "to", slots)
-            cache:resize_slots(slots)
-        end
+        cache = {}
+        print("setting up cache", cache)
     end
 
     local natsort
     if operands_func then
         natsort = function(a, b)
             a, b = operands_func(a, b)
-            local ca, cb = cache:get(a), cache:get(b)
+            local ca, cb = cache[a], cache[b]
             if not ca then
                 ca = natsort_conv(a)
-                cache:set(a, ca)
+                cache[a] = ca
             end
             if not cb then
                 cb = natsort_conv(b)
-                cache:set(b, cb)
+                cache[b] = cb
             end
 
             return ca < cb or ca == cb and a < b
         end
     else
         natsort = function(a, b)
-            local ca, cb = cache:get(a), cache:get(b)
+            local ca, cb = cache[a], cache[b]
             if not ca then
                 ca = natsort_conv(a)
-                cache:set(a, ca)
+                cache[a] = ca
             end
             if not cb then
                 cb = natsort_conv(b)
-                cache:set(b, cb)
+                cache[b] = cb
             end
 
             return ca < cb or ca == cb and a < b
