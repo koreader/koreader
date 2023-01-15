@@ -233,11 +233,18 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             return a.percent_finished < b.percent_finished
         end
     elseif collate == "natural" then
+        local natsort
         -- Only keep the cache if we're an *instance* of FileChooser
         if self ~= FileChooser then
-            sorting, self.natsort_cache = sort.natsort_cmp(function(a, b) return a.name, b.name end, self.natsort_cache)
+            natsort, self.natsort_cache = sort.natsort_cmp(self.natsort_cache)
+            sorting = function(a, b)
+                return natsort(a.name, b.name)
+            end
         else
-            sorting = sort.natsort_cmp(function(a, b) return a.name, b.name end)
+            natsort = sort.natsort_cmp()
+            sorting = function(a, b)
+                return natsort(a.name, b.name)
+            end
         end
     else
         sorting = function(a, b)

@@ -450,7 +450,8 @@ function CalibreSearch:switchResults(t, title, is_child, page)
         title = _("Search results")
     end
 
-    table.sort(t, sort.natsort_cmp(function(a, b) return a.text, b.text end, self.natsort_cache))
+    local natsort = sort.natsort_cmp(self.natsort_cache)
+    table.sort(t, function(a, b) return natsort(a.text, b.text) end)
 
     if is_child then
         local path_entry = {}

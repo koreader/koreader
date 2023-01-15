@@ -88,7 +88,6 @@ end
 --[[--
 Generates a natural sorting comparison function for table.sort.
 
-@param operands_func Optional, used when sorting nested strings. Takes two objects as input (like a `table.sort` `cmp` function), and returns, in the same order, two *strings* that will actually be fed to the actual cmp function
 @param cache Optional, hashmap used to cache the processed strings to speed up sorting
 @return The cmp function to feed to `table.sort`
 @return The cache used (same object as the passed one, if any; will be created if not)
@@ -100,10 +99,10 @@ table.sort(t, sort.natsort_cmp())
 
 -- t is an array of arrays, we want to sort the strings in the "text" field of the inner arrays, and we want to keep the cache around.
 local cmp, cache
-cmp, cache = sort.natsort_cmp(function(a, b) return a.text, b.text end, cache)
-table.sort(t, cmp)
+cmp, cache = sort.natsort_cmp(cache)
+table.sort(t, function(a, b) return cmp(a.text, b.text) end)
 ]]
-function sort.natsort_cmp(operands_func, cache)
+function sort.natsort_cmp(cache)
     if not cache then
         cache = {}
     end
@@ -124,20 +123,10 @@ function sort.natsort_cmp(operands_func, cache)
         return res
     end
 
-    local natsort
-    if operands_func then
-        natsort = function(a, b)
-            a, b = operands_func(a, b)
-            local ca, cb = cache[a] or natsort_conv(a), cache[b] or natsort_conv(b)
+    local function natsort(a, b)
+        local ca, cb = cache[a] or natsort_conv(a), cache[b] or natsort_conv(b)
 
-            return ca < cb or ca == cb and a < b
-        end
-    else
-        natsort = function(a, b)
-            local ca, cb = cache[a] or natsort_conv(a), cache[b] or natsort_conv(b)
-
-            return ca < cb or ca == cb and a < b
-        end
+        return ca < cb or ca == cb and a < b
     end
     return natsort, cache
 end
