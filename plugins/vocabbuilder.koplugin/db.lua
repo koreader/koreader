@@ -219,7 +219,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     if target_count == 0 then
         due_time = current_time + 5 * 60 -- 5 minutes
     elseif target_count == 1 then
-        due_time = current_time + 24 * 3600 -- 30m
+        due_time = current_time + 30 * 60 -- 30m
     elseif target_count == 2 then
         due_time = current_time + math.random(10, 14) * 3600 -- ~12h
     elseif target_count == 3 then
