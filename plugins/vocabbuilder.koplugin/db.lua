@@ -217,21 +217,19 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     local target_review_count = math.max(item.review_count + (isGot and 1 or -1), 0)
     local target_count = isGot and item.streak_count + 1 or 0
     if target_count == 0 then
-        due_time = current_time + 5 * 60
+        due_time = current_time + 5 * 60 -- 5 minutes
     elseif target_count == 1 then
-        due_time = current_time + 30 * 60
+        due_time = current_time + 24 * 3600 -- 24h
     elseif target_count == 2 then
-        due_time = current_time + 12 * 3600
+        due_time = current_time + math.random(40, 60 ) * 3600 -- ~60h, 2.5d median
     elseif target_count == 3 then
-        due_time = current_time + 24 * 3600
+        due_time = current_time + math.random(120, 170) * 3600 -- ~145h or 6d
     elseif target_count == 4 then
-        due_time = current_time + 48 * 3600
+        due_time = current_time + math.random(330, 400) * 3600 -- ~365h or 15d
     elseif target_count == 5 then
-        due_time = current_time + 96 * 3600
+        due_time = current_time + math.random(800, 1100) * 3600 -- ~950h or 40d
     elseif target_count == 6 then
-        due_time = current_time + 24 * 7 * 3600
-    elseif target_count == 7 then
-        due_time = current_time + 24 * 15 * 3600
+        due_time = current_time + math.random(2100, 2500) * 3600 -- ~2300h or 95d
     else
         due_time = current_time + 24 * 3600 * 30 * 2 ^ (math.min(target_count - 8, 6))
     end
