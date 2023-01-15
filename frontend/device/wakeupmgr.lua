@@ -221,8 +221,7 @@ function WakeupMgr:unsetWakeupAlarm()
     -- Deal with this insanity by ensuring the alarm is not set in the future,
     -- by overwriting the current alarm with an already expired disabled one.
     logger.dbg("WakeupMgr:unsetWakeupAlarm will invalidate any future alarms")
-    local epoch = RTC:secondsFromNowToEpoch(-1)
-    self:setWakeupAlarm(epoch, false)
+    self:setWakeupAlarm(0, false)
     return self.rtc:unsetWakeupAlarm()
 end
 
