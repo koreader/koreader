@@ -125,7 +125,6 @@ function sort.natsort_cmp(cache)
 
     local function natsort(a, b)
         local ca, cb = cache[a] or natsort_conv(a), cache[b] or natsort_conv(b)
-
         return ca < cb or ca == cb and a < b
     end
     return natsort, cache
