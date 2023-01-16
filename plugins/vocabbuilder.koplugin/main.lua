@@ -246,38 +246,37 @@ function MenuDialog:init()
     local custom_intervals_button = {
         text = _("Set review intervals"),
         callback = function()
-            UIManager:show(ConfirmBox:new{
-                text = _("Are you absolutely sure?"),
-                ok_text = _("Yes"),
-                ok_callback = function()
-                    local dialog
-                    dialog = InputDialog:new {
-                        title = _("Set review intervals to:"),
-                        input = "a",
-                        input_type = "text",
-                        buttons = {
-                            {
-                                {
-                                    text = _("Cancel"),
-                                    id = "close",
-                                    callback = function()
-                                        UIManager:close(dialog)
-                                    end
-                                },
-                                {
-                                    text = _("Change"),
-                                    is_enter_default = true,
-                                    callback = function()
-                                        UIManager:close(dialog)
-                                    end
-                                }
-                            }
-                        }
+            local interval_input
+            interval_input = InputDialog:new{
+                title = _("Set review intervals"),
+                input = "",
+                input_hint = _("0.5, 1, 3, 6, 12"),
+                description = _("Desired intervals, in days:"),
+                text_type = "text",
+                buttons = {
+                    {
+                        {
+                            text = _("Cancel"),
+                            id = "close",
+                            callback = function()
+                                UIManager:close(sample_input)
+                            end,
+                        },
+                        {
+                            text = _("Save"),
+                            -- button with is_enter_default set to true will be
+                            -- triggered after user press the enter key from keyboard
+                            is_enter_default = true,
+                            callback = function()
+                                logger.dbg("Got user input as raw text:", sample_input:getInputText())
+                                logger.dbg("Got user input as value:", sample_input:getInputValue())
+                            end,
+                        },
                     }
-                    self:onClose()
-                    self.clean_callback()
-                end
-            })
+                },
+            }
+            UIManager:show(interval_input)
+            interval_input:onShowKeyboard()
         end,
     }
     local show_sync_settings = function()
