@@ -269,8 +269,12 @@ function MenuDialog:init()
                             -- triggered after user press the enter key from keyboard
                             is_enter_default = true,
                             callback = function()
-                                logger.dbg("Got user input as raw text:", interval_input:getInputText())
-                                logger.dbg("Got user input as value:", interval_input:getInputValue())
+                                local intervalsArray = {};
+                                for num in string.gmatch(interval_input:getInputText(), "%d+") do
+                                    table.insert(intervalsArray, tonumber(num))
+                                end
+                                logger.dbg("FIRST VALUE: ", intervalsArray[1])
+                                logger.dbg("SECOND VALUE: ", intervalsArray[2])
                             end,
                         },
                     }
