@@ -246,10 +246,40 @@ function MenuDialog:init()
     local custom_intervals_button = {
         text = _("Set review intervals"),
         callback = function()
-            -- todo
+            UIManager:show(ConfirmBox:new{
+                text = _("Are you absolutely sure?"),
+                ok_text = _("Yes"),
+                ok_callback = function()
+                    local dialog
+                    dialog = InputDialog:new {
+                        title = _("Set review intervals to:"),
+                        input = "a",
+                        input_type = "text",
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    id = "close",
+                                    callback = function()
+                                        UIManager:close(dialog)
+                                    end
+                                },
+                                {
+                                    text = _("Change"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        UIManager:close(dialog)
+                                    end
+                                }
+                            }
+                        }
+                    }
+                    self:onClose()
+                    self.clean_callback()
+                end
+            })
         end,
     }
-
     local show_sync_settings = function()
         if not settings.server then
             local sync_settings = SyncService:new{}
