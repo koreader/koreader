@@ -3,7 +3,6 @@ This plugin processes dictionary word lookups and uses spaced repetition to help
 
 @module koplugin.vocabbuilder
 --]]--
-
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
@@ -47,6 +46,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -246,6 +246,7 @@ function MenuDialog:init()
     local custom_intervals_button = {
         text = _("Set review intervals"),
         callback = function()
+
             local interval_input
             interval_input = InputDialog:new{
                 title = _("Set review intervals"),
@@ -259,7 +260,7 @@ function MenuDialog:init()
                             text = _("Cancel"),
                             id = "close",
                             callback = function()
-                                UIManager:close(sample_input)
+                                UIManager:close(interval_input)
                             end,
                         },
                         {
@@ -268,8 +269,8 @@ function MenuDialog:init()
                             -- triggered after user press the enter key from keyboard
                             is_enter_default = true,
                             callback = function()
-                                logger.dbg("Got user input as raw text:", sample_input:getInputText())
-                                logger.dbg("Got user input as value:", sample_input:getInputValue())
+                                logger.dbg("Got user input as raw text:", interval_input:getInputText())
+                                logger.dbg("Got user input as value:", interval_input:getInputValue())
                             end,
                         },
                     }
