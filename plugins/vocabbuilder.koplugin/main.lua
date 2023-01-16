@@ -243,6 +243,22 @@ function MenuDialog:init()
         end,
     }
 
+    function parseInputTime(str)
+        local num = tonumber(str:sub(1, -2))
+        local unit = str:sub(-1)
+        local totalMinutes = 0
+        if unit == "m" then
+            totalMinutes = num
+        elseif unit == "h" then
+            totalMinutes = num * 60
+        elseif unit == "d" then
+            totalMinutes = num * 1440
+        else
+            error("Invalid unit!")
+        end
+        return totalMinutes
+    end
+
     local custom_intervals_button = {
         text = _("Set review intervals"),
         callback = function()
@@ -251,8 +267,8 @@ function MenuDialog:init()
             interval_input = InputDialog:new{
                 title = _("Set review intervals"),
                 input = "",
-                input_hint = _("0.5, 1, 3, 6, 12"),
-                description = _("Desired intervals, in days:"),
+                input_hint = _("10m, 12h, 3d"),
+                description = _("Desired intervals:"),
                 text_type = "text",
                 buttons = {
                     {
