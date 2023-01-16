@@ -243,6 +243,13 @@ function MenuDialog:init()
         end,
     }
 
+    local custom_intervals_button = {
+        text = _("Set review intervals"),
+        callback = function()
+            -- todo
+        end,
+    }
+
     local show_sync_settings = function()
         if not settings.server then
             local sync_settings = SyncService:new{}
@@ -327,7 +334,7 @@ function MenuDialog:init()
         buttons = {
             {reverse_button},
             {sync_button},
-            {search_button},
+            {search_button, custom_intervals_button},
             {filter_button, edit_button},
             {reset_button, clean_button},
         },
