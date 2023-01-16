@@ -106,7 +106,7 @@ function UIManager:init()
 
     -- A simple wrapper for UIManager:quit()
     -- This may be overwritten by setRunForeverMode(); for testing purposes
-    self._gated_quit = self.quit
+    self:unsetRunForeverMode()
 end
 
 --[[--
@@ -785,14 +785,21 @@ end
 
 --- Signals to quit.
 -- An exit_code of false is not allowed.
-function UIManager:quit(exit_code)
+function UIManager:quit(exit_code, implicit)
     if exit_code == false then
         logger.err("UIManager:quit() called with false")
         return
     end
     -- Also honor older exit codes; default to 0
     self._exit_code = exit_code or self._exit_code or 0
-    logger.info("quitting uimanager with exit code:", self._exit_code)
+    if not implicit then
+        -- Explicit call via UIManager:quit (as opposed to self:_gated_quit)
+        if exit_code then
+            logger.info("Preparing to quit UIManager with exit code:", exit_code)
+        else
+            logger.info("Preparing to quit UIManager")
+        end
+    end
     self._task_queue_dirty = false
     self._window_stack = {}
     self._task_queue = {}
@@ -818,7 +825,7 @@ end
 
 -- Enable automatic UIManager quit; for testing purposes
 function UIManager:unsetRunForeverMode()
-    self._gated_quit = self.quit
+    self._gated_quit = function() return self:quit(nil, true) end
 end
 
 -- Ignore an empty window stack *once*; for startup w/ a missing last_file shenanigans...
@@ -1548,6 +1555,7 @@ function UIManager:run()
         self.looper:start()
     end
 
+    logger.info("Tearing down UIManager with exit code:", self._exit_code)
     return self._exit_code
 end
 
