@@ -25,6 +25,7 @@ end
 
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local sort = require("sort")
 local DataStorage = require("datastorage")
 
 -- the directory KOReader is installed in (and runs from)
@@ -55,16 +56,7 @@ local function runUserPatchTasks(dir, priority)
         return -- nothing to do
     end
 
-    local function addLeadingZeroes(d)
-        local dec, n = string.match(d, "(%.?)0*(.+)")
-        return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
-    end
-    local function sorting(a, b)
-        return tostring(a):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b)
-            < tostring(b):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#a)
-    end
-
-    table.sort(patches, sorting)
+    table.sort(patches, sort.natsort_cmp())
 
     for i, entry in ipairs(patches) do
         local fullpath = dir .. "/" .. entry

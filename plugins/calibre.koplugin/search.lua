@@ -17,8 +17,9 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
-local util = require("util")
+local sort = require("sort")
 local time = require("ui/time")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -159,6 +160,7 @@ end
 local CalibreSearch = WidgetContainer:extend{
     books = {},
     libraries = {},
+    natsort_cache = {},
     last_scan = {},
     search_options = {
         "cache_metadata",
@@ -271,7 +273,7 @@ function CalibreSearch:bookCatalog(t, option)
         entry.info = getBookInfo(book)
         entry.path = book.rootpath .. "/" .. book.lpath
         if series and book.series_index then
-            local major, minor = string.format("%05.2f", book.series_index):match("([^.]+).([^.]+)")
+            local major, minor = string.format("%05.2f", book.series_index):match("([^.]+)%.([^.]+)")
             if minor ~= "00" then
                 subseries = true
             end
@@ -448,7 +450,8 @@ function CalibreSearch:switchResults(t, title, is_child, page)
         title = _("Search results")
     end
 
-    table.sort(t, function(v1,v2) return v1.text < v2.text end)
+    local natsort = sort.natsort_cmp(self.natsort_cache)
+    table.sort(t, function(a, b) return natsort(a.text, b.text) end)
 
     if is_child then
         local path_entry = {}
@@ -549,6 +552,7 @@ end
 function CalibreSearch:invalidateCache()
     self.cache_books:delete()
     self.books = {}
+    self.natsort_cache = {}
 end
 
 -- get metadata from cache or calibre files
