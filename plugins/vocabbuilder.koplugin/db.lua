@@ -211,7 +211,7 @@ function VocabularyBuilder:select_items(vocab_widget, start_idx, end_idx)
 end
 
 function estimateNextInterval(intervals, current_time, target_count)
-    local interval = intervals[target_count + 1]
+    local interval = intervals[target_count]
     local interval_randomized_minutes = math.random(math.floor(interval * 0.9), math.ceil(interval * 1.1))
     return current_time + interval_randomized_minutes * 60
 end
