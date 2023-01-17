@@ -3,6 +3,7 @@ local Device = require("device")
 local SQ3 = require("lua-ljsqlite3/init")
 local LuaData = require("luadata")
 local logger = require("logger")
+local settings = G_reader_settings:readSetting("vocabulary_builder", {enabled = false, with_context = true})
 
 local db_location = DataStorage:getSettingsDir() .. "/vocabulary_builder.sqlite3"
 
@@ -209,6 +210,10 @@ function VocabularyBuilder:select_items(vocab_widget, start_idx, end_idx)
     self:_select_items(items, start_cursor, vocab_widget:check_reverse() and vocab_widget.reload_time, vocab_widget.search_text_sql)
 end
 
+function estimateNextInterval(interval, current_time)
+    local interval_randomized_minutes = math.random(math.floor(interval * 0.9), math.ceil(interval * 1.1))
+    return current_time + interval_randomized_minutes * 60
+end
 
 function VocabularyBuilder:gotOrForgot(item, isGot)
     local current_time = os.time()
@@ -216,22 +221,30 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     local due_time
     local target_review_count = math.max(item.review_count + (isGot and 1 or -1), 0)
     local target_count = isGot and item.streak_count + 1 or 0
+
+    local intervals
+    if settings.review_intervals then
+        intervals = settings.review_intervals
+    else
+        intervals = settings.default_review_intervals
+    end
+
     if target_count == 0 then
-        due_time = current_time + 5 * 60
+        due_time = estimateNextInterval(intervals[1], current_time)
     elseif target_count == 1 then
-        due_time = current_time + 30 * 60
+        due_time = estimateNextInterval(intervals[2], current_time)
     elseif target_count == 2 then
-        due_time = current_time + 12 * 3600
+        due_time = estimateNextInterval(intervals[3], current_time)
     elseif target_count == 3 then
-        due_time = current_time + 24 * 3600
+        due_time = estimateNextInterval(intervals[4], current_time)
     elseif target_count == 4 then
-        due_time = current_time + 48 * 3600
+        due_time = estimateNextInterval(intervals[5], current_time)
     elseif target_count == 5 then
-        due_time = current_time + 96 * 3600
+        due_time = estimateNextInterval(intervals[6], current_time)
     elseif target_count == 6 then
-        due_time = current_time + 24 * 7 * 3600
+        due_time = estimateNextInterval(intervals[7], current_time)
     elseif target_count == 7 then
-        due_time = current_time + 24 * 15 * 3600
+        due_time = estimateNextInterval(intervals[8], current_time)
     else
         due_time = current_time + 24 * 3600 * 30 * 2 ^ (math.min(target_count - 8, 6))
     end
