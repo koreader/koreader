@@ -282,6 +282,14 @@ function MenuDialog:init()
                             end,
                         },
                         {
+                            text = _("Revert to default"),
+                            id = "revert",
+                            callback = function()
+                                settings.review_intervals = settings.default_review_intervals
+                                UIManager:close(interval_input)
+                            end,
+                        },
+                        {
                             text = _("Save"),
                             -- button with is_enter_default set to true will be
                             -- triggered after user press the enter key from keyboard
