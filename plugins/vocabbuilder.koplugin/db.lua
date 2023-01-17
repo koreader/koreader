@@ -210,7 +210,8 @@ function VocabularyBuilder:select_items(vocab_widget, start_idx, end_idx)
     self:_select_items(items, start_cursor, vocab_widget:check_reverse() and vocab_widget.reload_time, vocab_widget.search_text_sql)
 end
 
-function estimateNextInterval(interval, current_time)
+function estimateNextInterval(intervals, current_time, target_count)
+    local interval = intervals[target_count + 1]
     local interval_randomized_minutes = math.random(math.floor(interval * 0.9), math.ceil(interval * 1.1))
     return current_time + interval_randomized_minutes * 60
 end
@@ -229,25 +230,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
         intervals = settings.default_review_intervals
     end
 
-    if target_count == 0 then
-        due_time = estimateNextInterval(intervals[1], current_time)
-    elseif target_count == 1 then
-        due_time = estimateNextInterval(intervals[2], current_time)
-    elseif target_count == 2 then
-        due_time = estimateNextInterval(intervals[3], current_time)
-    elseif target_count == 3 then
-        due_time = estimateNextInterval(intervals[4], current_time)
-    elseif target_count == 4 then
-        due_time = estimateNextInterval(intervals[5], current_time)
-    elseif target_count == 5 then
-        due_time = estimateNextInterval(intervals[6], current_time)
-    elseif target_count == 6 then
-        due_time = estimateNextInterval(intervals[7], current_time)
-    elseif target_count == 7 then
-        due_time = estimateNextInterval(intervals[8], current_time)
-    else
-        due_time = current_time + 24 * 3600 * 30 * 2 ^ (math.min(target_count - 8, 6))
-    end
+    due_time = estimateNextInterval(intervals, current_time, target_count)
 
     item.last_streak_count = item.streak_count
     item.last_review_count = item.review_count
