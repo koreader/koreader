@@ -260,17 +260,17 @@ function MenuDialog:init()
     end
 
     local custom_intervals_button = {
-        text = _("Set review intervals"),
+        text = _("Review intervals"),
         callback = function()
-            settings.default_review_intervals = {5, 30, 720, 1440, 3600,
+            settings.default_review_intervals = {2, 30, 720, 1440, 3600,
                                                  8700, 21900, 57000, 138000};
             logger.dbg("first value in db, retrieved from file: ", settings.review_intervals[1])
             local interval_input
             interval_input = InputDialog:new{
-                title = _("Set review intervals"),
+                title = _("Review intervals"),
                 input = "",
                 input_hint = _("10m, 12h, 3d"),
-                description = _("Enter 8 desired intervals:"),
+                description = _("Enter desired intervals:"),
                 text_type = "text",
                 buttons = {
                     {
@@ -282,25 +282,22 @@ function MenuDialog:init()
                             end,
                         },
                         {
-                            text = _("Revert to default"),
-                            id = "revert",
+                            text = _("Default"),
+                            id = "default",
                             callback = function()
                                 settings.review_intervals = settings.default_review_intervals
+                                saveSettings()
                                 UIManager:close(interval_input)
                             end,
                         },
                         {
                             text = _("Save"),
-                            -- button with is_enter_default set to true will be
-                            -- triggered after user press the enter key from keyboard
                             is_enter_default = true,
                             callback = function()
                                 local intervalsArray = {};
                                 for inputTime in string.gmatch(interval_input:getInputText(), "%d+[m|d|h]") do
                                     table.insert(intervalsArray, parseInputTime(inputTime))
                                 end
-                                logger.dbg("FIRST VALUE: ", intervalsArray[1])
-                                logger.dbg("SECOND VALUE: ", intervalsArray[2])
                                 settings.review_intervals = intervalsArray
                                 saveSettings()
                             end,
@@ -311,6 +308,49 @@ function MenuDialog:init()
             UIManager:show(interval_input)
             interval_input:onShowKeyboard()
         end,
+    }
+    local interval_modifier_button = {
+        text = _("Interval modifier"),
+        callback = function()
+            settings.interval_modifier = 2
+            local interval_modifier_input
+            interval_modifier_input = InputDialog:new{
+                title = _("Set interval modifier"),
+                description = _("Multiplier that applies after there are no more set intervals. For example, if you have set intervals 10m 1d 3d, interval modifier will take over and keep increasing intervals. By default it's 2, doubling the previous value. In that example, it would set next interval to 6");
+                input = "2",
+                text_type = "text",
+                buttons = {
+                    {
+                        {
+                            text = _("Cancel"),
+                            id = "close",
+                            callback = function()
+                                UIManager:close(interval_modifier_input)
+                            end,
+                        },
+                        {
+                            text = _("Default"),
+                            id = "Default",
+                            callback = function()
+                                settings.interval_modifier = 2
+                                saveSettings()
+                                UIManager:close(interval_modifier_input)
+                            end,
+                        },
+                        {
+                            text = _("Save"),
+                            is_enter_default = true,
+                            callback = function()
+                                settings.interval_modifier = interval_modifier_input:getInputText()
+                                saveSettings()
+                            end,
+                        },
+                    }
+                },
+            }
+            UIManager:show(interval_modifier_input)
+            interval_modifier_input:onShowKeyboard()
+        end
     }
     local show_sync_settings = function()
         if not settings.server then
@@ -396,7 +436,8 @@ function MenuDialog:init()
         buttons = {
             {reverse_button},
             {sync_button},
-            {search_button, custom_intervals_button},
+            {search_button},
+            {custom_intervals_button, interval_modifier_button},
             {filter_button, edit_button},
             {reset_button, clean_button},
         },
