@@ -262,7 +262,7 @@ function MenuDialog:init()
     local custom_intervals_button = {
         text = _("Set review intervals"),
         callback = function()
-
+            logger.dbg("first value in db, retrieved from file: ", settings.review_intervals[1])
             local interval_input
             interval_input = InputDialog:new{
                 title = _("Set review intervals"),
@@ -291,6 +291,8 @@ function MenuDialog:init()
                                 end
                                 logger.dbg("FIRST VALUE: ", intervalsArray[1])
                                 logger.dbg("SECOND VALUE: ", intervalsArray[2])
+                                settings.review_intervals = intervalsArray
+                                saveSettings()
                             end,
                         },
                     }
