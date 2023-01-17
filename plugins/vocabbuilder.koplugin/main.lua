@@ -286,8 +286,8 @@ function MenuDialog:init()
                             is_enter_default = true,
                             callback = function()
                                 local intervalsArray = {};
-                                for num in string.gmatch(interval_input:getInputText(), "%d+") do
-                                    table.insert(intervalsArray, tonumber(num))
+                                for inputTime in string.gmatch(interval_input:getInputText(), "%d+[m|d|h]") do
+                                    table.insert(intervalsArray, parseInputTime(inputTime))
                                 end
                                 logger.dbg("FIRST VALUE: ", intervalsArray[1])
                                 logger.dbg("SECOND VALUE: ", intervalsArray[2])
