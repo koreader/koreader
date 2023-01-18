@@ -236,7 +236,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
 
     local interval_randomized_minutes = math.random(math.floor(interval * 0.9), math.ceil(interval * 1.1))
 
-    due_time = current_time + interval * 60
+    due_time = current_time + interval_randomized_minutes * 60
 
     item.last_streak_count = item.streak_count
     item.last_review_count = item.review_count
