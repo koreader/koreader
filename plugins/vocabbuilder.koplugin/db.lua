@@ -210,11 +210,6 @@ function VocabularyBuilder:select_items(vocab_widget, start_idx, end_idx)
     self:_select_items(items, start_cursor, vocab_widget:check_reverse() and vocab_widget.reload_time, vocab_widget.search_text_sql)
 end
 
-function estimateNextInterval(intervals, current_time, target_count)
-    local interval = intervals[target_count]
-    local interval_randomized_minutes = math.random(math.floor(interval * 0.9), math.ceil(interval * 1.1))
-    return current_time + interval_randomized_minutes * 60
-end
 
 function VocabularyBuilder:gotOrForgot(item, isGot)
     local current_time = os.time()
@@ -230,7 +225,18 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
         intervals = settings.default_review_intervals
     end
 
-    due_time = estimateNextInterval(intervals, current_time, target_count)
+    local interval
+    if intervals[target_count] ~= nil then
+        interval = intervals[target_count]
+        item.last_interval = interval
+    else
+        interval = item.last_interval * settings.interval_modifier
+        item.last_interval = interval
+    end
+
+    local interval_randomized_minutes = math.random(math.floor(interval * 0.9), math.ceil(interval * 1.1))
+
+    due_time = current_time + interval * 60
 
     item.last_streak_count = item.streak_count
     item.last_review_count = item.review_count
