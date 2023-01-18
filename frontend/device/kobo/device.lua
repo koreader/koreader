@@ -157,7 +157,7 @@ local Kobo = Generic:extend{
     isAlwaysPortrait = yes,
     -- we don't need an extra refreshFull on resume, thank you very much.
     needsScreenRefreshAfterResume = no,
-    -- currently only the Aura One and Forma have coloured frontlights
+    -- some devices have coloured frontlights
     hasNaturalLight = no,
     hasNaturalLightMixer = no,
     -- HW inversion is generally safe on Kobo, except on a few boards/kernels
@@ -417,7 +417,7 @@ local KoboStorm = Kobo:extend{
     },
     -- NOTE: The Libra apparently suffers from a mysterious issue where completely innocuous WAIT_FOR_UPDATE_COMPLETE ioctls
     --       will mysteriously fail with a timeout (5s)...
-    --       This obviously leads to *terrible* user experience, so, until more is understood avout the issue,
+    --       This obviously leads to *terrible* user experience, so, until more is understood about the issue,
     --       bypass this ioctl on this device.
     --       c.f., https://github.com/koreader/koreader/issues/7340
     hasReliableMxcWaitFor = no,
@@ -1529,7 +1529,7 @@ elseif codename == "trilogy" and product_id == "310" then
     -- This is where things get interesting...
     -- The early 'A' variant (the actual model name being N905, without any letter suffix, unlike the two other variants)
     -- does *NOT* feature an internal SD card, and is manufactured in China instead of Taiwan... because it is *NOT* an NTX board.
-    -- c.f., #9742
+    -- cf. https://github.com/koreader/koreader/issues/9742
     if os.getenv("PLATFORM") == "freescale" then
         return KoboTrilogyA
     else
