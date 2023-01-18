@@ -316,7 +316,9 @@ function MenuDialog:init()
             local interval_modifier_input
             interval_modifier_input = InputDialog:new{
                 title = _("Set interval modifier"),
-                description = _("Multiplier that applies after there are no more set intervals. For example, if you have set intervals 10m 1d 3d, interval modifier will take over and keep increasing intervals. By default it's 2, doubling the previous value. In that example, it would set next interval to 6");
+                description = _([[Multiplier that applies after there are no more set intervals. By default it's 2,
+doubling the previous value. If you have set intervals 10m 1d 3d, interval modifier will set next interval to 6d,
+then 12d, and so on.]]):gsub("\n", " ");
                 input = "2",
                 text_type = "text",
                 buttons = {
