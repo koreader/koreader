@@ -243,22 +243,6 @@ function MenuDialog:init()
         end,
     }
 
-    function parseInputTime(str)
-        local num = tonumber(str:sub(1, -2))
-        local unit = str:sub(-1)
-        local totalMinutes = 0
-        if unit == "m" then
-            totalMinutes = num
-        elseif unit == "h" then
-            totalMinutes = num * 60
-        elseif unit == "d" then
-            totalMinutes = num * 1440
-        else
-            error("Invalid unit!")
-        end
-        return totalMinutes
-    end
-
     local custom_intervals_button = {
         text = _("Review intervals"),
         callback = function()
@@ -498,6 +482,23 @@ then 12d, and so on.]]):gsub("\n", " ");
     }
 
 end
+
+function MenuDialog:parseInputTime(str)
+    local num = tonumber(str:sub(1, -2))
+    local unit = str:sub(-1)
+    local totalMinutes = 0
+    if unit == "m" then
+        totalMinutes = num
+    elseif unit == "h" then
+        totalMinutes = num * 60
+    elseif unit == "d" then
+        totalMinutes = num * 1440
+    else
+        error("Invalid unit!")
+    end
+    return totalMinutes
+end
+
 
 function MenuDialog:onShow()
     UIManager:setDirty(self, function()
