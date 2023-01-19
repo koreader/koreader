@@ -292,7 +292,7 @@ function MenuDialog:init()
                             text = _("Default"),
                             id = "default",
                             callback = function()
-                                settings.review_intervals = settings.default_review_intervals
+                                settings.review_intervals = nil
                                 saveSettings()
                                 UIManager:close(interval_input)
                             end,
