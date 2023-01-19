@@ -333,8 +333,7 @@ function MenuDialog:init()
                 title = _("Set interval modifier"),
                 description = _([[Multiplier that applies after there are no more set intervals. If you have set intervals
 10m 1d 3d, interval modifier will set next interval to 6d, then 12d, and so on.]]):gsub("\n", " ");
-                input = interval_modifier,
-                text_type = "text",
+                input = tostring(interval_modifier),
                 buttons = {
                     {
                         {
