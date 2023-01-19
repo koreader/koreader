@@ -243,18 +243,41 @@ function MenuDialog:init()
         end,
     }
 
+    function parseInputTime(str)
+        local num = tonumber(str:sub(1, -2))
+        local unit = str:sub(-1)
+        local totalMinutes = 0
+        if unit == "m" then
+            totalMinutes = num
+        elseif unit == "h" then
+            totalMinutes = num * 60
+        elseif unit == "d" then
+            totalMinutes = num * 1440
+        else
+            error("Invalid unit!")
+        end
+        return totalMinutes
+    end
+
+
     local custom_intervals_button = {
         text = _("Review intervals"),
         callback = function()
-            settings.default_review_intervals = {5, 30, 720, 1440};
+            settings.default_review_intervals = {5, 30, 720, 1440}
+            settings.default_review_intervals_pretty = "5m, 30m, 12h, 24h"
 
-            logger.dbg("first value in db, retrieved from file: ", settings.review_intervals[1])
+            if settings.review_intervals then
+                current_intervals = settings.review_intervals_pretty
+            else
+                current_intervals = settings.default_review_intervals_pretty
+            end
+
             local interval_input
             interval_input = InputDialog:new{
                 title = _("Review intervals"),
                 input = "",
                 input_hint = _("10m, 12h, 3d"),
-                description = _("Enter desired intervals:"),
+                description = _("Enter desired review intervals. Current setting is: " .. current_intervals),
                 text_type = "text",
                 buttons = {
                     {
@@ -283,6 +306,7 @@ function MenuDialog:init()
                                     table.insert(intervalsArray, parseInputTime(inputTime))
                                 end
                                 settings.review_intervals = intervalsArray
+                                settings.review_intervals_pretty = interval_input:getInputText();
                                 saveSettings()
                             end,
                         },
@@ -481,22 +505,6 @@ then 12d, and so on.]]):gsub("\n", " ");
         }
     }
 
-end
-
-function MenuDialog:parseInputTime(str)
-    local num = tonumber(str:sub(1, -2))
-    local unit = str:sub(-1)
-    local totalMinutes = 0
-    if unit == "m" then
-        totalMinutes = num
-    elseif unit == "h" then
-        totalMinutes = num * 60
-    elseif unit == "d" then
-        totalMinutes = num * 1440
-    else
-        error("Invalid unit!")
-    end
-    return totalMinutes
 end
 
 
