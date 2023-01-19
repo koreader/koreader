@@ -275,9 +275,8 @@ function MenuDialog:init()
             local interval_input
             interval_input = InputDialog:new{
                 title = _("Review intervals"),
-                input = "",
-                input_hint = _("10m, 12h, 3d"),
-                description = _("Enter desired review intervals. Current setting is: " .. current_intervals),
+                input = current_intervals,
+                description = _("Enter desired review intervals:"),
                 text_type = "text",
                 buttons = {
                     {
