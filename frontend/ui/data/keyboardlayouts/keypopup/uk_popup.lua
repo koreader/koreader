@@ -118,7 +118,7 @@ return {
     _Z_ = {"З", north = "з", },
     _z_ = {"з", north = "З", },
     _Y_ = {"И", north = "и", northwest = "ы", west = "Ы", },
-    _y_ = {"и", north = "И", northwest = "ы", west = "Ы", },
+    _y_ = {"и", north = "И", northwest = "Ы", west = "ы", },
     _I_ = {"І", north = "і", northeast = "ї", east = "Ї", alt_label = "Ї",},
     _i_ = {"і", north = "І", northeast = "Ї", east = "ї", alt_label = "ї",},
     _Yi_ = {"Ї", north = "ї", },
@@ -163,7 +163,6 @@ return {
     _yu_ = {"ю", north = "Ю", },
     _Ya_ = {"Я", north = "я", },
     _ya_ = {"я", north = "Я", },
-    
   -- _1_ and _1p: numeric key 1 and its popup sibling (they have north swipe ups of each other, the rest is the same)
   -- _1n and _1s: numpad key 1 (layer 2), -- superscript key 1 (layer 2, shifted)
   _1_ = { "1", north = "!", alt_label = "!", northeast = "¡", south = "'", southeast = "¿", east = "?", },
