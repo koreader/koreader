@@ -287,8 +287,8 @@ function VocabularyBuilder:insertOrUpdate(entry)
                         due_time = ?,
                         prev_context = ifnull(excluded.prev_context, prev_context),
                         next_context = ifnull(excluded.next_context, next_context);]]);
-    stmt:bind(entry.word, entry.book_title, entry.time, entry.time+300, entry.time,
-              entry.prev_context, entry.next_context, entry.time+300)
+    stmt:bind(entry.word, entry.book_title, entry.time, entry.time, entry.time,
+              entry.prev_context, entry.next_context, entry.time)
     stmt:step()
     stmt:clearbind():reset()
     conn:close()

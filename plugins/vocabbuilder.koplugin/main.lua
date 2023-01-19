@@ -262,8 +262,8 @@ function MenuDialog:init()
     local custom_intervals_button = {
         text = _("Review intervals"),
         callback = function()
-            settings.default_review_intervals = {2, 30, 720, 1440, 3600,
-                                                 8700, 21900, 57000, 138000};
+            settings.default_review_intervals = {5, 30, 720, 1440};
+
             logger.dbg("first value in db, retrieved from file: ", settings.review_intervals[1])
             local interval_input
             interval_input = InputDialog:new{
