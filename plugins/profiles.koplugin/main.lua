@@ -9,6 +9,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
+local lfs = require("libs/libkoreader-lfs")
 local rapidjson = require("rapidjson")
 local util = require("util")
 
@@ -406,7 +407,11 @@ function Profiles:exportProfile(name)
         ok_text = _("Save"),
         ok_callback = function()
             local text
-            local filepath = DataStorage:getDataDir() .. "/clipboard/" .. name .. ".json"
+            local path = DataStorage:getDataDir() .. "/clipboard"
+            if lfs.attributes(path, "mode") ~= "directory" then
+                lfs.mkdir(path)
+            end
+            local filepath = path .. "/" .. name .. ".json"
             local file = io.open(filepath, "w")
             if file then
                 file:write(rapidjson.encode(self.data[name], {pretty = true}))
