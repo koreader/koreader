@@ -9,8 +9,6 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
-local lfs = require("libs/libkoreader-lfs")
-local rapidjson = require("rapidjson")
 local util = require("util")
 
 local autostart_done = false
@@ -114,19 +112,6 @@ function Profiles:getSubMenuItems()
                 end
                 self:editProfileName(editCallback)
             end,
-        },
-        {
-            text = _("Import"),
-            keep_menu_open = true,
-            callback = function(touchmenu_instance)
-                local function importCallback()
-                    self.updated = true
-                    touchmenu_instance.item_table = self:getSubMenuItems()
-                    touchmenu_instance.page = 1
-                    touchmenu_instance:updateItems()
-                end
-                self:importProfile(importCallback)
-            end,
             separator = true,
         },
     }
@@ -208,13 +193,6 @@ function Profiles:getSubMenuItems()
                         touchmenu_instance:updateItems()
                       end
                     self:editProfileName(editCallback, k)
-                end,
-            },
-            {
-                text = _("Export"),
-                keep_menu_open = true,
-                callback = function()
-                    self:exportProfile(k)
                 end,
             },
             {
@@ -399,56 +377,6 @@ function Profiles:executeAutostart()
         end
     end
     autostart_done = true
-end
-
-function Profiles:exportProfile(name)
-    UIManager:show(ConfirmBox:new{
-        text = _("The profile will be saved as:") .. "\n\n".. _("Profile ") .. name .. ".json",
-        ok_text = _("Save"),
-        ok_callback = function()
-            local text
-            local path = DataStorage:getDataDir() .. "/clipboard"
-            if lfs.attributes(path, "mode") ~= "directory" then
-                lfs.mkdir(path)
-            end
-            local filepath = path .. "/" .. name .. ".json"
-            local file = io.open(filepath, "w")
-            if file then
-                file:write(rapidjson.encode(self.data[name], {pretty = true}))
-                file:write("\n")
-                file:close()
-                text = _("Profile saved")
-            else
-                text = _("Failed to save profile")
-            end
-            UIManager:show(require("ui/widget/notification"):new{
-                text = text,
-            })
-        end,
-    })
-end
-
-function Profiles:importProfile(importCallback)
-    local path_chooser = require("ui/widget/pathchooser"):new{
-        select_directory = false,
-        path = DataStorage:getDataDir() .. "/clipboard",
-        onConfirm = function(file_path)
-            local file = io.open(file_path, "r")
-            if file then
-                local contents = file:read("*all")
-                file:close()
-                local ok, parsed = pcall(rapidjson.decode, contents)
-                if ok then
-                    local name = parsed and parsed.settings and parsed.settings.name
-                    if name then
-                        self.data[name] = parsed
-                        importCallback()
-                    end
-                end
-            end
-        end
-    }
-    UIManager:show(path_chooser)
 end
 
 return Profiles
