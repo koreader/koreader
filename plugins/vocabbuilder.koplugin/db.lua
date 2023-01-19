@@ -225,11 +225,18 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
         intervals = settings.default_review_intervals
     end
 
+    local interval_modifier
+    if settings.interval_modifier then
+        interval_modifier = settings.interval_modifier
+    else
+        interval_modifier = settings.default_interval_modifier
+    end
+
     local interval
     if intervals[target_count] ~= nil then
         interval = intervals[target_count]
     else
-        interval = intervals[#intervals] * settings.interval_modifier * (target_count - #intervals) -- number of times the modifier needs to apply
+        interval = intervals[#intervals] * interval_modifier * (target_count - #intervals) -- number of times the modifier needs to apply
     end
 
     local interval_randomized_minutes = math.random(math.floor(interval * 0.9), math.ceil(interval * 1.1))

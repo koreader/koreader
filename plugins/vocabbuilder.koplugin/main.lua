@@ -320,14 +320,21 @@ function MenuDialog:init()
     local interval_modifier_button = {
         text = _("Interval modifier"),
         callback = function()
-            settings.interval_modifier = 2
+            settings.default_interval_modifier = 2
+
+            local interval_modifier
+            if settings.interval_modifier then
+                interval_modifier = settings.interval_modifier
+            else
+                interval_modifier = settings.default_interval_modifier
+            end
+
             local interval_modifier_input
             interval_modifier_input = InputDialog:new{
                 title = _("Set interval modifier"),
-                description = _([[Multiplier that applies after there are no more set intervals. By default it's 2,
-doubling the previous value. If you have set intervals 10m 1d 3d, interval modifier will set next interval to 6d,
-then 12d, and so on.]]):gsub("\n", " ");
-                input = "2",
+                description = _([[Multiplier that applies after there are no more set intervals. If you have set intervals
+10m 1d 3d, interval modifier will set next interval to 6d, then 12d, and so on.]]):gsub("\n", " ");
+                input = interval_modifier,
                 text_type = "text",
                 buttons = {
                     {
@@ -342,7 +349,7 @@ then 12d, and so on.]]):gsub("\n", " ");
                             text = _("Default"),
                             id = "Default",
                             callback = function()
-                                settings.interval_modifier = 2
+                                settings.interval_modifier = nil
                                 saveSettings()
                                 UIManager:close(interval_modifier_input)
                             end,
