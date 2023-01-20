@@ -46,7 +46,6 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -243,47 +242,13 @@ function MenuDialog:init()
         end,
     }
 
-    function parseInputTime(str)
-        local num = tonumber(str:sub(1, -2))
-        local unit = str:sub(-1)
-        local totalMinutes = 0
-        if unit == "m" then
-            totalMinutes = num
-        elseif unit == "h" then
-            totalMinutes = num * 60
-        elseif unit == "d" then
-            totalMinutes = num * 1440
-        else
-            error("Invalid unit!")
-        end
-        return totalMinutes
-    end
-
-    local function splitCommasToTable(input_string)
-        t = {}
-        for w in string.gmatch(input_string, "[^,]+") do
-            s = string.gsub(w, "%s", "")
-            table.insert(t, s)
-        end
-        return t
-    end
-
-    local function isIntervalStringValid(interval_string)
-        interval_table = splitCommasToTable(interval_string)
-        for i, token in ipairs(interval_table) do
-            if string.match(token, "^[0-9]+[mdh]$") == nil then
-                return false
-            end
-        end
-        return true
-    end
-
     local custom_intervals_button = {
         text = _("Review intervals"),
         callback = function()
             settings.default_review_intervals = {5, 30, 720, 1440}
             settings.default_review_intervals_pretty = "5m, 30m, 12h, 24h"
 
+            local current_intervals
             if settings.review_intervals then
                 current_intervals = settings.review_intervals_pretty
             else
@@ -320,15 +285,15 @@ function MenuDialog:init()
                             callback = function()
                                 local intervalsArray = {};
                                 local input = interval_input:getInputText()
-                                if isIntervalStringValid(input) then
+                                if self.isIntervalStringValid(input) then
                                     for inputTime in string.gmatch(input, "%d+[m|d|h]") do
-                                        table.insert(intervalsArray, parseInputTime(inputTime))
+                                        table.insert(intervalsArray, self.parseInputTime(inputTime))
                                     end
                                     settings.review_intervals = intervalsArray
                                     settings.review_intervals_pretty = input;
                                     saveSettings()
                                 else
-                                    invalidInputMessage = InfoMessage:new{
+                                    local invalidInputMessage = InfoMessage:new{
                                         text = _("Invalid input. Please enter intervals with number followed by m, h, or d"),
                                         show_icon = true,
                                         icon = "notice-info",
@@ -543,6 +508,40 @@ function MenuDialog:init()
 
 end
 
+function MenuDialog:parseInputTime(str)
+    local num = tonumber(str:sub(1, -2))
+    local unit = str:sub(-1)
+    local totalMinutes = 0
+    if unit == "m" then
+        totalMinutes = num
+    elseif unit == "h" then
+        totalMinutes = num * 60
+    elseif unit == "d" then
+        totalMinutes = num * 1440
+    else
+        error("Invalid unit!")
+    end
+    return totalMinutes
+end
+
+function MenuDialog:splitCommasToTable(input_string)
+    local t = {}
+    for w in string.gmatch(input_string, "[^,]+") do
+        local s = string.gsub(w, "%s", "")
+        table.insert(t, s)
+    end
+    return t
+end
+
+function MenuDialog:isIntervalStringValid(interval_string)
+    local interval_table = self.splitCommasToTable(interval_string)
+    for i, token in ipairs(interval_table) do
+        if string.match(token, "^[0-9]+[mdh]$") == nil then
+            return false
+        end
+    end
+    return true
+end
 
 function MenuDialog:onShow()
     UIManager:setDirty(self, function()
