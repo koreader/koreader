@@ -499,7 +499,7 @@ function MenuDialog.parseInputTime(str)
 end
 
 function MenuDialog.splitCommasToTable(input_string)
-    t = {}
+    local t = {}
     for w in string.gmatch(input_string, "[^,]+") do
         local s = string.gsub(w, "%s", "")
         table.insert(t, s)
