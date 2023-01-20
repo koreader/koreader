@@ -46,6 +46,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local MultiInputDialog = require("ui/widget/multiinputdialog")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
@@ -241,10 +242,10 @@ function MenuDialog:init()
             })
         end,
     }
-
-    local custom_intervals_button = {
-        text = _("Review intervals"),
+    local interval_settings_button = {
+        text = _("Interval settings"),
         callback = function()
+            -- review intervals
             settings.default_review_intervals = {5, 30, 720, 1440}
             settings.default_review_intervals_pretty = "5m, 30m, 12h, 24h"
 
@@ -255,66 +256,7 @@ function MenuDialog:init()
                 current_intervals = settings.default_review_intervals_pretty
             end
 
-            local interval_input
-            interval_input = InputDialog:new{
-                title = _("Review intervals"),
-                input = current_intervals,
-                description = _("Enter desired review intervals:"),
-                text_type = "text",
-                buttons = {
-                    {
-                        {
-                            text = _("Cancel"),
-                            id = "close",
-                            callback = function()
-                                UIManager:close(interval_input)
-                            end,
-                        },
-                        {
-                            text = _("Default"),
-                            id = "default",
-                            callback = function()
-                                settings.review_intervals = nil
-                                saveSettings()
-                                UIManager:close(interval_input)
-                            end,
-                        },
-                        {
-                            text = _("Save"),
-                            is_enter_default = true,
-                            callback = function()
-                                local intervalsArray = {};
-                                local input = interval_input:getInputText()
-                                if self.isIntervalStringValid(input) then
-                                    for inputTime in string.gmatch(input, "%d+[m|d|h]") do
-                                        table.insert(intervalsArray, self.parseInputTime(inputTime))
-                                    end
-                                    settings.review_intervals = intervalsArray
-                                    settings.review_intervals_pretty = input;
-                                    saveSettings()
-                                else
-                                    local invalidInputMessage = InfoMessage:new{
-                                        text = _("Invalid input. Please enter intervals with number followed by m, h, or d"),
-                                        show_icon = true,
-                                        icon = "notice-info",
-                                        timeout = 3
-                                    }
-                                    UIManager:show(invalidInputMessage)
-                                end
-
-
-                            end,
-                        },
-                    }
-                },
-            }
-            UIManager:show(interval_input)
-            interval_input:onShowKeyboard()
-        end,
-    }
-    local interval_modifier_button = {
-        text = _("Interval modifier"),
-        callback = function()
+            -- interval modifier
             settings.default_interval_modifier = 2
 
             local interval_modifier
@@ -324,45 +266,78 @@ function MenuDialog:init()
                 interval_modifier = settings.default_interval_modifier
             end
 
-            local interval_modifier_input
-            interval_modifier_input = InputDialog:new{
-                title = _("Set interval modifier"),
-                description = _([[Multiplier that applies after there are no more set intervals. If you have set intervals
-10m 1d 3d, interval modifier will set next interval to 6d, then 12d, and so on.]]):gsub("\n", " ");
-                input = tostring(interval_modifier),
+
+            self.settings_dialog = MultiInputDialog:new {
+                title = _("Interval settings"),
+                fields = {
+                    {
+                        description = "Review intervals",
+                        text = current_intervals,
+                        hint = _("10m 12h 1d"),
+                    },
+                    {
+                        description = "Interval modifier",
+
+                        text = tostring(interval_modifier),
+                        hint = _("2")
+                    },
+                },
                 buttons = {
                     {
                         {
                             text = _("Cancel"),
                             id = "close",
                             callback = function()
-                                UIManager:close(interval_modifier_input)
+                                UIManager:close(self.settings_dialog)
                             end,
                         },
                         {
                             text = _("Default"),
-                            id = "Default",
+                            id = "default",
                             callback = function()
+                                settings.review_intervals = nil
                                 settings.interval_modifier = nil
                                 saveSettings()
-                                UIManager:close(interval_modifier_input)
+                                UIManager:close(self.settings_dialog)
                             end,
                         },
                         {
                             text = _("Save"),
                             is_enter_default = true,
                             callback = function()
-                                settings.interval_modifier = interval_modifier_input:getInputText()
-                                saveSettings()
+                                local fields = self.settings_dialog:getFields()
+                                local interval_input = fields[1]
+                                settings.interval_modifier = fields[2]
+
+                                local intervalsArray = {};
+                                if MenuDialog.isIntervalStringValid(interval_input) then
+                                    for inputTime in string.gmatch(interval_input, "%d+[m|d|h]") do
+                                        table.insert(intervalsArray, MenuDialog.parseInputTime(inputTime))
+                                    end
+                                    settings.review_intervals = intervalsArray
+                                    settings.review_intervals_pretty = interval_input;
+                                    saveSettings()
+                                else
+                                    local invalidIntervalInputMessage = InfoMessage:new{
+                                        text = _("Invalid interval input. Please enter intervals with number followed by m, h, or d"),
+                                        show_icon = true,
+                                        icon = "notice-info",
+                                        timeout = 3
+                                    }
+                                    UIManager:show(invalidIntervalInputMessage)
+                                end
+                                UIManager:close(self.settings_dialog)
                             end,
                         },
                     }
                 },
+
             }
-            UIManager:show(interval_modifier_input)
-            interval_modifier_input:onShowKeyboard()
+            UIManager:show(self.settings_dialog)
+
         end
     }
+
     local show_sync_settings = function()
         if not settings.server then
             local sync_settings = SyncService:new{}
@@ -447,8 +422,7 @@ function MenuDialog:init()
         buttons = {
             {reverse_button},
             {sync_button},
-            {search_button},
-            {custom_intervals_button, interval_modifier_button},
+            {search_button, interval_settings_button},
             {filter_button, edit_button},
             {reset_button, clean_button},
         },
@@ -508,7 +482,7 @@ function MenuDialog:init()
 
 end
 
-function MenuDialog:parseInputTime(str)
+function MenuDialog.parseInputTime(str)
     local num = tonumber(str:sub(1, -2))
     local unit = str:sub(-1)
     local totalMinutes = 0
@@ -524,8 +498,8 @@ function MenuDialog:parseInputTime(str)
     return totalMinutes
 end
 
-function MenuDialog:splitCommasToTable(input_string)
-    local t = {}
+function MenuDialog.splitCommasToTable(input_string)
+    t = {}
     for w in string.gmatch(input_string, "[^,]+") do
         local s = string.gsub(w, "%s", "")
         table.insert(t, s)
@@ -533,8 +507,8 @@ function MenuDialog:splitCommasToTable(input_string)
     return t
 end
 
-function MenuDialog:isIntervalStringValid(interval_string)
-    local interval_table = self.splitCommasToTable(interval_string)
+function MenuDialog.isIntervalStringValid(interval_string)
+    local interval_table = MenuDialog.splitCommasToTable(interval_string)
     for i, token in ipairs(interval_table) do
         if string.match(token, "^[0-9]+[mdh]$") == nil then
             return false
