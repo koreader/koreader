@@ -259,6 +259,24 @@ function MenuDialog:init()
         return totalMinutes
     end
 
+    local function splitCommasToTable(input_string)
+        t = {}
+        for w in string.gmatch(input_string, "[^,]+") do
+            s = string.gsub(w, "%s", "")
+            table.insert(t, s)
+        end
+        return t
+    end
+
+    local function isIntervalStringValid(interval_string)
+        interval_table = splitCommasToTable(interval_string)
+        for i, token in ipairs(interval_table) do
+            if string.match(token, "^[0-9]+[mdh]$") == nil then
+                return false
+            end
+        end
+        return true
+    end
 
     local custom_intervals_button = {
         text = _("Review intervals"),
@@ -301,12 +319,25 @@ function MenuDialog:init()
                             is_enter_default = true,
                             callback = function()
                                 local intervalsArray = {};
-                                for inputTime in string.gmatch(interval_input:getInputText(), "%d+[m|d|h]") do
-                                    table.insert(intervalsArray, parseInputTime(inputTime))
+                                local input = interval_input:getInputText()
+                                if isIntervalStringValid(input) then
+                                    for inputTime in string.gmatch(input, "%d+[m|d|h]") do
+                                        table.insert(intervalsArray, parseInputTime(inputTime))
+                                    end
+                                    settings.review_intervals = intervalsArray
+                                    settings.review_intervals_pretty = input;
+                                    saveSettings()
+                                else
+                                    invalidInputMessage = InfoMessage:new{
+                                        text = _("Invalid input. Please enter intervals with number followed by m, h, or d"),
+                                        show_icon = true,
+                                        icon = "notice-info",
+                                        timeout = 3
+                                    }
+                                    UIManager:show(invalidInputMessage)
                                 end
-                                settings.review_intervals = intervalsArray
-                                settings.review_intervals_pretty = interval_input:getInputText();
-                                saveSettings()
+
+
                             end,
                         },
                     }
