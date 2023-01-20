@@ -114,8 +114,6 @@ function PatchManagement:getSubMenu(priority)
                         textviewer = TextViewer:new{
                             title = patch,
                             text = patch_content,
---                        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
---                        height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
                         }
                         UIManager:show(textviewer)
                     end
@@ -129,7 +127,7 @@ local about_text = _([[Patch management allows enabling, disabling or editing us
 
 The runlevel and priority of a patch can not be modified here. This has to be done manually by renaming the patch prefix.
 
-For more infomation about user patches, see
+For more information about user patches, see
 https://github.com/koreader/koreader/wiki/User-patches
 
 Patches are an advanced feature, so be careful what you do!]])
