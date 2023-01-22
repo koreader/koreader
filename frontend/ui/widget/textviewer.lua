@@ -34,6 +34,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local TextViewer = InputContainer:extend{
+    covers_footer = true,
     title = nil,
     text = nil,
     width = nil,
