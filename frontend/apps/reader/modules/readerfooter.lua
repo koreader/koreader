@@ -771,28 +771,14 @@ function ReaderFooter:unscheduleFooterAutoRefresh()
 end
 
 function ReaderFooter:shouldBeRepainted()
-    -- Go down the widget stack until we find either ReaderUI => repaint, or a widget that covers ourselves => abort
-    for widget in UIManager:topdown_widgets_iter() do
-        if widget.name == "ReaderUI" then
-            logger.dbg("Hit ReaderUI")
-            return true
-        elseif widget.covers_fullscreen or widget.covers_footer then
-            -- (e.g. the virtual keyboard sets widget_covers_footer == true)
-            logger.dbg("ReaderFooter: Widget", tostring(widget), "is flagged as covering ourselves")
-            return false
-        end
-        --[[
-        elseif widget.dimen and widget.dimen.intersect and widget.dimen:intersectWith(self.footer_content.dimen) then
-            -- Widget has a dimen, it's a Geom, and it intersects with ourselves => MEEP
-            -- NOTE: Everything is terrible and a *lot* of widgets just have dimen set to the screen size,
-            --       making this unusable (ditto for a live getSize() approach)... >_<"
-            logger.dbg("ReaderFooter: Widget", tostring(widget), "intersects with ourselves:", widget.dimen, "over", self.footer_content.dimen)
-            return false
-        end
-        --]]
+    -- Defensive approach to avoid painting over other widgets, since dimen isn't reliable enough to do it right...
+    local top_wg = UIManager:getNthTopWidget() or {}
+    if top_wg.name == "ReaderUI" or top_wg.name == "FrontLightWidget" or top_wg.invisible then
+        -- FrontLightWidget is here to allow reflecting changes immediately in the footer, even if it *can* overlap us (if moved).
+        -- Invisible is here for TrapWidget, especially in the context of the Dimmer plugin.
+        return true
     end
 
-    -- We should never reach this, because we can't have a ReaderFooter without ReaderUI...
     return false
 end
 
