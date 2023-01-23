@@ -146,9 +146,6 @@ function SortWidget:init()
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }
-    if self.dimen.h == Screen:getHeight() then
-        self.covers_footer = true
-    end
 
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }

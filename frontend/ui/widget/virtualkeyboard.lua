@@ -755,7 +755,6 @@ end
 
 local VirtualKeyboard = FocusManager:extend{
     name = "VirtualKeyboard",
-    covers_footer = true,
     modal = true,
     disable_double_tap = true,
     inputbox = nil,
