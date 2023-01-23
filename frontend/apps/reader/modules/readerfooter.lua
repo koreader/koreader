@@ -775,7 +775,6 @@ function ReaderFooter:shouldBeRepainted()
         return false
     end
 
-    -- Defensive approach to avoid painting over other widgets, since dimen isn't reliable enough to do it right...
     local top_wg = UIManager:getTopmostVisibleWidget() or {}
     if top_wg.name == "ReaderUI" then
         -- Request a widget repaint
@@ -785,7 +784,9 @@ function ReaderFooter:shouldBeRepainted()
         return false
     end
 
-    -- Request a full RedaerUI stack repaint to avoid out-of-order repaints (i.e., painting ReaderFooter over something else)
+    -- What's on top might overlap with us, and dimen isn't reliable enough to do a bounds check
+    -- (as stuff often just sets it to the Screen dimensions),
+    -- so request a full ReaderUI repaint to avoid out-of-order repaints.
     print("ReaderFooter:shouldBeRepainted Requested a full stack repaint")
     return true, true
 end
