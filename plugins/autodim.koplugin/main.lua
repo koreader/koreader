@@ -290,6 +290,7 @@ function AutoDim:autodim_task()
             end
 
             self.trap_widget = TrapWidget:new{
+                name = "AutoDim",
                 dismiss_callback = function()
                     self:restoreFrontlight()
                     self.trap_widget = nil

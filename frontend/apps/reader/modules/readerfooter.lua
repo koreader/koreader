@@ -773,9 +773,8 @@ end
 function ReaderFooter:shouldBeRepainted()
     -- Defensive approach to avoid painting over other widgets, since dimen isn't reliable enough to do it right...
     local top_wg = UIManager:getNthTopWidget() or {}
-    if top_wg.name == "ReaderUI" or top_wg.name == "FrontLightWidget" or top_wg.invisible then
+    if top_wg.name == "ReaderUI" or top_wg.name == "FrontLightWidget" or top_wg.name == "AutoDim" then
         -- FrontLightWidget is here to allow reflecting changes immediately in the footer, even if it *can* overlap us (if moved).
-        -- Invisible is here for TrapWidget, especially in the context of the Dimmer plugin.
         return true
     end
 
