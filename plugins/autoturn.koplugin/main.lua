@@ -32,8 +32,8 @@ function AutoTurn:_schedule()
     local delay = self.last_action_time + time.s(self.autoturn_sec) - UIManager:getTime()
 
     if delay <= 0 then
-        local top_wg = UIManager:getNthTopWidget() or {}
-        if top_wg.name == "ReaderUI" or top_wg.name == "AutoDim" then
+        local top_wg = UIManager:getTopmostVisibleWidget() or {}
+        if top_wg.name == "ReaderUI" then
             logger.dbg("AutoTurn: go to next page")
             self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
             self.last_action_time = UIManager:getTime()
