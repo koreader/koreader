@@ -729,6 +729,19 @@ function UIManager:getNthTopWidget(n)
     return widget
 end
 
+--- Top-to-bottom widgets iterator
+function UIManager:topdown_widgets_iter()
+    local n = #self._window_stack
+    print("UIManager:topdown_widgets_iter: n =", n)
+    local i = n + 1
+    return function()
+        i = i - 1
+        if i > 0 then
+            return self._window_stack[i].widget
+        end
+    end
+end
+
 --[[--
 Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
 

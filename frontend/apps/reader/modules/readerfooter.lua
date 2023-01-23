@@ -771,18 +771,28 @@ function ReaderFooter:unscheduleFooterAutoRefresh()
 end
 
 function ReaderFooter:shouldBeRepainted()
-    local n = 1
-    local widget = UIManager:getNthTopWidget(n)
-    while widget do
+    -- Go down the widget stack until we find either ReaderUI => repaint, or a widget that covers ourselves => abort
+    for widget in UIManager:topdown_widgets_iter() do
         if widget.name == "ReaderUI" then
+            logger.dbg("Hit ReaderUI")
             return true
         elseif widget.covers_fullscreen or widget.covers_footer then
             -- (e.g. the virtual keyboard sets widget_covers_footer == true)
+            logger.dbg("ReaderFooter: Widget", tostring(widget), "is flagged as covering ourselves")
             return false
         end
-        n = n + 1
-        widget = UIManager:getNthTopWidget(n)
+        --[[
+        elseif widget.dimen and widget.dimen.intersect and widget.dimen:intersectWith(self.footer_content.dimen) then
+            -- Widget has a dimen, it's a Geom, and it intersects with ourselves => MEEP
+            -- NOTE: Everything is terrible and a *lot* of widgets just have dimen set to the screen size,
+            --       making this unusable (ditto for a live getSize() approach)... >_<"
+            logger.dbg("ReaderFooter: Widget", tostring(widget), "intersects with ourselves:", widget.dimen, "over", self.footer_content.dimen)
+            return false
+        end
+        --]]
     end
+
+    -- We should never reach this, because we can't have a ReaderFooter without ReaderUI...
     return false
 end
 
@@ -817,7 +827,8 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
         end
     end
     if schedule then
-        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
+        --UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
+        UIManager:scheduleIn(5, self.autoRefreshFooter)
         if not unscheduled then
             logger.dbg("ReaderFooter: scheduled autoRefreshFooter")
         else
