@@ -91,16 +91,12 @@ function ReaderCoptListener:onTimeFormatChanged()
 end
 
 function ReaderCoptListener:shouldHeaderBeRepainted()
-    local n = 1
-    local widget = UIManager:getNthTopWidget(n)
-    while widget do
+    for widget in UIManager:topdown_widgets_iter() do
         if widget.name == "ReaderUI"  then
             return true
         elseif widget.covers_fullscreen then
             return false
         end
-        n = n + 1
-        widget = UIManager:getNthTopWidget(n)
     end
     return false
 end
