@@ -771,13 +771,23 @@ function ReaderFooter:unscheduleFooterAutoRefresh()
 end
 
 function ReaderFooter:shouldBeRepainted()
+    if not self.view.footer_visible then
+        return false
+    end
+
     -- Defensive approach to avoid painting over other widgets, since dimen isn't reliable enough to do it right...
     local top_wg = UIManager:getTopmostVisibleWidget() or {}
     if top_wg.name == "ReaderUI" then
+        -- Request a widget repaint
         return true
+    elseif top_wg.covers_fullscreen or top_wg.covers_footer then
+        -- No repaint necessary at all
+        return false
     end
 
-    return false
+    -- Request a full RedaerUI stack repaint to avoid out-of-order repaints (i.e., painting ReaderFooter over something else)
+    print("ReaderFooter:shouldBeRepainted Requested a full stack repaint")
+    return true, true
 end
 
 function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
@@ -788,7 +798,7 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
             -- (We want to avoid the footer to be painted over a widget covering it - we would
             -- be fine refreshing it if the widget is not covering it, but this is hard to
             -- guess from here.)
-            self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
+            self:onUpdateFooter(self:shouldBeRepainted())
 
             self:rescheduleFooterAutoRefreshIfNeeded() -- schedule (or not) next refresh
         end
@@ -811,7 +821,8 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
         end
     end
     if schedule then
-        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
+        --UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
+        UIManager:scheduleIn(5, self.autoRefreshFooter)
         if not unscheduled then
             logger.dbg("ReaderFooter: scheduled autoRefreshFooter")
         else
@@ -2130,6 +2141,7 @@ end
 
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
+    print("ReaderFooter:_updateFooterText", force_repaint, force_recompute)
     -- footer is invisible, we need neither a repaint nor a recompute, go away.
     if not self.view.footer_visible and not force_repaint and not force_recompute then
         return
@@ -2209,7 +2221,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
         end
         -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
-        if self.view.footer_visible then
+        if self.view.footer_visible and not force_recompute then
             -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
             -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
             -- NOTE: self.view.footer -> self ;).
@@ -2221,6 +2233,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
                 return self.view.currently_scrolling and "fast" or "ui", self.footer_content.dimen
             end)
         else
+            -- If the footer is invisible or might be hidden behind another widget, we need to repaint the full ReaderUI stack.
             UIManager:setDirty(self.view.dialog, function()
                 return self.view.currently_scrolling and "fast" or "ui", refresh_dim
             end)
@@ -2466,12 +2479,12 @@ end
 -- Used by event handlers that can trip without direct UI interaction...
 function ReaderFooter:maybeUpdateFooter()
     -- ...so we need to avoid stomping over unsuspecting widgets (usually, ScreenSaver).
-    self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
+    self:onUpdateFooter(self:shouldBeRepainted())
 end
 
 -- is the same as maybeUpdateFooter
 function ReaderFooter:onFrontlightStateChanged()
-    self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
+    self:onUpdateFooter(self:shouldBeRepainted())
 end
 
 function ReaderFooter:onNetworkConnected()

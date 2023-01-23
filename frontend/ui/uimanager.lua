@@ -745,7 +745,7 @@ end
 
 --- Get the topmost visible widget
 function UIManager:getTopmostVisibleWidget()
-    for i = #self._window_stack - 1, 1, -1 do
+    for i = #self._window_stack, 1, -1 do
         local widget = self._window_stack[i].widget
         if not widget.invisible then
             return widget
