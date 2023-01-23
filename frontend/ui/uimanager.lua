@@ -732,7 +732,6 @@ end
 --- Top-to-bottom widgets iterator
 function UIManager:topdown_widgets_iter()
     local n = #self._window_stack
-    print("UIManager:topdown_widgets_iter: n =", n)
     local i = n + 1
     return function()
         i = i - 1

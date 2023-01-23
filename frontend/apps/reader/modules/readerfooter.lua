@@ -813,8 +813,7 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
         end
     end
     if schedule then
-        --UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
-        UIManager:scheduleIn(5, self.autoRefreshFooter)
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
         if not unscheduled then
             logger.dbg("ReaderFooter: scheduled autoRefreshFooter")
         else
