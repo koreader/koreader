@@ -747,6 +747,7 @@ end
 function UIManager:getTopmostVisibleWidget()
     for i = #self._window_stack, 1, -1 do
         local widget = self._window_stack[i].widget
+        -- Skip invisible widgets (e.g., TrapWidget)
         if not widget.invisible then
             return widget
         end
