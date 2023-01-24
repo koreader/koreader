@@ -98,6 +98,8 @@ function ReaderCoptListener:shouldHeaderBeRepainted()
             return false
         end
     end
+
+    -- This is unreachable, we can't have a Header without ReaderUI...
     return false
 end
 
