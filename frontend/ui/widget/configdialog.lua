@@ -859,6 +859,7 @@ Widget that displays config menubar and config panel
 local ConfigDialog = FocusManager:extend{
     --is_borderless = false,
     name = "ConfigDialog",
+    covers_footer = true,
     panel_index = 1,
     is_fresh = true,
 }
