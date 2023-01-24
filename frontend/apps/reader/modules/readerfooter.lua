@@ -2108,15 +2108,15 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     return title .. sec
 end
 
-function ReaderFooter:onUpdateFooter(force_repaint, force_recompute)
+function ReaderFooter:onUpdateFooter(force_repaint, full_repaint)
     if self.pageno then
-        self:updateFooterPage(force_repaint, force_recompute)
+        self:updateFooterPage(force_repaint, full_repaint)
     else
-        self:updateFooterPos(force_repaint, force_recompute)
+        self:updateFooterPos(force_repaint, full_repaint)
     end
 end
 
-function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
+function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
     if type(self.pageno) ~= "number" then return end
     if self.ui.document:hasHiddenFlows() then
         local flow = self.ui.document:getPageFlow(self.pageno)
@@ -2126,25 +2126,25 @@ function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
     else
         self.progress_bar.percentage = self.pageno / self.pages
     end
-    self:updateFooterText(force_repaint, force_recompute)
+    self:updateFooterText(force_repaint, full_repaint)
 end
 
-function ReaderFooter:updateFooterPos(force_repaint, force_recompute)
+function ReaderFooter:updateFooterPos(force_repaint, full_repaint)
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
-    self:updateFooterText(force_repaint, force_recompute)
+    self:updateFooterText(force_repaint, full_repaint)
 end
 
 -- updateFooterText will start as a noop. After onReaderReady event is
 -- received, it will initialized as _updateFooterText below
-function ReaderFooter:updateFooterText(force_repaint, force_recompute)
+function ReaderFooter:updateFooterText(force_repaint, full_repaint)
 end
 
 -- only call this function after document is fully loaded
-function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
-    print("ReaderFooter:_updateFooterText", force_repaint, force_recompute)
+function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
+    print("ReaderFooter:_updateFooterText", force_repaint, full_repaint)
     -- footer is invisible, we need neither a repaint nor a recompute, go away.
-    if not self.view.footer_visible and not force_repaint and not force_recompute then
+    if not self.view.footer_visible and not force_repaint and not full_repaint then
         return
     end
     local text = self:genFooterText()
@@ -2222,7 +2222,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
         end
         -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
-        if self.view.footer_visible and not force_recompute then
+        if self.view.footer_visible and not full_repaint then
             -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
             -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
             -- NOTE: self.view.footer -> self ;).
