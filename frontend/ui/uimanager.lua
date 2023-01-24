@@ -730,7 +730,7 @@ function UIManager:getNthTopWidget(n)
 end
 
 --- Top-to-bottom widgets iterator
---- NOTE: VirtualKeyboard can be instanciated multiple times, and is a modal,
+--- NOTE: VirtualKeyboard can be instantiated multiple times, and is a modal,
 --        so don't be suprised if you find a couple of instances of it at the top ;).
 function UIManager:topdown_widgets_iter()
     local n = #self._window_stack

@@ -92,7 +92,6 @@ end
 
 function ReaderCoptListener:shouldHeaderBeRepainted()
     local top_wg = UIManager:getTopmostVisibleWidget() or {}
-    print("H top_wg:", top_wg, top_wg.name, top_wg.covers_fullscreen, top_wg.covers_header)
     if top_wg.name == "ReaderUI" then
         -- We're on display, go ahead
         return true
@@ -135,8 +134,7 @@ function ReaderCoptListener:rescheduleHeaderRefreshIfNeeded()
             and self.document.configurable.status_line == 0 -- top bar enabled
             and self.view.view_mode == "page" -- not in scroll mode (which would disable the header)
             and (self.clock == 1 or self.battery == 1) then -- something shown can change in next minute
-        --UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
-        UIManager:scheduleIn(5, self.headerRefresh)
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
         if not unscheduled then
             logger.dbg("ReaderCoptListener.headerRefresh scheduled")
         else

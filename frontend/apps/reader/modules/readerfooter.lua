@@ -776,7 +776,6 @@ function ReaderFooter:shouldBeRepainted()
     end
 
     local top_wg = UIManager:getTopmostVisibleWidget() or {}
-    print("F top_wg:", top_wg, top_wg.name, top_wg.covers_fullscreen, top_wg.covers_footer)
     if top_wg.name == "ReaderUI" then
         -- No overlap possible, it's safe to request a targeted widget repaint
         return true
@@ -785,10 +784,9 @@ function ReaderFooter:shouldBeRepainted()
         return false
     end
 
-    -- What's on top might overlap with us, and dimen isn't reliable enough to do a bounds check
+    -- The topmost visible widget might overlap with us, but dimen isn't reliable enough to do a proper bounds check
     -- (as stuff often just sets it to the Screen dimensions),
     -- so request a full ReaderUI repaint to avoid out-of-order repaints.
-    print("ReaderFooter:shouldBeRepainted Requested a full stack repaint")
     return true, true
 end
 
@@ -823,8 +821,7 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
         end
     end
     if schedule then
-        --UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
-        UIManager:scheduleIn(5, self.autoRefreshFooter)
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
         if not unscheduled then
             logger.dbg("ReaderFooter: scheduled autoRefreshFooter")
         else
@@ -2143,7 +2140,6 @@ end
 
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
-    print("ReaderFooter:_updateFooterText", force_repaint, full_repaint)
     -- footer is invisible, we need neither a repaint nor a recompute, go away.
     if not self.view.footer_visible and not force_repaint and not full_repaint then
         return
