@@ -297,7 +297,7 @@ function MenuDialog:init()
                             callback = function()
                                 local helpMessage = InfoMessage:new{
                                     text = [[Review intervals are the initial periods of time between reviews of words. 
-                                    
+
 Interval modifier is used after all review intervals have been completed to increase the time between reviews.
 
 For example, a word could be reviewed at 5m, 30m and 1d intervals before the interval modifier takes over with 2d, 4d, etc.]],
