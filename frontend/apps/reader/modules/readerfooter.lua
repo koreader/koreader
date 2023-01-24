@@ -777,7 +777,7 @@ function ReaderFooter:shouldBeRepainted()
 
     local top_wg = UIManager:getTopmostVisibleWidget() or {}
     if top_wg.name == "ReaderUI" then
-        -- Request a widget repaint
+        -- No overlap possible, it's safe to request a targeted widget repaint
         return true
     elseif top_wg.covers_fullscreen or top_wg.covers_footer then
         -- No repaint necessary at all
