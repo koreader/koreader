@@ -91,16 +91,19 @@ function ReaderCoptListener:onTimeFormatChanged()
 end
 
 function ReaderCoptListener:shouldHeaderBeRepainted()
-    for widget in UIManager:topdown_widgets_iter() do
-        if widget.name == "ReaderUI"  then
-            return true
-        elseif widget.covers_fullscreen then
-            return false
-        end
+    local top_wg = UIManager:getTopmostVisibleWidget() or {}
+    print("H top_wg:", top_wg, top_wg.name, top_wg.covers_fullscreen, top_wg.covers_header)
+    if top_wg.name == "ReaderUI" then
+        -- We're on display, go ahead
+        return true
+    elseif top_wg.covers_fullscreen or top_wg.covers_header then
+        -- We're hidden behind something that definitely covers us, don't do anything
+        return false
+    else
+        -- There's something on top of us, but we might still be visible, request a ReaderUI repaint,
+        -- UIManager will sort it out.
+        return true
     end
-
-    -- This is unreachable, we can't have a Header without ReaderUI...
-    return false
 end
 
 function ReaderCoptListener:updateHeader()
