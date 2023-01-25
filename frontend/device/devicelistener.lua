@@ -308,14 +308,14 @@ end
 
 function DeviceListener:onSetFlashOnImages(toggle)
     if toggle == true then
-        _setSetting("refresh_on_images")
+        G_reader_settings:makeTrue("refresh_on_images")
     else
         _unsetSetting("refresh_on_images")
     end
 end
 
 function DeviceListener:onToggleFlashOnImages()
-    _toggleSetting("refresh_on_images")
+    G_reader_settings:flipNilOrTrue("refresh_on_images")
 end
 
 function DeviceListener:onSwapPageTurnButtons()

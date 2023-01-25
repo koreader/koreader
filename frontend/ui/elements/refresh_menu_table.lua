@@ -118,7 +118,7 @@ return {
         },
         {
             text = _("Always flash on pages with images"),
-            checked_func = function() return G_reader_settings:isTrue("refresh_on_images") end,
+            checked_func = function() return G_reader_settings:nilOrTrue("refresh_on_images") end,
             callback = function() UIManager:broadcastEvent(Event:new("ToggleFlashOnImages")) end,
         },
     }
