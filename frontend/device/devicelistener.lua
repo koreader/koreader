@@ -306,6 +306,18 @@ function DeviceListener:onToggleNoFlashOnSecondChapterPage()
     _toggleSetting("no_refresh_on_second_chapter_page")
 end
 
+function DeviceListener:onSetFlashOnImages(toggle)
+    if toggle == true then
+        _setSetting("refresh_on_images")
+    else
+        _unsetSetting("refresh_on_images")
+    end
+end
+
+function DeviceListener:onToggleFlashOnImages()
+    _toggleSetting("refresh_on_images")
+end
+
 function DeviceListener:onSwapPageTurnButtons()
     _toggleSetting("input_invert_page_turn_keys")
     Device:invertButtons()

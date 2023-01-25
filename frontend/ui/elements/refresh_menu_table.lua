@@ -116,5 +116,10 @@ return {
             checked_func = function() return G_reader_settings:isTrue("no_refresh_on_second_chapter_page") end,
             callback = function() UIManager:broadcastEvent(Event:new("ToggleNoFlashOnSecondChapterPage")) end,
         },
+        {
+            text = _("Always flash on pages with images"),
+            checked_func = function() return G_reader_settings:isTrue("refresh_on_images") end,
+            callback = function() UIManager:broadcastEvent(Event:new("ToggleFlashOnImages")) end,
+        },
     }
 }
