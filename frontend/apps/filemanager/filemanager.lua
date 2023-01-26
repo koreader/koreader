@@ -979,74 +979,70 @@ function FileManager:cutFile(file)
 end
 
 function FileManager:pasteHere(file)
-    if self.clipboard then
-        file = BaseUtil.realpath(file)
-        local orig_basename = BaseUtil.basename(self.clipboard)
-        local orig = BaseUtil.realpath(self.clipboard)
-        local dest = lfs.attributes(file, "mode") == "directory" and
-            file or file:match("(.*/)")
+    if not self.clipboard then return end
+    local orig = BaseUtil.realpath(self.clipboard)
+    local orig_basename = BaseUtil.basename(orig)
+    local dest = BaseUtil.realpath(file)
+    local dest_dir = lfs.attributes(dest, "mode") == "directory" and dest.."/" or dest:match("(.*/)")
+    local dest_file = dest_dir .. orig_basename
 
-        local function infoCopyFile()
-            -- if we copy a file, also copy its sidecar directory
-            if DocSettings:hasSidecarFile(orig) then
-                BaseUtil.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
-            end
-            if BaseUtil.execute(self.cp_bin, "-r", orig, dest) ~= 0 then
-                UIManager:show(InfoMessage:new {
-                    text = T(_("Failed to copy:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
-                    icon = "notice-warning",
-                })
+    local function updateSidecar(move)
+        if DocSettings:hasSidecarFile(orig) then
+            local dest_sidecar_dir = DocSettings:getSidecarDir(dest_file)
+            BaseUtil.execute(self.mkdir_bin, dest_sidecar_dir)
+            BaseUtil.execute(self.cp_bin, DocSettings:getSidecarFile(orig), dest_sidecar_dir)
+            if move then
+                DocSettings:open(orig):purge()
             end
         end
+    end
 
-        local function infoMoveFile()
-            -- if we move a file, also move its sidecar directory
-            if DocSettings:hasSidecarFile(orig) then
-                self:moveFile(DocSettings:getSidecarDir(orig), dest) -- dest is always a directory
-            end
-            if self:moveFile(orig, dest) then
-                -- Update history and collections.
-                local dest_file = string.format("%s/%s", dest, BaseUtil.basename(orig))
-                require("readhistory"):updateItemByPath(orig, dest_file) -- (will update "lastfile" if needed)
-                ReadCollection:updateItemByPath(orig, dest_file)
-            else
-                UIManager:show(InfoMessage:new {
-                    text = T(_("Failed to move:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
-                    icon = "notice-warning",
-                })
-            end
-        end
-
-        local info_file
-        if self.cutfile then
-            info_file = infoMoveFile
+    local function infoCopyFile()
+        if BaseUtil.execute(self.cp_bin, "-r", orig, dest_dir) == 0 then
+            updateSidecar()
         else
-            info_file = infoCopyFile
-        end
-        local basename = BaseUtil.basename(self.clipboard)
-        local mode = lfs.attributes(string.format("%s/%s", dest, basename), "mode")
-        if mode == "file" or mode == "directory" then
-            local text
-            if mode == "file" then
-                text = T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(basename))
-            else
-                text = T(_("Folder already exists:\n%1\nOverwrite folder?"), BD.directory(basename))
-            end
-
-            UIManager:show(ConfirmBox:new {
-                text = text,
-                ok_text = _("Overwrite"),
-                ok_callback = function()
-                    info_file()
-                    self:onRefresh()
-                    self.clipboard = nil
-                end,
+            UIManager:show(InfoMessage:new{
+                text = T(_("Failed to copy:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest_dir)),
+                icon = "notice-warning",
             })
-        else
-            info_file()
-            self:onRefresh()
-            self.clipboard = nil
         end
+    end
+
+    local function infoMoveFile()
+        if BaseUtil.execute(self.mv_bin, orig, dest_dir) == 0 then
+            updateSidecar(true)
+            require("readhistory"):updateItemByPath(orig, dest_file) -- (will update "lastfile" if needed)
+            ReadCollection:updateItemByPath(orig, dest_file)
+        else
+            UIManager:show(InfoMessage:new{
+                text = T(_("Failed to move:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest_dir)),
+                icon = "notice-warning",
+            })
+        end
+    end
+
+    local function doPaste()
+        if self.cutfile then
+            infoMoveFile()
+        else
+            infoCopyFile()
+        end
+        self:onRefresh()
+        self.clipboard = nil
+    end
+
+    local mode = lfs.attributes(dest_file, "mode")
+    if mode == "file" or mode == "directory" then
+        UIManager:show(ConfirmBox:new{
+            text = mode == "file" and T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(orig_basename))
+                                   or T(_("Folder already exists:\n%1\nOverwrite folder?"), BD.directory(orig_basename)),
+            ok_text = _("Overwrite"),
+            ok_callback = function()
+                doPaste()
+            end,
+        })
+    else
+        doPaste()
     end
 end
 
