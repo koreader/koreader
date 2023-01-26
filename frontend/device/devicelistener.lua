@@ -308,9 +308,9 @@ end
 
 function DeviceListener:onSetFlashOnPagesWithImages(toggle)
     if toggle == true then
-        G_reader_settings:makeTrue("refresh_on_pages_with_images")
-    else
         _unsetSetting("refresh_on_pages_with_images")
+    else
+        G_reader_settings:makeFalse("refresh_on_pages_with_images")
     end
 end
 
