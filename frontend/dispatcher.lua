@@ -66,8 +66,8 @@ local settingsList = {
     toggle_flash_on_chapter_boundaries = {category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), screen=true, condition=Device:hasEinkScreen()},
     set_no_flash_on_second_chapter_page = {category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
     toggle_no_flash_on_second_chapter_page = {category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), separator=true},
-    set_flash_on_images = {category="string", event="SetFlashOnImages", title=_("Always flash on pages with images"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
-    toggle_flash_on_images = {category="none", event="ToggleFlashOnImages", title=_("Toggle flashing on pages with images"), screen=true, condition=Device:hasEinkScreen()},
+    set_flash_on_pages_with_images = {category="string", event="SetFlashOnPagesWithImages", title=_("Always flash on pages with images"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("on"), _("off")}},
+    toggle_flash_on_pages_with_images = {category="none", event="ToggleFlashOnPagesWithImages", title=_("Toggle flashing on pages with images"), screen=true, condition=Device:hasEinkScreen()},
 
     -- Device settings
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:hasGSensor()},
@@ -276,8 +276,8 @@ local dispatcher_menu_order = {
     "toggle_flash_on_chapter_boundaries",
     "set_no_flash_on_second_chapter_page",
     "toggle_no_flash_on_second_chapter_page",
-    "set_flash_on_images",
-    "toggle_flash_on_images",
+    "set_flash_on_pages_with_images",
+    "toggle_flash_on_pages_with_images",
 
     -- filemanager
     "folder_up",

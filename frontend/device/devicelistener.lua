@@ -306,16 +306,16 @@ function DeviceListener:onToggleNoFlashOnSecondChapterPage()
     _toggleSetting("no_refresh_on_second_chapter_page")
 end
 
-function DeviceListener:onSetFlashOnImages(toggle)
+function DeviceListener:onSetFlashOnPagesWithImages(toggle)
     if toggle == true then
-        G_reader_settings:makeTrue("refresh_on_images")
+        G_reader_settings:makeTrue("refresh_on_pages_with_images")
     else
-        _unsetSetting("refresh_on_images")
+        _unsetSetting("refresh_on_pages_with_images")
     end
 end
 
-function DeviceListener:onToggleFlashOnImages()
-    G_reader_settings:flipNilOrTrue("refresh_on_images")
+function DeviceListener:onToggleFlashOnPagesWithImages()
+    G_reader_settings:flipNilOrTrue("refresh_on_pages_with_images")
 end
 
 function DeviceListener:onSwapPageTurnButtons()
