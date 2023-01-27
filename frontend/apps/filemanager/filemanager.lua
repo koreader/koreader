@@ -989,10 +989,17 @@ function FileManager:pasteHere(file)
     local function updateSidecar(move)
         if DocSettings:hasSidecarFile(orig) then
             local dest_sidecar_dir = DocSettings:getSidecarDir(dest_file)
-            BaseUtil.execute(self.mkdir_bin, dest_sidecar_dir)
+            DocSettings:ensureSideca(dest_sidecar_dir)
             BaseUtil.execute(self.cp_bin, DocSettings:getSidecarFile(orig), dest_sidecar_dir)
             if move then
                 DocSettings:open(orig):purge()
+            end
+        end
+        local orig_history_path = DocSettings:getHistoryPath(orig)
+        if lfs.attributes(orig_history_path, "mode") == "file" then
+            BaseUtil.execute(self.cp_bin, orig_history_path, DocSettings:getHistoryPath(dest_file))
+            if move then
+                os.remove(orig_history_path)
             end
         end
     end
