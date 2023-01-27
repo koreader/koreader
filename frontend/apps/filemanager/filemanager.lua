@@ -1128,7 +1128,9 @@ function FileManager:deleteFile(file, is_file)
     end
     if ok and not err then
         if is_file then
-            if DocumentRegistry:hasProvider(file_abs_path) and DocSettings:hasSidecarFile(file_abs_path) then
+            if DocumentRegistry:hasProvider(file_abs_path) and
+                    (DocSettings:hasSidecarFile(file_abs_path) or
+                    lfs.attributes(DocSettings:getHistoryPath(file_abs_path), "mode") == "file") then
                 local doc_settings = DocSettings:open(file)
                 local cache_file_path = doc_settings:readSetting("cache_file_path")
                 if cache_file_path then
