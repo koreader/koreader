@@ -324,10 +324,13 @@ For example, a word could be reviewed at 5m, 30m and 1d intervals before the int
                             callback = function()
                                 local fields = self.settings_dialog:getFields()
                                 local interval_input = fields[1]
-                                settings.interval_modifier = fields[2]
+                                local modifier_input = fields[2]
+
+                                local isIntervalValid = MenuDialog.isIntervalStringValid(interval_input)
+                                local isModifierValid = MenuDialog.isValidModifier(modifier_input)
 
                                 local intervalsArray = {};
-                                if MenuDialog.isIntervalStringValid(interval_input) then
+                                if isIntervalValid then
                                     for inputTime in string.gmatch(interval_input, "%d+[m|d|h]") do
                                         table.insert(intervalsArray, MenuDialog.parseInputTime(inputTime))
                                     end
@@ -336,13 +339,27 @@ For example, a word could be reviewed at 5m, 30m and 1d intervals before the int
                                     saveSettings()
                                 else
                                     local invalidIntervalInputMessage = InfoMessage:new{
-                                        text = _("Invalid interval input. Please enter intervals with number followed by m, h, or d"),
+                                        text = _("Invalid interval input. Please enter intervals in the format of 10m, 12h, 1d"),
                                         show_icon = true,
                                         icon = "notice-info",
                                         timeout = 3
                                     }
                                     UIManager:show(invalidIntervalInputMessage)
                                 end
+
+                                if isModifierValid then
+                                    settings.interval_modifier = fields[2]
+                                    saveSettings()
+                                else
+                                    local invalidModifierInputMessage = InfoMessage:new{
+                                        text = _("Invalid modifier input. Please enter a value like 1.5, 2"),
+                                        show_icon = true,
+                                        icon = "notice-info",
+                                        timeout = 3
+                                    }
+                                    UIManager:show(invalidModifierInputMessage)
+                                end
+
                                 UIManager:close(self.settings_dialog)
                             end,
                         },
@@ -498,6 +515,15 @@ For example, a word could be reviewed at 5m, 30m and 1d intervals before the int
     }
 
 end
+
+function MenuDialog.isValidModifier(number)
+    if tonumber(number) then
+        return true
+    else
+        return false
+    end
+end
+
 
 function MenuDialog.parseInputTime(str)
     local num = tonumber(str:sub(1, -2))
