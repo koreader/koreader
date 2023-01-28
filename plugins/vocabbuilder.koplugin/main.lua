@@ -285,7 +285,7 @@ function MenuDialog:init()
                 buttons = {
                     {
                         {
-                            text = _("Cancel"),
+                            text = _("Close"),
                             id = "close",
                             callback = function()
                                 UIManager:close(self.settings_dialog)
@@ -339,7 +339,7 @@ For example, a word could be reviewed at 5m, 30m and 1d intervals before the int
                                     saveSettings()
                                 else
                                     local invalidIntervalInputMessage = InfoMessage:new{
-                                        text = _("Invalid interval input. Please enter intervals in the format of 10m, 12h, 1d"),
+                                        text = _("Invalid review intervals. Please enter intervals in the format of 10m, 12h, 1d"),
                                         show_icon = true,
                                         icon = "notice-info",
                                         timeout = 3
@@ -359,8 +359,6 @@ For example, a word could be reviewed at 5m, 30m and 1d intervals before the int
                                     }
                                     UIManager:show(invalidModifierInputMessage)
                                 end
-
-                                UIManager:close(self.settings_dialog)
                             end,
                         },
                     }
