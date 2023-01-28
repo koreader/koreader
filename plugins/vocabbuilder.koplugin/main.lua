@@ -296,7 +296,7 @@ function MenuDialog:init()
                             id = "help",
                             callback = function()
                                 local helpMessage = InfoMessage:new{
-                                    text = [[Review intervals are the initial periods of time between reviews of words. 
+                                    text = [[Review intervals are the initial periods of time between reviews of words.
 
 Interval modifier is used after all review intervals have been completed to increase the time between reviews.
 
@@ -526,7 +526,7 @@ end
 function MenuDialog.parseInputTime(str)
     local num = tonumber(str:sub(1, -2))
     local unit = str:sub(-1)
-    local totalMinutes = 0
+    local totalMinutes
     if unit == "m" then
         totalMinutes = num
     elseif unit == "h" then
