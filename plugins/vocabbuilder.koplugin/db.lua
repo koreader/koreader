@@ -225,12 +225,8 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
         intervals = settings.default_review_intervals
     end
 
-    local interval_modifier
-    if settings.interval_modifier then
-        interval_modifier = settings.interval_modifier
-    else
-        interval_modifier = settings.default_interval_modifier
-    end
+    local interval_modifier = settings.interval_modifier or settings.default_interval_modifier
+
 
     local interval
     if intervals[target_count] ~= nil then
