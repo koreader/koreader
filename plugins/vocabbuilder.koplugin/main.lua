@@ -249,22 +249,12 @@ function MenuDialog:init()
             settings.default_review_intervals = {5, 30, 720, 1440}
             settings.default_review_intervals_pretty = "5m, 30m, 12h, 24h"
 
-            local current_intervals
-            if settings.review_intervals then
-                current_intervals = settings.review_intervals_pretty
-            else
-                current_intervals = settings.default_review_intervals_pretty
-            end
+            local current_intervals = settings.review_intervals_pretty or settings.default_review_intervals_pretty
 
             -- interval modifier
             settings.default_interval_modifier = 2
 
-            local interval_modifier
-            if settings.interval_modifier then
-                interval_modifier = settings.interval_modifier
-            else
-                interval_modifier = settings.default_interval_modifier
-            end
+            local interval_modifier = settings.interval_modifier or settings.default_interval_modifier
 
 
             self.settings_dialog = MultiInputDialog:new {

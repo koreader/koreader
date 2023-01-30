@@ -218,12 +218,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     local target_review_count = math.max(item.review_count + (isGot and 1 or -1), 0)
     local target_count = isGot and item.streak_count + 1 or 0
 
-    local intervals
-    if settings.review_intervals then
-        intervals = settings.review_intervals
-    else
-        intervals = settings.default_review_intervals
-    end
+    local intervals = settings.review_intervals or settings.default_review_intervals
 
     local interval_modifier = settings.interval_modifier or settings.default_interval_modifier
 
