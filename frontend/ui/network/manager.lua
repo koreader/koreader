@@ -308,8 +308,7 @@ function NetworkMgr:isNetworkInfoAvailable()
         -- always available
         return true
     else
-        --- @todo also show network info when device is authenticated to router but offline
-        return self:isWifiOn()
+        return self:isConnected()
     end
 end
 
