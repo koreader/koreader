@@ -128,7 +128,6 @@ local Emulator = Device:extend{
     hasNaturalLight = yes,
     hasNaturalLightApi = yes,
     hasWifiToggle = yes,
-    hasWifiManager = yes,
     -- Not really, Device:reboot & Device:powerOff are not implemented, so we just exit ;).
     canPowerOff = yes,
     canReboot = yes,
@@ -367,6 +366,28 @@ function Device:setEventHandlers(UIManager)
     end
 end
 
+function Device:initNetworkManager(NetworkMgr)
+    function NetworkMgr:isWifiOn() return true end
+    function NetworkMgr:isConnected()
+        -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
+        local default_gw, std_out
+        if isCommand("ip") then
+            std_out = io.popen([[ip r | grep default | tail -n 1 | cut -d ' ' -f 3]], "r")
+        else
+            std_out = io.popen([[/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1]], "r")
+        end
+
+        if std_out then
+            default_gw = std_out:read("*all")
+            std_out:close()
+            if not default_gw or default_gw == "" then
+                return false
+            end
+        end
+        return 0 == os.execute("ping -c1 -w2 " .. default_gw)
+    end
+end
+
 function Emulator:supportsScreensaver() return true end
 
 function Emulator:simulateSuspend()
@@ -401,6 +422,7 @@ function Emulator:initNetworkManager(NetworkMgr)
     function NetworkMgr:isWifiOn()
         return G_reader_settings:nilOrTrue("emulator_fake_wifi_connected")
     end
+    NetworkMgr.isConnected = NetworkMgr.isWifiOn
 end
 
 io.write("Starting SDL in " .. SDL.getBasePath() .. "\n")

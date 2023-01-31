@@ -9,6 +9,7 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = ffiutil.template
 
@@ -30,7 +31,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         self.wifi_was_on = false
         G_reader_settings:makeFalse("wifi_was_on")
         -- If we abort, murder Wi-Fi and the async script first...
-        if Device:hasWifiManager() and not Device:isEmulator() then
+        if Device:hasWifiManager() then
             os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         end
         self:turnOffWifi()
@@ -105,7 +106,9 @@ end
 -- NetworkMgr:setWirelessBackend
 function NetworkMgr:turnOnWifi() end
 function NetworkMgr:turnOffWifi() end
+-- This function returns status of the WiFi radio
 function NetworkMgr:isWifiOn() end
+function NetworkMgr:isConnected() end
 function NetworkMgr:getNetworkInterfaceName() end
 function NetworkMgr:getNetworkList() end
 function NetworkMgr:getCurrentNetwork() end
@@ -116,6 +119,30 @@ function NetworkMgr:releaseIP() end
 -- This function should call both turnOnWifi() and obtainIP() in a non-blocking manner.
 function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
+
+--Helper fuctions for devices that use the sysfs entry to check connectivity.
+function NetworkMgr:sysfsWifiOn()
+    -- Network interface directory exists while the Wi-Fi module is loaded.
+    local net_if = self:getNetworkInterfaceName()
+    return util.pathExists("/sys/class/net/".. net_if)
+end
+
+function NetworkMgr:sysfsCarrierConnected()
+    -- Read carrier state from sysfs.
+    -- NOTE: We can afford to use CLOEXEC, as devices too old for it don't support Wi-Fi anyway ;)
+    local out
+    local net_if = self:getNetworkInterfaceName()
+    local file = io.open("/sys/class/net/" .. net_if .. "/carrier", "re")
+
+    -- File only exists while Wi-Fi module is loaded.
+    if file then
+        -- 0 means not connected, 1 connected
+        out = file:read("*number")
+        file:close()
+    end
+
+    return out == 1
+end
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     local toggle_im = InfoMessage:new{
@@ -245,34 +272,6 @@ function NetworkMgr:afterWifiAction(callback)
     end
 end
 
-function NetworkMgr:isConnected()
-    if Device:isAndroid() or Device:isCervantes() or Device:isPocketBook() or Device:isEmulator() then
-        return self:isWifiOn()
-    elseif Device:isKindle() then
-        local on, connected =  self:isWifiOn()
-        return on and connected
-    else
-        -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
-        local default_gw
-        local std_out = io.popen([[/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1]], "r")
-        if std_out then
-            default_gw = std_out:read("*all")
-            std_out:close()
-            if not default_gw or default_gw == "" then
-                return false
-            end
-        end
-
-        -- `-c1` try only once; `-w2` wait 2 seconds
-        -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
-        if Device:isKindle() and Device:hasKeyboard() then
-            return 0 == os.execute("ping -c1 " .. default_gw)
-        else
-            return 0 == os.execute("ping -c1 -w2 " .. default_gw)
-        end
-    end
-end
-
 function NetworkMgr:isOnline()
     local socket = require("socket")
     -- Microsoft uses `dns.msftncsi.com` for Windows, see
@@ -308,8 +307,7 @@ function NetworkMgr:isNetworkInfoAvailable()
         -- always available
         return true
     else
-        --- @todo also show network info when device is authenticated to router but offline
-        return self:isWifiOn()
+        return self:isConnected()
     end
 end
 
@@ -499,7 +497,7 @@ function NetworkMgr:getPowersaveMenuTable()
         text = _("Disable Wi-Fi connection when inactive"),
         help_text = _([[This will automatically turn Wi-Fi off after a generous period of network inactivity, without disrupting workflows that require a network connection, so you can just keep reading without worrying about battery drain.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
-        enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
+        enabled_func = function() return Device:hasWifiManager() end,
         callback = function()
             G_reader_settings:flipNilOrFalse("auto_disable_wifi")
             -- NOTE: Well, not exactly, but the activity check wouldn't be (un)scheduled until the next Network(Dis)Connected event...
@@ -513,7 +511,7 @@ function NetworkMgr:getRestoreMenuTable()
         text = _("Restore Wi-Fi connection on resume"),
         help_text = _([[This will attempt to automatically and silently re-connect to Wi-Fi on startup or on resume if Wi-Fi used to be enabled the last time you used KOReader.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
-        enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
+        enabled_func = function() return Device:hasWifiManager() end,
         callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
     }
 end
@@ -610,7 +608,7 @@ function NetworkMgr:getMenuTable(common_settings)
     common_settings.network_proxy = self:getProxyMenuTable()
     common_settings.network_info = self:getInfoMenuTable()
 
-    if Device:hasWifiManager() then
+    if Device:hasWifiManager() or Device:isEmulator() then
         common_settings.network_powersave = self:getPowersaveMenuTable()
         common_settings.network_restore = self:getRestoreMenuTable()
         common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
