@@ -368,9 +368,10 @@ function PocketBook:initNetworkManager(NetworkMgr)
         end
     end
 
-    function NetworkMgr:isWifiOn()
+    function NetworkMgr:isConnected()
         return band(inkview.QueryNetwork(), C.NET_CONNECTED) ~= 0
     end
+    NetworkMgr.isWifiOn = NetworkMgr.isConnected
 end
 
 function PocketBook:getSoftwareVersion()

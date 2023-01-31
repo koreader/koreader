@@ -69,24 +69,6 @@ local function isWifiUp()
 end
 --]]
 
--- Faster lipc-less variant ;).
-local function isWifiUp()
-    -- Read carrier state from sysfs (so far, all Kindles appear to use wlan0)
-    -- NOTE: We can afford to use CLOEXEC, as devices too old for it don't support Wi-Fi anyway ;).
-    local file = io.open("/sys/class/net/wlan0/carrier", "re")
-
-    -- File only exists while Wi-Fi module is loaded.
-    if not file then
-        return false
-    end
-
-    -- 0 means not connected, 1 connected
-    local out = file:read("*number")
-    file:close()
-
-    return true, out == 1
-end
-
 --[[
 Test if a kindle device is flagged as a Special Offers device (i.e., ad supported) (FW >= 5.x)
 --]]
@@ -200,7 +182,12 @@ function Kindle:initNetworkManager(NetworkMgr)
         end
     end
 
-    NetworkMgr.isWifiOn = isWifiUp
+    function NetworkMgr:getNetworkInterfaceName()
+        return "wlan0" -- so far, all Kindles appear to use wlan0
+    end
+
+    NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
+    NetworkMgr.isConnected = NetworkMgr.sysfsCarrierConnected
 end
 
 function Kindle:supportsScreensaver()

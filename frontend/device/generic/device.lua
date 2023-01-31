@@ -268,7 +268,7 @@ function Device:onPowerEvent(ev)
                 logger.dbg("Resuming...")
                 local UIManager = require("ui/uimanager")
                 UIManager:unschedule(self.suspend)
-                if self:hasWifiManager() and not self:isEmulator() then
+                if self:hasWifiManager() then
                     local network_manager = require("ui/network/manager")
                     if network_manager.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
                         network_manager:restoreWifiAsync()
