@@ -248,6 +248,9 @@ end
 function NetworkMgr:isConnected()
     if Device:isAndroid() or Device:isCervantes() or Device:isPocketBook() or Device:isEmulator() then
         return self:isWifiOn()
+    elseif Device:isKindle() then
+        local on, connected =  self:isWifiOn()
+        return on and connected
     else
         -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
         local default_gw

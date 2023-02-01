@@ -968,19 +968,15 @@ end
 function ReaderView:onReaderFooterVisibilityChange()
     -- Don't bother ReaderRolling with this nonsense, the footer's height is NOT handled via visible_area there ;)
     if self.ui.paging and self.state.page then
-        -- NOTE: Simply relying on recalculate would be a wee bit too much: it'd reset the in-page offsets,
-        --       which would be wrong, and is also not necessary, since the footer is at the bottom of the screen ;).
-        --       So, simply mangle visible_area's height ourselves...
+        -- We don't need to do anything if reclaim is enabled ;).
         if not self.footer.settings.reclaim_height then
-            -- NOTE: Yes, this means that toggling reclaim_height requires a page switch (for a proper recalculate).
-            --       Thankfully, most of the time, the quirks are barely noticeable ;).
-            if self.footer_visible then
-                self.visible_area.h = self.visible_area.h - self.footer:getHeight()
-            else
-                self.visible_area.h = self.visible_area.h + self.footer:getHeight()
-            end
+            -- NOTE: Mimic what onSetFullScreen does, since, without reclaim, toggling the footer affects the available area,
+            --       so we need to recompute the full layout.
+            self.ui:handleEvent(Event:new("SetDimensions", Screen:getSize()))
+            -- NOTE: Scroll mode's behavior after this might be suboptimal (until next page),
+            --       but I'm not familiar enough with it to make it behave...
+            --       (e.g., RedrawCurrentPage & co will snap to the top of the "current" page).
         end
-        self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
     end
 end
 

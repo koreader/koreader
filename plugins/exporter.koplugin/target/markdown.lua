@@ -29,6 +29,7 @@ local formatter_buttons = {
     { _("None"), "none" },
     { _("Bold"), "bold" },
     { _("Bold italic"), "bold_italic" },
+    { _("Highlight"), "highlight"},
     { _("Italic"), "italic" },
     { _("Strikethrough"), "strikethrough" },
     { _("Underline (Markdownit style, with ++)"), "underline_markdownit" },

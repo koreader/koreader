@@ -12,6 +12,7 @@ local ffiUtil = require("ffi/util")
 local T = ffiUtil.template
 local _ = require("gettext")
 local Screen = Device.screen
+local sort = require("sort")
 local util = require("util")
 local getFileNameSuffix = util.getFileNameSuffix
 local getFriendlySize = util.getFriendlySize
@@ -232,14 +233,18 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
             return a.percent_finished < b.percent_finished
         end
     elseif collate == "natural" then
-        -- adapted from: http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua
-        local function addLeadingZeroes(d)
-            local dec, n = string.match(d, "(%.?)0*(.+)")
-            return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
-        end
-        sorting = function(a, b)
-            return tostring(a.name):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b.name)
-                    < tostring(b.name):gsub("%.?%d+",addLeadingZeroes)..("%3d"):format(#a.name)
+        local natsort
+        -- Only keep the cache if we're an *instance* of FileChooser
+        if self ~= FileChooser then
+            natsort, self.natsort_cache = sort.natsort_cmp(self.natsort_cache)
+            sorting = function(a, b)
+                return natsort(a.name, b.name)
+            end
+        else
+            natsort = sort.natsort_cmp()
+            sorting = function(a, b)
+                return natsort(a.name, b.name)
+            end
         end
     else
         sorting = function(a, b)

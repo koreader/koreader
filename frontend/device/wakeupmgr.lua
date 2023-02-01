@@ -216,6 +216,12 @@ Unset wakeup alarm.
 Simple wrapper for @{ffi.rtc.unsetWakeupAlarm}.
 --]]
 function WakeupMgr:unsetWakeupAlarm()
+    -- Apparently, toggling the interrupt doesn't work on some RTCs,
+    -- and not necessarily the ones we've flagged as dodgy... (#10031).
+    -- Deal with this insanity by ensuring the alarm is not set in the future,
+    -- by overwriting the current alarm with an already expired disabled one.
+    logger.dbg("WakeupMgr:unsetWakeupAlarm will invalidate any future alarms")
+    self:setWakeupAlarm(0, false)
     return self.rtc:unsetWakeupAlarm()
 end
 
