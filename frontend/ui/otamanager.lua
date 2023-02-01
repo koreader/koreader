@@ -62,9 +62,9 @@ function OTAManager:_isKindleWarioOrMore()
     --       but for Wario (Cortex A9), matching that to 0xc09 would work, too.
     --       On the other hand, I'm already using the Hardware match in MRPI, so, that sealed the deal ;).
 
-    -- If we've got a Hardware string, check if it mentions an i.MX 6 or 7...
+    -- If we've got a Hardware string, check if it mentions an i.MX 6 or 7 or a MTK...
     if cpu_hw then
-        if cpu_hw:find("i.MX%s?[6-7]") then
+        if cpu_hw:find("i%.MX%s?[6-7]") or cpu_hw:find("MT8110") then
             return true
         else
             return false
