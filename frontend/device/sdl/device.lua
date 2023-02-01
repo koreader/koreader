@@ -401,6 +401,7 @@ function Emulator:initNetworkManager(NetworkMgr)
     function NetworkMgr:isWifiOn()
         return G_reader_settings:nilOrTrue("emulator_fake_wifi_connected")
     end
+    NetworkMgr.isConnected = NetworkMgr.isWifiOn
 end
 
 io.write("Starting SDL in " .. SDL.getBasePath() .. "\n")
