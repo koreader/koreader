@@ -729,36 +729,29 @@ function UIManager:getNthTopWidget(n)
     return widget
 end
 
---[[--
-Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
-
-Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
-
-NOTE: Will skip over VirtualKeyboard instances, plural, in case there are multiple (because, apparently, we can do that.. ugh).
---]]
-function UIManager:getSecondTopmostWidget()
-    if #self._window_stack < 2 then
-        -- Not enough widgets in the stack, bye!
-        return nil
+--- Top-to-bottom widgets iterator
+--- NOTE: VirtualKeyboard can be instantiated multiple times, and is a modal,
+--        so don't be suprised if you find a couple of instances of it at the top ;).
+function UIManager:topdown_widgets_iter()
+    local n = #self._window_stack
+    local i = n + 1
+    return function()
+        i = i - 1
+        if i > 0 then
+            return self._window_stack[i].widget
+        end
     end
+end
 
-    -- Because everything is terrible, you can actually instantiate multiple VirtualKeyboards,
-    -- and they'll stack at the top, so, loop until we get something that *isn't* VK...
-    for i = #self._window_stack - 1, 1, -1 do
+--- Get the topmost visible widget
+function UIManager:getTopmostVisibleWidget()
+    for i = #self._window_stack, 1, -1 do
         local widget = self._window_stack[i].widget
-
-        if widget.name then
-            if widget.name ~= "VirtualKeyboard" then
-                return widget.name
-            end
-            -- Meaning if name is set, and is set to VK => continue, as we want the *next* widget.
-            -- I *really* miss the continue keyword, Lua :/.
-        else
+        -- Skip invisible widgets (e.g., TrapWidget)
+        if not widget.invisible then
             return widget
         end
     end
-
-    return nil
 end
 
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack.

@@ -414,6 +414,7 @@ function ReaderMenu:onShowMenu(tab_index)
     end
 
     local menu_container = CenterContainer:new{
+        covers_header = true,
         ignore = "height",
         dimen = Screen:getSize(),
     }

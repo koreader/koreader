@@ -771,19 +771,23 @@ function ReaderFooter:unscheduleFooterAutoRefresh()
 end
 
 function ReaderFooter:shouldBeRepainted()
-    local n = 1
-    local widget = UIManager:getNthTopWidget(n)
-    while widget do
-        if widget.name == "ReaderUI" then
-            return true
-        elseif widget.covers_fullscreen or widget.covers_footer then
-            -- (e.g. the virtual keyboard sets widget_covers_footer == true)
-            return false
-        end
-        n = n + 1
-        widget = UIManager:getNthTopWidget(n)
+    if not self.view.footer_visible then
+        return false
     end
-    return false
+
+    local top_wg = UIManager:getTopmostVisibleWidget() or {}
+    if top_wg.name == "ReaderUI" then
+        -- No overlap possible, it's safe to request a targeted widget repaint
+        return true
+    elseif top_wg.covers_fullscreen or top_wg.covers_footer then
+        -- No repaint necessary at all
+        return false
+    end
+
+    -- The topmost visible widget might overlap with us, but dimen isn't reliable enough to do a proper bounds check
+    -- (as stuff often just sets it to the Screen dimensions),
+    -- so request a full ReaderUI repaint to avoid out-of-order repaints.
+    return true, true
 end
 
 function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
@@ -794,7 +798,7 @@ function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
             -- (We want to avoid the footer to be painted over a widget covering it - we would
             -- be fine refreshing it if the widget is not covering it, but this is hard to
             -- guess from here.)
-            self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
+            self:onUpdateFooter(self:shouldBeRepainted())
 
             self:rescheduleFooterAutoRefreshIfNeeded() -- schedule (or not) next refresh
         end
@@ -2102,15 +2106,15 @@ function ReaderFooter:getDataFromStatistics(title, pages)
     return title .. sec
 end
 
-function ReaderFooter:onUpdateFooter(force_repaint, force_recompute)
+function ReaderFooter:onUpdateFooter(force_repaint, full_repaint)
     if self.pageno then
-        self:updateFooterPage(force_repaint, force_recompute)
+        self:updateFooterPage(force_repaint, full_repaint)
     else
-        self:updateFooterPos(force_repaint, force_recompute)
+        self:updateFooterPos(force_repaint, full_repaint)
     end
 end
 
-function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
+function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
     if type(self.pageno) ~= "number" then return end
     if self.ui.document:hasHiddenFlows() then
         local flow = self.ui.document:getPageFlow(self.pageno)
@@ -2120,24 +2124,24 @@ function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
     else
         self.progress_bar.percentage = self.pageno / self.pages
     end
-    self:updateFooterText(force_repaint, force_recompute)
+    self:updateFooterText(force_repaint, full_repaint)
 end
 
-function ReaderFooter:updateFooterPos(force_repaint, force_recompute)
+function ReaderFooter:updateFooterPos(force_repaint, full_repaint)
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
-    self:updateFooterText(force_repaint, force_recompute)
+    self:updateFooterText(force_repaint, full_repaint)
 end
 
 -- updateFooterText will start as a noop. After onReaderReady event is
 -- received, it will initialized as _updateFooterText below
-function ReaderFooter:updateFooterText(force_repaint, force_recompute)
+function ReaderFooter:updateFooterText(force_repaint, full_repaint)
 end
 
 -- only call this function after document is fully loaded
-function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
+function ReaderFooter:_updateFooterText(force_repaint, full_repaint)
     -- footer is invisible, we need neither a repaint nor a recompute, go away.
-    if not self.view.footer_visible and not force_repaint and not force_recompute then
+    if not self.view.footer_visible and not force_repaint and not full_repaint then
         return
     end
     local text = self:genFooterText()
@@ -2215,7 +2219,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
         end
         -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
-        if self.view.footer_visible then
+        if self.view.footer_visible and not full_repaint then
             -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
             -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
             -- NOTE: self.view.footer -> self ;).
@@ -2227,6 +2231,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
                 return self.view.currently_scrolling and "fast" or "ui", self.footer_content.dimen
             end)
         else
+            -- If the footer is invisible or might be hidden behind another widget, we need to repaint the full ReaderUI stack.
             UIManager:setDirty(self.view.dialog, function()
                 return self.view.currently_scrolling and "fast" or "ui", refresh_dim
             end)
@@ -2472,12 +2477,12 @@ end
 -- Used by event handlers that can trip without direct UI interaction...
 function ReaderFooter:maybeUpdateFooter()
     -- ...so we need to avoid stomping over unsuspecting widgets (usually, ScreenSaver).
-    self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
+    self:onUpdateFooter(self:shouldBeRepainted())
 end
 
 -- is the same as maybeUpdateFooter
 function ReaderFooter:onFrontlightStateChanged()
-    self:onUpdateFooter(self.view.footer_visible and self:shouldBeRepainted())
+    self:onUpdateFooter(self:shouldBeRepainted())
 end
 
 function ReaderFooter:onNetworkConnected()

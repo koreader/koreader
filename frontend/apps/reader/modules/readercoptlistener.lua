@@ -91,18 +91,18 @@ function ReaderCoptListener:onTimeFormatChanged()
 end
 
 function ReaderCoptListener:shouldHeaderBeRepainted()
-    local n = 1
-    local widget = UIManager:getNthTopWidget(n)
-    while widget do
-        if widget.name == "ReaderUI"  then
-            return true
-        elseif widget.covers_fullscreen then
-            return false
-        end
-        n = n + 1
-        widget = UIManager:getNthTopWidget(n)
+    local top_wg = UIManager:getTopmostVisibleWidget() or {}
+    if top_wg.name == "ReaderUI" then
+        -- We're on display, go ahead
+        return true
+    elseif top_wg.covers_fullscreen or top_wg.covers_header then
+        -- We're hidden behind something that definitely covers us, don't do anything
+        return false
+    else
+        -- There's something on top of us, but we might still be visible, request a ReaderUI repaint,
+        -- UIManager will sort it out.
+        return true
     end
-    return false
 end
 
 function ReaderCoptListener:updateHeader()

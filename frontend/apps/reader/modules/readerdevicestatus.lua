@@ -70,7 +70,8 @@ function ReaderDeviceStatus:init()
                         UIManager:close(self.memory_confirm_box)
                     end
                     if Device:canRestart() then
-                        if UIManager:getNthTopWidget().name == "ReaderUI"
+                        local top_wg = UIManager:getTopmostVisibleWidget() or {}
+                        if top_wg.name == "ReaderUI"
                            and G_reader_settings:isTrue("device_status_memory_auto_restart") then
                             UIManager:show(InfoMessage:new{
                                 text = _("High memory usage!\n\nKOReader is restarting…"),
