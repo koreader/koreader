@@ -1,5 +1,6 @@
 local Generic = require("device/generic/device")
 local logger = require("logger")
+local util = require("util")
 
 local function yes() return true end
 local function no() return false end
@@ -12,18 +13,23 @@ local function getProductId()
     return product_id
 end
 
+local function isWifiOn()
+    -- file exists while Wi-Fi module is loaded.
+    return util.pathExists("/sys/class/net/eth0/carrier")
+end
+
 local function isConnected()
     -- read carrier state from sysfs (for eth0)
     local file = io.open("/sys/class/net/eth0/carrier", "rb")
 
     -- file exists while Wi-Fi module is loaded.
-    if not file then return 0 end
+    if not file then return false end
 
     -- 0 means not connected, 1 connected
     local out = file:read("*number")
     file:close()
 
-    return out or 0
+    return out == 1
 end
 
 local function isMassStorageSupported()
@@ -190,9 +196,8 @@ function Cervantes:initNetworkManager(NetworkMgr)
     function NetworkMgr:restoreWifiAsync()
         os.execute("./restore-wifi-async.sh")
     end
-    function NetworkMgr:isWifiOn()
-        return 1 == isConnected()
-    end
+    NetworkMgr.isWifiOn = isWifiOn
+    NetworkMgr.isConnected = isConnected
 end
 
 -- power functions: suspend, resume, reboot, poweroff

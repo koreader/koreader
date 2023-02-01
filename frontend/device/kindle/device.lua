@@ -2,6 +2,7 @@ local Generic = require("device/generic/device")
 local time = require("ui/time")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 
 -- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
 local ffi = require("ffi")
@@ -71,6 +72,10 @@ end
 
 -- Faster lipc-less variant ;).
 local function isWifiUp()
+    return util.pathExists("/sys/class/net/wlan0/carrier")
+end
+
+local function isWifiConnected()
     -- Read carrier state from sysfs (so far, all Kindles appear to use wlan0)
     -- NOTE: We can afford to use CLOEXEC, as devices too old for it don't support Wi-Fi anyway ;).
     local file = io.open("/sys/class/net/wlan0/carrier", "re")
@@ -84,7 +89,7 @@ local function isWifiUp()
     local out = file:read("*number")
     file:close()
 
-    return true, out == 1
+    return out == 1
 end
 
 --[[
@@ -201,6 +206,7 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     NetworkMgr.isWifiOn = isWifiUp
+    NetworkMgr.isConnected = isWifiConnected
 end
 
 function Kindle:supportsScreensaver()

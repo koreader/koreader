@@ -105,6 +105,7 @@ end
 -- NetworkMgr:setWirelessBackend
 function NetworkMgr:turnOnWifi() end
 function NetworkMgr:turnOffWifi() end
+-- This function returns status of the WiFi radio
 function NetworkMgr:isWifiOn() end
 function NetworkMgr:getNetworkInterfaceName() end
 function NetworkMgr:getNetworkList() end
@@ -245,12 +246,10 @@ function NetworkMgr:afterWifiAction(callback)
     end
 end
 
+-- This function be overridden by a device specific implementation.
 function NetworkMgr:isConnected()
-    if Device:isAndroid() or Device:isCervantes() or Device:isPocketBook() or Device:isEmulator() then
+    if Device:isAndroid() or Device:isPocketBook() or Device:isEmulator() then
         return self:isWifiOn()
-    elseif Device:isKindle() then
-        local on, connected =  self:isWifiOn()
-        return on and connected
     else
         -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
         local default_gw
@@ -264,12 +263,7 @@ function NetworkMgr:isConnected()
         end
 
         -- `-c1` try only once; `-w2` wait 2 seconds
-        -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
-        if Device:isKindle() and Device:hasKeyboard() then
-            return 0 == os.execute("ping -c1 " .. default_gw)
-        else
-            return 0 == os.execute("ping -c1 -w2 " .. default_gw)
-        end
+        return 0 == os.execute("ping -c1 -w2 " .. default_gw)
     end
 end
 
