@@ -1,5 +1,6 @@
 local Device = require("device")
 local Event = require("ui/event")
+local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
@@ -22,6 +23,17 @@ exit_settings.restart_koreader = {
     text = _("Restart KOReader"),
     callback = function()
         UIManager:broadcastEvent(Event:new("Restart"))
+    end,
+    hold_callback = function()
+        if Device:deleteCrashLog() then
+            UIManager:show(InfoMessage:new{
+                text = _("KOReader log file deleted:\n'crash.log'"),
+            })
+        end
+        local restart_delay_s = 1.5 -- time to read the message
+        UIManager:scheduleIn(restart_delay_s, function()
+            UIManager:broadcastEvent(Event:new("Restart"))
+        end)
     end,
 }
 if not Device:canRestart()  then

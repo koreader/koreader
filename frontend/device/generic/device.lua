@@ -716,4 +716,8 @@ function Device:_afterNotCharging()
     UIManager:broadcastEvent(Event:new("NotCharging"))
 end
 
+function Device:deleteCrashLog()
+    return os.remove("crash.log")
+end
+
 return Device
