@@ -9,6 +9,10 @@ local formatters = {
         formatter = "**%s**",
         label = _("Bold")
     },
+    highlight = {
+        formatter = "==%s==",
+        label = _("Highlight")
+    },
     italic = {
         formatter = "*%s*",
         label = _("Italic")

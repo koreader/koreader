@@ -84,7 +84,7 @@ local function isWifiUp()
     local out = file:read("*number")
     file:close()
 
-    return out == 1
+    return true, out == 1
 end
 
 --[[
