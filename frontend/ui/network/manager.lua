@@ -248,7 +248,7 @@ end
 
 -- This function be overridden by a device specific implementation.
 function NetworkMgr:isConnected()
-    if Device:isAndroid() or Device:isPocketBook() then
+    if Device:isAndroid() then
         return self:isWifiOn()
     else
         -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
