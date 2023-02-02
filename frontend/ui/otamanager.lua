@@ -83,6 +83,8 @@ function OTAManager:getOTAModel()
             return "android-arm64"
         elseif arch == "x86" then
             return "android-x86"
+        elseif arch == "x86_64" then
+            return "android-x86_64"
         end
         return "android"
     elseif Device:isSDL() then
