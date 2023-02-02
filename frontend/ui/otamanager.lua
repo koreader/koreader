@@ -79,7 +79,9 @@ local arch = jit.arch
 
 function OTAManager:getOTAModel()
     if Device:isAndroid() then
-        if arch == "x86" then
+        if arch == "arm64" then
+            return "android-arm64"
+        elseif arch == "x86" then
             return "android-x86"
         end
         return "android"
