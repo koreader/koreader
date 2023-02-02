@@ -98,6 +98,21 @@ function Profiles:getSubMenuItems()
                 end
                 self:editProfileName(editCallback)
             end,
+        },
+        {
+            text = _("New with current document settings"),
+            enabled = self.ui.file_chooser == nil,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local function editCallback(new_name)
+                    self.data[new_name] = self:getProfileFromCurrentDocument(new_name)
+                    self.updated = true
+                    touchmenu_instance.item_table = self:getSubMenuItems()
+                    touchmenu_instance.page = 1
+                    touchmenu_instance:updateItems()
+                end
+                self:editProfileName(editCallback)
+            end,
             separator = true,
         },
     }
@@ -279,6 +294,77 @@ function Profiles:editProfileName(editCallback, old_name)
     }
     UIManager:show(name_input)
     name_input:onShowKeyboard()
+end
+
+function Profiles:getProfileFromCurrentDocument(new_name)
+    local document_settings
+    if self.ui.rolling then
+        document_settings = {
+            "rotation_mode",
+            "set_font",
+            "font_size",
+            "font_gamma",
+            "font_base_weight",
+            "font_hinting",
+            "font_kerning",
+            "word_spacing",
+            "word_expansion",
+            "visible_pages",
+            "h_page_margins",
+            "sync_t_b_page_margins",
+            "t_page_margin",
+            "b_page_margin",
+            "view_mode",
+            "block_rendering_mode",
+            "render_dpi",
+            "line_spacing",
+            "embedded_css",
+            "embedded_fonts",
+            "smooth_scaling",
+        }
+    else
+        document_settings = {
+            "rotation_mode",
+            "kopt_text_wrap",
+            "kopt_trim_page",
+            "kopt_page_margin",
+            "kopt_zoom_overlap_h",
+            "kopt_zoom_overlap_v",
+            "kopt_max_columns",
+            "kopt_zoom_mode_genus",
+            "kopt_zoom_mode_type",
+            "kopt_zoom_factor",
+            "kopt_zoom_direction",
+            "kopt_page_scroll",
+            "kopt_line_spacing",
+            "kopt_font_size",
+            "kopt_contrast",
+            "kopt_quality",
+        }
+    end
+
+    local profile = { settings = { name = new_name, order = document_settings } }
+    for _, v in ipairs(document_settings) do
+        profile[v] = self.document.configurable[self.ui.rolling and v or v:sub(6)]
+    end
+    if self.ui.rolling then
+        profile["set_font"] = self.ui.font.font_face
+        profile["sync_t_b_page_margins"] = self.ui.typeset.sync_t_b_page_margins
+        profile["view_mode"] = self.view.view_mode
+        profile["embedded_css"] = self.ui.typeset.embedded_css
+        profile["embedded_fonts"] = self.ui.typeset.embedded_fonts
+        profile["smooth_scaling"] = self.ui.typeset.smooth_scaling
+    else
+        local trim_page_to_mode = { _("manual"), _("auto"), _("semi-auto"), _("none") }
+        local zoom_genus_to_mode = { _("manual"), _("rows"), _("columns"), _("content"), _("page") }
+        local zoom_type_to_mode = { _("height"), _("width"), _("full") }
+        profile["rotation_mode"] = self.document.configurable.rotation_mode
+        profile["kopt_trim_page"] = trim_page_to_mode[profile["kopt_trim_page"]+1]
+        profile["kopt_zoom_mode_genus"] = zoom_genus_to_mode[profile["kopt_zoom_mode_genus"]+1]
+        profile["kopt_zoom_mode_type"] = zoom_type_to_mode[profile["kopt_zoom_mode_type"]+1]
+        profile["kopt_page_scroll"] = self.view.page_scroll
+    end
+    return profile
 end
 
 function Profiles:updateGestures(action_old_name, action_new_name)
