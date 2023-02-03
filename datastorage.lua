@@ -42,6 +42,9 @@ function DataStorage:getSettingsDir()
     return self:getDataDir() .. "/settings"
 end
 
+function DataStorage:getSidecarsDir()
+    return self:getDataDir() .. "/sidecars"
+end
 
 function DataStorage:getFullDataDir()
     if full_data_dir then return full_data_dir end
@@ -59,8 +62,8 @@ local function initDataDir()
     local sub_data_dirs = {
         "cache", "clipboard",
         "data", "data/dict", "data/tessdata",
-        "history", "ota", "plugins",
-        "screenshots", "settings", "styletweaks",
+        "history", "ota", "patches", "plugins",
+        "screenshots", "settings", "sidecars", "styletweaks",
     }
     for _, dir in ipairs(sub_data_dirs) do
         local sub_data_dir = string.format("%s/%s", DataStorage:getDataDir(), dir)
