@@ -269,9 +269,9 @@ function DocSettings:purge(full, sidecar_to_keep)
         end
     end
 
-    local function purgeDir(dir, full)
+    local function purgeDir(dir, full_purge)
         if lfs.attributes(dir, "mode") == "directory" then
-            if full then
+            if full_purge then
                 -- Asked to remove all the content of this .sdr directory, whether it's ours or not
                 ffiutil.purgeDir(dir)
             else
