@@ -207,7 +207,7 @@ function ReaderStatus:deleteFile()
         local path = util.splitFilePathName(self.document.file)
         FileManager:showFiles(path)
     end
-    FileManager:deleteFileDialog(self.document.file, post_delete_callback, pre_delete_callback)
+    FileManager:showDeleteFileDialog(self.document.file, post_delete_callback, pre_delete_callback)
 end
 
 function ReaderStatus:onShowBookStatus(before_show_callback)
