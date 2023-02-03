@@ -79,6 +79,7 @@ local order = {
         "status_bar",
     },
     document = {
+        "document_metadata_folder",
         "document_auto_save",
         "document_save",
         "document_end_action",
