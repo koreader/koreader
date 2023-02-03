@@ -100,7 +100,7 @@ function FileManagerHistory:onSetDimensions(dimen)
 end
 
 function FileManagerHistory:onMenuHold(item)
-    local dialog
+    self.histfile_dialog = nil
     local file_actions_enabled = not item.dim and not self._manager:isFileCurrentlyOpened(item.file)
     local buttons = {
         {
@@ -122,7 +122,7 @@ function FileManagerHistory:onMenuHold(item)
                             end
                             self._manager:updateItemTable()
                             self._manager.files_updated = true
-                            UIManager:close(dialog)
+                            UIManager:close(self.histfile_dialog)
                         end,
                     })
                 end,
@@ -132,7 +132,7 @@ function FileManagerHistory:onMenuHold(item)
                 callback = function()
                     require("readhistory"):removeItem(item)
                     self._manager:updateItemTable()
-                    UIManager:close(dialog)
+                    UIManager:close(self.histfile_dialog)
                 end,
             },
         },
@@ -144,10 +144,10 @@ function FileManagerHistory:onMenuHold(item)
                     local function post_delete_callback()
                         self._manager:updateItemTable()
                         self._manager.files_updated = true
-                        UIManager:close(dialog)
+                        UIManager:close(self.histfile_dialog)
                     end
                     local FileManager = require("apps/filemanager/filemanager")
-                    FileManager:deleteFileDialog(item.file, post_delete_callback)
+                    FileManager:showDeleteFileDialog(item.file, post_delete_callback)
                 end,
             },
             {
@@ -155,17 +155,17 @@ function FileManagerHistory:onMenuHold(item)
                 enabled = FileManagerBookInfo:isSupported(item.file),
                 callback = function()
                     FileManagerBookInfo:show(item.file)
-                    UIManager:close(dialog)
+                    UIManager:close(self.histfile_dialog)
                 end,
              },
         },
     }
-    dialog = ButtonDialogTitle:new{
+    self.histfile_dialog = ButtonDialogTitle:new{
         title = BD.filename(item.text:match("([^/]+)$")),
         title_align = "center",
         buttons = buttons,
     }
-    UIManager:show(dialog)
+    UIManager:show(self.histfile_dialog)
     return true
 end
 
