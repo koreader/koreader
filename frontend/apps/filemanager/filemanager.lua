@@ -247,7 +247,7 @@ function FileManager:setupLayout()
                         local function post_delete_callback()
                             self:refreshPath()
                         end
-                        file_manager:deleteFileDialog(file, post_delete_callback)
+                        file_manager:showDeleteFileDialog(file, post_delete_callback)
                     end,
                 },
                 {
@@ -1089,7 +1089,7 @@ function FileManager:createFolder()
     input_dialog:onShowKeyboard()
 end
 
-function FileManager:deleteFileDialog(file, post_delete_callback, pre_delete_callback)
+function FileManager:showDeleteFileDialog(file, post_delete_callback, pre_delete_callback)
     local file_abs_path = BaseUtil.realpath(file)
     local is_file = lfs.attributes(file_abs_path, "mode") == "file"
     local text = (is_file and _("Delete file permanently?") or _("Delete folder permanently?")) .. "\n\n" .. BD.filepath(file)
