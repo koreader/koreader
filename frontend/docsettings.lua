@@ -212,7 +212,7 @@ function DocSettings:flush()
     -- Depending on the settings, doc_settings are saved to the book folder or
     -- to koreader/sidecars folder. The latter is also a fallback for read-only book storage.
     local serials = { {self.sidecar_dir_sidecars, self.sidecar_file_sidecars} }
-    if G_reader_settings:readSetting("document_metadata_folder") == ":doc" then
+    if G_reader_settings:readSetting("document_metadata_folder", ":doc") == ":doc" then
         table.insert(serials, 1, {self.sidecar_dir_doc, self.sidecar_file_doc})
     end
 
