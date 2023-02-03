@@ -505,6 +505,34 @@ common_settings.document = {
     -- submenus are filled by menu_order
 }
 
+local metadata_folder_str = {
+    [":doc"] = _("book folder"),
+    [":sidecars"] = "koreader/sidecars",
+}
+
+local function genMetadataFolderMenuItem(value)
+    return {
+        text = metadata_folder_str[value],
+        checked_func = function()
+            return G_reader_settings:readSetting("document_metadata_folder") == value
+        end,
+        callback = function()
+            G_reader_settings:saveSetting("document_metadata_folder", value)
+        end,
+    }
+end
+
+common_settings.document_metadata_folder = {
+    text_func = function()
+        local value = G_reader_settings:readSetting("document_metadata_folder", ":doc")
+        return T(_("Book metadata folder: %1"), metadata_folder_str[value])
+    end,
+    sub_item_table = {
+        genMetadataFolderMenuItem(":doc"),
+        genMetadataFolderMenuItem(":sidecars"),
+    },
+}
+
 common_settings.document_auto_save = {
     text_func = function()
         local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
