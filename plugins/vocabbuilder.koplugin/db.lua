@@ -223,9 +223,9 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     local default_review_intervals = {5, 30, 720, 1440}
     local default_interval_modifier = 2 -- duplicated in main.lua
 
-    local intervals = settings.review_intervals or default_review_intervals
+    local intervals = item.review_intervals or default_review_intervals
 
-    local interval_modifier = settings.interval_modifier or default_interval_modifier
+    local interval_modifier = item.interval_modifier or default_interval_modifier
 
 
     local interval
