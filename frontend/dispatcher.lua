@@ -529,6 +529,9 @@ function Dispatcher:getNameFromItem(item, settings, dont_show_value)
             if type(value) == "table" then
                 display_value = string.format("%d / %d", unpack(value))
             else
+                if not settingsList[item].args and settingsList[item].args_func then
+                    settingsList[item].args, settingsList[item].toggle = settingsList[item].args_func()
+                end
                 local value_num = util.arrayContains(settingsList[item].args, value)
                 display_value = settingsList[item].toggle[value_num]
             end
