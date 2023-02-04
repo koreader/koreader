@@ -265,7 +265,7 @@ function MenuDialog:init()
                         hint = _("10m 12h 1d"),
                     },
                     {
-                        description = "Interval modifier",
+                        description = "Interval multiplier",
 
                         text = tostring(interval_modifier),
                         hint = _("2")
@@ -287,9 +287,9 @@ function MenuDialog:init()
                                 local helpMessage = InfoMessage:new{
                                     text = [[Review intervals are the initial periods of time between reviews of words.
 
-Interval modifier is used after all review intervals have been completed to increase the time between reviews.
+Interval multiplier is used after all review intervals have been completed to increase the time between reviews.
 
-For example, a word could be reviewed at 5m, 30m and 1d intervals before the interval modifier takes over with 2d, 4d, etc.]],
+For example, a word could be reviewed at 5m, 30m and 1d intervals before the interval multiplier takes over with 2d, 4d, etc.]],
 
                                     show_icon = true,
                                     icon = "notice-info",
