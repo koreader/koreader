@@ -249,6 +249,9 @@ function MenuDialog:init()
     local interval_settings_button = {
         text = _("Interval settings"),
         callback = function()
+            -- establish database connection
+            local db_conn = SQ3.open(db_location)
+            local db_interval_modifier = db_conn:exec("SELECT interval_mult FROM vocabulary")
             -- review intervals
             local default_review_intervals_pretty = "5m, 30m, 12h, 24h"
 
