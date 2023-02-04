@@ -219,7 +219,7 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     local target_count = isGot and item.streak_count + 1 or 0
 
     local default_review_intervals = {5, 30, 720, 1440}
-    local default_interval_modifier = 2
+    local default_interval_modifier = 2 -- duplicated in main.lua
 
     local intervals = settings.review_intervals or default_review_intervals
 

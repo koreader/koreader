@@ -251,7 +251,7 @@ function MenuDialog:init()
             local current_intervals = settings.review_intervals_pretty or default_review_intervals_pretty
 
             -- interval modifier
-            local default_interval_modifier = 2
+            local default_interval_modifier = 2 -- duplicated in db.lua
 
             local interval_modifier = settings.interval_modifier or default_interval_modifier
 
