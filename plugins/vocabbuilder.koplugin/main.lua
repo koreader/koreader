@@ -50,6 +50,10 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
+local DataStorage = require("datastorage")
+
+local SQ3 = require("lua-ljsqlite3/init")
+local db_location = DataStorage:getSettingsDir() .. "/vocabulary_builder.sqlite3"
 
 -------- shared values
 local word_face = Font:getFace("x_smallinfofont")
