@@ -340,27 +340,14 @@ function FileManager:setupLayout()
 
         if is_file then
             local status = filemanagerutil.getStatus(file)
-            local function genStatusButton(to_status)
-                local status_text = {
-                    reading   = _("Reading"),
-                    abandoned = _("On hold"),
-                    complete  = _("Finished"),
-                }
-                return {
-                    text = status_text[to_status],
-                    id = to_status, -- used by covermenu
-                    enabled = status ~= to_status,
-                    callback = function()
-                        filemanagerutil.setStatus(file, to_status)
-                        self:refreshPath()
-                        UIManager:close(self.file_dialog)
-                    end,
-                }
+            local function status_button_callback()
+                self:refreshPath()
+                UIManager:close(self.file_dialog)
             end
             table.insert(buttons, {
-                genStatusButton("reading"),
-                genStatusButton("abandoned"),
-                genStatusButton("complete"),
+                filemanagerutil.genStatusButton("reading", status ~= "reading", file, status_button_callback),
+                filemanagerutil.genStatusButton("abandoned", status ~= "abandoned", file, status_button_callback),
+                filemanagerutil.genStatusButton("complete", status ~= "complete", file, status_button_callback),
             })
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {

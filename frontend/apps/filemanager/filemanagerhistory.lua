@@ -90,33 +90,20 @@ function FileManagerHistory:onMenuHold(item)
     local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.histfile_dialog = nil
     local status = filemanagerutil.getStatus(item.file)
-    local function genStatusButton(to_status)
-        local status_text = {
-            reading   = _("Reading"),
-            abandoned = _("On hold"),
-            complete  = _("Finished"),
-        }
-        return {
-            text = status_text[to_status],
-            id = to_status, -- used by covermenu
-            enabled = not item.dim and status ~= to_status,
-            callback = function()
-                filemanagerutil.setStatus(item.file, to_status)
-                if self._manager.filter ~= "all" then
-                    self._manager:fetchStatuses(false)
-                else
-                    self._manager.statuses_fetched = false
-                end
-                self._manager:updateItemTable()
-                UIManager:close(self.histfile_dialog)
-            end,
-        }
+    local function status_button_callback()
+        if self._manager.filter ~= "all" then
+            self._manager:fetchStatuses(false)
+        else
+            self._manager.statuses_fetched = false
+        end
+        self._manager:updateItemTable()
+        UIManager:close(self.histfile_dialog)
     end
     local buttons = {
         {
-            genStatusButton("reading"),
-            genStatusButton("abandoned"),
-            genStatusButton("complete"),
+            filemanagerutil.genStatusButton("reading", not item.dim and status ~= "reading", item.file, status_button_callback),
+            filemanagerutil.genStatusButton("abandoned", not item.dim and status ~= "abandoned", item.file, status_button_callback),
+            filemanagerutil.genStatusButton("complete", not item.dim and status ~= "complete", item.file, status_button_callback),
         },
         {},
         {

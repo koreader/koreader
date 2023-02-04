@@ -46,28 +46,15 @@ end
 function FileManagerCollection:onMenuHold(item)
     self.collfile_dialog = nil
     local status = filemanagerutil.getStatus(item.file)
-    local function genStatusButton(to_status)
-        local status_text = {
-            reading   = _("Reading"),
-            abandoned = _("On hold"),
-            complete  = _("Finished"),
-        }
-        return {
-            text = status_text[to_status],
-            id = to_status, -- used by covermenu
-            enabled = status ~= to_status,
-            callback = function()
-                filemanagerutil.setStatus(item.file, to_status)
-                self._manager:updateItemTable()
-                UIManager:close(self.collfile_dialog)
-            end,
-        }
+    local function status_button_callback()
+        self._manager:updateItemTable()
+        UIManager:close(self.collfile_dialog)
     end
     local buttons = {
         {
-            genStatusButton("reading"),
-            genStatusButton("abandoned"),
-            genStatusButton("complete"),
+            filemanagerutil.genStatusButton("reading", status ~= "reading", item.file, status_button_callback),
+            filemanagerutil.genStatusButton("abandoned", status ~= "abandoned", item.file, status_button_callback),
+            filemanagerutil.genStatusButton("complete", status ~= "complete", item.file, status_button_callback),
         },
         {},
         {
