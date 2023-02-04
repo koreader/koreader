@@ -32,13 +32,21 @@ local SOURCE_DISPATCHER           = 0x0020 -- dispatcher
 local SOURCE_OTHER                = 0x0040 -- all other sources (e.g. keyboard)
 
 -- All bottom menu bits
-local SOURCE_BOTTOM_MENU = SOURCE_BOTTOM_MENU_ICON + SOURCE_BOTTOM_MENU_TOGGLE + SOURCE_BOTTOM_MENU_FINE +
-        SOURCE_BOTTOM_MENU_MORE + SOURCE_BOTTOM_MENU_PROGRESS
+local SOURCE_BOTTOM_MENU = SOURCE_BOTTOM_MENU_ICON +
+                           SOURCE_BOTTOM_MENU_TOGGLE +
+                           SOURCE_BOTTOM_MENU_FINE +
+                           SOURCE_BOTTOM_MENU_MORE +
+                           SOURCE_BOTTOM_MENU_PROGRESS
 
 -- these values can be changed here
-local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE + SOURCE_DISPATCHER
-local SOURCE_DEFAULT = SOURCE_SOME + SOURCE_BOTTOM_MENU_MORE + SOURCE_BOTTOM_MENU_PROGRESS
-local SOURCE_ALL = SOURCE_BOTTOM_MENU + SOURCE_DISPATCHER + SOURCE_OTHER
+local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE +
+                    SOURCE_DISPATCHER
+local SOURCE_DEFAULT = SOURCE_SOME +
+                       SOURCE_BOTTOM_MENU_MORE +
+                       SOURCE_BOTTOM_MENU_PROGRESS
+local SOURCE_ALL = SOURCE_BOTTOM_MENU +
+                   SOURCE_DISPATCHER +
+                   SOURCE_OTHER
 
 local Notification = InputContainer:extend{
     face = Font:getFace("x_smallinfofont"),
@@ -140,7 +148,7 @@ function Notification:getNotifySource()
     return self.notify_source
 end
 
--- show popups if `source` or `self.notify_source` is not masked by the setting `notification_sources_to_show_mask`
+-- Display a notification popup if `source` or `self.notify_source` is not masked by the `notification_sources_to_show_mask` setting
 function Notification:notify(arg, source, refresh_after)
     source = source or self.notify_source
     local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or self.SOURCE_DEFAULT
