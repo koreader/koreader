@@ -89,55 +89,34 @@ function FileManagerHistory:onMenuHold(item)
     local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
     local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.histfile_dialog = nil
-    local is_file = lfs.attributes(item.file, "mode") == "file"
     local status = filemanagerutil.getStatus(item.file)
+    local function genStatusButton(to_status)
+        local status_text = {
+            reading   = _("Reading"),
+            abandoned = _("On hold"),
+            complete  = _("Finished"),
+        }
+        return {
+            text = status_text[to_status],
+            id = to_status, -- used by covermenu
+            enabled = not item.dim and status ~= to_status,
+            callback = function()
+                filemanagerutil.setStatus(item.file, to_status)
+                if self._manager.filter ~= "all" then
+                    self._manager:fetchStatuses(false)
+                else
+                    self._manager.statuses_fetched = false
+                end
+                self._manager:updateItemTable()
+                UIManager:close(self.histfile_dialog)
+            end,
+        }
+    end
     local buttons = {
         {
-            {
-                text = _("Reading"),
-                id = "mark_as_reading", -- used by covermenu
-                enabled = is_file and status ~= "reading",
-                callback = function()
-                    filemanagerutil.setStatus(item.file, "reading")
-                    if self._manager.filter ~= "all" then
-                        self._manager:fetchStatuses(false)
-                    else
-                        self._manager.statuses_fetched = false
-                    end
-                    self._manager:updateItemTable()
-                    UIManager:close(self.histfile_dialog)
-                end,
-            },
-            {
-                text = _("On hold"),
-                id = "put_on_hold", -- used by covermenu
-                enabled = is_file and status ~= "abandoned",
-                callback = function()
-                    filemanagerutil.setStatus(item.file, "abandoned")
-                    if self._manager.filter ~= "all" then
-                        self._manager:fetchStatuses(false)
-                    else
-                        self._manager.statuses_fetched = false
-                    end
-                    self._manager:updateItemTable()
-                    UIManager:close(self.histfile_dialog)
-                end,
-            },
-            {
-                text = _("Finished"),
-                id = "mark_as_read", -- used by covermenu
-                enabled = is_file and status ~= "complete",
-                callback = function()
-                    filemanagerutil.setStatus(item.file, "complete")
-                    if self._manager.filter ~= "all" then
-                        self._manager:fetchStatuses(false)
-                    else
-                        self._manager.statuses_fetched = false
-                    end
-                    self._manager:updateItemTable()
-                    UIManager:close(self.histfile_dialog)
-                end,
-            },
+            genStatusButton("reading"),
+            genStatusButton("abandoned"),
+            genStatusButton("complete"),
         },
         {},
         {
