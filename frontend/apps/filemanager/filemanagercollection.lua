@@ -49,7 +49,7 @@ function FileManagerCollection:onMenuHold(item)
     local buttons = {
         {
             {
-                text = _("Mark as reading"),
+                text = _("Reading"),
                 id = "mark_as_reading", -- used by covermenu
                 enabled = status ~= "reading",
                 callback = function()
@@ -59,7 +59,7 @@ function FileManagerCollection:onMenuHold(item)
                 end,
             },
             {
-                text = _("Put on hold"),
+                text = _("On hold"),
                 id = "put_on_hold", -- used by covermenu
                 enabled = status ~= "abandoned",
                 callback = function()
@@ -69,7 +69,7 @@ function FileManagerCollection:onMenuHold(item)
                 end,
             },
             {
-                text = _("Mark as read"),
+                text = _("Finished"),
                 id = "mark_as_read", -- used by covermenu
                 enabled = status ~= "complete",
                 callback = function()
