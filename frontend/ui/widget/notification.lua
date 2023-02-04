@@ -189,7 +189,7 @@ end
 function Notification:onShow()
     -- triggered by the UIManager after we got successfully shown (not yet painted)
     UIManager:setDirty(self, function()
-        return "ui", self.frame.dimen
+        return "[ui]", self.frame.dimen
     end)
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
