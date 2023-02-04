@@ -248,6 +248,9 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     item.review_count = target_review_count
     item.review_time = current_time
     item.due_time = due_time
+
+    item.review_intervals = intervals
+    item.interval_modifier = interval_modifier
 end
 
 function VocabularyBuilder:batchUpdateItems(items)
