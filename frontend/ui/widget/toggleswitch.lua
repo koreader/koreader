@@ -229,7 +229,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
         end)
 
         UIManager:tickAfterNext(function()
-            Notification:resetNotifySource() -- only allow events, if they are activated
+            Notification:resetNotifySource()
         end)
     end
     return true

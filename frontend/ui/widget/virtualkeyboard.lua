@@ -747,7 +747,7 @@ function VirtualKeyPopup:init()
     self[1] = position_container
 
     UIManager:show(self)
-    -- Ensure the post-paint refresh will be able to grab updated coordinates from keyboard_frame
+    -- Ensure the post-paint refresh will be able to grab updated coordinates from keyboard_frame by using a refresh function
     UIManager:setDirty(self, function()
         return "ui", keyboard_frame.dimen
     end)
