@@ -147,7 +147,7 @@ end
 
 function MultiConfirmBox:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self[1][1].dimen   -- i.e., MovableContainer
+        return "ui", self[1][1].dimen -- i.e., MovableContainer
     end)
 end
 

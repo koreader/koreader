@@ -132,7 +132,7 @@ end
 
 function ButtonDialogTitle:paintTo(...)
     InputContainer.paintTo(self, ...)
-    self.dimen = self[1][1].dimen -- FrameContainer
+    self.dimen = self[1][1].dimen
 end
 
 return ButtonDialogTitle

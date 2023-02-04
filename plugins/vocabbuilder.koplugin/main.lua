@@ -389,7 +389,7 @@ end
 
 function MenuDialog:onShow()
     UIManager:setDirty(self, function()
-        return "flashui", self[1][1].dimen  -- i.e., FrameContainer
+        return "flashui", self[1][1].dimen -- i.e., FrameContainer
     end)
 end
 
@@ -622,7 +622,7 @@ end
 
 function WordInfoDialog:onShow()
     UIManager:setDirty(self, function()
-        return "flashui", self[1][1].dimen  -- i.e., MovableContainer
+        return "flashui", self[1][1].dimen -- i.e., MovableContainer
     end)
 end
 

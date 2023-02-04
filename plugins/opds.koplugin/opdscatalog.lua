@@ -51,7 +51,7 @@ end
 
 function OPDSCatalog:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self[1].dimen  -- i.e., FrameContainer
+        return "ui", self[1].dimen -- i.e., FrameContainer
     end)
 end
 
