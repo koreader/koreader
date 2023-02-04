@@ -105,7 +105,6 @@ local FakeCover = FrameContainer:extend{
     padding = 0,
     bordersize = Size.border.thin,
     dim = nil,
-    color = Blitbuffer.COLOR_GRAY_6,
     -- Provided filename, title and authors should not be BD wrapped
     filename = nil,
     file_deleted = nil,
@@ -591,7 +590,7 @@ function MosaicMenuItem:update()
                         padding = 0,
                         bordersize = border_size,
                         dim = self.file_deleted,
-                        color = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_GRAY_6,
+                        color = self.file_deleted and Blitbuffer.COLOR_DARK_GRAY or nil,
                         image,
                     }
                 }
@@ -937,7 +936,7 @@ function MosaicMenu:_recalculateDimen()
         progress_widget = ProgressWidget:new{
             bgcolor = Blitbuffer.COLOR_WHITE,
             fillcolor = Blitbuffer.COLOR_BLACK,
-            bordercolor = Blitbuffer.COLOR_GRAY_6,
+            bordercolor = Blitbuffer.COLOR_BLACK,
             height = Screen:scaleBySize(7),
             margin_h = Screen:scaleBySize(1),
             width = progress_bar_width,
