@@ -279,9 +279,6 @@ function TextViewer:init()
         dimen = self.region,
         self.movable,
     }
-    UIManager:setDirty(self, function()
-        return "partial", self.frame.dimen
-    end)
 end
 
 function TextViewer:onCloseWidget()
@@ -292,7 +289,7 @@ end
 
 function TextViewer:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self.frame.dimen
+        return "partial", self.frame.dimen
     end)
     return true
 end

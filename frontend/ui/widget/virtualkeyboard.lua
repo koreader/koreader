@@ -347,7 +347,7 @@ function VirtualKey:update_keyboard(want_flash, want_a2)
     --       We flash the *full* keyboard when we release a hold.
     if want_flash then
         UIManager:setDirty(self.keyboard, function()
-            return "flashui", self.keyboard[1][1].dimen
+            return "flashui", self.keyboard.dimen
         end)
     else
         local refresh_type = "ui"
@@ -506,7 +506,7 @@ end
 function VirtualKeyPopup:onCloseWidget()
     self:free()
     UIManager:setDirty(nil, function()
-        return "ui", self[1][1].dimen
+        return "ui", self[1][1].dimen   -- i.e., keyboard_frame
     end)
 end
 
@@ -746,11 +746,7 @@ function VirtualKeyPopup:init()
 
     self[1] = position_container
 
-    UIManager:show(self)
-
-    UIManager:setDirty(self, function()
-        return "ui", keyboard_frame.dimen
-    end)
+    UIManager:show(self, "ui", keyboard_frame.dimen)
 end
 
 local VirtualKeyboard = FocusManager:extend{
@@ -923,7 +919,7 @@ function VirtualKeyboard:_refresh(want_flash, fullscreen)
         return
     end
     UIManager:setDirty(self, function()
-        return refresh_type, self[1][1].dimen
+        return refresh_type, self.dimen
     end)
 end
 

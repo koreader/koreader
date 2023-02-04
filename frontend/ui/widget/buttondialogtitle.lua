@@ -107,7 +107,7 @@ end
 
 function ButtonDialogTitle:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self[1][1].dimen
+        return "ui", self[1][1].dimen -- i.e., MovableContainer
     end)
 end
 

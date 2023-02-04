@@ -213,7 +213,7 @@ function InfoMessage:onCloseWidget()
     end
 
     UIManager:setDirty(nil, function()
-        return "ui", self[1][1].dimen
+        return "ui", self.movable.dimen
     end)
 end
 
@@ -231,7 +231,7 @@ function InfoMessage:onShow()
     end
     -- set our region to be dirty, so UImanager will call our paintTo()
     UIManager:setDirty(self, function()
-        return "ui", self[1][1].dimen
+        return "ui", self.movable.dimen
     end)
     if self.flush_events_on_show then
         -- Discard queued and upcoming input events to avoid accidental dismissal
@@ -254,7 +254,7 @@ end
 
 function InfoMessage:getVisibleArea()
     if not self.invisible then
-        return self[1][1].dimen
+        return self.movable.dimen
     end
 end
 
