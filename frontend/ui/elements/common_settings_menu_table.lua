@@ -506,8 +506,8 @@ common_settings.document = {
 }
 
 local metadata_folder_str = {
-    [":doc"] = _("book folder"),
-    [":sidecars"] = "koreader/sidecars",
+    ["doc"] = _("book folder"),
+    ["dir"] = "koreader/docsettings",
 }
 
 local function genMetadataFolderMenuItem(value)
@@ -524,12 +524,12 @@ end
 
 common_settings.document_metadata_folder = {
     text_func = function()
-        local value = G_reader_settings:readSetting("document_metadata_folder", ":doc")
+        local value = G_reader_settings:readSetting("document_metadata_folder", "doc")
         return T(_("Book metadata folder: %1"), metadata_folder_str[value])
     end,
     sub_item_table = {
-        genMetadataFolderMenuItem(":doc"),
-        genMetadataFolderMenuItem(":sidecars"),
+        genMetadataFolderMenuItem("doc"),
+        genMetadataFolderMenuItem("dir"),
     },
 }
 
