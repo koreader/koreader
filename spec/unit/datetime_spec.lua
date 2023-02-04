@@ -112,7 +112,7 @@ describe("datetime module", function()
             assert.is_equal("10h01'30\"",
                             datetime.secondsToClockDuration("modern", 36090, false))
             assert.is_equal("10h01m30s",
-                            datetime.secondsToClockDuration("literal", 36090, false))
+                            datetime.secondsToClockDuration("letters", 36090, false))
             assert.is_equal("10:01:30",
                             datetime.secondsToClockDuration("classic", 36090, false))
             assert.is_equal("10:01:30",
@@ -126,9 +126,9 @@ describe("datetime module", function()
             assert.is_equal("10h02'",
                             datetime.secondsToClockDuration("modern", 36090, true))
             assert.is_equal("10h01m30s",
-                            datetime.secondsToClockDuration("literal", 36090, false))
+                            datetime.secondsToClockDuration("letters", 36090, false))
             assert.is_equal("10h02m",
-                            datetime.secondsToClockDuration("literal", 36090, true))
+                            datetime.secondsToClockDuration("letters", 36090, true))
             assert.is_equal("10:01:30",
                             datetime.secondsToClockDuration("classic", 36090, false))
             assert.is_equal("10:02",

@@ -186,8 +186,8 @@ function datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, 
 end
 
 --- Converts seconds to a clock type (classic or modern), based on the given format preference
---- "Classic" format calls secondsToClock, "Modern" and "Literal" formats call secondsToHClock
----- @string Either "modern" for 1h30'10", "literal" for 1h30m10s, or "classic" for 1:30:10
+--- "Classic" format calls secondsToClock, "Modern" and "Letters" formats call secondsToHClock
+---- @string Either "modern" for 1h30'10", "letters" for 1h30m10s, or "classic" for 1:30:10
 ---- @bool withoutSeconds if true 1h30' or 1h30m, if false 1h30'10" or 1h30m10s
 ---- @bool withDays, if hours>=24 include days in clock string 1d12h10m10s
 ---- @bool compact, if set removes all leading zeros (incl. units if necessary)
@@ -195,7 +195,7 @@ end
 function datetime.secondsToClockDuration(format, seconds, withoutSeconds, withDays, compact)
     if format == "modern" then
         return datetime.secondsToHClock(seconds, withoutSeconds, false, withDays, compact)
-    elseif format == "literal" then
+    elseif format == "letters" then
         return datetime.secondsToHClock(seconds, withoutSeconds, true, withDays, compact)
     else
          -- Assume "classic" to give safe default

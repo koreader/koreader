@@ -67,7 +67,7 @@ function AutoTurn:_start()
 
         local text
         if self.autoturn_distance == 1 then
-            local time_string = datetime.secondsToClockDuration("literal", self.autoturn_sec, false, true, true)
+            local time_string = datetime.secondsToClockDuration("letters", self.autoturn_sec, false, true, true)
             text = T(_("Autoturn is now active and will automatically turn the page every %1."), time_string)
         else
             text = T(_("Autoturn is now active and will automatically scroll %1 % of the page every %2 seconds."),
@@ -141,7 +141,7 @@ function AutoTurn:addToMainMenu(menu_items)
     menu_items.autoturn = {
         sorting_hint = "navi",
         text_func = function()
-            local time_string = datetime.secondsToClockDuration("literal", self.autoturn_sec, false, true, true)
+            local time_string = datetime.secondsToClockDuration("letters", self.autoturn_sec, false, true, true)
             return self:_enabled() and T(_("Autoturn: %1"), time_string) or _("Autoturn")
         end,
         checked_func = function() return self:_enabled() end,

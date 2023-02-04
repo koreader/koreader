@@ -89,8 +89,8 @@ common_settings.time = {
                 local text = C_("Time", "Classic")
                 if duration_format == "modern" then
                     text = C_("Time", "Modern")
-                elseif duration_format == "literal" then
-                    text = C_("Time", "Literal")
+                elseif duration_format == "letters" then
+                    text = C_("Time", "Letters")
                 end
                 return T(_("Duration format: %1"), text)
             end,
@@ -129,14 +129,14 @@ common_settings.time = {
                     text_func = function()
                         local datetime = require("datetime")
                         -- sample text shows 1h23m45s
-                        local duration_format_str = datetime.secondsToClockDuration("literal", 5025, false)
-                        return T(C_("Time", "Literal (%1)"), duration_format_str)
+                        local duration_format_str = datetime.secondsToClockDuration("letters", 5025, false)
+                        return T(C_("Time", "Letters (%1)"), duration_format_str)
                     end,
                     checked_func = function()
-                        return G_reader_settings:readSetting("duration_format") == "literal"
+                        return G_reader_settings:readSetting("duration_format") == "letters"
                     end,
                     callback = function()
-                        G_reader_settings:saveSetting("duration_format", "literal")
+                        G_reader_settings:saveSetting("duration_format", "letters")
                         UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
                     end,
                 },
