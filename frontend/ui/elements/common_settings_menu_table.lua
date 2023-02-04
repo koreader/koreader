@@ -546,7 +546,7 @@ common_settings.document_end_action = {
     text = _("End of document action"),
     sub_item_table = {
         {
-            text = _("Always mark as read"),
+            text = _("Always mark as finished"),
             checked_func = function()
                 return G_reader_settings:isTrue("end_document_auto_mark")
             end,

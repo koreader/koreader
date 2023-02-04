@@ -279,7 +279,7 @@ function Wallabag:addToMainMenu(menu_items)
                                 separator = true,
                             },
                             {
-                                text = _("Mark as read instead of deleting"),
+                                text = _("Mark as finished instead of deleting"),
                                 checked_func = function() return self.is_archiving_deleted end,
                                 callback = function()
                                     self.is_archiving_deleted = not self.is_archiving_deleted
