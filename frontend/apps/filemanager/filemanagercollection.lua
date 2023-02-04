@@ -46,38 +46,28 @@ end
 function FileManagerCollection:onMenuHold(item)
     self.collfile_dialog = nil
     local status = filemanagerutil.getStatus(item.file)
+    local function genStatusButton(to_status)
+        local status_text = {
+            reading   = _("Reading"),
+            abandoned = _("On hold"),
+            complete  = _("Finished"),
+        }
+        return {
+            text = status_text[to_status],
+            id = to_status, -- used by covermenu
+            enabled = status ~= to_status,
+            callback = function()
+                filemanagerutil.setStatus(item.file, to_status)
+                self._manager:updateItemTable()
+                UIManager:close(self.collfile_dialog)
+            end,
+        }
+    end
     local buttons = {
         {
-            {
-                text = _("Reading"),
-                id = "mark_as_reading", -- used by covermenu
-                enabled = status ~= "reading",
-                callback = function()
-                    filemanagerutil.setStatus(item.file, "reading")
-                    self._manager:updateItemTable()
-                    UIManager:close(self.collfile_dialog)
-                end,
-            },
-            {
-                text = _("On hold"),
-                id = "put_on_hold", -- used by covermenu
-                enabled = status ~= "abandoned",
-                callback = function()
-                    filemanagerutil.setStatus(item.file, "abandoned")
-                    self._manager:updateItemTable()
-                    UIManager:close(self.collfile_dialog)
-                end,
-            },
-            {
-                text = _("Finished"),
-                id = "mark_as_read", -- used by covermenu
-                enabled = status ~= "complete",
-                callback = function()
-                    filemanagerutil.setStatus(item.file, "complete")
-                    self._manager:updateItemTable()
-                    UIManager:close(self.collfile_dialog)
-                end,
-            },
+            genStatusButton("reading"),
+            genStatusButton("abandoned"),
+            genStatusButton("complete"),
         },
         {},
         {
