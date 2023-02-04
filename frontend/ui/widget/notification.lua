@@ -23,13 +23,13 @@ local Input = Device.input
 local band = bit.band
 
 -- The following constants are positions in a bitfield
-local SOURCE_BOTTOM_MENU_ICON =     0x0001 -- icons in bottom menu
-local SOURCE_BOTTOM_MENU_TOGGLE =   0x0002 -- toggles in bottom menu
-local SOURCE_BOTTOM_MENU_FINE =     0x0004 -- toggles with fine-tuning ("increase", "+" etc)
-local SOURCE_BOTTOM_MENU_MORE =     0x0008 -- three dots in bottom menu
+local SOURCE_BOTTOM_MENU_ICON     = 0x0001 -- icons in bottom menu
+local SOURCE_BOTTOM_MENU_TOGGLE   = 0x0002 -- toggles in bottom menu
+local SOURCE_BOTTOM_MENU_FINE     = 0x0004 -- toggles with fine-tuning ("increase", "+" etc)
+local SOURCE_BOTTOM_MENU_MORE     = 0x0008 -- three dots in bottom menu
 local SOURCE_BOTTOM_MENU_PROGRESS = 0x0010 -- progress indicator on bottom menu
-local SOURCE_DISPATCHER =           0x0020 -- dispatcher
-local SOURCE_OTHER =                0x0040 -- all other sources (e.g. keyboard)
+local SOURCE_DISPATCHER           = 0x0020 -- dispatcher
+local SOURCE_OTHER                = 0x0040 -- all other sources (e.g. keyboard)
 
 -- All bottom menu bits
 local SOURCE_BOTTOM_MENU = SOURCE_BOTTOM_MENU_ICON + SOURCE_BOTTOM_MENU_TOGGLE + SOURCE_BOTTOM_MENU_FINE +
@@ -140,10 +140,11 @@ function Notification:getNotifySource()
     return self.notify_source
 end
 
--- show popups if `self.notify_source` is not masked by the setting `notification_sources_to_show_mask`
-function Notification:notify(arg, refresh_after)
+-- show popups if `source` or `self.notify_source` is not masked by the setting `notification_sources_to_show_mask`
+function Notification:notify(arg, source, refresh_after)
+    source = source or self.notify_source
     local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or self.SOURCE_DEFAULT
-    if self.notify_source and band(mask, self.notify_source) ~= 0 then
+    if source and band(mask, self.notify_source) ~= 0 then
         UIManager:show(Notification:new{
             text = arg,
          })
