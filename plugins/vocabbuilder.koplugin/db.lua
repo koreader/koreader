@@ -20,6 +20,8 @@ local VOCABULARY_DB_SCHEMA = [[
         "prev_context"  TEXT,
         "next_context"  TEXT,
         "streak_count"  INTEGER NOT NULL DEFAULT 0,
+        "rev_intervals" TEXT,
+        "interval_mult" INTEGER NOT NULL,
         PRIMARY KEY("word")
     );
     CREATE TABLE IF NOT EXISTS "title" (
