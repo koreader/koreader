@@ -15,7 +15,7 @@ local util = require("util")
 local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
-local SIDECARS_DIR = DataStorage:getSidecarsDir()
+local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
 
 local function buildCandidates(list)
     local candidates = {}
@@ -51,7 +51,7 @@ local function buildCandidates(list)
     end
 
     -- MRU sort, tie breaker is insertion order (higher priority locations were inserted first).
-    -- If a primary/backup pair of file both exist, of the two of them, the primary one *always* has priority,
+    -- Iff a primary/backup pair of file both exist, of the two of them, the primary one *always* has priority,
     -- regardless of mtime (c.f., NOTE above).
     table.sort(candidates, function(l, r)
                                if l.mtime == r.mtime then
@@ -61,12 +61,7 @@ local function buildCandidates(list)
                                end
                            end)
 
-    -- Paths only are used
-    local candidates_path = {}
-    for _, candidate in ipairs(candidates) do
-        table.insert(candidates_path, candidate.path)
-    end
-    return candidates_path
+    return candidates
 end
 
 --- Returns path to sidecar directory (`filename.sdr`).
@@ -77,9 +72,9 @@ end
 function DocSettings:getSidecarDir(doc_path, force_location)
     if doc_path == nil or doc_path == '' then return '' end
     local path = doc_path:match("(.*)%.") or doc_path -- file path without the last suffix
-    local location = force_location or G_reader_settings:readSetting("document_metadata_folder", ":doc")
-    if location == ":sidecars" then
-        path = SIDECARS_DIR..path
+    local location = force_location or G_reader_settings:readSetting("document_metadata_folder", "doc")
+    if location == "dir" then
+        path = DOCSETTINGS_DIR..path
     end
     return path..".sdr"
 end
@@ -102,8 +97,8 @@ end
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 -- @treturn bool
 function DocSettings:hasSidecarFile(doc_path)
-    return lfs.attributes(self:getSidecarFile(doc_path, ":doc"), "mode") == "file"
-        or lfs.attributes(self:getSidecarFile(doc_path, ":sidecars"), "mode") == "file"
+    return lfs.attributes(self:getSidecarFile(doc_path, "doc"), "mode") == "file"
+        or lfs.attributes(self:getSidecarFile(doc_path, "dir"), "mode") == "file"
         or lfs.attributes(self:getHistoryPath(doc_path)) == "file"
 end
 
@@ -146,18 +141,18 @@ function DocSettings:open(doc_path)
     -- NOTE: Beware, our new instance is new, but self is still DocSettings!
     local new = DocSettings:extend{}
 
-    new.sidecar_dir_doc = new:getSidecarDir(doc_path, ":doc")
-    new.sidecar_file_doc = new:getSidecarFile(doc_path, ":doc")
+    new.sidecar_dir_doc = new:getSidecarDir(doc_path, "doc")
+    new.sidecar_file_doc = new:getSidecarFile(doc_path, "doc")
     local sidecar_file_doc, legacy_sidecar_file
     if lfs.attributes(new.sidecar_dir_doc, "mode") == "directory" then
         sidecar_file_doc = new.sidecar_file_doc
         legacy_sidecar_file = new.sidecar_dir_doc.."/"..ffiutil.basename(doc_path)..".lua"
     end
-    new.sidecar_dir_sidecars = new:getSidecarDir(doc_path, ":sidecars")
-    new.sidecar_file_sidecars = new:getSidecarFile(doc_path, ":sidecars")
-    local sidecar_file_sidecars
-    if lfs.attributes(new.sidecar_dir_sidecars, "mode") == "directory" then
-        sidecar_file_sidecars = new.sidecar_file_sidecars
+    new.sidecar_dir_dir = new:getSidecarDir(doc_path, "dir")
+    new.sidecar_file_dir = new:getSidecarFile(doc_path, "dir")
+    local sidecar_file_dir
+    if lfs.attributes(new.sidecar_dir_dir, "mode") == "directory" then
+        sidecar_file_dir = new.sidecar_file_dir
     end
     local history_file = new:getHistoryPath(doc_path)
 
@@ -169,10 +164,10 @@ function DocSettings:open(doc_path)
         sidecar_file_doc and (sidecar_file_doc..".old") or "",
         -- Legacy sidecar file
         legacy_sidecar_file or "",
-        -- New sidecar file in sidecars folder
-        sidecar_file_sidecars or "",
-        -- Backup file of new sidecar file in sidecars folder
-        sidecar_file_sidecars and (sidecar_file_sidecars..".old") or "",
+        -- New sidecar file in docsettings folder
+        sidecar_file_dir or "",
+        -- Backup file of new sidecar file in docsettings folder
+        sidecar_file_dir and (sidecar_file_dir..".old") or "",
         -- Legacy history folder
         history_file,
         -- Backup file in legacy history folder
@@ -184,7 +179,8 @@ function DocSettings:open(doc_path)
     local candidates = buildCandidates(candidates_list)
 
     local ok, stored
-    for _, candidate_path in ipairs(candidates) do
+    for _, t in ipairs(candidates) do
+        local candidate_path = t.path
         -- Ignore empty files
         if lfs.attributes(candidate_path, "size") > 0 then
             ok, stored = pcall(dofile, candidate_path)
@@ -210,31 +206,31 @@ end
 --- Serializes settings and writes them to `metadata.lua`.
 function DocSettings:flush()
     -- Depending on the settings, doc_settings are saved to the book folder or
-    -- to koreader/sidecars folder. The latter is also a fallback for read-only book storage.
-    local serials = { {self.sidecar_dir_sidecars, self.sidecar_file_sidecars} }
-    if G_reader_settings:readSetting("document_metadata_folder", ":doc") == ":doc" then
+    -- to koreader/docsettings folder. The latter is also a fallback for read-only book storage.
+    local serials = { {self.sidecar_dir_dir, self.sidecar_file_dir} }
+    if G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc" then
         table.insert(serials, 1, {self.sidecar_dir_doc, self.sidecar_file_doc})
     end
 
     local s_out = dump(self.data, nil, true)
     for _, s in ipairs(serials) do
         util.makePath(s[1])
-        local f = s[2]
+        local sidecar_file = s[2]
         local directory_updated = false
-        if lfs.attributes(f, "mode") == "file" then
+        if lfs.attributes(sidecar_file, "mode") == "file" then
             -- As an additional safety measure (to the ffiutil.fsync* calls used below),
             -- we only backup the file to .old when it has not been modified in the last 60 seconds.
             -- This should ensure in the case the fsync calls are not supported
             -- that the OS may have itself sync'ed that file content in the meantime.
-            local mtime = lfs.attributes(f, "modification")
+            local mtime = lfs.attributes(sidecar_file, "modification")
             if mtime < os.time() - 60 then
-                logger.dbg("DocSettings: Renamed", f, "to", f .. ".old")
-                os.rename(f, f .. ".old")
+                logger.dbg("DocSettings: Renamed", sidecar_file, "to", sidecar_file .. ".old")
+                os.rename(sidecar_file, sidecar_file .. ".old")
                 directory_updated = true -- fsync directory content too below
             end
         end
-        logger.dbg("DocSettings: Writing to", f)
-        local f_out = io.open(f, "w")
+        logger.dbg("DocSettings: Writing to", sidecar_file)
+        local f_out = io.open(sidecar_file, "w")
         if f_out ~= nil then
             f_out:write("-- we can read Lua syntax here!\nreturn ")
             f_out:write(s_out)
@@ -244,10 +240,10 @@ function DocSettings:flush()
 
             if directory_updated then
                 -- Ensure the file renaming is flushed to storage device
-                ffiutil.fsyncDirectory(f)
+                ffiutil.fsyncDirectory(sidecar_file)
             end
 
-            self:purge(false, f) -- remove old candidates and empty sidecar folders
+            self:purge(false, sidecar_file) -- remove old candidates and empty sidecar folders
 
             break
         end
@@ -258,7 +254,8 @@ end
 function DocSettings:purge(full, sidecar_to_keep)
     -- Remove any of the old ones we may consider as candidates in DocSettings:open()
     if self.candidates then
-        for _, candidate_path in ipairs(self.candidates) do
+        for _, t in ipairs(self.candidates) do
+            local candidate_path = t.path
             if lfs.attributes(candidate_path, "mode") == "file" then
                 if (not sidecar_to_keep)
                         or (candidate_path ~= sidecar_to_keep and candidate_path ~= sidecar_to_keep..".old") then
@@ -282,7 +279,7 @@ function DocSettings:purge(full, sidecar_to_keep)
         end
     end
     purgeDir(self.sidecar_dir_doc, full)
-    purgeDir(self.sidecar_dir_sidecars, full)
+    purgeDir(self.sidecar_dir_dir, full)
 end
 
 return DocSettings
