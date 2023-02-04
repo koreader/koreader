@@ -108,4 +108,22 @@ function filemanagerutil.setStatus(file, status)
     docinfo:flush()
 end
 
+-- Generate a book status file dialog button
+function filemanagerutil.genStatusButton(to_status, enabled, file, caller_callback)
+    local status_text = {
+        reading   = _("Reading"),
+        abandoned = _("On hold"),
+        complete  = _("Finished"),
+    }
+    return {
+        text = status_text[to_status],
+        id = to_status, -- used by covermenu
+        enabled = enabled,
+        callback = function()
+            filemanagerutil.setStatus(file, to_status)
+            caller_callback()
+        end,
+    }
+end
+
 return filemanagerutil
