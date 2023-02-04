@@ -141,33 +141,33 @@ function DocSettings:open(doc_path)
     -- NOTE: Beware, our new instance is new, but self is still DocSettings!
     local new = DocSettings:extend{}
 
-    new.sidecar_dir_doc = new:getSidecarDir(doc_path, "doc")
-    new.sidecar_file_doc = new:getSidecarFile(doc_path, "doc")
-    local sidecar_file_doc, legacy_sidecar_file
-    if lfs.attributes(new.sidecar_dir_doc, "mode") == "directory" then
-        sidecar_file_doc = new.sidecar_file_doc
-        legacy_sidecar_file = new.sidecar_dir_doc.."/"..ffiutil.basename(doc_path)..".lua"
+    new.doc_sidecar_dir = new:getSidecarDir(doc_path, "doc")
+    new.doc_sidecar_file = new:getSidecarFile(doc_path, "doc")
+    local doc_sidecar_file, legacy_sidecar_file
+    if lfs.attributes(new.doc_sidecar_dir, "mode") == "directory" then
+        doc_sidecar_file = new.doc_sidecar_file
+        legacy_sidecar_file = new.doc_sidecar_dir.."/"..ffiutil.basename(doc_path)..".lua"
     end
-    new.sidecar_dir_dir = new:getSidecarDir(doc_path, "dir")
-    new.sidecar_file_dir = new:getSidecarFile(doc_path, "dir")
-    local sidecar_file_dir
-    if lfs.attributes(new.sidecar_dir_dir, "mode") == "directory" then
-        sidecar_file_dir = new.sidecar_file_dir
+    new.dir_sidecar_dir = new:getSidecarDir(doc_path, "dir")
+    new.dir_sidecar_file = new:getSidecarFile(doc_path, "dir")
+    local dir_sidecar_file
+    if lfs.attributes(new.dir_sidecar_dir, "mode") == "directory" then
+        dir_sidecar_file = new.dir_sidecar_file
     end
     local history_file = new:getHistoryPath(doc_path)
 
     -- Candidates list, in order of priority:
     local candidates_list = {
         -- New sidecar file in doc folder
-        sidecar_file_doc or "",
+        doc_sidecar_file or "",
         -- Backup file of new sidecar file in doc folder
-        sidecar_file_doc and (sidecar_file_doc..".old") or "",
+        doc_sidecar_file and (doc_sidecar_file..".old") or "",
         -- Legacy sidecar file
         legacy_sidecar_file or "",
         -- New sidecar file in docsettings folder
-        sidecar_file_dir or "",
+        dir_sidecar_file or "",
         -- Backup file of new sidecar file in docsettings folder
-        sidecar_file_dir and (sidecar_file_dir..".old") or "",
+        dir_sidecar_file and (dir_sidecar_file..".old") or "",
         -- Legacy history folder
         history_file,
         -- Backup file in legacy history folder
@@ -207,9 +207,9 @@ end
 function DocSettings:flush()
     -- Depending on the settings, doc_settings are saved to the book folder or
     -- to koreader/docsettings folder. The latter is also a fallback for read-only book storage.
-    local serials = { {self.sidecar_dir_dir, self.sidecar_file_dir} }
+    local serials = { {self.dir_sidecar_dir, self.dir_sidecar_file} }
     if G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc" then
-        table.insert(serials, 1, {self.sidecar_dir_doc, self.sidecar_file_doc})
+        table.insert(serials, 1, {self.doc_sidecar_dir, self.doc_sidecar_file})
     end
 
     local s_out = dump(self.data, nil, true)
@@ -278,8 +278,8 @@ function DocSettings:purge(full, sidecar_to_keep)
             end
         end
     end
-    purgeDir(self.sidecar_dir_doc, full)
-    purgeDir(self.sidecar_dir_dir, full)
+    purgeDir(self.doc_sidecar_dir, full)
+    purgeDir(self.dir_sidecar_dir, full)
 end
 
 return DocSettings
