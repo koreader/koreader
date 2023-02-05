@@ -146,17 +146,13 @@ function ReadHistory:_readLegacyHistory()
     local history_updated
     local history_dir = DataStorage:getHistoryDir()
     for f in lfs.dir(history_dir) do
-        local path = joinPath(history_dir, f)
-        if lfs.attributes(path, "mode") == "file" then
-            path = DocSettings:getPathFromHistory(f)
-            if path ~= nil and path ~= "" then
-                local file = DocSettings:getNameFromHistory(f)
-                if file ~= nil and file ~= "" then
-                    local item_path = joinPath(path, file)
-                    local item_time = lfs.attributes(joinPath(history_dir, f), "modification")
-                    if self:addItem(item_path, item_time, true) then
-                        history_updated = true
-                    end
+        local legacy_history_file = joinPath(history_dir, f)
+        if lfs.attributes(legacy_history_file, "mode") == "file" then
+            local item_path = DocSettings:getFileFromHistory(f)
+            if item_path then
+                local item_time = lfs.attributes(legacy_history_file, "modification")
+                if self:addItem(item_path, item_time, true) then
+                    history_updated = true
                 end
             end
         end
