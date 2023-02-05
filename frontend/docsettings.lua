@@ -99,7 +99,7 @@ end
 function DocSettings:hasSidecarFile(doc_path)
     return lfs.attributes(self:getSidecarFile(doc_path, "doc"), "mode") == "file"
         or lfs.attributes(self:getSidecarFile(doc_path, "dir"), "mode") == "file"
-        or lfs.attributes(self:getHistoryPath(doc_path)) == "file"
+        or lfs.attributes(self:getHistoryPath(doc_path), "mode") == "file"
 end
 
 function DocSettings:getHistoryPath(doc_path)
