@@ -127,6 +127,16 @@ function DocSettings:getNameFromHistory(hist_name)
     return string.sub(hist_name, string.len(s)+2, -5)
 end
 
+function DocSettings:getFileFromHistory(hist_name)
+    local path = self:getPathFromHistory(hist_name)
+    if path ~= "" then
+        local name = self:getNameFromHistory(hist_name)
+        if name ~= "" then
+            return ffiutil.joinPath(path, name)
+        end
+    end
+end
+
 function DocSettings:getLastSaveTime(doc_path)
     local attr = lfs.attributes(self:getSidecarFile(doc_path))
     if attr and attr.mode == "file" then
