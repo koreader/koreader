@@ -27,9 +27,6 @@ function KoboPowerD:_syncKoboLightOnStart()
     local new_warmth = nil
     local kobo_light_on_start = tonumber(G_defaults:readSetting("KOBO_LIGHT_ON_START"))
 
-    -- calculate the warmth scale that fits the device
-    self.warmth_scale = 100 / self.fl_warmth_max
-
     if kobo_light_on_start then
         if kobo_light_on_start > 0 then
             new_intensity = math.min(kobo_light_on_start, 100)
@@ -150,6 +147,8 @@ function KoboPowerD:init()
             -- Does this device's NaturalLight use a custom scale?
             self.fl_warmth_min = self.device.frontlight_settings.nl_min or self.fl_warmth_min
             self.fl_warmth_max = self.device.frontlight_settings.nl_max or self.fl_warmth_max
+            -- Generic does it *after* init, but we're going to need it *now*...
+            self.warmth_scale = 100 / self.fl_warmth_max
             -- If this device has a mixer, we can use the ioctl for brightness control, as it's much lower latency.
             if self.device:hasNaturalLightMixer() then
                 local kobolight = require("ffi/kobolight")
