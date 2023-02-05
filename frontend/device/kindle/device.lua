@@ -183,7 +183,7 @@ function Kindle:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:getNetworkInterfaceName()
-        return "wlan0"
+        return "wlan0" -- so far, all Kindles appear to use wlan0
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.carrierFileExists
