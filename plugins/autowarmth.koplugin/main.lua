@@ -257,9 +257,6 @@ function AutoWarmth:scheduleMidnightUpdate(from_resume)
     UIManager:unschedule(self.setWarmth)
     UIManager:unschedule(self.setFrontlight)
 
-    -- Sync the current warmth.
-    Powerd:setWarmth(Powerd:frontlightWarmth(), true)
-
     SunTime:setPosition(self.location, self.latitude, self.longitude, self.timezone, self.altitude, true)
     SunTime:setAdvanced()
     SunTime:setDate() -- today
