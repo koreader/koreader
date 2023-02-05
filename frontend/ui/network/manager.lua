@@ -9,6 +9,7 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = ffiutil.template
 
@@ -117,6 +118,30 @@ function NetworkMgr:releaseIP() end
 -- This function should call both turnOnWifi() and obtainIP() in a non-blocking manner.
 function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
+
+--Helper fuctions for devices that use the carrier file to check connectivity.
+function NetworkMgr:carrierFileExists()
+    -- file exists while Wi-Fi module is loaded.
+    local net_if = self:getNetworkInterfaceName()
+    return util.pathExists("/sys/class/net/".. net_if .. "/carrier")
+end
+
+function NetworkMgr:carrierFileConnected()
+    -- Read carrier state from sysfs.
+    local net_if = self:getNetworkInterfaceName()
+    local file = io.open("/sys/class/net/" .. net_if .. "/carrier", "rb")
+
+    -- File only exists while Wi-Fi module is loaded.
+    if not file then
+        return false
+    end
+
+    -- 0 means not connected, 1 connected
+    local out = file:read("*number")
+    file:close()
+
+    return out == 1
+end
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     local toggle_im = InfoMessage:new{

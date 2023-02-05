@@ -2,7 +2,6 @@ local Generic = require("device/generic/device")
 local time = require("ui/time")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
 
 -- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
 local ffi = require("ffi")
@@ -69,28 +68,6 @@ local function isWifiUp()
     end
 end
 --]]
-
--- Faster lipc-less variant ;).
-local function isWifiUp()
-    return util.pathExists("/sys/class/net/wlan0/carrier")
-end
-
-local function isWifiConnected()
-    -- Read carrier state from sysfs (so far, all Kindles appear to use wlan0)
-    -- NOTE: We can afford to use CLOEXEC, as devices too old for it don't support Wi-Fi anyway ;).
-    local file = io.open("/sys/class/net/wlan0/carrier", "re")
-
-    -- File only exists while Wi-Fi module is loaded.
-    if not file then
-        return false
-    end
-
-    -- 0 means not connected, 1 connected
-    local out = file:read("*number")
-    file:close()
-
-    return out == 1
-end
 
 --[[
 Test if a kindle device is flagged as a Special Offers device (i.e., ad supported) (FW >= 5.x)
@@ -205,8 +182,12 @@ function Kindle:initNetworkManager(NetworkMgr)
         end
     end
 
-    NetworkMgr.isWifiOn = isWifiUp
-    NetworkMgr.isConnected = isWifiConnected
+    function NetworkMgr:getNetworkInterfaceName()
+        return "wlan0"
+    end
+
+    NetworkMgr.isWifiOn = NetworkMgr.carrierFileExists
+    NetworkMgr.isConnected = NetworkMgr.carrierFileConnected
 end
 
 function Kindle:supportsScreensaver()
