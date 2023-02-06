@@ -119,11 +119,11 @@ function NetworkMgr:releaseIP() end
 function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
 
---Helper fuctions for devices that use the carrier file to check connectivity.
-function NetworkMgr:carrierFileExists()
-    -- file exists while Wi-Fi module is loaded.
+--Helper fuctions for devices that use the sysfs entry to check connectivity.
+function NetworkMgr:sysfsWifiOn()
+    -- Network interface directory exists while the Wi-Fi module is loaded.
     local net_if = self:getNetworkInterfaceName()
-    return util.pathExists("/sys/class/net/".. net_if .. "/carrier")
+    return util.pathExists("/sys/class/net/".. net_if)
 end
 
 function NetworkMgr:carrierFileConnected()

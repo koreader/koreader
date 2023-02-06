@@ -194,7 +194,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
 
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
 
-    NetworkMgr.isWifiOn = NetworkMgr.carrierFileExists
+    NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
     NetworkMgr.isConnected = NetworkMgr.carrierFileConnected
 end
 
