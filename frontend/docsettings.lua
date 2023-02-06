@@ -137,11 +137,12 @@ function DocSettings:getFileFromHistory(hist_name)
     end
 end
 
-function DocSettings:getLastSaveTime(doc_path)
-    local attr = lfs.attributes(self:getSidecarFile(doc_path))
-    if attr and attr.mode == "file" then
-        return attr.modification
+function DocSettings:getLastSaveTime(doc_path) -- for readhistory
+    local mtime = lfs.attributes(self:getSidecarFile(doc_path, "doc"), "modification")
+    if not mtime then
+        mtime = lfs.attributes(self:getSidecarFile(doc_path, "dir"), "modification")
     end
+    return mtime
 end
 
 --- Opens a document's individual settings (font, margin, dictionary, etc.)
