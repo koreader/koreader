@@ -31,7 +31,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         self.wifi_was_on = false
         G_reader_settings:makeFalse("wifi_was_on")
         -- If we abort, murder Wi-Fi and the async script first...
-        if Device:hasWifiManager() and not Device:isEmulator() then
+        if Device:hasWifiManager() then
             os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         end
         self:turnOffWifi()
@@ -513,7 +513,7 @@ function NetworkMgr:getPowersaveMenuTable()
         text = _("Disable Wi-Fi connection when inactive"),
         help_text = _([[This will automatically turn Wi-Fi off after a generous period of network inactivity, without disrupting workflows that require a network connection, so you can just keep reading without worrying about battery drain.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
-        enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
+        enabled_func = function() return Device:hasWifiManager() end,
         callback = function()
             G_reader_settings:flipNilOrFalse("auto_disable_wifi")
             -- NOTE: Well, not exactly, but the activity check wouldn't be (un)scheduled until the next Network(Dis)Connected event...
@@ -527,7 +527,7 @@ function NetworkMgr:getRestoreMenuTable()
         text = _("Restore Wi-Fi connection on resume"),
         help_text = _([[This will attempt to automatically and silently re-connect to Wi-Fi on startup or on resume if Wi-Fi used to be enabled the last time you used KOReader.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
-        enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
+        enabled_func = function() return Device:hasWifiManager() end,
         callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
     }
 end
@@ -624,7 +624,7 @@ function NetworkMgr:getMenuTable(common_settings)
     common_settings.network_proxy = self:getProxyMenuTable()
     common_settings.network_info = self:getInfoMenuTable()
 
-    if Device:hasWifiManager() then
+    if Device:hasWifiManager() or Device:isEmulator() then
         common_settings.network_powersave = self:getPowersaveMenuTable()
         common_settings.network_restore = self:getRestoreMenuTable()
         common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
