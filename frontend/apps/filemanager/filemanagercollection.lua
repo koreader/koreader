@@ -51,11 +51,7 @@ function FileManagerCollection:onMenuHold(item)
         UIManager:close(self.collfile_dialog)
     end
     local buttons = {
-        {
-            filemanagerutil.genStatusButton("reading", status ~= "reading", item.file, status_button_callback),
-            filemanagerutil.genStatusButton("abandoned", status ~= "abandoned", item.file, status_button_callback),
-            filemanagerutil.genStatusButton("complete", status ~= "complete", item.file, status_button_callback),
-        },
+        filemanagerutil.getStatusButtonsRow(status, item.file, status_button_callback),
         {},
         {
             {
