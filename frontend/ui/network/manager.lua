@@ -258,9 +258,16 @@ function NetworkMgr:isConnected()
         if std_out then
             default_gw = std_out:read("*all")
             std_out:close()
-            if not default_gw or default_gw == "" then
-                return false
+        end
+        if not default_gw or default_gw == "" then
+            std_out = io.popen([[/sbin/ip r | grep default | tail -n 1 | cut -d ' ' -f 3]], "r")
+            if std_out then
+                default_gw = std_out:read("*all")
+                std_out:close()
             end
+        end
+        if not default_gw or default_gw == "" then
+            return false
         end
 
         -- `-c1` try only once; `-w2` wait 2 seconds
