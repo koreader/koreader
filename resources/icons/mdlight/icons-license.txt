@@ -31,10 +31,10 @@ https://github.com/Templarian/MaterialDesignLight
 * appbar.wifi
 * menu-icon
 * notice-question
-* cre.render.partial.svg
-* cre.render.ready.svg
-* cre.render.reload.svg
-* cre.render.working.svg
+* cre.render.partial
+* cre.render.ready
+* cre.render.reload
+* cre.render.working
 
 
 Derived from MaterialDesign
@@ -43,4 +43,4 @@ https://github.com/Templarian/MaterialDesign
 (https://www.apache.org/licenses/LICENSE-2.0)
 * appbar.cabinet.files
 * appbar.tools
-* cre.render.reload.svg
+* cre.render.reload
