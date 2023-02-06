@@ -852,7 +852,7 @@ function Kobo:initNetworkManager(NetworkMgr)
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
-    NetworkMgr.isConnected = NetworkMgr.carrierFileConnected
+    NetworkMgr.isConnected = NetworkMgr.sysfsCarrierConnected
 end
 
 function Kobo:setTouchEventHandler()

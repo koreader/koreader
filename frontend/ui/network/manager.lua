@@ -126,7 +126,7 @@ function NetworkMgr:sysfsWifiOn()
     return util.pathExists("/sys/class/net/".. net_if)
 end
 
-function NetworkMgr:carrierFileConnected()
+function NetworkMgr:sysfsCarrierConnected()
     -- Read carrier state from sysfs.
     -- NOTE: We can afford to use CLOEXEC, as devices too old for it don't support Wi-Fi anyway ;)
     local out

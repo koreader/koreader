@@ -177,7 +177,7 @@ function Cervantes:initNetworkManager(NetworkMgr)
         os.execute("./restore-wifi-async.sh")
     end
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
-    NetworkMgr.isConnected = NetworkMgr.carrierFileConnected
+    NetworkMgr.isConnected = NetworkMgr.sysfsCarrierConnected
 end
 
 -- power functions: suspend, resume, reboot, poweroff
