@@ -196,7 +196,7 @@ end
 
 function Notification:onShow()
     -- NOTE: We use the elusive "[ui]" mode solely for the sake of NTX boards flagged as unreliable,
-    --       in the hope that this will save same from an EPDC race that might make them horribly crash.
+    --       in the hope that this will save them from an EPDC race that might make them horribly crash.
     --       c.f., https://github.com/koreader/koreader/issues/9806#issuecomment-1416827447
     UIManager:setDirty(self, function()
         return "[ui]", self.frame.dimen
