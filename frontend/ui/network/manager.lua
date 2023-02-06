@@ -128,17 +128,17 @@ end
 
 function NetworkMgr:carrierFileConnected()
     -- Read carrier state from sysfs.
+    -- NOTE: We can afford to use CLOEXEC, as devices too old for it don't support Wi-Fi anyway ;)
+    local out
     local net_if = self:getNetworkInterfaceName()
-    local file = io.open("/sys/class/net/" .. net_if .. "/carrier", "rb")
+    local file = io.open("/sys/class/net/" .. net_if .. "/carrier", "re")
 
     -- File only exists while Wi-Fi module is loaded.
-    if not file then
-        return false
+    if file then
+        -- 0 means not connected, 1 connected
+        out = file:read("*number")
+        file:close()
     end
-
-    -- 0 means not connected, 1 connected
-    local out = file:read("*number")
-    file:close()
 
     return out == 1
 end
