@@ -101,12 +101,6 @@ function FileManagerHistory:onMenuHold(item)
     end
     local buttons = {
         {
-            filemanagerutil.genStatusButton("reading", not item.dim and status ~= "reading", item.file, status_button_callback),
-            filemanagerutil.genStatusButton("abandoned", not item.dim and status ~= "abandoned", item.file, status_button_callback),
-            filemanagerutil.genStatusButton("complete", not item.dim and status ~= "complete", item.file, status_button_callback),
-        },
-        {},
-        {
             {
                 text = _("Reset settings"),
                 id = "reset_settings", -- used by covermenu
@@ -169,6 +163,10 @@ function FileManagerHistory:onMenuHold(item)
              },
         },
     }
+    if not item.dim then
+        table.insert(buttons, 1, filemanagerutil.getStatusButtonsRow(status, item.file, status_button_callback))
+        table.insert(buttons, 2, {})
+    end
     self.histfile_dialog = ButtonDialogTitle:new{
         title = BD.filename(item.text:match("([^/]+)$")),
         title_align = "center",

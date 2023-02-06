@@ -109,7 +109,7 @@ function filemanagerutil.setStatus(file, status)
 end
 
 -- Generate a book status file dialog button
-function filemanagerutil.genStatusButton(to_status, enabled, file, caller_callback)
+function filemanagerutil.genStatusButton(to_status, current_status, file, caller_callback)
     local status_text = {
         reading   = _("Reading"),
         abandoned = _("On hold"),
@@ -118,11 +118,20 @@ function filemanagerutil.genStatusButton(to_status, enabled, file, caller_callba
     return {
         text = status_text[to_status],
         id = to_status, -- used by covermenu
-        enabled = enabled,
+        enabled = current_status ~= to_status,
         callback = function()
             filemanagerutil.setStatus(file, to_status)
             caller_callback()
         end,
+    }
+end
+
+-- Generate all book status file dialog buttons in a row
+function filemanagerutil.getStatusButtonsRow(current_status, file, caller_callback)
+    return {
+        filemanagerutil.genStatusButton("reading", current_status, file, caller_callback),
+        filemanagerutil.genStatusButton("abandoned", current_status, file, caller_callback),
+        filemanagerutil.genStatusButton("complete", current_status, file, caller_callback),
     }
 end
 

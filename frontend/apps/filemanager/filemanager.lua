@@ -344,11 +344,7 @@ function FileManager:setupLayout()
                 self:refreshPath()
                 UIManager:close(self.file_dialog)
             end
-            table.insert(buttons, {
-                filemanagerutil.genStatusButton("reading", status ~= "reading", file, status_button_callback),
-                filemanagerutil.genStatusButton("abandoned", status ~= "abandoned", file, status_button_callback),
-                filemanagerutil.genStatusButton("complete", status ~= "complete", file, status_button_callback),
-            })
+            table.insert(buttons, filemanagerutil.getStatusButtonsRow(status, file, status_button_callback))
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 {
