@@ -369,8 +369,13 @@ end
 function Device:initNetworkManager(NetworkMgr)
     function NetworkMgr:isConnected()
         -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
-        local default_gw
-        local std_out = io.popen([[/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1]], "r")
+        local default_gw, std_out
+        if isCommand("ip") then
+            std_out = io.popen([[ip r | grep default | tail -n 1 | cut -d ' ' -f 3]], "r")
+        else
+            std_out = io.popen([[/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1]], "r")
+        end
+
         if std_out then
             default_gw = std_out:read("*all")
             std_out:close()
