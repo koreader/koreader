@@ -347,7 +347,7 @@ function VirtualKey:update_keyboard(want_flash, want_a2)
     --       We flash the *full* keyboard when we release a hold.
     if want_flash then
         UIManager:setDirty(self.keyboard, function()
-            return "flashui", self.keyboard[1][1].dimen
+            return "flashui", self.keyboard[1][1].dimen -- i.e., keyboard_frame
         end)
     else
         local refresh_type = "ui"
@@ -506,7 +506,7 @@ end
 function VirtualKeyPopup:onCloseWidget()
     self:free()
     UIManager:setDirty(nil, function()
-        return "ui", self[1][1].dimen
+        return "ui", self[1][1].dimen -- i.e., keyboard_frame
     end)
 end
 
@@ -747,7 +747,7 @@ function VirtualKeyPopup:init()
     self[1] = position_container
 
     UIManager:show(self)
-
+    -- Ensure the post-paint refresh will be able to grab updated coordinates from keyboard_frame by using a refresh function
     UIManager:setDirty(self, function()
         return "ui", keyboard_frame.dimen
     end)
@@ -923,7 +923,7 @@ function VirtualKeyboard:_refresh(want_flash, fullscreen)
         return
     end
     UIManager:setDirty(self, function()
-        return refresh_type, self[1][1].dimen
+        return refresh_type, self[1][1].dimen -- i.e., keyboard_frame
     end)
 end
 
@@ -1040,6 +1040,8 @@ function VirtualKeyboard:addKeys()
         dimen = Screen:getSize(),
         keyboard_frame,
     }
+    -- Beware, this won't be updated post-paint, so the coordinates will stay at (0, 0)
+    -- (i.e., only the size is accurate, not the position).
     self.dimen = keyboard_frame:getSize()
 end
 
