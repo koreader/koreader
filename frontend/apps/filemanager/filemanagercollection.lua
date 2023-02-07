@@ -1,8 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
@@ -44,33 +42,18 @@ function FileManagerCollection:updateItemTable()
 end
 
 function FileManagerCollection:onMenuHold(item)
+    local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
+    local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.collfile_dialog = nil
-    local status = filemanagerutil.getStatus(item.file)
     local function status_button_callback()
         self._manager:updateItemTable()
         UIManager:close(self.collfile_dialog)
     end
     local buttons = {
-        filemanagerutil.getStatusButtonsRow(status, item.file, status_button_callback),
+        filemanagerutil.getStatusButtonsRow(item.file, currently_opened_file, status_button_callback),
         {},
         {
-            {
-                text = _("Reset settings"),
-                id = "reset_settings", -- used by covermenu
-                enabled = DocSettings:hasSidecarFile(BaseUtil.realpath(item.file)),
-                callback = function()
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(item.file)),
-                        ok_text = _("Reset"),
-                        ok_callback = function()
-                            filemanagerutil.purgeSettings(item.file)
-                            require("readhistory"):fileSettingsPurged(item.file)
-                            self._manager:updateItemTable()
-                            UIManager:close(self.collfile_dialog)
-                        end,
-                    })
-                end,
-            },
+            filemanagerutil.genResetSettingsButton(item.file, nil, status_button_callback),
             {
                 text = _("Remove from collection"),
                 callback = function()

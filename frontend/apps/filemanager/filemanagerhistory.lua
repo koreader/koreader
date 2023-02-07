@@ -1,7 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
-local DocSettings = require("docsettings")
 local FFIUtil = require("ffi/util")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Menu = require("ui/widget/menu")
@@ -89,7 +88,6 @@ function FileManagerHistory:onMenuHold(item)
     local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
     local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.histfile_dialog = nil
-    local status = filemanagerutil.getStatus(item.file)
     local function status_button_callback()
         if self._manager.filter ~= "all" then
             self._manager:fetchStatuses(false)
@@ -101,29 +99,7 @@ function FileManagerHistory:onMenuHold(item)
     end
     local buttons = {
         {
-            {
-                text = _("Reset settings"),
-                id = "reset_settings", -- used by covermenu
-                enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(FFIUtil.realpath(item.file)),
-                callback = function()
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."),
-                            BD.filepath(item.file)),
-                        ok_text = _("Reset"),
-                        ok_callback = function()
-                            filemanagerutil.purgeSettings(item.file)
-                            require("readhistory"):fileSettingsPurged(item.file)
-                            if self._manager.filter ~= "all" then
-                                self._manager:fetchStatuses(false)
-                            else
-                                self._manager.statuses_fetched = false
-                            end
-                            self._manager:updateItemTable()
-                            UIManager:close(self.histfile_dialog)
-                        end,
-                    })
-                end,
-            },
+            filemanagerutil.genResetSettingsButton(item.file, currently_opened_file, status_button_callback),
             {
                 text = _("Remove from history"),
                 callback = function()
@@ -164,7 +140,7 @@ function FileManagerHistory:onMenuHold(item)
         },
     }
     if not item.dim then
-        table.insert(buttons, 1, filemanagerutil.getStatusButtonsRow(status, item.file, status_button_callback))
+        table.insert(buttons, 1, filemanagerutil.getStatusButtonsRow(item.file, status_button_callback))
         table.insert(buttons, 2, {})
     end
     self.histfile_dialog = ButtonDialogTitle:new{

@@ -330,7 +330,7 @@ function CoverMenu:updateItems(select_number)
                 }
 
                 -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
-                local button = self.file_dialog.button_table:getButtonById("reset_settings")
+                local button = self.file_dialog.button_table:getButtonById("reset")
                 local orig_purge_callback = button.callback
                 button.callback = function()
                     -- Wipe the cache
@@ -507,7 +507,7 @@ function CoverMenu:onHistoryMenuHold(item)
     }
 
     -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
-    local button = self.histfile_dialog.button_table:getButtonById("reset_settings")
+    local button = self.histfile_dialog.button_table:getButtonById("reset")
     local orig_purge_callback = button.callback
     button.callback = function()
         -- Wipe the cache
@@ -682,7 +682,7 @@ function CoverMenu:onCollectionsMenuHold(item)
     }
 
     -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
-    local button = self.collfile_dialog.button_table:getButtonById("reset_settings")
+    local button = self.collfile_dialog.button_table:getButtonById("reset")
     local orig_purge_callback = button.callback
     button.callback = function()
         -- Wipe the cache
