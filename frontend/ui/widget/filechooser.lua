@@ -126,18 +126,18 @@ function FileChooser:init()
                         elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
                             if self:show_file(f) then
                                 if not count_only then
-                                    local percent_finished = 0
+                                    local percent_finished
                                     if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
                                         if DocSettings:hasSidecarFile(filename) then
                                             local docinfo = DocSettings:open(filename)
-                                            percent_finished = docinfo.data.percent_finished or 0
+                                            percent_finished = docinfo:readSetting("percent_finished")
                                         end
                                     end
                                     item = {name = f,
                                             suffix = getFileNameSuffix(f),
                                             fullpath = filename,
                                             attr = attributes,
-                                            percent_finished = percent_finished,}
+                                            percent_finished = percent_finished or 0,}
                                 end
                                 table.insert(files, item)
                             end
@@ -187,13 +187,12 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
         end
     elseif collate == "change" then
         sorting = function(a, b)
-            if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
-                return false
+            local a_opened = DocSettings:hasSidecarFile(a.fullpath)
+            local b_opened = DocSettings:hasSidecarFile(b.fullpath)
+            if a_opened == b_opened then
+                return a.attr.change > b.attr.change
             end
-            if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
-                return true
-            end
-            return a.attr.change > b.attr.change
+            return b_opened
         end
     elseif collate == "size" then
         sorting = function(a, b)
@@ -201,36 +200,25 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
         end
     elseif collate == "type" then
         sorting = function(a, b)
-            if a.suffix == nil and b.suffix == nil then
-                return ffiUtil.strcoll(a.name, b.name)
-            else
+            if (a.suffix or b.suffix) and a.suffix ~= b.suffix then
                 return ffiUtil.strcoll(a.suffix, b.suffix)
             end
+            return ffiUtil.strcoll(a.name, b.name)
         end
     elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
         sorting = function(a, b)
-            if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
-                if collate == "percent_unopened_first" then
-                    return false
-                else
-                    return true
+            local a_opened = DocSettings:hasSidecarFile(a.fullpath)
+            local b_opened = DocSettings:hasSidecarFile(b.fullpath)
+            if a_opened == b_opened then
+                if a_opened then
+                    return a.percent_finished < b.percent_finished
                 end
-            end
-            if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
-                if collate == "percent_unopened_first" then
-                    return true
-                else
-                    return false
-                end
-            end
-            if not DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
                 return a.name < b.name
             end
-
-            if a.attr.mode == "directory" then return a.name < b.name end
-            if b.attr.mode == "directory" then return a.name < b.name end
-
-            return a.percent_finished < b.percent_finished
+            if collate == "percent_unopened_first" then
+                return b_opened
+            end
+            return a_opened
         end
     elseif collate == "natural" then
         local natsort
