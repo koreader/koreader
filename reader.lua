@@ -69,7 +69,7 @@ if G_reader_settings:isTrue("debug") and G_reader_settings:isTrue("debug_verbose
 -- Option parsing:
 local longopts = {
     debug = "d",
-    verbose = "d",
+    verbose = "v",
     profile = "p",
     help = "h",
 }
