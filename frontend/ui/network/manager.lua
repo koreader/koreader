@@ -497,7 +497,6 @@ function NetworkMgr:getPowersaveMenuTable()
         text = _("Disable Wi-Fi connection when inactive"),
         help_text = _([[This will automatically turn Wi-Fi off after a generous period of network inactivity, without disrupting workflows that require a network connection, so you can just keep reading without worrying about battery drain.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
-        enabled_func = function() return Device:hasWifiManager() end,
         callback = function()
             G_reader_settings:flipNilOrFalse("auto_disable_wifi")
             -- NOTE: Well, not exactly, but the activity check wouldn't be (un)scheduled until the next Network(Dis)Connected event...
@@ -608,8 +607,12 @@ function NetworkMgr:getMenuTable(common_settings)
     common_settings.network_proxy = self:getProxyMenuTable()
     common_settings.network_info = self:getInfoMenuTable()
 
-    if Device:hasWifiManager() or Device:isEmulator() then
+    -- Allow auto_disable_wifi on devices where the net sysfs entry is exposed.
+    if self:getNetworkInterfaceName() then
         common_settings.network_powersave = self:getPowersaveMenuTable()
+    end
+
+    if Device:hasWifiManager() or Device:isEmulator() then
         common_settings.network_restore = self:getRestoreMenuTable()
         common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
         common_settings.network_before_wifi_action = self:getBeforeWifiActionMenuTable()

@@ -198,13 +198,11 @@ end
 
 function NetworkListener:onNetworkConnected()
     logger.dbg("NetworkListener: onNetworkConnected")
-    if not Device:hasWifiManager() then
-        return
+    if Device:hasWifiManager() then
+        -- This is for the sake of events that don't emanate from NetworkMgr itself...
+        NetworkMgr:setWifiState(true)
+        NetworkMgr:setConnectionState(true)
     end
-
-    -- This is for the sake of events that don't emanate from NetworkMgr itself...
-    NetworkMgr:setWifiState(true)
-    NetworkMgr:setConnectionState(true)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return
@@ -218,12 +216,10 @@ end
 
 function NetworkListener:onNetworkDisconnected()
     logger.dbg("NetworkListener: onNetworkDisconnected")
-    if not Device:hasWifiManager() then
-        return
+    if Device:hasWifiManager() then
+        NetworkMgr:setWifiState(false)
+        NetworkMgr:setConnectionState(false)
     end
-
-    NetworkMgr:setWifiState(false)
-    NetworkMgr:setConnectionState(false)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return
