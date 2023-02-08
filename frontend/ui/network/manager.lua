@@ -77,13 +77,6 @@ function NetworkMgr:scheduleConnectivityCheck(callback, widget)
 end
 
 function NetworkMgr:init()
-    -- On Kobo, kill Wi-Fi if NetworkMgr:isWifiOn() and NOT NetworkMgr:isConnected()
-    -- (i.e., if the launcher left the Wi-Fi in an inconsistent state: modules loaded, but no route to gateway).
-    if Device:isKobo() and self:isWifiOn() and not self:isConnected() then
-        logger.info("Kobo Wi-Fi: Left in an inconsistent state by launcher!")
-        self:turnOffWifi()
-    end
-
     self:queryNetworkState()
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
     if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
