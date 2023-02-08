@@ -1,5 +1,5 @@
 describe("docsettings module", function()
-    local DataStorage, docsettings, docsettings_dir, lfs, realpath, util
+    local DataStorage, docsettings, docsettings_dir, lfs, util
 
     setup(function()
         require("commonrequire")
@@ -7,7 +7,6 @@ describe("docsettings module", function()
         docsettings = require("docsettings")
         lfs = require("libs/libkoreader-lfs")
         util = require("ffi/util")
-        realpath = util.realpath
 
         docsettings_dir = DataStorage:getDocSettingsDir()
     end)
@@ -28,9 +27,8 @@ describe("docsettings module", function()
 
     it("should generate sidecar folder path in docsettings folder", function()
         G_reader_settings:saveSetting("document_metadata_folder", "dir")
---        assert.Equals(docsettings_dir.."/"..realpath("../../foo.sdr"), docsettings:getSidecarDir("../../foo.pdf"))
-        assert.Equals(docsettings_dir.."/".."/foo/bar.sdr", docsettings:getSidecarDir("/foo/bar.pdf"))
-        assert.Equals(docsettings_dir.."/".."baz.sdr", docsettings:getSidecarDir("baz.pdf"))
+        assert.Equals(docsettings_dir.."/foo/bar.sdr", docsettings:getSidecarDir("/foo/bar.pdf"))
+        assert.Equals(docsettings_dir.."/baz.sdr", docsettings:getSidecarDir("baz.pdf"))
     end)
 
     it("should generate sidecar metadata file (book folder)", function()
@@ -45,11 +43,9 @@ describe("docsettings module", function()
 
     it("should generate sidecar metadata file (docsettings folder)", function()
         G_reader_settings:saveSetting("document_metadata_folder", "dir")
-        assert.Equals(docsettings_dir.."/"..realpath("../../foo.sdr/metadata.pdf.lua"),
-                      docsettings:getSidecarFile("../../foo.pdf"))
         assert.Equals(docsettings_dir.."/foo/bar.sdr/metadata.pdf.lua",
                       docsettings:getSidecarFile("/foo/bar.pdf"))
-        assert.Equals(docsettings_dir.."/".."baz.sdr/metadata.epub.lua",
+        assert.Equals(docsettings_dir.."/baz.sdr/metadata.epub.lua",
                       docsettings:getSidecarFile("baz.epub"))
     end)
 
@@ -64,14 +60,14 @@ describe("docsettings module", function()
 
         local legacy_files = {
             docsettings:getHistoryPath(file),
-            d.dir_sidecar_dir .. "/file.pdf.lua",
+            d.doc_sidecar_dir .. "/file.pdf.lua",
             "file.pdf.kpdfview.lua",
         }
 
         for _, f in pairs(legacy_files) do
-            assert.False(os.rename(d.dir_sidecar_file, f) == nil)
+            assert.False(os.rename(d.doc_sidecar_file, f) == nil)
             d = docsettings:open(file)
-            assert.True(os.remove(d.dir_sidecar_file) == nil)
+            assert.True(os.remove(d.doc_sidecar_file) == nil)
             -- Legacy history files should not be removed before flush has been
             -- called.
             assert.Equals(lfs.attributes(f, "mode"), "file")
@@ -84,7 +80,7 @@ describe("docsettings module", function()
             assert.True(os.remove(f) == nil)
         end
 
-        assert.False(os.remove(d.dir_sidecar_file) == nil)
+        assert.False(os.remove(d.doc_sidecar_file) == nil)
         d:purge()
     end)
 
@@ -94,7 +90,7 @@ describe("docsettings module", function()
 
         local legacy_files = {
             docsettings:getHistoryPath(file),
-            d.dir_sidecar_dir .. "/file.pdf.lua",
+            d.doc_sidecar_dir .. "/file.pdf.lua",
             "file.pdf.kpdfview.lua",
         }
 
