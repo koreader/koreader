@@ -115,7 +115,7 @@ local network_activity_noise_margin = 12 -- unscaled_size_check: ignore
 
 -- Read the statistics/tx_packets sysfs entry for the current network interface.
 -- It *should* be the least noisy entry on an idle network...
--- The fact that auto_disable_wifi is only available on devices thet expose a
+-- The fact that auto_disable_wifi is only available on devices that expose a
 -- net sysfs entry allows us to get away with a Linux-only solution.
 function NetworkListener:_getTxPackets()
     -- read tx_packets stats from sysfs (for the right network if)
