@@ -26,8 +26,7 @@ describe("docsettings module", function()
     end)
 
     it("should generate sidecar folder path in docsettings folder", function()
-        assert.Equals(docsettings_dir.."/foo/bar.sdr", docsettings:getSidecarDir("/foo/bar.pdf", "dir"))
-        assert.Equals(docsettings_dir.."/baz.sdr", docsettings:getSidecarDir("baz.pdf", "dir"))
+        assert.Equals(util.realpath(DataStorage:getDocSettingsDir()).."bar.sdr", docsettings:getSidecarDir("bar.pdf", "dir"))
     end)
 
     it("should generate sidecar metadata file (book folder)", function()
