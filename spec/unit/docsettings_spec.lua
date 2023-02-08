@@ -26,7 +26,9 @@ describe("docsettings module", function()
     end)
 
     it("should generate sidecar folder path in docsettings folder", function()
-        assert.Equals(util.realpath(DataStorage:getDocSettingsDir()).."bar.sdr", docsettings:getSidecarDir("bar.pdf", "dir"))
+        G_reader_settings:saveSetting("document_metadata_folder", "dir")
+        assert.Equals(docsettings_dir.."foo/bar.sdr", docsettings:getSidecarDir("/foo/bar.pdf"))
+        assert.Equals(docsettings_dir.."baz.sdr", docsettings:getSidecarDir("baz.pdf"))
     end)
 
     it("should generate sidecar metadata file (book folder)", function()
@@ -41,9 +43,9 @@ describe("docsettings module", function()
 
     it("should generate sidecar metadata file (docsettings folder)", function()
         G_reader_settings:saveSetting("document_metadata_folder", "dir")
-        assert.Equals(docsettings_dir.."/foo/bar.sdr/metadata.pdf.lua",
+        assert.Equals(docsettings_dir.."foo/bar.sdr/metadata.pdf.lua",
                       docsettings:getSidecarFile("/foo/bar.pdf"))
-        assert.Equals(docsettings_dir.."/baz.sdr/metadata.epub.lua",
+        assert.Equals(docsettings_dir.."baz.sdr/metadata.epub.lua",
                       docsettings:getSidecarFile("baz.epub"))
     end)
 
