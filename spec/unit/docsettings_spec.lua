@@ -8,7 +8,7 @@ describe("docsettings module", function()
         lfs = require("libs/libkoreader-lfs")
         util = require("ffi/util")
 
-        docsettings_dir = util.realpath(DataStorage:getDocSettingsDir())
+        docsettings_dir = DataStorage:getDocSettingsDir()
     end)
 
     it("should generate sidecar folder path in book folder (by default)", function()
@@ -27,7 +27,7 @@ describe("docsettings module", function()
 
     it("should generate sidecar folder path in docsettings folder", function()
         G_reader_settings:saveSetting("document_metadata_folder", "dir")
-        assert.Equals(docsettings_dir.."foo/bar.sdr", docsettings:getSidecarDir("/foo/bar.pdf"))
+        assert.Equals(docsettings_dir.."/foo/bar.sdr", docsettings:getSidecarDir("/foo/bar.pdf"))
         assert.Equals(docsettings_dir.."baz.sdr", docsettings:getSidecarDir("baz.pdf"))
     end)
 
@@ -43,7 +43,7 @@ describe("docsettings module", function()
 
     it("should generate sidecar metadata file (docsettings folder)", function()
         G_reader_settings:saveSetting("document_metadata_folder", "dir")
-        assert.Equals(docsettings_dir.."foo/bar.sdr/metadata.pdf.lua",
+        assert.Equals(docsettings_dir.."/foo/bar.sdr/metadata.pdf.lua",
                       docsettings:getSidecarFile("/foo/bar.pdf"))
         assert.Equals(docsettings_dir.."baz.sdr/metadata.epub.lua",
                       docsettings:getSidecarFile("baz.epub"))
