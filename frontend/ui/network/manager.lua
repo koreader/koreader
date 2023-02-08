@@ -7,11 +7,16 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
+local ffi = require("ffi")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local C = ffi.C
 local T = ffiutil.template
+
+-- Load header definitions for functions and constants to the ffi.C namespace.
+require("ffi/posix_h")
 
 local NetworkMgr = {
     is_wifi_on = false,
@@ -156,6 +161,85 @@ function NetworkMgr:sysfsOperState()
 
     return out == "up"
 end
+
+-- This relies on the BSD API instead of the Linux ioctls (netdevice(7)), because handling IPv6 is slightly less painful this way...
+function NetworkMgr:IsInterfaceReady()
+    -- If the interface isn't operationally up, no need to go any further
+    if not self:sysfsOperState() then
+        return false
+    end
+
+    -- It's up, do the getifaddrs dance to see if it was assigned an IP yet...
+    local ifaddr = ffi.new("struct ifaddrs *[1]")
+    local host = ffi.new("char[?]", C.NI_MAXHOST)
+
+    if C.getifaddrs(ifaddr) == -1 then
+        local errno = ffi.errno()
+        logger.err("getifaddrs:", ffi.string(C.strerror(errno)))
+        return false
+    end
+
+    local net_if = self:getNetworkInterfaceName()
+    local ok
+    local ifa = ifaddr[0]
+    while ifa ~= nil do
+        if ifa.ifa_addr ~= nil and ffi.string(ifa.ifa_name) == net_if then
+            local family = ifa.ifa_addr.sa_family
+            if family == C.AF_INET or family == C.AF_INET6 then
+                local s = C.getnameinfo(ifa.ifa_addr,
+                                        family == C.AF_INET and ffi.sizeof("struct sockaddr_in") or ffi.sizeof("struct sockaddr_in"),
+                                        host, C.NI_MAXHOST,
+                                        nil, 0, C.NI_NUMERICHOST)
+                if s ~= 0 then
+                    logger.err("getnameinfo:", ffi.string(C.gai_strerror(s)))
+                    ok = false
+                else
+                    logger.dbg("NetworkMgr: Network interface", net_if, "was assigned IP address", ffi.string(host))
+                    ok = true
+                end
+                -- Regardless of failure, we only check a single if, so we're done
+                break
+            end
+        end
+        ifa = ifa.ifa_next
+    end
+    C.freeifaddrs(ifaddr[0])
+
+    return ok
+end
+
+--[[
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <string.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int main(int argc, char *argv[]) {
+	struct ifreq ifr;
+	struct sockaddr_in sai;
+	strncpy(ifr.ifr_name, *++argv, IFNAMSIZ);
+
+	int fd = socket(PF_INET, SOCK_DGRAM, 0);
+	ioctl(fd, SIOCGIFADDR, &ifr);
+	close(fd);
+
+	/*
+	memcpy(&sai, &ifr.ifr_addr, sizeof(sai));
+	printf("ifr.ifr_addr: %s\n", inet_ntoa(sai.sin_addr));
+	*/
+	char host[NI_MAXHOST];
+	int s = getnameinfo(&ifr.ifr_addr, sizeof(struct sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+	printf("ifr.ifr_addr: %s\n", host);
+
+	return EXIT_SUCCESS;
+}
+--]]
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     local toggle_im = InfoMessage:new{
