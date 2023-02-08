@@ -20,8 +20,6 @@ local VOCABULARY_DB_SCHEMA = [[
         "prev_context"  TEXT,
         "next_context"  TEXT,
         "streak_count"  INTEGER NOT NULL DEFAULT 0,
-        "rev_intervals" TEXT,
-        "interval_mult" INTEGER NOT NULL,
         PRIMARY KEY("word")
     );
     CREATE TABLE IF NOT EXISTS "title" (
@@ -223,9 +221,9 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     local default_review_intervals = {5, 30, 720, 1440}
     local default_interval_modifier = 2 -- duplicated in main.lua
 
-    local intervals = item.review_intervals or default_review_intervals
+    local intervals = settings.review_intervals or default_review_intervals
 
-    local interval_modifier = item.interval_modifier or default_interval_modifier
+    local interval_modifier = settings.interval_modifier or default_interval_modifier
 
 
     local interval
@@ -248,9 +246,6 @@ function VocabularyBuilder:gotOrForgot(item, isGot)
     item.review_count = target_review_count
     item.review_time = current_time
     item.due_time = due_time
-
-    item.review_intervals = intervals
-    item.interval_modifier = interval_modifier
 end
 
 function VocabularyBuilder:batchUpdateItems(items)
