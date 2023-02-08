@@ -27,6 +27,7 @@ describe("docsettings module", function()
 
     it("should generate sidecar folder path in docsettings folder", function()
         G_reader_settings:saveSetting("document_metadata_folder", "dir")
+        assert.Equals(docsettings_dir.."foo/bar.sdr", docsettings:getSidecarDir("/foo/bar.pdf"))
         assert.Equals(docsettings_dir.."baz.sdr", docsettings:getSidecarDir("baz.pdf"))
     end)
 
