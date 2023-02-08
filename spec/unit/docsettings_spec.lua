@@ -1,5 +1,5 @@
 describe("docsettings module", function()
-    local DataStorage, docsettings, docsettings_dir, joinPath, lfs, realpath, util
+    local DataStorage, docsettings, docsettings_dir, lfs, realpath, util
 
     setup(function()
         require("commonrequire")
@@ -7,7 +7,6 @@ describe("docsettings module", function()
         docsettings = require("docsettings")
         lfs = require("libs/libkoreader-lfs")
         util = require("ffi/util")
-        joinPath = util.joinPath
         realpath = util.realpath
 
         docsettings_dir = DataStorage:getDocSettingsDir()
