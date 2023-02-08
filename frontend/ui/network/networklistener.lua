@@ -115,8 +115,8 @@ local network_activity_noise_margin = 12 -- unscaled_size_check: ignore
 
 -- Read the statistics/tx_packets sysfs entry for the current network interface.
 -- It *should* be the least noisy entry on an idle network...
--- The fact that auto_disable_wifi is only available on Device:hasWifiManager()
--- allows us to get away with a Linux-only solution.
+-- The fact that auto_disable_wifi is only available on devices that expose a
+-- net sysfs entry allows us to get away with a Linux-only solution.
 function NetworkListener:_getTxPackets()
     -- read tx_packets stats from sysfs (for the right network if)
     local file = io.open("/sys/class/net/" .. NetworkMgr:getNetworkInterfaceName() .. "/statistics/tx_packets", "rb")
@@ -198,13 +198,11 @@ end
 
 function NetworkListener:onNetworkConnected()
     logger.dbg("NetworkListener: onNetworkConnected")
-    if not Device:hasWifiManager() then
-        return
+    if Device:hasWifiManager() then
+        -- This is for the sake of events that don't emanate from NetworkMgr itself...
+        NetworkMgr:setWifiState(true)
+        NetworkMgr:setConnectionState(true)
     end
-
-    -- This is for the sake of events that don't emanate from NetworkMgr itself...
-    NetworkMgr:setWifiState(true)
-    NetworkMgr:setConnectionState(true)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return
@@ -218,12 +216,10 @@ end
 
 function NetworkListener:onNetworkDisconnected()
     logger.dbg("NetworkListener: onNetworkDisconnected")
-    if not Device:hasWifiManager() then
-        return
+    if Device:hasWifiManager() then
+        NetworkMgr:setWifiState(false)
+        NetworkMgr:setConnectionState(false)
     end
-
-    NetworkMgr:setWifiState(false)
-    NetworkMgr:setConnectionState(false)
 
     if not G_reader_settings:isTrue("auto_disable_wifi") then
         return
