@@ -127,9 +127,10 @@ function NetworkMgr:sysfsCarrierConnected()
     local net_if = self:getNetworkInterfaceName()
     local file = io.open("/sys/class/net/" .. net_if .. "/carrier", "re")
 
-    -- File only exists while Wi-Fi module is loaded.
+    -- File only exists while Wi-Fi module is loaded, but may fail to read until the interface is brought up.
     if file then
-        -- 0 means not connected, 1 connected
+        -- 0 means the interface is down, 1 that it's up
+        -- This does *NOT* represent network association state for Wi-Fi (it'll return 1 as soon as ifup)!
         out = file:read("*number")
         file:close()
     end
