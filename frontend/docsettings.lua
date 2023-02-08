@@ -15,7 +15,7 @@ local util = require("util")
 local DocSettings = LuaSettings:extend{}
 
 local HISTORY_DIR = DataStorage:getHistoryDir()
-local DOCSETTINGS_DIR = DataStorage:getDocSettingsDir()
+local DOCSETTINGS_DIR = ffiutil.realpath(DataStorage:getDocSettingsDir())
 
 local function buildCandidates(list)
     local candidates = {}
