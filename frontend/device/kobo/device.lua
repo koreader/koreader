@@ -829,10 +829,7 @@ function Kobo:initNetworkManager(NetworkMgr)
         self:reconnectOrShowNetworkMenu(complete_callback)
     end
 
-    local net_if = os.getenv("INTERFACE")
-    if not net_if then
-        net_if = "eth0"
-    end
+    local net_if = os.getenv("INTERFACE") or "eth0"
     function NetworkMgr:getNetworkInterfaceName()
         return net_if
     end
