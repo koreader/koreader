@@ -138,6 +138,25 @@ function NetworkMgr:sysfsCarrierConnected()
     return out == 1
 end
 
+function NetworkMgr:sysfsOperState()
+    -- Reads the interface's RFC2863 operational state from sysfs, and wait for it to be up (associated & authenticated)
+    local out
+    local net_if = self:getNetworkInterfaceName()
+    local file = io.open("/sys/class/net/" .. net_if .. "/operstate", "re")
+
+    -- Possible values: "unknown", "notpresent", "down", "lowerlayerdown", "testing", "dormant", "up"
+    -- (c.f., Linux's <Documentation/ABI/testing/sysfs-class-net>)
+    -- We're *assuming* all the drivers we care about implement this properly, so we can just rely on checking for "up".
+    -- On unsupported drivers, this would be stuck to "unknown" (c.f., Linux's <Documentation/networking/operstates.rst>)
+    -- NOTE: This does *NOT* mean the interface has been assigned an IP!
+    if file then
+        out = file:read("*l")
+        file:close()
+    end
+
+    return out == "up"
+end
+
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     local toggle_im = InfoMessage:new{
         text = _("Turning on Wi-Fi…"),
