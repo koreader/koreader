@@ -8,7 +8,7 @@ describe("docsettings module", function()
         lfs = require("libs/libkoreader-lfs")
         util = require("ffi/util")
 
-        docsettings_dir = DataStorage:getDocSettingsDir()
+        docsettings_dir = util.realpath(DataStorage:getDocSettingsDir())
     end)
 
     it("should generate sidecar folder path in book folder (by default)", function()
