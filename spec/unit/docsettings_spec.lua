@@ -50,7 +50,7 @@ describe("docsettings module", function()
                       docsettings:getSidecarFile("../../foo.pdf"))
         assert.Equals(docsettings_dir.."/foo/bar.sdr/metadata.pdf.lua",
                       docsettings:getSidecarFile("/foo/bar.pdf"))
-        assert.Equals(docsettings_dir.."/".."baz.sdr/metadata.epub.lua"),
+        assert.Equals(docsettings_dir.."/".."baz.sdr/metadata.epub.lua",
                       docsettings:getSidecarFile("baz.epub"))
     end)
 
