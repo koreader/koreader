@@ -118,7 +118,7 @@ function NetworkMgr:releaseIP() end
 function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
 
---Helper fuctions for devices that use the sysfs entry to check connectivity.
+-- Helper functions for devices that use sysfs entries to check connectivity.
 function NetworkMgr:sysfsWifiOn()
     -- Network interface directory exists while the Wi-Fi module is loaded.
     local net_if = self:getNetworkInterfaceName()
@@ -143,7 +143,7 @@ function NetworkMgr:sysfsCarrierConnected()
     return out == 1
 end
 
-function NetworkMgr:sysfsOperState()
+function NetworkMgr:sysfsInterfaceOperational()
     -- Reads the interface's RFC2863 operational state from sysfs, and wait for it to be up (associated & authenticated)
     local out
     local net_if = self:getNetworkInterfaceName()
@@ -163,16 +163,14 @@ function NetworkMgr:sysfsOperState()
 end
 
 -- This relies on the BSD API instead of the Linux ioctls (netdevice(7)), because handling IPv6 is slightly less painful this way...
-function NetworkMgr:IsInterfaceReady()
+function NetworkMgr:ifHasAnAddress()
     -- If the interface isn't operationally up, no need to go any further
-    if not self:sysfsOperState() then
+    if not self:sysfsInterfaceOperational() then
         return false
     end
 
     -- It's up, do the getifaddrs dance to see if it was assigned an IP yet...
     local ifaddr = ffi.new("struct ifaddrs *[1]")
-    local host = ffi.new("char[?]", C.NI_MAXHOST)
-
     if C.getifaddrs(ifaddr) == -1 then
         local errno = ffi.errno()
         logger.err("getifaddrs:", ffi.string(C.strerror(errno)))
@@ -186,8 +184,9 @@ function NetworkMgr:IsInterfaceReady()
         if ifa.ifa_addr ~= nil and ffi.string(ifa.ifa_name) == net_if then
             local family = ifa.ifa_addr.sa_family
             if family == C.AF_INET or family == C.AF_INET6 then
+                local host = ffi.new("char[?]", C.NI_MAXHOST)
                 local s = C.getnameinfo(ifa.ifa_addr,
-                                        family == C.AF_INET and ffi.sizeof("struct sockaddr_in") or ffi.sizeof("struct sockaddr_in"),
+                                        family == C.AF_INET and ffi.sizeof("struct sockaddr_in") or ffi.sizeof("struct sockaddr_in6"),
                                         host, C.NI_MAXHOST,
                                         nil, 0, C.NI_NUMERICHOST)
                 if s ~= 0 then
@@ -209,6 +208,7 @@ function NetworkMgr:IsInterfaceReady()
 end
 
 --[[
+-- This would be the aforementioned Linux ioctl approach
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -221,6 +221,7 @@ end
 #include <arpa/inet.h>
 
 int main(int argc, char *argv[]) {
+    // Querying IPv6 would require a different in6_ifreq struct and more hoop-jumping...
 	struct ifreq ifr;
 	struct sockaddr_in sai;
 	strncpy(ifr.ifr_name, *++argv, IFNAMSIZ);
@@ -230,6 +231,7 @@ int main(int argc, char *argv[]) {
 	close(fd);
 
 	/*
+	// inet_ntoa is deprecated
 	memcpy(&sai, &ifr.ifr_addr, sizeof(sai));
 	printf("ifr.ifr_addr: %s\n", inet_ntoa(sai.sin_addr));
 	*/
