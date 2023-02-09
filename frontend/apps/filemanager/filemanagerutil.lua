@@ -132,9 +132,9 @@ function filemanagerutil.getStatusButtonsRow(file, caller_callback)
         }
     end
     return {
-        genStatusButton("reading", status, file, caller_callback),
-        genStatusButton("abandoned", status, file, caller_callback),
-        genStatusButton("complete", status, file, caller_callback),
+        genStatusButton("reading"),
+        genStatusButton("abandoned"),
+        genStatusButton("complete"),
     }
 end
 
