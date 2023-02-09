@@ -172,6 +172,7 @@ function NetworkMgr:ifHasAnAddress()
     end
 
     -- It's up, do the getifaddrs dance to see if it was assigned an IP yet...
+    -- c.f., getifaddrs(3)
     local ifaddr = ffi.new("struct ifaddrs *[1]")
     if C.getifaddrs(ifaddr) == -1 then
         local errno = ffi.errno()
