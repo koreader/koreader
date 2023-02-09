@@ -183,7 +183,7 @@ function NetworkMgr:ifHasAnAddress()
     local ok
     local ifa = ifaddr[0]
     while ifa ~= nil do
-        if ifa.ifa_addr ~= nil and ffi.string(ifa.ifa_name) == net_if then
+        if ifa.ifa_addr ~= nil and C.strcmp(ifa.ifa_name, net_if) == 0 then
             local family = ifa.ifa_addr.sa_family
             if family == C.AF_INET or family == C.AF_INET6 then
                 local host = ffi.new("char[?]", C.NI_MAXHOST)
