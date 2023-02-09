@@ -147,9 +147,6 @@ function FakeCover:init()
         end
         bd_wrap_title_as_filename = true
     end
-    if filename then
-        filename = BD.filename(filename)
-    end
     -- If no authors, and title is filename without extension, it was
     -- probably made by an engine, and we can consider it a filename, and
     -- act according to common usage in naming files.
@@ -175,6 +172,10 @@ function FakeCover:init()
         -- before it.
         title = title:gsub("%.\xE2\x80\x8B(%w%w?%w?%w?%w?)$", "\xE2\x80\x8B.%1")
         -- These substitutions will hopefully have no impact with the following BD wrapping
+        -- If the title is the filename, just show the suffix at the bottom instead of repeating
+        filename = string.upper(util.getFileNameSuffix(filename))
+    elseif filename then
+        filename = BD.filename(filename)
     end
     if title then
         title = bd_wrap_title_as_filename and BD.filename(title) or BD.auto(title)
