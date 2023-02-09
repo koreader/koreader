@@ -61,13 +61,13 @@ describe("docsettings module", function()
         local legacy_files = {
             docsettings:getHistoryPath(file),
             d.doc_sidecar_dir .. "/file.pdf.lua",
-            "file.pdf.kpdfview.lua",
+            "/books/file.pdf.kpdfview.lua",
         }
 
         for _, f in ipairs(legacy_files) do
---            assert.False(os.rename(d.doc_sidecar_file, f) == nil)
+            assert.False(os.rename(d.doc_sidecar_file, f) == nil)
             d = docsettings:open(file)
---            assert.True(os.remove(d.doc_sidecar_file) == nil)
+            assert.True(os.remove(d.doc_sidecar_file) == nil)
             -- Legacy history files should not be removed before flush has been
             -- called.
             assert.Equals(lfs.attributes(f, "mode"), "file")
@@ -77,10 +77,10 @@ describe("docsettings module", function()
             d:close()
             -- legacy history files should be removed as sidecar_file is
             -- preferred.
---            assert.True(os.remove(f) == nil)
+            assert.True(os.remove(f) == nil)
         end
 
---        assert.False(os.remove(d.doc_sidecar_file) == nil)
+        assert.False(os.remove(d.doc_sidecar_file) == nil)
         d:purge()
     end)
 
