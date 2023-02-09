@@ -1,12 +1,13 @@
 describe("docsettings module", function()
-    local DataStorage, docsettings, docsettings_dir, lfs, util
+    local DataStorage, docsettings, docsettings_dir, ffiutil, lfs, util
 
     setup(function()
         require("commonrequire")
         DataStorage = require("datastorage")
         docsettings = require("docsettings")
+        ffiutil = require("ffi/util")
         lfs = require("libs/libkoreader-lfs")
-        util = require("ffi/util")
+        util = require("util")
 
         docsettings_dir = DataStorage:getDocSettingsDir()
     end)
@@ -64,7 +65,8 @@ describe("docsettings module", function()
             "file.pdf.kpdfview.lua",
         }
 
-        for _, f in pairs(legacy_files) do
+        util.makePath(d.doc_sidecar_dir)
+        for _, f in ipairs(legacy_files) do
             assert.False(os.rename(d.doc_sidecar_file, f) == nil)
             d = docsettings:open(file)
             assert.True(os.remove(d.doc_sidecar_file) == nil)
@@ -94,6 +96,8 @@ describe("docsettings module", function()
             "file.pdf.kpdfview.lua",
         }
 
+        util.makePath(d.doc_sidecar_dir)
+
         -- docsettings:flush will remove legacy files.
         for i, v in ipairs(legacy_files) do
             d:saveSetting("a", i)
@@ -114,7 +118,7 @@ describe("docsettings module", function()
 
     it("should build correct legacy history path", function()
         local file = "/a/b/c--d/c.txt"
-        local history_path = util.basename(docsettings:getHistoryPath(file))
+        local history_path = ffiutil.basename(docsettings:getHistoryPath(file))
         local path_from_history = docsettings:getPathFromHistory(history_path)
         local name_from_history = docsettings:getNameFromHistory(history_path)
         assert.is.same(file, path_from_history .. "/" .. name_from_history)
