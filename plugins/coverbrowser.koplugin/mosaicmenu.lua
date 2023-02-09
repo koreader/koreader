@@ -105,6 +105,7 @@ local FakeCover = FrameContainer:extend{
     padding = 0,
     bordersize = Size.border.thin,
     dim = nil,
+    do_hint_opened = false,
     -- Provided filename, title and authors should not be BD wrapped
     filename = nil,
     file_deleted = nil,
@@ -254,7 +255,7 @@ function FakeCover:init()
                 text = filename,
                 lang = self.book_lang, -- might as well use it for filename
                 face = Font:getFace("cfont", math.max(self.filename_font_max - sizedec, self.filename_font_min)),
-                width = text_width,
+                width = self.do_hint_opened and width - 2 * corner_mark_size or text_width,
                 alignment = "center",
             }
             texts_height = texts_height + filename_wg:getSize().h
@@ -640,7 +641,8 @@ function MosaicMenuItem:update()
                         authors_add = not bookinfo.ignore_meta and authors_add,
                         book_lang = not bookinfo.ignore_meta and bookinfo.language,
                         file_deleted = self.file_deleted,
-                        bottom_pad = BookInfoManager:getSetting("show_progress_in_mosaic") and Screen:scaleBySize(7)
+                        bottom_pad = BookInfoManager:getSetting("show_progress_in_mosaic") and Screen:scaleBySize(7),
+                        do_hint_opened = self.do_hint_opened,
                     }
                 }
             end
