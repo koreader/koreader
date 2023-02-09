@@ -178,7 +178,7 @@ function SonyPRSTUX:initNetworkManager(NetworkMgr)
     end
     --]]
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
-    NetworkMgr.isConnected = NetworkMgr.sysfsCarrierConnected
+    NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
 end
 
 
