@@ -59,13 +59,12 @@ describe("docsettings module", function()
         -- Now the sidecar file should be written.
 
         local legacy_files = {
-            docsettings:getHistoryPath(file),
-            d.doc_sidecar_dir .. "/file.pdf.lua",
+--            docsettings:getHistoryPath(file),
+--            d.doc_sidecar_dir .. "/file.pdf.lua",
             "/books/file.pdf.kpdfview.lua",
         }
 
---        for _, f in ipairs(legacy_files) do
-local f = legacy_files[1]
+        for _, f in ipairs(legacy_files) do
             assert.False(os.rename(d.doc_sidecar_file, f) == nil)
             d = docsettings:open(file)
             assert.True(os.remove(d.doc_sidecar_file) == nil)
@@ -79,7 +78,7 @@ local f = legacy_files[1]
             -- legacy history files should be removed as sidecar_file is
             -- preferred.
             assert.True(os.remove(f) == nil)
---        end
+        end
 
         assert.False(os.remove(d.doc_sidecar_file) == nil)
         d:purge()
