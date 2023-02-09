@@ -1,5 +1,5 @@
 describe("docsettings module", function()
-    local DataStorage, docsettings, docsettings_dir, ffiutil, lfs, util
+    local DataStorage, docsettings, docsettings_dir, ffiutil, lfs
 
     setup(function()
         require("commonrequire")
@@ -7,7 +7,6 @@ describe("docsettings module", function()
         docsettings = require("docsettings")
         ffiutil = require("ffi/util")
         lfs = require("libs/libkoreader-lfs")
-        util = require("util")
 
         docsettings_dir = DataStorage:getDocSettingsDir()
     end)
@@ -52,7 +51,7 @@ describe("docsettings module", function()
 
     it("should read legacy history file", function()
         G_reader_settings:delSetting("document_metadata_folder")
-        local file = "file.pdf"
+        local file = "/books/file.pdf"
         local d = docsettings:open(file)
         d:saveSetting("a", "b")
         d:saveSetting("c", "d")
@@ -65,7 +64,6 @@ describe("docsettings module", function()
             "file.pdf.kpdfview.lua",
         }
 
-        util.makePath(d.doc_sidecar_dir)
         for _, f in ipairs(legacy_files) do
             assert.False(os.rename(d.doc_sidecar_file, f) == nil)
             d = docsettings:open(file)
@@ -95,8 +93,6 @@ describe("docsettings module", function()
             d.doc_sidecar_dir .. "/file.pdf.lua",
             "file.pdf.kpdfview.lua",
         }
-
-        util.makePath(d.doc_sidecar_dir)
 
         -- docsettings:flush will remove legacy files.
         for i, v in ipairs(legacy_files) do
