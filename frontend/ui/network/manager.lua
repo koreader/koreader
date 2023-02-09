@@ -120,7 +120,7 @@ function NetworkMgr:restoreWifiAsync() end
 
 -- Helper functions for devices that use sysfs entries to check connectivity.
 function NetworkMgr:sysfsWifiOn()
-    -- Network interface directory exists while the Wi-Fi module is loaded.
+    -- Network interface directory only exists as long as the Wi-Fi module is loaded
     local net_if = self:getNetworkInterfaceName()
     return util.pathExists("/sys/class/net/".. net_if)
 end
@@ -132,7 +132,7 @@ function NetworkMgr:sysfsCarrierConnected()
     local net_if = self:getNetworkInterfaceName()
     local file = io.open("/sys/class/net/" .. net_if .. "/carrier", "re")
 
-    -- File only exists while Wi-Fi module is loaded, but may fail to read until the interface is brought up.
+    -- File only exists while the Wi-Fi module is loaded, but may fail to read until the interface is brought up.
     if file then
         -- 0 means the interface is down, 1 that it's up
         -- This does *NOT* represent network association state for Wi-Fi (it'll return 1 as soon as ifup)!
@@ -144,7 +144,8 @@ function NetworkMgr:sysfsCarrierConnected()
 end
 
 function NetworkMgr:sysfsInterfaceOperational()
-    -- Reads the interface's RFC2863 operational state from sysfs, and wait for it to be up (associated & authenticated)
+    -- Reads the interface's RFC2863 operational state from sysfs, and wait for it to be up
+    -- (For Wi-Fi, that means associated & successfully authenticated)
     local out
     local net_if = self:getNetworkInterfaceName()
     local file = io.open("/sys/class/net/" .. net_if .. "/operstate", "re")
@@ -152,7 +153,7 @@ function NetworkMgr:sysfsInterfaceOperational()
     -- Possible values: "unknown", "notpresent", "down", "lowerlayerdown", "testing", "dormant", "up"
     -- (c.f., Linux's <Documentation/ABI/testing/sysfs-class-net>)
     -- We're *assuming* all the drivers we care about implement this properly, so we can just rely on checking for "up".
-    -- On unsupported drivers, this would be stuck to "unknown" (c.f., Linux's <Documentation/networking/operstates.rst>)
+    -- On unsupported drivers, this would be stuck on "unknown" (c.f., Linux's <Documentation/networking/operstates.rst>)
     -- NOTE: This does *NOT* mean the interface has been assigned an IP!
     if file then
         out = file:read("*l")
