@@ -50,10 +50,10 @@ function FileManagerCollection:onMenuHold(item)
         UIManager:close(self.collfile_dialog)
     end
     local buttons = {
-        filemanagerutil.getStatusButtonsRow(item.file, currently_opened_file, status_button_callback),
+        filemanagerutil.getStatusButtonsRow(item.file, status_button_callback),
         {},
         {
-            filemanagerutil.genResetSettingsButton(item.file, nil, status_button_callback),
+            filemanagerutil.genResetSettingsButton(item.file, currently_opened_file, status_button_callback),
             {
                 text = _("Remove from collection"),
                 callback = function()

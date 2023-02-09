@@ -342,35 +342,17 @@ function CoverMenu:updateItems(select_number)
                 end
 
                 -- Fudge the status change button callbacks to also update the cover_info_cache
-                button = self.file_dialog.button_table:getButtonById("reading")
-                local orig_reading_callback = button.callback
-                button.callback = function()
-                    -- Update the cache
-                    if self.cover_info_cache and self.cover_info_cache[file] then
-                        self.cover_info_cache[file][3] = "reading"
+                for _, status in ipairs({"reading", "abandoned", "complete"}) do
+                    button = self.file_dialog.button_table:getButtonById(status)
+                    local orig_status_callback = button.callback
+                    button.callback = function()
+                        -- Update the cache
+                        if self.cover_info_cache and self.cover_info_cache[file] then
+                            self.cover_info_cache[file][3] = status
+                        end
+                        -- And then set the status on file as expected
+                        orig_status_callback()
                     end
-                    -- And then set the status on file as expected
-                    orig_reading_callback()
-                end
-                button = self.file_dialog.button_table:getButtonById("abandoned")
-                local orig_abandoned_callback = button.callback
-                button.callback = function()
-                    -- Update the cache
-                    if self.cover_info_cache and self.cover_info_cache[file] then
-                        self.cover_info_cache[file][3] = "abandoned"
-                    end
-                    -- And then set the status on file as expected
-                    orig_abandoned_callback()
-                end
-                button = self.file_dialog.button_table:getButtonById("complete")
-                local orig_complete_callback = button.callback
-                button.callback = function()
-                    -- Update the cache
-                    if self.cover_info_cache and self.cover_info_cache[file] then
-                        self.cover_info_cache[file][3] = "complete"
-                    end
-                    -- And then set the status on file as expected
-                    orig_complete_callback()
                 end
 
                 -- Replace the "Book information" button callback to use directly our bookinfo
@@ -519,40 +501,18 @@ function CoverMenu:onHistoryMenuHold(item)
     end
 
     -- Fudge the status change button callbacks to also update the cover_info_cache
-    button = self.histfile_dialog.button_table:getButtonById("reading")
-    if button then
-        local orig_reading_callback = button.callback
-        button.callback = function()
-            -- Update the cache
-            if self.cover_info_cache and self.cover_info_cache[file] then
-                self.cover_info_cache[file][3] = "reading"
+    for _, status in ipairs({"reading", "abandoned", "complete"}) do
+        button = self.histfile_dialog.button_table:getButtonById(status)
+        if button then
+            local orig_status_callback = button.callback
+            button.callback = function()
+                -- Update the cache
+                if self.cover_info_cache and self.cover_info_cache[file] then
+                    self.cover_info_cache[file][3] = status
+                end
+                -- And then set the status on file as expected
+                orig_status_callback()
             end
-            -- And then set the status on file as expected
-            orig_reading_callback()
-        end
-    end
-    button = self.histfile_dialog.button_table:getButtonById("abandoned")
-    if button then
-        local orig_abandoned_callback = button.callback
-        button.callback = function()
-            -- Update the cache
-            if self.cover_info_cache and self.cover_info_cache[file] then
-                self.cover_info_cache[file][3] = "abandoned"
-            end
-            -- And then set the status on file as expected
-            orig_abandoned_callback()
-        end
-    end
-    button = self.histfile_dialog.button_table:getButtonById("complete")
-    if button then
-        local orig_complete_callback = button.callback
-        button.callback = function()
-            -- Update the cache
-            if self.cover_info_cache and self.cover_info_cache[file] then
-                self.cover_info_cache[file][3] = "complete"
-            end
-            -- And then set the status on file as expected
-            orig_complete_callback()
         end
     end
 
@@ -694,35 +654,17 @@ function CoverMenu:onCollectionsMenuHold(item)
     end
 
     -- Fudge the status change button callbacks to also update the cover_info_cache
-    button = self.collfile_dialog.button_table:getButtonById("reading")
-    local orig_reading_callback = button.callback
-    button.callback = function()
-        -- Update the cache
-        if self.cover_info_cache and self.cover_info_cache[file] then
-            self.cover_info_cache[file][3] = "reading"
+    for _, status in ipairs({"reading", "abandoned", "complete"}) do
+        button = self.collfile_dialog.button_table:getButtonById(status)
+        local orig_status_callback = button.callback
+        button.callback = function()
+            -- Update the cache
+            if self.cover_info_cache and self.cover_info_cache[file] then
+                self.cover_info_cache[file][3] = status
+            end
+            -- And then set the status on file as expected
+            orig_status_callback()
         end
-        -- And then set the status on file as expected
-        orig_reading_callback()
-    end
-    button = self.collfile_dialog.button_table:getButtonById("abandoned")
-    local orig_abandoned_callback = button.callback
-    button.callback = function()
-        -- Update the cache
-        if self.cover_info_cache and self.cover_info_cache[file] then
-            self.cover_info_cache[file][3] = "abandoned"
-        end
-        -- And then set the status on file as expected
-        orig_abandoned_callback()
-    end
-    button = self.collfile_dialog.button_table:getButtonById("complete")
-    local orig_complete_callback = button.callback
-    button.callback = function()
-        -- Update the cache
-        if self.cover_info_cache and self.cover_info_cache[file] then
-            self.cover_info_cache[file][3] = "complete"
-        end
-        -- And then set the status on file as expected
-        orig_complete_callback()
     end
 
     -- Replace Book information callback to use directly our bookinfo
