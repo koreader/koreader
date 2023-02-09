@@ -15,7 +15,7 @@ local _ = require("gettext")
 local C = ffi.C
 local T = ffiutil.template
 
--- Load header definitions for functions and constants to the ffi.C namespace.
+-- We'll need a bunch of stuff for getifaddrs in NetworkMgr:ifHasAnAddress
 require("ffi/posix_h")
 
 local NetworkMgr = {
@@ -135,6 +135,7 @@ function NetworkMgr:sysfsCarrierConnected()
     -- File only exists while the Wi-Fi module is loaded, but may fail to read until the interface is brought up.
     if file then
         -- 0 means the interface is down, 1 that it's up
+        -- (technically, it reflects the state of the physical link (e.g., plugged in or not for Ethernet))
         -- This does *NOT* represent network association state for Wi-Fi (it'll return 1 as soon as ifup)!
         out = file:read("*number")
         file:close()
@@ -189,7 +190,8 @@ function NetworkMgr:ifHasAnAddress()
                 local s = C.getnameinfo(ifa.ifa_addr,
                                         family == C.AF_INET and ffi.sizeof("struct sockaddr_in") or ffi.sizeof("struct sockaddr_in6"),
                                         host, C.NI_MAXHOST,
-                                        nil, 0, C.NI_NUMERICHOST)
+                                        nil, 0,
+                                        C.NI_NUMERICHOST)
                 if s ~= 0 then
                     logger.err("getnameinfo:", ffi.string(C.gai_strerror(s)))
                     ok = false
