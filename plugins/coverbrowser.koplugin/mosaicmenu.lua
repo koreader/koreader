@@ -640,6 +640,7 @@ function MosaicMenuItem:update()
                         authors_add = not bookinfo.ignore_meta and authors_add,
                         book_lang = not bookinfo.ignore_meta and bookinfo.language,
                         file_deleted = self.file_deleted,
+                        bottom_pad = BookInfoManager:getSetting("show_progress_in_mosaic") and Screen:scaleBySize(7)
                     }
                 }
             end
