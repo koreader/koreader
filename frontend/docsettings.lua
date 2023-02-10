@@ -10,7 +10,6 @@ local dump = require("dump")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
 
 local DocSettings = LuaSettings:extend{}
 
