@@ -83,7 +83,9 @@ function NetworkMgr:scheduleConnectivityCheck(callback, widget)
 end
 
 function NetworkMgr:init()
+    Device:initNetworkManager(self)
     self.interface = self:getNetworkInterfaceName()
+
     self:queryNetworkState()
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
     if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
@@ -99,6 +101,8 @@ function NetworkMgr:init()
             UIManager:scheduleIn(2, UIManager.broadcastEvent, UIManager, Event:new("NetworkConnected"))
         end
     end
+
+    return self
 end
 
 -- Following methods are Device specific which need to be initialized in
@@ -839,8 +843,4 @@ if G_defaults:readSetting("NETWORK_PROXY") then
     NetworkMgr:setHTTPProxy(G_defaults:readSetting("NETWORK_PROXY"))
 end
 
-
-Device:initNetworkManager(NetworkMgr)
-NetworkMgr:init()
-
-return NetworkMgr
+return NetworkMgr:init()
