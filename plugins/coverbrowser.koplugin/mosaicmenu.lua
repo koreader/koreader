@@ -780,10 +780,10 @@ function MosaicMenuItem:paintTo(bb, x, y)
 
     if self.status ~= "complete" and BookInfoManager:getSetting("show_progress_in_mosaic") and self.percent_finished then
         local cover_item = self[1][1][1]
-        progress_widget.width = cover_item.width - corner_mark_size + 2
+        progress_widget.width = cover_item.width - corner_mark_size + Screen:scaleBySize(0.5)
         local pos_x
         if BD.mirroredUILayout() then
-            pos_x = x + math.floor((self.width - cover_item.width) / 2) + corner_mark_size - 2
+            pos_x = x + math.floor((self.width - cover_item.width) / 2) + corner_mark_size - Screen:scaleBySize(0.5)
         else
             pos_x = x + math.floor((self.width - cover_item.width) / 2)
         end
