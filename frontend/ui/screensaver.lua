@@ -192,15 +192,16 @@ function Screensaver:expandSpecial(message, fallback)
         end
     elseif DocSettings:hasSidecarFile(lastfile) then
         -- If there's no ReaderUI instance, but the file has sidecar data, use that
-        local docinfo = DocSettings:open(lastfile)
-        totalpages = docinfo.data.doc_pages or totalpages
-        percent = docinfo.data.percent_finished or percent
+        local doc_settings = DocSettings:open(lastfile)
+        totalpages = doc_settings:readSetting("doc_pages") or totalpages
+        percent = doc_settings:readSetting("percent_finished") or percent
         currentpage = Math.round(percent * totalpages)
         percent = Math.round(percent * 100)
-        if docinfo.data.doc_props then
-            title = docinfo.data.doc_props.title and docinfo.data.doc_props.title ~= "" and docinfo.data.doc_props.title or title
-            authors = docinfo.data.doc_props.authors and docinfo.data.doc_props.authors ~= "" and docinfo.data.doc_props.authors or authors
-            series = docinfo.data.doc_props.series and docinfo.data.doc_props.series ~= "" and docinfo.data.doc_props.series or series
+        local doc_props = doc_settings:readSetting("doc_props")
+        if doc_props then
+            title = doc_props.title and doc_props.title ~= "" and doc_props.title or title
+            authors = doc_props.authors and doc_props.authors ~= "" and doc_props.authors or authors
+            series = doc_props.series and doc_props.series ~= "" and doc_props.series or series
         end
         -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
     end
