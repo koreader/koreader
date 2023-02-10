@@ -197,7 +197,7 @@ function NetworkMgr:ifHasAnAddress()
                     logger.err("getnameinfo:", ffi.string(C.gai_strerror(s)))
                     ok = false
                 else
-                    logger.dbg("NetworkMgr: Network interface", net_if, "was assigned IP address", ffi.string(host))
+                    logger.dbg("NetworkMgr: interface", net_if, "is up @", ffi.string(host))
                     ok = true
                 end
                 -- Regardless of failure, we only check a single if, so we're done
