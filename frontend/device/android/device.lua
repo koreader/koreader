@@ -394,7 +394,7 @@ function Device:_toggleStatusBarVisibility()
         0, statusbar_height, width, new_height))
 
     self.screen:setViewport(viewport)
-    if is_fullscreen and self.viewport then
+    if is_fullscreen and self.viewport and self.viewport.y ~= 0 then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchTranslate,
             {x = 0 - self.viewport.x, y = 0 - self.viewport.y}
