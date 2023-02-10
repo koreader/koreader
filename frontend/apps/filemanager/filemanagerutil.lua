@@ -113,7 +113,7 @@ function filemanagerutil.setStatus(file, status)
 end
 
 -- Generate all book status file dialog buttons in a row
-function filemanagerutil.getStatusButtonsRow(file, caller_callback)
+function filemanagerutil.genStatusButtonsRow(file, caller_callback)
     local status = filemanagerutil.getStatus(file)
     local function genStatusButton(to_status)
         local status_text = {
