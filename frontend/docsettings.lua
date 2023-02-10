@@ -225,7 +225,9 @@ function DocSettings:flush()
 
     local s_out = dump(self.data, nil, true)
     for _, s in ipairs(serials) do
-        util.makePath(s[1])
+        if lfs.attributes(s[1], "mode") ~= "directory" then
+            os.execute("mkdir -p " .. "'" .. s[1] .. "'")
+        end
         local sidecar_file = s[2]
         local directory_updated = false
         if lfs.attributes(sidecar_file, "mode") == "file" then
