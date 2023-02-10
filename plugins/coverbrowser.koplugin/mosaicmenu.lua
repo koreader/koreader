@@ -920,12 +920,12 @@ function MosaicMenu:_recalculateDimen()
             height = corner_mark_size,
         }
         abandoned_mark = IconWidget:new{
-            icon = BD.mirroredUILayout() and "dogear.onhold.rtl" or "dogear.onhold",
+            icon = BD.mirroredUILayout() and "dogear.abandoned.rtl" or "dogear.abandoned",
             width = corner_mark_size,
             height = corner_mark_size,
         }
         complete_mark = IconWidget:new{
-            icon = BD.mirroredUILayout() and "dogear.read.rtl" or "dogear.read",
+            icon = BD.mirroredUILayout() and "dogear.complete.rtl" or "dogear.complete",
             alpha = true,
             width = corner_mark_size,
             height = corner_mark_size,
