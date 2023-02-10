@@ -1,5 +1,5 @@
 describe("docsettings module", function()
-    local DataStorage, docsettings, docsettings_dir, ffiutil, lfs
+    local DataStorage, docsettings, docsettings_dir -- , ffiutil, lfs
 
     setup(function()
         require("commonrequire")
