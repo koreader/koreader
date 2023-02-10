@@ -43,6 +43,16 @@ local nb_drawings_since_last_collectgarbage = 0
 -- in the real Menu class or instance
 local CoverMenu = {}
 
+function CoverMenu:updateCache(file, status)
+    if self.cover_info_cache and self.cover_info_cache[file] then
+        if status then
+            self.cover_info_cache[file][3] = status
+        else
+            self.cover_info_cache[file] = nil
+        end
+    end
+end
+
 function CoverMenu:updateItems(select_number)
     -- As done in Menu:updateItems()
     local old_dimen = self.dimen and self.dimen:copy()
@@ -310,9 +320,7 @@ function CoverMenu:updateItems(select_number)
                         enabled = bookinfo and true or false,
                         callback = function()
                             -- Wipe the cache
-                            if self.cover_info_cache and self.cover_info_cache[file] then
-                                self.cover_info_cache[file] = nil
-                            end
+                            self:updateCache(file)
                             BookInfoManager:deleteBookInfo(file)
                             UIManager:close(self.file_dialog)
                             self:updateItems()
@@ -334,9 +342,7 @@ function CoverMenu:updateItems(select_number)
                 local orig_purge_callback = button.callback
                 button.callback = function()
                     -- Wipe the cache
-                    if self.cover_info_cache and self.cover_info_cache[file] then
-                        self.cover_info_cache[file] = nil
-                    end
+                    self:updateCache(file)
                     -- And then purge the sidecar folder as expected
                     orig_purge_callback()
                 end
@@ -347,9 +353,7 @@ function CoverMenu:updateItems(select_number)
                     local orig_status_callback = button.callback
                     button.callback = function()
                         -- Update the cache
-                        if self.cover_info_cache and self.cover_info_cache[file] then
-                            self.cover_info_cache[file][3] = status
-                        end
+                        self:updateCache(file, status)
                         -- And then set the status on file as expected
                         orig_status_callback()
                     end
@@ -469,9 +473,7 @@ function CoverMenu:onHistoryMenuHold(item)
             enabled = bookinfo and true or false,
             callback = function()
                 -- Wipe the cache
-                if self.cover_info_cache and self.cover_info_cache[file] then
-                    self.cover_info_cache[file] = nil
-                end
+                self:updateCache(file)
                 BookInfoManager:deleteBookInfo(file)
                 UIManager:close(self.histfile_dialog)
                 self:updateItems()
@@ -493,9 +495,7 @@ function CoverMenu:onHistoryMenuHold(item)
     local orig_purge_callback = button.callback
     button.callback = function()
         -- Wipe the cache
-        if self.cover_info_cache and self.cover_info_cache[file] then
-            self.cover_info_cache[file] = nil
-        end
+        self:updateCache(file)
         -- And then purge the sidecar folder as expected
         orig_purge_callback()
     end
@@ -507,9 +507,7 @@ function CoverMenu:onHistoryMenuHold(item)
             local orig_status_callback = button.callback
             button.callback = function()
                 -- Update the cache
-                if self.cover_info_cache and self.cover_info_cache[file] then
-                    self.cover_info_cache[file][3] = status
-                end
+                self:updateCache(file, status)
                 -- And then set the status on file as expected
                 orig_status_callback()
             end
@@ -622,9 +620,7 @@ function CoverMenu:onCollectionsMenuHold(item)
             enabled = bookinfo and true or false,
             callback = function()
                 -- Wipe the cache
-                if self.cover_info_cache and self.cover_info_cache[file] then
-                    self.cover_info_cache[file] = nil
-                end
+                self:updateCache(file)
                 BookInfoManager:deleteBookInfo(file)
                 UIManager:close(self.collfile_dialog)
                 self:updateItems()
@@ -646,9 +642,7 @@ function CoverMenu:onCollectionsMenuHold(item)
     local orig_purge_callback = button.callback
     button.callback = function()
         -- Wipe the cache
-        if self.cover_info_cache and self.cover_info_cache[file] then
-            self.cover_info_cache[file] = nil
-        end
+        self:updateCache(file)
         -- And then purge the sidecar folder as expected
         orig_purge_callback()
     end
@@ -659,9 +653,7 @@ function CoverMenu:onCollectionsMenuHold(item)
         local orig_status_callback = button.callback
         button.callback = function()
             -- Update the cache
-            if self.cover_info_cache and self.cover_info_cache[file] then
-                self.cover_info_cache[file][3] = status
-            end
+            self:updateCache(file, status)
             -- And then set the status on file as expected
             orig_status_callback()
         end
