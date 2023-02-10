@@ -140,7 +140,7 @@ function FileManagerHistory:onMenuHold(item)
         },
     }
     if not item.dim then
-        table.insert(buttons, 1, filemanagerutil.getStatusButtonsRow(item.file, status_button_callback))
+        table.insert(buttons, 1, filemanagerutil.genStatusButtonsRow(item.file, status_button_callback))
         table.insert(buttons, 2, {})
     end
     self.histfile_dialog = ButtonDialogTitle:new{

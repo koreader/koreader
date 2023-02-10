@@ -343,7 +343,7 @@ function FileManager:setupLayout()
                 self:refreshPath()
                 UIManager:close(self.file_dialog)
             end
-            table.insert(buttons, filemanagerutil.getStatusButtonsRow(file, status_button_callback))
+            table.insert(buttons, filemanagerutil.genStatusButtonsRow(file, status_button_callback))
             table.insert(buttons, {}) -- separator
             table.insert(buttons, {
                 filemanagerutil.genResetSettingsButton(file, nil, status_button_callback),
