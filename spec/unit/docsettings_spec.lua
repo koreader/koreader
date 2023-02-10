@@ -5,8 +5,8 @@ describe("docsettings module", function()
         require("commonrequire")
         DataStorage = require("datastorage")
         docsettings = require("docsettings")
-        ffiutil = require("ffi/util")
-        lfs = require("libs/libkoreader-lfs")
+--        ffiutil = require("ffi/util")
+--        lfs = require("libs/libkoreader-lfs")
 
         docsettings_dir = DataStorage:getDocSettingsDir()
     end)
@@ -58,11 +58,11 @@ describe("docsettings module", function()
         d:close()
         -- Now the sidecar file should be written.
 
-        local legacy_files = {
+--        local legacy_files = {
 --            docsettings:getHistoryPath(file),
-            d.doc_sidecar_dir .. "/file.pdf.lua",
-            "/books/file.pdf.kpdfview.lua",
-        }
+--            d.doc_sidecar_dir .. "/file.pdf.lua",
+--            "/books/file.pdf.kpdfview.lua",
+--        }
 
 --        for _, f in ipairs(legacy_files) do
 --            assert.False(os.rename(d.doc_sidecar_file, f) == nil)
