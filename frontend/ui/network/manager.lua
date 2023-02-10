@@ -227,24 +227,24 @@ end
 
 int main(int argc, char *argv[]) {
     // Querying IPv6 would require a different in6_ifreq struct and more hoop-jumping...
-	struct ifreq ifr;
-	struct sockaddr_in sai;
-	strncpy(ifr.ifr_name, *++argv, IFNAMSIZ);
+    struct ifreq ifr;
+    struct sockaddr_in sai;
+    strncpy(ifr.ifr_name, *++argv, IFNAMSIZ);
 
-	int fd = socket(PF_INET, SOCK_DGRAM, 0);
-	ioctl(fd, SIOCGIFADDR, &ifr);
-	close(fd);
+    int fd = socket(PF_INET, SOCK_DGRAM, 0);
+    ioctl(fd, SIOCGIFADDR, &ifr);
+    close(fd);
 
-	/*
-	// inet_ntoa is deprecated
-	memcpy(&sai, &ifr.ifr_addr, sizeof(sai));
-	printf("ifr.ifr_addr: %s\n", inet_ntoa(sai.sin_addr));
-	*/
-	char host[NI_MAXHOST];
-	int s = getnameinfo(&ifr.ifr_addr, sizeof(struct sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-	printf("ifr.ifr_addr: %s\n", host);
+    /*
+    // inet_ntoa is deprecated
+    memcpy(&sai, &ifr.ifr_addr, sizeof(sai));
+    printf("ifr.ifr_addr: %s\n", inet_ntoa(sai.sin_addr));
+    */
+    char host[NI_MAXHOST];
+    int s = getnameinfo(&ifr.ifr_addr, sizeof(struct sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+    printf("ifr.ifr_addr: %s\n", host);
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 --]]
 
