@@ -21,6 +21,7 @@ require("ffi/posix_h")
 local NetworkMgr = {
     is_wifi_on = false,
     is_connected = false,
+    interface = nil,
 }
 
 function NetworkMgr:readNWSettings()
@@ -82,6 +83,7 @@ function NetworkMgr:scheduleConnectivityCheck(callback, widget)
 end
 
 function NetworkMgr:init()
+    self.interface = self:getNetworkInterfaceName()
     self:queryNetworkState()
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
     if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
@@ -121,16 +123,14 @@ function NetworkMgr:restoreWifiAsync() end
 -- Helper functions for devices that use sysfs entries to check connectivity.
 function NetworkMgr:sysfsWifiOn()
     -- Network interface directory only exists as long as the Wi-Fi module is loaded
-    local net_if = self:getNetworkInterfaceName()
-    return util.pathExists("/sys/class/net/".. net_if)
+    return util.pathExists("/sys/class/net/".. self.interface)
 end
 
 function NetworkMgr:sysfsCarrierConnected()
     -- Read carrier state from sysfs.
     -- NOTE: We can afford to use CLOEXEC, as devices too old for it don't support Wi-Fi anyway ;)
     local out
-    local net_if = self:getNetworkInterfaceName()
-    local file = io.open("/sys/class/net/" .. net_if .. "/carrier", "re")
+    local file = io.open("/sys/class/net/" .. self.interface .. "/carrier", "re")
 
     -- File only exists while the Wi-Fi module is loaded, but may fail to read until the interface is brought up.
     if file then
@@ -148,8 +148,7 @@ function NetworkMgr:sysfsInterfaceOperational()
     -- Reads the interface's RFC2863 operational state from sysfs, and wait for it to be up
     -- (For Wi-Fi, that means associated & successfully authenticated)
     local out
-    local net_if = self:getNetworkInterfaceName()
-    local file = io.open("/sys/class/net/" .. net_if .. "/operstate", "re")
+    local file = io.open("/sys/class/net/" .. self.interface .. "/operstate", "re")
 
     -- Possible values: "unknown", "notpresent", "down", "lowerlayerdown", "testing", "dormant", "up"
     -- (c.f., Linux's <Documentation/ABI/testing/sysfs-class-net>)
@@ -181,11 +180,10 @@ function NetworkMgr:ifHasAnAddress()
         return false
     end
 
-    local net_if = self:getNetworkInterfaceName()
     local ok
     local ifa = ifaddr[0]
     while ifa ~= nil do
-        if ifa.ifa_addr ~= nil and C.strcmp(ifa.ifa_name, net_if) == 0 then
+        if ifa.ifa_addr ~= nil and C.strcmp(ifa.ifa_name, self.interface) == 0 then
             local family = ifa.ifa_addr.sa_family
             if family == C.AF_INET or family == C.AF_INET6 then
                 local host = ffi.new("char[?]", C.NI_MAXHOST)
@@ -198,7 +196,7 @@ function NetworkMgr:ifHasAnAddress()
                     logger.err("NetworkMgr: getnameinfo:", ffi.string(C.gai_strerror(s)))
                     ok = false
                 else
-                    logger.dbg("NetworkMgr: interface", net_if, "is up @", ffi.string(host))
+                    logger.dbg("NetworkMgr: interface", self.interface, "is up @", ffi.string(host))
                     ok = true
                 end
                 -- Regardless of failure, we only check a single if, so we're done

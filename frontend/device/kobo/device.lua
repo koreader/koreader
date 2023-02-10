@@ -850,6 +850,8 @@ function Kobo:initNetworkManager(NetworkMgr)
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
     NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
+    -- Usually handled in NetworkMgr:init, but we'll need it *now*
+    NetworkMgr.interface = net_if
 
     -- Kill Wi-Fi if NetworkMgr:isWifiOn() and NOT NetworkMgr:isConnected()
     -- (i.e., if the launcher left the Wi-Fi in an inconsistent state: modules loaded, but no route to gateway).
