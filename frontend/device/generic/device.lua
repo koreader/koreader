@@ -203,10 +203,12 @@ function Device:init()
     if self.viewport then
         logger.dbg("setting a viewport:", self.viewport)
         self.screen:setViewport(self.viewport)
-        self.input:registerEventAdjustHook(
-            self.input.adjustTouchTranslate,
-            {x = 0 - self.viewport.x, y = 0 - self.viewport.y}
-        )
+        if self.viewport.x ~= 0 or self.viewport.y ~= 0 then
+            self.input:registerEventAdjustHook(
+                self.input.adjustTouchTranslate,
+                {x = 0 - self.viewport.x, y = 0 - self.viewport.y}
+            )
+        end
     end
 
     -- Handle button mappings shenanigans
