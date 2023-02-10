@@ -45,8 +45,8 @@ local BookInfoManager = require("bookinfomanager")
 local corner_mark_size = -1
 local corner_mark
 local reading_mark
-local onhold_mark
-local read_mark
+local abandoned_mark
+local complete_mark
 local progress_widget
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
@@ -769,9 +769,9 @@ function MosaicMenuItem:paintTo(bb, x, y)
         local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
         -- math.ceil() makes it looks better than math.floor()
         if self.status == "abandoned" then
-            corner_mark = onhold_mark
+            corner_mark = abandoned_mark
         elseif self.status == "complete" then
-            corner_mark = read_mark
+            corner_mark = complete_mark
         else
             corner_mark = reading_mark
         end
@@ -910,8 +910,8 @@ function MosaicMenu:_recalculateDimen()
         corner_mark_size = mark_size
         if corner_mark then
             reading_mark:free()
-            onhold_mark:free()
-            read_mark:free()
+            abandoned_mark:free()
+            complete_mark:free()
         end
         reading_mark = IconWidget:new{
             icon = "dogear.reading",
@@ -919,12 +919,12 @@ function MosaicMenu:_recalculateDimen()
             width = corner_mark_size,
             height = corner_mark_size,
         }
-        onhold_mark = IconWidget:new{
+        abandoned_mark = IconWidget:new{
             icon = BD.mirroredUILayout() and "dogear.onhold.rtl" or "dogear.onhold",
             width = corner_mark_size,
             height = corner_mark_size,
         }
-        read_mark = IconWidget:new{
+        complete_mark = IconWidget:new{
             icon = BD.mirroredUILayout() and "dogear.read.rtl" or "dogear.read",
             alpha = true,
             width = corner_mark_size,
