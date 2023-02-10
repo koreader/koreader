@@ -49,39 +49,19 @@ describe("docsettings module", function()
                       docsettings:getSidecarFile("baz.epub"))
     end)
 
-    it("should read legacy history file", function()
+    it("open", function()
         G_reader_settings:delSetting("document_metadata_folder")
         local file = "/books/file.pdf"
         local d = docsettings:open(file)
-        d:saveSetting("a", "b")
-        d:saveSetting("c", "d")
-        d:close()
-        -- Now the sidecar file should be written.
+        assert.Equals(d:readSetting("e"), nil)
+    end)
 
---        local legacy_files = {
---            docsettings:getHistoryPath(file),
---            d.doc_sidecar_dir .. "/file.pdf.lua",
---            "/books/file.pdf.kpdfview.lua",
---        }
-
---        for _, f in ipairs(legacy_files) do
---            assert.False(os.rename(d.doc_sidecar_file, f) == nil)
-            d = docsettings:open(file)
---            assert.True(os.remove(d.doc_sidecar_file) == nil)
-            -- Legacy history files should not be removed before flush has been
-            -- called.
---            assert.Equals(lfs.attributes(f, "mode"), "file")
---            assert.Equals(d:readSetting("a"), "b")
---            assert.Equals(d:readSetting("c"), "d")
-            assert.Equals(d:readSetting("e"), nil)
-            d:close()
-            -- legacy history files should be removed as sidecar_file is
-            -- preferred.
---            assert.True(os.remove(f) == nil)
---        end
-
---        assert.False(os.remove(d.doc_sidecar_file) == nil)
---        d:purge()
+    it("open close", function()
+        G_reader_settings:delSetting("document_metadata_folder")
+        local file = "/books/file.pdf"
+        local d = docsettings:open(file)
+        assert.Equals(d:readSetting("e"), nil)
+        d:flush()
     end)
 
 end)
