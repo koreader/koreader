@@ -168,6 +168,7 @@ end
 function NetworkMgr:ifHasAnAddress()
     -- If the interface isn't operationally up, no need to go any further
     if not self:sysfsInterfaceOperational() then
+        logger.dbg("NetworkMgr: interface is not operational yet")
         return false
     end
 
@@ -176,7 +177,7 @@ function NetworkMgr:ifHasAnAddress()
     local ifaddr = ffi.new("struct ifaddrs *[1]")
     if C.getifaddrs(ifaddr) == -1 then
         local errno = ffi.errno()
-        logger.err("getifaddrs:", ffi.string(C.strerror(errno)))
+        logger.err("NetworkMgr: getifaddrs:", ffi.string(C.strerror(errno)))
         return false
     end
 
@@ -194,7 +195,7 @@ function NetworkMgr:ifHasAnAddress()
                                         nil, 0,
                                         C.NI_NUMERICHOST)
                 if s ~= 0 then
-                    logger.err("getnameinfo:", ffi.string(C.gai_strerror(s)))
+                    logger.err("NetworkMgr: getnameinfo:", ffi.string(C.gai_strerror(s)))
                     ok = false
                 else
                     logger.dbg("NetworkMgr: interface", net_if, "is up @", ffi.string(host))
