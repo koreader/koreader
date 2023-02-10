@@ -195,7 +195,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
-    NetworkMgr.isConnected = NetworkMgr.sysfsCarrierConnected
+    NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
 end
 
 function Remarkable:setDateTime(year, month, day, hour, min, sec)

@@ -829,10 +829,7 @@ function Kobo:initNetworkManager(NetworkMgr)
         self:reconnectOrShowNetworkMenu(complete_callback)
     end
 
-    local net_if = os.getenv("INTERFACE")
-    if not net_if then
-        net_if = "eth0"
-    end
+    local net_if = os.getenv("INTERFACE") or "eth0"
     function NetworkMgr:getNetworkInterfaceName()
         return net_if
     end
@@ -852,7 +849,16 @@ function Kobo:initNetworkManager(NetworkMgr)
     end
 
     NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
-    NetworkMgr.isConnected = NetworkMgr.sysfsCarrierConnected
+    NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
+    -- Usually handled in NetworkMgr:init, but we'll need it *now*
+    NetworkMgr.interface = net_if
+
+    -- Kill Wi-Fi if NetworkMgr:isWifiOn() and NOT NetworkMgr:isConnected()
+    -- (i.e., if the launcher left the Wi-Fi in an inconsistent state: modules loaded, but no route to gateway).
+    if NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
+        logger.info("Kobo Wi-Fi: Left in an inconsistent state by launcher!")
+        NetworkMgr:turnOffWifi()
+    end
 end
 
 function Kobo:setTouchEventHandler()
