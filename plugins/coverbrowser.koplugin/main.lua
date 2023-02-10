@@ -527,6 +527,7 @@ function CoverBrowser:setupFileManagerDisplayMode(display_mode)
     -- In both mosaic and list modes, replace original methods with those from
     -- our generic CoverMenu
     local CoverMenu = require("covermenu")
+    FileChooser.updateCache = CoverMenu.updateCache
     FileChooser.updateItems = CoverMenu.updateItems
     FileChooser.onCloseWidget = CoverMenu.onCloseWidget
 
@@ -592,6 +593,7 @@ local function _FileManagerHistory_updateItemTable(self)
         -- In both mosaic and list modes, replace original methods with those from
         -- our generic CoverMenu
         local CoverMenu = require("covermenu")
+        hist_menu.updateCache = CoverMenu.updateCache
         hist_menu.updateItems = CoverMenu.updateItems
         hist_menu.onCloseWidget = CoverMenu.onCloseWidget
         -- Also replace original onMenuHold (it will use original method, so remember it)
@@ -670,6 +672,7 @@ local function _FileManagerCollections_updateItemTable(self)
         -- In both mosaic and list modes, replace original methods with those from
         -- our generic CoverMenu
         local CoverMenu = require("covermenu")
+        coll_menu.updateCache = CoverMenu.updateCache
         coll_menu.updateItems = CoverMenu.updateItems
         coll_menu.onCloseWidget = CoverMenu.onCloseWidget
         -- Also replace original onMenuHold (it will use original method, so remember it)
