@@ -64,12 +64,11 @@ local function buildCandidates(list)
 end
 
 --- Returns path to sidecar directory (`filename.sdr`).
---
 -- Sidecar directory is the file without _last_ suffix.
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 -- @treturn string path to the sidecar directory (e.g., `/foo/bar.sdr`)
 function DocSettings:getSidecarDir(doc_path, force_location)
-    if doc_path == nil or doc_path == '' then return '' end
+    if doc_path == nil or doc_path == "" then return "" end
     local path = doc_path:match("(.*)%.") or doc_path -- file path without the last suffix
     local location = force_location or G_reader_settings:readSetting("document_metadata_folder", "doc")
     if location == "dir" then
@@ -82,13 +81,10 @@ end
 -- @string doc_path path to the document (e.g., `/foo/bar.pdf`)
 -- @treturn string path to `/foo/bar.sdr/metadata.lua` file
 function DocSettings:getSidecarFile(doc_path, force_location)
-    if doc_path == nil or doc_path == '' then return '' end
+    if doc_path == nil or doc_path == "" then return "" end
     -- If the file does not have a suffix or we are working on a directory, we
     -- should ignore the suffix part in metadata file path.
-    local suffix = doc_path:match(".*%.(.+)")
-    if suffix == nil then
-        suffix = ''
-    end
+    local suffix = doc_path:match(".*%.(.+)") or ""
     return self:getSidecarDir(doc_path, force_location) .. "/metadata." .. suffix .. ".lua"
 end
 
@@ -101,26 +97,31 @@ function DocSettings:hasSidecarFile(doc_path)
         or lfs.attributes(self:getHistoryPath(doc_path), "mode") == "file"
 end
 
+function DocSettings:getLastSaveTime(doc_path) -- for readhistory
+    return lfs.attributes(self:getSidecarFile(doc_path, "doc"), "modification")
+        or lfs.attributes(self:getSidecarFile(doc_path, "dir"), "modification")
+end
+
 function DocSettings:getHistoryPath(doc_path)
     return HISTORY_DIR .. "/[" .. doc_path:gsub("(.*/)([^/]+)", "%1] %2"):gsub("/", "#") .. ".lua"
 end
 
 function DocSettings:getPathFromHistory(hist_name)
-    if hist_name == nil or hist_name == '' then return '' end
-    if hist_name:sub(-4) ~= ".lua" then return '' end -- ignore .lua.old backups
+    if hist_name == nil or hist_name == "" then return "" end
+    if hist_name:sub(-4) ~= ".lua" then return "" end -- ignore .lua.old backups
     -- 1. select everything included in brackets
     local s = string.match(hist_name,"%b[]")
-    if s == nil or s == '' then return '' end
+    if s == nil or s == "" then return "" end
     -- 2. crop the bracket-sign from both sides
     -- 3. and finally replace decorative signs '#' to dir-char '/'
     return string.gsub(string.sub(s, 2, -3), "#", "/")
 end
 
 function DocSettings:getNameFromHistory(hist_name)
-    if hist_name == nil or hist_name == '' then return '' end
-    if hist_name:sub(-4) ~= ".lua" then return '' end -- ignore .lua.old backups
+    if hist_name == nil or hist_name == "" then return "" end
+    if hist_name:sub(-4) ~= ".lua" then return "" end -- ignore .lua.old backups
     local s = string.match(hist_name, "%b[]")
-    if s == nil or s == '' then return '' end
+    if s == nil or s == "" then return "" end
     -- at first, search for path length
     -- and return the rest of string without 4 last characters (".lua")
     return string.sub(hist_name, string.len(s)+2, -5)
@@ -134,14 +135,6 @@ function DocSettings:getFileFromHistory(hist_name)
             return ffiutil.joinPath(path, name)
         end
     end
-end
-
-function DocSettings:getLastSaveTime(doc_path) -- for readhistory
-    local mtime = lfs.attributes(self:getSidecarFile(doc_path, "doc"), "modification")
-    if not mtime then
-        mtime = lfs.attributes(self:getSidecarFile(doc_path, "dir"), "modification")
-    end
-    return mtime
 end
 
 --- Opens a document's individual settings (font, margin, dictionary, etc.)
@@ -225,7 +218,7 @@ function DocSettings:flush()
     local s_out = dump(self.data, nil, true)
     for _, s in ipairs(serials) do
         if lfs.attributes(s[1], "mode") ~= "directory" then
-            os.execute("mkdir -p " .. "'" .. s[1] .. "'")
+            os.execute("mkdir -p '" .. s[1] .. "'")
         end
         local sidecar_file = s[2]
         local directory_updated = false
