@@ -559,6 +559,7 @@ common_settings.document_auto_save = {
             end,
         } or nil,
     },
+    separator = true,
 }
 
 common_settings.document_save = {
