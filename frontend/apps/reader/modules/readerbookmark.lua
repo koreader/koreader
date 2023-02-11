@@ -245,7 +245,8 @@ function ReaderBookmark:isBookmarkInPositionOrder(a, b)
             if compare_xp then
                 if compare_xp == 0 then -- both bookmarks with the same start
                     if a.highlighted and b.highlighted then -- both are highlights, compare ends
-                        return self.ui.document:compareXPointers(a.pos1, b.pos1) < 0
+                        compare_xp = self.ui.document:compareXPointers(a.pos1, b.pos1)
+                        return compare_xp and compare_xp < 0
                     end
                     return a.highlighted -- have page bookmarks before highlights
                 end
