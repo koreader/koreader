@@ -168,11 +168,15 @@ local CalibreSearch = WidgetContainer:extend{
     libraries = {},
     natsort_cache = {},
     last_scan = {},
-    search_options = {
+    -- These are enabled by default
+    default_search_options = {
         "cache_metadata",
         "case_insensitive",
         "find_by_title",
         "find_by_authors",
+    },
+    -- These aren't
+    extra_search_options = {
         "find_by_series",
         "find_by_tag",
         "find_by_path",
@@ -330,8 +334,11 @@ end
 
 -- find books, series, tags, authors or titles
 function CalibreSearch:find(option)
-    for _, opt in ipairs(self.search_options) do
+    for _, opt in ipairs(self.default_search_options) do
         self[opt] = G_reader_settings:nilOrTrue("calibre_search_"..opt)
+    end
+    for _, opt in ipairs(self.extra_search_options) do
+        self[opt] = G_reader_settings:isTrue("calibre_search_"..opt)
     end
 
     if #self.libraries == 0 then

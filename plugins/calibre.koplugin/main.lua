@@ -230,10 +230,10 @@ function Calibre:getSearchMenuTable()
         {
             text = _("Search by path"),
             checked_func = function()
-                return G_reader_settings:nilOrTrue("calibre_search_find_by_path")
+                return G_reader_settings:isTrue("calibre_search_find_by_path")
             end,
             callback = function()
-                G_reader_settings:flipNilOrTrue("calibre_search_find_by_path")
+                G_reader_settings:toggle("calibre_search_find_by_path")
             end,
         },
     }
