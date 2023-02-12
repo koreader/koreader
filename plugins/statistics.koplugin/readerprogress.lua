@@ -335,7 +335,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = datetime.secondsToClockDuration(user_duration_format, self.current_duration, true, true),
+                text = datetime.secondsToClockDuration(user_duration_format, self.current_duration, true),
                 face = self.medium_font_face,
             },
         },
@@ -349,7 +349,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = datetime.secondsToClockDuration(user_duration_format, self.today_duration, true, true),
+                text = datetime.secondsToClockDuration(user_duration_format, self.today_duration, true),
                 face = self.medium_font_face,
             },
         },
@@ -437,7 +437,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time), true, true),
+                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time), true),
                 face = self.medium_font_face,
             },
         },
@@ -451,7 +451,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time) * (1/7), true, true),
+                text = datetime.secondsToClockDuration(user_duration_format, math.floor(total_time) * (1/7), true),
                 face = self.medium_font_face,
             }
         }

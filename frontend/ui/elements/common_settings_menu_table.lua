@@ -7,6 +7,7 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local N_ = _.ngettext
+local C_ = _.pgettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -85,7 +86,12 @@ common_settings.time = {
         {
             text_func = function ()
                 local duration_format = G_reader_settings:readSetting("duration_format", "classic")
-                local text = duration_format == "classic" and _("Classic") or _("Modern")
+                local text = C_("Time", "Classic")
+                if duration_format == "modern" then
+                    text = C_("Time", "Modern")
+                elseif duration_format == "letters" then
+                    text = C_("Time", "Letters")
+                end
                 return T(_("Duration format: %1"), text)
             end,
             sub_item_table = {
@@ -94,7 +100,7 @@ common_settings.time = {
                         local datetime = require("datetime")
                         -- sample text shows 1:23:45
                         local duration_format_str = datetime.secondsToClockDuration("classic", 5025, false)
-                        return T(_("Classic (%1)"), duration_format_str)
+                        return T(C_("Time", "Classic (%1)"), duration_format_str)
                     end,
                     checked_func = function()
                         return G_reader_settings:readSetting("duration_format") == "classic"
@@ -107,15 +113,30 @@ common_settings.time = {
                 {
                     text_func = function()
                         local datetime = require("datetime")
-                        -- sample text shows 1h23m45s
+                        -- sample text shows 1h23'45"
                         local duration_format_str = datetime.secondsToClockDuration("modern", 5025, false)
-                        return T(_("Modern (%1)"), duration_format_str)
+                        return T(C_("Time", "Modern (%1)"), duration_format_str)
                     end,
                     checked_func = function()
                         return G_reader_settings:readSetting("duration_format") == "modern"
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("duration_format", "modern")
+                        UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
+                    end,
+                },
+                {
+                    text_func = function()
+                        local datetime = require("datetime")
+                        -- sample text shows 1h23m45s
+                        local duration_format_str = datetime.secondsToClockDuration("letters", 5025, false)
+                        return T(C_("Time", "Letters (%1)"), duration_format_str)
+                    end,
+                    checked_func = function()
+                        return G_reader_settings:readSetting("duration_format") == "letters"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("duration_format", "letters")
                         UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
                     end,
                 },

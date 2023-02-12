@@ -485,15 +485,15 @@ function AutoSuspend:pickTimeoutValue(touchmenu_instance, title, info, setting,
                 self:_start()
             end
             if touchmenu_instance then touchmenu_instance:updateItems() end
-            local time_string = datetime.secondsToClockDuration("modern", self[setting],
-                time_scale == 2 or time_scale == 1, true, true)
+            local time_string = datetime.secondsToClockDuration("letters", self[setting],
+                time_scale == 2 or time_scale == 1, true)
             UIManager:show(InfoMessage:new{
                 text = T(_("%1: %2"), title, time_string),
                 timeout = 3,
             })
         end,
-        default_value = datetime.secondsToClockDuration("modern", default_value,
-            time_scale == 2 or time_scale == 1, true, true),
+        default_value = datetime.secondsToClockDuration("letters", default_value,
+            time_scale == 2 or time_scale == 1, true),
         default_callback = function()
             local day, hour, min, sec -- luacheck: ignore 431
             if time_scale == 2 then
@@ -539,8 +539,8 @@ function AutoSuspend:addToMainMenu(menu_items)
         end,
         text_func = function()
             if self.auto_suspend_timeout_seconds and self.auto_suspend_timeout_seconds > 0 then
-                local time_string = datetime.secondsToClockDuration("modern",
-                    self.auto_suspend_timeout_seconds, true, true, true)
+                local time_string = datetime.secondsToClockDuration("letters",
+                    self.auto_suspend_timeout_seconds, true, true)
                 return T(_("Autosuspend timeout: %1"), time_string)
             else
                 return _("Autosuspend timeout")
@@ -565,8 +565,8 @@ function AutoSuspend:addToMainMenu(menu_items)
             end,
             text_func = function()
                 if self.autoshutdown_timeout_seconds and self.autoshutdown_timeout_seconds > 0 then
-                    local time_string = datetime.secondsToClockDuration("modern", self.autoshutdown_timeout_seconds,
-                        true, true, true)
+                    local time_string = datetime.secondsToClockDuration("letters", self.autoshutdown_timeout_seconds,
+                        true, true)
                     return T(_("Autoshutdown timeout: %1"), time_string)
                 else
                     return _("Autoshutdown timeout")
@@ -604,8 +604,8 @@ Upon user input, the device needs a certain amount of time to wake up. Generally
             end,
             text_func = function()
                 if self.auto_standby_timeout_seconds and self.auto_standby_timeout_seconds > 0 then
-                    local time_string = datetime.secondsToClockDuration("modern", self.auto_standby_timeout_seconds,
-                        false, true, true, true)
+                    local time_string = datetime.secondsToClockDuration("letters", self.auto_standby_timeout_seconds,
+                        false, true, true)
                     return T(_("Autostandby timeout: %1"), time_string)
                 else
                     return _("Autostandby timeout")
