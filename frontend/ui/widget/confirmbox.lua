@@ -185,7 +185,7 @@ end
 
 function ConfirmBox:onShow()
     UIManager:setDirty(self, function()
-        return "ui", self[1][1].dimen
+        return "ui", self.movable.dimen
     end)
     if self.flush_events_on_show then
         -- Discard queued and upcoming input events to avoid accidental dismissal
@@ -195,7 +195,7 @@ end
 
 function ConfirmBox:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "ui", self[1][1].dimen
+        return "ui", self.movable.dimen
     end)
 end
 
@@ -207,7 +207,7 @@ function ConfirmBox:onClose()
 end
 
 function ConfirmBox:onTapClose(arg, ges)
-    if ges.pos:notIntersectWith(self[1][1].dimen) then
+    if ges.pos:notIntersectWith(self.movable.dimen) then
         self:onClose()
     end
     -- Don't let it propagate to underlying widgets

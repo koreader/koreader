@@ -712,10 +712,6 @@ function DictQuickLookup:init()
 
     -- We're a new window
     table.insert(DictQuickLookup.window_list, self)
-
-    UIManager:setDirty(self, function()
-        return "partial", self.dict_frame.dimen
-    end)
 end
 
 -- Whether currently DictQuickLookup is working without a document.

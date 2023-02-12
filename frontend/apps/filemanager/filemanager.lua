@@ -335,27 +335,18 @@ function FileManager:setupLayout()
                     end,
                 }
             )
+            table.insert(buttons, {}) -- separator
         end
 
         if is_file then
+            local function status_button_callback()
+                self:refreshPath()
+                UIManager:close(self.file_dialog)
+            end
+            table.insert(buttons, filemanagerutil.genStatusButtonsRow(file, status_button_callback))
+            table.insert(buttons, {}) -- separator
             table.insert(buttons, {
-                {
-                    text = _("Reset settings"),
-                    id = "reset_settings", -- used by covermenu
-                    enabled = is_file and DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
-                    callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(file)),
-                            ok_text = _("Reset"),
-                            ok_callback = function()
-                                filemanagerutil.purgeSettings(file)
-                                require("readhistory"):fileSettingsPurged(file)
-                                self:refreshPath()
-                                UIManager:close(self.file_dialog)
-                            end,
-                        })
-                    end,
-                },
+                filemanagerutil.genResetSettingsButton(file, nil, status_button_callback),
                 {
                     text_func = function()
                         if ReadCollection:checkItemExist(file) then

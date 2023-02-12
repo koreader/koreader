@@ -8,6 +8,7 @@ local ReadCollection = require("readcollection")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = require("device").screen
+local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local BaseUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
@@ -41,11 +42,30 @@ function FileManagerCollection:updateItemTable()
 end
 
 function FileManagerCollection:onMenuHold(item)
+    local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
+    local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.collfile_dialog = nil
+    local function status_button_callback()
+        self._manager:updateItemTable()
+        UIManager:close(self.collfile_dialog)
+    end
     local buttons = {
+        filemanagerutil.genStatusButtonsRow(item.file, status_button_callback),
+        {},
+        {
+            filemanagerutil.genResetSettingsButton(item.file, currently_opened_file, status_button_callback),
+            {
+                text = _("Remove from collection"),
+                callback = function()
+                    ReadCollection:removeItem(item.file, self._manager.coll_menu.collection)
+                    self._manager:updateItemTable()
+                    UIManager:close(self.collfile_dialog)
+                end,
+            },
+        },
         {
             {
-                text = _("Sort"),
+                text = _("Sort collection"),
                 callback = function()
                     UIManager:close(self.collfile_dialog)
                     local item_table = {}
@@ -70,21 +90,11 @@ function FileManagerCollection:onMenuHold(item)
                         end
                     }
                     UIManager:show(sort_item)
-
                 end,
             },
-            {
-                text = _("Remove from collection"),
-                callback = function()
-                    ReadCollection:removeItem(item.file, self._manager.coll_menu.collection)
-                    self._manager:updateItemTable()
-                    UIManager:close(self.collfile_dialog)
-                end,
-            },
-        },
-        {
             {
                 text = _("Book information"),
+                id = "book_information", -- used by covermenu
                 enabled = FileManagerBookInfo:isSupported(item.file),
                 callback = function()
                     FileManagerBookInfo:show(item.file)

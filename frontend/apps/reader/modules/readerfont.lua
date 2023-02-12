@@ -430,14 +430,14 @@ end
 
 function ReaderFont:onIncreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    Notification:notify(_("Increasing font size…"), true)
+    Notification:notify(_("Increasing font size…"), nil, true)
     self:onChangeSize(delta_int)
     return true
 end
 
 function ReaderFont:onDecreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    Notification:notify(_("Decreasing font size…"), true)
+    Notification:notify(_("Decreasing font size…"), nil, true)
     self:onChangeSize(-delta_int)
     return true
 end

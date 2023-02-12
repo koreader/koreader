@@ -203,10 +203,12 @@ function Device:init()
     if self.viewport then
         logger.dbg("setting a viewport:", self.viewport)
         self.screen:setViewport(self.viewport)
-        self.input:registerEventAdjustHook(
-            self.input.adjustTouchTranslate,
-            {x = 0 - self.viewport.x, y = 0 - self.viewport.y}
-        )
+        if self.viewport.x ~= 0 or self.viewport.y ~= 0 then
+            self.input:registerEventAdjustHook(
+                self.input.adjustTouchTranslate,
+                {x = 0 - self.viewport.x, y = 0 - self.viewport.y}
+            )
+        end
     end
 
     -- Handle button mappings shenanigans
@@ -268,7 +270,7 @@ function Device:onPowerEvent(ev)
                 logger.dbg("Resuming...")
                 local UIManager = require("ui/uimanager")
                 UIManager:unschedule(self.suspend)
-                if self:hasWifiManager() and not self:isEmulator() then
+                if self:hasWifiManager() then
                     local network_manager = require("ui/network/manager")
                     if network_manager.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
                         network_manager:restoreWifiAsync()

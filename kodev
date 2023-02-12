@@ -40,7 +40,7 @@ function assert_ret_zero() {
 }
 
 function check_submodules() {
-    if git submodule status | grep -qE '^\-'; then
+    if git submodule status | grep -qE '^-'; then
         kodev-fetch-thirdparty
     fi
 }

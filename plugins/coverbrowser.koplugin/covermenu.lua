@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local DocumentRegistry = require("document/documentregistry")
-local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
 local InfoMessage = require("ui/widget/infomessage")
@@ -43,6 +42,16 @@ local nb_drawings_since_last_collectgarbage = 0
 -- Simple holder of methods that will replace those
 -- in the real Menu class or instance
 local CoverMenu = {}
+
+function CoverMenu:updateCache(file, status)
+    if self.cover_info_cache and self.cover_info_cache[file] then
+        if status then
+            self.cover_info_cache[file][3] = status
+        else
+            self.cover_info_cache[file] = nil
+        end
+    end
+end
 
 function CoverMenu:updateItems(select_number)
     -- As done in Menu:updateItems()
@@ -306,65 +315,12 @@ function CoverMenu:updateItems(select_number)
                     },
                 })
                 table.insert(orig_buttons, {
-                    { -- Mark the book as read/unread
-                        text_func = function()
-                            -- If the book has a cache entry, it means it has a sidecar file, and it *may* have the info we need.
-                            local status
-                            if self.cover_info_cache and self.cover_info_cache[file] then
-                                local _, _, c_status = unpack(self.cover_info_cache[file])
-                                status = c_status
-                            end
-                            -- NOTE: status may still be nil if the BookStatus widget was never opened in this book.
-                            --       For our purposes, we assume this means reading or on hold, which is just fine.
-                            -- NOTE: This also means we assume "on hold" means reading, meaning it'll be flipped to "finished",
-                            --       which I'm personally okay with, too.
-                            --       c.f., BookStatusWidget:generateSwitchGroup for the three possible constant values.
-                            return status == "complete" and _("Mark as reading") or _("Mark as read")
-                        end,
-                        callback = function()
-                            local status
-                            if self.cover_info_cache and self.cover_info_cache[file] then
-                                local c_pages, c_percent_finished, c_status = unpack(self.cover_info_cache[file])
-                                status = c_status == "complete" and "reading" or "complete"
-                                -- Update the cache, even if it had a nil status before
-                                self.cover_info_cache[file] = {c_pages, c_percent_finished, status}
-                            else
-                                -- We assumed earlier an empty status meant "reading", so, flip that to "complete"
-                                status = "complete"
-                            end
-
-                            -- In case the book doesn't have a sidecar file, this'll create it
-                            local docinfo = DocSettings:open(file)
-                            if docinfo.data.summary and docinfo.data.summary.status then
-                                -- Book already had the full BookStatus table in its sidecar, easy peasy!
-                                docinfo.data.summary.status = status
-                            else
-                                -- No BookStatus table, create a minimal one...
-                                if docinfo.data.summary then
-                                    -- Err, a summary table with no status entry? Should never happen...
-                                    local summary = { status = status }
-                                    -- Append the status entry to the existing summary...
-                                    util.tableMerge(docinfo.data.summary, summary)
-                                else
-                                    -- No summary table at all, create a minimal one
-                                    local summary = { status = status }
-                                    docinfo:saveSetting("summary", summary)
-                                end
-                            end
-                            docinfo:flush()
-
-                            UIManager:close(self.file_dialog)
-                            self:updateItems()
-                        end,
-                    },
                     { -- Allow a new extraction (multiple interruptions, book replaced)...
-                        text = _("Refresh book info"),
+                        text = _("Refresh cached book information"),
                         enabled = bookinfo and true or false,
                         callback = function()
                             -- Wipe the cache
-                            if self.cover_info_cache and self.cover_info_cache[file] then
-                                self.cover_info_cache[file] = nil
-                            end
+                            self:updateCache(file)
                             BookInfoManager:deleteBookInfo(file)
                             UIManager:close(self.file_dialog)
                             self:updateItems()
@@ -373,6 +329,7 @@ function CoverMenu:updateItems(select_number)
                 })
 
                 -- Create the new ButtonDialogTitle, and let UIManager show it
+                -- (all button callback fudging must be done after this block to stick)
                 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
                 self.file_dialog = ButtonDialogTitle:new{
                     title = orig_title,
@@ -381,15 +338,25 @@ function CoverMenu:updateItems(select_number)
                 }
 
                 -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
-                local button = self.file_dialog.button_table:getButtonById("reset_settings")
+                local button = self.file_dialog.button_table:getButtonById("reset")
                 local orig_purge_callback = button.callback
                 button.callback = function()
                     -- Wipe the cache
-                    if self.cover_info_cache and self.cover_info_cache[file] then
-                        self.cover_info_cache[file] = nil
-                    end
+                    self:updateCache(file)
                     -- And then purge the sidecar folder as expected
                     orig_purge_callback()
+                end
+
+                -- Fudge the status change button callbacks to also update the cover_info_cache
+                for _, status in ipairs({"reading", "abandoned", "complete"}) do
+                    button = self.file_dialog.button_table:getButtonById(status)
+                    local orig_status_callback = button.callback
+                    button.callback = function()
+                        -- Update the cache
+                        self:updateCache(file, status)
+                        -- And then set the status on file as expected
+                        orig_status_callback()
+                    end
                 end
 
                 -- Replace the "Book information" button callback to use directly our bookinfo
@@ -432,12 +399,6 @@ function CoverMenu:onHistoryMenuHold(item)
     -- on screen, so we won't see it)
     UIManager:close(self.histfile_dialog)
     UIManager:clearRenderStack()
-
-    -- Replace Book information callback to use directly our bookinfo
-    orig_buttons[2][2].callback = function()
-        FileManagerBookInfo:show(file, bookinfo)
-        UIManager:close(self.histfile_dialog)
-    end
 
     -- Add some new buttons to original buttons set
     table.insert(orig_buttons, {
@@ -511,6 +472,8 @@ function CoverMenu:onHistoryMenuHold(item)
             text = _("Refresh cached book information"),
             enabled = bookinfo and true or false,
             callback = function()
+                -- Wipe the cache
+                self:updateCache(file)
                 BookInfoManager:deleteBookInfo(file)
                 UIManager:close(self.histfile_dialog)
                 self:updateItems()
@@ -519,12 +482,44 @@ function CoverMenu:onHistoryMenuHold(item)
     })
 
     -- Create the new ButtonDialog, and let UIManager show it
+    -- (all button callback replacement must be done after this block to stick)
     local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
     self.histfile_dialog = ButtonDialogTitle:new{
         title = orig_title,
         title_align = orig_title_align,
         buttons = orig_buttons,
     }
+
+    -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
+    local button = self.histfile_dialog.button_table:getButtonById("reset")
+    local orig_purge_callback = button.callback
+    button.callback = function()
+        -- Wipe the cache
+        self:updateCache(file)
+        -- And then purge the sidecar folder as expected
+        orig_purge_callback()
+    end
+
+    -- Fudge the status change button callbacks to also update the cover_info_cache
+    for _, status in ipairs({"reading", "abandoned", "complete"}) do
+        button = self.histfile_dialog.button_table:getButtonById(status)
+        if button then
+            local orig_status_callback = button.callback
+            button.callback = function()
+                -- Update the cache
+                self:updateCache(file, status)
+                -- And then set the status on file as expected
+                orig_status_callback()
+            end
+        end
+    end
+
+    -- Replace Book information callback to use directly our bookinfo
+    self.histfile_dialog.button_table:getButtonById("book_information").callback = function()
+        FileManagerBookInfo:show(file, bookinfo)
+        UIManager:close(self.histfile_dialog)
+    end
+
     UIManager:show(self.histfile_dialog)
     return true
 end
@@ -551,12 +546,6 @@ function CoverMenu:onCollectionsMenuHold(item)
     -- on screen, so we won't see it)
     UIManager:close(self.collfile_dialog)
     UIManager:clearRenderStack()
-
-    -- Replace Book information callback to use directly our bookinfo
-    orig_buttons[2][1].callback = function()
-        FileManagerBookInfo:show(file, bookinfo)
-        UIManager:close(self.collfile_dialog)
-    end
 
     -- Add some new buttons to original buttons set
     table.insert(orig_buttons, {
@@ -630,19 +619,52 @@ function CoverMenu:onCollectionsMenuHold(item)
             text = _("Refresh cached book information"),
             enabled = bookinfo and true or false,
             callback = function()
+                -- Wipe the cache
+                self:updateCache(file)
                 BookInfoManager:deleteBookInfo(file)
                 UIManager:close(self.collfile_dialog)
                 self:updateItems()
             end,
         },
     })
+
     -- Create the new ButtonDialog, and let UIManager show it
+    -- (all button callback replacement must be done after this block to stick)
     local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
     self.collfile_dialog = ButtonDialogTitle:new{
         title = orig_title,
         title_align = orig_title_align,
         buttons = orig_buttons,
     }
+
+    -- Fudge the "Reset settings" button callback to also trash the cover_info_cache
+    local button = self.collfile_dialog.button_table:getButtonById("reset")
+    local orig_purge_callback = button.callback
+    button.callback = function()
+        -- Wipe the cache
+        self:updateCache(file)
+        -- And then purge the sidecar folder as expected
+        orig_purge_callback()
+    end
+
+    -- Fudge the status change button callbacks to also update the cover_info_cache
+    for _, status in ipairs({"reading", "abandoned", "complete"}) do
+        button = self.collfile_dialog.button_table:getButtonById(status)
+        local orig_status_callback = button.callback
+        button.callback = function()
+            -- Update the cache
+            self:updateCache(file, status)
+            -- And then set the status on file as expected
+            orig_status_callback()
+        end
+    end
+
+    -- Replace Book information callback to use directly our bookinfo
+    self.collfile_dialog.button_table:getButtonById("book_information").callback = function()
+        FileManagerBookInfo:show(file, bookinfo)
+        UIManager:close(self.collfile_dialog)
+    end
+
     UIManager:show(self.collfile_dialog)
     return true
 end

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<component>
+<component type="desktop-application">
   <id>rocks.koreader.KOReader</id>
   <launchable type="desktop-id">rocks.koreader.KOReader.desktop</launchable>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>AGPL-3.0-only</project_license>
   <name>KOReader</name>
+  <developer_name>KOReader Community</developer_name>
   <summary>A document viewer for DjVu, PDF, EPUB and more</summary>
   <description>
     <p>
@@ -29,7 +30,7 @@
   <url type="homepage">https://koreader.rocks/</url>
   <url type="bugtracker">https://github.com/koreader/koreader/issues</url>
   <url type="faq">https://github.com/koreader/koreader/wiki</url>
-  <url type="translate">https://github.com/koreader/koreader#translation</url>
+  <url type="translate">https://github.com/koreader/koreader-translations</url>
   <url type="vcs-browser">https://github.com/koreader/koreader</url>
   <url type="contribute">https://koreader.rocks/doc/</url>
   <categories>

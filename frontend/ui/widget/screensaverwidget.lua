@@ -50,9 +50,6 @@ function ScreenSaverWidget:update()
     }
     self.dithered = true
     self[1] = self.main_frame
-    UIManager:setDirty(self, function()
-        return "full", self.main_frame.dimen
-    end)
 end
 
 function ScreenSaverWidget:onShow()

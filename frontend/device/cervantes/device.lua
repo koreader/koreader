@@ -12,20 +12,6 @@ local function getProductId()
     return product_id
 end
 
-local function isConnected()
-    -- read carrier state from sysfs (for eth0)
-    local file = io.open("/sys/class/net/eth0/carrier", "rb")
-
-    -- file exists while Wi-Fi module is loaded.
-    if not file then return 0 end
-
-    -- 0 means not connected, 1 connected
-    local out = file:read("*number")
-    file:close()
-
-    return out or 0
-end
-
 local function isMassStorageSupported()
     -- we rely on 3rd party package for that. It should be installed as part of KOReader prerequisites,
     local safemode_version = io.open("/usr/share/safemode/version", "rb")
@@ -190,9 +176,8 @@ function Cervantes:initNetworkManager(NetworkMgr)
     function NetworkMgr:restoreWifiAsync()
         os.execute("./restore-wifi-async.sh")
     end
-    function NetworkMgr:isWifiOn()
-        return 1 == isConnected()
-    end
+    NetworkMgr.isWifiOn = NetworkMgr.sysfsWifiOn
+    NetworkMgr.isConnected = NetworkMgr.ifHasAnAddress
 end
 
 -- power functions: suspend, resume, reboot, poweroff

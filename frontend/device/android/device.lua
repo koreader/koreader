@@ -292,12 +292,13 @@ function Device:initNetworkManager(NetworkMgr)
         android.openWifiSettings()
     end
 
-    function NetworkMgr:isWifiOn()
+    function NetworkMgr:isConnected()
         local ok = android.getNetworkInfo()
         ok = tonumber(ok)
         if not ok then return false end
         return ok == 1
     end
+    NetworkMgr.isWifiOn = NetworkMgr.isConnected
 end
 
 function Device:performHapticFeedback(type)
@@ -393,7 +394,7 @@ function Device:_toggleStatusBarVisibility()
         0, statusbar_height, width, new_height))
 
     self.screen:setViewport(viewport)
-    if is_fullscreen and self.viewport then
+    if is_fullscreen and self.viewport and self.viewport.y ~= 0 then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchTranslate,
             {x = 0 - self.viewport.x, y = 0 - self.viewport.y}

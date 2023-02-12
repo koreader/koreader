@@ -2,10 +2,14 @@
 This module contains miscellaneous helper functions for FileManager
 ]]
 
+local BD = require("ui/bidi")
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocSettings = require("docsettings")
+local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
 local _ = require("gettext")
+local T = util.template
 
 local filemanagerutil = {}
 
@@ -59,8 +63,100 @@ function filemanagerutil.resetDocumentSettings(file)
             end
         end
         doc_settings:makeTrue("docsettings_reset_done") -- for readertypeset block_rendering_mode
-        doc_settings:close()
+        doc_settings:flush()
     end
+end
+
+-- Get a document's status ("new", "reading", "complete", or "abandoned")
+function filemanagerutil.getStatus(file)
+    local status = "new"
+    if DocSettings:hasSidecarFile(file) then
+        local docinfo = DocSettings:open(file) -- no io handles created, do not close
+        if docinfo.data.summary and docinfo.data.summary.status and docinfo.data.summary.status ~= "" then
+            status = docinfo.data.summary.status
+        else
+            status = "reading"
+        end
+    end
+    return status
+end
+
+-- Set a document's status
+function filemanagerutil.setStatus(file, status)
+    -- In case the book doesn't have a sidecar file, this'll create it
+    local docinfo = DocSettings:open(file)
+    local summary
+    if docinfo.data.summary and docinfo.data.summary.status then
+        -- Book already had the full BookStatus table in its sidecar, easy peasy!
+        docinfo.data.summary.status = status
+        docinfo.data.summary.modified = os.date("%Y-%m-%d", os.time())
+        summary = docinfo.data.summary
+    else
+        -- No BookStatus table, create a minimal one...
+        if docinfo.data.summary then
+            -- Err, a summary table with no status entry? Should never happen...
+            summary = { status = status }
+            -- Append the status entry to the existing summary...
+            require("util").tableMerge(docinfo.data.summary, summary)
+            docinfo.data.summary.modified = os.date("%Y-%m-%d", os.time())
+            summary = docinfo.data.summary
+        else
+            -- No summary table at all, create a minimal one
+            summary = {
+                status = status,
+                modified = os.date("%Y-%m-%d", os.time())
+            }
+        end
+    end
+    docinfo:saveSetting("summary", summary)
+    docinfo:flush()
+end
+
+-- Generate all book status file dialog buttons in a row
+function filemanagerutil.genStatusButtonsRow(file, caller_callback)
+    local status = filemanagerutil.getStatus(file)
+    local function genStatusButton(to_status)
+        local status_text = {
+            reading   = _("Reading"),
+            abandoned = _("On hold"),
+            complete  = _("Finished"),
+        }
+        return {
+            text = status_text[to_status],
+            id = to_status, -- used by covermenu
+            enabled = status ~= to_status,
+            callback = function()
+                filemanagerutil.setStatus(file, to_status)
+                caller_callback()
+            end,
+        }
+    end
+    return {
+        genStatusButton("reading"),
+        genStatusButton("abandoned"),
+        genStatusButton("complete"),
+    }
+end
+
+-- Generate a "Reset settings" file dialog button
+function filemanagerutil.genResetSettingsButton(file, currently_opened_file, caller_callback)
+    return {
+        text = _("Reset"),
+        id = "reset", -- used by covermenu
+        enabled = file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(file)),
+        callback = function()
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Reset this document?\n\n%1\n\nAll document progress, settings, bookmarks, highlights, and notes will be permanently lost."),
+                    BD.filepath(file)),
+                ok_text = _("Reset"),
+                ok_callback = function()
+                    filemanagerutil.purgeSettings(file)
+                    require("readhistory"):fileSettingsPurged(file)
+                    caller_callback()
+                end,
+            })
+        end,
+    }
 end
 
 return filemanagerutil

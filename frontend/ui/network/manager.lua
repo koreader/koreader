@@ -7,14 +7,21 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
+local ffi = require("ffi")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
+local C = ffi.C
 local T = ffiutil.template
+
+-- We'll need a bunch of stuff for getifaddrs in NetworkMgr:ifHasAnAddress
+require("ffi/posix_h")
 
 local NetworkMgr = {
     is_wifi_on = false,
     is_connected = false,
+    interface = nil,
 }
 
 function NetworkMgr:readNWSettings()
@@ -30,7 +37,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         self.wifi_was_on = false
         G_reader_settings:makeFalse("wifi_was_on")
         -- If we abort, murder Wi-Fi and the async script first...
-        if Device:hasWifiManager() and not Device:isEmulator() then
+        if Device:hasWifiManager() then
             os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         end
         self:turnOffWifi()
@@ -76,12 +83,8 @@ function NetworkMgr:scheduleConnectivityCheck(callback, widget)
 end
 
 function NetworkMgr:init()
-    -- On Kobo, kill Wi-Fi if NetworkMgr:isWifiOn() and NOT NetworkMgr:isConnected()
-    -- (i.e., if the launcher left the Wi-Fi in an inconsistent state: modules loaded, but no route to gateway).
-    if Device:isKobo() and self:isWifiOn() and not self:isConnected() then
-        logger.info("Kobo Wi-Fi: Left in an inconsistent state by launcher!")
-        self:turnOffWifi()
-    end
+    Device:initNetworkManager(self)
+    self.interface = self:getNetworkInterfaceName()
 
     self:queryNetworkState()
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
@@ -98,6 +101,8 @@ function NetworkMgr:init()
             UIManager:scheduleIn(2, UIManager.broadcastEvent, UIManager, Event:new("NetworkConnected"))
         end
     end
+
+    return self
 end
 
 -- Following methods are Device specific which need to be initialized in
@@ -105,7 +110,9 @@ end
 -- NetworkMgr:setWirelessBackend
 function NetworkMgr:turnOnWifi() end
 function NetworkMgr:turnOffWifi() end
+-- This function returns status of the WiFi radio
 function NetworkMgr:isWifiOn() end
+function NetworkMgr:isConnected() end
 function NetworkMgr:getNetworkInterfaceName() end
 function NetworkMgr:getNetworkList() end
 function NetworkMgr:getCurrentNetwork() end
@@ -116,6 +123,132 @@ function NetworkMgr:releaseIP() end
 -- This function should call both turnOnWifi() and obtainIP() in a non-blocking manner.
 function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
+
+-- Helper functions for devices that use sysfs entries to check connectivity.
+function NetworkMgr:sysfsWifiOn()
+    -- Network interface directory only exists as long as the Wi-Fi module is loaded
+    return util.pathExists("/sys/class/net/".. self.interface)
+end
+
+function NetworkMgr:sysfsCarrierConnected()
+    -- Read carrier state from sysfs.
+    -- NOTE: We can afford to use CLOEXEC, as devices too old for it don't support Wi-Fi anyway ;)
+    local out
+    local file = io.open("/sys/class/net/" .. self.interface .. "/carrier", "re")
+
+    -- File only exists while the Wi-Fi module is loaded, but may fail to read until the interface is brought up.
+    if file then
+        -- 0 means the interface is down, 1 that it's up
+        -- (technically, it reflects the state of the physical link (e.g., plugged in or not for Ethernet))
+        -- This does *NOT* represent network association state for Wi-Fi (it'll return 1 as soon as ifup)!
+        out = file:read("*number")
+        file:close()
+    end
+
+    return out == 1
+end
+
+function NetworkMgr:sysfsInterfaceOperational()
+    -- Reads the interface's RFC2863 operational state from sysfs, and wait for it to be up
+    -- (For Wi-Fi, that means associated & successfully authenticated)
+    local out
+    local file = io.open("/sys/class/net/" .. self.interface .. "/operstate", "re")
+
+    -- Possible values: "unknown", "notpresent", "down", "lowerlayerdown", "testing", "dormant", "up"
+    -- (c.f., Linux's <Documentation/ABI/testing/sysfs-class-net>)
+    -- We're *assuming* all the drivers we care about implement this properly, so we can just rely on checking for "up".
+    -- On unsupported drivers, this would be stuck on "unknown" (c.f., Linux's <Documentation/networking/operstates.rst>)
+    -- NOTE: This does *NOT* mean the interface has been assigned an IP!
+    if file then
+        out = file:read("*l")
+        file:close()
+    end
+
+    return out == "up"
+end
+
+-- This relies on the BSD API instead of the Linux ioctls (netdevice(7)), because handling IPv6 is slightly less painful this way...
+function NetworkMgr:ifHasAnAddress()
+    -- If the interface isn't operationally up, no need to go any further
+    if not self:sysfsInterfaceOperational() then
+        logger.dbg("NetworkMgr: interface is not operational yet")
+        return false
+    end
+
+    -- It's up, do the getifaddrs dance to see if it was assigned an IP yet...
+    -- c.f., getifaddrs(3)
+    local ifaddr = ffi.new("struct ifaddrs *[1]")
+    if C.getifaddrs(ifaddr) == -1 then
+        local errno = ffi.errno()
+        logger.err("NetworkMgr: getifaddrs:", ffi.string(C.strerror(errno)))
+        return false
+    end
+
+    local ok
+    local ifa = ifaddr[0]
+    while ifa ~= nil do
+        if ifa.ifa_addr ~= nil and C.strcmp(ifa.ifa_name, self.interface) == 0 then
+            local family = ifa.ifa_addr.sa_family
+            if family == C.AF_INET or family == C.AF_INET6 then
+                local host = ffi.new("char[?]", C.NI_MAXHOST)
+                local s = C.getnameinfo(ifa.ifa_addr,
+                                        family == C.AF_INET and ffi.sizeof("struct sockaddr_in") or ffi.sizeof("struct sockaddr_in6"),
+                                        host, C.NI_MAXHOST,
+                                        nil, 0,
+                                        C.NI_NUMERICHOST)
+                if s ~= 0 then
+                    logger.err("NetworkMgr: getnameinfo:", ffi.string(C.gai_strerror(s)))
+                    ok = false
+                else
+                    logger.dbg("NetworkMgr: interface", self.interface, "is up @", ffi.string(host))
+                    ok = true
+                end
+                -- Regardless of failure, we only check a single if, so we're done
+                break
+            end
+        end
+        ifa = ifa.ifa_next
+    end
+    C.freeifaddrs(ifaddr[0])
+
+    return ok
+end
+
+--[[
+-- This would be the aforementioned Linux ioctl approach
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <string.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int main(int argc, char *argv[]) {
+    // Querying IPv6 would require a different in6_ifreq struct and more hoop-jumping...
+    struct ifreq ifr;
+    struct sockaddr_in sai;
+    strncpy(ifr.ifr_name, *++argv, IFNAMSIZ);
+
+    int fd = socket(PF_INET, SOCK_DGRAM, 0);
+    ioctl(fd, SIOCGIFADDR, &ifr);
+    close(fd);
+
+    /*
+    // inet_ntoa is deprecated
+    memcpy(&sai, &ifr.ifr_addr, sizeof(sai));
+    printf("ifr.ifr_addr: %s\n", inet_ntoa(sai.sin_addr));
+    */
+    char host[NI_MAXHOST];
+    int s = getnameinfo(&ifr.ifr_addr, sizeof(struct sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+    printf("ifr.ifr_addr: %s\n", host);
+
+    return EXIT_SUCCESS;
+}
+--]]
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press)
     local toggle_im = InfoMessage:new{
@@ -245,34 +378,6 @@ function NetworkMgr:afterWifiAction(callback)
     end
 end
 
-function NetworkMgr:isConnected()
-    if Device:isAndroid() or Device:isCervantes() or Device:isPocketBook() or Device:isEmulator() then
-        return self:isWifiOn()
-    elseif Device:isKindle() then
-        local on, connected =  self:isWifiOn()
-        return on and connected
-    else
-        -- Pull the default gateway first, so we don't even try to ping anything if there isn't one...
-        local default_gw
-        local std_out = io.popen([[/sbin/route -n | awk '$4 == "UG" {print $2}' | tail -n 1]], "r")
-        if std_out then
-            default_gw = std_out:read("*all")
-            std_out:close()
-            if not default_gw or default_gw == "" then
-                return false
-            end
-        end
-
-        -- `-c1` try only once; `-w2` wait 2 seconds
-        -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles...
-        if Device:isKindle() and Device:hasKeyboard() then
-            return 0 == os.execute("ping -c1 " .. default_gw)
-        else
-            return 0 == os.execute("ping -c1 -w2 " .. default_gw)
-        end
-    end
-end
-
 function NetworkMgr:isOnline()
     local socket = require("socket")
     -- Microsoft uses `dns.msftncsi.com` for Windows, see
@@ -308,8 +413,7 @@ function NetworkMgr:isNetworkInfoAvailable()
         -- always available
         return true
     else
-        --- @todo also show network info when device is authenticated to router but offline
-        return self:isWifiOn()
+        return self:isConnected()
     end
 end
 
@@ -499,7 +603,6 @@ function NetworkMgr:getPowersaveMenuTable()
         text = _("Disable Wi-Fi connection when inactive"),
         help_text = _([[This will automatically turn Wi-Fi off after a generous period of network inactivity, without disrupting workflows that require a network connection, so you can just keep reading without worrying about battery drain.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
-        enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
         callback = function()
             G_reader_settings:flipNilOrFalse("auto_disable_wifi")
             -- NOTE: Well, not exactly, but the activity check wouldn't be (un)scheduled until the next Network(Dis)Connected event...
@@ -513,7 +616,7 @@ function NetworkMgr:getRestoreMenuTable()
         text = _("Restore Wi-Fi connection on resume"),
         help_text = _([[This will attempt to automatically and silently re-connect to Wi-Fi on startup or on resume if Wi-Fi used to be enabled the last time you used KOReader.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
-        enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
+        enabled_func = function() return Device:hasWifiManager() end,
         callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
     }
 end
@@ -610,8 +713,12 @@ function NetworkMgr:getMenuTable(common_settings)
     common_settings.network_proxy = self:getProxyMenuTable()
     common_settings.network_info = self:getInfoMenuTable()
 
-    if Device:hasWifiManager() then
+    -- Allow auto_disable_wifi on devices where the net sysfs entry is exposed.
+    if self:getNetworkInterfaceName() then
         common_settings.network_powersave = self:getPowersaveMenuTable()
+    end
+
+    if Device:hasWifiManager() or Device:isEmulator() then
         common_settings.network_restore = self:getRestoreMenuTable()
         common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
         common_settings.network_before_wifi_action = self:getBeforeWifiActionMenuTable()
@@ -739,8 +846,4 @@ if G_defaults:readSetting("NETWORK_PROXY") then
     NetworkMgr:setHTTPProxy(G_defaults:readSetting("NETWORK_PROXY"))
 end
 
-
-Device:initNetworkManager(NetworkMgr)
-NetworkMgr:init()
-
-return NetworkMgr
+return NetworkMgr:init()

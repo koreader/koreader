@@ -63,7 +63,7 @@ function ReaderStatus:onEndOfBook()
                         if self.settings.data.summary and self.settings.data.summary.status == "complete" then
                             return _("Mark as reading")
                         else
-                            return _("Mark as read")
+                            return _("Mark as finished")
                         end
                     end,
                     callback = function()
@@ -246,7 +246,7 @@ function ReaderStatus:onMarkBook(mark_read)
     if self.settings.data.summary then
         if self.settings.data.summary.status and self.settings.data.summary.status == "complete" then
             if mark_read then
-                -- Keep mark as read.
+                -- Keep mark as finished.
                 self.settings.data.summary.status = "complete"
             else
                 -- Change current status from read (complete) to reading

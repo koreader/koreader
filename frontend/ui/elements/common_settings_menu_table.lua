@@ -484,7 +484,7 @@ local function genAutoSaveMenuItem(value)
     local setting_name = "auto_save_settings_interval_minutes"
     local text
     if not value then
-        text = _("Only on close, suspend and exit")
+        text = _("Only on close and suspend")
     else
         text = T(N_("Every minute", "Every %1 minutes", value), value)
     end
@@ -538,11 +538,11 @@ common_settings.document_auto_save = {
         local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
         local s_interval
         if interval == false then
-            s_interval = _("only on close")
+            s_interval = _("only on close and suspend")
         else
             s_interval = T(N_("every 1 m", "every %1 m", interval), interval)
         end
-        return T(_("Auto-save book metadata: %1"), s_interval)
+        return T(_("Save book metadata: %1"), s_interval)
     end,
     help_text = auto_save_help_text,
     sub_item_table = {
@@ -575,7 +575,7 @@ common_settings.document_end_action = {
     text = _("End of document action"),
     sub_item_table = {
         {
-            text = _("Always mark as read"),
+            text = _("Always mark as finished"),
             checked_func = function()
                 return G_reader_settings:isTrue("end_document_auto_mark")
             end,

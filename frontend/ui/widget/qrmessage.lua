@@ -81,7 +81,7 @@ end
 
 function QRMessage:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "ui", self[1][1].dimen
+        return "ui", self[1][1].dimen -- i.e., frame
     end)
 end
 

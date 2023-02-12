@@ -394,9 +394,6 @@ function DateTimeWidget:createLayout()
         }
     }
     self:refocusWidget()
-    UIManager:setDirty(self, function()
-        return "ui", self.date_frame.dimen
-    end)
 end
 
 function DateTimeWidget:update(year, month, day, hour, min, sec)
