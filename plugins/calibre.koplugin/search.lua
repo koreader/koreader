@@ -67,6 +67,20 @@ local function match(str, query, case_insensitive)
     end
 end
 
+-- get books that exactly match the search in the requested field
+local function getBooksByField(t, field, query)
+    local result = {}
+    for _, book in ipairs(t) do
+        local data = book[field]
+        if data and data ~= rapidjson.null then
+            if data == query then
+                table.insert(result, book)
+            end
+        end
+    end
+    return result
+end
+
 -- get books that exactly match the search tag
 local function getBooksByTag(t, tag)
     local result = {}
@@ -80,17 +94,18 @@ local function getBooksByTag(t, tag)
     return result
 end
 
--- get books that exactly match the search series
-local function getBooksBySeries(t, series)
-    local result = {}
+-- generic search in a specific field (series, authors or title), matching the search criteria and their frequency
+local function searchByField(t, field, query, case_insensitive)
+    local freq = {}
     for _, book in ipairs(t) do
-        if book.series and book.series ~= rapidjson.null then
-            if book.series == series then
-                table.insert(result, book)
+        local data = book[field]
+        if data and data ~= rapidjson.null then
+            if match(data, query, case_insensitive) then
+                freq[data] = (freq[data] or 0) + 1
             end
         end
     end
-    return result
+    return freq
 end
 
 -- get tags that match the search criteria and their frequency
@@ -102,19 +117,6 @@ local function searchByTag(t, query, case_insensitive)
                 if match(tag, query, case_insensitive) then
                     freq[tag] = (freq[tag] or 0) + 1
                 end
-            end
-        end
-    end
-    return freq
-end
-
--- get series that match the search criteria and their frequency
-local function searchBySeries(t, query, case_insensitive)
-    local freq = {}
-    for _, book in ipairs(t) do
-        if book.series and book.series ~= rapidjson.null then
-            if match(book.series, query, case_insensitive) then
-                freq[book.series] = (freq[book.series] or 0) + 1
             end
         end
     end
@@ -201,6 +203,26 @@ function CalibreSearch:ShowSearch()
                     callback = function()
                         self.search_value = self.search_dialog:getInputText()
                         self.lastsearch = "tags"
+                        self:close()
+                    end,
+                },
+            },
+            {
+                {
+                    text = _("Browse authors"),
+                    enabled = true,
+                    callback = function()
+                        self.search_value = self.search_dialog:getInputText()
+                        self.lastsearch = "authors"
+                        self:close()
+                    end,
+                },
+                {
+                    text = _("Browse titles"),
+                    enabled = true,
+                    callback = function()
+                        self.search_value = self.search_dialog:getInputText()
+                        self.lastsearch = "title"
                         self:close()
                     end,
                 },
@@ -300,7 +322,7 @@ function CalibreSearch:bookCatalog(t, option)
     return catalog
 end
 
--- find books, series or tags
+-- find books, series, tags, authors or titles
 function CalibreSearch:find(option)
     for _, opt in ipairs(self.search_options) do
         self[opt] = G_reader_settings:nilOrTrue("calibre_search_"..opt)
@@ -396,7 +418,13 @@ function CalibreSearch:browse(option)
             source = searchByTag(self.books, search_value, self.case_insensitive)
         elseif option == "series" then
             name = _("Browse by series")
-            source = searchBySeries(self.books, search_value, self.case_insensitive)
+            source = searchByField(self.books, option, search_value, self.case_insensitive)
+        elseif option == "authors" then
+            name = _("Browse by authors")
+            source = searchByField(self.books, option, search_value, self.case_insensitive)
+        elseif option == "title" then
+            name = _("Browse by titles")
+            source = searchByField(self.books, option, search_value, self.case_insensitive)
         end
         for k, v in pairs(source) do
             local entry = {}
@@ -435,8 +463,8 @@ function CalibreSearch:expandTagOrSeries(option, chosen_item)
 
     if option == "tags" then
         results = getBooksByTag(self.books, chosen_item)
-    elseif option == "series" then
-        results = getBooksBySeries(self.books, chosen_item)
+    else
+        results = getBooksByField(self.books, option, chosen_item)
     end
     if results then
         local catalog = self:bookCatalog(results, option)
