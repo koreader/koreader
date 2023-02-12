@@ -173,6 +173,8 @@ local CalibreSearch = WidgetContainer:extend{
         "case_insensitive",
         "find_by_title",
         "find_by_authors",
+        "find_by_series",
+        "find_by_tag",
         "find_by_path",
     },
 
@@ -362,6 +364,8 @@ function CalibreSearch:find(option)
         "case sensitive: " .. tostring(not self.case_insensitive),
         "title: " .. tostring(self.find_by_title),
         "authors: " .. tostring(self.find_by_authors),
+        "series: " .. tostring(self.find_by_series),
+        "tag: " .. tostring(self.find_by_tag),
         "path: " .. tostring(self.find_by_path)))
 end
 
@@ -384,6 +388,16 @@ function CalibreSearch:findBooks(query)
         if self.find_by_authors then
             for _, author in ipairs(book.authors) do
                 if bookMatch(author, pattern) then
+                    return true
+                end
+            end
+        end
+        if self.find_by_series and bookMatch(book.series, pattern) then
+            return true
+        end
+        if self.find_by_tag then
+            for _, tag in ipairs(book.tags) do
+                if bookMatch(tag, pattern) then
                     return true
                 end
             end

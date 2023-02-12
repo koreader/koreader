@@ -210,6 +210,24 @@ function Calibre:getSearchMenuTable()
             end,
         },
         {
+            text = _("Search by series"),
+            checked_func = function()
+                return G_reader_settings:isTrue("calibre_search_find_by_series")
+            end,
+            callback = function()
+                G_reader_settings:toggle("calibre_search_find_by_series")
+            end,
+        },
+        {
+            text = _("Search by tag"),
+            checked_func = function()
+                return G_reader_settings:isTrue("calibre_search_find_by_tag")
+            end,
+            callback = function()
+                G_reader_settings:toggle("calibre_search_find_by_tag")
+            end,
+        },
+        {
             text = _("Search by path"),
             checked_func = function()
                 return G_reader_settings:nilOrTrue("calibre_search_find_by_path")
