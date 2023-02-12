@@ -19,7 +19,7 @@
 
 * **portable**: runs on embedded devices (Cervantes, Kindle, Kobo, PocketBook, reMarkable), Android and Linux computers. Developers can run a KOReader emulator in Linux and MacOS.
 
-* **multi-format documents**: supports fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, CHM, TXT). Scanned PDF/DjVu documents can also be reflowed with the built-in K2pdfopt library.
+* **multi-format documents**: supports fixed page formats (PDF, DjVu, CBT, CBZ) and reflowable e-book formats (EPUB, FB2, Mobi, DOC, RTF, HTML, CHM, TXT). Scanned PDF/DjVu documents can also be reflowed with the built-in K2pdfopt library. [ZIP files][link-wiki-zip] are also supported for some formats.
 
 * **full-featured reading**: multi-lingual user interface with a highly customizable reader view and many typesetting options. You can set arbitrary page margins, override line spacing and choose external fonts and styles. It has multi-lingual hyphenation dictionaries bundled into the application.
 
@@ -101,3 +101,4 @@ Right now we only support [liberapay](https://liberapay.com/KOReader) donations,
 [link-issues-features]:https://github.com/koreader/koreader/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement
 [link-weblate]:https://hosted.weblate.org/engage/koreader/?utm_source=widget
 [link-wiki]:https://github.com/koreader/koreader/wiki
+[link-wiki-zip]:https://github.com/koreader/koreader/wiki/ZIP
