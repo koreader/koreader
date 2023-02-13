@@ -588,6 +588,7 @@ function ReaderFooter:init()
         tick_width = Screen:scaleBySize(self.settings.toc_markers_width),
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
+        initial_pos_marker = true,
     }
 
     if self.settings.progress_style_thin then
