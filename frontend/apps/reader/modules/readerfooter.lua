@@ -437,7 +437,6 @@ local ReaderFooter = WidgetContainer:extend{
     mode = MODE.page_progress,
     pageno = nil,
     pages = nil,
-    progress_percentage = 0.0,
     footer_text = nil,
     text_font_face = "ffont",
     height = Screen:scaleBySize(G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT")),
@@ -584,7 +583,7 @@ function ReaderFooter:init()
     self.progress_bar = ProgressWidget:new{
         width = nil,
         height = nil,
-        percentage = self.progress_percentage,
+        percentage = 0,
         tick_width = Screen:scaleBySize(self.settings.toc_markers_width),
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
@@ -2125,12 +2124,14 @@ function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
     else
         self.progress_bar.percentage = self.pageno / self.pages
     end
+    print("ReaderFooter:updateFooterPage @", self.progress_bar.percentage)
     self:updateFooterText(force_repaint, full_repaint)
 end
 
 function ReaderFooter:updateFooterPos(force_repaint, full_repaint)
     if type(self.position) ~= "number" then return end
     self.progress_bar.percentage = self.position / self.doc_height
+    print("ReaderFooter:updateFooterPos @", self.progress_bar.percentage)
     self:updateFooterText(force_repaint, full_repaint)
 end
 
@@ -2297,6 +2298,9 @@ function ReaderFooter:onReaderReady()
     self:setTocMarkers()
     self.updateFooterText = self._updateFooterText
     self:onUpdateFooter()
+    -- We init ProgressWidget at 0%, so we'll have to update this ourselves
+    self.progress_bar.inital_percentage = self.progress_bar.percentage
+    print("ReaderFooter:onReaderReady @", self.progress_bar.percentage)
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
