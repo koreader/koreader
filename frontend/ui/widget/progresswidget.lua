@@ -132,7 +132,7 @@ function ProgressWidget:paintTo(bb, x, y)
 
         -- Overlay the current position marker on top of that
         if not self.current_pos_icon then
-                self.current_pos_icon = IconWidget:new{
+            self.current_pos_icon = IconWidget:new{
                 icon = "position.marker",
                 width = self.dimen.h, -- it's square
                 height = self.dimen.h,
@@ -192,6 +192,16 @@ function ProgressWidget:setHeight(height)
     self.margin_v = math.max(self.margin_v, margin_v_min)
     self.bordersize = math.min(self._orig_bordersize, math.floor((self.height - 2*self.margin_v - 1) / 2))
     self.bordersize = math.max(self.bordersize, bordersize_min)
+
+    -- Re-render marker, if any
+    if self.current_pos_icon then
+        self.current_pos_icon = IconWidget:new{
+            icon = "position.marker",
+            width = self.height,
+            height = self.height,
+            alpha = true,
+        }
+    end
 end
 
 function ProgressWidget:updateStyle(thick, height)
