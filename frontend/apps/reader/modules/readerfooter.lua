@@ -495,6 +495,7 @@ ReaderFooter.default_settings = {
     progress_pct_format = "0",
     progress_margin = false,
     pages_left_includes_current_page = false,
+    initial_marker = false,
 }
 
 function ReaderFooter:init()
@@ -587,7 +588,7 @@ function ReaderFooter:init()
         tick_width = Screen:scaleBySize(self.settings.toc_markers_width),
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
-        initial_pos_marker = true,
+        initial_pos_marker = self.settings.initial_marker,
     }
 
     if self.settings.progress_style_thin then
@@ -1839,6 +1840,17 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                                 end
                             },
                         },
+                    },
+                    {
+                        text = _("Show initial position marker"),
+                        checked_func = function()
+                            return self.settings.initial_marker == true
+                        end,
+                        callback = function()
+                            self.settings.initial_marker = not self.settings.initial_marker
+                            self.progress_bar.initial_pos_marker = self.settings.initial_marker
+                            self:refreshFooter(true)
+                        end
                     },
                 },
             },

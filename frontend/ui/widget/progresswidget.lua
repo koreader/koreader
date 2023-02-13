@@ -58,6 +58,7 @@ local ProgressWidget = Widget:extend{
     _orig_bordersize = nil,
     initial_pos_marker = false, -- overlay a marker on the initial percentage
     marker_threshold = Screen:scaleBySize(12), -- somewhat empirically chosen threshold ;o)
+    inital_percentage = nil,
 }
 
 function ProgressWidget:init()
