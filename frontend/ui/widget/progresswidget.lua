@@ -84,7 +84,7 @@ function ProgressWidget:renderMarkerIcon()
         return
     end
 
-    if self.height < self.marker_threshold then
+    if self.height <= self.marker_threshold then
         self.initial_pos_icon = IconWidget:new{
             icon = "position.marker.top",
             width = Math.round(self.height / 2),
@@ -175,8 +175,8 @@ function ProgressWidget:paintTo(bb, x, y)
 
         -- Overlay the initial position marker on top of that
         if self.initial_pos_marker then
-            if self.height < self.marker_threshold then
-                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.height / 2), y - Math.round(self.height / 3))
+            if self.height <= self.marker_threshold then
+                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.height / 4), y - Math.round(self.height / 6))
             else
                 self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.height / 2), y)
             end
