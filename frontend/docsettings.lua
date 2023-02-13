@@ -10,6 +10,7 @@ local dump = require("dump")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 
 local DocSettings = LuaSettings:extend{}
 
@@ -103,6 +104,7 @@ function DocSettings:getLastSaveTime(doc_path) -- for readhistory
 end
 
 function DocSettings:getHistoryPath(doc_path)
+    if doc_path == nil or doc_path == "" then return "" end
     return HISTORY_DIR .. "/[" .. doc_path:gsub("(.*/)([^/]+)", "%1] %2"):gsub("/", "#") .. ".lua"
 end
 
@@ -207,19 +209,17 @@ function DocSettings:open(doc_path)
 end
 
 --- Serializes settings and writes them to `metadata.lua`.
-function DocSettings:flush()
+function DocSettings:flush(data)
     -- Depending on the settings, doc_settings are saved to the book folder or
     -- to koreader/docsettings folder. The latter is also a fallback for read-only book storage.
-    local serials = { {self.dir_sidecar_dir, self.dir_sidecar_file} }
-    if G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc" then
-        table.insert(serials, 1, {self.doc_sidecar_dir, self.doc_sidecar_file})
-    end
+    local serials = G_reader_settings:readSetting("document_metadata_folder", "doc") == "doc"
+        and { {self.doc_sidecar_dir, self.doc_sidecar_file},
+              {self.dir_sidecar_dir, self.dir_sidecar_file}, }
+         or { {self.dir_sidecar_dir, self.dir_sidecar_file}, }
 
-    local s_out = dump(self.data, nil, true)
+    local s_out = dump(data or self.data, nil, true)
     for _, s in ipairs(serials) do
-        if lfs.attributes(s[1], "mode") ~= "directory" then
-            os.execute("mkdir -p '" .. s[1] .. "'")
-        end
+        util.makePath(s[1])
         local sidecar_file = s[2]
         local directory_updated = false
         if lfs.attributes(sidecar_file, "mode") == "file" then
@@ -285,6 +285,25 @@ function DocSettings:purge(full, sidecar_to_keep)
     end
     purgeDir(self.doc_sidecar_dir, full)
     purgeDir(self.dir_sidecar_dir, full)
+end
+
+--- Updates sidecar info for file rename/copy/move/delete operations.
+function DocSettings:update(doc_path, new_doc_path, copy)
+    if self:hasSidecarFile(doc_path) then
+        local doc_settings = DocSettings:open(doc_path)
+        if new_doc_path then
+            local new_doc_settings = DocSettings:open(new_doc_path)
+            new_doc_settings:flush(doc_settings.data) -- with current "Book metadata folder" setting
+        else
+            local cache_file_path = doc_settings:readSetting("cache_file_path")
+            if cache_file_path then
+                os.remove(cache_file_path)
+            end
+        end
+        if not copy then
+            doc_settings:purge()
+        end
+    end
 end
 
 return DocSettings
