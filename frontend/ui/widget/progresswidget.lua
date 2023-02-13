@@ -31,6 +31,8 @@ Example:
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
+local IconWidget = require("ui/widget/iconwidget")
+local Math = require("optmath")
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
 
@@ -127,6 +129,16 @@ function ProgressWidget:paintTo(bb, x, y)
                      math.ceil(fill_width * self.percentage),
                      math.ceil(fill_height),
                      self.fillcolor)
+
+        -- Overlay the current position marker on top of that
+        -- FIXME: Move to init?
+        self.current_pos_icon = IconWidget:new{
+            icon = "position.marker",
+            width = self.dimen.h, -- it's square
+            height = self.dimen.h,
+            alpha = true,
+        }
+        self.current_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.percentage) - self.dimen.h / 2), y)
     end
 
     -- ...then the tick(s).
