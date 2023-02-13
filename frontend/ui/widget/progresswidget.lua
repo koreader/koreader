@@ -36,7 +36,7 @@ local Math = require("optmath")
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
 
--- Somewhat empirically chosen threshold to switch between the two design ;o)
+-- Somewhat empirically chosen threshold to switch between the two designs ;o)
 local INITIAL_MARKER_HEIGHT_THRESHOLD = Screen:scaleBySize(12)
 
 local ProgressWidget = Widget:extend{
