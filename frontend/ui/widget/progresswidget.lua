@@ -131,14 +131,16 @@ function ProgressWidget:paintTo(bb, x, y)
                      self.fillcolor)
 
         -- Overlay the current position marker on top of that
-        -- FIXME: Move to init?
-        self.current_pos_icon = IconWidget:new{
-            icon = "position.marker",
-            width = self.dimen.h, -- it's square
-            height = self.dimen.h,
-            alpha = true,
-        }
-        self.current_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.percentage) - self.dimen.h / 2), y)
+        if not self.current_pos_icon then
+                self.current_pos_icon = IconWidget:new{
+                icon = "position.marker",
+                width = self.dimen.h, -- it's square
+                height = self.dimen.h,
+                alpha = true,
+            }
+            self.inital_percentage = self.percentage
+        end
+        self.current_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.dimen.h / 2), y)
     end
 
     -- ...then the tick(s).
