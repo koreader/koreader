@@ -56,6 +56,8 @@ local ProgressWidget = Widget:extend{
     alt = nil, -- table with alternate pages to mark with different color (in the form {{ini1, len1}, {ini2, len2}, ...})
     _orig_margin_v = nil,
     _orig_bordersize = nil,
+    initial_pos_marker = false, -- overlay a marker on the initial percentage
+    marker_threshold = Screen:scaleBySize(12), -- somewhat empirically chosen threshold ;o)
 }
 
 function ProgressWidget:getSize()
@@ -130,7 +132,7 @@ function ProgressWidget:paintTo(bb, x, y)
                      math.ceil(fill_height),
                      self.fillcolor)
 
-        -- Overlay the current position marker on top of that
+        -- Overlay the initial position marker on top of that
         if not self.current_pos_icon then
             self.current_pos_icon = IconWidget:new{
                 icon = "position.marker",
@@ -140,18 +142,22 @@ function ProgressWidget:paintTo(bb, x, y)
             }
             self.inital_percentage = self.percentage
         end
-        -- Draw marker triangle, point first
-        local c = fill_x + math.floor(fill_width * self.inital_percentage)
-        local r = y + Math.round(self.dimen.h / 3)
-        local cols = 1
-        for row = Math.round(self.dimen.h / 2), 0, -1 do
-            print("row", row, "@", c, r)
-            bb:paintRect(c, r, cols, 1, self.bordercolor)
-            cols = cols + 2
-            r = r - 1
-            c = c - 1
+        -- The SVG becomes nearly invisible at small sizes, so,
+        -- rely on crappoy heuristics to resort to a simpler triangle at small sizes...
+        if self.dimen.h < self.marker_threshold then
+            -- Draw marker triangle, point first
+            local c = fill_x + math.floor(fill_width * self.inital_percentage)
+            local r = y + Math.round(self.dimen.h / 3)
+            local cols = 1
+            for _ = Math.round(self.dimen.h / 2), 0, -1 do
+                bb:paintRect(c, r, cols, 1, self.bordercolor)
+                cols = cols + 2
+                r = r - 1
+                c = c - 1
+            end
+        else
+            self.current_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.dimen.h / 2), y)
         end
-        --self.current_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.dimen.h / 2), y)
     end
 
     -- ...then the tick(s).
