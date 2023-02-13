@@ -61,6 +61,13 @@ export MACOSX_DEPLOYMENT_TARGET=10.09
 ```
 *Note:* On Catalina (10.15), you will currently *NOT* want to deploy for `10.15`, as [XCode is currently broken in that configuration](https://forums.developer.apple.com/thread/121887)! (i.e., deploy for `10.14` instead).
 
+### Alpine
+
+```
+apk add build-base patch wget unzip git cmake luarocks5.1 autoconf nasm ragel gcc automake libtool sdl2-dev
+ln -s /usr/bin/luarocks-5.1 /usr/local/bin/luarocks
+```
+
 ## Getting the source
 
 
