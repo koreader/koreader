@@ -20,7 +20,7 @@
    xmlns:dc="http://purl.org/dc/elements/1.1/"><metadata
    id="metadata10"><rdf:RDF><cc:Work
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
    id="defs8" /><sodipodi:namedview
    pagecolor="#ffffff"
    bordercolor="#666666"
@@ -53,7 +53,7 @@
 	
 <path
    sodipodi:type="star"
-   style="fill:#000000;fill-rule:evenodd;fill-opacity:0.75"
+   style="fill:#000000;fill-opacity:0.69999999;fill-rule:evenodd"
    id="path1002"
    inkscape:flatsided="true"
    sodipodi:sides="3"
@@ -67,9 +67,9 @@
    inkscape:randomized="0"
    d="m 20.33527,14.276472 -28.6705402,0 14.3352703,-24.829416 z"
    inkscape:transform-center-y="-4.0000005"
-   transform="matrix(0.96659542,0,0,0.96659542,18.200427,34.200428)" /><path
+   transform="matrix(0.96659542,0,0,0.96659542,18.200427,46.200428)" /><path
    sodipodi:type="star"
-   style="fill:#000000;fill-rule:evenodd;fill-opacity:0.75"
+   style="fill:#000000;fill-opacity:0.69999999;fill-rule:evenodd"
    id="path1136"
    inkscape:flatsided="true"
    sodipodi:sides="3"
@@ -82,5 +82,5 @@
    inkscape:rounded="0"
    inkscape:randomized="0"
    d="m 20.33527,14.276472 -28.6705402,0 14.3352703,-24.829416 z"
-   transform="matrix(-0.96659542,0,0,-0.96659542,29.799573,13.799572)"
+   transform="matrix(-0.96659542,0,0,-0.96659542,29.799573,1.7995726)"
    inkscape:transform-center-y="4.000001" /></svg>
