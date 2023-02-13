@@ -2539,4 +2539,8 @@ function ReaderFooter:onTimeFormatChanged()
     self:refreshFooter(true, true)
 end
 
+function ReaderFooter:onCloseWidget()
+    self:free()
+end
+
 return ReaderFooter

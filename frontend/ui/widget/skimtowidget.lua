@@ -336,6 +336,8 @@ function SkimToWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.skimto_frame.dimen
     end)
+
+    self:free()
 end
 
 function SkimToWidget:onShow()
