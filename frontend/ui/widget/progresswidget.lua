@@ -36,6 +36,9 @@ local Math = require("optmath")
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
 
+-- Somewhat empirically chosen threshold to switch between the two design ;o)
+local INITIAL_MARKER_HEIGHT_THRESHOLD = Screen:scaleBySize(12)
+
 local ProgressWidget = Widget:extend{
     width = nil,
     height = nil,
@@ -56,8 +59,7 @@ local ProgressWidget = Widget:extend{
     alt = nil, -- table with alternate pages to mark with different color (in the form {{ini1, len1}, {ini2, len2}, ...})
     _orig_margin_v = nil,
     _orig_bordersize = nil,
-    initial_pos_marker = false, -- overlay a marker on the initial percentage
-    marker_threshold = Screen:scaleBySize(12), -- somewhat empirically chosen threshold ;o)
+    initial_pos_marker = false, -- overlay a marker at the initial percentage position
     inital_percentage = nil,
 }
 
@@ -85,7 +87,7 @@ function ProgressWidget:renderMarkerIcon()
         return
     end
 
-    if self.height <= self.marker_threshold then
+    if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
         self.initial_pos_icon = IconWidget:new{
             icon = "position.marker.top",
             width = Math.round(self.height / 2),
@@ -176,7 +178,7 @@ function ProgressWidget:paintTo(bb, x, y)
 
         -- Overlay the initial position marker on top of that
         if self.initial_pos_marker then
-            if self.height <= self.marker_threshold then
+            if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
                 self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.height / 4), y - Math.round(self.height / 6))
             else
                 self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.height / 2), y)
