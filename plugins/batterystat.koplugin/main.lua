@@ -81,7 +81,7 @@ end
 local function duration(number)
     local duration_fmt = G_reader_settings:readSetting("duration_format", "classic")
     return type(number) ~= "number" and number or
-        datetime.secondsToClockDuration(duration_fmt, number, true, true, true)
+        datetime.secondsToClockDuration(duration_fmt, number, true, true)
 end
 
 function Usage:dump(kv_pairs, id)

@@ -763,15 +763,33 @@ end
 -- @string path the directory to create
 -- @treturn bool true on success; nil, err_message on error
 function util.makePath(path)
-    path = path:gsub("/+$", "")
-    if util.pathExists(path) then return true end
-
-    local success, err = util.makePath((util.splitFilePathName(path)))
-    if not success then
-        return nil, err.." (creating "..path..")"
+    if lfs.attributes(path, "mode") == "directory" then
+        return true
     end
 
-    return lfs.mkdir(path)
+    local components
+    if path:sub(1, 1) == "/" then
+        -- Leading slash, remember that it's an absolute path
+        components = "/"
+    else
+        -- Relative path
+        components = ""
+    end
+
+    local success, err
+    -- NOTE: mkdir -p handles umask shenanigans for intermediate components, we don't
+    for component in path:gmatch("([^/]+)") do
+        -- The trailing slash ensures we properly fail via mkdir if the composite path already exists as a file/link
+        components = components .. component .. "/"
+        if not util.pathExists(components) then
+            success, err = lfs.mkdir(components)
+            if not success then
+                return nil, err .. " (creating `" .. components .. "` for `" .. path .. "`)"
+            end
+        end
+    end
+
+    return success, err
 end
 
 --- As `rm`

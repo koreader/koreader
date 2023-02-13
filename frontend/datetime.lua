@@ -113,6 +113,7 @@ end
 ---- @bool withoutSeconds if true 1h30', if false 1h30'10"
 ---- @bool hmsFormat, if true format 1h30m10s
 ---- @bool withDays, if true format 1d12h30m10s
+---- @bool compact, if set removes all leading zeros (incl. units if necessary)
 ---- @treturn string clock string in the form of 1h30'10" or 1h30m10s
 function datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, compact)
     local SECONDS_SYMBOL = "\""
@@ -185,16 +186,17 @@ function datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, 
 end
 
 --- Converts seconds to a clock type (classic or modern), based on the given format preference
---- "Classic" format calls secondsToClock, and "Modern" format calls secondsToHClock
----- @string Either "modern" for 1h30'10" or "classic" for 1:30:10
+--- "Classic" format calls secondsToClock, "Modern" and "Letters" formats call secondsToHClock
+---- @string Either "modern" for 1h30'10", "letters" for 1h30m10s, or "classic" for 1:30:10
 ---- @bool withoutSeconds if true 1h30' or 1h30m, if false 1h30'10" or 1h30m10s
----- @bool hmsFormat, modern format only, if true format 1h30m or 1h30m10s
 ---- @bool withDays, if hours>=24 include days in clock string 1d12h10m10s
 ---- @bool compact, if set removes all leading zeros (incl. units if necessary)
 ---- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h30m, 1h30m10s
-function datetime.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat, withDays, compact)
+function datetime.secondsToClockDuration(format, seconds, withoutSeconds, withDays, compact)
     if format == "modern" then
-        return datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, compact)
+        return datetime.secondsToHClock(seconds, withoutSeconds, false, withDays, compact)
+    elseif format == "letters" then
+        return datetime.secondsToHClock(seconds, withoutSeconds, true, withDays, compact)
     else
          -- Assume "classic" to give safe default
         return datetime.secondsToClock(seconds, withoutSeconds, withDays)
