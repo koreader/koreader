@@ -203,6 +203,11 @@ end
 
 function ProgressWidget:setPercentage(percentage)
     self.percentage = percentage
+    if self.initial_pos_marker then
+        if not self.inital_percentage then
+            self.inital_percentage = self.percentage
+        end
+    end
 end
 
 function ProgressWidget:getPercentageFromPosition(pos)

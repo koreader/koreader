@@ -583,7 +583,7 @@ function ReaderFooter:init()
     self.progress_bar = ProgressWidget:new{
         width = nil,
         height = nil,
-        percentage = 0,
+        percentage = nil,
         tick_width = Screen:scaleBySize(self.settings.toc_markers_width),
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
@@ -2120,18 +2120,16 @@ function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
         local flow = self.ui.document:getPageFlow(self.pageno)
         local page = self.ui.document:getPageNumberInFlow(self.pageno)
         local pages = self.ui.document:getTotalPagesInFlow(flow)
-        self.progress_bar.percentage = page / pages
+        self.progress_bar:setPercentage(page / pages)
     else
-        self.progress_bar.percentage = self.pageno / self.pages
+        self.progress_bar:setPercentage(self.pageno / self.pages)
     end
-    print("ReaderFooter:updateFooterPage @", self.progress_bar.percentage)
     self:updateFooterText(force_repaint, full_repaint)
 end
 
 function ReaderFooter:updateFooterPos(force_repaint, full_repaint)
     if type(self.position) ~= "number" then return end
-    self.progress_bar.percentage = self.position / self.doc_height
-    print("ReaderFooter:updateFooterPos @", self.progress_bar.percentage)
+    self.progress_bar:setPercentage(self.position / self.doc_height)
     self:updateFooterText(force_repaint, full_repaint)
 end
 
@@ -2298,9 +2296,6 @@ function ReaderFooter:onReaderReady()
     self:setTocMarkers()
     self.updateFooterText = self._updateFooterText
     self:onUpdateFooter()
-    -- We init ProgressWidget at 0%, so we'll have to update this ourselves
-    self.progress_bar.inital_percentage = self.progress_bar.percentage
-    print("ReaderFooter:onReaderReady @", self.progress_bar.percentage)
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
