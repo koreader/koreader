@@ -71,6 +71,7 @@ function SkimToWidget:init()
         tick_width = Size.line.medium,
         last = self.page_count,
         alt = self.ui.document.flows,
+        initial_pos_marker = true,
     }
 
     -- Bottom row buttons

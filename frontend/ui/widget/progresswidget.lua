@@ -133,30 +133,32 @@ function ProgressWidget:paintTo(bb, x, y)
                      self.fillcolor)
 
         -- Overlay the initial position marker on top of that
-        if not self.current_pos_icon then
-            self.current_pos_icon = IconWidget:new{
-                icon = "position.marker",
-                width = self.dimen.h, -- it's square
-                height = self.dimen.h,
-                alpha = true,
-            }
-            self.inital_percentage = self.percentage
-        end
-        -- The SVG becomes nearly invisible at small sizes, so,
-        -- rely on crappoy heuristics to resort to a simpler triangle at small sizes...
-        if self.dimen.h < self.marker_threshold then
-            -- Draw marker triangle, point first
-            local c = fill_x + math.floor(fill_width * self.inital_percentage)
-            local r = y + Math.round(self.dimen.h / 3)
-            local cols = 1
-            for _ = Math.round(self.dimen.h / 2), 0, -1 do
-                bb:paintRect(c, r, cols, 1, self.bordercolor)
-                cols = cols + 2
-                r = r - 1
-                c = c - 1
+        if self.initial_pos_marker then
+            if not self.initial_pos_icon then
+                self.initial_pos_icon = IconWidget:new{
+                    icon = "position.marker",
+                    width = self.dimen.h, -- it's square
+                    height = self.dimen.h,
+                    alpha = true,
+                }
+                self.inital_percentage = self.percentage
             end
-        else
-            self.current_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.dimen.h / 2), y)
+            -- The SVG becomes nearly invisible at small sizes, so,
+            -- rely on crappoy heuristics to resort to a simpler triangle at small sizes...
+            if self.dimen.h < self.marker_threshold then
+                -- Draw marker triangle, point first
+                local c = fill_x + math.floor(fill_width * self.inital_percentage)
+                local r = y + Math.round(self.dimen.h / 3)
+                local cols = 1
+                for _ = Math.round(self.dimen.h / 2), 0, -1 do
+                    bb:paintRect(c, r, cols, 1, self.bordercolor)
+                    cols = cols + 2
+                    r = r - 1
+                    c = c - 1
+                end
+            else
+                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.dimen.h / 2), y)
+            end
         end
     end
 
@@ -211,8 +213,8 @@ function ProgressWidget:setHeight(height)
     self.bordersize = math.max(self.bordersize, bordersize_min)
 
     -- Re-render marker, if any
-    if self.current_pos_icon then
-        self.current_pos_icon = IconWidget:new{
+    if self.initial_pos_icon then
+        self.initial_pos_icon = IconWidget:new{
             icon = "position.marker",
             width = self.height,
             height = self.height,
