@@ -72,10 +72,9 @@ local function getBooksByField(t, field, query)
     local result = {}
     for _, book in ipairs(t) do
         local data = book[field]
-        if data and data ~= rapidjson.null then
-            if data == query then
-                table.insert(result, book)
-            end
+        -- We can compare nil & rapidjson.null (light userdata) to a string safely
+        if data == query then
+            table.insert(result, book)
         end
     end
     return result
@@ -86,11 +85,9 @@ local function getBooksByNestedField(t, field, query)
     local result = {}
     for _, book in ipairs(t) do
         local array = book[field]
-        if type(array) == "table" then
-            for __, data in ipairs(array) do
-                if data == query then
-                    table.insert(result, book)
-                end
+        for __, data in ipairs(array) do
+            if data == query then
+                table.insert(result, book)
             end
         end
     end
@@ -102,6 +99,7 @@ local function searchByField(t, field, query, case_insensitive)
     local freq = {}
     for _, book in ipairs(t) do
         local data = book[field]
+        -- We have to make sure we only pass strings to match
         if data and data ~= rapidjson.null then
             if match(data, query, case_insensitive) then
                 freq[data] = (freq[data] or 0) + 1
@@ -116,11 +114,9 @@ local function searchByNestedField(t, field, query, case_insensitive)
     local freq = {}
     for _, book in ipairs(t) do
         local array = book[field]
-        if type(array) == "table" then
-            for __, data in ipairs(array) do
-                if match(data, query, case_insensitive) then
-                    freq[data] = (freq[data] or 0) + 1
-                end
+        for __, data in ipairs(array) do
+            if match(data, query, case_insensitive) then
+                freq[data] = (freq[data] or 0) + 1
             end
         end
     end
