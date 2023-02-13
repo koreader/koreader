@@ -140,7 +140,18 @@ function ProgressWidget:paintTo(bb, x, y)
             }
             self.inital_percentage = self.percentage
         end
-        self.current_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.dimen.h / 2), y)
+        -- Draw marker triangle, point first
+        local c = fill_x + math.ceil(fill_width * self.inital_percentage)
+        local r = y + Math.round(self.dimen.h / 4)
+        local cols = 1
+        for row = Math.round(self.dimen.h / 2), 0, -1 do
+            print("row", row, "@", c, r)
+            bb:paintRect(c, r, cols, 1, self.bordercolor)
+            cols = cols + 2
+            r = r - 1
+            c = c - 1
+        end
+        --self.current_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.dimen.h / 2), y)
     end
 
     -- ...then the tick(s).
