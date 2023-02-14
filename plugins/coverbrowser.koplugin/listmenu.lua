@@ -386,26 +386,27 @@ function ListMenuItem:update()
                 self.menu.cover_info_cache = {}
             end
             local pages_str = ""
-            local percent_finished, status
             local pages = bookinfo.pages -- default to those in bookinfo db
+            local percent_finished, status
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
                 if self.menu.cover_info_cache[self.filepath] then
                     pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
                 else
-                    local docinfo = DocSettings:open(self.filepath)
+                    local doc_settings = DocSettings:open(self.filepath)
                     -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
-                    if docinfo.data.doc_pages then
-                        pages = docinfo.data.doc_pages
-                    elseif docinfo.data.stats and docinfo.data.stats.pages then
-                        if docinfo.data.stats.pages ~= 0 then -- crengine with statistics disabled stores 0
-                            pages = docinfo.data.stats.pages
+                    local doc_pages = doc_settings:readSetting("doc_pages")
+                    if doc_pages then
+                        pages = doc_pages
+                    else
+                        local stats = doc_settings:readSetting("stats")
+                        if stats and stats.pages and stats.pages ~= 0 then -- crengine with statistics disabled stores 0
+                            pages = stats.pages
                         end
                     end
-                    if docinfo.data.summary and docinfo.data.summary.status then
-                        status = docinfo.data.summary.status
-                    end
-                    percent_finished = docinfo.data.percent_finished
+                    percent_finished = doc_settings:readSetting("percent_finished")
+                    local summary = doc_settings:readSetting("summary")
+                    status = summary and summary.status
                     self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
                 end
             end
