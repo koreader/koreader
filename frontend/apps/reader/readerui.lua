@@ -63,7 +63,8 @@ local logger = require("logger")
 local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
+local Input = Device.input
+local Screen = Device.screen
 local T = ffiUtil.template
 
 local ReaderUI = InputContainer:extend{
@@ -109,6 +110,7 @@ function ReaderUI:init()
     -- cap screen refresh on pan to 2 refreshes per second
     local pan_rate = Screen.low_pan_rate and 2.0 or 30.0
 
+    Input:inhibitInput(true) -- Inhibit any past and upcoming input events.
     Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
 
     self.postInitCallback = {}
@@ -479,6 +481,7 @@ function ReaderUI:init()
     self.postReaderCallback = nil
 
     Device:setIgnoreInput(false) -- Allow processing of events (on Android).
+    Input:inhibitInputUntil(0.2)
 
     -- print("Ordered registered gestures:")
     -- for _, tzone in ipairs(self._ordered_touch_zones) do
@@ -562,7 +565,7 @@ end
 --- @note: Will sanely close existing FileManager/ReaderUI instance for you!
 ---        This is the *only* safe way to instantiate a new ReaderUI instance!
 ---        (i.e., don't look at the testsuite, which resorts to all kinds of nasty hacks).
-function ReaderUI:showReader(file, provider)
+function ReaderUI:showReader(file, provider, seamless)
     logger.dbg("show reader ui")
 
     if lfs.attributes(file, "mode") ~= "file" then
@@ -584,21 +587,22 @@ function ReaderUI:showReader(file, provider)
     UIManager:broadcastEvent(Event:new("ShowingReader"))
     provider = provider or DocumentRegistry:getProvider(file)
     if provider.provider then
-        self:showReaderCoroutine(file, provider)
+        self:showReaderCoroutine(file, provider, seamless)
     end
 end
 
-function ReaderUI:showReaderCoroutine(file, provider)
+function ReaderUI:showReaderCoroutine(file, provider, seamless)
     UIManager:show(InfoMessage:new{
         text = T(_("Opening file '%1'."), BD.filepath(file)),
         timeout = 0.0,
+        invisible = seamless,
     })
     -- doShowReader might block for a long time, so force repaint here
     UIManager:forceRePaint()
     UIManager:nextTick(function()
         logger.dbg("creating coroutine for showing reader")
         local co = coroutine.create(function()
-            self:doShowReader(file, provider)
+            self:doShowReader(file, provider, seamless)
         end)
         local ok, err = coroutine.resume(co)
         if err ~= nil or ok == false then
@@ -612,7 +616,7 @@ function ReaderUI:showReaderCoroutine(file, provider)
     end)
 end
 
-function ReaderUI:doShowReader(file, provider)
+function ReaderUI:doShowReader(file, provider, seamless)
     logger.info("opening file", file)
     -- Only keep a single instance running
     if ReaderUI.instance then
@@ -664,7 +668,7 @@ function ReaderUI:doShowReader(file, provider)
         FileManager.instance:onClose()
     end
 
-    UIManager:show(reader, "full")
+    UIManager:show(reader, seamless and "ui" or "full")
 end
 
 -- NOTE: The instance reference used to be stored in a private module variable, hence the getter method.
@@ -832,7 +836,7 @@ function ReaderUI:onReload()
     self:reloadDocument()
 end
 
-function ReaderUI:reloadDocument(after_close_callback)
+function ReaderUI:reloadDocument(after_close_callback, seamless)
     local file = self.document.file
     local provider = getmetatable(self.document).__index
 
@@ -842,6 +846,7 @@ function ReaderUI:reloadDocument(after_close_callback)
 
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
+    self:handleEvent(Event:new("PreserveCurrentSession")) -- don't reset statistics' start_current_period
     self.highlight:onClose() -- close highlight dialog if any
     self:onClose(false)
     if after_close_callback then
@@ -849,7 +854,7 @@ function ReaderUI:reloadDocument(after_close_callback)
         after_close_callback(file, provider)
     end
 
-    self:showReader(file, provider)
+    self:showReader(file, provider, seamless)
 end
 
 function ReaderUI:switchDocument(new_file)
