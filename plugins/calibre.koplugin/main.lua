@@ -30,15 +30,9 @@ function Calibre:onCalibreSearch()
     return true
 end
 
-function Calibre:onCalibreBrowseTags()
+function Calibre:onCalibreBrowseBy(field)
     CalibreSearch.search_value = ""
-    CalibreSearch:find("tags", 1)
-    return true
-end
-
-function Calibre:onCalibreBrowseSeries()
-    CalibreSearch.search_value = ""
-    CalibreSearch:find("series", 1)
+    CalibreSearch:find(field)
     return true
 end
 
@@ -62,8 +56,10 @@ end
 
 function Calibre:onDispatcherRegisterActions()
     Dispatcher:registerAction("calibre_search", { category="none", event="CalibreSearch", title=_("Calibre metadata search"), general=true,})
-    Dispatcher:registerAction("calibre_browse_tags", { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), general=true,})
-    Dispatcher:registerAction("calibre_browse_series", { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), general=true, separator=true,})
+    Dispatcher:registerAction("calibre_browse_tags", { category="none", event="CalibreBrowseBy", arg="tags", title=_("Browse all calibre tags"), general=true,})
+    Dispatcher:registerAction("calibre_browse_series", { category="none", event="CalibreBrowseBy", arg="series", title=_("Browse all calibre series"), general=true,})
+    Dispatcher:registerAction("calibre_browse_authors", { category="none", event="CalibreBrowseBy", arg="authors", title=_("Browse all calibre authors"), general=true,})
+    Dispatcher:registerAction("calibre_browse_titles", { category="none", event="CalibreBrowseBy", arg="title", title=_("Browse all calibre titles"), general=true, separator=true,})
 end
 
 function Calibre:init()
@@ -210,12 +206,30 @@ function Calibre:getSearchMenuTable()
             end,
         },
         {
-            text = _("Search by path"),
+            text = _("Search by series"),
             checked_func = function()
-                return G_reader_settings:nilOrTrue("calibre_search_find_by_path")
+                return G_reader_settings:isTrue("calibre_search_find_by_series")
             end,
             callback = function()
-                G_reader_settings:flipNilOrTrue("calibre_search_find_by_path")
+                G_reader_settings:toggle("calibre_search_find_by_series")
+            end,
+        },
+        {
+            text = _("Search by tag"),
+            checked_func = function()
+                return G_reader_settings:isTrue("calibre_search_find_by_tag")
+            end,
+            callback = function()
+                G_reader_settings:toggle("calibre_search_find_by_tag")
+            end,
+        },
+        {
+            text = _("Search by path"),
+            checked_func = function()
+                return G_reader_settings:isTrue("calibre_search_find_by_path")
+            end,
+            callback = function()
+                G_reader_settings:toggle("calibre_search_find_by_path")
             end,
         },
     }
