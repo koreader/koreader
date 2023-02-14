@@ -2478,6 +2478,8 @@ end
 
 function ReaderFooter:onSuspend()
     self:unscheduleFooterAutoRefresh()
+    -- Reset the initial marker
+    self.progress_bar.inital_percentage = nil
 end
 
 ReaderFooter.onEnterStandby = ReaderFooter.onSuspend
