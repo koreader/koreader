@@ -26,7 +26,9 @@ local userpatch = require("userpatch")
 userpatch.applyPatches(userpatch.early_once)
 userpatch.applyPatches(userpatch.early)
 
-io.write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
+local Version = require("version")
+local current_version = Version:getCurrentRevision()
+io.write(" [*] Version: ", current_version, "\n\n")
 
 -- Load default settings
 G_defaults = require("luadefaults"):open()
@@ -157,6 +159,11 @@ end
 local hw_nightmode = Device.screen:getHWNightmode()
 if G_reader_settings:isTrue("night_mode") then
     Device.screen:toggleNightMode()
+end
+-- Update the version log file if there was an update
+local last_version, last_model = Version:getLastVersion()
+if last_version ~= current_version or last_model ~= Device.model then
+    Version:appendVersionLog(Device.model)
 end
 -- Ensure the proper rotation on startup.
 -- We default to the rotation KOReader closed with.
