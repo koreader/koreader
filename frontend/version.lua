@@ -2,6 +2,12 @@
 This module helps with retrieving version information.
 ]]
 
+local LogFile = require("logfile")
+
+local VERSION_LOG_FILE = "version.log"
+local LAST_VERSION_NOT_FOUND = "last version not found"
+local MAX_NB_LOG_LINES = 365
+
 local Version = {}
 
 --- Returns current KOReader git-rev.
@@ -84,6 +90,24 @@ function Version:getBuildDate()
         end
     end
     return self.date
+end
+
+--- Updates `VERSION_LOG_FILE` and keep the file small
+-- @string model device model (may contain spaces)
+function Version:updateVersionLog(current_model)
+    local last_line = LogFile:getLastLineAndShrinkFile(VERSION_LOG_FILE, MAX_NB_LOG_LINES - 1)
+
+    local dummy, dummy, last_version, last_model = last_line:match("(.-), (.-), (.-), (.-)$")
+    self.last_version = last_version or ""
+    self.last_model = last_model or ""
+
+    if self.rev ~= last_version or current_model ~= last_model then
+        -- Appends KOReader git-rev, model and current date to the `VERSION_LOG_FILE`
+        -- in the format 'YYYY-mm-dd, HH:MM:SS, git-rev, model'
+        LogFile:append(VERSION_LOG_FILE,
+            os.date("%Y-%m-%d, %X, ") .. (self.rev or LAST_VERSION_NOT_FOUND) .. ", " .. (current_model or ""),
+            MAX_NB_LOG_LINES)
+    end
 end
 
 return Version
