@@ -123,6 +123,8 @@ local Device = {
     canOpenLink = no,
     openLink = no,
     canExternalDictLookup = no,
+
+    requested_cpu_cores_nb = 1, --requested number of online CPU cores
 }
 
 function Device:extend(o)
@@ -478,7 +480,29 @@ function Device:setupChargingLED() end
 
 -- Device specific method for enabling a specific amount of CPU cores
 -- (Should only be implemented on embedded platforms where we can afford to control that without screwing with the system).
-function Device:enableCPUCores(amount) end
+-- Returns the number of online CPU cores.
+function Device:enableCPUCores(amount)
+    self.requested_cpu_cores_nb = amount
+    return amount
+end
+
+-- Device specific method to enable/disable a specific amount of CPU cores (if possible)
+-- amount might be negative.
+-- Returns the number of requested online CPU cores.
+-- see Device:enabledCPUCores()
+function Device:adjustEnabledCPUCores(amount)
+    self.requested_cpu_cores_nb = self.requested_cpu_cores_nb + amount
+    if self.requested_cpu_cores_nb < 1 then
+        logger.warn("Some workflow has tried to disable ALL CPU cores! This should not happen!")
+        self.requested_cpu_cores = 1
+    end
+
+    logger.dbg("xxx adjust CPU cores by", amount, "to", self.requested_cpu_cores_nb) -- delete that later xxx
+    return self.requested_cpu_cores
+end
+
+-- Device specific method to get the number of enabled CPU cores
+function Device:numberOfEnabledCPUCores() return self.requested_cpu_cores_nb end
 
 -- NOTE: For this to work, all three must be implemented, and getKeyRepeat must be run on init (c.f., Kobo)!
 -- Device specific method to get the current key repeat setup

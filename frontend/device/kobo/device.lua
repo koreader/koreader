@@ -166,7 +166,9 @@ local Kobo = Generic:extend{
     -- Device ships with various hardware revisions under the same device code, requirign automatic hardware detection...
     automagic_sysfs = false,
 
-    unexpected_wakeup_count = 0
+    unexpected_wakeup_count = 0,
+
+    requested_cpu_cores_nb = 1,
 }
 
 local KoboTrilogyA = Kobo:extend{
@@ -678,6 +680,7 @@ function Kobo:init()
     -- NOP unsupported methods
     if self.cpu_count == 1 then
         self.enableCPUCores = NOP
+        self.adjustEnabledCPUCores = NOP
     end
 
     -- Automagically set this so we never have to remember to do it manually ;p
@@ -1353,7 +1356,7 @@ end
 
 function Kobo:enableCPUCores(amount)
     -- CPU0 is *always* online ;).
-    for n = 1, self.cpu_count do
+    for n = math.max(self.cpu_count, self.requested_cpu_cores_nb), 1, -1 do
         local path = "/sys/devices/system/cpu/cpu" .. n .. "/online"
         local up
         if n >= amount then
@@ -1364,6 +1367,20 @@ function Kobo:enableCPUCores(amount)
 
         writeToSys(up, path)
     end
+end
+
+function Kobo:numberOfEnabledCPUCores()
+    return self.requested_cpu_cores_nb
+end
+
+function Kobo:adjustEnabledCPUCores(amount)
+    self.requested_cpu_cores_nb = self.requested_cpu_cores_nb + amount
+    if self.requested_cpu_cores < 1 then
+        logger.dbg("Some workflow has tried to disable ALL CPU cores! This should not happen!")
+        self.requested_cpu_cores = 1
+    end
+    self.enableCPUCores(self.requested_cpu_cores_nb)
+    return self.requested_cpu_cores_nb
 end
 
 function Kobo:performanceCPUGovernor()
