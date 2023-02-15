@@ -2,6 +2,8 @@
 This module helps with retrieving version information.
 ]]
 
+local VERSION_LOG_FILE = "version.log"
+
 local Version = {}
 
 --- Returns current KOReader git-rev.
@@ -84,6 +86,49 @@ function Version:getBuildDate()
         end
     end
     return self.date
+end
+
+--- Get last line in `VERSION_LOG_FILE`.
+-- @treturn last line in `VERSION_LOG_FILE` or an empty string
+function Version:getLastLogLine()
+    local log_file = io.open(VERSION_LOG_FILE, "r")
+    local last_log_line
+    if log_file then
+        for line in log_file:lines() do
+            last_log_line = line
+        end
+        log_file:close()
+    end
+
+    return last_log_line or ""
+end
+
+--- Append text to a `VERSION_LOG_FILE`.
+-- @string text text to be appended
+function Version:appendToLogFile(text)
+    local log_file = io.open(VERSION_LOG_FILE, "a")
+    if not log_file then
+        return
+    end
+    log_file:write(text, "\n")
+    log_file:close()
+    return true
+end
+
+--- Updates `VERSION_LOG_FILE` and keep the file small
+-- @string model device model (may contain spaces)
+function Version:updateVersionLog(current_model)
+    local last_line = Version:getLastLogLine()
+
+    local dummy, dummy, last_version, last_model = last_line:match("(.-), (.-), (.-), (.-)$")
+    self.last_version = last_version or "last version not found"
+    self.last_model = last_model or "last model not found"
+
+    if self.rev ~= last_version or current_model ~= last_model then
+        -- Appends KOReader git-rev, model and current date to the `VERSION_LOG_FILE`
+        -- in the format 'YYYY-mm-dd, HH:MM:SS, git-rev, model'
+        self:appendToLogFile(os.date("%Y-%m-%d, %X, ") .. self.rev .. ", " .. current_model)
+    end
 end
 
 return Version
