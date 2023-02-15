@@ -110,7 +110,7 @@ function KoptInterface:waitForContext(kc)
 
     if waited or self.bg_thread then
         -- Background thread is done, go back to a single CPU core.
-        CanvasContext:enableCPUCores(1)
+        CanvasContext:adjustEnabledCPUCores(-1)
         self.bg_thread = nil
     end
 
@@ -392,7 +392,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
     local cached = DocCache:check(hash, TileCacheItem)
     if not cached then
         if hinting then
-            CanvasContext:enableCPUCores(2)
+            CanvasContext:adjustEnabledCPUCores(1)
         end
 
         local page_size = Document.getNativePageDimensions(doc, pageno)
@@ -426,7 +426,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         DocCache:insert(hash, tile)
 
         if hinting then
-            CanvasContext:enableCPUCores(1)
+            CanvasContext:adjustEnabledCPUCores(-1)
         end
 
         return tile
@@ -465,7 +465,7 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, rend
     local cached = DocCache:check(hash)
     if not cached then
         if hinting then
-            CanvasContext:enableCPUCores(2)
+            CanvasContext:adjustEnabledCPUCores(1)
         end
 
         local kc = self:createContext(doc, pageno, bbox)

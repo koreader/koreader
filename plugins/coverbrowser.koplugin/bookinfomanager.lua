@@ -674,7 +674,7 @@ function BookInfoManager:collectSubprocesses()
 
     -- We're done, back to a single core
     if #self.subprocesses_pids == 0 then
-        Device:enableCPUCores(1)
+        Device:adjustEnabledCPUCores(-1)
     end
 end
 
@@ -717,7 +717,7 @@ function BookInfoManager:extractInBackground(files)
 
     -- If it's the first subprocess we're launching, enable 2 CPU cores
     if #self.subprocesses_pids == 0 then
-        Device:enableCPUCores(2)
+        Device:adjustEnabledCPUCores(1)
     end
 
     -- Run task in sub-process, and remember its pid

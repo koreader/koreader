@@ -96,4 +96,8 @@ function CanvasContext:enableCPUCores(amount)
     return self.device:enableCPUCores(amount)
 end
 
+function CanvasContext:adjustEnabledCPUCores(amount)
+    return self.device:adjustEnabledCPUCores(amount)
+end
+
 return CanvasContext

@@ -426,7 +426,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
     end
 
     if hinting then
-        CanvasContext:enableCPUCores(2)
+        CanvasContext:adjustEnabledCPUCores(1)
     end
     self:preRenderPage()
 
@@ -442,7 +442,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
             logger.warn("aborting, since we do not have a specification for that part")
             -- required part not given, so abort
             if hinting then
-                CanvasContext:enableCPUCores(1)
+                CanvasContext:adjustEnabledCPUCores(-1)
             end
             return
         end
@@ -488,7 +488,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, h
 
     self:postRenderPage()
     if hinting then
-        CanvasContext:enableCPUCores(1)
+        CanvasContext:adjustEnabledCPUCores(-1)
     end
     return tile
 end
