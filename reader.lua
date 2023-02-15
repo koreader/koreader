@@ -26,7 +26,8 @@ local userpatch = require("userpatch")
 userpatch.applyPatches(userpatch.early_once)
 userpatch.applyPatches(userpatch.early)
 
-io.write(" [*] Version: ", require("version"):getCurrentRevision(), "\n\n")
+local Version = require("version")
+io.write(" [*] Version: ", Version:getCurrentRevision(), "\n\n")
 
 -- Load default settings
 G_defaults = require("luadefaults"):open()
@@ -184,6 +185,9 @@ end
 -- Document renderers canvas
 local CanvasContext = require("document/canvascontext")
 CanvasContext:init(Device)
+
+-- Update the version log file if there was an update or the device has changed
+Version:updateVersionLog(Device.model)
 
 -- Handle one time migration stuff (settings, deprecation, ...) in case of an upgrade...
 require("ui/data/onetime_migration")
