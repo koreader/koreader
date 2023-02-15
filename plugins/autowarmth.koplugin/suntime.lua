@@ -19,7 +19,7 @@ Maximal errors from 2020-2050 (compared to https://midcdmz.nrel.gov/spa/) are:
 * 47.25° Innsbruck:    13s
 * 52.32° Berlin:       30s
 * 59.92° Oslo:         42s
-* 64.14° Reykjavik:    66s
+* 64.14° Reykjavik:    69s
 * 65.69° Akureyri:    <24s (except *)
 * 70.67° Hammerfest: <105s (except **)
 
@@ -73,7 +73,7 @@ local average_earth_radius = 6371e3
 local semimajor_axis = 149598022.96E3 -- earth orbit's major semi-axis in meter
 local average_speed_earth = 29.7859e3
 local aberration = asin(average_speed_earth/speed_of_light) -- Aberration relativistic
---local average_speed_equator = (2*pi * average_earth_radius) / (24*3600)
+-- local average_speed_equator = (2*pi * average_earth_radius) / (24*3600)
 --------------------------------------------
 
  -- minimal twillight times in hours
@@ -166,7 +166,7 @@ Set position for later calculations
 @param name Name of the location
 @param latitude Geographical latitude, North is positive
 @param longitude Geographical longitude, West is negative
-@param time_zone Timezone e.g. CET = +1
+@param time_zone Timezone e.g. CET = +1; if nil try to autodetect the current zone
 @param altitude Altitude of the location above the sea level
 @param degree if `nil` latitude and longitue are in radian, else in decimal degree
  --]]--
@@ -194,7 +194,7 @@ function SunTime:setPosition(name, latitude, longitude, time_zone, altitude, deg
     latitude = atan((1-self.earth_flatten)^2 * tan(latitude))
 
     self.pos = {name = name, latitude = latitude, longitude = longitude, altitude = altitude}
-    self.time_zone = time_zone
+    self.time_zone = time_zone or self:getTimezoneOffset()
 --    self.refract = Rad(36.35/60 * .5 ^ (altitude / 5538)) -- constant temperature
     self.refract = Rad(36.20/60 * (1 - 0.0065*altitude/(273.15+self.average_temperature)) ^ 5.255 )
 
@@ -381,6 +381,7 @@ function SunTime:getHeight(time, eod)
 end
 
 -- Get time for a certain height
+-- Set height to nil for sunset/rise
 -- Set hour near to expected time
 -- Set after_noon to true, if sunset is wanted
 -- Set no_correct_dst if no daylight saving correction is wanted
@@ -419,13 +420,13 @@ function SunTime:calculateTimeIter(height, hour, default_hour)
     local after_noon = (hour and hour > 12) or (default_hour and default_hour > 12)
 
     if not hour then -- do the iteration with the default value
-        hour = self:calculateTime(height or self.eod, default_hour, after_noon, true)
+        hour = self:calculateTime(height, default_hour, after_noon, true)
     elseif hour and not default_hour then -- do the full iteration with value
-        hour = self:calculateTime(height or self.eod, hour, after_noon, true)
+        hour = self:calculateTime(height, hour, after_noon, true)
     end -- if hour and default_hour are given don't do the first step
 
     if hour ~= nil then -- do the last calculation step
-        hour = self:calculateTime(height or self.eod, hour, after_noon)
+        hour = self:calculateTime(height, hour, hour > 12)
     end
     return hour
 end
@@ -520,29 +521,29 @@ function SunTime:calculateTimes(fast_twilight)
     -- All or some the times can be nil at great latitudes
     -- but either noon or midnight is not nil
 
-if not fast_twilight then
+    if not fast_twilight then
     -- The canonical way is to calculate everything from scratch
-    self.rise = self:calculateTimeIter(nil, 6)
-    self.set = self:calculateTimeIter(nil, 18)
+        self.rise = self:calculateTimeIter(nil, 6)
+        self.set = self:calculateTimeIter(nil, 18)
 
-    self.rise_civil = self:calculateTimeIter(self.civil, 6)
-    self.set_civil = self:calculateTimeIter(self.civil, 18)
-    self.rise_nautic = self:calculateTimeIter(self.nautic, 6)
-    self.set_nautic = self:calculateTimeIter(self.nautic, 18)
-    self.rise_astronomic = self:calculateTimeIter(self.astronomic, 6)
-    self.set_astronomic = self:calculateTimeIter(self.astronomic, 18)
-else
-    -- Calculate rise and set from scratch, use these values for twilight times
-    self.rise = self:calculateTimeIter(nil, 6)
-    self.rise_civil = self:calculateTimeIter(self.civil, self.rise - min_civil_twilight, 6)
-    self.rise_nautic = self:calculateTimeIter(self.nautic, self.rise_civil - min_nautic_twilight, 6)
-    self.rise_astronomic = self:calculateTimeIter(self.astronomic, self.rise_nautic - min_astronomic_twilight, 6)
+        self.rise_civil = self:calculateTimeIter(self.civil, 6)
+        self.set_civil = self:calculateTimeIter(self.civil, 18)
+        self.rise_nautic = self:calculateTimeIter(self.nautic, 6)
+        self.set_nautic = self:calculateTimeIter(self.nautic, 18)
+        self.rise_astronomic = self:calculateTimeIter(self.astronomic, 6)
+        self.set_astronomic = self:calculateTimeIter(self.astronomic, 18)
+    else
+        -- Calculate rise and set from scratch, use these values for twilight times
+        self.rise = self:calculateTimeIter(nil, 6)
+        self.rise_civil = self:calculateTimeIter(self.civil, self.rise - min_civil_twilight, 6)
+        self.rise_nautic = self:calculateTimeIter(self.nautic, self.rise_civil - min_nautic_twilight, 6)
+        self.rise_astronomic = self:calculateTimeIter(self.astronomic, self.rise_nautic - min_astronomic_twilight, 6)
 
-    self.set = self:calculateTimeIter(nil, 18)
-    self.set_civil = self:calculateTimeIter(self.civil, self.set + min_civil_twilight, 18)
-    self.set_nautic = self:calculateTimeIter(self.nautic, self.set_civil + min_nautic_twilight, 18)
-    self.set_astronomic = self:calculateTimeIter(self.astronomic, self.set_nautic + min_astronomic_twilight, 18)
-end
+        self.set = self:calculateTimeIter(nil, 18)
+        self.set_civil = self:calculateTimeIter(self.civil, self.set + min_civil_twilight, 18)
+        self.set_nautic = self:calculateTimeIter(self.nautic, self.set_civil + min_nautic_twilight, 18)
+        self.set_astronomic = self:calculateTimeIter(self.astronomic, self.set_nautic + min_astronomic_twilight, 18)
+    end
 
     self.midnight_beginning = self:calculateMidnight(0)
     self.noon = self:calculateNoon()
@@ -594,6 +595,14 @@ function SunTime:getTimeInSec(val)
         val = val*3600
     end
     return math.floor(val * 1000) * (1/1000)
+end
+
+-- Get the timezone offset in hours (including dst).
+ function SunTime:getTimezoneOffset()
+    local now_ts = os.time()
+    local utcdate   = os.date("!*t", now_ts)
+    local localdate = os.date("*t", now_ts)
+    return os.difftime(os.time(localdate), os.time(utcdate)) * (1/3600)
 end
 
 return SunTime
