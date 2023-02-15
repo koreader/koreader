@@ -2,6 +2,9 @@
 This module helps with retrieving version information.
 ]]
 
+local VERSION_LOG_FILE = "version.log"
+local LAST_VERSION_NOT_FOUND = "last version not found"
+
 local Version = {}
 
 --- Returns current KOReader git-rev.
@@ -84,6 +87,56 @@ function Version:getBuildDate()
         end
     end
     return self.date
+end
+
+-- Returns the last line in a file. If `skip_nl_at_end` is true, omit the NL at eof
+local function readLastLine(filePath, skip_nl_at_end)
+    local file = io.open(filePath, "r")
+    if not file then
+        return
+    end
+
+    local eof  = file:seek("end")
+    for i = 1, eof do
+        file:seek("set", eof - i)
+        if i == eof then
+            break
+        elseif file:read(1) == '\n' then
+            if not skip_nl_at_end and i ~= 1 then
+                break
+            end
+        end
+    end
+
+    local lastLine = file:read("*a")
+    file:close()
+    return lastLine
+end
+
+--- Returns the KOReader git-rev and model of the last line in the VERSION\_LOG\_FILE
+-- @treturn string,string last line in KOReader git-rev format, device model
+function Version:getLastVersion()
+    local last_version_line = readLastLine(VERSION_LOG_FILE) or ""
+    self.last_version = last_version_line:match("%S*") or LAST_VERSION_NOT_FOUND
+    local model = last_version_line:match(" .* %(") or "  (" -- two spaces and a parens
+    model = model:sub(2, model:len() - 2)
+
+    return self.last_version, model
+end
+
+--- Appends KOReader git-rev, model and current date to the VERSION\_LOG\_FILE
+--- in the format 'git-rev "model" (YYYY-mm-dd HH:MM:SS)'
+-- @string model device model (may contain spaces)
+function Version:appendVersionLog(model)
+    local file = io.open(VERSION_LOG_FILE, "a")
+    if not file then
+        return
+    end
+
+    file:write(self.rev or LAST_VERSION_NOT_FOUND, " ", model or "", os.date(" (%Y-%m-%d %X)\n"))
+
+    file:close()
+    return
 end
 
 return Version
