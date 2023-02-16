@@ -792,7 +792,7 @@ function util.makePath(path)
     return success, err
 end
 
---- Remove as many empty directories in the path, children-first.
+--- Remove as many of the empty directories specified in path, children-first.
 -- Does not fail (up until the first real issue) if the directory is already gone.
 -- @string path the directory tree to prune
 -- @treturn bool true on success; nil, err_message on error
