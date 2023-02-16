@@ -62,6 +62,7 @@ local STATISTICS_SQL_BOOK_TOTALS_QUERY = [[
 local ReaderStatistics = Widget:extend{
     name = "statistics",
     start_current_period = 0,
+    preserved_start_current_period = nil, -- should stay a class property
     curr_page = 0,
     id_curr_book = nil,
     is_enabled = nil,
@@ -120,6 +121,10 @@ function ReaderStatistics:init()
     }
 
     self.start_current_period = os.time()
+    if ReaderStatistics.preserved_start_current_period then
+        self.start_current_period = ReaderStatistics.preserved_start_current_period
+        ReaderStatistics.preserved_start_current_period = nil
+    end
     self:resetVolatileStats()
 
     self.settings = G_reader_settings:readSetting("statistics", self.default_settings)
@@ -244,6 +249,23 @@ function ReaderStatistics:onDocumentRerendered()
 
     -- Update our copy of the page count
     self.data.pages = new_pagecount
+end
+
+function ReaderStatistics:onDocumentPartiallyRerendered(first_partial_rerender)
+    if not first_partial_rerender then return end -- already done
+    -- Override :onPageUpdate() to not account page changes from now on
+    self.onPageUpdate = function(this, pageno)
+        if pageno == false then -- happens from onCloseDocument
+            -- We need to call the original one to get saved previous statistics correct
+            return ReaderStatistics.onPageUpdate(this, false)
+        end
+        return
+    end
+end
+
+function ReaderStatistics:onPreserveCurrentSession()
+    -- Can be called before ReaderUI:reloadDocument() to not reset the current session
+    ReaderStatistics.preserved_start_current_period = self.start_current_period
 end
 
 function ReaderStatistics:resetVolatileStats(now_ts)

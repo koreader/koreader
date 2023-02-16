@@ -83,6 +83,8 @@ local order = {
         "document_save",
         "document_end_action",
         "language_support",
+        "----------------------------",
+        "partial_rerendering",
     },
     device = {
         "keyboard_layout",
