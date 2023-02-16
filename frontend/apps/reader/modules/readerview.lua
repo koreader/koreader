@@ -190,6 +190,14 @@ function ReaderView:paintTo(bb, x, y)
         elseif self.view_mode == "scroll" then
             self:drawScrollView(bb, x, y)
         end
+        local should_repaint = self.ui.rolling:handlePartialRerendering()
+        if should_repaint then
+            -- ReaderRolling may have repositionned on another page containing
+            -- the xpointer of the top of the original page: recalling this is
+            -- all there is to do.
+            self:paintTo(bb, x, y)
+            return
+        end
     end
 
     -- dim last read area
@@ -226,7 +234,8 @@ function ReaderView:paintTo(bb, x, y)
         self.footer:paintTo(bb, x, y)
     end
     -- paint flipping or select mode sign
-    if self.flipping_visible or self.ui.highlight.select_mode then
+    if self.flipping_visible or self.ui.highlight.select_mode
+            or (self.ui.rolling and self.ui.rolling.rendering_state) then
         self.flipping:paintTo(bb, x, y)
     end
     for _, m in pairs(self.view_modules) do
