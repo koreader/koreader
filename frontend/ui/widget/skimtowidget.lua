@@ -71,6 +71,7 @@ function SkimToWidget:init()
         tick_width = Size.line.medium,
         last = self.page_count,
         alt = self.ui.document.flows,
+        initial_pos_marker = true,
     }
 
     -- Bottom row buttons
@@ -335,6 +336,8 @@ function SkimToWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.skimto_frame.dimen
     end)
+
+    self:free()
 end
 
 function SkimToWidget:onShow()

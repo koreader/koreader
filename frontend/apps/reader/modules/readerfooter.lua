@@ -437,7 +437,6 @@ local ReaderFooter = WidgetContainer:extend{
     mode = MODE.page_progress,
     pageno = nil,
     pages = nil,
-    progress_percentage = 0.0,
     footer_text = nil,
     text_font_face = "ffont",
     height = Screen:scaleBySize(G_defaults:readSetting("DMINIBAR_CONTAINER_HEIGHT")),
@@ -496,6 +495,7 @@ ReaderFooter.default_settings = {
     progress_pct_format = "0",
     progress_margin = false,
     pages_left_includes_current_page = false,
+    initial_marker = false,
 }
 
 function ReaderFooter:init()
@@ -584,10 +584,11 @@ function ReaderFooter:init()
     self.progress_bar = ProgressWidget:new{
         width = nil,
         height = nil,
-        percentage = self.progress_percentage,
+        percentage = nil,
         tick_width = Screen:scaleBySize(self.settings.toc_markers_width),
         ticks = nil, -- ticks will be populated in self:updateFooterText
         last = nil, -- last will be initialized in self:updateFooterText
+        initial_pos_marker = self.settings.initial_marker,
     }
 
     if self.settings.progress_style_thin then
@@ -1840,6 +1841,17 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                             },
                         },
                     },
+                    {
+                        text = _("Show initial position marker"),
+                        checked_func = function()
+                            return self.settings.initial_marker == true
+                        end,
+                        callback = function()
+                            self.settings.initial_marker = not self.settings.initial_marker
+                            self.progress_bar.initial_pos_marker = self.settings.initial_marker
+                            self:refreshFooter(true)
+                        end
+                    },
                 },
             },
             {
@@ -2120,16 +2132,16 @@ function ReaderFooter:updateFooterPage(force_repaint, full_repaint)
         local flow = self.ui.document:getPageFlow(self.pageno)
         local page = self.ui.document:getPageNumberInFlow(self.pageno)
         local pages = self.ui.document:getTotalPagesInFlow(flow)
-        self.progress_bar.percentage = page / pages
+        self.progress_bar:setPercentage(page / pages)
     else
-        self.progress_bar.percentage = self.pageno / self.pages
+        self.progress_bar:setPercentage(self.pageno / self.pages)
     end
     self:updateFooterText(force_repaint, full_repaint)
 end
 
 function ReaderFooter:updateFooterPos(force_repaint, full_repaint)
     if type(self.position) ~= "number" then return end
-    self.progress_bar.percentage = self.position / self.doc_height
+    self.progress_bar:setPercentage(self.position / self.doc_height)
     self:updateFooterText(force_repaint, full_repaint)
 end
 
@@ -2466,6 +2478,8 @@ end
 
 function ReaderFooter:onSuspend()
     self:unscheduleFooterAutoRefresh()
+    -- Reset the initial marker
+    self.progress_bar.inital_percentage = nil
 end
 
 ReaderFooter.onEnterStandby = ReaderFooter.onSuspend
@@ -2525,6 +2539,10 @@ end
 
 function ReaderFooter:onTimeFormatChanged()
     self:refreshFooter(true, true)
+end
+
+function ReaderFooter:onCloseWidget()
+    self:free()
 end
 
 return ReaderFooter

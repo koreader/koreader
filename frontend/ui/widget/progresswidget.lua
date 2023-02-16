@@ -31,8 +31,13 @@ Example:
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
+local IconWidget = require("ui/widget/iconwidget")
+local Math = require("optmath")
 local Widget = require("ui/widget/widget")
 local Screen = require("device").screen
+
+-- Somewhat empirically chosen threshold to switch between the two designs ;o)
+local INITIAL_MARKER_HEIGHT_THRESHOLD = Screen:scaleBySize(12)
 
 local ProgressWidget = Widget:extend{
     width = nil,
@@ -54,7 +59,50 @@ local ProgressWidget = Widget:extend{
     alt = nil, -- table with alternate pages to mark with different color (in the form {{ini1, len1}, {ini2, len2}, ...})
     _orig_margin_v = nil,
     _orig_bordersize = nil,
+    initial_pos_marker = false, -- overlay a marker at the initial percentage position
+    inital_percentage = nil,
 }
+
+function ProgressWidget:init()
+    if self.initial_pos_marker then
+        if not self.inital_percentage then
+            self.inital_percentage = self.percentage
+        end
+
+        self:renderMarkerIcon()
+    end
+end
+
+function ProgressWidget:renderMarkerIcon()
+    if not self.initial_pos_marker then
+        return
+    end
+
+    if self.initial_pos_icon then
+        self.initial_pos_icon:free()
+    end
+
+    -- Can't do anything if we don't have a proper height yet...
+    if not self.height then
+        return
+    end
+
+    if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
+        self.initial_pos_icon = IconWidget:new{
+            icon = "position.marker.top",
+            width = Math.round(self.height / 2),
+            height = Math.round(self.height / 2),
+            alpha = true,
+        }
+    else
+        self.initial_pos_icon = IconWidget:new{
+            icon = "position.marker",
+            width = self.height,
+            height = self.height,
+            alpha = true,
+        }
+    end
+end
 
 function ProgressWidget:getSize()
     return { w = self.width, h = self.height }
@@ -127,6 +175,15 @@ function ProgressWidget:paintTo(bb, x, y)
                      math.ceil(fill_width * self.percentage),
                      math.ceil(fill_height),
                      self.fillcolor)
+
+        -- Overlay the initial position marker on top of that
+        if self.initial_pos_marker then
+            if self.height <= INITIAL_MARKER_HEIGHT_THRESHOLD then
+                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.height / 4), y - Math.round(self.height / 6))
+            else
+                self.initial_pos_icon:paintTo(bb, Math.round(fill_x + math.ceil(fill_width * self.inital_percentage) - self.height / 2), y)
+            end
+        end
     end
 
     -- ...then the tick(s).
@@ -149,6 +206,11 @@ end
 
 function ProgressWidget:setPercentage(percentage)
     self.percentage = percentage
+    if self.initial_pos_marker then
+        if not self.inital_percentage then
+            self.inital_percentage = self.percentage
+        end
+    end
 end
 
 function ProgressWidget:getPercentageFromPosition(pos)
@@ -178,6 +240,9 @@ function ProgressWidget:setHeight(height)
     self.margin_v = math.max(self.margin_v, margin_v_min)
     self.bordersize = math.min(self._orig_bordersize, math.floor((self.height - 2*self.margin_v - 1) / 2))
     self.bordersize = math.max(self.bordersize, bordersize_min)
+
+    -- Re-render marker, if any
+    self:renderMarkerIcon()
 end
 
 function ProgressWidget:updateStyle(thick, height)
@@ -206,6 +271,12 @@ function ProgressWidget:updateStyle(thick, height)
         if height then
             self:setHeight(height)
         end
+    end
+end
+
+function ProgressWidget:free()
+    if self.initial_pos_icon then
+        self.initial_pos_icon:free()
     end
 end
 
