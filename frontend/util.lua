@@ -824,6 +824,8 @@ function util.removePath(path)
                 -- If directory doesn't exist but we haven't failed yet, keep going,
                 -- we might be able to remove empty directories further up the path.
                 if not success then
+                    -- This is unreachable, we always return as soon as success is false;
+                    -- I just needed a continue when success is true ;).
                     return nil, "Encountered an intermediate component that doesn't exist" .. " (removing `" .. component .. "` for `" .. path .. "`)"
                 end
             else
