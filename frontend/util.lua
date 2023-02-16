@@ -813,25 +813,18 @@ function util.removePath(path)
     local err
     for _ = #components, 1, -1 do
         local component = table.concat(components, "/")
-        if lfs.attributes(component, "mode") == "directory" then
+        local attr = lfs.attributes(component, "mode")
+        if attr == "directory" then
             success, err = lfs.rmdir(component)
             if not success then
                 -- Most likely because ENOTEMPTY ;)
                 return nil, err .. " (removing `" .. component .. "` for `" .. path .. "`)"
             end
-        else
-            if lfs.attributes(component, "mode") == nil then
-                -- If directory doesn't exist but we haven't failed yet, keep going,
-                -- we might be able to remove empty directories further up the path.
-                if not success then
-                    -- This is unreachable, we always return as soon as success is false;
-                    -- I just needed a continue when success is true ;).
-                    return nil, "Encountered an intermediate component that doesn't exist" .. " (removing `" .. component .. "` for `" .. path .. "`)"
-                end
-            else
-                return nil, "Encountered a component that isn't a directory" .. " (removing `" .. component .. "` for `" .. path .. "`)"
-            end
+        elseif attr ~= nil then
+            return nil, "Encountered a component that isn't a directory" .. " (removing `" .. component .. "` for `" .. path .. "`)"
         end
+        -- NOTE: If directory doesn't exist, keep going,
+        --       we might be able to remove empty directories further up the path.
         -- Done with this child, go up
         table.remove(components)
     end
