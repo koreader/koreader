@@ -233,6 +233,22 @@ function CreDocument:setupDefaultView()
     self._document:setIntProperty("crengine.image.scaling.zoomout.inline.mode", 0)
     self._document:setIntProperty("crengine.image.scaling.zoomout.inline.scale", 1)
 
+    -- crengine won't create a cache for small documents, which could actually
+    -- makes re-opening small files slower than big files!
+    -- Also, we need a cache for ReaderRolling's partial rerenderings handling.
+    -- In crengine code:
+    -- A cache is created if the file size is larger than:
+    --   crengine.cache.filesize.min = PROP_MIN_FILE_SIZE_TO_CACHE: default 300000
+    --   (fallback: DOCUMENT_CACHING_SIZE_THRESHOLD=1048576)
+    -- A cache is searched for (to be used) only if the file size is larger than 65535:
+    --   hardcoded not overridable: DOCUMENT_CACHING_MIN_SIZE=65535
+    -- Other related variables:
+    --   PROP_FORCED_MIN_FILE_SIZE_TO_CACHE: not used (a hardcoded value of 30000 is used instead)
+    --     (if filesize < 30000: swapToCache simulated but not really done)
+    --   DOCUMENT_CACHING_MAX_RAM_USAGE 8388608: not used
+    -- Force having a cache with small documents (but at least > 65K)
+    self._document:setIntProperty("crengine.cache.filesize.min", 65536)
+
     -- If switching to two pages on view, we want it to behave like two columns
     -- and each view to be a single page number (instead of the default of two).
     -- This ensures that page number and count are consistent between top and
