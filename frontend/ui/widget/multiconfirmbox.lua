@@ -41,6 +41,7 @@ local MultiConfirmBox = InputContainer:extend{
     modal = true,
     text = _("no text"),
     face = Font:getFace("infofont"),
+    icon = "notice-question",
     choice1_text = _("Choice 1"),
     choice1_text_func = nil,
     choice2_text = _("Choice 2"),
@@ -77,7 +78,8 @@ function MultiConfirmBox:init()
     local content = HorizontalGroup:new{
         align = "center",
         IconWidget:new{
-            icon = "notice-question",
+            icon = self.icon,
+            alpha = true,
         },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
         TextBoxWidget:new{
