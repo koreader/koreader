@@ -322,9 +322,9 @@ function CreDocument:render()
     logger.dbg("CreDocument: rendering done.")
 end
 
-function CreDocument:getDocumentRenderingHash()
+function CreDocument:getDocumentRenderingHash(extended)
     if self.been_rendered then
-        return self._document:getDocumentRenderingHash()
+        return self._document:getDocumentRenderingHash(extended)
     end
     return 0
 end
@@ -1390,12 +1390,36 @@ function CreDocument:setCallback(func)
     return self._document:setCallback(func)
 end
 
+function CreDocument:canBePartiallyRerendered()
+    return self._document:canBePartiallyRerendered()
+end
+
+function CreDocument:isPartialRerenderingEnabled()
+    return self._document:isPartialRerenderingEnabled()
+end
+
+function CreDocument:enablePartialRerendering(enable)
+    return self._document:enablePartialRerendering(enable)
+end
+
+function CreDocument:getPartialRerenderingsCount()
+    return self._document:getPartialRerenderingsCount()
+end
+
+function CreDocument:isRerenderingDelayed()
+    return self._document:isRerenderingDelayed()
+end
+
 function CreDocument:isBuiltDomStale()
     return self._document:isBuiltDomStale()
 end
 
 function CreDocument:hasCacheFile()
     return self._document:hasCacheFile()
+end
+
+function CreDocument:isCacheFileStale()
+    return self._document:isCacheFileStale()
 end
 
 function CreDocument:invalidateCacheFile()
@@ -1794,6 +1818,8 @@ function CreDocument:setupCallCache()
             elseif name == "getPageFlow" then no_wrap = true
             elseif name == "getPageNumberInFlow" then no_wrap = true
             elseif name == "getTotalPagesLeft" then no_wrap = true
+            elseif name == "getDocumentRenderingHash" then no_wrap = true
+            elseif name == "getPartialRerenderingsCount" then no_wrap = true
 
             -- Some get* have different results by page/pos
             elseif name == "getLinkFromPosition" then cache_by_tag = true
