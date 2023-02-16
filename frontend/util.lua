@@ -793,29 +793,15 @@ function util.makePath(path)
 end
 
 --- Remove as many of the empty directories specified in path, children-first.
--- Does not fail (up until the first real issue) if the directory is already gone.
+-- Does not fail if the directory is already gone.
 -- @string path the directory tree to prune
 -- @treturn bool true on success; nil, err_message on error
 function util.removePath(path)
-    local components
-    if path:sub(1, 1) == "/" then
-        -- Leading slash, remember that it's an absolute path
-        -- (we'll recover our slash via table.concat later).
-        components = { "" }
-    else
-        components = {}
-    end
-    for component in path:gmatch("([^/]+)") do
-        table.insert(components, component)
-    end
-
-    local success = true
-    local err
-    for _ = #components, 1, -1 do
-        local component = table.concat(components, "/")
+    local component = path
+    repeat
         local attr = lfs.attributes(component, "mode")
         if attr == "directory" then
-            success, err = lfs.rmdir(component)
+            local success, err = lfs.rmdir(component)
             if not success then
                 -- Most likely because ENOTEMPTY ;)
                 return nil, err .. " (removing `" .. component .. "` for `" .. path .. "`)"
@@ -823,13 +809,11 @@ function util.removePath(path)
         elseif attr ~= nil then
             return nil, "Encountered a component that isn't a directory" .. " (removing `" .. component .. "` for `" .. path .. "`)"
         end
-        -- NOTE: If directory doesn't exist, keep going,
-        --       we might be able to remove empty directories further up the path.
-        -- Done with this child, go up
-        table.remove(components)
-    end
 
-    return success, err
+        local parent = BaseUtil.dirname(component)
+        component = parent
+    until parent == "."
+    return true, nil
 end
 
 --- As `rm`
