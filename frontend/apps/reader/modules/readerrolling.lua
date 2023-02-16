@@ -9,6 +9,7 @@ local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
+local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local time = require("ui/time")
@@ -18,6 +19,18 @@ local Screen = Device.screen
 local T = require("ffi/util").template
 
 local band = bit.band
+
+-- We need a small mmap'ped segment to exchange states with forked
+-- subproceses doing background rerenderings.
+-- Used as:
+--   shared_state[0] = pid of current subprocess
+--   shared_state[1] = 0 or 1, set by subprocess when rendering done, waiting to save cache
+--   shared_state[2] = 0 or 1, set by main process when subprocess can go on saving cache
+local ffi = require("ffi")
+local shared_state_data = ffi.C.mmap(nil, 3*ffi.sizeof("uint32_t"), bit.bor(ffi.C.PROT_READ, ffi.C.PROT_WRITE),
+                                       bit.bor(ffi.C.MAP_SHARED, ffi.C.MAP_ANONYMOUS), -1, 0)
+local shared_state = ffi.cast("uint32_t*", shared_state_data)
+local koreader_pid = ffi.C.getpid()
 
 --[[
     Rolling is just like paging in page-based documents except that
@@ -54,6 +67,18 @@ local ReaderRolling = InputContainer:extend{
     -- same page when turning first 2-pages set of document)
     odd_or_even_first_page = 1, -- 1 = odd, 2 = even, nil or others = free
     hide_nonlinear_flows = nil,
+
+    partial_rerendering = false,
+    nb_partial_rerenderings = 0,
+    rendering_state = nil,
+    RENDERING_STATE = {
+        FULLY_RENDERED = nil,
+        PARTIALLY_RERENDERED = 1,
+        FULL_RENDERING_IN_BACKGROUND = 2,
+        FULL_RENDERING_READY = 3,
+        RELOADING_DOCUMENT = 4,
+        DO_RELOAD_DOCUMENT = 5,
+    }
 }
 
 function ReaderRolling:init()
@@ -61,8 +86,16 @@ function ReaderRolling:init()
     self.pan_interval = time.s(1 / self.pan_rate)
 
     table.insert(self.ui.postInitCallback, function()
-        self.rendering_hash = self.ui.document:getDocumentRenderingHash()
+        self.rendering_hash = self.ui.document:getDocumentRenderingHash(true)
         self.ui.document:_readMetadata()
+        if self.ui.document:hasCacheFile() and not self.ui.document:isCacheFileStale() then
+            -- We loaded from a valid cache file: remember its hash. It may allow not
+            -- having to do any background rerendering if the user somehow reverted
+            -- some setting changes before any background rerendering had completed
+            -- (ie. with autorotation, transitionning from portrait to landscape for
+            -- a few seconds, to then end up back in portrait).
+            self.valid_cache_rendering_hash = self.ui.document:getDocumentRenderingHash(false)
+        end
     end)
     table.insert(self.ui.postReaderCallback, function()
         self:updatePos()
@@ -258,6 +291,13 @@ function ReaderRolling:onReadSettings(config)
     end
     self.ui.document:setHideNonlinearFlows(self.hide_nonlinear_flows)
 
+    -- Will be activated on ReaderReady
+    if config:has("partial_rerendering") then
+        self.partial_rerendering = config:isTrue("partial_rerendering")
+    else
+        self.partial_rerendering = G_reader_settings:nilOrTrue("cre_partial_rerendering")
+    end
+
     -- Set a callback to allow showing load and rendering progress
     -- (this callback will be cleaned up by cre.cpp closeDocument(),
     -- no need to handle it in :onCloseDocument() here.)
@@ -275,14 +315,19 @@ end
 -- in scroll mode percent_finished must be save before close document
 -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
+    self:tearDownRerenderingAutomation()
     self.current_header_height = nil -- show unload progress bar at top
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
+
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
     self.ui.doc_settings:saveSetting("cache_file_path", cache_file_path)
     if self.ui.document:hasCacheFile() then
         -- also checks if DOM is coherent with styles; if not, invalidate the
         -- cache, so a new DOM is built on next opening
-        if self.ui.document:isBuiltDomStale() then
+        -- Don't check if we are reloading from a cache built in background: if
+        -- incoherent, the user will get the popup after the re-open, and can
+        -- decide to reload, or just revert his changes and avoid the reload.
+        if self.ui.document:isBuiltDomStale() and self.rendering_state ~= self.RENDERING_STATE.DO_RELOAD_DOCUMENT then
             logger.dbg("cre DOM may not be in sync with styles, invalidating cache file for a full reload at next opening")
             self.ui.document:invalidateCacheFile()
         end
@@ -330,6 +375,7 @@ function ReaderRolling:onSaveSettings()
     end
     self.ui.doc_settings:saveSetting("visible_pages", self.visible_pages)
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
+    self.ui.doc_settings:saveSetting("partial_rerendering", self.partial_rerendering)
 end
 
 function ReaderRolling:onReaderReady()
@@ -338,6 +384,13 @@ function ReaderRolling:onReaderReady()
         self.ui.document:cacheFlows()
     end
     self.setupXpointer()
+    if self.partial_rerendering then
+        UIManager:nextTick(function()
+            if self.ui.document then -- (could have disappeared with unit tests)
+                self.ui.document:enablePartialRerendering(true)
+            end
+        end)
+    end
 end
 
 function ReaderRolling:setupTouchZones()
@@ -423,6 +476,63 @@ function ReaderRolling:addToMainMenu(menu_items)
             help_text = hide_nonlinear_text,
         }
     end
+    menu_items.partial_rerendering = {
+        text = _("Enable partial renderings"),
+        enabled_func = function()
+            return self.ui.document:canBePartiallyRerendered() == true
+        end,
+        checked_func = function()
+            return self.ui.document:isPartialRerenderingEnabled() == true
+        end,
+        callback = function()
+            if self.ui.document:isPartialRerenderingEnabled() then
+                -- (Don't disable it if we are currently in a rerendering automation)
+                if not self.rendering_state then
+                    self.partial_rerendering = false
+                    if self.ui.document:enablePartialRerendering(false) then
+                        -- Disabling returns true when some partial rerenderings had been done.
+                        -- A full rerendering is needed to have a properly rendered document.
+                        self:onUpdatePos()
+                    end
+                end
+            else
+                self.ui.document:enablePartialRerendering(true)
+                self.partial_rerendering = self.ui.document:isPartialRerenderingEnabled()
+            end
+        end,
+        hold_callback = function()
+            local cre_partial_rerendering = G_reader_settings:nilOrTrue("cre_partial_rerendering")
+            local text = _([[
+With EPUB documents (having multiple fragments), text appearance adjustments can be made quicker by only rendering the current chapter.
+After such partial renderings, the book and KOReader are in a degraded state: you can turn pages, but some info and features may be broken or disabled (ie. footer info, ToC, statistics…).
+To get back to a sane state, a full rendering will happen in the background, get cached, and the document will be seamlessly reloaded after a brief period of inactivity.]])
+            if cre_partial_rerendering then
+                text = text .. "\n\n" .. _("The current default (★) is to enable partial renderings when possible.")
+            else
+                text = text .. "\n\n" .. _("The current default (★) is to always do a full rendering.")
+            end
+            local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+            UIManager:show(MultiConfirmBox:new{
+                text = text,
+                -- This text is a bit long, and MultiConfirmBox currently doesn't adjust the
+                -- font size and may overflow the screen height: use a smaller font size
+                face = require("ui/font"):getFace("infofont", 20),
+                icon = "cre.render.partial",
+                choice1_text_func =  function()
+                    return cre_partial_rerendering and _("Disable") or _("Disable (★)")
+                end,
+                choice1_callback = function()
+                    G_reader_settings:makeFalse("cre_partial_rerendering")
+                end,
+                choice2_text_func = function()
+                    return cre_partial_rerendering and _("Enable (★)") or _("Enable")
+                end,
+                choice2_callback = function()
+                    G_reader_settings:makeTrue("cre_partial_rerendering")
+                end,
+            })
+        end,
+    }
 end
 
 function ReaderRolling:getLastPercent()
@@ -951,10 +1061,19 @@ function ReaderRolling:updatePos(force)
         return
     end
     -- Check if the document has been re-rendered
-    local new_rendering_hash = self.ui.document:getDocumentRenderingHash()
+    local new_rendering_hash = self.ui.document:getDocumentRenderingHash(true)
     if new_rendering_hash ~= self.rendering_hash or force then
         logger.dbg("rendering hash changed:", self.rendering_hash, ">", new_rendering_hash)
         self.rendering_hash = new_rendering_hash
+
+        if self.ui.document:isRerenderingDelayed(true) then
+            -- Partial rerendering is enabled, rerendering is delayed
+            logger.dbg("  but rendering delayed, will do partial renderings on draw")
+            self:handleRenderingDelayed()
+            return
+        end
+
+        -- Full rerendering done.
         -- A few things like page numbers may have changed
         self.ui.document:resetCallCache() -- be really sure this cache is reset
         self.ui.document:_readMetadata() -- get updated document height and nb of pages
@@ -1144,6 +1263,12 @@ function ReaderRolling:onSetVisiblePages(visible_pages)
     self.ui.document:setVisiblePageCount(visible_pages)
     local cur_visible_pages = self.ui.document:getVisiblePageCount()
     if cur_visible_pages ~= prev_visible_pages then
+        if self.ui.document:isPartialRerenderingEnabled() then
+            -- Page numbers have gone *2 or /2, we don't want drawCurrentViewByPage()
+            -- to ensure the current page as we know it, which would otherwise
+            -- led us *2 or /2 away or back in the book.
+            self.ui.document.no_page_sync = true
+        end
         self:onUpdatePos()
     end
 end
@@ -1536,6 +1661,364 @@ function ReaderRolling:onToggleHideNonlinear()
     -- the footer needs updating, and TOC markers may come or go.
     -- So, provide force=true.
     self:onUpdatePos(true)
+end
+
+
+-- Partial rerendering handling methods and automation.
+-- This is a one way path: we start from normal, and on a setting
+-- change, we are and stay in a degraded partial rendering mode,
+-- that we only exit with reloadDocument(), which makes everything
+-- sane by restarting with fresh Reader and crengine instances.
+
+function ReaderRolling:handleRenderingDelayed()
+    -- Partial rendering will happen on next drawing: let it be known.
+    -- Pages and ToC will be invalid, some modules may want to disable
+    -- some features (ie. reading statistics should stop accounting
+    -- pages read/total pages, as there are invalid, and bogus data
+    -- would stick in the stats db).
+    -- We don't send it on each partial rendering (which can happen as
+    -- we turn pages, only on setting changes (if this would be needed,
+    -- send this or another event in :handlePartialRerendering()).
+    local first_partial_rerender = self.rendering_state == nil
+    self.ui:handleEvent(Event:new("DocumentPartiallyRerendered", first_partial_rerender))
+    -- Start the automation, ensuring we'll soon be rendering in background
+    self:setupRerenderingAutomation()
+    self._stepRerenderingAutomation(self.RENDERING_STATE.PARTIALLY_RERENDERED)
+    -- Have ReaderView draw the current page, which will provoke the partial rerendering
+    -- of the DocFragement the current page is from.
+    UIManager:setDirty(self.view.dialog, "partial")
+end
+
+function ReaderRolling:handlePartialRerendering()
+    -- Called by ReaderView after crengine drawing, so we can notice if a partial
+    -- rerendering did happen or not
+    local nb_partial_rerenderings = self.ui.document:getPartialRerenderingsCount()
+    if nb_partial_rerenderings == self.nb_partial_rerenderings then
+        return -- no partial rerendering
+    end
+    logger.dbg("partial rerenderings done", self.nb_partial_rerenderings, ">", nb_partial_rerenderings)
+    self.nb_partial_rerenderings = nb_partial_rerenderings
+
+    self.ui.document:resetCallCache() -- trash invalid cached info
+
+    -- crengine should have handled repositionning to the initial page xpointer,
+    -- and redraw the page if needed.
+    -- But when tweaking settings multiple times (without changing page), crengine
+    -- will ensure this for each new displayed page top xpointer, and, the shifts
+    -- accumulating, we may end up a few pages behind the original page.
+    -- This is avoided with full rerendering by ensuring _gotoXPointer(self.xpointer)
+    -- in :updatePos() above. So, do the same if we notice it is needed.
+    local cur_page = self.ui.document:getCurrentPage()
+    local cur_xpointer_page = self.ui.document:getPageFromXPointer(self.xpointer)
+    if cur_page ~= cur_xpointer_page then
+        logger.dbg("not on the expected page: repositionning and redrawing")
+        self:_gotoXPointer(self.xpointer)
+        return true -- ReaderView will repaint
+    end
+
+    -- Current page numbers, total pages and many other have changed.
+    -- Some may be gathered next time from crengine as we reset the cache,
+    -- but some are stored in Reader modules (ie. ToC) and won't be updated
+    -- (some updates may be costly, but mostly, we don't want to hunt them all).
+    -- At least, be sure everything knows about the current page, so we can
+    -- turn pages and scroll.
+    if self.view.view_mode == "page" then
+        self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
+    else
+        self.current_page = self.ui.document:getCurrentPage()
+        self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getCurrentPos(), self.current_page))
+    end
+end
+
+function ReaderRolling:_waitOrKillCurrentRerenderingSubprocess(wait, kill)
+    -- No need for an asynchronous collector: we'll explicitely call this and wait
+    -- before going on, even when reloading, to avoid having multiple possibly huge
+    -- subprocesses at the same time.
+    -- Returns true if the process is no longer running.
+    -- We should only return false when wait=false provided (to know if still running).
+    -- If wait=true, don't return until process is done.
+    -- If kill=true, kill it, and wait for it to be gone.
+    if not self._current_rerendering_pid then
+        return true
+    end
+    if ffiutil.isSubProcessDone(self._current_rerendering_pid) then
+        self._current_rerendering_pid = nil
+        return true
+    end
+    if kill then
+        wait = true -- we want to be sure it is collected
+        ffiutil.terminateSubProcess(self._current_rerendering_pid)
+    end
+    if wait then
+        if ffiutil.isSubProcessDone(self._current_rerendering_pid, true) then
+            self._current_rerendering_pid = nil
+            return true
+        end
+    end
+    return false
+end
+
+function ReaderRolling:setupRerenderingAutomation()
+    if self._stepRerenderingAutomation then
+        return
+    end
+
+    -- Once this is created and called, we shouldn't stay long on the current document,
+    -- we will reload it soon. So, disable standby during the whole steps.
+    UIManager:preventStandby()
+
+    -- Some states will step only when the user is idle
+    local last_input_event_time = UIManager:getTime() -- (we got here because of some input)
+    self._watchInputEvent = function()
+        -- :getTime(), although not accurate, should be good enough, see:
+        -- https://github.com/koreader/koreader/issues/9087#issuecomment-1419852952
+        last_input_event_time = UIManager:getTime()
+    end
+    UIManager.event_hook:register("InputEvent", self._watchInputEvent)
+
+    local next_step_not_before
+    self._stepRerenderingAutomation = function(next_step)
+        -- Ensure transitions between partial rerendering steps
+        logger.dbg("_stepRerenderingAutomation(", next_step, "), currently ", self.rendering_state)
+        UIManager:unschedule(self._stepRerenderingAutomation)
+        local reschedule = true
+        local prev_state = self.rendering_state
+
+        if next_step == self.RENDERING_STATE.PARTIALLY_RERENDERED then
+            -- rendering changed: may be the first, or some setting were changed
+            -- before we ended all the steps and reload: cancel anything ongoing
+            self:_waitOrKillCurrentRerenderingSubprocess(true, true)
+            self.rendering_state = self.RENDERING_STATE.PARTIALLY_RERENDERED
+            -- Avoid setDirty("ui"), a "partial" has been issued by our caller:
+            prev_state = self.RENDERING_STATE.PARTIALLY_RERENDERED
+            next_step_not_before = false
+
+        elseif next_step == self.RENDERING_STATE.FULL_RENDERING_IN_BACKGROUND then
+            self.rendering_state = self.RENDERING_STATE.FULL_RENDERING_IN_BACKGROUND
+            if self.valid_cache_rendering_hash
+                    and self.valid_cache_rendering_hash == self.ui.document:getDocumentRenderingHash(false) then
+                -- No need to rerender, the current cache is valid, and we can just reload from it!
+                -- We'll still show the rendering icon to keep the icon workflow consistent,
+                -- it will just not display for long
+                logger.dbg("background rerendering not needed, current cache is usable")
+                self._current_rerendering_pid = nil -- have this mean no rerendering was needed
+            else
+                self._current_rerendering_pid = self:_rerenderInBackground()
+            end
+
+        elseif next_step == self.RENDERING_STATE.FULL_RENDERING_READY then
+            -- Just show the new icon, work will happen at next schedule
+            self.rendering_state = self.RENDERING_STATE.FULL_RENDERING_READY
+
+        elseif next_step == self.RENDERING_STATE.RELOADING_DOCUMENT then
+            -- Just show the new icon, work will happen at next schedule
+            self.rendering_state = self.RENDERING_STATE.RELOADING_DOCUMENT
+
+        else -- (from reschedule, next_step=nil)
+
+            if self.rendering_state == self.RENDERING_STATE.PARTIALLY_RERENDERED then
+                -- We want to launch a background rendering, but not before
+                -- the user has closed all menus, meaning he might be satisfied
+                -- enough with the partial result; as it may close them to see
+                -- more of the book; allow for a small delay, assuming that
+                -- if ReaderUI is still/again at the top, the user is done
+                -- tweaking settings (if he changes a setting before a reload
+                -- is triggered, we'll be go at step 1).
+                -- Let's go with a delay of 3s.
+                local top_widget = UIManager:getTopmostVisibleWidget() or {}
+                if top_widget.name == "ReaderUI" then
+                    if not next_step_not_before then -- start counting from now
+                        next_step_not_before = UIManager:getTime() + time.s(3)
+                    else
+                        if UIManager:getTime() >= next_step_not_before then
+                            self._stepRerenderingAutomation(self.RENDERING_STATE.FULL_RENDERING_IN_BACKGROUND)
+                            return
+                        end
+                        -- otherwise, recheck at next schedule
+                    end
+                end
+
+            elseif self.rendering_state == self.RENDERING_STATE.FULL_RENDERING_IN_BACKGROUND then
+                if self._current_rerendering_pid then
+                    -- Be sure the subprocess is still running
+                    if self:_waitOrKillCurrentRerenderingSubprocess(false) then
+                        -- subprocess died... (self._current_rerendering_pid has then be reset to nil)
+                        -- Step forward, as if no background rendering needed
+                        self._stepRerenderingAutomation(self.RENDERING_STATE.FULL_RENDERING_READY)
+                        return
+                    else -- still running
+                        if shared_state[1] ~= 0 then -- done rendering
+                            self._stepRerenderingAutomation(self.RENDERING_STATE.FULL_RENDERING_READY)
+                            return
+                        end
+                        -- otherwise, recheck at next schedule
+                    end
+                else -- no background rendering needed, step forward
+                    self._stepRerenderingAutomation(self.RENDERING_STATE.FULL_RENDERING_READY)
+                    return
+                end
+
+            elseif self.rendering_state == self.RENDERING_STATE.FULL_RENDERING_READY
+                or self.rendering_state == self.RENDERING_STATE.RELOADING_DOCUMENT then
+                -- We'll have to reload the document: we prefer doing it when the user is
+                -- idle "reading" (that is, ReaderUI is at top, and no input for some time)
+                -- to not surprise and interrupt him if he is turning pages, reading a dict
+                -- lookup result, or busy in some other widget or menu.
+                -- Let's go with 5s of idle time
+                local do_reload = false
+                local top_widget = UIManager:getTopmostVisibleWidget() or {}
+                if top_widget.name == "ReaderUI" then
+                    do_reload = true
+                    if self.ui.highlight.hold_pos or self.ui.highlight.select_mode then
+                        -- Not if text selection in progress (to not reload while the user
+                        -- is selecting, even if idle)
+                        do_reload = false
+                    elseif UIManager:getTime() < last_input_event_time + time.s(5) then
+                        -- Not idle long enough
+                        do_reload = false
+                    end
+                end
+                if self.rendering_state == self.RENDERING_STATE.FULL_RENDERING_READY then
+                    if do_reload then
+                        -- Transition to show the reload icon for at least 1s if the
+                        -- book reloads really fast. We'll redo the above conditions checks
+                        -- in case things happened in the meantime.
+                        self._stepRerenderingAutomation(self.RENDERING_STATE.RELOADING_DOCUMENT)
+                        return
+                    end
+                    -- Otherwise, conditions not yet met
+                else -- self.RENDERING_STATE.RELOADING_DOCUMENT
+                    if not do_reload then
+                        -- Stuff happened: transition back to previous state
+                        self._stepRerenderingAutomation(self.RENDERING_STATE.FULL_RENDERING_READY)
+                    else
+                        -- reload icon shown, ready to reload
+                        if self._current_rerendering_pid and not self:_waitOrKillCurrentRerenderingSubprocess(false) then
+                            -- Rendering subproces still alive, waiting for our signal to save its cache
+                            -- We need to let the subprocess save the cache, and only then reloadDocument.
+                            -- We need to block the UI so no other setting get changed, and the cache
+                            -- is sane to reload from.
+                            -- Let subprocess know it can save cache
+                            shared_state[2] = 1
+                            -- And wait for it to end (successfully or not)
+                            self:_waitOrKillCurrentRerenderingSubprocess(true)
+                        end
+                        -- Otherwise, no background rerendering needed, or the subprocess died: go on with the reload.
+                        -- We're done with background stuff and icon animations: reallow standby
+                        self.rendering_state = self.RENDERING_STATE.DO_RELOAD_DOCUMENT
+                        self.ui:reloadDocument(nil, true) -- seamless reload (no infomsg, no flash)
+                    end
+                    return
+                end
+            end
+        end
+        if self.rendering_state ~= prev_state then
+            logger.dbg("_stepRerenderingAutomation", prev_state, ">", self.rendering_state)
+            -- Have ReaderView redraw and refresh ReaderFlipping and our state icon, avoiding flashes
+            UIManager:setDirty(self.view.dialog, "ui", self.view.flipping.dimen)
+        end
+        if reschedule then
+            UIManager:scheduleIn(1, self._stepRerenderingAutomation)
+        end
+    end
+end
+
+function ReaderRolling:tearDownRerenderingAutomation()
+    if self._stepRerenderingAutomation then
+        UIManager:unschedule(self._stepRerenderingAutomation)
+        self._stepRerenderingAutomation = nil
+        UIManager:allowStandby()
+    end
+    if self._watchInputEvent then
+        UIManager.event_hook:unregister("InputEvent", self._watchInputEvent)
+        self._watchInputEvent = nil
+    end
+    -- Be sure we don't let any zombie
+    self:_waitOrKillCurrentRerenderingSubprocess(true, true)
+    Device:enableCPUCores(1)
+end
+
+function ReaderRolling:_rerenderInBackground()
+    Device:enableCPUCores(2)
+
+    -- Set up mmap segment to exchange signals between main and sub processes
+    shared_state[0] = 0
+    shared_state[1] = 0
+    shared_state[2] = 0
+
+    -- If the fork failed, self._current_rerendering_pid will be false, and the above
+    -- automation should do as if no rendering needed, and go on with the reload,
+    -- provoking a full rerendering on load
+    local child_pid = ffiutil.runInSubProcess(function(my_pid)
+        logger.dbg("background rerendering started for hash", self.rendering_hash)
+        -- Disable top left cre progress bar (not really needed, and may cause
+        -- a crash on SDL "XInitThreads not called")
+        self.ui.document:setCallback()
+        self.ui.document:enablePartialRerendering(false) -- we want a full render
+
+        -- Rerender: this will take some time
+        self.ui.document._document:renderDocument()
+
+        -- We could check if we would get "Styles have changed...fully reloading the document may be needed"
+        -- (which happens when CSS properties "display:" and "white-space:" have changed for some nodes, which
+        -- is rather rare with our style tweaks) here, and do the reload and rerendering in this same background
+        -- subprocess, and doing this would hide this whole thing from the user, making the UX seamless.
+        -- But this would need a lot more memory, as we would then have 2 independant DOM in memory.
+        -- Ie. with a big book and KOReader taking 120 MB, the subprocess would additionally use:
+        -- - 60 MB when doing a simple rerendering
+        -- - 130 MB when doing a full load+render
+        -- So, let's not, and let the user handle that after the coming up reload.
+        if false and self.ui.document:isBuiltDomStale() then
+            logger.info("background cre DOM may not be in sync with styles, doing a full reload")
+            self.ui.document:invalidateCacheFile()
+            -- Just doing this seems to work, we can keep the same LVDocView, no need for any
+            -- tedious cleanup:
+            self.ui.document._document:loadDocument(self.ui.document.file)
+            self.ui.document._document:renderDocument()
+        end
+
+        -- Rebuild ToC and PageMap data (these are done when needed when requested by frontend,
+        -- but doing that now in the background will save that time on the next reload).
+        self.ui.document._document:updateTocAndPageMap()
+
+        -- crengine is quite optimized regarding cache updates writes: it will compute hashes
+        -- of each block and avoid writing them to disk if not changed from its vision of
+        -- the existing cache at load time. Because of this, we don't want this background
+        -- subprocess to update the cache until we are sure we'll reload from it.
+        -- So, let the main process know we are done rendering and waiting for its
+        -- signal that we can write the cache.
+
+        -- We take some precautions to avoid staying alive if nothing is waiting for us
+        if shared_state[0] ~= 0 and shared_state[0] ~= my_pid then
+            -- Parent process is no longer waiting for this child
+            os.exit(0)
+        end
+        shared_state[1] = 1 -- done rendering, let parent know, and wait before saving cache
+        shared_state[2] = 0 -- we're going to wait for this to become non-0
+        while true do
+            ffiutil.usleep(250000)
+            if shared_state[0] ~= 0 and shared_state[0] ~= my_pid then
+                logger.info("rerendering subprocess: no longer waited, exiting")
+                os.exit(0)
+            end
+            if ffi.C.getppid() ~= koreader_pid then
+                -- new parent pid: main process exited/crashed
+                logger.info("rerendering subprocess: parent gone, exiting")
+                os.exit(0)
+            end
+            if shared_state[2] ~= 0 then
+                break -- we can go on
+            end
+        end
+        logger.dbg("rerendering subprocess: going on saving cache")
+        self.ui.document._document:close() -- should save the cache and clean things properly
+        -- ffiutil.sleep(1)
+        logger.dbg("rerendering subprocess done")
+    end)
+    -- If the fork failed, or in _stepRerenderingAutomation() when we notice the subprocess has died
+    -- (probably because of out of memory), should we disable partial rendering for this book?
+    shared_state[0] = child_pid or 0
+    return child_pid
 end
 
 return ReaderRolling
