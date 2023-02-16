@@ -797,15 +797,14 @@ end
 -- @string path the directory tree to prune
 -- @treturn bool true on success; nil, err_message on error
 function util.removePath(path)
-    local absolute
+    local components
     if path:sub(1, 1) == "/" then
         -- Leading slash, remember that it's an absolute path
-        absolute = true
+        -- (we'll recover our slash via table.concat later).
+        components = { "" }
     else
-        absolute = false
+        components = {}
     end
-
-    local components = {}
     for component in path:gmatch("([^/]+)") do
         table.insert(components, component)
     end
@@ -813,7 +812,7 @@ function util.removePath(path)
     local success = true
     local err
     for _ = #components, 1, -1 do
-        local component = absolute and ("/" .. table.concat(components, "/")) or table.concat(components, "/")
+        local component = table.concat(components, "/")
         if lfs.attributes(component, "mode") == "directory" then
             success, err = lfs.rmdir(component)
             if not success then
