@@ -386,7 +386,9 @@ function ReaderRolling:onReaderReady()
     self.setupXpointer()
     if self.partial_rerendering then
         UIManager:nextTick(function()
-            self.ui.document:enablePartialRerendering(true)
+            if self.ui.document then -- (could have disappeared with unit tests)
+                self.ui.document:enablePartialRerendering(true)
+            end
         end)
     end
 end
