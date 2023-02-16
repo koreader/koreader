@@ -747,13 +747,22 @@ function ReaderStyleTweak:onDispatcherRegisterActions()
 end
 
 local BOOK_TWEAK_SAMPLE_CSS = [[
-p.someTitleClassName { text-indent: 0; }
-
-DIV.advertisement { display: none !important; }
-
+/* Remove indent from some P used as titles */
+p.someTitleClassName {
+    text-indent: 0;
+}
+/* Get in-page footnotes when no tweak works */
 .footnoteContainerClassName {
     -cr-hint: footnote-inpage;
-    margin: 0 !important;
+}
+/* Help getting some alternative ToC when no headings */
+.someSeparatorClassName {
+    -cr-hint: toc-level1;
+    break-before: always;
+}
+/* Hide annoying content */
+DIV.someAdvertisement {
+    display: none !important;
 }
 ]]
 
