@@ -170,7 +170,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
     if self.item.enabled_func then
         enabled = self.item.enabled_func()
     end
-    if enabled == false then return end
+    if enabled == false then return true end -- don't propagate
 
     local tap_on_checkmark = false
     if ges and ges.pos and ges.pos.x then
@@ -182,7 +182,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
     end
 
     -- If the menu hasn't actually been drawn yet, don't do anything (as it's confusing, and the coordinates may be wrong).
-    if not self.item_frame.dimen then return end
+    if not self.item_frame.dimen then return true end
 
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuSelect(self.item, tap_on_checkmark)
@@ -225,9 +225,21 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if self.item.enabled_func then
         enabled = self.item.enabled_func()
     end
-    if enabled == false then return end
+    if enabled == false then
+        -- Allow help_text to be displayed even if menu item disabled
+        if self.item.help_text or type(self.item.help_text_func) == "function" then
+            local help_text = self.item.help_text
+            if self.item.help_text_func then
+                help_text = self.item.help_text_func(self)
+            end
+            if help_text then
+                UIManager:show(InfoMessage:new{ text = help_text, })
+            end
+        end
+        return true -- don't propagate
+    end
 
-    if not self.item_frame.dimen then return end
+    if not self.item_frame.dimen then return true end
 
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item, self.text_truncated)
