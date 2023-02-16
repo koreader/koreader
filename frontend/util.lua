@@ -812,7 +812,7 @@ function util.removePath(path)
 
         local parent = BaseUtil.dirname(component)
         component = parent
-    until parent == "."
+    until parent == "." or parent == "/"
     return true, nil
 end
 
