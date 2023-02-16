@@ -787,15 +787,16 @@ function MosaicMenuItem:paintTo(bb, x, y)
 
     if self.show_progress_bar then
         local cover_item = self[1][1][1]
-        progress_widget.width = cover_item.width - Screen:scaleBySize(16)
-        local pos_x = x + math.floor((self.width - cover_item.width) / 2) + Screen:scaleBySize(8)
+        local progress_widget_margin = math.floor((corner_mark_size - progress_widget.height) / 2)
+        progress_widget.width = cover_item.width - 2*progress_widget_margin
+        local pos_x = x + math.ceil((self.width - progress_widget.width) / 2)
         if self.do_hint_opened then
-            progress_widget.width = cover_item.width - corner_mark_size - Screen:scaleBySize(16)
+            progress_widget.width = progress_widget.width - corner_mark_size
             if BD.mirroredUILayout() then
-                pos_x = x + math.floor((self.width - cover_item.width) / 2) + corner_mark_size + Screen:scaleBySize(8)
+                pos_x = pos_x + corner_mark_size
             end
         end
-        local pos_y = y + self.height - math.ceil((self.height - cover_item.height) / 2) - corner_mark_size + math.ceil((corner_mark_size - progress_widget.height) / 2)
+        local pos_y = y + self.height - math.ceil((self.height - cover_item.height) / 2) - corner_mark_size + progress_widget_margin
         if self.status == "abandoned" then
             progress_widget.fillcolor = Blitbuffer.COLOR_GRAY_6
         else
