@@ -817,6 +817,7 @@ function util.removePath(path)
         if lfs.attributes(component, "mode") == "directory" then
             success, err = lfs.rmdir(component)
             if not success then
+                -- Most likely because ENOTEMPTY ;)
                 return nil, err .. " (removing `" .. component .. "` for `" .. path .. "`)"
             end
         else
