@@ -143,7 +143,7 @@ function ImageWidget:_loadfile()
             width = self.width
             height = self.height
         end
-        local hash = "image|"..self.file.."|"..(width or "").."|"..(height or "")
+        local hash = "image|"..self.file.."|"..(width or "").."|"..(height or "")..tostring(self.alpha)
         -- Do the scaling for DPI here, so it can be cached and not re-done
         -- each time in _render() (but not if scale_factor, to avoid double scaling)
         local scale_for_dpi_here = false
