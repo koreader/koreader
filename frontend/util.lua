@@ -781,12 +781,57 @@ function util.makePath(path)
     for component in path:gmatch("([^/]+)") do
         -- The trailing slash ensures we properly fail via mkdir if the composite path already exists as a file/link
         components = components .. component .. "/"
-        if not util.pathExists(components) then
+        if lfs.attributes(components, "mode") == nil then
             success, err = lfs.mkdir(components)
             if not success then
                 return nil, err .. " (creating `" .. components .. "` for `" .. path .. "`)"
             end
         end
+    end
+
+    return success, err
+end
+
+--- Remove as many empty directories in the path, children-first.
+-- Does not fail (up until the first real issue) if the directory is already gone.
+-- @string path the directory tree to prune
+-- @treturn bool true on success; nil, err_message on error
+function util.removePath(path)
+    local absolute
+    if path:sub(1, 1) == "/" then
+        -- Leading slash, remember that it's an absolute path
+        absolute = true
+    else
+        absolute = false
+    end
+
+    local components = {}
+    for component in path:gmatch("([^/]+)") do
+        table.insert(components, component)
+    end
+
+    local success = true
+    local err
+    for _ = #components, 1, -1 do
+        local component = absolute and ("/" .. table.concat(components, "/")) or table.concat(components, "/")
+        if lfs.attributes(component, "mode") == "directory" then
+            success, err = lfs.rmdir(component)
+            if not success then
+                return nil, err .. " (removing `" .. component .. "` for `" .. path .. "`)"
+            end
+        else
+            if lfs.attributes(component, "mode") == nil then
+                -- If directory doesn't exist but we haven't failed yet, keep going,
+                -- we might be able to remove empty directories further up the path.
+                if not success then
+                    return nil, "Encountered an intermediate component that doesn't exist" .. " (removing `" .. component .. "` for `" .. path .. "`)"
+                end
+            else
+                return nil, "Encountered a component that isn't a directory" .. " (removing `" .. component .. "` for `" .. path .. "`)"
+            end
+        end
+        -- Done with this child, go up
+        table.remove(components)
     end
 
     return success, err
