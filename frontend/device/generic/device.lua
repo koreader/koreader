@@ -532,7 +532,7 @@ function Device:retrieveNetworkInfo()
             end
         end
         if default_gw then
-            result = result .. "Default gateway: " .. default_gw .. "\n"
+            result = result .. T(_("Default gateway: %1"), default_gw) .. "\n"
             -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
             local pingok
             if self:isKindle() and self:hasDPad() then
