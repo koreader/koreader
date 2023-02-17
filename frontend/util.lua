@@ -781,7 +781,7 @@ function util.makePath(path)
     for component in path:gmatch("([^/]+)") do
         -- The trailing slash ensures we properly fail via mkdir if the composite path already exists as a file/link
         components = components .. component .. "/"
-        if not util.pathExists(components) then
+        if lfs.attributes(components, "mode") == nil then
             success, err = lfs.mkdir(components)
             if not success then
                 return nil, err .. " (creating `" .. components .. "` for `" .. path .. "`)"
@@ -790,6 +790,30 @@ function util.makePath(path)
     end
 
     return success, err
+end
+
+--- Remove as many of the empty directories specified in path, children-first.
+-- Does not fail if the directory is already gone.
+-- @string path the directory tree to prune
+-- @treturn bool true on success; nil, err_message on error
+function util.removePath(path)
+    local component = path
+    repeat
+        local attr = lfs.attributes(component, "mode")
+        if attr == "directory" then
+            local success, err = lfs.rmdir(component)
+            if not success then
+                -- Most likely because ENOTEMPTY ;)
+                return nil, err .. " (removing `" .. component .. "` for `" .. path .. "`)"
+            end
+        elseif attr ~= nil then
+            return nil, "Encountered a component that isn't a directory" .. " (removing `" .. component .. "` for `" .. path .. "`)"
+        end
+
+        local parent = BaseUtil.dirname(component)
+        component = parent
+    until parent == "." or parent == "/"
+    return true, nil
 end
 
 --- As `rm`
