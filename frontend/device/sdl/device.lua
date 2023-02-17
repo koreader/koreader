@@ -21,7 +21,7 @@ local function isUrl(s)
 end
 
 local function isCommand(s)
-    return os.execute("which "..s.." >/dev/null 2>&1") == 0
+    return os.execute("command -v "..s.." >/dev/null") == 0
 end
 
 local function runCommand(command)
@@ -378,13 +378,13 @@ function Device:initNetworkManager(NetworkMgr)
         end
 
         if std_out then
-            default_gw = std_out:read("*all")
+            default_gw = std_out:read("*l")
             std_out:close()
             if not default_gw or default_gw == "" then
                 return false
             end
         end
-        return 0 == os.execute("ping -c1 -w2 " .. default_gw)
+        return 0 == os.execute("ping -c1 -w2 " .. default_gw .. " > /dev/null")
     end
 end
 

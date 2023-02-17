@@ -15,6 +15,10 @@ local T = ffiUtil.template
 local function yes() return true end
 local function no() return false end
 
+local function isCommand(s)
+    return os.execute("command -v "..s.." >/dev/null") == 0
+end
+
 local Device = {
     screen_saver_mode = false,
     screen_saver_lock = false,
@@ -509,17 +513,32 @@ function Device:retrieveNetworkInfo()
         std_out:close()
         std_out = io.popen('2>/dev/null iwconfig | grep ESSID | cut -d\\" -f2')
         if std_out then
-            local ssid = std_out:read("*all")
-            result = result .. "SSID: " .. util.trim(ssid) .. "\n"
+            local ssid = std_out:read("*l")
             std_out:close()
+            result = result .. "SSID: " .. ssid .. "\n"
         end
-        if os.execute("ip r | grep -q default") == 0 then
+        -- iproute2 tools may not always be available, fall back to net-tools if necessary
+        if isCommand("ip") then
+            std_out = io.popen([[ip r | grep default | tail -n 1 | cut -d ' ' -f 3]], "r")
+        else
+            std_out = io.popen([[route -n | awk '$4 == "UG" {print $2}' | tail -n 1]], "r")
+        end
+        local default_gw
+        if std_out then
+            default_gw = std_out:read("*l")
+            std_out:close()
+            if default_gw == "" then
+                default_gw = nil
+            end
+        end
+        if default_gw then
+            result = result .. "Default gateway: " .. default_gw .. "\n"
             -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
             local pingok
             if self:isKindle() and self:hasDPad() then
-                pingok = os.execute("ping -q -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
+                pingok = os.execute("ping -q -c1 " .. default_gw .. " > /dev/null")
             else
-                pingok = os.execute("ping -q -w 3 -c 2 `ip r | grep default | tail -n 1 | cut -d ' ' -f 3` > /dev/null")
+                pingok = os.execute("ping -q -c1 -w2 " .. default_gw .. " > /dev/null")
             end
             if pingok == 0 then
                 result = result .. _("Gateway ping successful")
