@@ -883,7 +883,7 @@ function FileManager:pasteHere(file)
     dest_path = lfs.attributes(dest_path, "mode") == "directory" and dest_path or dest_path:match("(.*/)")
     local dest_file = BaseUtil.joinPath(dest_path, orig_name)
     local is_file = lfs.attributes(orig_file, "mode") == "file"
-    
+
     local function infoCopyFile()
         if self:copyRecursive(orig_file, dest_path) then
             if is_file then
@@ -913,7 +913,7 @@ function FileManager:pasteHere(file)
             })
         end
     end
-    
+
     local function doPaste()
         local ok = self.cutfile and infoMoveFile() or infoCopyFile()
         if ok then
