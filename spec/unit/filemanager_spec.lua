@@ -32,7 +32,7 @@ describe("FileManager module", function()
             assert.Equals(w.text, "File not found:\n"..tmp_fn)
         end
         assert.is_nil(lfs.attributes(tmp_fn))
-        filemanager:deleteFile(tmp_fn)
+        filemanager:deleteFile(tmp_fn, true)
         UIManager.show = old_show
         filemanager:onClose()
     end)
@@ -61,7 +61,7 @@ describe("FileManager module", function()
         UIManager.show = function(self, w)
             assert.Equals(w.text, "Deleted file:\n"..tmp_fn)
         end
-        filemanager:deleteFile(tmp_fn)
+        filemanager:deleteFile(tmp_fn, true)
         UIManager.show = old_show
         filemanager:onClose()
 
@@ -83,6 +83,10 @@ describe("FileManager module", function()
 
         local tmp_sidecar = docsettings:getSidecarDir(util.realpath(tmp_fn))
         lfs.mkdir(tmp_sidecar)
+        local tmp_sidecar_file = docsettings:getSidecarFile(util.realpath(tmp_fn))
+        local tmpsf = io.open(tmp_sidecar_file, "w")
+        tmpsf:write("{}")
+        tmpsf:close()
         local tmp_history = docsettings:getHistoryPath(tmp_fn)
         local tmpfp = io.open(tmp_history, "w")
         tmpfp:write("{}")
@@ -97,7 +101,7 @@ describe("FileManager module", function()
         UIManager.show = function(self, w)
             assert.Equals(w.text, "Deleted file:\n"..tmp_fn)
         end
-        filemanager:deleteFile(tmp_fn)
+        filemanager:deleteFile(tmp_fn, true)
         UIManager.show = old_show
         filemanager:onClose()
 
