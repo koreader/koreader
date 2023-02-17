@@ -88,7 +88,7 @@ local dictionaries = {
         lang_out = "Portuguese",
         entries = 128521,
         license = _("CC-BY-SA 2.5"),
-        url = "http://www.dicionario-aberto.net/resources/stardict-DicAberto.tar.bz2",
+        url = "https://dicionario-aberto.net/resources/stardict-DicAberto.tar.bz2",
     },
     {
         name = "GNU/FDL Anglicko/Český slovník",
