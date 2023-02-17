@@ -501,12 +501,13 @@ function Device:exit()
 end
 
 function Device:retrieveNetworkInfo()
+    -- NOTE: This sed monstrosity is tailored for the busybox implementation of ifconfig
     local std_out = io.popen("ifconfig | " ..
                              "sed -n " ..
                              "-e 's/ \\+$//g' " ..
                              "-e 's/ \\+/ /g' " ..
                              "-e 's/ \\?inet6\\? addr: \\?\\([^ ]\\+\\) .*$/IP: \\1/p' " ..
-                             "-e 's/Link encap:Ethernet\\(.*\\)/\\1/p'",
+                             "-e 's/Link encap:Ethernet[[:blank:]]*HWaddr \\(.*\\)/\\1/p'",
                              "r")
     if std_out then
         local result = std_out:read("*all")
