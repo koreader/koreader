@@ -40,7 +40,7 @@ function ReaderStatus:onEndOfBook()
         self:openFileBrowser()
         return
     end
-    
+
     -- Should we start by marking the book as read?
     if G_reader_settings:isTrue("end_document_auto_mark") then
         self:onMarkBook(true)
