@@ -6,10 +6,12 @@ local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocSettings = require("docsettings")
+local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
-local util = require("ffi/util")
+local ffiutil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
-local T = util.template
+local T = ffiutil.template
 
 local filemanagerutil = {}
 
@@ -35,7 +37,7 @@ end
 
 -- Purge doc settings in sidecar directory
 function filemanagerutil.purgeSettings(file)
-    local file_abs_path = util.realpath(file)
+    local file_abs_path = ffiutil.realpath(file)
     if file_abs_path then
         DocSettings:open(file_abs_path):purge()
     end
@@ -54,7 +56,7 @@ function filemanagerutil.resetDocumentSettings(file)
         last_page = true,
         last_xpointer = true,
     }
-    local file_abs_path = util.realpath(file)
+    local file_abs_path = ffiutil.realpath(file)
     if file_abs_path then
         local doc_settings = DocSettings:open(file_abs_path)
         for k in pairs(doc_settings.data) do
@@ -67,54 +69,32 @@ function filemanagerutil.resetDocumentSettings(file)
     end
 end
 
--- Get a document's status ("new", "reading", "complete", or "abandoned")
+-- Get a document status ("new", "reading", "complete", or "abandoned")
 function filemanagerutil.getStatus(file)
-    local status = "new"
     if DocSettings:hasSidecarFile(file) then
-        local docinfo = DocSettings:open(file) -- no io handles created, do not close
-        if docinfo.data.summary and docinfo.data.summary.status and docinfo.data.summary.status ~= "" then
-            status = docinfo.data.summary.status
-        else
-            status = "reading"
+        local summary = DocSettings:open(file):readSetting("summary")
+        if summary and summary.status and summary.status ~= "" then
+            return summary.status
         end
+        return "reading"
     end
-    return status
+    return "new"
 end
 
--- Set a document's status
+-- Set a document status ("reading", "complete", or "abandoned")
 function filemanagerutil.setStatus(file, status)
     -- In case the book doesn't have a sidecar file, this'll create it
-    local docinfo = DocSettings:open(file)
-    local summary
-    if docinfo.data.summary and docinfo.data.summary.status then
-        -- Book already had the full BookStatus table in its sidecar, easy peasy!
-        docinfo.data.summary.status = status
-        docinfo.data.summary.modified = os.date("%Y-%m-%d", os.time())
-        summary = docinfo.data.summary
-    else
-        -- No BookStatus table, create a minimal one...
-        if docinfo.data.summary then
-            -- Err, a summary table with no status entry? Should never happen...
-            summary = { status = status }
-            -- Append the status entry to the existing summary...
-            require("util").tableMerge(docinfo.data.summary, summary)
-            docinfo.data.summary.modified = os.date("%Y-%m-%d", os.time())
-            summary = docinfo.data.summary
-        else
-            -- No summary table at all, create a minimal one
-            summary = {
-                status = status,
-                modified = os.date("%Y-%m-%d", os.time())
-            }
-        end
-    end
-    docinfo:saveSetting("summary", summary)
-    docinfo:flush()
+    local doc_settings = DocSettings:open(file)
+    local summary = doc_settings:readSetting("summary") or {}
+    summary.status = status
+    summary.modified = os.date("%Y-%m-%d", os.time())
+    doc_settings:saveSetting("summary", summary)
+    doc_settings:flush()
 end
 
 -- Generate all book status file dialog buttons in a row
-function filemanagerutil.genStatusButtonsRow(file, caller_callback)
-    local status = filemanagerutil.getStatus(file)
+function filemanagerutil.genStatusButtonsRow(file, caller_callback, current_status)
+    local status = current_status or filemanagerutil.getStatus(file)
     local function genStatusButton(to_status)
         local status_text = {
             reading   = _("Reading"),
@@ -122,7 +102,7 @@ function filemanagerutil.genStatusButtonsRow(file, caller_callback)
             complete  = _("Finished"),
         }
         return {
-            text = status_text[to_status],
+            text = status_text[to_status] .. (status == to_status and "  ✓" or ""),
             id = to_status, -- used by covermenu
             enabled = status ~= to_status,
             callback = function()
@@ -138,15 +118,16 @@ function filemanagerutil.genStatusButtonsRow(file, caller_callback)
     }
 end
 
--- Generate a "Reset settings" file dialog button
-function filemanagerutil.genResetSettingsButton(file, currently_opened_file, caller_callback)
+-- Generate "Reset" file dialog button
+function filemanagerutil.genResetSettingsButton(file, caller_callback, button_disabled)
     return {
         text = _("Reset"),
         id = "reset", -- used by covermenu
-        enabled = file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(file)),
+        enabled = not button_disabled and DocSettings:hasSidecarFile(ffiutil.realpath(file)),
         callback = function()
             UIManager:show(ConfirmBox:new{
-                text = T(_("Reset this document?\n\n%1\n\nAll document progress, settings, bookmarks, highlights, and notes will be permanently lost."),
+                text = T(_("Reset this document?") .. "\n\n%1\n\n" ..
+                    _("Document progress, settings, bookmarks, highlights and notes will be permanently lost."),
                     BD.filepath(file)),
                 ok_text = _("Reset"),
                 ok_callback = function()
@@ -155,6 +136,44 @@ function filemanagerutil.genResetSettingsButton(file, currently_opened_file, cal
                     caller_callback()
                 end,
             })
+        end,
+    }
+end
+
+-- Generate "Execute script" file dialog button
+function filemanagerutil.genExecuteScriptButton(file, caller_callback)
+    return {
+        -- @translators This is the script's programming language (e.g., shell or python)
+        text = T(_("Execute %1 script"), util.getScriptType(file)),
+        callback = function()
+            caller_callback()
+            local script_is_running_msg = InfoMessage:new{
+                -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
+                text = T(_("Running %1 script %2…"), util.getScriptType(file), BD.filename(ffiutil.basename(file))),
+            }
+            UIManager:show(script_is_running_msg)
+            UIManager:scheduleIn(0.5, function()
+                local rv
+                if Device:isAndroid() then
+                    Device:setIgnoreInput(true)
+                    rv = os.execute("sh " .. ffiutil.realpath(file)) -- run by sh, because sdcard has no execute permissions
+                    Device:setIgnoreInput(false)
+                else
+                    rv = os.execute(ffiutil.realpath(file))
+                end
+                UIManager:close(script_is_running_msg)
+                if rv == 0 then
+                    UIManager:show(InfoMessage:new{
+                        text = _("The script exited successfully."),
+                    })
+                else
+                    --- @note: Lua 5.1 returns the raw return value from the os's system call. Counteract this madness.
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
+                        icon = "notice-warning",
+                    })
+                end
+            end)
         end,
     }
 end
