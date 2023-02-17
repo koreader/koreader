@@ -36,7 +36,7 @@ describe("FileManager module", function()
         UIManager.show = old_show
         filemanager:onClose()
     end)
-    it("should not delete settings for non-document file", function()
+    it("should not delete not empty sidecar folder", function()
         local filemanager = FileManager:new{
             dimen = Screen:getSize(),
             root_path = "../../test",
@@ -47,16 +47,19 @@ describe("FileManager module", function()
 
         local tmp_sidecar = docsettings:getSidecarDir(util.realpath(tmp_fn))
         lfs.mkdir(tmp_sidecar)
-        local tmp_history = docsettings:getHistoryPath(tmp_fn)
-        local tmpfp = io.open(tmp_history, "w")
-        tmpfp:write("{}")
-        tmpfp:close()
+        local tmp_sidecar_file = docsettings:getSidecarFile(util.realpath(tmp_fn))
+        local tmp_sidecar_file_foo = tmp_sidecar_file .. ".foo" -- non-docsettings file
+        local tmpsf = io.open(tmp_sidecar_file, "w")
+        tmpsf:write("{}")
+        tmpsf:close()
+        util.copyFile(tmp_sidecar_file, tmp_sidecar_file_foo)
         local old_show = UIManager.show
 
         -- make sure file exists
         assert.is_not_nil(lfs.attributes(tmp_fn))
         assert.is_not_nil(lfs.attributes(tmp_sidecar))
-        assert.is_not_nil(lfs.attributes(tmp_history))
+        assert.is_not_nil(lfs.attributes(tmp_sidecar_file))
+        assert.is_not_nil(lfs.attributes(tmp_sidecar_file_foo))
 
         UIManager.show = function(self, w)
             assert.Equals(w.text, "Deleted file:\n"..tmp_fn)
@@ -65,12 +68,11 @@ describe("FileManager module", function()
         UIManager.show = old_show
         filemanager:onClose()
 
-        -- make sure history file exists
+        -- make sure sdr folder exists
         assert.is_nil(lfs.attributes(tmp_fn))
         assert.is_not_nil(lfs.attributes(tmp_sidecar))
-        assert.is_not_nil(lfs.attributes(tmp_history))
+        os.remove(tmp_sidecar_file_foo)
         os.remove(tmp_sidecar)
-        os.remove(tmp_history)
     end)
     it("should delete document with its settings", function()
         local filemanager = FileManager:new{
