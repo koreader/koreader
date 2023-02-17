@@ -1,17 +1,15 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
-local FFIUtil = require("ffi/util")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
-local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local C_ = _.pgettext
-local T = FFIUtil.template
+local T = require("ffi/util").template
 
 local FileManagerHistory = WidgetContainer:extend{
     hist_menu_title = _("History"),
@@ -31,7 +29,6 @@ function FileManagerHistory:init()
 end
 
 function FileManagerHistory:addToMainMenu(menu_items)
-    -- insert table to main tab of filemanager menu
     menu_items.history = {
         text = self.hist_menu_title,
         callback = function()
@@ -41,16 +38,13 @@ function FileManagerHistory:addToMainMenu(menu_items)
 end
 
 function FileManagerHistory:fetchStatuses(count)
-    local status
     for _, v in ipairs(require("readhistory").hist) do
-        if v.dim then
-            status = "deleted"
-        else
-            status = filemanagerutil.getStatus(v.file)
+        v.status = v.dim and "deleted" or filemanagerutil.getStatus(v.file)
+        if v.status == "new" and v.file == (self.ui.document and self.ui.document.file) then
+            v.status = "reading" -- file currently opened for the first time
         end
-        v.status = status
         if count then
-            self.count[status] = self.count[status] + 1
+            self.count[v.status] = self.count[v.status] + 1
         end
     end
     self.statuses_fetched = true
@@ -85,64 +79,60 @@ function FileManagerHistory:onSetDimensions(dimen)
 end
 
 function FileManagerHistory:onMenuHold(item)
-    local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
-    local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.histfile_dialog = nil
     local function status_button_callback()
+        UIManager:close(self.histfile_dialog)
         if self._manager.filter ~= "all" then
             self._manager:fetchStatuses(false)
         else
             self._manager.statuses_fetched = false
         end
         self._manager:updateItemTable()
-        UIManager:close(self.histfile_dialog)
+        self._manager.files_updated = true -- sidecar folder may be created/deleted
     end
-    local buttons = {
+    local is_currently_opened = item.file == (self.ui.document and self.ui.document.file)
+
+    local buttons = {}
+    if not (item.dim or is_currently_opened) then
+        table.insert(buttons, filemanagerutil.genStatusButtonsRow(item.file, status_button_callback))
+        table.insert(buttons, {}) -- separator
+    end
+    table.insert(buttons, {
+        filemanagerutil.genResetSettingsButton(item.file, status_button_callback, is_currently_opened),
         {
-            filemanagerutil.genResetSettingsButton(item.file, currently_opened_file, status_button_callback),
-            {
-                text = _("Remove from history"),
-                callback = function()
-                    require("readhistory"):removeItem(item)
+            text = _("Remove from history"),
+            callback = function()
+                UIManager:close(self.histfile_dialog)
+                require("readhistory"):removeItem(item)
+                self._manager:updateItemTable()
+            end,
+        },
+    })
+    table.insert(buttons, {
+        {
+            text = _("Delete"),
+            enabled = not (item.dim or is_currently_opened),
+            callback = function()
+                local function post_delete_callback()
+                    UIManager:close(self.histfile_dialog)
                     self._manager:updateItemTable()
-                    UIManager:close(self.histfile_dialog)
-                end,
-            },
+                    self._manager.files_updated = true
+                end
+                local FileManager = require("apps/filemanager/filemanager")
+                FileManager:showDeleteFileDialog(item.file, post_delete_callback)
+            end,
         },
         {
-            {
-                text = _("Delete"),
-                enabled = (item.file ~= currently_opened_file and lfs.attributes(item.file, "mode")) and true or false,
-                callback = function()
-                    UIManager:show(ConfirmBox:new{
-                        text = T(_("Are you sure that you want to delete this document?\n\n%1\n\nIf you delete a file, it is permanently lost."),
-                            BD.filepath(item.file)),
-                        ok_text = _("Delete"),
-                        ok_callback = function()
-                            local FileManager = require("apps/filemanager/filemanager")
-                            FileManager:deleteFile(item.file)
-                            require("readhistory"):fileDeleted(item.file) -- (will update "lastfile" if needed)
-                            self._manager:updateItemTable()
-                            UIManager:close(self.histfile_dialog)
-                        end,
-                    })
-                end,
-            },
-            {
-                text = _("Book information"),
-                id = "book_information", -- used by covermenu
-                enabled = FileManagerBookInfo:isSupported(item.file),
-                callback = function()
-                    FileManagerBookInfo:show(item.file)
-                    UIManager:close(self.histfile_dialog)
-                end,
-             },
-        },
-    }
-    if not item.dim then
-        table.insert(buttons, 1, filemanagerutil.genStatusButtonsRow(item.file, status_button_callback))
-        table.insert(buttons, 2, {})
-    end
+            text = _("Book information"),
+            id = "book_information", -- used by covermenu
+            enabled = not item.dim,
+            callback = function()
+                UIManager:close(self.histfile_dialog)
+                FileManagerBookInfo:show(item.file)
+            end,
+         },
+    })
+
     self.histfile_dialog = ButtonDialogTitle:new{
         title = BD.filename(item.text:match("([^/]+)$")),
         title_align = "center",
@@ -190,6 +180,13 @@ function FileManagerHistory:onShowHist()
     end
     self:updateItemTable()
     self.hist_menu.close_callback = function()
+        if self.files_updated then -- refresh Filemanager list of files
+            local FileManager = require("apps/filemanager/filemanager")
+            if FileManager.instance then
+                FileManager.instance:onRefresh()
+            end
+            self.files_updated = nil
+        end
         self.statuses_fetched = nil
         UIManager:close(self.hist_menu)
         G_reader_settings:saveSetting("history_filter", self.filter)
@@ -218,17 +215,15 @@ function FileManagerHistory:showHistDialog()
     table.insert(buttons, {
         genFilterButton("reading"),
         genFilterButton("abandoned"),
-    })
-    table.insert(buttons, {
         genFilterButton("complete"),
-        genFilterButton("deleted"),
     })
     table.insert(buttons, {
         genFilterButton("all"),
         genFilterButton("new"),
+        genFilterButton("deleted"),
     })
     if self.count.deleted > 0 then
-        table.insert(buttons, {})
+        table.insert(buttons, {}) -- separator
         table.insert(buttons, {
             {
                 text = _("Clear history of deleted files"),
@@ -243,7 +238,7 @@ function FileManagerHistory:showHistDialog()
                         end,
                     })
                 end,
-             },
+            },
         })
     end
     hist_dialog = ButtonDialogTitle:new{
