@@ -43,6 +43,8 @@ local nb_drawings_since_last_collectgarbage = 0
 -- in the real Menu class or instance
 local CoverMenu = {}
 
+local book_statuses = {"reading", "abandoned", "complete"}
+
 function CoverMenu:updateCache(file, status)
     if self.cover_info_cache and self.cover_info_cache[file] then
         if status then
@@ -348,8 +350,9 @@ function CoverMenu:updateItems(select_number)
                 end
 
                 -- Fudge the status change button callbacks to also update the cover_info_cache
-                for _, status in ipairs({"reading", "abandoned", "complete"}) do
+                for _, status in ipairs(book_statuses) do
                     button = self.file_dialog.button_table:getButtonById(status)
+                    if not button then break end -- status buttons are not shown
                     local orig_status_callback = button.callback
                     button.callback = function()
                         -- Update the cache
@@ -501,16 +504,15 @@ function CoverMenu:onHistoryMenuHold(item)
     end
 
     -- Fudge the status change button callbacks to also update the cover_info_cache
-    for _, status in ipairs({"reading", "abandoned", "complete"}) do
+    for _, status in ipairs(book_statuses) do
         button = self.histfile_dialog.button_table:getButtonById(status)
-        if button then
-            local orig_status_callback = button.callback
-            button.callback = function()
-                -- Update the cache
-                self:updateCache(file, status)
-                -- And then set the status on file as expected
-                orig_status_callback()
-            end
+        if not button then break end -- status buttons are not shown
+        local orig_status_callback = button.callback
+        button.callback = function()
+            -- Update the cache
+            self:updateCache(file, status)
+            -- And then set the status on file as expected
+            orig_status_callback()
         end
     end
 
@@ -648,8 +650,9 @@ function CoverMenu:onCollectionsMenuHold(item)
     end
 
     -- Fudge the status change button callbacks to also update the cover_info_cache
-    for _, status in ipairs({"reading", "abandoned", "complete"}) do
+    for _, status in ipairs(book_statuses) do
         button = self.collfile_dialog.button_table:getButtonById(status)
+        if not button then break end -- status buttons are not shown
         local orig_status_callback = button.callback
         button.callback = function()
             -- Update the cache
@@ -694,7 +697,7 @@ function CoverMenu:onCloseWidget()
     -- Propagate a call to free() to all our sub-widgets, to release memory used by their _bb
     self.item_group:free()
 
-    -- Clean any short term cache (used by ListMenu to cache some DocSettings info)
+    -- Clean any short term cache (used by ListMenu to cache some Doc Settings info)
     self.cover_info_cache = nil
 
     -- Force garbage collecting when leaving too
