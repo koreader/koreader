@@ -44,6 +44,9 @@ local BookInfoManager = require("bookinfomanager")
 -- recreated if height changes)
 local corner_mark_size = -1
 local corner_mark
+local reading_mark
+local abandoned_mark
+local complete_mark
 local progress_widget
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
@@ -102,6 +105,7 @@ local FakeCover = FrameContainer:extend{
     padding = 0,
     bordersize = Size.border.thin,
     dim = nil,
+    bottom_right_compensate = false,
     -- Provided filename, title and authors should not be BD wrapped
     filename = nil,
     file_deleted = nil,
@@ -251,7 +255,7 @@ function FakeCover:init()
                 text = filename,
                 lang = self.book_lang, -- might as well use it for filename
                 face = Font:getFace("cfont", math.max(self.filename_font_max - sizedec, self.filename_font_min)),
-                width = text_width,
+                width = self.bottom_right_compensate and width - 2 * corner_mark_size or text_width,
                 alignment = "center",
             }
             texts_height = texts_height + filename_wg:getSize().h
@@ -383,6 +387,7 @@ function MosaicMenuItem:init()
 
     self.detail = self.text
     self.percent_finished = nil
+    self.status = nil
 
     -- we need this table per-instance, so we declare it here
     self.ges_events = {
@@ -559,6 +564,42 @@ function MosaicMenuItem:update()
         end
 
         if bookinfo then -- This book is known
+            -- Current page / pages are available or more accurate in .sdr/metadata.lua
+            -- We use a cache (cleaned at end of this browsing session) to store
+            -- page, percent read and book status from sidecar files, to avoid
+            -- re-parsing them when re-rendering a visited page
+            -- This cache is shared with ListMenu, so we need to fill it with the same
+            -- info here than there, even if we don't need them all here.
+            if not self.menu.cover_info_cache then
+                self.menu.cover_info_cache = {}
+            end
+            local percent_finished, status
+            local pages = bookinfo.pages
+            if DocSettings:hasSidecarFile(self.filepath) then
+                self.been_opened = true
+                if self.menu.cover_info_cache[self.filepath] then
+                    pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath]) -- luacheck: no unused
+                else
+                    local docinfo = DocSettings:open(self.filepath)
+                    -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
+                    if docinfo.data.doc_pages then
+                        pages = docinfo.data.doc_pages
+                    elseif docinfo.data.stats and docinfo.data.stats.pages then
+                        if docinfo.data.stats.pages ~= 0 then -- crengine with statistics disabled stores 0
+                            pages = docinfo.data.stats.pages
+                        end
+                    end
+                    if docinfo.data.summary and docinfo.data.summary.status then
+                        status = docinfo.data.summary.status
+                    end
+                    percent_finished = docinfo.data.percent_finished
+                    self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
+                end
+            end
+            self.percent_finished = percent_finished
+            self.status = status
+            self.show_progress_bar = self.status ~= "complete" and BookInfoManager:getSetting("show_progress_in_mosaic") and self.percent_finished
+
             local cover_bb_used = false
             self.bookinfo_found = true
             -- For wikipedia saved as epub, we made a cover from the 1st pic of the page,
@@ -622,6 +663,12 @@ function MosaicMenuItem:update()
                         end
                     end
                 end
+                local bottom_pad = Size.padding.default
+                if self.show_progress_bar and self.do_hint_opened then
+                    bottom_pad = corner_mark_size + Screen:scaleBySize(2)
+                elseif self.show_progress_bar then
+                    bottom_pad = corner_mark_size - Screen:scaleBySize(2)
+                end
                 widget = CenterContainer:new{
                     dimen = dimen,
                     FakeCover:new{
@@ -636,6 +683,8 @@ function MosaicMenuItem:update()
                         authors_add = not bookinfo.ignore_meta and authors_add,
                         book_lang = not bookinfo.ignore_meta and bookinfo.language,
                         file_deleted = self.file_deleted,
+                        bottom_pad = bottom_pad,
+                        bottom_right_compensate = not self.show_progress_bar and self.do_hint_opened,
                     }
                 }
             end
@@ -647,43 +696,6 @@ function MosaicMenuItem:update()
             if bookinfo.description then
                 self.has_description = true
             end
-
-            -- Current page / pages are available or more accurate in .sdr/metadata.lua
-            -- We use a cache (cleaned at end of this browsing session) to store
-            -- page, percent read and book status from sidecar files, to avoid
-            -- re-parsing them when re-rendering a visited page
-            -- This cache is shared with ListMenu, so we need to fill it with the same
-            -- info here than there, even if we don't need them all here.
-            if not self.menu.cover_info_cache then
-                self.menu.cover_info_cache = {}
-            end
-            local percent_finished, status
-            local pages = bookinfo.pages
-            if DocSettings:hasSidecarFile(self.filepath) then
-                self.been_opened = true
-                if self.menu.cover_info_cache[self.filepath] then
-                    pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath]) -- luacheck: no unused
-                else
-                    local docinfo = DocSettings:open(self.filepath)
-                    -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
-                    if docinfo.data.doc_pages then
-                        pages = docinfo.data.doc_pages
-                    elseif docinfo.data.stats and docinfo.data.stats.pages then
-                        if docinfo.data.stats.pages ~= 0 then -- crengine with statistics disabled stores 0
-                            pages = docinfo.data.stats.pages
-                        end
-                    end
-                    if docinfo.data.summary and docinfo.data.summary.status then
-                        status = docinfo.data.summary.status
-                    end
-                    percent_finished = docinfo.data.percent_finished
-                    self.menu.cover_info_cache[self.filepath] = {pages, percent_finished, status}
-                end
-            end
-            if status == "completed" then
-                percent_finished = 100
-            end
-            self.percent_finished = percent_finished
         else -- bookinfo not found
             if self.init_done then
                 -- Non-initial update(), but our widget is still not found:
@@ -740,7 +752,7 @@ function MosaicMenuItem:paintTo(bb, x, y)
 
     -- to which we paint over the shortcut icon
     if self.shortcut_icon then
-        -- align it on bottom left corner of widget
+        -- align it on top left corner of widget
         local target = self
         local ix
         if BD.mirroredUILayout() then
@@ -748,13 +760,11 @@ function MosaicMenuItem:paintTo(bb, x, y)
         else
             ix = 0
         end
-        local iy = target.dimen.h - self.shortcut_icon.dimen.h
+        local iy = 0
         self.shortcut_icon:paintTo(bb, x+ix, y+iy)
     end
 
-    local show_progress_in_mosaic = BookInfoManager:getSetting("show_progress_in_mosaic")
-    -- to which we paint over a dogear if needed
-    if not show_progress_in_mosaic and corner_mark and self.do_hint_opened and self.been_opened then
+    if self.do_hint_opened and self.been_opened then
         -- align it on bottom right corner of sub-widget
         local target =  self[1][1][1]
         local ix
@@ -765,15 +775,33 @@ function MosaicMenuItem:paintTo(bb, x, y)
         end
         local iy = self.height - math.ceil((self.height - target.dimen.h)/2) - corner_mark:getSize().h
         -- math.ceil() makes it looks better than math.floor()
+        if self.status == "abandoned" then
+            corner_mark = abandoned_mark
+        elseif self.status == "complete" then
+            corner_mark = complete_mark
+        else
+            corner_mark = reading_mark
+        end
         corner_mark:paintTo(bb, x+ix, y+iy)
     end
 
-    if show_progress_in_mosaic and self.percent_finished then
+    if self.show_progress_bar then
         local cover_item = self[1][1][1]
-        local width = math.min(self.width * 0.60, cover_item.width)
-        progress_widget.width = width
-        local pos_x = x + self.width - progress_widget.width - math.ceil((self.width - cover_item.width) / 2) - progress_widget.bordersize
-        local pos_y = y + self.height - progress_widget.height - math.ceil((self.height - cover_item.height) / 2)
+        local progress_widget_margin = math.floor((corner_mark_size - progress_widget.height) / 2)
+        progress_widget.width = cover_item.width - 2*progress_widget_margin
+        local pos_x = x + math.ceil((self.width - progress_widget.width) / 2)
+        if self.do_hint_opened then
+            progress_widget.width = progress_widget.width - corner_mark_size
+            if BD.mirroredUILayout() then
+                pos_x = pos_x + corner_mark_size
+            end
+        end
+        local pos_y = y + self.height - math.ceil((self.height - cover_item.height) / 2) - corner_mark_size + progress_widget_margin
+        if self.status == "abandoned" then
+            progress_widget.fillcolor = Blitbuffer.COLOR_GRAY_6
+        else
+            progress_widget.fillcolor = Blitbuffer.COLOR_BLACK
+        end
         progress_widget:setPercentage(self.percent_finished)
         progress_widget:paintTo(bb, pos_x, pos_y)
     end
@@ -886,18 +914,32 @@ function MosaicMenu:_recalculateDimen()
 
     -- Create or replace corner_mark if needed
     -- 1/12 (larger) or 1/16 (smaller) of cover looks allright
-    local mark_size = math.floor(math.min(self.item_width, self.item_height) / 16)
+    local mark_size = math.floor(math.min(self.item_width, self.item_height) / 8)
     if mark_size ~= corner_mark_size then
         corner_mark_size = mark_size
         if corner_mark then
-            corner_mark:free()
+            reading_mark:free()
+            abandoned_mark:free()
+            complete_mark:free()
         end
-        corner_mark = IconWidget:new{
-            icon = "dogear.opaque",
-            rotation_angle = BD.mirroredUILayout() and 180 or 270,
+        reading_mark = IconWidget:new{
+            icon = "dogear.reading",
+            rotation_angle = BD.mirroredUILayout() and 270 or 0,
             width = corner_mark_size,
             height = corner_mark_size,
         }
+        abandoned_mark = IconWidget:new{
+            icon = BD.mirroredUILayout() and "dogear.abandoned.rtl" or "dogear.abandoned",
+            width = corner_mark_size,
+            height = corner_mark_size,
+        }
+        complete_mark = IconWidget:new{
+            icon = BD.mirroredUILayout() and "dogear.complete.rtl" or "dogear.complete",
+            alpha = true,
+            width = corner_mark_size,
+            height = corner_mark_size,
+        }
+        corner_mark = reading_mark
     end
 
     -- Create or replace progress_widget if needed
@@ -907,11 +949,11 @@ function MosaicMenu:_recalculateDimen()
             bgcolor = Blitbuffer.COLOR_WHITE,
             fillcolor = Blitbuffer.COLOR_BLACK,
             bordercolor = Blitbuffer.COLOR_BLACK,
-            height = Screen:scaleBySize(6),
+            height = Screen:scaleBySize(8),
             margin_h = Screen:scaleBySize(1),
             width = progress_bar_width,
             radius = Size.border.thin,
-            bordersize = Size.border.thin,
+            bordersize = Size.border.default,
         }
     end
 end

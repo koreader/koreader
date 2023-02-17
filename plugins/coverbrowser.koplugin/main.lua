@@ -278,7 +278,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Show hint for opened books in history"),
+                        text = _("Show hint for book status in history"),
                         checked_func = function() return BookInfoManager:getSetting("history_hint_opened") end,
                         callback = function()
                             if BookInfoManager:getSetting("history_hint_opened") then
@@ -290,7 +290,7 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Show hint for opened books in favorites"),
+                        text = _("Show hint for book status in favorites"),
                         checked_func = function() return BookInfoManager:getSetting("collections_hint_opened") end,
                         callback = function()
                             if BookInfoManager:getSetting("collections_hint_opened") then

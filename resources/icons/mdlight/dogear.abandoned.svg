@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <path id="background" fill="#ffffff" stroke="none" d="M 0 0 L 48 0 L 48 48 L 0 48 Z"/>
+    <polygon points="1,47 1,1 47,1" fill="none" stroke="#000000" stroke-width="2"/>
+    <path id="pause-left" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="butt" d="M 8 6 L 8 21"/>
+    <path id="pause-right" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="butt" stroke-linejoin="bevel" d="M 17 6 L 17 21"/>
+</svg>
