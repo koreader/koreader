@@ -248,9 +248,9 @@ function Kindle:setDateTime(year, month, day, hour, min, sec)
     else
         local command
         if year and month and day then
-            command = string.format("date -s '%d-%d-%d %d:%d:%d' '+%Y-%m-%d %H:%M:%S'", year, month, day, hour, min, sec)
+            command = string.format("date -s '%d-%d-%d %d:%d:%d' '+%%Y-%%m-%%d %%H:%%M:%%S'", year, month, day, hour, min, sec)
         else
-            command = string.format("date -s '%d:%d' '+%H:%M'", hour, min)
+            command = string.format("date -s '%d:%d' '+%%H:%%M'", hour, min)
         end
         if os.execute(command) == 0 then
             os.execute("hwclock -u -w")
