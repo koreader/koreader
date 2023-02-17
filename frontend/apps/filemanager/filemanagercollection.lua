@@ -1,4 +1,3 @@
-local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Device = require("device")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
@@ -9,7 +8,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local _ = require("gettext")
-local T = require("ffi/util").template
 
 local FileManagerCollection = WidgetContainer:extend{
     coll_menu_title = _("Favorites"),
