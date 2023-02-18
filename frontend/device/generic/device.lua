@@ -523,7 +523,7 @@ function Device:getDefaultRoute(interface)
             -- Check the requested interface or anything that isn't lo
             if (interface and fields[1] == interface) or (not interface and fields[1] ~= "lo") then
                 -- We're looking for something that's up & a gateway
-                if bit.band(fields[4], bit.bor(C.RTF_UP, C.RTF_GATEWAY)) ~= 0 then
+                if bit.band(fields[4], C.RTF_UP) ~= 0 and bit.band(fields[4], C.RTF_GATEWAY) ~= 0 then
                     -- Handle the conversion from network endianness hex string into a human-readable numeric form
                     local sockaddr_in = ffi.new("struct sockaddr_in")
                     sockaddr_in.sin_family = C.AF_INET
