@@ -627,8 +627,6 @@ function Device:retrieveNetworkInfo()
                         --- @todo: Build an IPv6 variant of getDefaultRoute that parses /proc/net/ipv6_route
                     end
                 end
-                -- Regardless of failure, we only check a single if, so we're done
-                break
             end
         end
         ifa = ifa.ifa_next
@@ -636,58 +634,36 @@ function Device:retrieveNetworkInfo()
     C.freeifaddrs(ifaddr[0])
     C.close(socket)
 
-    return table.concat(results, "\n")
-
-    -- NOTE: This sed monstrosity is tailored for the busybox implementation of ifconfig
-    local std_out = io.popen("ifconfig | " ..
-                             "sed -n " ..
-                             "-e 's/ \\+$//g' " ..
-                             "-e 's/ \\+/ /g' " ..
-                             "-e 's/ \\?inet6\\? addr: \\?\\([^ ]\\+\\) .*$/IP: \\1/p' " ..
-                             "-e 's/Link encap:Ethernet[[:blank:]]*HWaddr \\(.*\\)/\\1/p'",
-                             "r")
+    --- @fixme: Implement the basics for wireless detection/essid, and fold it inside the interface walk?
+    local std_out = io.popen('2>/dev/null iwconfig | grep ESSID | cut -d\\" -f2')
     if std_out then
-        local result = std_out:read("*all")
+        local ssid = std_out:read("*l")
         std_out:close()
-        std_out = io.popen('2>/dev/null iwconfig | grep ESSID | cut -d\\" -f2')
-        if std_out then
-            local ssid = std_out:read("*l")
-            std_out:close()
-            result = result .. "SSID: " .. ssid .. "\n"
-        end
-        -- iproute2 tools may not always be available, fall back to net-tools if necessary
-        if isCommand("ip") then
-            std_out = io.popen([[ip r | grep default | tail -n 1 | cut -d ' ' -f 3]], "r")
-        else
-            std_out = io.popen([[route -n | awk '$4 == "UG" {print $2}' | tail -n 1]], "r")
-        end
-        local default_gw
-        if std_out then
-            default_gw = std_out:read("*l")
-            std_out:close()
-            if default_gw == "" then
-                default_gw = nil
-            end
-        end
-        if default_gw then
-            result = result .. T(_("Default gateway: %1"), default_gw) .. "\n"
-            -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
-            local pingok
-            if self:isKindle() and self:hasDPad() then
-                pingok = os.execute("ping -q -c1 " .. default_gw .. " > /dev/null")
-            else
-                pingok = os.execute("ping -q -c1 -w2 " .. default_gw .. " > /dev/null")
-            end
-            if pingok == 0 then
-                result = result .. _("Gateway ping successful")
-            else
-                result = result .. _("Gateway ping FAILED")
-            end
-        else
-            result = result .. _("No default gateway to ping")
-        end
-        return result
+        table.insert(results, string.format("SSID: %s", ssid))
     end
+
+    -- Only ping a single gateway
+    --- @fixme: Prefer the wireless interface, if any.
+    local default_gw = self:getDefaultRoute()
+    if default_gw then
+        table.insert(results, T(_("Default gateway: %1"), default_gw)
+        -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
+        local pingok
+        if self:isKindle() and self:hasDPad() then
+            pingok = os.execute("ping -q -c1 " .. default_gw .. " > /dev/null")
+        else
+            pingok = os.execute("ping -q -c1 -w2 " .. default_gw .. " > /dev/null")
+        end
+        if pingok == 0 then
+            table.insert(results, _("Gateway ping successful"))
+        else
+            table.insert(results, _("Gateway ping FAILED"))
+        end
+    else
+        table.insert(results, _("No default gateway to ping"))
+    end
+
+    return table.concat(results, "\n")
 end
 
 function Device:setTime(hour, min)
