@@ -20,10 +20,6 @@ require("ffi/posix_h")
 local function yes() return true end
 local function no() return false end
 
-local function isCommand(s)
-    return os.execute("command -v "..s.." >/dev/null") == 0
-end
-
 local Device = {
     screen_saver_mode = false,
     screen_saver_lock = false,
@@ -646,7 +642,7 @@ function Device:retrieveNetworkInfo()
     --- @fixme: Prefer the wireless interface, if any.
     local default_gw = self:getDefaultRoute()
     if default_gw then
-        table.insert(results, T(_("Default gateway: %1"), default_gw)
+        table.insert(results, T(_("Default gateway: %1"), default_gw))
         -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
         local pingok
         if self:isKindle() and self:hasDPad() then
