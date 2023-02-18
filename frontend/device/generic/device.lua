@@ -610,18 +610,18 @@ function Device:retrieveNetworkInfo()
                                                       ifr.ifr_hwaddr.sa_data[3],
                                                       ifr.ifr_hwaddr.sa_data[4],
                                                       ifr.ifr_hwaddr.sa_data[5])
-                            table.insert(results, T(_("MAC: %1"), mac))
+                            table.insert(results, string.format("MAC: %s", mac))
                         end
                     end
 
                     if family == C.AF_INET then
-                        table.insert(results, T(_("IP: %1"), ffi.string(host)))
+                        table.insert(results, string.format("IP: %s", ffi.string(host)))
                         local gw = self:getDefaultRoute(ifname)
                         if gw then
                             table.insert(results, T(_("Default gateway: %1"), gw))
                         end
                     else
-                        table.insert(results, T(_("IPV6: %1"), ffi.string(host)))
+                        table.insert(results, string.format("IPV6: %s", ffi.string(host)))
                         --- @todo: Build an IPv6 variant of getDefaultRoute that parses /proc/net/ipv6_route
                     end
                 end
