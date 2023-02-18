@@ -606,12 +606,12 @@ function Device:retrieveNetworkInfo()
                             logger.err("Device:retrieveNetworkInfo: ioctl:", ffi.string(C.strerror(errno)))
                         else
                             local mac = string.format("%02X:%02X:%02X:%02X:%02X:%02X",
-                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[0],
-                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[1],
-                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[2],
-                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[3],
-                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[4],
-                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[5])
+                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[0], 0xFF),
+                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[1], 0xFF),
+                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[2], 0xFF),
+                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[3], 0xFF),
+                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[4], 0xFF),
+                                                      bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[5], 0xFF))
                             table.insert(results, string.format("MAC: %s", mac))
                         end
                     end
