@@ -7,10 +7,15 @@ This module defines stubs for common methods.
 local DataStorage = require("datastorage")
 local Geom = require("ui/geometry")
 local logger = require("logger")
+local ffi = require("ffi")
 local util = require("util")
 local _ = require("gettext")
 local ffiUtil = require("ffi/util")
+local C = ffi.C
 local T = ffiUtil.template
+
+-- We'll need a bunch of stuff for getifaddrs & co in Device:retrieveNetworkInfo
+require("ffi/posix_h")
 
 local function yes() return true end
 local function no() return false end
@@ -498,6 +503,56 @@ prepare for application shutdown
 function Device:exit()
     self.screen:close()
     require("ffi/input"):closeAll()
+end
+
+function Device:getDefaultRoute(interface)
+    local fd = io.open("/proc/net/route", "re")
+    if not fd then
+        return
+    end
+
+    local gateway
+    local l = 1
+    for line in fd:lines() do
+        -- Skip the first line (header)
+        if l > 1 then
+            local fields = {}
+            for field in line:gmatch("%S+") do
+                table.insert(fields, field)
+            end
+            -- Check the requested interface or anything that isn't lo
+            if (interface and fields[1] == interface) or (not interface and fields[1] ~= "lo") then
+                -- We're looking for something that's up & a gateway
+                if bit.band(fields[4], bit.bor(C.RTF_UP, C.RTF_GATEWAY)) ~= 0 then
+                    -- Handle the conversion from network endianness hex string into a human-readable numeric form
+                    local sockaddr_in = ffi.new("struct sockaddr_in")
+                    sockaddr_in.sin_family = C.AF_INET
+                    sockaddr_in.sin_addr.s_addr = tonumber(fields[3], 16)
+                    local host = ffi.new("char[?]", C.NI_MAXHOST)
+                    local s = C.getnameinfo(ffi.cast("struct sockaddr *", sockaddr_in),
+                                            ffi.sizeof("struct sockaddr_in"),
+                                            host, C.NI_MAXHOST,
+                                            nil, 0,
+                                            C.NI_NUMERICHOST)
+                    if s ~= 0 then
+                        logger.err("Device:getDefaultRoute: getnameinfo:", ffi.string(C.gai_strerror(s)))
+                        break
+                    else
+                        gateway = ffi.string(host)
+                        -- If we specified an interface, we're done.
+                        -- If we didn't, we'll just keep the last gateway in the routing table...
+                        if interface then
+                            break
+                        end
+                    end
+                end
+            end
+        end
+        l = l + 1
+    end
+    fd:close()
+
+    return gateway
 end
 
 function Device:retrieveNetworkInfo()
