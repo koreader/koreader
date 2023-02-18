@@ -575,11 +575,13 @@ function Device:retrieveNetworkInfo()
     local results = {}
     local interfaces = {}
 
-    -- Loop over all the non-loopback network interfaces
+    -- Loop over all the network interfaces
     local ifa = ifaddr[0]
     while ifa ~= nil do
-        -- FIXME: Check IFF_LOOPBACK instead
-        if ifa.ifa_addr ~= nil and C.strcmp(ifa.ifa_name, "lo") ~= 0 then
+        -- Skip over loopback or downed interfaces
+        if ifa.ifa_addr ~= nil and
+           bit.band(ifa.ifa_flags, C.IFF_UP) ~= 0 and
+           bit.band(ifa.ifa_flags, C.IFF_LOOPBACK) == 0 then
             local family = ifa.ifa_addr.sa_family
             if family == C.AF_INET or family == C.AF_INET6 then
                 local host = ffi.new("char[?]", C.NI_MAXHOST)
