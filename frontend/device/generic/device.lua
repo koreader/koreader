@@ -600,18 +600,18 @@ function Device:retrieveNetworkInfo()
                         interfaces[ifname] = true
                         -- Get its MAC address
                         local ifr = ffi.new("struct ifreq")
-                        ffi.copy(ifr.ifr_name, ifa.ifa_name, C.IFNAMSIZ)
+                        ffi.copy(ifr.ifr_ifrn.ifrn_name, ifa.ifa_name, C.IFNAMSIZ)
                         if C.ioctl(socket, C.SIOCGIFHWADDR, ifr) == -1 then
                             local errno = ffi.errno()
                             logger.err("Device:retrieveNetworkInfo: ioctl:", ffi.string(C.strerror(errno)))
                         else
                             local mac = string.format("%02X:%02X:%02X:%02X:%02X:%02X",
-                                                      ifr.ifr_hwaddr.sa_data[0],
-                                                      ifr.ifr_hwaddr.sa_data[1],
-                                                      ifr.ifr_hwaddr.sa_data[2],
-                                                      ifr.ifr_hwaddr.sa_data[3],
-                                                      ifr.ifr_hwaddr.sa_data[4],
-                                                      ifr.ifr_hwaddr.sa_data[5])
+                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[0],
+                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[1],
+                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[2],
+                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[3],
+                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[4],
+                                                      ifr.ifr_ifru.ifru_hwaddr.sa_data[5])
                             table.insert(results, string.format("MAC: %s", mac))
                         end
                     end
