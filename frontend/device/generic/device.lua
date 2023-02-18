@@ -556,6 +556,86 @@ function Device:getDefaultRoute(interface)
 end
 
 function Device:retrieveNetworkInfo()
+    -- We're going to need a random socket for the MAC query ioctl...
+    local socket = C.socket(C.PF_INET, C.SOCK_DGRAM, C.IPPROTO_IP);
+    if socket == -1 then
+        local errno = ffi.errno()
+        logger.err("Device:retrieveNetworkInfo: socket:", ffi.string(C.strerror(errno)))
+        return
+    end
+
+    local ifaddr = ffi.new("struct ifaddrs *[1]")
+    if C.getifaddrs(ifaddr) == -1 then
+        local errno = ffi.errno()
+        logger.err("Device:retrieveNetworkInfo: getifaddrs:", ffi.string(C.strerror(errno)))
+        return false
+    end
+
+    -- Build a string rope to format the results
+    local results = {}
+    local interfaces = {}
+
+    -- Loop over all the non-loopback network interfaces
+    local ifa = ifaddr[0]
+    while ifa ~= nil do
+        -- FIXME: Check IFF_LOOPBACK instead
+        if ifa.ifa_addr ~= nil and C.strcmp(ifa.ifa_name, "lo") ~= 0 then
+            local family = ifa.ifa_addr.sa_family
+            if family == C.AF_INET or family == C.AF_INET6 then
+                local host = ffi.new("char[?]", C.NI_MAXHOST)
+                local s = C.getnameinfo(ifa.ifa_addr,
+                                        family == C.AF_INET and ffi.sizeof("struct sockaddr_in") or ffi.sizeof("struct sockaddr_in6"),
+                                        host, C.NI_MAXHOST,
+                                        nil, 0,
+                                        C.NI_NUMERICHOST)
+                if s ~= 0 then
+                    logger.err("Device:retrieveNetworkInfo:", ffi.string(C.gai_strerror(s)))
+                else
+                    -- Only print the ifname once
+                    local ifname = ffi.string(ifa.ifa_name)
+                    if not interfaces[ifname] then
+                        table.insert(results, T(_("Interface: %1"), ifname))
+                        interfaces[ifname] = true
+                        -- Get its MAC address
+                        local ifr = ffi.new("struct ifreq")
+                        ffi.copy(ifr.ifr_name, ifa.ifa_name, C.IFNAMSIZ)
+                        if C.ioctl(socket, C.SIOCGIFHWADDR, ifr) == -1 then
+                            local errno = ffi.errno()
+                            logger.err("Device:retrieveNetworkInfo: ioctl:", ffi.string(C.strerror(errno)))
+                        else
+                            local mac = string.format("%02X:%02X:%02X:%02X:%02X:%02X",
+                                                      ifr.ifr_hwaddr.sa_data[0],
+                                                      ifr.ifr_hwaddr.sa_data[1],
+                                                      ifr.ifr_hwaddr.sa_data[2],
+                                                      ifr.ifr_hwaddr.sa_data[3],
+                                                      ifr.ifr_hwaddr.sa_data[4],
+                                                      ifr.ifr_hwaddr.sa_data[5])
+                            table.insert(results, T(_("MAC: %1"), mac))
+                        end
+                    end
+
+                    if family == C.AF_INET then
+                        table.insert(results, T(_("IP: %1"), ffi.string(host)))
+                        local gw = self:getDefaultRoute(ifname)
+                        if gw then
+                            table.insert(results, T(_("Default gateway: %1"), gw))
+                        end
+                    else
+                        table.insert(results, T(_("IPV6: %1"), ffi.string(host)))
+                        --- @todo: Build an IPv6 variant of getDefaultRoute that parses /proc/net/ipv6_route
+                    end
+                end
+                -- Regardless of failure, we only check a single if, so we're done
+                break
+            end
+        end
+        ifa = ifa.ifa_next
+    end
+    C.freeifaddrs(ifaddr[0])
+    C.close(socket)
+
+    return table.concat(results, "\n")
+
     -- NOTE: This sed monstrosity is tailored for the busybox implementation of ifconfig
     local std_out = io.popen("ifconfig | " ..
                              "sed -n " ..
