@@ -501,6 +501,146 @@ function Device:exit()
     require("ffi/input"):closeAll()
 end
 
+-- Lifted from busybox's libbb/inet_cksum.c
+local function inet_cksum(ptr, nleft)
+    local addr = ffi.new("const uint16_t *", ptr)
+
+    local sum = ffi.new("unsigned int", 0)
+    while nleft > 1 do
+        sum = sum + addr[0]
+        addr = addr + 1
+        nleft = nleft - 2
+    end
+
+    if nleft == 1 then
+        local u8p = ffi.cast("uint8_t *", addr)
+        sum = sum + u8p[0]
+    end
+
+    sum = bit.rshift(sum, 16) + bit.band(sum, 0xFFFF)
+    sum = sum + bit.rshift(sum, 16)
+
+    sum = bit.bnot(sum)
+    return ffi.cast("uint16_t", sum)
+end
+
+function Device:ping4(ip)
+    -- Try an unpriviledged ICMP socket first
+    local socket
+    socket = C.socket(C.AF_INET, bit.bor(C.SOCK_DGRAM, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
+    if socket == -1 then
+        local errno = ffi.errno()
+        -- DBG
+        print("Device:ping4: unpriviledged ICMP socket:", ffi.string(C.strerror(errno)))
+
+        -- Try a raw socket
+        socket = C.socket(C.AF_INET, bit.bor(C.SOCK_RAW, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
+        if socket == -1 then
+            local errno = ffi.errno()
+            if errno == C.EPERM then
+                -- DBG
+                print("Device:ping4: Opening a RAW ICMP sockets requires CAP_NET_RAW capabilities!")
+            else
+                -- DBG
+                print("Device:ping4: Raw ICMP socket:", ffi.string(C.strerror(errno)))
+            end
+            --- FIXME: Fall-back to exec ping, in the hope that it's setuid
+            return false
+        end
+    end
+
+    -- c.f., busybox's networking/ping.c
+    local DEFDATALEN = 56
+    local MAXIPLEN   = 60
+    local MAXICMPLEN = 76
+
+    local myid = ffi.cast("uint16_t", C.getpid())
+    myid = C.htons(myid)
+
+    -- Setup the packet
+    local packet = ffi.new("char[?]", DEFDATALEN + MAXIPLEN + MAXICMPLEN)
+    local pkt = ffi.new("struct icmp *")
+    pkt = ffi.cast("struct icmp *", packet)
+    pkt.icmp_type = C.ICMP_ECHO
+    pkt.icmp_hun.ih_idseq.icd_id = myid
+    pkt.icmp_hun.ih_idseq.icd_seq = 1
+    pkt.icmp_cksum = inet_cksum(ffi.cast("const void *", pkt), ffi.sizeof(packet))
+
+    -- Set the destination address
+    local addr = ffi.new("struct sockaddr_in")
+    addr.sin_family = C.AF_INET
+    local in_addr = ffi.new("struct in_addr")
+    if C.inet_aton(ip, in_addr) == 0 then
+        -- ERR
+        print("Device:ping4: Invalid address:", ip)
+        C.close(socket)
+        return false
+    end
+    addr.sin_addr = in_addr
+    addr.sin_port = 0
+
+    -- Send the ping
+    if C.sendto(socket, packet, DEFDATALEN + C.ICMP_MINLEN, 0, ffi.cast("struct sockaddr*", addr), ffi.sizeof(addr)) == - 1 then
+        local errno = ffi.errno()
+        -- ERR
+        print("Device:ping4: sendto:", ffi.string(C.strerror(errno)))
+        C.close(socket)
+        return false
+    end
+
+    -- We'll poll to make timing out easier on us (busybox uses a SIGALRM :s)
+    local pfd = ffi.new("struct pollfd")
+    pfd.fd = socket
+    pfd.events = C.POLLIN
+
+    -- Wait for a response
+    while true do
+        local poll_num = C.poll(pfd, 1, 2000)
+        if poll_num == -1 then
+            local errno = ffi.errno()
+            if errno ~= C.EINTR then
+                -- ERR
+                print("Device:ping4: poll:", ffi.string(C.strerror(errno)))
+                C.close(socket)
+                return false
+            end
+        elseif poll_num > 0 then
+            local c = C.recv(socket, packet, ffi.sizeof(packet), 0)
+            if c == -1 then
+                local errno = ffi.errno()
+                if errno ~= C.EINTR then
+                    -- ERR
+                    print("Device:ping4: recv:", ffi.string(C.strerror(errno)))
+                    C.close(socket)
+                    return false
+                end
+            end
+            if c >= MAXICMPLEN then
+                -- ip + icmp
+                local iphdr = ffi.cast("struct iphdr *", packet)
+                -- Skip ip hdr
+                pkt = ffi.cast("struct icmp *", packet + bit.lshift(iphdr.ihl, 2))
+                if pkt.icmp_hun.ih_idseq.icd_id ~= myid then
+                    -- not our ping
+                    goto continue
+                end
+                if pkt.icmp_type == C.ICMP_ECHOREPLY then
+                    break
+                end
+            end
+        else
+            -- INFO
+            print("Device:ping4: timed out waiting for a response from", ip)
+            C.close(socket)
+            return false
+        end
+        ::continue::
+    end
+
+    -- If we went this far, we've got a reply to our ping!
+    return true
+end
+
 function Device:getDefaultRoute(interface)
     local fd = io.open("/proc/net/route", "re")
     if not fd then
