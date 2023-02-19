@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ImageViewer = require("ui/widget/imageviewer")
@@ -45,12 +46,31 @@ local CoverMenu = {}
 
 local book_statuses = {"reading", "abandoned", "complete"}
 
-function CoverMenu:updateCache(file, status)
-    if self.cover_info_cache and self.cover_info_cache[file] then
-        if status then
-            self.cover_info_cache[file][3] = status
+function CoverMenu:updateCache(file, status, do_create, pages)
+    if do_create then -- create new cache entry if absent
+        if self.cover_info_cache[file] then return end
+        local doc_settings = DocSettings:open(file)
+        -- We can get nb of page in the new 'doc_pages' setting, or from the old 'stats.page'
+        local doc_pages = doc_settings:readSetting("doc_pages")
+        if doc_pages then
+            pages = doc_pages
         else
-            self.cover_info_cache[file] = nil
+            local stats = doc_settings:readSetting("stats")
+            if stats and stats.pages and stats.pages ~= 0 then -- crengine with statistics disabled stores 0
+                pages = stats.pages
+            end
+        end
+        local percent_finished = doc_settings:readSetting("percent_finished")
+        local summary = doc_settings:readSetting("summary")
+        status = summary and summary.status
+        self.cover_info_cache[file] = {pages, percent_finished, status}
+    else
+        if self.cover_info_cache and self.cover_info_cache[file] then
+            if status then
+                self.cover_info_cache[file][3] = status
+            else
+                self.cover_info_cache[file] = nil
+            end
         end
     end
 end
