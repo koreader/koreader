@@ -4,6 +4,7 @@ This module helps with retrieving version information.
 
 local VERSION_LOG_FILE = "version.log"
 local LAST_VERSION_NOT_FOUND = "last version not found"
+local MAX_NB_LOG_LINES = 365
 
 local Version = {}
 
@@ -89,54 +90,63 @@ function Version:getBuildDate()
     return self.date
 end
 
--- Returns the last line in a file. If `skip_nl_at_end` is true, omit the NL at eof
-local function readLastLine(filePath, skip_nl_at_end)
-    local file = io.open(filePath, "r")
-    if not file then
-        return
-    end
-
-    local eof  = file:seek("end")
-    for i = 1, eof do
-        file:seek("set", eof - i)
-        if i == eof then
-            break
-        elseif file:read(1) == '\n' then
-            if not skip_nl_at_end and i ~= 1 then
-                break
-            end
-        end
-    end
-
-    local lastLine = file:read("*a")
-    file:close()
-    return lastLine
-end
-
---- Returns the KOReader git-rev and model of the last line in the VERSION\_LOG\_FILE
--- @treturn string,string last line in KOReader git-rev format, device model
+--- Returns the KOReader git-rev and model of the last line in the `VERSION_LOG_FILE`
+--- and drop any lines except the last `MAX_NB_LOG_LINE's.
+-- @treturn string,string  git-rev, model
 function Version:getLastVersion()
-    local last_version_line = readLastLine(VERSION_LOG_FILE) or ""
-    self.last_version = last_version_line:match("%S*") or LAST_VERSION_NOT_FOUND
-    local model = last_version_line:match(" .* %(") or "  (" -- two spaces and a parens
-    model = model:sub(2, model:len() - 2)
+    local log_file = io.open(VERSION_LOG_FILE, "r")
+    local log_lines = {}
+    if log_file then
+        local next_line = log_file:read("*line")
+        while next_line do
+            table.insert(log_lines, next_line)
+            next_line = log_file:read("*line")
+        end
+        log_file:close()
 
-    return self.last_version, model
+        if #log_lines <= 0 then -- no need for shortening the log file
+            return LAST_VERSION_NOT_FOUND, ""
+        elseif #log_lines >= MAX_NB_LOG_LINES then -- keep only the last N-1 lines
+            local new_file = io.open(VERSION_LOG_FILE.."new", "a")
+            for i = math.max(#log_lines - MAX_NB_LOG_LINES + 1, 1), #log_lines do
+                new_file:write(log_lines[i], "\n")
+            end
+            new_file:close()
+            os.remove(VERSION_LOG_FILE)
+            os.rename(VERSION_LOG_FILE.."new", VERSION_LOG_FILE)
+        end
+    else -- log_file does not exist or can not be opened
+        return LAST_VERSION_NOT_FOUND, ""
+    end
+
+    local last_version_line = log_lines[#log_lines]
+    local dummy, dummy, last_version, last_model = last_version_line:match("(.-), (.-), (.-), (.-)$")
+
+    self.last_version = last_version or ""
+    self.last_model = last_model or ""
+    return self.last_version, self.last_model
 end
 
---- Appends KOReader git-rev, model and current date to the VERSION\_LOG\_FILE
---- in the format 'git-rev "model" (YYYY-mm-dd HH:MM:SS)'
+--- Appends KOReader git-rev, model and current date to the `VERSION_LOG_FILE`
+--- in the format 'YYYY-mm-dd, HH:MM:SS, git-rev, model'
 -- @string model device model (may contain spaces)
 function Version:appendVersionLog(model)
     local file = io.open(VERSION_LOG_FILE, "a")
     if not file then
         return
     end
-
-    file:write(self.rev or LAST_VERSION_NOT_FOUND, " ", model or "", os.date(" (%Y-%m-%d %X)\n"))
-
+    file:write(os.date("%Y-%m-%d, %X, "), self.rev or LAST_VERSION_NOT_FOUND, ", ", model or "", "\n")
     file:close()
     return
+end
+
+--- Updates the `VERSION_LOG_FILE` and keep the file small
+-- @string model device model (may contain spaces)
+function Version:updateVersionLog(current_model)
+    local last_version, last_model = self:getLastVersion()
+    if self.rev ~= last_version or current_model ~= last_model then
+        self:appendVersionLog(current_model)
+    end
 end
 
 return Version
