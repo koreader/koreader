@@ -629,10 +629,10 @@ function Device:retrieveNetworkInfo()
                                 if iwr.u.data.flags ~= 0 then
                                     if bit.band(iwr.u.data.flags, C.IW_ENCODE_INDEX) > 1 then
                                         table.insert(results, string.format("SSID: \"%s\" [%d]",
-                                                                            essid,
+                                                                            ffi.string(essid),
                                                                             bit.band(iwr.u.data.flags, C.IW_ENCODE_INDEX)))
                                     else
-                                        table.insert(results, string.format("SSID: \"%s\"", essid))
+                                        table.insert(results, string.format("SSID: \"%s\"", ffi.string(essid)))
                                     end
                                 else
                                     table.insert(results, "SSID: off/any")
