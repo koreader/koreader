@@ -576,14 +576,12 @@ function MosaicMenuItem:update()
             local percent_finished, status
             if DocSettings:hasSidecarFile(self.filepath) then
                 self.been_opened = true
-                local pages = bookinfo.pages -- not used outside
-                self.menu:updateCache(self.filepath, nil, true, pages) -- create new cache entry if absent
-                pages, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
+                self.menu:updateCache(self.filepath, nil, true, bookinfo.pages) -- create new cache entry if absent
+                _, percent_finished, status = unpack(self.menu.cover_info_cache[self.filepath])
             end
             self.percent_finished = percent_finished
             self.status = status
-            self.show_progress_bar = self.status ~= "complete"
-                and BookInfoManager:getSetting("show_progress_in_mosaic") and self.percent_finished
+            self.show_progress_bar = self.status ~= "complete" and BookInfoManager:getSetting("show_progress_in_mosaic") and self.percent_finished
 
             local cover_bb_used = false
             self.bookinfo_found = true
