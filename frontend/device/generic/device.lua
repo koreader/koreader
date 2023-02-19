@@ -552,7 +552,7 @@ function Device:getDefaultRoute(interface)
 end
 
 function Device:retrieveNetworkInfo()
-    -- We're going to need a random socket for the MAC query ioctl...
+    -- We're going to need a random socket for the network & wireless ioctls...
     local socket = C.socket(C.PF_INET, C.SOCK_DGRAM, C.IPPROTO_IP);
     if socket == -1 then
         local errno = ffi.errno()
@@ -588,7 +588,7 @@ function Device:retrieveNetworkInfo()
                                         nil, 0,
                                         C.NI_NUMERICHOST)
                 if s ~= 0 then
-                    logger.err("Device:retrieveNetworkInfo:", ffi.string(C.gai_strerror(s)))
+                    logger.err("Device:retrieveNetworkInfo: getnameinfo:", ffi.string(C.gai_strerror(s)))
                 else
                     -- Only print the ifname once
                     local ifname = ffi.string(ifa.ifa_name)
@@ -617,7 +617,7 @@ function Device:retrieveNetworkInfo()
                             table.insert(results, string.format("MAC: %s", mac))
                         end
 
-                        -- Check if it's a wireless interface
+                        -- Check if it's a wireless interface (c.f., wireless-tools)
                         local iwr = ffi.new("struct iwreq")
                         ffi.copy(iwr.ifr_ifrn.ifrn_name, ifa.ifa_name, C.IFNAMSIZ)
                         if C.ioctl(socket, C.SIOCGIWNAME, iwr) ~= -1 then
