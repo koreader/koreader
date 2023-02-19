@@ -631,11 +631,12 @@ function Device:retrieveNetworkInfo()
                                 local errno = ffi.errno()
                                 logger.err("Device:retrieveNetworkInfo: SIOCGIWESSID ioctl:", ffi.string(C.strerror(errno)))
                             else
-                                if iwr.u.data.flags ~= 0 then
-                                    if bit.band(iwr.u.data.flags, C.IW_ENCODE_INDEX) > 1 then
+                                local essid_on = iwr.u.data.flags
+                                if essid_on ~= 0 then
+                                    if bit.band(essid_on, C.IW_ENCODE_INDEX) > 1 then
                                         table.insert(results, string.format("SSID: \"%s\" [%d]",
                                                                             ffi.string(essid),
-                                                                            bit.band(iwr.u.data.flags, C.IW_ENCODE_INDEX)))
+                                                                            bit.band(essid_on, C.IW_ENCODE_INDEX)))
                                     else
                                         table.insert(results, string.format("SSID: \"%s\"", ffi.string(essid)))
                                     end
