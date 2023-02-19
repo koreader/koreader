@@ -44,6 +44,24 @@ describe("datetime module", function()
             assert.is_equal("00:02:00",
                             datetime.secondsToClock(120))
         end)
+        it("should convert seconds to 0d:00:00:00 format", function()
+            assert.is_equal("00:00:00",
+                            datetime.secondsToClock(0, false, true))
+            assert.is_equal("00:02:00",
+                            datetime.secondsToClock(120, false, true))
+            assert.is_equal("5d:00:02:00",
+                            datetime.secondsToClock(432120, false, true))
+        end)
+        it("should convert seconds to 0d:00:00 format", function()
+            assert.is_equal("00:00",
+                            datetime.secondsToClock(0, true, true))
+            assert.is_equal("00:02",
+                            datetime.secondsToClock(120, true, true))
+            assert.is_equal("5d:00:02",
+                            datetime.secondsToClock(432110, true, true))
+            assert.is_equal("5d:00:02",
+                            datetime.secondsToClock(432120, true, true))
+        end)
     end)
 
     describe("secondsToHClock()", function()
@@ -149,6 +167,20 @@ describe("datetime module", function()
                             datetime.secondsToClockDuration("classic", 36090, false))
             assert.is_equal("10:02",
                             datetime.secondsToClockDuration("classic", 36090, true))
+        end)
+        it("should pass along withDays", function()
+            assert.is_equal("58h01'30\"",
+                            datetime.secondsToClockDuration("modern", 208890, false, false))
+            assert.is_equal("2d10h01'30\"",
+                            datetime.secondsToClockDuration("modern", 208890, false, true))
+            assert.is_equal("58h 1m 30s",
+                            datetime.secondsToClockDuration("letters", 208890, false, false))
+            assert.is_equal("2d 10h 1m 30s",
+                            datetime.secondsToClockDuration("letters", 208890, false, true))
+            assert.is_equal("58:01:30",
+                            datetime.secondsToClockDuration("classic", 36090, false, false))
+            assert.is_equal("2d:10:01:30",
+                            datetime.secondsToClockDuration("classic", 36090, false, true))
         end)
     end)
 

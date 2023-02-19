@@ -100,10 +100,10 @@ function datetime.secondsToClock(seconds, withoutSeconds, withDays)
                 mins = string.format("%02d", 0)
                 hours = string.format("%02d", hours + 1)
             end
-            return  (days ~= "0" and (days .. "d") or "") .. hours .. ":" .. mins
+            return  (days ~= "0" and (days .. C_("Time", "d")) or "") .. hours .. ":" .. mins
         else
             local secs = string.format("%02d", seconds % 60)
-            return (days ~= "0" and (days .. "d") or "") .. hours .. ":" .. mins .. ":" .. secs
+            return (days ~= "0" and (days .. C_("Time", "d")) or "") .. hours .. ":" .. mins .. ":" .. secs
         end
     end
 end
@@ -181,6 +181,7 @@ function datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, 
             if compact then
                 return withoutSeconds and time_string or (time_string .. C_("Time", "s"))
             else
+                time_string = time_string:gsub(C_("Time", "d"), C_("Time", "d") .. " ") -- add space after "d"
                 time_string = time_string:gsub(C_("Time", "h"), C_("Time", "h") .. " ") -- add space after "h"
                 return withoutSeconds and time_string or
                     (time_string:gsub(C_("Time", "m"), C_("Time", "m") .. " ") .. C_("Time", "s")) -- add space after "m"
