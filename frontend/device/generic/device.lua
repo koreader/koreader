@@ -570,7 +570,7 @@ function Device:retrieveNetworkInfo()
     -- Build a string rope to format the results
     local results = {}
     local interfaces = {}
-    local default_gw
+    local prev_ifname, default_gw
 
     -- Loop over all the network interfaces
     local ifa = ifaddr[0]
@@ -593,6 +593,11 @@ function Device:retrieveNetworkInfo()
                     -- Only print the ifname once
                     local ifname = ffi.string(ifa.ifa_name)
                     if not interfaces[ifname] then
+                        if prev_ifname and ifname ~= prev_ifname then
+                            -- Add a linebreak between interfaces
+                            table.insert(results, "")
+                        end
+                        prev_ifname = ifname
                         table.insert(results, T(_("Interface: %1"), ifname))
                         interfaces[ifname] = true
                         -- Get its MAC address
@@ -664,6 +669,9 @@ function Device:retrieveNetworkInfo()
     C.close(socket)
 
     -- Only ping a single gateway (if we found a wireless interface earlier, we've kept its gateway address around)
+    if prev_ifname then
+        table.insert(results, "")
+    end
     if not default_gw then
         -- If not, we'll simply use the last one in the list...
         default_gw = self:getDefaultRoute()
