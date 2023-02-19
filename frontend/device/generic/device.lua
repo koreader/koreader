@@ -570,6 +570,7 @@ function Device:retrieveNetworkInfo()
     -- Build a string rope to format the results
     local results = {}
     local interfaces = {}
+    local default_gw
 
     -- Loop over all the network interfaces
     local ifa = ifaddr[0]
@@ -599,7 +600,7 @@ function Device:retrieveNetworkInfo()
                         ffi.copy(ifr.ifr_ifrn.ifrn_name, ifa.ifa_name, C.IFNAMSIZ)
                         if C.ioctl(socket, C.SIOCGIFHWADDR, ifr) == -1 then
                             local errno = ffi.errno()
-                            logger.err("Device:retrieveNetworkInfo: ioctl:", ffi.string(C.strerror(errno)))
+                            logger.err("Device:retrieveNetworkInfo: SIOCGIFHWADDR ioctl:", ffi.string(C.strerror(errno)))
                         else
                             local mac = string.format("%02X:%02X:%02X:%02X:%02X:%02X",
                                                       bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[0], 0xFF),
@@ -610,6 +611,34 @@ function Device:retrieveNetworkInfo()
                                                       bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[5], 0xFF))
                             table.insert(results, string.format("MAC: %s", mac))
                         end
+
+                        -- Check if it's a wireless interface
+                        local iwr = ffi.new("struct iwreq")
+                        ffi.copy(iwr.ifr_ifrn.ifrn_name, ifa.ifa_name, C.IFNAMSIZ)
+                        if C.ioctl(socket, C.SIOCGIWNAME, iwr) ~= -1 then
+                            interfaces[ifname] = "wireless"
+                            -- Get its ESSID
+                            local essid = ffi.new("char[?]", C.IW_ESSID_MAX_SIZE + 1)
+                            iwr.u.essid.pointer = ffi.cast("caddr_t", essid)
+                            iwr.u.essid.length = C.IW_ESSID_MAX_SIZE + 1
+                            iwr.u.essid.flags = 0
+                            if C.ioctl(socket, C.SIOCGIWESSID, iwr) == -1 then
+                                local errno = ffi.errno()
+                                logger.err("Device:retrieveNetworkInfo: SIOCGIWESSID ioctl:", ffi.string(C.strerror(errno)))
+                            else
+                                if iwr.u.data.flags ~= 0 then
+                                    if bit.band(iwr.u.data.flags, C.IW_ENCODE_INDEX) > 1 then
+                                        table.insert(results, string.format("SSID: \"%s\" [%d]",
+                                                                            essid,
+                                                                            bit.band(iwr.u.data.flags, C.IW_ENCODE_INDEX)))
+                                    else
+                                        table.insert(results, string.format("SSID: \"%s\"", essid))
+                                    end
+                                else
+                                    table.insert(results, "SSID: off/any")
+                                end
+                            end
+                        end
                     end
 
                     if family == C.AF_INET then
@@ -617,6 +646,10 @@ function Device:retrieveNetworkInfo()
                         local gw = self:getDefaultRoute(ifname)
                         if gw then
                             table.insert(results, T(_("Default gateway: %1"), gw))
+                            -- If that's a wireless interface, use *that* one for the ping test
+                            if interfaces[ifname] == "wireless" then
+                                default_gw = gw
+                            end
                         end
                     else
                         table.insert(results, string.format("IPV6: %s", ffi.string(host)))
@@ -630,17 +663,11 @@ function Device:retrieveNetworkInfo()
     C.freeifaddrs(ifaddr[0])
     C.close(socket)
 
-    --- @fixme: Implement the basics for wireless detection/essid, and fold it inside the interface walk?
-    local std_out = io.popen('2>/dev/null iwconfig | grep ESSID | cut -d\\" -f2')
-    if std_out then
-        local ssid = std_out:read("*l")
-        std_out:close()
-        table.insert(results, string.format("SSID: %s", ssid))
+    -- Only ping a single gateway (if we found a wireless interface earlier, we've kept its gateway address around)
+    if not default_gw then
+        -- If not, we'll simply use the last one in the list...
+        default_gw = self:getDefaultRoute()
     end
-
-    -- Only ping a single gateway
-    --- @fixme: Prefer the wireless interface, if any.
-    local default_gw = self:getDefaultRoute()
     if default_gw then
         -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
         local pingok
