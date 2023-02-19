@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local Device = require("device")
 local Event = require("ui/event")
 local EventListener = require("ui/widget/eventlistener")
+local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
@@ -240,6 +241,8 @@ function NetworkListener:onShowNetworkInfo()
     if Device.retrieveNetworkInfo then
         UIManager:show(InfoMessage:new{
             text = Device:retrieveNetworkInfo(),
+            -- IPv6 addresses are *loooooong*!
+            face = Font:getFace("x_smallinfofont"),
         })
     else
         UIManager:show(InfoMessage:new{

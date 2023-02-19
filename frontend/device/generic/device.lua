@@ -657,7 +657,7 @@ function Device:retrieveNetworkInfo()
                             end
                         end
                     else
-                        table.insert(results, string.format("IPV6: %s", ffi.string(host)))
+                        table.insert(results, string.format("IPv6: %s", ffi.string(host)))
                         --- @todo: Build an IPv6 variant of getDefaultRoute that parses /proc/net/ipv6_route
                     end
                 end
