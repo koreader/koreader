@@ -668,10 +668,10 @@ function Device:retrieveNetworkInfo()
     C.freeifaddrs(ifaddr[0])
     C.close(socket)
 
-    -- Only ping a single gateway (if we found a wireless interface earlier, we've kept its gateway address around)
     if prev_ifname then
         table.insert(results, "")
     end
+    -- Only ping a single gateway (if we found a wireless interface earlier, we've kept its gateway address around)
     if not default_gw then
         -- If not, we'll simply use the last one in the list...
         default_gw = self:getDefaultRoute()
