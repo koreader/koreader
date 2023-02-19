@@ -128,7 +128,7 @@ common_settings.time = {
                 {
                     text_func = function()
                         local datetime = require("datetime")
-                        -- sample text shows 1h23m45s
+                        -- sample text shows 1h 23m 45s
                         local duration_format_str = datetime.secondsToClockDuration("letters", 5025, false)
                         return T(C_("Time", "Letters (%1)"), duration_format_str)
                     end,

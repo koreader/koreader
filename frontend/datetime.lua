@@ -111,10 +111,10 @@ end
 --- Converts seconds to a period of time string.
 ---- @int seconds number of seconds
 ---- @bool withoutSeconds if true 1h30', if false 1h30'10"
----- @bool hmsFormat, if true format 1h30m10s
----- @bool withDays, if true format 1d12h30m10s
----- @bool compact, if set removes all leading zeros (incl. units if necessary)
----- @treturn string clock string in the form of 1h30'10" or 1h30m10s
+---- @bool hmsFormat, if true format 1h 30m 10s
+---- @bool withDays, if true format 1d12h30'10" or 1d 12h 30m 10s
+---- @bool compact, if set removes all leading zeros (incl. units if necessary) and spaces (if present)
+---- @treturn string clock string in the form of 1h30'10" or 1h 30m 10s
 function datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, compact)
     local SECONDS_SYMBOL = "\""
     seconds = tonumber(seconds)
@@ -150,7 +150,7 @@ function datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, 
                 if compact then
                     return T(C_("Time", "%1s"), string.format("%d", seconds))
                 else
-                    return T(C_("Time", "%1m%2s"), "0", string.format("%02d", seconds))
+                    return T(C_("Time", "%1m %2s"), "0", string.format("%d", seconds))
                 end
             else
                 if compact then
@@ -177,7 +177,14 @@ function datetime.secondsToHClock(seconds, withoutSeconds, hmsFormat, withDays, 
         end
 
         if hmsFormat then
-            return withoutSeconds and time_string or (time_string .. C_("Time", "s"))
+            time_string = time_string:gsub("0(%d)", "%1") -- delete all leading "0"s
+            if compact then
+                return withoutSeconds and time_string or (time_string .. C_("Time", "s"))
+            else
+                time_string = time_string:gsub(C_("Time", "h"), C_("Time", "h") .. " ") -- add space after "h"
+                return withoutSeconds and time_string or
+                    (time_string:gsub(C_("Time", "m"), C_("Time", "m") .. " ") .. C_("Time", "s")) -- add space after "m"
+            end
         else
             time_string = time_string:gsub(C_("Time", "m"), "'") -- replace m with '
             return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
@@ -187,11 +194,11 @@ end
 
 --- Converts seconds to a clock type (classic or modern), based on the given format preference
 --- "Classic" format calls secondsToClock, "Modern" and "Letters" formats call secondsToHClock
----- @string Either "modern" for 1h30'10", "letters" for 1h30m10s, or "classic" for 1:30:10
----- @bool withoutSeconds if true 1h30' or 1h30m, if false 1h30'10" or 1h30m10s
----- @bool withDays, if hours>=24 include days in clock string 1d12h10m10s
----- @bool compact, if set removes all leading zeros (incl. units if necessary)
----- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h30m, 1h30m10s
+---- @string Either "modern" for 1h30'10", "letters" for 1h 30m 10s, or "classic" for 1:30:10
+---- @bool withoutSeconds if true 1h30' or 1h 30m, if false 1h30'10" or 1h 30m 10s
+---- @bool withDays, if hours>=24 include days in clock string 1d12h10'10" or 1d 12h 10m 10s
+---- @bool compact, if set removes all leading zeros (incl. units if necessary) and spaces (if present)
+---- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h 30m, 1h 30m 10s
 function datetime.secondsToClockDuration(format, seconds, withoutSeconds, withDays, compact)
     if format == "modern" then
         return datetime.secondsToHClock(seconds, withoutSeconds, false, withDays, compact)
