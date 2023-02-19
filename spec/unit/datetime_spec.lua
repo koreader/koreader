@@ -44,22 +44,22 @@ describe("datetime module", function()
             assert.is_equal("00:02:00",
                             datetime.secondsToClock(120))
         end)
-        it("should convert seconds to 0d:00:00:00 format", function()
+        it("should convert seconds to 0d00:00:00 format", function()
             assert.is_equal("00:00:00",
                             datetime.secondsToClock(0, false, true))
             assert.is_equal("00:02:00",
                             datetime.secondsToClock(120, false, true))
-            assert.is_equal("5d:00:02:00",
+            assert.is_equal("5d00:02:00",
                             datetime.secondsToClock(432120, false, true))
         end)
-        it("should convert seconds to 0d:00:00 format", function()
+        it("should convert seconds to 0d00:00 format", function()
             assert.is_equal("00:00",
                             datetime.secondsToClock(0, true, true))
             assert.is_equal("00:02",
                             datetime.secondsToClock(120, true, true))
-            assert.is_equal("5d:00:02",
+            assert.is_equal("5d00:02",
                             datetime.secondsToClock(432110, true, true))
-            assert.is_equal("5d:00:02",
+            assert.is_equal("5d00:02",
                             datetime.secondsToClock(432120, true, true))
         end)
     end)
@@ -93,7 +93,7 @@ describe("datetime module", function()
             assert.is_equal("10h01'",
                             datetime.secondsToHClock(36060, true))
         end)
-        it("should round seconds to minutes in 0h 0m format", function()
+        it("should round seconds to minutes in 0h 0m (thinspace) format", function()
             assert.is_equal("1m",
                 datetime.secondsToHClock(89, true, true))
             assert.is_equal("2m",
@@ -109,7 +109,7 @@ describe("datetime module", function()
             assert.is_equal("10h\xE2\x80\x891m",
                 datetime.secondsToHClock(36060, true, true))
         end)
-        it("should round seconds to minutes in 0h0m format", function()
+        it("should round seconds to minutes in 0h 0m (hairspace) format", function()
             assert.is_equal("1m",
                 datetime.secondsToHClock(89, true, true, false, true))
             assert.is_equal("2m",
@@ -145,7 +145,7 @@ describe("datetime module", function()
         it("should change type based on format", function()
             assert.is_equal("10h01'30\"",
                             datetime.secondsToClockDuration("modern", 36090, false))
-            assert.is_equal("10h\xE2\x80\x8A1m\xE2\x80\x8A30s",
+            assert.is_equal("10h\xE2\x80\x891m\xE2\x80\x8930s",
                             datetime.secondsToClockDuration("letters", 36090, false))
             assert.is_equal("10:01:30",
                             datetime.secondsToClockDuration("classic", 36090, false))
@@ -159,9 +159,9 @@ describe("datetime module", function()
                             datetime.secondsToClockDuration("modern", 36090, false))
             assert.is_equal("10h02'",
                             datetime.secondsToClockDuration("modern", 36090, true))
-            assert.is_equal("10h\xE2\x80\x8A1m\xE2\x80\x8A30s",
+            assert.is_equal("10h\xE2\x80\x891m\xE2\x80\x8930s",
                             datetime.secondsToClockDuration("letters", 36090, false))
-            assert.is_equal("10h\xE2\x80\x8A2m",
+            assert.is_equal("10h\xE2\x80\x892m",
                             datetime.secondsToClockDuration("letters", 36090, true))
             assert.is_equal("10:01:30",
                             datetime.secondsToClockDuration("classic", 36090, false))
@@ -173,14 +173,14 @@ describe("datetime module", function()
                             datetime.secondsToClockDuration("modern", 208890, false, false))
             assert.is_equal("2d10h01'30\"",
                             datetime.secondsToClockDuration("modern", 208890, false, true))
-            assert.is_equal("58h\xE2\x80\x8A1m\xE2\x80\x8A30s",
+            assert.is_equal("58h\xE2\x80\x891m\xE2\x80\x8930s",
                             datetime.secondsToClockDuration("letters", 208890, false, false))
-            assert.is_equal("2d\xE2\x80\x8A10h\xE2\x80\x8A1m\xE2\x80\x8A30s",
+            assert.is_equal("2d\xE2\x80\x8910h\xE2\x80\x891m\xE2\x80\x8930s",
                             datetime.secondsToClockDuration("letters", 208890, false, true))
             assert.is_equal("58:01:30",
-                            datetime.secondsToClockDuration("classic", 36090, false, false))
-            assert.is_equal("2d:10:01:30",
-                            datetime.secondsToClockDuration("classic", 36090, false, true))
+                            datetime.secondsToClockDuration("classic", 208890, false, false))
+            assert.is_equal("2d10:01:30",
+                            datetime.secondsToClockDuration("classic", 208890, false, true))
         end)
     end)
 
