@@ -545,8 +545,13 @@ function Device:ping4(ip)
                 -- DBG
                 print("Device:ping4: Raw ICMP socket:", ffi.string(C.strerror(errno)))
             end
-            --- FIXME: Fall-back to exec ping, in the hope that it's setuid
-            return false
+            --- Fall-back to the ping CLI tool, in the hope that it's setuid...
+            if self:isKindle() and self:hasDPad() then
+                -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
+                return os.execute("ping -q -c1 " .. ip .. " > /dev/null") == 0
+            else
+                return os.execute("ping -q -c1 -w2 " .. ip .. " > /dev/null") == 0
+            end
         else
             socket_type = C.SOCK_RAW
         end
@@ -840,14 +845,7 @@ function Device:retrieveNetworkInfo()
         default_gw = self:getDefaultRoute()
     end
     if default_gw then
-        -- NOTE: No -w flag available in the old busybox build used on Legacy Kindles (K4 included)...
-        local pingok
-        if self:isKindle() and self:hasDPad() then
-            pingok = os.execute("ping -q -c1 " .. default_gw .. " > /dev/null")
-        else
-            pingok = os.execute("ping -q -c1 -w2 " .. default_gw .. " > /dev/null")
-        end
-        if pingok == 0 then
+        if self:ping4(default_gw) then
             table.insert(results, _("Gateway ping successful"))
         else
             table.insert(results, _("Gateway ping FAILED"))
