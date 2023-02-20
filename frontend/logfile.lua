@@ -2,13 +2,15 @@
 This module helps with writing information to log files
 ]]
 
-local logfile = {}
+local LogFile = {
+    log_files = {},
+}
 
 --- Returns last line in a log file and drop any lines except the last lines
 -- string path of the logfile
 -- int max_nb_log_lines maximum number of lines in the log file
--- @treturn string,string  git-rev, model
-function logfile.getLastLineAndShrinkFile(path, max_nb_log_lines)
+-- @treturn string last line in log file
+function LogFile:getLastLineAndShrinkFile(path, max_nb_log_lines)
     local log_file = io.open(path, "r")
     local log_lines = {}
     if log_file then
@@ -19,17 +21,20 @@ function logfile.getLastLineAndShrinkFile(path, max_nb_log_lines)
         end
         log_file:close()
 
+        self.log_files[path] = #log_lines
+
         max_nb_log_lines = max_nb_log_lines or math.huge
-        if #log_lines <= 0 then -- no need for shortening the log file
+        if #log_lines <= 0 then -- empty log file
             return ""
         elseif #log_lines > max_nb_log_lines then -- keep only the last N-1 lines
             local new_file = io.open(path .. ".new", "a")
-            for i = math.max(#log_lines - max_nb_log_lines, 1), #log_lines do
+            for i = #log_lines - max_nb_log_lines + 1, #log_lines do
                 new_file:write(log_lines[i], "\n")
             end
             new_file:close()
             os.remove(path)
             os.rename(path .. ".new", path)
+            self.log_files[path] = max_nb_log_lines
         end
     else -- log_file does not exist or can not be opened
         return ""
@@ -38,15 +43,28 @@ function logfile.getLastLineAndShrinkFile(path, max_nb_log_lines)
     return log_lines[#log_lines]
 end
 
---- Document: ToDo
-function logfile.append(path, text)
+--- Documentation: ToDo
+function LogFile:append(path, text, max_nb_log_lines)
+    max_nb_log_lines = max_nb_log_lines or math.huge
+    if not self.log_files or not self.log_files[path] or self.log_files[path] > max_nb_log_lines then
+        LogFile:getLastLineAndShrinkFile(path, max_nb_log_lines - 1)
+    end
+
     local log_file = io.open(path, "a")
     if not log_file then
         return
     end
     log_file:write(text, "\n")
     log_file:close()
+
+    local _, nb_new_lines = text:gsub("\n","")
+    if self.log_files and self.log_files[path] then
+        self.log_files[path] = self.log_files[path] + nb_new_lines + 1
+    else
+        self.log_files[path] = nb_new_lines + 1
+    end
+
     return true
 end
 
-return logfile
+return LogFile

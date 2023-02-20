@@ -40,9 +40,13 @@ local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local LogFile = require("logfile")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
+
+local INFOMESSAGE_LOG_FILE = "infomessage.log"
+local NB_LOG_LINES = 500
 
 local InfoMessage = InputContainer:extend{
     modal = true,
@@ -74,6 +78,9 @@ local InfoMessage = InputContainer:extend{
     show_delay = nil,
     -- Set to true when it might be displayed after some processing, to avoid accidental dismissal
     flush_events_on_show = false,
+
+    log_file_name = INFOMESSAGE_LOG_FILE,
+    nb_log_lines = NB_LOG_LINES,
 }
 
 function InfoMessage:init()
@@ -249,6 +256,8 @@ function InfoMessage:onShow()
             UIManager:close(self)
         end)
     end
+
+    LogFile:append(self.log_file_name, os.date("%Y-%m-%d, %X:\n") .. self.text, self.nb_log_lines)
     return true
 end
 

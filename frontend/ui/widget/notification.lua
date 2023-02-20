@@ -15,12 +15,16 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local LogFile = require("logfile")
 local time = require("ui/time")
 local _ = require("gettext")
 local Screen = Device.screen
 local Input = Device.input
 
 local band = bit.band
+
+local NOTIFICATION_LOG_FILE = "notification.log"
+local NB_LOG_LINES = 10 -- todo
 
 -- The following constants are positions in a bitfield
 local SOURCE_BOTTOM_MENU_ICON     = 0x0001 -- icons in bottom menu
@@ -73,6 +77,9 @@ local Notification = InputContainer:extend{
     SOURCE_SOME = SOURCE_SOME,
     SOURCE_DEFAULT = SOURCE_DEFAULT,
     SOURCE_ALL = SOURCE_ALL,
+
+    log_file_name = NOTIFICATION_LOG_FILE,
+    nb_log_lines = NB_LOG_LINES,
 }
 
 function Notification:init()
@@ -204,6 +211,8 @@ function Notification:onShow()
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
     end
+
+    LogFile:append(self.log_file_name, os.date("%Y-%m-%d, %X: ") .. self.text, self.nb_log_lines)
     return true
 end
 

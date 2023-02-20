@@ -1,4 +1,6 @@
 local Notification = require("ui/widget/notification")
+local TextViewer = require("ui/widget/textviewer")
+local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
 local band = bit.band
@@ -13,9 +15,10 @@ local function getMask()
 end
 
 return {
-    text = _("Notifications"),
+    text = _("Notifications and info-messages"),
     help_text = _([[Notification popups may be shown at the top of screen on various occasions.
-This allows selecting which to show or hide.]]),
+This allows selecting which to show or hide.\n
+Past notifications and info-massages can be retrieved.]]),
     checked_func = function()
         local value = G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
         return  value ~= 0
@@ -74,6 +77,58 @@ This allows selecting which to show or hide.]]),
                         band(getMask(), Notification.SOURCE_BOTTOM_MENU)))
                 end
             end,
+            separator = true,
+        },
+        {
+            text = _("Show past notifications"),
+            help_text = _("Show the text of past Notifications."),
+            callback = function()
+                local file = io.open(Notification.log_file_name, "rb")
+                local content
+                if file then
+                    content = file:read("*all")
+                    file:close()
+                end
+
+                if not content then
+                    content = _("No notifications available.")
+                end
+
+                local textviewer
+                textviewer = TextViewer:new{
+                    title = _("Past notifications"),
+                    text = content,
+                    justified = false,
+                }
+                UIManager:show(textviewer)
+            end,
+            keep_menu_open = true,
+        },
+        {
+            text = _("Show past info-messages"),
+            help_text = _("Show the text of past info-messages."),
+            callback = function()
+                local InfoMessage = require("ui/widget/infomessage")
+                local file = io.open(InfoMessage.log_file_name, "rb")
+                local content
+                if file then
+                    content = file:read("*all")
+                    file:close()
+                end
+
+                if not content then
+                    content = _("No info-messages available.")
+                end
+                local textviewer
+                textviewer = TextViewer:new{
+                    title = _("Past info-messages"),
+                    text = content,
+                    justified = false,
+                    start_at_end = true,
+                }
+                UIManager:show(textviewer)
+            end,
+            keep_menu_open = true,
             separator = true,
         },
     }
