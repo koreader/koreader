@@ -558,7 +558,7 @@ function Device:ping4(ip)
     end
 
     -- c.f., busybox's networking/ping.c
-    local DEFDATALEN = 56
+    local DEFDATALEN = 56 -- 64 - 8
     local MAXIPLEN   = 60
     local MAXICMPLEN = 76
 
@@ -598,9 +598,9 @@ function Device:ping4(ip)
     local pfd = ffi.new("struct pollfd")
     pfd.fd = socket
     pfd.events = C.POLLIN
+    local timeout = 2000
 
     -- Wait for a response
-    local timeout = 2000
     while true do
         local poll_num = C.poll(pfd, 1, timeout)
         -- Slice the timeout in two on every retry, ensuring we'll bail definitively after 4s...
