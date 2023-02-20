@@ -603,7 +603,7 @@ function Device:ping4(ip)
     local timeout = 2000
     while true do
         local poll_num = C.poll(pfd, 1, timeout)
-        -- Slice the timeout in two on every retry...
+        -- Slice the timeout in two on every retry, ensuring we'll bail definitively after 4s...
         timeout = bit.rshift(timeout, 1)
         if poll_num == -1 then
             local errno = ffi.errno()
@@ -624,8 +624,10 @@ function Device:ping4(ip)
                     return false
                 end
             else
-                -- ip + icmp
-                local iphdr = ffi.cast("struct iphdr *", packet)
+                -- Do some minimal verification of the reply's validity.
+                -- This is mostly based on busybox's ping,
+                -- with some extra inspiration from iputils's ping, especially as far as SOCK_DGRAM is concerned.
+                local iphdr = ffi.cast("struct iphdr *", packet) -- ip + icmp
                 local hlen
                 if socket_type == C.SOCK_RAW then
                     hlen = bit.lshift(iphdr.ihl, 2)
@@ -639,10 +641,10 @@ function Device:ping4(ip)
                 else
                     hlen = 0
                 end
-                -- Skip ip hdr
+                -- Skip ip hdr to get at the ICMP part
                 local icp = ffi.cast("struct icmphdr *", packet + hlen)
                 -- Check that we got a *reply* to *our* ping
-                -- NOTE: The reply's ident is defined by the kernel for SOCK_DGRAM!
+                -- NOTE: The reply's ident is defined by the kernel for SOCK_DGRAM, so we can't do anything with it!
                 if icp.type == C.ICMP_ECHOREPLY and
                    (socket_type == C.SOCK_DGRAM or icp.un.echo.id == myid) then
                     break
