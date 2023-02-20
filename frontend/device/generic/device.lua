@@ -525,13 +525,13 @@ local function inet_cksum(ptr, nleft)
 end
 
 function Device:ping4(ip)
-    -- Try an unpriviledged ICMP socket first
+    -- Try an unprivileged ICMP socket first
     -- NOTE: On modern distros, this may be disabled, c.f., sysctl net.ipv4.ping_group_range
     local socket, socket_type
     socket = C.socket(C.AF_INET, bit.bor(C.SOCK_DGRAM, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
     if socket == -1 then
         local errno = ffi.errno()
-        logger.dbg("Device:ping4: unpriviledged ICMP socket:", ffi.string(C.strerror(errno)))
+        logger.dbg("Device:ping4: unprivileged ICMP socket:", ffi.string(C.strerror(errno)))
 
         -- Try a raw socket
         socket = C.socket(C.AF_INET, bit.bor(C.SOCK_RAW, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
