@@ -8,6 +8,7 @@ local DataStorage = require("datastorage")
 local Geom = require("ui/geometry")
 local logger = require("logger")
 local ffi = require("ffi")
+local time = require("ui/time")
 local util = require("util")
 local _ = require("gettext")
 local ffiUtil = require("ffi/util")
@@ -587,6 +588,7 @@ function Device:ping4(ip)
     addr.sin_port = 0
 
     -- Send the ping
+    local start_time = time.now()
     if C.sendto(socket, packet, DEFDATALEN + C.ICMP_MINLEN, 0, ffi.cast("struct sockaddr*", addr), ffi.sizeof(addr)) == - 1 then
         local errno = ffi.errno()
         logger.err("Device:ping4: sendto:", ffi.string(C.strerror(errno)))
@@ -647,16 +649,18 @@ function Device:ping4(ip)
                 end
             end
         else
+            local end_time = time.now()
             logger.info("Device:ping4: timed out waiting for a response from", ip)
             C.close(socket)
-            return false
+            return false, end_time - start_time
         end
         ::continue::
     end
+    local end_time = time.now()
 
     -- If we got this far, we've got a reply to our ping in time!
     C.close(socket)
-    return true
+    return true, end_time - start_time
 end
 
 function Device:getDefaultRoute(interface)
@@ -772,7 +776,7 @@ function Device:retrieveNetworkInfo()
                                                       bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[3], 0xFF),
                                                       bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[4], 0xFF),
                                                       bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[5], 0xFF))
-                            table.insert(results, T(_("MAC: %1", mac)))
+                            table.insert(results, T(_("MAC: %1"), mac))
                         end
 
                         -- Check if it's a wireless interface (c.f., wireless-tools)
@@ -793,9 +797,9 @@ function Device:retrieveNetworkInfo()
                                 if essid_on ~= 0 then
                                     local token_index = bit.band(essid_on, C.IW_ENCODE_INDEX)
                                     if token_index > 1 then
-                                        table.insert(results, T(_("SSID: \"%1\" [%2]", ffi.string(essid), token_index)))
+                                        table.insert(results, T(_("SSID: \"%1\" [%2]"), ffi.string(essid), token_index))
                                     else
-                                        table.insert(results, T(_("SSID: \"%1\"", ffi.string(essid))))
+                                        table.insert(results, T(_("SSID: \"%1\""), ffi.string(essid)))
                                     end
                                 else
                                     table.insert(results, _("SSID: off/any"))
@@ -805,7 +809,7 @@ function Device:retrieveNetworkInfo()
                     end
 
                     if family == C.AF_INET then
-                        table.insert(results, T(_("IP: %1", ffi.string(host))))
+                        table.insert(results, T(_("IP: %1"), ffi.string(host)))
                         local gw = self:getDefaultRoute(ifname)
                         if gw then
                             table.insert(results, T(_("Default gateway: %1"), gw))
@@ -815,7 +819,7 @@ function Device:retrieveNetworkInfo()
                             end
                         end
                     else
-                        table.insert(results, T(_("IPv6: %1", ffi.string(host))))
+                        table.insert(results, T(_("IPv6: %1"), ffi.string(host)))
                         --- @todo: Build an IPv6 variant of getDefaultRoute that parses /proc/net/ipv6_route
                     end
                 end
@@ -835,10 +839,14 @@ function Device:retrieveNetworkInfo()
         default_gw = self:getDefaultRoute()
     end
     if default_gw then
-        if self:ping4(default_gw) then
-            table.insert(results, _("Gateway ping successful"))
+        local ok, rtt = self:ping4(default_gw)
+        if ok then
+            table.insert(results, T(_("Gateway ping successful (RTT: %1ms)"), time.to_ms(rtt)))
         else
             table.insert(results, _("Gateway ping FAILED"))
+            if rtt then
+                table.insert(results, T(_("Timed out after %1s"), time.to_s(rtt)))
+            end
         end
     else
         table.insert(results, _("No default gateway to ping"))
