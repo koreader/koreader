@@ -772,7 +772,7 @@ function Device:retrieveNetworkInfo()
                                                       bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[3], 0xFF),
                                                       bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[4], 0xFF),
                                                       bit.band(ifr.ifr_ifru.ifru_hwaddr.sa_data[5], 0xFF))
-                            table.insert(results, string.format("MAC: %s", mac))
+                            table.insert(results, T(_("MAC: %1", mac)))
                         end
 
                         -- Check if it's a wireless interface (c.f., wireless-tools)
@@ -793,19 +793,19 @@ function Device:retrieveNetworkInfo()
                                 if essid_on ~= 0 then
                                     local token_index = bit.band(essid_on, C.IW_ENCODE_INDEX)
                                     if token_index > 1 then
-                                        table.insert(results, string.format("SSID: \"%s\" [%d]", ffi.string(essid), token_index))
+                                        table.insert(results, T(_("SSID: \"%1\" [%2]", ffi.string(essid), token_index)))
                                     else
-                                        table.insert(results, string.format("SSID: \"%s\"", ffi.string(essid)))
+                                        table.insert(results, T(_("SSID: \"%1\"", ffi.string(essid))))
                                     end
                                 else
-                                    table.insert(results, "SSID: off/any")
+                                    table.insert(results, _("SSID: off/any"))
                                 end
                             end
                         end
                     end
 
                     if family == C.AF_INET then
-                        table.insert(results, string.format("IP: %s", ffi.string(host)))
+                        table.insert(results, T(_("IP: %1", ffi.string(host))))
                         local gw = self:getDefaultRoute(ifname)
                         if gw then
                             table.insert(results, T(_("Default gateway: %1"), gw))
@@ -815,7 +815,7 @@ function Device:retrieveNetworkInfo()
                             end
                         end
                     else
-                        table.insert(results, string.format("IPv6: %s", ffi.string(host)))
+                        table.insert(results, T(_("IPv6: %1", ffi.string(host))))
                         --- @todo: Build an IPv6 variant of getDefaultRoute that parses /proc/net/ipv6_route
                     end
                 end
