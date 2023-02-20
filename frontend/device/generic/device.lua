@@ -562,17 +562,17 @@ function Device:ping4(ip)
     local MAXIPLEN   = 60
     local MAXICMPLEN = 76
 
-    -- Base the id on our PID (like ping)
+    -- Base the id on our PID (like busybox)
     local myid = ffi.cast("uint16_t", C.getpid())
     myid = C.htons(myid)
 
     -- Setup the packet
     local packet = ffi.new("char[?]", DEFDATALEN + MAXIPLEN + MAXICMPLEN)
-    local pkt = ffi.cast("struct icmp *", packet)
-    pkt.icmp_type = C.ICMP_ECHO
-    pkt.icmp_hun.ih_idseq.icd_id = myid
-    pkt.icmp_hun.ih_idseq.icd_seq = C.htons(1)
-    pkt.icmp_cksum = inet_cksum(ffi.cast("const void *", pkt), ffi.sizeof(packet))
+    local pkt = ffi.cast("struct icmphdr *", packet)
+    pkt.type = C.ICMP_ECHO
+    pkt.un.echo.id = myid
+    pkt.un.echo.sequence = C.htons(1)
+    pkt.checksum = inet_cksum(ffi.cast("const void *", pkt), ffi.sizeof(packet))
 
     -- Set the destination address
     local addr = ffi.new("struct sockaddr_in")
