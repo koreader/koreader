@@ -531,19 +531,16 @@ function Device:ping4(ip)
     socket = C.socket(C.AF_INET, bit.bor(C.SOCK_DGRAM, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
     if socket == -1 then
         local errno = ffi.errno()
-        -- DBG
-        print("Device:ping4: unpriviledged ICMP socket:", ffi.string(C.strerror(errno)))
+        logger.dbg("Device:ping4: unpriviledged ICMP socket:", ffi.string(C.strerror(errno)))
 
         -- Try a raw socket
         socket = C.socket(C.AF_INET, bit.bor(C.SOCK_RAW, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
         if socket == -1 then
             local errno = ffi.errno()
             if errno == C.EPERM then
-                -- DBG
-                print("Device:ping4: Opening a RAW ICMP sockets requires CAP_NET_RAW capabilities!")
+                logger.dbg("Device:ping4: Opening a RAW ICMP sockets requires CAP_NET_RAW capabilities!")
             else
-                -- DBG
-                print("Device:ping4: Raw ICMP socket:", ffi.string(C.strerror(errno)))
+                logger.dbg("Device:ping4: Raw ICMP socket:", ffi.string(C.strerror(errno)))
             end
             --- Fall-back to the ping CLI tool, in the hope that it's setuid...
             if self:isKindle() and self:hasDPad() then
@@ -582,8 +579,7 @@ function Device:ping4(ip)
     addr.sin_family = C.AF_INET
     local in_addr = ffi.new("struct in_addr")
     if C.inet_aton(ip, in_addr) == 0 then
-        -- ERR
-        print("Device:ping4: Invalid address:", ip)
+        logger.err("Device:ping4: Invalid address:", ip)
         C.close(socket)
         return false
     end
@@ -593,8 +589,7 @@ function Device:ping4(ip)
     -- Send the ping
     if C.sendto(socket, packet, DEFDATALEN + C.ICMP_MINLEN, 0, ffi.cast("struct sockaddr*", addr), ffi.sizeof(addr)) == - 1 then
         local errno = ffi.errno()
-        -- ERR
-        print("Device:ping4: sendto:", ffi.string(C.strerror(errno)))
+        logger.err("Device:ping4: sendto:", ffi.string(C.strerror(errno)))
         C.close(socket)
         return false
     end
@@ -613,8 +608,7 @@ function Device:ping4(ip)
         if poll_num == -1 then
             local errno = ffi.errno()
             if errno ~= C.EINTR then
-                -- ERR
-                print("Device:ping4: poll:", ffi.string(C.strerror(errno)))
+                logger.err("Device:ping4: poll:", ffi.string(C.strerror(errno)))
                 C.close(socket)
                 return false
             end
@@ -623,8 +617,7 @@ function Device:ping4(ip)
             if c == -1 then
                 local errno = ffi.errno()
                 if errno ~= C.EINTR then
-                    -- ERR
-                    print("Device:ping4: recv:", ffi.string(C.strerror(errno)))
+                    logger.err("Device:ping4: recv:", ffi.string(C.strerror(errno)))
                     C.close(socket)
                     return false
                 end
@@ -637,10 +630,8 @@ function Device:ping4(ip)
                 if socket_type == C.SOCK_RAW then
                     hlen = bit.lshift(iphdr.ihl, 2)
                     if c < (hlen + 8) or iphdr.ihl < 5 then
-                        -- Packet too short
-                        -- DBG
-                        -- We don't use recvfrom, so we can't log where it's from ;o)
-                        print("Device:ping4: received a short packet")
+                        -- Packet too short (we don't use recvfrom, so we can't log where it's from ;o))
+                        logger.dbg("Device:ping4: received a short packet")
                         goto continue
                     end
                 else
@@ -656,8 +647,7 @@ function Device:ping4(ip)
                 end
             end
         else
-            -- INFO
-            print("Device:ping4: timed out waiting for a response from", ip)
+            logger.info("Device:ping4: timed out waiting for a response from", ip)
             C.close(socket)
             return false
         end
