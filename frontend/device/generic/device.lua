@@ -526,7 +526,8 @@ end
 
 function Device:ping4(ip)
     -- Try an unpriviledged ICMP socket first
-    local socket
+    -- NOTE: On modern distros, this may be disabled, c.f., sysctl net.ipv4.ping_group_range
+    local socket, socket_type
     socket = C.socket(C.AF_INET, bit.bor(C.SOCK_DGRAM, C.SOCK_NONBLOCK, C.SOCK_CLOEXEC), C.IPPROTO_ICMP)
     if socket == -1 then
         local errno = ffi.errno()
@@ -546,7 +547,11 @@ function Device:ping4(ip)
             end
             --- FIXME: Fall-back to exec ping, in the hope that it's setuid
             return false
+        else
+            socket_type = C.SOCK_RAW
         end
+    else
+        socket_type = C.SOCK_DGRAM
     end
 
     -- c.f., busybox's networking/ping.c
@@ -564,7 +569,7 @@ function Device:ping4(ip)
     pkt = ffi.cast("struct icmp *", packet)
     pkt.icmp_type = C.ICMP_ECHO
     pkt.icmp_hun.ih_idseq.icd_id = myid
-    pkt.icmp_hun.ih_idseq.icd_seq = 1
+    pkt.icmp_hun.ih_idseq.icd_seq = C.htons(1)
     pkt.icmp_cksum = inet_cksum(ffi.cast("const void *", pkt), ffi.sizeof(packet))
 
     -- Set the destination address
@@ -595,8 +600,11 @@ function Device:ping4(ip)
     pfd.events = C.POLLIN
 
     -- Wait for a response
+    local timeout = 2000
     while true do
-        local poll_num = C.poll(pfd, 1, 2000)
+        local poll_num = C.poll(pfd, 1, timeout)
+        -- Slice the timeout in two on every retry...
+        timeout = bit.rshift(timeout, 1)
         if poll_num == -1 then
             local errno = ffi.errno()
             if errno ~= C.EINTR then
@@ -615,14 +623,28 @@ function Device:ping4(ip)
                     C.close(socket)
                     return false
                 end
-            elseif c >= MAXICMPLEN then
+            else
                 -- ip + icmp
                 local iphdr = ffi.cast("struct iphdr *", packet)
+                local hlen
+                if socket_type == C.SOCK_RAW then
+                    hlen = bit.lshift(iphdr.ihl, 2)
+                    if c < (hlen + 8) or iphdr.ihl < 5 then
+                        -- Packet too short
+                        -- DBG
+                        -- We don't use recvfrom, so we can't log where it's from ;o)
+                        print("Device:ping4: received a short packet")
+                        goto continue
+                    end
+                else
+                    hlen = 0
+                end
                 -- Skip ip hdr
-                pkt = ffi.cast("struct icmp *", packet + bit.lshift(iphdr.ihl, 2))
+                local icp = ffi.cast("struct icmphdr *", packet + hlen)
                 -- Check that we got a *reply* to *our* ping
-                if pkt.icmp_type == C.ICMP_ECHOREPLY and
-                   pkt.icmp_hun.ih_idseq.icd_id == myid then
+                -- NOTE: The reply's ident is defined by the kernel for SOCK_DGRAM!
+                if icp.type == C.ICMP_ECHOREPLY and
+                   (socket_type == C.SOCK_DGRAM or icp.un.echo.id == myid) then
                     break
                 end
             end
@@ -632,6 +654,7 @@ function Device:ping4(ip)
             C.close(socket)
             return false
         end
+        ::continue::
     end
 
     -- If we got this far, we've got a reply to our ping in time!
