@@ -539,7 +539,7 @@ function Device:ping4(ip)
         if socket == -1 then
             errno = ffi.errno()
             if errno == C.EPERM then
-                logger.dbg("Device:ping4: Opening a RAW ICMP sockets requires CAP_NET_RAW capabilities!")
+                logger.dbg("Device:ping4: Opening a RAW ICMP socket requires CAP_NET_RAW capabilities!")
             else
                 logger.dbg("Device:ping4: Raw ICMP socket:", ffi.string(C.strerror(errno)))
             end
