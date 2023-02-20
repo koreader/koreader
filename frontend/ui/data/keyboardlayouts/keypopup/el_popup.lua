@@ -72,7 +72,7 @@ return {
     _E_el = {
         "Ε",
         northeast = "Ἐ",
-		northwest = "Ἑ",
+        northwest = "Ἑ",
         north = "E", -- English E
         east = "Έ",
         south = "€",
@@ -111,7 +111,7 @@ return {
     _H_el = {
         "Η",
         northeast = "Ἠ",
-		northwest = "Ἡ",
+        northwest = "Ἡ",
         north = "H", -- English H
         east = "Ή",
         south = "ῌ",
@@ -215,7 +215,7 @@ return {
     _O_el = {
         "Ο",
         northeast = "Ὀ",
-		northwest = "Ὁ",
+        northwest = "Ὁ",
         north = "O", -- English O
         east = "Ό",
         south = "Ø",
@@ -225,7 +225,7 @@ return {
     _o_el = {
         "ο",
         northeast = "ὀ",
-		northwest = "ὁ",        
+        northwest = "ὁ",        
         north = "o", -- English o
         east = "ό",
         west = "ὸ",
@@ -292,7 +292,7 @@ return {
     _V_el = {
         "Ω",
         northeast = "Ὠ",
-		northwest = "Ὡ",
+        northwest = "Ὡ",
         north = "V",
         east = "Ώ",
         south = "ῼ",
@@ -342,7 +342,7 @@ return {
         "Υ",
         north = "Y", -- English Y
         northwest = "Ὑ",
-		east = "Ύ",
+        east = "Ύ",
         west = "Ϋ",
         southeast = "Ὗ",
         southwest = "Ὕ",
