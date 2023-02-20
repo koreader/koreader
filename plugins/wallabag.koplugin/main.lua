@@ -195,7 +195,7 @@ function Wallabag:addToMainMenu(menu_items)
                             else
                                 path = filemanagerutil.abbreviate(self.directory)
                             end
-                            return T(_("Set download directory (%1)"), BD.dirpath(path))
+                            return T(_("Set download folder: %1"), BD.dirpath(path))
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -211,7 +211,7 @@ function Wallabag:addToMainMenu(menu_items)
                             else
                                 filter = self.filter_tag
                             end
-                            return T(_("Filter articles by tag (%1)"), filter)
+                            return T(_("Filter articles by tag: %1"), filter)
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -364,7 +364,7 @@ The 'Synchronize remotely deleted files' option will remove local files that no 
 
 More details: https://wallabag.org
 
-Downloads to directory: %1]]), BD.dirpath(filemanagerutil.abbreviate(self.directory)))
+Downloads to folder: %1]]), BD.dirpath(filemanagerutil.abbreviate(self.directory)))
                     })
                 end,
             },
@@ -804,17 +804,13 @@ function Wallabag:processLocalFiles(mode)
             if entry ~= "." and entry ~= ".." then
                 local entry_path = self.directory .. "/" .. entry
                 if DocSettings:hasSidecarFile(entry_path) then
-                    local docinfo = DocSettings:open(entry_path)
-                    local status
-
                     if self.send_review_as_tags then
                         self:addTags(entry_path)
                     end
-
-                    if docinfo.data.summary and docinfo.data.summary.status then
-                        status = docinfo.data.summary.status
-                    end
-                    local percent_finished = docinfo.data.percent_finished
+                    local doc_settings = DocSettings:open(entry_path)
+                    local summary = doc_settings:readSetting("summary")
+                    local status = summary and summary.status
+                    local percent_finished = doc_settings:readSetting("percent_finished")
                     if status == "complete" or status == "abandoned" then
                         if self.is_delete_finished then
                             self:removeArticle(entry_path)
@@ -861,33 +857,29 @@ function Wallabag:addTags(path)
     logger.dbg("Wallabag: managing tags for article ", path)
     local id = self:getArticleID(path)
     if id then
-        local docinfo = DocSettings:open(path)
+        local doc_settings = DocSettings:open(path)
+        local summary = doc_settings:readSetting("summary")
+        local tags = summary and summary.note
+        if tags and tags ~= "" then
+            logger.dbg("Wallabag: sending tags ", tags, " for ", path)
 
-        if docinfo.data and docinfo.data.summary and docinfo.data.summary.note then
-          local tags = docinfo.data.summary.note
+            local body = {
+                tags = tags,
+            }
 
-          if tags ~= "" and tags ~= nil then
+            local bodyJSON = JSON.encode(body)
 
-              logger.dbg("Wallabag: sending tags ", tags, " for ", path)
+            local headers = {
+                ["Content-type"] = "application/json",
+                ["Accept"] = "application/json, */*",
+                ["Content-Length"] = tostring(#bodyJSON),
+                ["Authorization"] = "Bearer " .. self.access_token,
+            }
 
-              local body = {
-                  tags = tags,
-              }
-
-              local bodyJSON = JSON.encode(body)
-
-              local headers = {
-                  ["Content-type"] = "application/json",
-                  ["Accept"] = "application/json, */*",
-                  ["Content-Length"] = tostring(#bodyJSON),
-                  ["Authorization"] = "Bearer " .. self.access_token,
-              }
-
-              self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON, "")
-          else
-              logger.dbg("Wallabag: no tags to send for ", path)
-          end
-       end
+            self:callAPI("POST", "/api/entries/" .. id .. "/tags.json", headers, bodyJSON, "")
+        else
+            logger.dbg("Wallabag: no tags to send for ", path)
+        end
     end
 end
 
@@ -917,12 +909,8 @@ function Wallabag:removeArticle(path)
 end
 
 function Wallabag:deleteLocalArticle(path)
-    local entry_mode = lfs.attributes(path, "mode")
-    if entry_mode == "file" then
-        os.remove(path)
-        local sdr_dir = DocSettings:getSidecarDir(path)
-        FFIUtil.purgeDir(sdr_dir)
-        ReadHistory:fileDeleted(path)
+    if lfs.attributes(path, "mode") == "file" then
+        FileManager:deleteFile(path, true)
    end
 end
 
@@ -953,7 +941,6 @@ function Wallabag:setFilterTag(touchmenu_instance)
    self.tag_dialog = InputDialog:new {
         title =  _("Set a single tag to filter articles on"),
         input = self.filter_tag,
-        input_type = "string",
         buttons = {
             {
                 {
@@ -985,7 +972,6 @@ function Wallabag:setTagsDialog(touchmenu_instance, title, description, value, c
         title =  title,
         description = description,
         input = value,
-        input_type = "string",
         buttons = {
             {
                 {
@@ -1027,29 +1013,24 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
             {
                 text = self.server_url,
                 --description = T(_("Server URL:")),
-                input_type = "string",
                 hint = _("Server URL")
             },
             {
                 text = self.client_id,
                 --description = T(_("Client ID and secret")),
-                input_type = "string",
                 hint = _("Client ID")
             },
             {
                 text = self.client_secret,
-                input_type = "string",
                 hint = _("Client secret")
             },
             {
                 text = self.username,
                 --description = T(_("Username and password")),
-                input_type = "string",
                 hint = _("Username")
             },
             {
                 text = self.password,
-                input_type = "string",
                 text_type = "password",
                 hint = _("Password")
             },
@@ -1060,7 +1041,6 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
                     text = _("Cancel"),
                     id = "close",
                     callback = function()
-                        self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
                     end
                 },
@@ -1080,13 +1060,11 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
                         self.username      = myfields[4]
                         self.password      = myfields[5]
                         self:saveSettings()
-                        self.settings_dialog:onClose()
                         UIManager:close(self.settings_dialog)
                     end
                 },
             },
         },
-        input_type = "string",
     }
     UIManager:show(self.settings_dialog)
     self.settings_dialog:onShowKeyboard()
@@ -1109,7 +1087,6 @@ function Wallabag:editClientSettings()
                     text = _("Cancel"),
                     id = "close",
                     callback = function()
-                        self.client_settings_dialog:onClose()
                         UIManager:close(self.client_settings_dialog)
                     end
                 },
@@ -1119,13 +1096,11 @@ function Wallabag:editClientSettings()
                         local myfields = self.client_settings_dialog:getFields()
                         self.articles_per_sync = math.max(1, tonumber(myfields[1]) or self.articles_per_sync)
                         self:saveSettings(myfields)
-                        self.client_settings_dialog:onClose()
                         UIManager:close(self.client_settings_dialog)
                     end
                 },
             },
         },
-        input_type = "string",
     }
     UIManager:show(self.client_settings_dialog)
     self.client_settings_dialog:onShowKeyboard()
@@ -1173,14 +1148,12 @@ end
 
 function Wallabag:readSettings()
     local wb_settings = LuaSettings:open(DataStorage:getSettingsDir().."/wallabag.lua")
-    if not wb_settings.data.wallabag then
-        wb_settings.data.wallabag = {}
-    end
+    wb_settings:readSetting("wallabag", {})
     return wb_settings
 end
 
 function Wallabag:saveWBSettings(setting)
-    if not self.wb_settings then self:readSettings() end
+    if not self.wb_settings then self.wb_settings = self:readSettings() end
     self.wb_settings:saveSetting("wallabag", setting)
     self.wb_settings:flush()
 end
@@ -1222,11 +1195,8 @@ function Wallabag:onSynchronizeWallabag()
 end
 
 function Wallabag:getLastPercent()
-    if self.ui.document.info.has_pages then
-        return Math.roundPercent(self.ui.paging:getLastPercent())
-    else
-        return Math.roundPercent(self.ui.rolling:getLastPercent())
-    end
+    local percent = self.ui.paging and self.ui.paging:getLastPercent() or self.ui.rolling:getLastPercent()
+    return Math.roundPercent(percent)
 end
 
 function Wallabag:addToDownloadQueue(article_url)
@@ -1237,11 +1207,9 @@ end
 function Wallabag:onCloseDocument()
     if self.remove_finished_from_history or self.remove_read_from_history then
         local document_full_path = self.ui.document.file
-        local is_finished
-        if self.ui.status.settings.data.summary and self.ui.status.settings.data.summary.status then
-            local status = self.ui.status.settings.data.summary.status
-            is_finished = (status == "complete" or status == "abandoned")
-        end
+        local summary = self.ui.doc_settings:readSetting("summary")
+        local status = summary and summary.status
+        local is_finished = status == "complete" or status == "abandoned"
         local is_read = self:getLastPercent() == 1
 
         if document_full_path
