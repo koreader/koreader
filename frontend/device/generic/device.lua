@@ -554,6 +554,7 @@ function Device:ping4(ip)
     local MAXIPLEN   = 60
     local MAXICMPLEN = 76
 
+    -- Base the id on our PID (like ping)
     local myid = ffi.cast("uint16_t", C.getpid())
     myid = C.htons(myid)
 
@@ -614,17 +615,14 @@ function Device:ping4(ip)
                     C.close(socket)
                     return false
                 end
-            end
-            if c >= MAXICMPLEN then
+            elseif c >= MAXICMPLEN then
                 -- ip + icmp
                 local iphdr = ffi.cast("struct iphdr *", packet)
                 -- Skip ip hdr
                 pkt = ffi.cast("struct icmp *", packet + bit.lshift(iphdr.ihl, 2))
-                if pkt.icmp_hun.ih_idseq.icd_id ~= myid then
-                    -- not our ping
-                    goto continue
-                end
-                if pkt.icmp_type == C.ICMP_ECHOREPLY then
+                -- Check that we got a *reply* to *our* ping
+                if pkt.icmp_type == C.ICMP_ECHOREPLY and
+                   pkt.icmp_hun.ih_idseq.icd_id == myid then
                     break
                 end
             end
@@ -634,10 +632,10 @@ function Device:ping4(ip)
             C.close(socket)
             return false
         end
-        ::continue::
     end
 
-    -- If we went this far, we've got a reply to our ping!
+    -- If we got this far, we've got a reply to our ping in time!
+    C.close(socket)
     return true
 end
 
